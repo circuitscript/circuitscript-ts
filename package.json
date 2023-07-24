@@ -36,6 +36,7 @@
   "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "antlr4": "^4.13.0",
     "tslib": "~2.5"
   },
   "volta": {
