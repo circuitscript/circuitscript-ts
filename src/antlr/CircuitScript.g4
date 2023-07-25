@@ -6,25 +6,23 @@ grammar CircuitScript;
 tokens { INDENT, DEDENT }
 
 @lexer::header{
-from antlr_denter.DenterHelper import DenterHelper
-from CircuitScriptParser import CircuitScriptParser
+import CircuitScriptParser from './CircuitScriptParser.js';
+import { DenterHelper } from './../denter/DenterHelper.js';
 }
+
 @lexer::members {
-class CircuitScriptDenter(DenterHelper):
-    def __init__(self, lexer, nl_token, indent_token, dedent_token, ignore_eof):
-        super().__init__(nl_token, indent_token, dedent_token, ignore_eof)
-        self.lexer: CircuitScriptLexer = lexer
+    denter: DenterHelper | null = null;
 
-    def pull_token(self):
-        return super(CircuitScriptLexer, self.lexer).nextToken()
+    nextToken(): Token {
+        if (this.denter === null) {
+            this.denter = new DenterHelper(
+                CircuitScriptParser.NEWLINE, CircuitScriptParser.INDENT, CircuitScriptParser.DEDENT, false, () => {
+                    return super.nextToken();
+                });
+        }
 
-denter = None
-
-def nextToken(self):
-    if not self.denter:
-        self.denter = self.CircuitScriptDenter(self, self.NEWLINE, CircuitScriptParser.INDENT, CircuitScriptParser.DEDENT, False)
-    return self.denter.next_token()
-
+        return this.denter.nextToken();
+    }
 } 
 
 script: (expression | NEWLINE)+;
