@@ -15,12 +15,15 @@ export class DenterHelper {
     shouldIgnoreEOF: boolean;
     reachedEOF = false;
 
-    constructor(NLToken: number, IndentToken: number, DedentToken: number, shouldIgnoreEOF: boolean) {
+    pullToken: () => Token;
+
+    constructor(NLToken: number, IndentToken: number, DedentToken: number, shouldIgnoreEOF: boolean, pullToken: () => Token) {
         this.NLToken = NLToken;
         this.IndentToken = IndentToken;
         this.DedentToken = DedentToken;
 
         this.shouldIgnoreEOF = shouldIgnoreEOF;
+        this.pullToken = pullToken;
     }
 
     initIfFirstRun(): void {
@@ -43,10 +46,6 @@ export class DenterHelper {
 
             this.dentsBuffer.push(firstRealToken);
         }
-    }
-
-    pullToken(): Token {
-        // This should be overwritten
     }
 
     nextToken(): Token {
