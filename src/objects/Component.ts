@@ -30,7 +30,7 @@ export class Component {
         // Let pin index start from 1.
         for (let i = 1; i < this.numPins + 1; i++) {
             const pinIndex = i;
-            this.pins[pinIndex] = new PinDefinition(pinIndex, PinIdType.Int, pinIndex.toString(), PinTypes.Any);
+            this.pins.set(pinIndex, new PinDefinition(pinIndex, PinIdType.Int, pinIndex.toString(), PinTypes.Any));
         }
     }
 
@@ -98,7 +98,7 @@ export class Component {
     }
 
     getNextPinAfter(pinIndex: number): number {
-        if (pinIndex + 1 < this.numPins){
+        if (pinIndex + 1 <= this.numPins) {
             return pinIndex + 1;
         } else {
             // No more next pin, so just return the
@@ -112,7 +112,7 @@ export class Component {
     }
 
     getParam(key: string): any {
-        if (this.parameters.has(key)){
+        if (this.parameters.has(key)) {
             return this.parameters.get(key);
         } else {
             throw "Invalid parameter key";

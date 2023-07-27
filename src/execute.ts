@@ -4,7 +4,7 @@ import { ExecutionScope } from "./objects/ExecutionScope.js";
 import { Net } from "./objects/Net.js";
 import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { PinDefinition } from "./objects/PinDefinition.js";
-import { ComponentPin } from "./objects/types.js";
+import { CFunction, CFunctionResult, ComponentPin } from "./objects/types.js";
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -38,12 +38,12 @@ export class ExecutionContext {
         this.print('create new execution context', this.name, this.scope.indentLevel);
     }
 
-    private print(...params: any[]): void {
+    print(...params: any[]): void {
         const indentOutput = "".padStart(this.indentLevel * 4, "    ");
         const indentLevelText = this.indentLevel.toString().padStart(3, " ");
 
         const args = ["[" + indentLevelText + "]", indentOutput, ...params];
-        console.log.apply(args);
+        console.log.apply(null, args);
     }
 
     private setupRoot(): void {
@@ -53,6 +53,8 @@ export class ExecutionContext {
 
         this.scope.currentComponent = component_root;
         this.scope.currentPin = component_root.getDefaultPin();
+
+        this.scope.componentRoot = component_root;
     }
 
     private setupGndNet(): void {
@@ -61,7 +63,10 @@ export class ExecutionContext {
 
         const net_gnd = new Net(GlobalNames.gnd, 100, 'gnd');
         const pair: ComponentPin = [component_gnd, 1];
-        this.scope.nets.set(pair, net_gnd);
+        this.scope.setNet(component_gnd, 1, net_gnd);
+
+        this.scope.componentGnd = component_gnd;
+        this.scope.netGnd = net_gnd;
     }
 
     instanceExists(instanceName: string): boolean {
@@ -152,7 +157,7 @@ export class ExecutionContext {
         const scopeNets = this.scope.nets;
         for (const [componentPair, net] of scopeNets) {
             if (net === net2){
-                scopeNets.set(componentPair, net1);
+                this.scope.setNet(componentPair[0], componentPair[1], net1);
             }
         }
     }
@@ -168,8 +173,8 @@ export class ExecutionContext {
         const paramsMap = new Map<string, any>();
 
         params.forEach(param => {
-            component.parameters[param.paramName] = param.paramValue;
-            paramsMap[param.paramName] = param.paramValue;
+            component.parameters.set(param.paramName, param.paramValue);
+            paramsMap.set(param.paramName, param.paramValue);
         });
 
         if (paramsMap.has('__is_net')) {
@@ -177,7 +182,7 @@ export class ExecutionContext {
             const priority = paramsMap.get('priority');
 
             const tmpNet = new Net(netName, priority);
-            this.print('Added net instance', tmpNet);
+            this.print('added net instance', tmpNet.toString());
 
             // Assume net is on 1 pin for now
             this.scope.setNet(component, 1, tmpNet);
@@ -195,16 +200,16 @@ export class ExecutionContext {
     }
 
     printPoint(): void {
-        this.print('point: ', this.scope.currentComponent, this.scope.currentPin);
+        this.print('point: ' + this.scope.currentComponent.instanceName +" " + this.scope.currentPin);
     }
 
-    addComponentExist(component: ClassComponent): void {
+    addComponentExisting(component: ClassComponent): void {
         const startPin = component.getDefaultPin();
         const nextPin = component.getNextPinAfter(startPin);
 
         this.toComponent(component, startPin);
 
-        this.print('move to next pin');
+        this.print('move to next pin: ' + nextPin);
         this.atComponent(component, nextPin);
 
         this.printPoint();
@@ -217,6 +222,7 @@ export class ExecutionContext {
             pinId = component.getDefaultPin();
         } else {
             if (component.pins.get(pinId) === undefined) {
+                console.trace();
                 throw "Invalid pin number " + pinId + " in " + component.instanceName;
             }
         }
@@ -224,7 +230,7 @@ export class ExecutionContext {
         this.printPoint();
 
         if (this.scope.hasNet(this.scope.currentComponent, this.scope.currentPin)) {
-            this.print('net: ', this.scope.getNet(this.scope.currentComponent, this.scope.currentPin));
+            this.print('net: ', this.scope.getNet(this.scope.currentComponent, this.scope.currentPin).toString());
         }
 
         this.linkComponent(this.scope.currentComponent, this.scope.currentPin, component, pinId);
@@ -257,5 +263,116 @@ export class ExecutionContext {
         }
 
         this.printPoint();
+    }
+
+    createFunction(functionName: string, __runFunc: CFunction): void {
+        this.scope.functions.set(functionName, __runFunc);
+        this.print(`defined new function ${functionName}`);
+    }
+
+    hasFunction(functionName: string): boolean {
+        return this.scope.functions.has(functionName);
+    }
+
+    getFunction(functionName: string): CFunction {
+        return this.scope.functions.get(functionName);
+    }
+
+    callFunction(functionName: string, functionParams: any[] | null = null): CFunctionResult {
+        let __runFunc: CFunction | null = null;
+
+        if (this.hasFunction(functionName)) {
+            __runFunc = this.getFunction(functionName);
+        }
+
+        // If the function does not exist in the current execution context,
+        // then try to search in the upper execution context
+        if (__runFunc === null && this.resolveFunction !== null) {
+            __runFunc = this.resolveFunction(functionName);
+        }
+
+        if (__runFunc !== null) {
+            this.print(`call function '${functionName}'`);
+
+            const functionResult = __runFunc(functionParams);
+
+            this.print(`done call function '${functionName}'`);
+
+            return functionResult;
+        } else {
+            throw `Invalid function '${functionName}'`;
+        }
+    }
+
+    mergeScope(childScope: ExecutionScope, namespace:string): void {
+        this.print('-- merging scope to parent --');
+
+        // Save these position first, because this needs to be restored
+        // after the merge operation
+        const currentComponent = this.scope.currentComponent;
+        const currentPin = this.scope.currentPin;
+
+        // move all instances into the parent scope first, with a namespace extension
+        const tmpInstances = childScope.instances;
+        const tmpNets = childScope.getNets();
+
+        const tmpIgnore = [childScope.componentGnd, childScope.componentRoot];
+
+        // Rename instance names with the addition of the namespace
+        for (const [instanceName, component] of tmpInstances){
+
+            // Ignore the root component of the child scope
+            if (tmpIgnore.indexOf(component) !== -1){
+                continue;
+            }
+
+            const newInstanceName = `${namespace}.${instanceName}`;
+            component.instanceName = newInstanceName;
+            this.scope.instances.set(newInstanceName, component);
+        }
+
+        // Update net names with the namespace
+        const uniqueNets = [];
+        tmpNets.forEach(([component, pin, net]) => {
+            if (uniqueNets.indexOf(net) === -1) {
+                net.name = namespace + '.' + net.name;
+                uniqueNets.push(net);
+            }
+        });
+
+        // Merge nets
+        tmpNets.forEach(([component, pin, net]) => {
+            if (net.name !== GlobalNames.gnd){
+                this.scope.setNet(component, pin , net);
+            } 
+        });
+
+        // If true, then then __root component of the child_scope will
+        // be connected to the current component/pin of the parent
+        const linkRootComponent = false;
+
+        if (linkRootComponent) {
+            // join the child_scope's __root net to the current component / pin
+            const tmpRoot = childScope.componentRoot;
+
+            // put the __root of the child component at the current component pin
+            this.toComponent(tmpRoot, 1)
+        }
+
+        // Link the GND nets together
+        // To ensure the root GND has precedence, increase the priority temporarily
+        this.scope.netGnd.priority += 1
+
+        const childGnd = childScope.componentGnd;
+        this.atComponent(childGnd, null);
+
+        this.toComponent(this.scope.componentGnd, 1);
+
+        this.scope.netGnd.priority -= 1
+
+        this.scope.currentComponent = currentComponent;
+        this.scope.currentPin = currentPin;
+
+        this.print('-- done merging scope --')
     }
 }

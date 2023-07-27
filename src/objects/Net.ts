@@ -8,4 +8,8 @@ export class Net {
         this.priority = priority;
         this.type = type;
     }
+
+    toString(): string {
+        return this.name;
+    }
 }

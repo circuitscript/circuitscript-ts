@@ -1,17 +1,18 @@
 import { ClassComponent, Component } from "./Component.js";
 import { Net } from "./Net.js";
-import { NetMap } from "./types.js";
+import { CFunction } from "./types.js";
+import lodash from 'lodash';
 
 export class ExecutionScope {
 
     scopeId: number;
-    nets: NetMap;
+    private nets: [Component, number, Net][] = [];
 
     instances: Map<string, ClassComponent | Component> = new Map();
 
-    functions: any;
+    functions: Map<string, CFunction> = new Map();
 
-    variables: any;
+    variables: Map<string, any> = new Map();
 
     branchStack: any;
 
@@ -21,6 +22,10 @@ export class ExecutionScope {
 
     currentComponent: Component | null = null;
     currentPin: number | null = null;
+
+    netGnd: Net | null = null;
+    componentGnd: ClassComponent | null = null;
+    componentRoot: ClassComponent | null = null;
 
     constructor(scopeId: number) {
         this.scopeId = scopeId;
@@ -35,14 +40,41 @@ export class ExecutionScope {
     }
 
     hasNet(component: Component, pin: number): boolean {
-        return this.nets.has([component, pin]);
+        const result = this.nets.find(([tmpComponent, tmpPin, net]) => {
+            // lodash isEqual is needed because deep equality is needed
+            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
+        });
+
+        return result !== undefined;
     }
 
     getNet(component: Component, pin: number): Net {
-        return this.nets.get([component, pin]);
+        const result = this.nets.find(([tmpComponent, tmpPin, net]) => {
+            // lodash isEqual is needed because deep equality is needed
+            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
+        });
+
+        if (result) {
+            return result[2]; // net
+        }
+
+        return null;
     }
 
     setNet(component: Component, pin: number, net: Net): void {
-        this.nets.set([component, pin], net);
+        const result = this.nets.findIndex(([tmpComponent, tmpPin, net]) => {
+            // lodash isEqual is needed because deep equality is needed
+            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
+        });
+
+        if (result === -1) {
+            this.nets.push([component, pin, net]);
+        } else {
+            this.nets[result][2] = net;
+        }
+    }
+
+    getNets(): [Component, number, Net][] {
+        return this.nets;
     }
 }
