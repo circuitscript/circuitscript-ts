@@ -59,7 +59,7 @@ export class ExecutionContext {
 
     private setupGndNet(): void {
         const component_gnd = Component.simple(GlobalNames.gnd, 1);
-        this.scope.instances[GlobalNames.gnd] = component_gnd;
+        this.scope.instances.set(GlobalNames.gnd, component_gnd);
 
         const net_gnd = new Net(GlobalNames.gnd, 100, 'gnd');
         const pair: ComponentPin = [component_gnd, 1];
@@ -373,6 +373,6 @@ export class ExecutionContext {
         this.scope.currentComponent = currentComponent;
         this.scope.currentPin = currentPin;
 
-        this.print('-- done merging scope --')
+        this.print('-- done merging scope --');
     }
 }

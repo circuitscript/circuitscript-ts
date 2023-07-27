@@ -1,6 +1,5 @@
 import { PinDefinition, PinIdType } from "./PinDefinition.js";
 import { PinTypes } from "./PinTypes.js";
-import { ComponentPin, NetMap } from "./types.js";
 
 export class Component {
     // A component has an instance_name to identify it
@@ -32,29 +31,6 @@ export class Component {
             const pinIndex = i;
             this.pins.set(pinIndex, new PinDefinition(pinIndex, PinIdType.Int, pinIndex.toString(), PinTypes.Any));
         }
-    }
-
-    getNets(allNets: NetMap): { pin: PinDefinition, net: string }[] {
-        // Returns the list of nets that the component pins are 
-        // connected to.
-
-        const result = [];
-
-        for (const [pinId, pin] of this.pins) {
-            let netName = 'NO_NET';
-            const componentPin: ComponentPin = [this, pinId];
-
-            if (allNets.has(componentPin)) {
-                netName = allNets.get(componentPin).name;
-            }
-
-            result.push({
-                pin: pin,
-                net: netName
-            })
-        }
-
-        return result;
     }
 
     getDefaultPin(): number {
