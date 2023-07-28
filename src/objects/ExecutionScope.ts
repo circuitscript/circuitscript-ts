@@ -8,7 +8,7 @@ export class ExecutionScope {
     scopeId: number;
     private nets: [Component, number, Net][] = [];
 
-    instances: Map<string, ClassComponent | Component> = new Map();
+    instances: Map<string, ClassComponent> = new Map();
 
     functions: Map<string, CFunction> = new Map();
 
@@ -20,7 +20,7 @@ export class ExecutionScope {
     netCounter = 1;
     unnamedCounter = 1;
 
-    currentComponent: Component | null = null;
+    currentComponent: ClassComponent | null = null;
     currentPin: number | null = null;
 
     netGnd: Net | null = null;
@@ -76,5 +76,11 @@ export class ExecutionScope {
 
     getNets(): [Component, number, Net][] {
         return this.nets;
+    }
+
+    printNets(): void {
+        this.nets.forEach(([component, pin, net]) => {
+            console.log(component.instanceName, pin, '=>', net.name);
+        });
     }
 }

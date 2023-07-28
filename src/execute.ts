@@ -4,7 +4,7 @@ import { ExecutionScope } from "./objects/ExecutionScope.js";
 import { Net } from "./objects/Net.js";
 import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { PinDefinition } from "./objects/PinDefinition.js";
-import { CFunction, CFunctionResult, ComponentPin } from "./objects/types.js";
+import { CFunction, CFunctionResult } from "./objects/types.js";
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -48,7 +48,7 @@ export class ExecutionContext {
 
     private setupRoot(): void {
         // Setup the root node in the scope
-        const component_root = Component.simple(GlobalNames.__root, 1);
+        const component_root = ClassComponent.simple(GlobalNames.__root, 1, '__root');
         this.scope.instances.set(GlobalNames.__root, component_root);
 
         this.scope.currentComponent = component_root;
@@ -58,11 +58,10 @@ export class ExecutionContext {
     }
 
     private setupGndNet(): void {
-        const component_gnd = Component.simple(GlobalNames.gnd, 1);
+        const component_gnd = ClassComponent.simple(GlobalNames.gnd, 1, 'gnd');
         this.scope.instances.set(GlobalNames.gnd, component_gnd);
 
         const net_gnd = new Net(GlobalNames.gnd, 100, 'gnd');
-        const pair: ComponentPin = [component_gnd, 1];
         this.scope.setNet(component_gnd, 1, net_gnd);
 
         this.scope.componentGnd = component_gnd;
@@ -73,7 +72,7 @@ export class ExecutionContext {
         return this.scope.instances.has(instanceName);
     }
 
-    getComponent(instanceName: string): Component { 
+    getComponent(instanceName: string): ClassComponent { 
         return this.scope.instances.get(instanceName);
     }
 
@@ -104,7 +103,7 @@ export class ExecutionContext {
         return tmpName;
     }
 
-    linkComponent(component1: Component, component1Pin: number, component2: Component, component2Pin: number): void {
+    linkComponent(component1: ClassComponent, component1Pin: number, component2: ClassComponent, component2Pin: number): void {
         const net1_exists = this.scope.hasNet(component1, component1Pin);
         const net2_exists = this.scope.hasNet(component2, component2Pin);
         
@@ -154,17 +153,17 @@ export class ExecutionContext {
 
         // Get all (component, pin) pairs that are linked to net2
         // and change them to net1
-        const scopeNets = this.scope.nets;
-        for (const [componentPair, net] of scopeNets) {
-            if (net === net2){
-                this.scope.setNet(componentPair[0], componentPair[1], net1);
+        const scopeNets = this.scope.getNets();
+        scopeNets.forEach(([component, pin, net]) => {
+            if (net === net2) {
+                this.scope.setNet(component, pin, net);
             }
-        }
+        });
     }
 
     createComponent(instanceName: string, pins: PinDefinition[], params: ParamDefinition[]): Component {
         const numPins = pins.length;
-        const component = new ClassComponent(instanceName, GlobalNames.symbol, numPins);
+        const component = new ClassComponent(instanceName, numPins, GlobalNames.symbol);
 
         pins.forEach(pin => {
             component.pins.set(pin.id, pin);
@@ -194,7 +193,7 @@ export class ExecutionContext {
            return pin.id + ":" + pin.name; 
         });
 
-        this.print('add symbol', instanceName, '[' + pinsOutput.join(',') + ']');
+        this.print('add symbol', instanceName, '[' + pinsOutput.join(', ') + ']');
 
         return component;
     }
@@ -215,7 +214,7 @@ export class ExecutionContext {
         this.printPoint();
     }
 
-    toComponent(component: Component, pinId: number | null): void {
+    toComponent(component: ClassComponent, pinId: number | null): void {
         this.print('to component');
 
         if (pinId === null) {
@@ -241,7 +240,7 @@ export class ExecutionContext {
         this.printPoint();
     }
 
-    atComponent(component: Component, pinId: number | null): void {
+    atComponent(component: ClassComponent, pinId: number | null): void {
         this.print('at component');
         this.printPoint();
 
@@ -267,7 +266,7 @@ export class ExecutionContext {
 
     createFunction(functionName: string, __runFunc: CFunction): void {
         this.scope.functions.set(functionName, __runFunc);
-        this.print(`defined new function ${functionName}`);
+        this.print(`defined new function '${functionName}'`);
     }
 
     hasFunction(functionName: string): boolean {
@@ -331,9 +330,9 @@ export class ExecutionContext {
             this.scope.instances.set(newInstanceName, component);
         }
 
-        // Update net names with the namespace
+        // Update all net names in the child scope with the namespace
         const uniqueNets = [];
-        tmpNets.forEach(([component, pin, net]) => {
+        tmpNets.forEach(([,, net]) => {
             if (uniqueNets.indexOf(net) === -1) {
                 net.name = namespace + '.' + net.name;
                 uniqueNets.push(net);
@@ -342,9 +341,10 @@ export class ExecutionContext {
 
         // Merge nets
         tmpNets.forEach(([component, pin, net]) => {
-            if (net.name !== GlobalNames.gnd){
-                this.scope.setNet(component, pin , net);
-            } 
+            // Do not carry over the gnd component from the child scope
+            if (component !== childScope.componentGnd) {
+                this.scope.setNet(component, pin, net);
+            }
         });
 
         // If true, then then __root component of the child_scope will

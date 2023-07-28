@@ -19,12 +19,6 @@ export class Component {
         this.numPins = numPins;
     }
 
-    static simple(instanceName: string, numPins = 1): Component {
-        const component = new Component(instanceName, numPins);
-        component.setupPins();
-        return component;
-    }
-
     setupPins(): void {
         // Let pin index start from 1.
         for (let i = 1; i < this.numPins + 1; i++) {
@@ -44,11 +38,11 @@ export class Component {
 
         } else {
             // assume is string
-            this.pins.forEach(pin => {
-                if (pin.name === pinId || pin.altNames.indexOf(pinId) !== -1) {
+            for (const [, pinDef] of this.pins) {
+                if (pinDef.name === pinId || pinDef.altNames.indexOf(pinId) !== -1) {
                     return true;
                 }
-            });
+            }
         }
 
         return false;
@@ -63,11 +57,11 @@ export class Component {
             return pinId;
         } else {
             // assume is string
-            this.pins.forEach((pin, key) => {
-                if (pin.name === pinId || pin.altNames.indexOf(pinId) === -1) {
-                    return key;
+            for (const [pin, pinDef] of this.pins) {
+                if (pinDef.name === pinId || pinDef.altNames.indexOf(pinId) !== -1) {
+                    return pin;
                 }
-            });
+            }
 
             return -1;
         }
@@ -83,11 +77,11 @@ export class Component {
         }
     }
 
-    setParam(key: string, value: any): void {
+    setParam(key: string, value: number | string): void {
         this.parameters.set(key, value);
     }
 
-    getParam(key: string): any {
+    getParam(key: string): number | string {
         if (this.parameters.has(key)) {
             return this.parameters.get(key);
         } else {
@@ -103,15 +97,15 @@ export class Component {
 export class ClassComponent extends Component {
 
     className: string;
-    constructor(instanceName: string, className: string, numPins = 1) {
+
+    constructor(instanceName: string, numPins: number, className: string) {
         super(instanceName, numPins);
         this.className = className;
     }
 
-    static simple(instanceName: string, className: string, numPins): ClassComponent {
-        const component = new ClassComponent(instanceName, className, numPins);
+    static simple(instanceName: string, numPins: number, className: string): ClassComponent {
+        const component = new ClassComponent(instanceName, numPins, className);
         component.setupPins();
         return component;
     }
-
 }
