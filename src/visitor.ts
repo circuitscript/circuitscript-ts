@@ -393,6 +393,8 @@ export class MainVisitor extends ParseTreeVisitor {
     }
 
 
+    pinTypes = [PinTypes.Any, PinTypes.IO, PinTypes.Input, PinTypes.Output, PinTypes.Power];
+
     private parseCreateComponentPins(pinData: number | Map): PinDefinition[] {
         const pins: PinDefinition[] = [];
 
@@ -402,8 +404,43 @@ export class MainVisitor extends ParseTreeVisitor {
                 const pinId = i + 1;
                 pins.push(new PinDefinition(pinId, PinIdType.Int, pinId.toString()))
             }
+
         } else if (pinData instanceof Map) {
-            // Skip for now...
+            for (const [pinId, pinDef] of pinData) {
+                let pinIdType = PinIdType.Int;
+                let pinType = PinTypes.Any;
+                let pinName: string | null = null;
+                let altPinNames: string[] = [];
+
+                if (typeof pinId === 'string') {
+                    pinIdType = PinIdType.Str;
+                }
+
+                if (Array.isArray(pinDef)) {
+
+                    const firstValue = pinDef[0];
+
+                    // Check if firstValue matches a pin type
+                    if (this.pinTypes.indexOf(firstValue) !== -1) {
+                        // First value matches a pin type
+                        pinType = firstValue;
+                        pinName = pinDef[1];
+
+                        if (pinDef.length > 2) {
+                            altPinNames = pinDef.slice(2);
+                        }
+                    } else {
+                        pinName = pinDef[0];
+                        if (pinDef.length > 1) {
+                            altPinNames = pinDef.slice(1);
+                        }
+                    }
+                } else {
+                    pinName = pinDef;
+                }
+
+                pins.push(new PinDefinition(pinId, pinIdType, pinName, pinType, altPinNames));
+            }
         }
 
         return pins;
