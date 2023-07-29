@@ -1,13 +1,14 @@
 import fs from 'fs';
-import CircuitScriptParser from './antlr/CircuitScriptParser.js';
-import CircuitScriptLexer from './antlr/CircuitScriptLexer.js';
+import CircuitScriptParser from './antlr/CircuitScriptParser';
+import CircuitScriptLexer from './antlr/CircuitScriptLexer';
 
 import { CharStream, CommonTokenStream } from 'antlr4';
-import { MainVisitor } from './visitor.js';
+import { MainVisitor } from './visitor';
 
 export default function main(): void {
 
-    const fileName = 'examples/example.cst';
+    const fileName = process.argv[2];
+
 
     fs.readFile(fileName, 'utf8', (err, data) => {
         if (err) {
@@ -21,18 +22,14 @@ export default function main(): void {
         const parser = new CircuitScriptParser(tokens);
         const tree = parser.script();
 
-        console.log(tree.toStringTree(null, parser));
-        
         const visitor = new MainVisitor();
         try {
             visitor.visit(tree);
         } catch (err) {
             console.log("got error", err);
         }
+
+        const result = visitor.dump2();
+        console.log(JSON.stringify(result, null, 2));
     });
-
-    // const component = new Component("helloWorld", 100);
-    // console.log(component + '');
 }
-
-main();
