@@ -1,5 +1,5 @@
-import { PinDefinition, PinIdType } from "./PinDefinition.js";
-import { PinTypes } from "./PinTypes.js";
+import { PinDefinition, PinIdType } from "./PinDefinition";
+import { PinTypes } from "./PinTypes";
 
 export class Component {
     // A component has an instance_name to identify it

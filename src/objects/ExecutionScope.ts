@@ -1,8 +1,8 @@
 import lodash from 'lodash';
 
-import { ClassComponent, Component } from "./Component.js";
-import { Net } from "./Net.js";
-import { CFunction } from "./types.js";
+import { ClassComponent, Component } from "./Component";
+import { Net } from "./Net";
+import { CFunction } from "./types";
 
 export class ExecutionScope {
 

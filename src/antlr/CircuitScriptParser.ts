@@ -11,7 +11,7 @@ import {
 	Token, TokenStream,
 	Interval, IntervalSet
 } from 'antlr4';
-import CircuitScriptVisitor from "./CircuitScriptVisitor.js";
+import CircuitScriptVisitor from "./CircuitScriptVisitor";
 
 // for running tests with parameters, TODO: discuss strategy for typed parameters in CI
 // eslint-disable-next-line no-unused-vars

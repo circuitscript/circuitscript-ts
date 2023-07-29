@@ -1,12 +1,12 @@
 import lodash from 'lodash';
 
-import { GlobalNames } from "./globals.js";
-import { ClassComponent, Component } from "./objects/Component.js";
-import { ExecutionScope } from "./objects/ExecutionScope.js";
-import { Net } from "./objects/Net.js";
-import { ParamDefinition } from "./objects/ParamDefinition.js";
-import { PinDefinition } from "./objects/PinDefinition.js";
-import { CFunction, CFunctionResult } from "./objects/types.js";
+import { GlobalNames } from "./globals";
+import { ClassComponent, Component } from "./objects/Component";
+import { ExecutionScope } from "./objects/ExecutionScope";
+import { Net } from "./objects/Net";
+import { ParamDefinition } from "./objects/ParamDefinition";
+import { PinDefinition } from "./objects/PinDefinition";
+import { CFunction, CFunctionResult } from "./objects/types";
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -25,7 +25,10 @@ export class ExecutionContext {
     // Return result of the context
     returnValue = null;
 
-    constructor(name: string, executionLevel = 0, indentLevel = 0) {
+    // If true, then do not print any messages
+    silent = false;
+
+    constructor(name: string, executionLevel = 0, indentLevel = 0, silent = false) {
         this.name = name;
         this.executionLevel = executionLevel;
 
@@ -35,10 +38,16 @@ export class ExecutionContext {
         this.setupRoot();
         this.setupGndNet();
 
+        this.silent = silent;
+
         this.print('create new execution context', this.name, this.scope.indentLevel);
     }
 
     print(...params: any[]): void {
+        if (this.silent) {
+            return;
+        }
+
         const indentOutput = "".padStart(this.scope.indentLevel * 4, "    ");
         const indentLevelText = this.scope.indentLevel.toString().padStart(3, " ");
 
@@ -168,6 +177,7 @@ export class ExecutionContext {
         const component = new ClassComponent(instanceName, numPins, GlobalNames.symbol);
 
         pins.forEach(pin => {
+            // @ts-ignore
             component.pins.set(pin.id, pin);
         });
 

@@ -6,8 +6,8 @@ grammar CircuitScript;
 tokens { INDENT, DEDENT }
 
 @lexer::header{
-import CircuitScriptParser from './CircuitScriptParser.js';
-import { DenterHelper } from './../denter/DenterHelper.js';
+import CircuitScriptParser from './CircuitScriptParser';
+import { DenterHelper } from './../denter/DenterHelper';
 }
 
 @lexer::members {

@@ -78,7 +78,7 @@ export class DenterHelper {
         return token;
     }
 
-    createToken(tokenType: Token, copyFrom: Token): Token {
+    createToken(tokenType: number, copyFrom: Token): Token {
         let tokenTypeStr = null;
         
         if (tokenType === this.NLToken) {

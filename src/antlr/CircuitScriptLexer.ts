@@ -12,8 +12,8 @@ import {
 	Token
 } from "antlr4";
 
-import CircuitScriptParser from './CircuitScriptParser.js';
-import { DenterHelper } from './../denter/DenterHelper.js';
+import CircuitScriptParser from './CircuitScriptParser';
+import { DenterHelper } from './../denter/DenterHelper';
 
 export default class CircuitScriptLexer extends Lexer {
 	public static readonly T__0 = 1;

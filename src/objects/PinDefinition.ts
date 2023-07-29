@@ -1,4 +1,4 @@
-import { PinTypes } from "./PinTypes.js";
+import { PinTypes } from "./PinTypes";
 
 export type PinId = number | string;
 
