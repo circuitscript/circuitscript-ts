@@ -4,13 +4,15 @@ import CircuitScriptLexer from './antlr/CircuitScriptLexer';
 
 import { CharStream, CommonTokenStream } from 'antlr4';
 import { MainVisitor } from './visitor';
+import { generateLayout, prepareLayout } from './layout';
+import { generateSVG } from './render';
 
 export default function main(): void {
 
     const fileName = process.argv[2];
 
 
-    fs.readFile(fileName, 'utf8', (err, data) => {
+    fs.readFile(fileName, 'utf8', async (err, data) => {
         if (err) {
             throw err;
         }
@@ -29,7 +31,16 @@ export default function main(): void {
             console.log("got error", err);
         }
 
-        const result = visitor.dump2();
-        console.log(JSON.stringify(result, null, 2));
+        const {nodes, edges} = visitor.getGraph();
+        const graph = prepareLayout(nodes, edges);
+        console.log(graph);
+
+        const elkOutput = await generateLayout(graph);
+
+        generateSVG(elkOutput, 'output.svg');
     });
+}
+
+if (require.main === module) {
+    main();
 }
