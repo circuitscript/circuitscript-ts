@@ -1,5 +1,5 @@
 import { ParseTreeVisitor } from 'antlr4';
-import { Add_component_exprContext, Assignment_exprContext, At_component_exprContext, Component_select_exprContext, Create_component_exprContext, Data_exprContext, Function_args_exprContext, Function_call_exprContext, Function_def_exprContext, Function_return_exprContext, Nested_propertiesContext, ParametersContext, Pin_select_exprContext, Property_exprContext, Property_key_exprContext, ScriptContext, Single_line_propertyContext, To_component_exprContext, Value_exprContext } from "./antlr/CircuitScriptParser.js";
+import { Add_component_exprContext, Assignment_exprContext, At_component_exprContext, Branch_blocksContext, Component_select_exprContext, Create_component_exprContext, Data_exprContext, ExpressionContext, Function_args_exprContext, Function_call_exprContext, Function_def_exprContext, Function_return_exprContext, Nested_propertiesContext, ParametersContext, Pin_select_exprContext, Property_exprContext, Property_key_exprContext, ScriptContext, Single_line_propertyContext, To_component_exprContext, Value_exprContext } from "./antlr/CircuitScriptParser.js";
 import { ExecutionContext } from "./execute.js";
 import { ClassComponent, Component } from './objects/Component.js';
 import { NumericValue, ParamDefinition, PercentageValue } from './objects/ParamDefinition.js';
@@ -18,7 +18,50 @@ export class MainVisitor extends ParseTreeVisitor {
     executionStack = [this.startingContext];
 
     getExecutor(): ExecutionContext {
-        return this.executionStack[this.executionStack.length-1];
+        return this.executionStack[this.executionStack.length - 1];
+    }
+
+    visit(ctx) {
+        // The visit method is moved out from ParseTreeVisitor
+        // because its implementation is different that the 
+        // python version.
+        if (Array.isArray(ctx)) {
+            const allResults = [];
+            let result: any = null;
+
+            for (let i = 0; i < ctx.length; i++) {
+                // Follow the python version
+                if (!this.shouldVisitNextChild(ctx, result)) {
+                    return result;
+                }
+
+                const child = ctx[i];
+                const childResult = child.accept(this);
+                allResults.push(childResult);
+                result = childResult;
+            }
+
+            return result;
+        } else {
+            return ctx.accept(this);
+        }
+    }
+
+    visitChildren(ctx) {
+        // Moved out from ParseTreeVisitor
+        if (ctx.children) {
+            return this.visit(ctx.children);
+        } else {
+            return null;
+        }
+    }
+
+    shouldVisitNextChild(node, currentResult): boolean {
+        // If result is -1, then do no parse further children
+        if (currentResult === -1) {
+            return false;
+        }
+        return true;
     }
 
     visitScript(ctx: ScriptContext): any {
@@ -26,6 +69,10 @@ export class MainVisitor extends ParseTreeVisitor {
         const result = this.visitChildren(ctx);
         this.print('===', 'end', '===');
         return result;
+    }
+
+    visitExpression(ctx: ExpressionContext) {
+        return this.visitChildren(ctx);
     }
 
     visitParameters(ctx: ParametersContext) {
@@ -56,7 +103,7 @@ export class MainVisitor extends ParseTreeVisitor {
         }
 
         if (value instanceof ClassComponent) {
-            const tmpScope = this.getExecutor().scope;
+            const instances = this.getExecutor().scope.instances;
             const tmpComponent: ClassComponent = value;
 
             const oldName = tmpComponent.instanceName;
@@ -64,8 +111,11 @@ export class MainVisitor extends ParseTreeVisitor {
             // Rename to new name
             tmpComponent.instanceName = variableName;
 
-            tmpScope.instances.delete(oldName);
-            tmpScope.instances.set(variableName, tmpComponent);
+            instances.delete(oldName);
+            instances.set(variableName, tmpComponent);
+            
+            this.getExecutor().print(`assigned '${variableName}' to new ClassComponent`);
+
         } else {
             this.getExecutor().scope.variables.set(variableName, value);
         }
@@ -132,6 +182,31 @@ export class MainVisitor extends ParseTreeVisitor {
         }
 
         return [component, pinId];
+    }
+
+    visitBranch_blocks(ctx: Branch_blocksContext){
+        this.getExecutor().enterBranches();
+
+        const branches = ctx.branch_block_inner_list();
+        branches.forEach((branch, index) => {
+            this.getExecutor().enterBranch(index);
+
+            this.visitExpression(branch);
+
+            this.getExecutor().exitBranch(index);
+        });
+
+        this.getExecutor().exitBranches();
+    }
+
+    visitBreak_keyword(ctx:Break_keywordContext): number {
+        // When the break keyword is encountered inside a branch, then leave the branch
+        // without storing the final state. If used, the break should be
+        // the last expression in the branch, any expressions after the break
+        // will be skipped
+
+        this.getExecutor().breakBranch();
+        return -1;
     }
 
     visitCreate_component_expr(ctx: Create_component_exprContext) {

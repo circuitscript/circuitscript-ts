@@ -1,3 +1,5 @@
+import lodash from 'lodash';
+
 import { GlobalNames } from "./globals.js";
 import { ClassComponent, Component } from "./objects/Component.js";
 import { ExecutionScope } from "./objects/ExecutionScope.js";
@@ -11,7 +13,6 @@ export class ExecutionContext {
 
     name: string;
     executionLevel: number;
-    indentLevel: number;
 
     scope: ExecutionScope;
 
@@ -27,10 +28,9 @@ export class ExecutionContext {
     constructor(name: string, executionLevel = 0, indentLevel = 0) {
         this.name = name;
         this.executionLevel = executionLevel;
-        this.indentLevel = indentLevel;
 
         this.scope = ExecutionScope.create();
-        this.scope.indentLevel = this.indentLevel;
+        this.scope.indentLevel = indentLevel;
 
         this.setupRoot();
         this.setupGndNet();
@@ -39,8 +39,8 @@ export class ExecutionContext {
     }
 
     print(...params: any[]): void {
-        const indentOutput = "".padStart(this.indentLevel * 4, "    ");
-        const indentLevelText = this.indentLevel.toString().padStart(3, " ");
+        const indentOutput = "".padStart(this.scope.indentLevel * 4, "    ");
+        const indentLevelText = this.scope.indentLevel.toString().padStart(3, " ");
 
         const args = ["[" + indentLevelText + "]", indentOutput, ...params];
         console.log.apply(null, args);
@@ -136,6 +136,8 @@ export class ExecutionContext {
     }
 
     private mergeNets(net1: Net, net2: Net): void {
+        // By default merge net2 into net1, net2 will no longer be used.
+
         if (net1 === net2) {
             return;
         }
@@ -155,8 +157,8 @@ export class ExecutionContext {
         // and change them to net1
         const scopeNets = this.scope.getNets();
         scopeNets.forEach(([component, pin, net]) => {
-            if (net === net2) {
-                this.scope.setNet(component, pin, net);
+            if (lodash.isEqual(net, net2)) {
+                this.scope.setNet(component, pin, net1);
             }
         });
     }
@@ -262,6 +264,116 @@ export class ExecutionContext {
         }
 
         this.printPoint();
+    }
+
+    enterBranches(): void {
+        this.scope.branchStack.set(this.scope.indentLevel, {
+            // Tracks the position when the branch is entered
+            "entered_at": [this.scope.currentComponent, this.scope.currentPin], 
+            "inner_branches": new Map<number, any>(),
+            "current_index": null
+        });
+
+        this.print('enter branches');
+    }
+
+    exitBranches(): void {
+        // When exiting/leaving a group of branches
+        const innerBranches = this.scope.branchStack.get(this.scope.indentLevel)["inner_branches"];
+        const lastNets:[number, [ClassComponent, number, Net]][] = [];
+
+        // Gather all the last nets that should be joined together
+        for(const [key, value] of innerBranches){
+            if (value["ignore_last_net"] === false){
+
+                const [component, pin] = value["last_net"];
+
+                let netPriority = 0;
+                if (this.scope.hasNet(component, pin)){
+                    netPriority = this.scope.getNet(component, pin).priority;
+                }
+
+                lastNets.push([netPriority, value["last_net"]]);
+            }
+        }
+
+        if (lastNets.length > 0){
+            // Items in the lastNets list might not have an actual net created/defined yet
+
+            // Sort the nets so that the net with the highest priority is first
+            const sortedNets = lastNets.sort((a, b) => {
+                if (a[0] > b[0]){
+                    return -1;
+                } else if (a[0] < b[0]){
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+
+            // Not always a good idea to always use the first item for combining...
+            const [comp1, pin1] = sortedNets[0][1];
+
+            const tmpList = sortedNets.slice(1);
+            tmpList.forEach(item => {
+                const [, [comp2, pin2]] = item;
+
+                this.atComponent(comp1, pin1);
+                this.toComponent(comp2, pin2);
+            });
+
+            this.scope.currentComponent = comp1;
+            this.scope.currentPin = pin1;
+        }
+
+        this.print('exit branches');
+    }
+
+    enterBranch(branchIndex: number): void {
+        this.print('enter inner branch >>>');
+
+        // Current net before any branching is already stored in enterBranches()
+        const stackRef = this.scope.branchStack.get(this.scope.indentLevel);
+
+        stackRef["branch_index"] = branchIndex;
+
+        // Setup the state for the inner branch at the given index
+        stackRef["inner_branches"].set(branchIndex, {
+            "last_net": null,
+            "ignore_last_net": false
+        });
+
+        this.scope.indentLevel += 1;
+    }
+
+    exitBranch(branchIndex: number): void {
+        const stackRef = this.scope.branchStack.get(this.scope.indentLevel -1);
+
+        // Save the last net reference
+        const branchIndexRef = stackRef["inner_branches"].get(branchIndex);
+        branchIndexRef["last_net"] = [this.scope.currentComponent, this.scope.currentPin];
+
+        stackRef["branch_index"] = null;
+
+        // Restore the latest entry in the branch stack
+        const [preBranchComponent, preBranchPin] = stackRef["entered_at"];
+        
+        this.scope.indentLevel -= 1;
+
+        this.print('exit inner branch <<<');
+        this.atComponent(preBranchComponent, preBranchPin);
+    }
+
+    breakBranch(): void {
+        this.print('break branch')
+        // Mark that the branch stack at the current indent level
+        // should be ignored
+
+        const branchesInfo = this.scope.branchStack.get(this.scope.indentLevel - 1);
+        const branchIndex = branchesInfo["branch_index"];
+
+        const branchIndexRef = branchesInfo["inner_branches"].get(branchIndex);
+        branchIndexRef["ignore_last_net"] = true;
     }
 
     createFunction(functionName: string, __runFunc: CFunction): void {

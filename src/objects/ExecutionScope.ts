@@ -1,7 +1,8 @@
+import lodash from 'lodash';
+
 import { ClassComponent, Component } from "./Component.js";
 import { Net } from "./Net.js";
 import { CFunction } from "./types.js";
-import lodash from 'lodash';
 
 export class ExecutionScope {
 
@@ -14,7 +15,7 @@ export class ExecutionScope {
 
     variables: Map<string, any> = new Map();
 
-    branchStack: any;
+    branchStack: Map<number, any> = new Map();
 
     indentLevel = 0;
     netCounter = 1;
@@ -62,7 +63,7 @@ export class ExecutionScope {
     }
 
     setNet(component: Component, pin: number, net: Net): void {
-        const result = this.nets.findIndex(([tmpComponent, tmpPin, net]) => {
+        const result = this.nets.findIndex(([tmpComponent, tmpPin, ]) => {
             // lodash isEqual is needed because deep equality is needed
             return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
         });
