@@ -4,14 +4,15 @@ import CircuitScriptLexer from './../src/antlr/CircuitScriptLexer';
 
 import { CharStream, CommonTokenStream } from 'antlr4';
 import { MainVisitor } from './../src/visitor';
-import { Example1Expected, Example2Expected } from './expectedResults';
+import { Example1Expected, Example2Expected, Example3Expected } from './expectedResults';
 
 describe('test examples', () => {
 
     test.each([
         ['examples/example.cst', Example1Expected],
-        ['examples/example2.cst', Example2Expected]
-    ])("test %s", async (fileName, expectedResult) => {
+        ['examples/example2.cst', Example2Expected],
+        ['examples/example3.cst', Example3Expected],
+    ])("file %s", async (fileName, expectedResult) => {
         const data = await getFile(fileName);
         const result = getScriptOutput(data);
         expect(result).toStrictEqual(expectedResult);
