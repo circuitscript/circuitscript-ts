@@ -1,0 +1,21 @@
+# show function definition, basics of circuit manipulation
+
+def net(net_name):
+    return create component:
+        pins: 1
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 5
+
+def res(value):
+    return create component:
+        pins: 2
+        params:
+            value: value
+            
+# Show multiple commands together
+add V5V = net("5V") to R1 = res(10k) at pin 2 to R2 = res(30k) at pin 2 to R3 = res(50k) at pin 2 to gnd
+
+at V5V
+add res(20k) to gnd

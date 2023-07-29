@@ -1,0 +1,40 @@
+# Shows branching point
+
+def res(value):
+    return create component:
+        pins: 
+            1: input, "A"
+            2: input, "B"
+        params:
+            value: value
+        display:
+            left: 1
+            right: 2
+
+add R1 = res(0)
+
+branch:
+    add R2 = res(0)
+
+    # no further expressions should be parsed after this
+    break
+    add R2_2 = res(0)
+
+branch:
+    add R3 = res(0)
+    branch:
+        add R4 = res(0)
+
+branch:
+    add R5 = res(0)
+    add R6 = res(0)
+    break
+
+add R7 = res(0)
+
+branch:
+    add R8 = res(0)
+branch:
+    add R9 = res(0)
+    
+to gnd
