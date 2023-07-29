@@ -38,8 +38,7 @@ describe('test examples', () => {
         const parser = new CircuitScriptParser(tokens);
         const tree = parser.script();
 
-        const visitor = new MainVisitor();
-        visitor.silent = true;
+        const visitor = new MainVisitor(true);
         visitor.getExecutor().silent = true;
 
         try {
