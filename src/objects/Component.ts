@@ -1,5 +1,5 @@
-import { PinDefinition, PinIdType } from "./PinDefinition";
-import { PinTypes } from "./PinTypes";
+import { PinDefinition, PinIdType } from './PinDefinition';
+import { PinTypes } from './PinTypes';
 
 export class Component {
     // A component has an instance_name to identify it
@@ -23,7 +23,15 @@ export class Component {
         // Let pin index start from 1.
         for (let i = 1; i < this.numPins + 1; i++) {
             const pinIndex = i;
-            this.pins.set(pinIndex, new PinDefinition(pinIndex, PinIdType.Int, pinIndex.toString(), PinTypes.Any));
+            this.pins.set(
+                pinIndex,
+                new PinDefinition(
+                    pinIndex,
+                    PinIdType.Int,
+                    pinIndex.toString(),
+                    PinTypes.Any,
+                ),
+            );
         }
     }
 
@@ -33,13 +41,15 @@ export class Component {
     }
 
     hasPin(pinId: number | string): boolean {
-        if (typeof (pinId) === 'number') {
+        if (typeof pinId === 'number') {
             return this.pins.has(pinId);
-
         } else {
             // assume is string
             for (const [, pinDef] of this.pins) {
-                if (pinDef.name === pinId || pinDef.altNames.indexOf(pinId) !== -1) {
+                if (
+                    pinDef.name === pinId ||
+                    pinDef.altNames.indexOf(pinId) !== -1
+                ) {
                     return true;
                 }
             }
@@ -53,12 +63,15 @@ export class Component {
         // this returns the pin index in the component.
         // If the pinId does not match, then a -1 is returned.
 
-        if (typeof (pinId) === 'number') {
+        if (typeof pinId === 'number') {
             return pinId;
         } else {
             // assume is string
             for (const [pin, pinDef] of this.pins) {
-                if (pinDef.name === pinId || pinDef.altNames.indexOf(pinId) !== -1) {
+                if (
+                    pinDef.name === pinId ||
+                    pinDef.altNames.indexOf(pinId) !== -1
+                ) {
                     return pin;
                 }
             }
@@ -85,7 +98,7 @@ export class Component {
         if (this.parameters.has(key)) {
             return this.parameters.get(key);
         } else {
-            throw "Invalid parameter key";
+            throw 'Invalid parameter key';
         }
     }
 
@@ -95,7 +108,6 @@ export class Component {
 }
 
 export class ClassComponent extends Component {
-
     className: string;
 
     constructor(instanceName: string, numPins: number, className: string) {
@@ -103,7 +115,11 @@ export class ClassComponent extends Component {
         this.className = className;
     }
 
-    static simple(instanceName: string, numPins: number, className: string): ClassComponent {
+    static simple(
+        instanceName: string,
+        numPins: number,
+        className: string,
+    ): ClassComponent {
         const component = new ClassComponent(instanceName, numPins, className);
         component.setupPins();
         return component;

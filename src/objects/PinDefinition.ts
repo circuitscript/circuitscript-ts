@@ -1,11 +1,10 @@
-import { PinTypes } from "./PinTypes";
+import { PinTypes } from './PinTypes';
 
 export type PinId = number | string;
 
 export class PinDefinition {
-
     id: PinId;
-    
+
     idType: PinIdType;
 
     pinType: PinTypes;
@@ -13,7 +12,13 @@ export class PinDefinition {
     name: string;
     altNames: string[];
 
-    constructor(id: PinId, idType: PinIdType, name: string, pinType = PinTypes.Any, altNames = []) {
+    constructor(
+        id: PinId,
+        idType: PinIdType,
+        name: string,
+        pinType = PinTypes.Any,
+        altNames = [],
+    ) {
         this.id = id;
         this.idType = idType;
 
@@ -29,6 +34,4 @@ export enum PinIdType {
     Str = 'str',
 }
 
-export class PinReference {
-
-}
+export class PinReference {}

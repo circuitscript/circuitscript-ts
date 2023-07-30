@@ -1,8 +1,35 @@
 import { ParseTreeVisitor } from 'antlr4';
-import { Add_component_exprContext, Assignment_exprContext, At_component_exprContext, Branch_blocksContext, Break_keywordContext, Component_select_exprContext, Create_component_exprContext, Data_exprContext, ExpressionContext, Function_args_exprContext, Function_call_exprContext, Function_def_exprContext, Function_return_exprContext, Nested_propertiesContext, ParametersContext, Pin_select_exprContext, Property_exprContext, Property_key_exprContext, ScriptContext, Single_line_propertyContext, To_component_exprContext, Value_exprContext } from "./antlr/CircuitScriptParser";
-import { ExecutionContext } from "./execute";
+import {
+    Add_component_exprContext,
+    Assignment_exprContext,
+    At_component_exprContext,
+    Branch_blocksContext,
+    Break_keywordContext,
+    Component_select_exprContext,
+    Create_component_exprContext,
+    Data_exprContext,
+    ExpressionContext,
+    Function_args_exprContext,
+    Function_call_exprContext,
+    Function_def_exprContext,
+    Function_return_exprContext,
+    Nested_propertiesContext,
+    ParametersContext,
+    Pin_select_exprContext,
+    Property_exprContext,
+    Property_key_exprContext,
+    ScriptContext,
+    Single_line_propertyContext,
+    To_component_exprContext,
+    Value_exprContext,
+} from './antlr/CircuitScriptParser';
+import { ExecutionContext } from './execute';
 import { ClassComponent, Component } from './objects/Component';
-import { NumericValue, ParamDefinition, PercentageValue } from './objects/ParamDefinition';
+import {
+    NumericValue,
+    ParamDefinition,
+    PercentageValue,
+} from './objects/ParamDefinition';
 import { PinDefinition, PinIdType } from './objects/PinDefinition';
 import { PinTypes } from './objects/PinTypes';
 import { ExecutionScope } from './objects/ExecutionScope';
@@ -22,7 +49,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     constructor(silent = false) {
         super();
-        this.startingContext = new ExecutionContext("__base__", 0, 0, silent);
+        this.startingContext = new ExecutionContext('__base__', 0, 0, silent);
         this.executionStack = [this.startingContext];
         this.silent = silent;
     }
@@ -33,7 +60,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visit(ctx) {
         // The visit method is moved out from ParseTreeVisitor
-        // because its implementation is different that the 
+        // because its implementation is different that the
         // python version.
         if (Array.isArray(ctx)) {
             const allResults = [];
@@ -96,7 +123,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             returnList.push(['position', index, value]);
         });
 
-        keywordAssignmentExpressions.forEach(item => {
+        keywordAssignmentExpressions.forEach((item) => {
             const [key, value] = this.visit(item);
             returnList.push(['keyword', key, value]);
         });
@@ -109,7 +136,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
         const value = this.visit(ctx.data_expr());
         if (this.getExecutor().hasFunction(variableName)) {
-            throw "Cannot have variable or instance named as function name '" + variableName + "'";
+            throw (
+                "Cannot have variable or instance named as function name '" +
+                variableName +
+                "'"
+            );
         }
 
         if (value instanceof ClassComponent) {
@@ -123,9 +154,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             instances.delete(oldName);
             instances.set(variableName, tmpComponent);
-            
-            this.getExecutor().print(`assigned '${variableName}' to new ClassComponent`);
 
+            this.getExecutor().print(
+                `assigned '${variableName}' to new ClassComponent`,
+            );
         } else {
             this.getExecutor().scope.variables.set(variableName, value);
         }
@@ -150,12 +182,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitPin_select_expr(ctx: Pin_select_exprContext){
-        if (ctx.INTEGER_VALUE()){
+    visitPin_select_expr(ctx: Pin_select_exprContext) {
+        if (ctx.INTEGER_VALUE()) {
             return Number(ctx.INTEGER_VALUE().toString());
         } else if (ctx.STRING_VALUE()) {
             return this.prepareStringValue(ctx.STRING_VALUE().toString());
-        } 
+        }
 
         return null;
     }
@@ -165,13 +197,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().addComponentExisting(component);
     }
 
-    visitAt_component_expr(ctx: At_component_exprContext){
+    visitAt_component_expr(ctx: At_component_exprContext) {
         const [component, pin] = this.visit(ctx.component_select_expr());
         this.getExecutor().atComponent(component, pin, true);
     }
 
     visitTo_component_expr(ctx: To_component_exprContext) {
-        ctx.component_select_expr_list().forEach(item => {
+        ctx.component_select_expr_list().forEach((item) => {
             const [component, pin] = this.visit(item);
             this.getExecutor().toComponent(component, pin, true);
         });
@@ -182,7 +214,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         let pinId: number | string | null = null;
 
         if (ctx.data_expr()) {
-            component = this.visit(ctx.data_expr())
+            component = this.visit(ctx.data_expr());
         } else {
             component = this.getExecutor().scope.currentComponent;
         }
@@ -194,7 +226,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return [component, pinId];
     }
 
-    visitBranch_blocks(ctx: Branch_blocksContext){
+    visitBranch_blocks(ctx: Branch_blocksContext) {
         this.getExecutor().enterBranches();
 
         const branches = ctx.branch_block_inner_list();
@@ -209,7 +241,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().exitBranches();
     }
 
-    visitBreak_keyword(ctx:Break_keywordContext): number {
+    visitBreak_keyword(ctx: Break_keywordContext): number {
         // When the break keyword is encountered inside a branch, then leave the branch
         // without storing the final state. If used, the break should be
         // the last expression in the branch, any expressions after the break
@@ -222,7 +254,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitCreate_component_expr(ctx: Create_component_exprContext) {
         const properties = new Map<string, any>();
 
-        ctx.property_expr_list().forEach(item => {
+        ctx.property_expr_list().forEach((item) => {
             const result: Map<string, any> = this.visit(item); // Map should be returned
 
             for (const [key, value] of result) {
@@ -230,18 +262,21 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             }
         });
 
-        const pins: PinDefinition[] = this.parseCreateComponentPins(properties.get("pins"));
+        const pins: PinDefinition[] = this.parseCreateComponentPins(
+            properties.get('pins'),
+        );
 
         // Use a unique instance name in the context for now
-        let instanceName = this.getExecutor().getUniqueInstanceName("");
+        let instanceName = this.getExecutor().getUniqueInstanceName('');
 
         const propParams = properties.get('params');
-        const params: ParamDefinition[] = this.parseCreateComponentParams(propParams);
+        const params: ParamDefinition[] =
+            this.parseCreateComponentParams(propParams);
 
         if (params.length > 0) {
             // Always append the first value
             // to the generated name.
-            const firstParam = params[0]
+            const firstParam = params[0];
             const paramValue = firstParam.paramValue;
             let appendValue = paramValue.toString();
 
@@ -265,13 +300,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return map;
     }
 
-    visitSingle_line_property(ctx: Single_line_propertyContext){
+    visitSingle_line_property(ctx: Single_line_propertyContext) {
         let value;
-        if (ctx.data_expr_list().length === 1){
+        if (ctx.data_expr_list().length === 1) {
             value = this.visit(ctx.data_expr(0));
         } else {
             value = [];
-            ctx.data_expr_list().forEach(item => {
+            ctx.data_expr_list().forEach((item) => {
                 value.push(this.visit(item));
             });
         }
@@ -279,13 +314,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return value;
     }
 
-    visitNested_properties(ctx: Nested_propertiesContext){
+    visitNested_properties(ctx: Nested_propertiesContext) {
         const result = new Map<string, any>();
-        ctx.property_expr_list().forEach(item => {
+        ctx.property_expr_list().forEach((item) => {
             const property: Map<string, any> = this.visit(item);
-            
+
             // Get out all items, by default
-            for(const [key, value] of property){
+            for (const [key, value] of property) {
                 result.set(key, value);
             }
         });
@@ -303,41 +338,39 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    pinTypesList:string[] = [PinTypes.Any, PinTypes.Input, 
-                            PinTypes.Output, PinTypes.Output, PinTypes.Power];
+    pinTypesList: string[] = [
+        PinTypes.Any,
+        PinTypes.Input,
+        PinTypes.Output,
+        PinTypes.Output,
+        PinTypes.Power,
+    ];
 
     visitData_expr(ctx: Data_exprContext) {
-
         let value;
-        if (ctx.value_expr()){
+        if (ctx.value_expr()) {
             value = this.visit(ctx.value_expr());
-
-        } else if (ctx.ID()){
+        } else if (ctx.ID()) {
             const idName = ctx.ID().toString();
             const scope = this.getExecutor().scope;
 
-            if (scope.instances.has(idName)){
+            if (scope.instances.has(idName)) {
                 value = scope.instances.get(idName);
-            
-            } else if (scope.variables.has(idName)){
+            } else if (scope.variables.has(idName)) {
                 value = scope.variables.get(idName);
-            
-            } else if (this.pinTypesList.indexOf(idName) !== -1){
+            } else if (this.pinTypesList.indexOf(idName) !== -1) {
                 // Not sure if just returning the string is enough...
                 value = idName;
             } else {
-                throw "Could not find variable '" + idName +"'";
+                throw "Could not find variable '" + idName + "'";
             }
-
-        } else if (ctx.function_call_expr()){
+        } else if (ctx.function_call_expr()) {
             const functionCallReturn = this.visit(ctx.function_call_expr());
             // This is the returned component from the function call
             value = functionCallReturn[2];
-        
         } else if (ctx.assignment_expr()) {
             value = this.visit(ctx.assignment_expr());
-
-        } else if (ctx.create_component_expr()){
+        } else if (ctx.create_component_expr()) {
             value = this.visit(ctx.create_component_expr());
         }
 
@@ -347,53 +380,57 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitFunction_args_expr(ctx: Function_args_exprContext): string[] {
         // Returns list of param names
         const argumentNames = [];
-        ctx.ID_list().forEach(item => {
+        ctx.ID_list().forEach((item) => {
             argumentNames.push(item.toString());
         });
 
         return argumentNames;
     }
 
-
-    visitFunction_def_expr(ctx: Function_def_exprContext){
+    visitFunction_def_expr(ctx: Function_def_exprContext) {
         const functionName = ctx.ID().toString();
 
         // These are the defined arguments for the function
-        let functionArgs:string[]|null = null;
-        if (ctx.function_args_expr()){
+        let functionArgs: string[] | null = null;
+        if (ctx.function_args_expr()) {
             functionArgs = this.visit(ctx.function_args_expr());
         }
 
         const executionStack = this.executionStack;
 
-        const functionCounter = {counter: 0};
+        const functionCounter = { counter: 0 };
 
         const resolveFunction = (functionName: string) => {
             // search through the execution stack in reverse to find if the func_name exists
             this.print('find function', functionName);
             const reversed = [...executionStack].reverse();
-            reversed.forEach(context => {
+            reversed.forEach((context) => {
                 if (context.hasFunction(functionName)) {
                     return context.getFunction(functionName);
                 }
             });
 
             return null;
-        }
+        };
 
         const __runFunc = (passedInArgs) => {
-
-            // Create a new execution context, so that the commands are executed only 
+            // Create a new execution context, so that the commands are executed only
             // within this context. Components and nets will be local to this context for now.
 
-            const executionContextName = functionName + "_" + functionCounter['counter'];
+            const executionContextName =
+                functionName + '_' + functionCounter['counter'];
             functionCounter['counter'] += 1;
 
-            const currentExecutionContext = executionStack[executionStack.length-1];
+            const currentExecutionContext =
+                executionStack[executionStack.length - 1];
             const executionLevel = currentExecutionContext.executionLevel;
 
-            const newExecutor = new ExecutionContext(executionContextName, executionLevel + 1, 
-                this.getExecutor().scope.indentLevel + 1, currentExecutionContext.silent);
+            const newExecutor = new ExecutionContext(
+                executionContextName,
+                executionLevel + 1,
+                this.getExecutor().scope.indentLevel + 1,
+                currentExecutionContext.silent,
+            );
 
             newExecutor.resolveFunction = resolveFunction;
 
@@ -402,29 +439,34 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             // setup the params in the execution scope if there are any function arguments
             if (functionArgs) {
-
-                if (passedInArgs === null){
+                if (passedInArgs === null) {
                     throw `Function '${functionName}' expects arguments`;
                 }
 
-                passedInArgs.forEach(item => {
-                    if (item[0] === 'position'){
+                passedInArgs.forEach((item) => {
+                    if (item[0] === 'position') {
                         // Only parse position arguments for now
                         const position = item[1];
 
-                        if (position < functionArgs.length){
+                        if (position < functionArgs.length) {
                             const variableName = functionArgs[position];
-                            newExecutor.print('set variable in scope, var name: ', variableName);
-                            newExecutor.scope.variables.set(variableName, item[2]);
+                            newExecutor.print(
+                                'set variable in scope, var name: ',
+                                variableName,
+                            );
+                            newExecutor.scope.variables.set(
+                                variableName,
+                                item[2],
+                            );
                         } else {
-                            throw "Invalid function parameter";
+                            throw 'Invalid function parameter';
                         }
                     }
                 });
             }
 
             let returnValue = null;
-            
+
             // Execute the expressions within the context
             const expressionList = ctx.function_expr_list();
             for (let i = 0; i < expressionList.length; i++) {
@@ -437,20 +479,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                     break;
                 }
             }
-            
+
             // Function execution is completed, get the last executor
-            const lastExecution = executionStack.pop()
+            const lastExecution = executionStack.pop();
 
             // self.dump_scope(last_execution.scope)
 
             // Merge what ever was created in the scope with the outer scope
-            const nextLastExecution = executionStack[executionStack.length-1];
-            nextLastExecution.mergeScope(lastExecution.scope, executionContextName);
+            const nextLastExecution = executionStack[executionStack.length - 1];
+            nextLastExecution.mergeScope(
+                lastExecution.scope,
+                executionContextName,
+            );
 
             // Return the last execution context and the final return value of the function
             return [lastExecution, returnValue];
-
-        }
+        };
 
         this.getExecutor().createFunction(functionName, __runFunc);
     }
@@ -463,35 +507,44 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().returnValue = returnValue;
     }
 
-    visitFunction_call_expr(ctx: Function_call_exprContext){
+    visitFunction_call_expr(ctx: Function_call_exprContext) {
         this.getExecutor().printPoint();
 
         let parameters = null;
-        if (ctx.parameters()){
+        if (ctx.parameters()) {
             parameters = this.visit(ctx.parameters());
         }
 
         const functionName = ctx.ID().toString();
-        const [executionContext, returnResult] = this.getExecutor().callFunction(functionName, parameters);
+        const [executionContext, returnResult] =
+            this.getExecutor().callFunction(functionName, parameters);
 
         this.getExecutor().printPoint();
 
         return [executionContext, functionName, returnResult];
     }
 
+    pinTypes = [
+        PinTypes.Any,
+        PinTypes.IO,
+        PinTypes.Input,
+        PinTypes.Output,
+        PinTypes.Power,
+    ];
 
-    pinTypes = [PinTypes.Any, PinTypes.IO, PinTypes.Input, PinTypes.Output, PinTypes.Power];
-
-    private parseCreateComponentPins(pinData: number | Map<string, any>): PinDefinition[] {
+    private parseCreateComponentPins(
+        pinData: number | Map<string, any>,
+    ): PinDefinition[] {
         const pins: PinDefinition[] = [];
 
         if (typeof pinData === 'number') {
             const lastPin = pinData;
             for (let i = 0; i < lastPin; i++) {
                 const pinId = i + 1;
-                pins.push(new PinDefinition(pinId, PinIdType.Int, pinId.toString()))
+                pins.push(
+                    new PinDefinition(pinId, PinIdType.Int, pinId.toString()),
+                );
             }
-
         } else if (pinData instanceof Map) {
             for (const [pinId, pinDef] of pinData) {
                 let pinIdType = PinIdType.Int;
@@ -504,7 +557,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 }
 
                 if (Array.isArray(pinDef)) {
-
                     const firstValue = pinDef[0];
 
                     // Check if firstValue matches a pin type
@@ -526,14 +578,24 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                     pinName = pinDef;
                 }
 
-                pins.push(new PinDefinition(pinId, pinIdType, pinName, pinType, altPinNames));
+                pins.push(
+                    new PinDefinition(
+                        pinId,
+                        pinIdType,
+                        pinName,
+                        pinType,
+                        altPinNames,
+                    ),
+                );
             }
         }
 
         return pins;
     }
 
-    private parseCreateComponentParams(params: Map<string, any>): ParamDefinition[] {
+    private parseCreateComponentParams(
+        params: Map<string, any>,
+    ): ParamDefinition[] {
         const result = [];
         if (params) {
             for (const [key, value] of params) {
@@ -549,14 +611,14 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     protected print(...params: any[]): void {
-        if (this.silent){
+        if (this.silent) {
             return;
         }
 
-        const indentOutput = "".padStart(this.indentLevel * 4, "    ");
-        const indentLevelText = this.indentLevel.toString().padStart(3, " ");
+        const indentOutput = ''.padStart(this.indentLevel * 4, '    ');
+        const indentLevelText = this.indentLevel.toString().padStart(3, ' ');
 
-        const args = ["[" + indentLevelText + "]", indentOutput, ...params];
+        const args = ['[' + indentLevelText + ']', indentOutput, ...params];
         console.log.apply(null, args);
     }
 
@@ -565,15 +627,18 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const items = [];
 
         for (const [instanceName, instance] of instances) {
-            const pinNets = this.resolveNets(this.getExecutor().scope, instance);
+            const pinNets = this.resolveNets(
+                this.getExecutor().scope,
+                instance,
+            );
 
             const componentItem = {
                 name: instanceName,
-                pins: {}
-            }
+                pins: {},
+            };
 
-            pinNets.forEach(item => {
-                componentItem.pins[item.pin.id] = item.netName
+            pinNets.forEach((item) => {
+                componentItem.pins[item.pin.id] = item.netName;
             });
 
             items.push(componentItem);
@@ -582,18 +647,21 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return items;
     }
 
-    getGraph(){
+    getGraph() {
         const sequence = this.getExecutor().scope.sequence;
         const nets = this.getExecutor().scope.getNets();
 
         return {
             sequence,
-            nets
-        }
+            nets,
+        };
     }
-    
-    private resolveNets(scope: ExecutionScope, instance: Component): { pin: PinDefinition, netName: string }[] {
-        // Returns the list of nets that the component pins are 
+
+    private resolveNets(
+        scope: ExecutionScope,
+        instance: Component,
+    ): { pin: PinDefinition; netName: string }[] {
+        // Returns the list of nets that the component pins are
         // connected to.
 
         const result = [];
@@ -607,8 +675,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             result.push({
                 pin: pin,
-                netName: netName
-            })
+                netName: netName,
+            });
         }
 
         return result;

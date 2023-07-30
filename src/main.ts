@@ -22,7 +22,7 @@ export default async function main(): Promise<void> {
     try {
         visitor.visit(tree);
     } catch (err) {
-        console.log("got error", err);
+        console.log('got error', err);
     }
 
     const { sequence } = visitor.getGraph();
@@ -34,7 +34,7 @@ export default async function main(): Promise<void> {
 }
 
 async function readFile(fileName: string): Promise<string> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         fs.readFile(fileName, 'utf8', (err, data) => {
             if (err) {
                 throw err;

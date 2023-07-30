@@ -1,11 +1,10 @@
 import lodash from 'lodash';
 
-import { ClassComponent, Component } from "./Component";
-import { Net } from "./Net";
-import { CFunction } from "./types";
+import { ClassComponent, Component } from './Component';
+import { Net } from './Net';
+import { CFunction } from './types';
 
 export class ExecutionScope {
-
     scopeId: number;
     private nets: [Component, number, Net][] = [];
 
@@ -68,7 +67,7 @@ export class ExecutionScope {
     }
 
     setNet(component: Component, pin: number, net: Net): void {
-        const result = this.nets.findIndex(([tmpComponent, tmpPin, ]) => {
+        const result = this.nets.findIndex(([tmpComponent, tmpPin]) => {
             // lodash isEqual is needed because deep equality is needed
             return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
         });

@@ -3,24 +3,25 @@ import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
 
 function createNode(component: ClassComponent): any {
-
     const nodeValue = {
         id: component.instanceName,
         width: 100,
         height: 50,
-        labels: [{
-            text: component.instanceName,
-            width: 50,
-            height: 12,
-        }],
+        labels: [
+            {
+                text: component.instanceName,
+                width: 50,
+                height: 12,
+            },
+        ],
         layoutOptions: {
-            "nodeLabels.placement": "[INSIDE V_CENTER H_CENTER]"
-        }
-    }
+            'nodeLabels.placement': '[INSIDE V_CENTER H_CENTER]',
+        },
+    };
 
     let displayValue = null;
-    if (component.parameters.has("value")) {
-        const tmpValue = component.parameters.get("value");
+    if (component.parameters.has('value')) {
+        const tmpValue = component.parameters.get('value');
         if (tmpValue instanceof NumericValue) {
             displayValue = tmpValue.value.toString();
         } else {
@@ -30,15 +31,16 @@ function createNode(component: ClassComponent): any {
         nodeValue.labels.push({
             text: displayValue,
             width: 50,
-            height: 12
+            height: 12,
         });
     }
 
     return nodeValue;
 }
 
-export function prepareLayout(sequence: [string, ClassComponent, number][]): any {
-
+export function prepareLayout(
+    sequence: [string, ClassComponent, number][],
+): any {
     const tmpNodes = [];
     const tmpEdges = [];
 
@@ -61,7 +63,7 @@ export function prepareLayout(sequence: [string, ClassComponent, number][]): any
             tmpEdges.push({
                 id: `edge_${edgeCounter}`,
                 sources: [prevNode],
-                targets: [component.instanceName]
+                targets: [component.instanceName],
             });
 
             edgeCounter++;
@@ -71,17 +73,17 @@ export function prepareLayout(sequence: [string, ClassComponent, number][]): any
     }
 
     return {
-        id: "root",
+        id: 'root',
         layoutOptions: {
-            algorithm: "layered",
-            "portLabels.placement": "[INSIDE]",
-            "portConstraints": "FIXED_SIDE",
+            algorithm: 'layered',
+            'portLabels.placement': '[INSIDE]',
+            portConstraints: 'FIXED_SIDE',
 
             // So the order of the nodes will also be considered
-            "considerModelOrder.strategy": "NODES_AND_EDGES",
+            'considerModelOrder.strategy': 'NODES_AND_EDGES',
 
             // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html
-            "crossingMinimization.forceNodeModelOrder": "true"
+            'crossingMinimization.forceNodeModelOrder': 'true',
         },
         children: tmpNodes,
         edges: tmpEdges,
@@ -95,10 +97,10 @@ export async function generateLayout(graph): Promise<ElkNode> {
 }
 
 export type OutputGraphItem = {
-    name: string,
+    name: string;
     pins: {
-        [key: string]: string
-    }
+        [key: string]: string;
+    };
 };
 
 export type OutputGraph = OutputGraphItem[];

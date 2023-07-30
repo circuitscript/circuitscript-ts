@@ -1,5 +1,4 @@
 export class ParamDefinition {
-
     paramName: string;
     paramValue: string | number | any;
 

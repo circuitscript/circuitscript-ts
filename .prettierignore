@@ -1,0 +1,8 @@
+*.md
+*.json
+.prettierrc
+
+build/*
+src/antlr/CircuitScriptLexer.ts
+src/antlr/CircuitScriptParser.ts
+src/antlr/CircuitScriptVisitor.ts
