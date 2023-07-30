@@ -167,13 +167,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitAt_component_expr(ctx: At_component_exprContext){
         const [component, pin] = this.visit(ctx.component_select_expr());
-        this.getExecutor().atComponent(component, pin);
+        this.getExecutor().atComponent(component, pin, true);
     }
 
     visitTo_component_expr(ctx: To_component_exprContext) {
         ctx.component_select_expr_list().forEach(item => {
             const [component, pin] = this.visit(item);
-            this.getExecutor().toComponent(component, pin);
+            this.getExecutor().toComponent(component, pin, true);
         });
     }
 
@@ -583,46 +583,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     getGraph(){
-        const instances = this.getExecutor().scope.instances;
-
-        const nodes = [];
-        const edges = [];
-
-        for(const [instanceName,] of instances){
-            nodes.push({
-                name: instanceName
-            })
-        }
-
+        const sequence = this.getExecutor().scope.sequence;
         const nets = this.getExecutor().scope.getNets();
 
-        // Assume that net names are unique, get all components
-        // that are in the net. Ignore pins for now.
-        const netMapping = new Map<string, string[]>();
-
-        nets.forEach(([component,, net]) => {
-            if (!netMapping.has(net.name)){
-                netMapping.set(net.name, []);
-            }
-
-            const currentList = netMapping.get(net.name);
-            const newList = [...currentList, component.instanceName];
-            netMapping.set(net.name, newList);
-        });
-
-        // Go through net mapping and generate the edges
-        for (const [netName, netComponents] of netMapping) {
-            if (netComponents.length > 1) {
-                const firstComponent = netComponents[0];
-                for (let i = 1; i < netComponents.length; i++) {
-                    edges.push([firstComponent, netComponents[i]]);
-                }
-            }
-        }
-
         return {
-            nodes,
-            edges,
+            sequence,
+            nets
         }
     }
     

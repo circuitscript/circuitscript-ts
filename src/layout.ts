@@ -1,55 +1,74 @@
 import ELK, { ElkNode } from 'elkjs';
-import { GlobalNames } from './globals';
+import { ClassComponent } from './objects/Component';
+import { NumericValue } from './objects/ParamDefinition';
 
-export function prepareLayout(nodes: { name: string }[], edges: string[][]): any {
+function createNode(component: ClassComponent): any {
+
+    const nodeValue = {
+        id: component.instanceName,
+        width: 100,
+        height: 50,
+        labels: [{
+            text: component.instanceName,
+            width: 50,
+            height: 12,
+        }],
+        layoutOptions: {
+            "nodeLabels.placement": "[INSIDE V_CENTER H_CENTER]"
+        }
+    }
+
+    let displayValue = null;
+    if (component.parameters.has("value")) {
+        const tmpValue = component.parameters.get("value");
+        if (tmpValue instanceof NumericValue) {
+            displayValue = tmpValue.value.toString();
+        } else {
+            displayValue = tmpValue.toString();
+        }
+
+        nodeValue.labels.push({
+            text: displayValue,
+            width: 50,
+            height: 12
+        });
+    }
+
+    return nodeValue;
+}
+
+export function prepareLayout(sequence: [string, ClassComponent, number][]): any {
 
     const tmpNodes = [];
     const tmpEdges = [];
 
-    const sortedNodes = nodes.sort((a, b) => {
-        if (a.name === 'gnd'){
-            return 1;
-        } else if (b.name === 'gnd'){
-            return -1;
-        } else {
-            return 0;
-        }
-    });
+    const addedNodes = [];
+    let prevNode = null;
 
-    sortedNodes.forEach(item => {
-        const { name } = item;
+    let edgeCounter = 0;
 
-        tmpNodes.push({
-            id: name,
-            width: 100,
-            height: 50,
-            labels: [
-                {
-                    text: name,
-                    width: 50,
-                    height: 12,
-                }
-            ],
-        });
-    });
+    for (let i = 0; i < sequence.length; i++) {
+        const [action, component] = sequence[i];
 
-    edges.forEach((pair, index) => {
-
-        let tmpSource = pair[0];
-        let tmpTarget = pair[1];
-
-        if (pair[0] === GlobalNames.gnd){
-            tmpSource = pair[1];
-            tmpTarget = pair[0];
+        // Add the node if it has not been added before
+        if (addedNodes.indexOf(component.instanceName) === -1) {
+            tmpNodes.push(createNode(component));
+            addedNodes.push(component.instanceName);
         }
 
-        tmpEdges.push({
-            id: `edge_${index}`,
-            sources: [tmpSource],
-            targets: [tmpTarget],
-        });
-        console.log('edge', tmpSource, tmpTarget);
-    });
+        // Create the edge, if possible
+        if (action === 'to' && prevNode !== null) {
+            tmpEdges.push({
+                id: `edge_${edgeCounter}`,
+                sources: [prevNode],
+                targets: [component.instanceName]
+            });
+
+            edgeCounter++;
+        }
+
+        prevNode = component.instanceName;
+    }
 
     return {
         id: "root",
@@ -57,6 +76,12 @@ export function prepareLayout(nodes: { name: string }[], edges: string[][]): any
             algorithm: "layered",
             "portLabels.placement": "[INSIDE]",
             "portConstraints": "FIXED_SIDE",
+
+            // So the order of the nodes will also be considered
+            "considerModelOrder.strategy": "NODES_AND_EDGES",
+
+            // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html
+            "crossingMinimization.forceNodeModelOrder": "true"
         },
         children: tmpNodes,
         edges: tmpEdges,

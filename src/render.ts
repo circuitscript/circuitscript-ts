@@ -24,8 +24,9 @@ export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     fs.writeFile(outputPath, canvas.svg(), err => {
         if (err) {
             console.log('error writing to file: ', err);
+        } else {
+            console.log('saved to', outputPath);
         }
-
     });
 }
 

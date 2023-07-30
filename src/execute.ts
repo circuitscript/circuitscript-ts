@@ -218,15 +218,16 @@ export class ExecutionContext {
         const startPin = component.getDefaultPin();
         const nextPin = component.getNextPinAfter(startPin);
 
-        this.toComponent(component, startPin);
+        // Add to sequence
+        this.toComponent(component, startPin, true);
 
         this.print('move to next pin: ' + nextPin);
-        this.atComponent(component, nextPin);
+        this.atComponent(component, nextPin, true);
 
         this.printPoint();
     }
 
-    toComponent(component: ClassComponent, pinId: number | null): void {
+    toComponent(component: ClassComponent, pinId: number | null, addSequence = false): void {
         this.print('to component');
 
         if (pinId === null) {
@@ -249,10 +250,14 @@ export class ExecutionContext {
         this.scope.currentComponent = component;
         this.scope.currentPin = pinId;
 
+        if (addSequence) {
+            this.scope.sequence.push(['to', component, pinId]);
+        }
+
         this.printPoint();
     }
 
-    atComponent(component: ClassComponent, pinId: number | null): void {
+    atComponent(component: ClassComponent, pinId: number | null, addSequence = false): void {
         this.print('at component');
         this.printPoint();
 
@@ -271,6 +276,10 @@ export class ExecutionContext {
 
         if (usePinId) {
             this.scope.currentPin = usePinId;
+        }
+
+        if (addSequence){
+            this.scope.sequence.push(['at', component, usePinId]);
         }
 
         this.printPoint();
@@ -328,8 +337,8 @@ export class ExecutionContext {
             tmpList.forEach(item => {
                 const [, [comp2, pin2]] = item;
 
-                this.atComponent(comp1, pin1);
-                this.toComponent(comp2, pin2);
+                this.atComponent(comp1, pin1, true);
+                this.toComponent(comp2, pin2, true);
             });
 
             this.scope.currentComponent = comp1;
@@ -371,7 +380,7 @@ export class ExecutionContext {
         this.scope.indentLevel -= 1;
 
         this.print('exit inner branch <<<');
-        this.atComponent(preBranchComponent, preBranchPin);
+        this.atComponent(preBranchComponent, preBranchPin, true);
     }
 
     breakBranch(): void {

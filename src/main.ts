@@ -7,37 +7,40 @@ import { MainVisitor } from './visitor';
 import { generateLayout, prepareLayout } from './layout';
 import { generateSVG } from './render';
 
-export default function main(): void {
-
+export default async function main(): Promise<void> {
     const fileName = process.argv[2];
+    const data = await readFile(fileName);
 
+    const chars = new CharStream(data);
+    const lexer = new CircuitScriptLexer(chars);
+    const tokens = new CommonTokenStream(lexer);
 
-    fs.readFile(fileName, 'utf8', async (err, data) => {
-        if (err) {
-            throw err;
-        }
+    const parser = new CircuitScriptParser(tokens);
+    const tree = parser.script();
 
-        const chars = new CharStream(data);
-        const lexer = new CircuitScriptLexer(chars);
-        const tokens = new CommonTokenStream(lexer);
+    const visitor = new MainVisitor();
+    try {
+        visitor.visit(tree);
+    } catch (err) {
+        console.log("got error", err);
+    }
 
-        const parser = new CircuitScriptParser(tokens);
-        const tree = parser.script();
+    const { sequence } = visitor.getGraph();
+    const graph = prepareLayout(sequence);
 
-        const visitor = new MainVisitor();
-        try {
-            visitor.visit(tree);
-        } catch (err) {
-            console.log("got error", err);
-        }
+    const elkOutput = await generateLayout(graph);
 
-        const {nodes, edges} = visitor.getGraph();
-        const graph = prepareLayout(nodes, edges);
-        console.log(graph);
+    generateSVG(elkOutput, 'output.svg');
+}
 
-        const elkOutput = await generateLayout(graph);
-
-        generateSVG(elkOutput, 'output.svg');
+async function readFile(fileName: string): Promise<string> {
+    return new Promise(resolve => {
+        fs.readFile(fileName, 'utf8', (err, data) => {
+            if (err) {
+                throw err;
+            }
+            resolve(data);
+        });
     });
 }
 

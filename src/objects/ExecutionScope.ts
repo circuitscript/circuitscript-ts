@@ -28,6 +28,11 @@ export class ExecutionScope {
     componentGnd: ClassComponent | null = null;
     componentRoot: ClassComponent | null = null;
 
+    // Determines how components are added/joined on the graph
+    // This is very important in "building" up the graph
+    // according to the user's order.
+    sequence: any[] = [];
+
     constructor(scopeId: number) {
         this.scopeId = scopeId;
     }
