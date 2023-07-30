@@ -3,14 +3,14 @@ import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
 import { SequenceAction } from './objects/ExecutionScope';
 
-function createNode(component: ClassComponent): any {
+function createNode(id: string, component: ClassComponent): any {
     const nodeValue = {
-        id: component.instanceName,
+        id: id,
         width: 100,
         height: 50,
         labels: [
             {
-                text: component.instanceName,
+                text: id,
                 width: 50,
                 height: 12,
             },
@@ -39,9 +39,18 @@ function createNode(component: ClassComponent): any {
     return nodeValue;
 }
 
+function dumpSequence(sequence: [string, ClassComponent, number][]): void  {
+    sequence.forEach(([action, component, number]) => {
+        console.log(action, component.instanceName, number);
+    });
+}
+
 export function prepareLayout(
     sequence: [string, ClassComponent, number][],
 ): any {
+
+    dumpSequence(sequence);
+
     const tmpNodes = [];
     const tmpEdges = [];
 
@@ -53,10 +62,21 @@ export function prepareLayout(
     for (let i = 0; i < sequence.length; i++) {
         const [action, component] = sequence[i];
 
+        let useName = component.instanceName;
+        if (component._linkID !== undefined) {
+            useName = `${component.instanceName}@${component._linkID}`;
+        }
+
         // Add the node if it has not been added before
-        if (addedNodes.indexOf(component.instanceName) === -1) {
-            tmpNodes.push(createNode(component));
-            addedNodes.push(component.instanceName);
+        if (addedNodes.indexOf(useName) === -1 && !(prevNode === null && action === SequenceAction.To)) {
+            const tmpNode = createNode(useName, component);
+
+            // Priority is used to determine which node is plotted first
+            // Earlier elements in the sequence list should have higher priortiy,
+            // so that's why the priority is backwards
+            tmpNode.layoutOptions["priority"] = sequence.length - i;
+            tmpNodes.push(tmpNode);
+            addedNodes.push(useName);
         }
 
         // Create the edge, if possible
@@ -64,13 +84,13 @@ export function prepareLayout(
             tmpEdges.push({
                 id: `edge_${edgeCounter}`,
                 sources: [prevNode],
-                targets: [component.instanceName],
+                targets: [useName],
             });
 
             edgeCounter++;
         }
 
-        prevNode = component.instanceName;
+        prevNode = useName;
     }
 
     return {
@@ -81,10 +101,10 @@ export function prepareLayout(
             portConstraints: 'FIXED_SIDE',
 
             // So the order of the nodes will also be considered
-            'considerModelOrder.strategy': 'NODES_AND_EDGES',
+            // 'considerModelOrder.strategy': 'NODES_AND_EDGES',
 
             // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html
-            'crossingMinimization.forceNodeModelOrder': 'true',
+            // 'crossingMinimization.forceNodeModelOrder': 'true',
         },
         children: tmpNodes,
         edges: tmpEdges,

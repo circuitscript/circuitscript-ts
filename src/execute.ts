@@ -1,6 +1,6 @@
 import lodash from 'lodash';
 
-import { GlobalNames } from './globals';
+import { GlobalNames, ParamKeys } from './globals';
 import { ClassComponent, Component } from './objects/Component';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
@@ -28,6 +28,9 @@ export class ExecutionContext {
     // If true, then do not print any messages
     silent = false;
 
+    // Move into scope instead?
+    linkIDs: Map<string, number> = new Map();
+
     constructor(
         name: string,
         executionLevel = 0,
@@ -41,7 +44,7 @@ export class ExecutionContext {
         this.scope.indentLevel = indentLevel;
 
         this.setupRoot();
-        this.setupGndNet();
+        this.setupGnd();
 
         this.silent = silent;
 
@@ -68,27 +71,36 @@ export class ExecutionContext {
 
     private setupRoot(): void {
         // Setup the root node in the scope
-        const component_root = ClassComponent.simple(
+        const componentRoot = ClassComponent.simple(
             GlobalNames.__root,
             1,
             '__root',
         );
-        this.scope.instances.set(GlobalNames.__root, component_root);
+        this.scope.instances.set(GlobalNames.__root, componentRoot);
 
-        this.scope.currentComponent = component_root;
-        this.scope.currentPin = component_root.getDefaultPin();
+        this.scope.currentComponent = componentRoot;
+        this.scope.currentPin = componentRoot.getDefaultPin();
 
-        this.scope.componentRoot = component_root;
+        this.scope.componentRoot = componentRoot;
     }
 
-    private setupGndNet(): void {
-        const component_gnd = ClassComponent.simple(GlobalNames.gnd, 1, 'gnd');
-        this.scope.instances.set(GlobalNames.gnd, component_gnd);
+    private setupGnd(): void {
+        const componentGnd = ClassComponent.simple(GlobalNames.gnd, 1, 'gnd');
+        const params = componentGnd.parameters;
 
-        const net_gnd = new Net(GlobalNames.gnd, 100, 'gnd');
-        this.scope.setNet(component_gnd, 1, net_gnd);
+        const defaultPriority = 100;
 
-        this.scope.componentGnd = component_gnd;
+        // Setup the parameters of the gnd
+        params.set(ParamKeys.__is_net, 1);
+        params.set(ParamKeys.priority, defaultPriority);
+        params.set(ParamKeys.net_name, GlobalNames.gnd);
+
+        this.scope.instances.set(GlobalNames.gnd, componentGnd);
+
+        const net_gnd = new Net(GlobalNames.gnd, defaultPriority, 'gnd');
+        this.scope.setNet(componentGnd, 1, net_gnd);
+
+        this.scope.componentGnd = componentGnd;
         this.scope.netGnd = net_gnd;
     }
 
@@ -216,9 +228,9 @@ export class ExecutionContext {
             paramsMap.set(param.paramName, param.paramValue);
         });
 
-        if (paramsMap.has('__is_net')) {
+        if (paramsMap.has(ParamKeys.__is_net)) {
             const netName = paramsMap.get('net_name');
-            const priority = paramsMap.get('priority');
+            const priority = paramsMap.get(ParamKeys.priority);
 
             const tmpNet = new Net(netName, priority);
             this.print('added net instance', tmpNet.toString());
@@ -312,7 +324,23 @@ export class ExecutionContext {
         this.scope.currentPin = pinId;
 
         if (addSequence) {
-            this.scope.sequence.push([SequenceAction.To, component, pinId]);
+            let sequenceComponent = component;
+
+            if (this.isNetComponent(component)) {
+                if (!this.linkIDs.has(component.instanceName)) {
+                    this.linkIDs.set(component.instanceName, 0);
+                }
+
+                const idNum = this.linkIDs.get(component.instanceName);
+                sequenceComponent = {
+                    ...component,
+                    _linkID: idNum,
+                }
+
+                this.linkIDs.set(component.instanceName, idNum + 1);
+            }
+
+            this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId]);
         }
 
         this.printPoint();
@@ -344,7 +372,22 @@ export class ExecutionContext {
         }
 
         if (addSequence) {
-            this.scope.sequence.push([SequenceAction.At, component, usePinId]);
+            let sequenceComponent = component;
+            if (this.isNetComponent(component)) {
+                if (!this.linkIDs.has(component.instanceName)) {
+                    this.linkIDs.set(component.instanceName, 0);
+                }
+
+                const idNum = this.linkIDs.get(component.instanceName);
+                sequenceComponent = {
+                    ...component,
+                    _linkID: idNum,
+                }
+
+                this.linkIDs.set(component.instanceName, idNum + 1);
+            }
+
+            this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId]);
         }
 
         this.printPoint();
@@ -578,5 +621,13 @@ export class ExecutionContext {
         this.scope.currentPin = currentPin;
 
         this.print('-- done merging scope --');
+    }
+
+    private isNetComponent(component: ClassComponent): boolean {
+        if (component.parameters.has(ParamKeys.__is_net)) {
+            return true;
+        }
+
+        return false;
     }
 }
