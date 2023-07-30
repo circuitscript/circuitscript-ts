@@ -2,7 +2,7 @@ import lodash from 'lodash';
 
 import { GlobalNames } from './globals';
 import { ClassComponent, Component } from './objects/Component';
-import { ExecutionScope } from './objects/ExecutionScope';
+import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition } from './objects/PinDefinition';
@@ -312,7 +312,7 @@ export class ExecutionContext {
         this.scope.currentPin = pinId;
 
         if (addSequence) {
-            this.scope.sequence.push(['to', component, pinId]);
+            this.scope.sequence.push([SequenceAction.To, component, pinId]);
         }
 
         this.printPoint();
@@ -344,7 +344,7 @@ export class ExecutionContext {
         }
 
         if (addSequence) {
-            this.scope.sequence.push(['at', component, usePinId]);
+            this.scope.sequence.push([SequenceAction.At, component, usePinId]);
         }
 
         this.printPoint();

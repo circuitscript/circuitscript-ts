@@ -89,3 +89,8 @@ export class ExecutionScope {
         });
     }
 }
+
+export enum SequenceAction {
+    To = 'to',
+    At = 'at',
+}

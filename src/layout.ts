@@ -1,6 +1,7 @@
 import ELK, { ElkNode } from 'elkjs';
 import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
+import { SequenceAction } from './objects/ExecutionScope';
 
 function createNode(component: ClassComponent): any {
     const nodeValue = {
@@ -59,7 +60,7 @@ export function prepareLayout(
         }
 
         // Create the edge, if possible
-        if (action === 'to' && prevNode !== null) {
+        if (action === SequenceAction.To && prevNode !== null) {
             tmpEdges.push({
                 id: `edge_${edgeCounter}`,
                 sources: [prevNode],
