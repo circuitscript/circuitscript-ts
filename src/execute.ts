@@ -330,22 +330,7 @@ export class ExecutionContext {
         this.scope.currentPin = pinId;
 
         if (addSequence) {
-            let sequenceComponent = component;
-
-            if (isNetComponent(component)) {
-                if (!this.linkIDs.has(component.instanceName)) {
-                    this.linkIDs.set(component.instanceName, 0);
-                }
-
-                const idNum = this.linkIDs.get(component.instanceName);
-                sequenceComponent = {
-                    ...component,
-                    _linkID: idNum,
-                }
-
-                this.linkIDs.set(component.instanceName, idNum + 1);
-            }
-
+            const sequenceComponent = this.prepareSequenceComponent(component);
             this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId]);
         }
 
@@ -378,21 +363,7 @@ export class ExecutionContext {
         }
 
         if (addSequence) {
-            let sequenceComponent = component;
-            if (isNetComponent(component)) {
-                if (!this.linkIDs.has(component.instanceName)) {
-                    this.linkIDs.set(component.instanceName, 0);
-                }
-
-                const idNum = this.linkIDs.get(component.instanceName);
-                sequenceComponent = {
-                    ...component,
-                    _linkID: idNum,
-                }
-
-                this.linkIDs.set(component.instanceName, idNum + 1);
-            }
-
+            const sequenceComponent = this.prepareSequenceComponent(component);
             this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId]);
         }
 
@@ -627,6 +598,26 @@ export class ExecutionContext {
         this.scope.currentPin = currentPin;
 
         this.print('-- done merging scope --');
+    }
+
+    private prepareSequenceComponent(component: ClassComponent): ClassComponent {
+        let sequenceComponent: ClassComponent;
+
+        if (isNetComponent(component)) {
+            if (!this.linkIDs.has(component.instanceName)) {
+                this.linkIDs.set(component.instanceName, 0);
+            }
+
+            const idNum = this.linkIDs.get(component.instanceName);
+            sequenceComponent = lodash.cloneDeep(component);
+            sequenceComponent._linkID = idNum;
+
+            this.linkIDs.set(component.instanceName, idNum + 1);
+        } else {
+            sequenceComponent = component;
+        }
+
+        return sequenceComponent;
     }
 }
 
