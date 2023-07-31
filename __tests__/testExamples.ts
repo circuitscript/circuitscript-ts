@@ -8,9 +8,11 @@ import {
     Example1Expected,
     Example2Expected,
     Example3Expected,
+    Example4PreELKExpected,
 } from './expectedResults';
+import { prepareLayout } from '../src/layout';
 
-describe('test examples', () => {
+describe('test correct visitor output from examples', () => {
     test.each([
         ['examples/example.cst', Example1Expected],
         ['examples/example2.cst', Example2Expected],
@@ -20,37 +22,61 @@ describe('test examples', () => {
         const result = getScriptOutput(data);
         expect(result).toStrictEqual(expectedResult);
     });
-
-    function getFile(filename: string): Promise<string> {
-        return new Promise((resolve) => {
-            fs.readFile(filename, 'utf8', (err, data) => {
-                if (err) {
-                    throw err;
-                }
-
-                resolve(data);
-            });
-        });
-    }
-
-    function getScriptOutput(data: string): object {
-        const chars = new CharStream(data);
-        const lexer = new CircuitScriptLexer(chars);
-        const tokens = new CommonTokenStream(lexer);
-
-        const parser = new CircuitScriptParser(tokens);
-        const tree = parser.script();
-
-        const visitor = new MainVisitor(true);
-        visitor.getExecutor().silent = true;
-
-        try {
-            visitor.visit(tree);
-        } catch (err) {
-            console.log('got error', err);
-        }
-
-        const result = visitor.dump2();
-        return result;
-    }
 });
+
+describe('test correct ELK output', () => {
+    
+    test.each([
+        ['examples/example4.cst', Example4PreELKExpected]
+    ])('file %s', async (fileName, expectedResult) => {
+        const data = await getFile(fileName);
+        const result = getPreELKOutput(data);
+        expect(result).toStrictEqual(expectedResult);
+    });
+
+});
+
+
+function getFile(filename: string): Promise<string> {
+    return new Promise((resolve) => {
+        fs.readFile(filename, 'utf8', (err, data) => {
+            if (err) {
+                throw err;
+            }
+
+            resolve(data);
+        });
+    });
+}
+
+function commonParse(data: string): MainVisitor {
+    const chars = new CharStream(data);
+    const lexer = new CircuitScriptLexer(chars);
+    const tokens = new CommonTokenStream(lexer);
+
+    const parser = new CircuitScriptParser(tokens);
+    const tree = parser.script();
+
+    const visitor = new MainVisitor(true);
+    visitor.getExecutor().silent = true;
+
+    try {
+        visitor.visit(tree);
+    } catch (err) {
+        console.log('got error', err);
+    }
+
+    return visitor;
+}
+
+function getScriptOutput(data: string): object {
+    const visitor = commonParse(data);
+    const result = visitor.dump2();
+    return result;
+}
+
+function getPreELKOutput(data: string): object {
+    const visitor = commonParse(data);
+    const { sequence } = visitor.getGraph();
+    return prepareLayout(sequence);
+}

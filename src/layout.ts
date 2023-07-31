@@ -23,6 +23,7 @@ function createNode(nodeId: string, component: ClassComponent): any {
             'nodeLabels.placement': '[OUTSIDE H_LEFT V_TOP]',
             'portLabels.placement': 'INSIDE'
         },
+        ports: [],
     };
 
     // If is a net component, then it is a single port symbol,
@@ -63,7 +64,7 @@ function createNode(nodeId: string, component: ClassComponent): any {
 
     let displayValue = null;
     if (component.parameters.has('value')) {
-        const tmpValue = component.parameters.get('value');
+        const tmpValue: any = component.parameters.get('value');
         if (tmpValue instanceof NumericValue) {
             displayValue = tmpValue.value.toString();
         } else {
@@ -132,7 +133,7 @@ export function prepareLayout(
     sequence: [string, ClassComponent, number][],
 ): any {
 
-    dumpSequence(sequence);
+    // dumpSequence(sequence);
 
     const tmpNodes = [];
     const tmpEdges = [];

@@ -202,3 +202,456 @@ export const Example3Expected = [
         },
     },
 ];
+
+export const Example4PreELKExpected = {
+    "id": "root",
+    "layoutOptions": {
+      "algorithm": "layered",
+      "portLabels.placement": "[INSIDE]",
+      "portConstraints": "FIXED_ORDER"
+    },
+    "children": [
+      {
+        "id": "V5V@0",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "V5V@0",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "priority": 12
+        },
+        "ports": [
+          {
+            "id": "V5V@0.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "U1",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "U1",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "portConstraints": "FIXED_ORDER",
+          "priority": 11
+        },
+        "ports": [
+          {
+            "id": "U1.2",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "2",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "GND",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          },
+          {
+            "id": "U1.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "VCC",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          },
+          {
+            "id": "U1.3",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "EAST"
+            },
+            "labels": [
+              {
+                "text": "3",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "I2C_SCL",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          },
+          {
+            "id": "U1.4",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "EAST"
+            },
+            "labels": [
+              {
+                "text": "4",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "I2C_SDA",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "gnd@0",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "gnd@0",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "priority": 9
+        },
+        "ports": [
+          {
+            "id": "gnd@0.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "res_0.COMP_1_4k",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "res_0.COMP_1_4k",
+            "width": 50,
+            "height": 12
+          },
+          {
+            "text": "4k",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "portConstraints": "FIXED_ORDER",
+          "priority": 7
+        },
+        "ports": [
+          {
+            "id": "res_0.COMP_1_4k.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          },
+          {
+            "id": "res_0.COMP_1_4k.2",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "EAST"
+            },
+            "labels": [
+              {
+                "text": "2",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "2",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "V5V@1",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "V5V@1",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "priority": 5
+        },
+        "ports": [
+          {
+            "id": "V5V@1.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "res_1.COMP_1_4k",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "res_1.COMP_1_4k",
+            "width": 50,
+            "height": 12
+          },
+          {
+            "text": "4k",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "portConstraints": "FIXED_ORDER",
+          "priority": 3
+        },
+        "ports": [
+          {
+            "id": "res_1.COMP_1_4k.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          },
+          {
+            "id": "res_1.COMP_1_4k.2",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "EAST"
+            },
+            "labels": [
+              {
+                "text": "2",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "2",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "V5V@2",
+        "width": 100,
+        "height": 100,
+        "labels": [
+          {
+            "text": "V5V@2",
+            "width": 50,
+            "height": 12
+          }
+        ],
+        "layoutOptions": {
+          "nodeLabels.placement": "[OUTSIDE H_LEFT V_TOP]",
+          "portLabels.placement": "INSIDE",
+          "priority": 1
+        },
+        "ports": [
+          {
+            "id": "V5V@2.1",
+            "width": 10,
+            "height": 1,
+            "properties": {
+              "port.side": "WEST"
+            },
+            "labels": [
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              },
+              {
+                "text": "1",
+                "width": 10,
+                "height": 12
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_0",
+        "sources": [
+          "V5V@0.1"
+        ],
+        "targets": [
+          "U1.1"
+        ]
+      },
+      {
+        "id": "edge_1",
+        "sources": [
+          "U1.2"
+        ],
+        "targets": [
+          "gnd@0.1"
+        ]
+      },
+      {
+        "id": "edge_2",
+        "sources": [
+          "U1.3"
+        ],
+        "targets": [
+          "res_0.COMP_1_4k.1"
+        ]
+      },
+      {
+        "id": "edge_3",
+        "sources": [
+          "res_0.COMP_1_4k.2"
+        ],
+        "targets": [
+          "V5V@1.1"
+        ]
+      },
+      {
+        "id": "edge_4",
+        "sources": [
+          "U1.4"
+        ],
+        "targets": [
+          "res_1.COMP_1_4k.1"
+        ]
+      },
+      {
+        "id": "edge_5",
+        "sources": [
+          "res_1.COMP_1_4k.2"
+        ],
+        "targets": [
+          "V5V@2.1"
+        ]
+      }
+    ]
+  }
