@@ -5,6 +5,9 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { createSVGWindow } from 'svgdom';
 
 const bodyColor = '#FFFEAF';
+const junctionSize = 8;
+const junctionColor = '#111';
+const edgeColor = '#111';
 
 export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     const window = createSVGWindow();
@@ -84,12 +87,15 @@ function generateSVGChild(canvas: SVGTypeMapping, elkNode: ElkNode): void {
         });
     });
 
+    // Draw these later, so that they are above other elements
+    const allJunctionPoints = [];
+
     // Draw edges
     edges.forEach((edge) => {
-        const { sections = [] } = edge;
+        const { sections = [], junctionPoints = []} = edge;
 
         sections.forEach((section) => {
-            const { startPoint, endPoint, bendPoints = [] } = section;
+            const { startPoint, endPoint, bendPoints = []} = section;
 
             const points = [];
             points.push([startPoint.x, startPoint.y]);
@@ -103,8 +109,19 @@ function generateSVGChild(canvas: SVGTypeMapping, elkNode: ElkNode): void {
             group
                 .polyline(points)
                 .fill('none')
-                .stroke({ width: 1, color: 'black' });
+                .stroke({ width: 1, color: edgeColor});
         });
+
+        junctionPoints.forEach(point => {
+            allJunctionPoints.push(point);
+        });
+    });
+
+    allJunctionPoints.forEach((point) => {
+        group.circle(junctionSize)
+            .fill(junctionColor)
+            .stroke({ width: 0 })
+            .translate(point.x - junctionSize / 2, point.y - junctionSize / 2);
     });
 
     labels.forEach((label) => {

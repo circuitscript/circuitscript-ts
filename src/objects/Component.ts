@@ -110,6 +110,11 @@ export class Component {
 export class ClassComponent extends Component {
     className: string;
 
+    _linkID?: string | number;
+
+    // This determines how pins are arrange on the component/symbol.
+    arrangeProps: Map<string, number[]> | null = null;
+
     constructor(instanceName: string, numPins: number, className: string) {
         super(instanceName, numPins);
         this.className = className;

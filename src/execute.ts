@@ -208,6 +208,7 @@ export class ExecutionContext {
         instanceName: string,
         pins: PinDefinition[],
         params: ParamDefinition[],
+        arrangeProps: any,
     ): Component {
         const numPins = pins.length;
         const component = new ClassComponent(
@@ -215,6 +216,8 @@ export class ExecutionContext {
             numPins,
             GlobalNames.symbol,
         );
+
+        component.arrangeProps = arrangeProps;
 
         pins.forEach((pin) => {
             // @ts-ignore
@@ -286,7 +289,10 @@ export class ExecutionContext {
         if (pinId === null) {
             pinId = component.getDefaultPin();
         } else {
-            if (component.pins.get(pinId) === undefined) {
+
+            if (component.hasPin(pinId)) {
+                pinId = component.getPin(pinId);
+            } else {
                 console.trace();
                 throw (
                     'Invalid pin number ' +
@@ -326,7 +332,7 @@ export class ExecutionContext {
         if (addSequence) {
             let sequenceComponent = component;
 
-            if (this.isNetComponent(component)) {
+            if (isNetComponent(component)) {
                 if (!this.linkIDs.has(component.instanceName)) {
                     this.linkIDs.set(component.instanceName, 0);
                 }
@@ -373,7 +379,7 @@ export class ExecutionContext {
 
         if (addSequence) {
             let sequenceComponent = component;
-            if (this.isNetComponent(component)) {
+            if (isNetComponent(component)) {
                 if (!this.linkIDs.has(component.instanceName)) {
                     this.linkIDs.set(component.instanceName, 0);
                 }
@@ -622,12 +628,13 @@ export class ExecutionContext {
 
         this.print('-- done merging scope --');
     }
+}
 
-    private isNetComponent(component: ClassComponent): boolean {
-        if (component.parameters.has(ParamKeys.__is_net)) {
-            return true;
-        }
-
-        return false;
+export function isNetComponent(component: ClassComponent): boolean {
+    // Returns true if the component is a net component
+    if (component.parameters.has(ParamKeys.__is_net)) {
+        return true;
     }
+
+    return false;
 }

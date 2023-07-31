@@ -2,23 +2,64 @@ import ELK, { ElkNode } from 'elkjs';
 import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
 import { SequenceAction } from './objects/ExecutionScope';
+import { isNetComponent } from './execute';
 
-function createNode(id: string, component: ClassComponent): any {
+const portWidth = 10;
+const portHeight = 1;
+
+function createNode(nodeId: string, component: ClassComponent): any {
     const nodeValue = {
-        id: id,
+        id: nodeId,
         width: 100,
-        height: 50,
+        height: 100,
         labels: [
             {
-                text: id,
+                text: nodeId,
                 width: 50,
                 height: 12,
             },
         ],
         layoutOptions: {
-            'nodeLabels.placement': '[INSIDE V_CENTER H_CENTER]',
+            'nodeLabels.placement': '[OUTSIDE H_LEFT V_TOP]',
+            'portLabels.placement': 'INSIDE'
         },
     };
+
+    // If is a net component, then it is a single port symbol,
+    // so do not enforce the fixed side constraint.
+
+    // For all other symbols/components, enforce this constraint.
+    if (!isNetComponent(component)) {
+        // FIXED_ORDER is needed over FIXED_SIDE, so that port.order
+        // is taken into consideration too.
+        nodeValue.layoutOptions["portConstraints"] = "FIXED_ORDER";
+    }
+
+    // If arrange props are set, then use it to generate 
+    // the placement of the ports
+    const portSides = getPortSide(component.numPins, component.arrangeProps);
+
+    nodeValue.ports = portSides.map(({ pinId, side }) => {
+        const pinDef = component.pins.get(pinId);
+        return {
+            id: `${nodeId}.${pinId}`,
+            width: portWidth,
+            height: portHeight,
+            properties: {
+                "port.side": side,
+            },
+            labels: [{
+                text: pinId.toString(),
+                width: 10,
+                height: 12,
+            }, {
+                text: pinDef.name,
+                width: 10,
+                height: 12,
+            }
+            ]
+        };
+    });
 
     let displayValue = null;
     if (component.parameters.has('value')) {
@@ -39,6 +80,48 @@ function createNode(id: string, component: ClassComponent): any {
     return nodeValue;
 }
 
+function getPortSide(numPins: number, arrangeProps: null | Map<string, number[]>): { pinId: number, side: string, order: number }[] {
+    // Takes the arrangeProps and determines how to arrange pins in the symbol.
+
+    const result = [];
+
+    if (arrangeProps === null) {
+        for (let i = 0; i < numPins; i++) {
+            result.push({
+                pinId: i + 1,
+                side: i % 2 === 0 ? 'WEST' : 'EAST',
+                order: i + 1,
+            });
+        }
+    } else {
+        let counter = numPins;
+
+        for (const [key, items] of arrangeProps) {
+
+            const useItems = [...items];
+
+            let useSide = PortSide.WEST;
+            if (key === 'left') {
+                useSide = PortSide.WEST;
+                useItems.reverse();
+            } else if (key === 'right') {
+                useSide = PortSide.EAST;
+            }
+
+            useItems.forEach(item => {
+                result.push({
+                    pinId: item,
+                    side: useSide,
+                    order: counter
+                });
+                counter--;
+            });
+        }
+    }
+
+    return result;
+}
+
 function dumpSequence(sequence: [string, ClassComponent, number][]): void  {
     sequence.forEach(([action, component, number]) => {
         console.log(action, component.instanceName, number);
@@ -56,11 +139,12 @@ export function prepareLayout(
 
     const addedNodes = [];
     let prevNode = null;
+    let prevPin = null;
 
     let edgeCounter = 0;
 
     for (let i = 0; i < sequence.length; i++) {
-        const [action, component] = sequence[i];
+        const [action, component, pin] = sequence[i];
 
         let useName = component.instanceName;
         if (component._linkID !== undefined) {
@@ -83,14 +167,15 @@ export function prepareLayout(
         if (action === SequenceAction.To && prevNode !== null) {
             tmpEdges.push({
                 id: `edge_${edgeCounter}`,
-                sources: [prevNode],
-                targets: [useName],
+                sources: [`${prevNode}.${prevPin}`],
+                targets: [`${useName}.${pin}`],
             });
 
             edgeCounter++;
         }
 
         prevNode = useName;
+        prevPin = pin;
     }
 
     return {
@@ -98,7 +183,7 @@ export function prepareLayout(
         layoutOptions: {
             algorithm: 'layered',
             'portLabels.placement': '[INSIDE]',
-            portConstraints: 'FIXED_SIDE',
+            portConstraints: 'FIXED_ORDER',
 
             // So the order of the nodes will also be considered
             // 'considerModelOrder.strategy': 'NODES_AND_EDGES',
@@ -125,3 +210,8 @@ export type OutputGraphItem = {
 };
 
 export type OutputGraph = OutputGraphItem[];
+
+export enum PortSide {
+    WEST = 'WEST',
+    EAST = 'EAST',
+}
