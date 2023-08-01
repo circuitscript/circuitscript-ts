@@ -1,13 +1,15 @@
 import fs from 'fs';
 
 import { ElkNode } from 'elkjs';
-import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
+import { G, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { createSVGWindow } from 'svgdom';
 
 const bodyColor = '#FFFEAF';
 const junctionSize = 8;
 const junctionColor = '#111';
 const edgeColor = '#111';
+
+const defaultFont = 'Roboto';
 
 export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     const window = createSVGWindow();
@@ -16,6 +18,8 @@ export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     registerWindow(window, document);
 
     const canvas = SVG(document.documentElement);
+    
+    canvas.style('#insert-here');
 
     const { width, height } = elkNode;
 
@@ -23,7 +27,12 @@ export function generateSVG(elkNode: ElkNode, outputPath: string): void {
 
     generateSVGChild(canvas, elkNode);
 
-    fs.writeFile(outputPath, canvas.svg(), (err) => {
+    let svgOutput = canvas.svg();
+
+    // Need to import font
+    svgOutput = svgOutput.replace("#insert-here", "@import url('https://fonts.googleapis.com/css?family=Roboto')");
+
+    fs.writeFile(outputPath, svgOutput, (err) => {
         if (err) {
             console.log('error writing to file: ', err);
         } else {
@@ -32,7 +41,7 @@ export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     });
 }
 
-function generateSVGChild(canvas: SVGTypeMapping, elkNode: ElkNode): void {
+function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode): void {
     const group = canvas.group();
     const {
         id,
@@ -44,15 +53,24 @@ function generateSVGChild(canvas: SVGTypeMapping, elkNode: ElkNode): void {
         y,
         width,
         height,
+        __symbol = null,
     } = elkNode;
     group.translate(x, y);
 
     if (id !== 'root') {
         // Draw the main body of the child view
-        group
-            .rect(width, height)
-            .fill(bodyColor)
-            .stroke({ width: 1, color: '#333' });
+        if (__symbol === null) {
+            group
+                .rect(width, height)
+                .fill(bodyColor)
+                .stroke({ width: 1, color: '#333' });
+        } else {
+            if (__symbol === 'gnd') {
+                drawSymbolGnd(group);
+            } else {
+                drawSymbolPower(group);
+            }
+        }
     }
 
     children.forEach((child) => {
@@ -71,19 +89,28 @@ function generateSVGChild(canvas: SVGTypeMapping, elkNode: ElkNode): void {
             .stroke({ width: 1, color: '#333' });
 
         labels.forEach((label) => {
-            const { x, y, text } = label;
+            const { x, y, text } = label
 
             portGroup
                 .text(text)
                 .translate(x, y)
                 .fill('#333')
                 .font({
-                    family: 'Arial',
+                    family: defaultFont,
                     size: 10,
                 })
                 .css({
                     'dominant-baseline': 'hanging',
                 });
+
+            // Draw the text boundaries
+            // portGroup.rect(label.width, label.height)
+            //     .translate(x, y)
+            //     .fill('none')
+            //     .stroke({
+            //         width: 1,
+            //         color: '#333',
+            //     })
         });
     });
 
@@ -131,11 +158,22 @@ function generateSVGChild(canvas: SVGTypeMapping, elkNode: ElkNode): void {
             .translate(x, y)
             .fill('#333')
             .font({
-                family: 'Arial',
+                family: defaultFont,
                 size: 10,
             })
             .css({
                 'dominant-baseline': 'hanging',
             });
     });
+}
+
+function drawSymbolGnd(group: G): void {
+    // Assume that the symbol is vertical
+    group.path('M0 0 h50 M10 10 h30 M20 20 h10')
+        .stroke({ width: 3, color: '#333' });
+}
+
+function drawSymbolPower(group: G): void {
+    group.path('M0 50 h50')
+        .stroke({ width: 3, color: '#333' });
 }

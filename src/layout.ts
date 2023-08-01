@@ -3,11 +3,20 @@ import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
 import { SequenceAction } from './objects/ExecutionScope';
 import { isNetComponent } from './execute';
+import { GlobalNames } from './globals';
+import { measureTextSize } from './sizing';
 
 const portWidth = 10;
 const portHeight = 1;
 
-function createNode(nodeId: string, component: ClassComponent): any {
+const defaultFont = 'Arial';
+const defaultFontSize = 10;
+
+async function createNode(nodeId: string, component: ClassComponent): Promise<any> {
+    const tmpIsNetComponent = isNetComponent(component);
+
+    const { width: labelWidth, height: labelHeight } = await measureTextSize(nodeId, defaultFont, defaultFontSize);
+
     const nodeValue = {
         id: nodeId,
         width: 100,
@@ -15,8 +24,8 @@ function createNode(nodeId: string, component: ClassComponent): any {
         labels: [
             {
                 text: nodeId,
-                width: 50,
-                height: 12,
+                width: labelWidth,
+                height: labelHeight,
             },
         ],
         layoutOptions: {
@@ -24,13 +33,14 @@ function createNode(nodeId: string, component: ClassComponent): any {
             'portLabels.placement': 'INSIDE'
         },
         ports: [],
+        __symbol: null,
     };
 
     // If is a net component, then it is a single port symbol,
     // so do not enforce the fixed side constraint.
 
     // For all other symbols/components, enforce this constraint.
-    if (!isNetComponent(component)) {
+    if (!tmpIsNetComponent) {
         // FIXED_ORDER is needed over FIXED_SIDE, so that port.order
         // is taken into consideration too.
         nodeValue.layoutOptions["portConstraints"] = "FIXED_ORDER";
@@ -40,27 +50,71 @@ function createNode(nodeId: string, component: ClassComponent): any {
     // the placement of the ports
     const portSides = getPortSide(component.numPins, component.arrangeProps);
 
-    nodeValue.ports = portSides.map(({ pinId, side }) => {
+    const ports = [];
+    
+    for (let i = 0; i < portSides.length; i++) {
+        const { pinId, side } = portSides[i];
+
         const pinDef = component.pins.get(pinId);
-        return {
-            id: `${nodeId}.${pinId}`,
-            width: portWidth,
-            height: portHeight,
-            properties: {
-                "port.side": side,
-            },
-            labels: [{
-                text: pinId.toString(),
-                width: 10,
-                height: 12,
-            }, {
-                text: pinDef.name,
-                width: 10,
-                height: 12,
+
+        if (pinDef) {
+            const port = {
+                id: `${nodeId}.${pinId}`,
+                width: portWidth,
+                height: portHeight,
+                properties: {},
+                labels: []
             }
-            ]
-        };
-    });
+
+            if (!tmpIsNetComponent) {
+                port.properties = {
+                    "port.side": side,
+                }
+
+                const pinIdSize = await measureTextSize(pinId.toString(), defaultFont, defaultFontSize);
+                const pinNameSize = await measureTextSize(pinDef.name, defaultFont, defaultFontSize);
+
+
+                port.labels = [
+                    {
+                        text: pinId.toString(),
+                        width: pinIdSize.width,
+                        height: pinIdSize.height,
+                    }, {
+                        text: pinDef.name,
+                        width: pinNameSize.width,
+                        height: pinNameSize.height,
+                    }]
+            }
+
+            ports.push(port);
+        }
+    }
+
+    nodeValue.ports = ports;
+
+    if (tmpIsNetComponent) {
+        nodeValue.layoutOptions["portConstraints"] = "FIXED_ORDER";
+        const tmpPort = nodeValue.ports[0];
+        let tmpPortSide = PortSide.NORTH;
+
+        if (component.parameters.get('net_name') === GlobalNames.gnd) {
+            nodeValue.__symbol = 'gnd';
+            tmpPortSide = PortSide.NORTH;
+        } else {
+            nodeValue.__symbol = 'net';
+            tmpPortSide = PortSide.SOUTH;
+        }
+
+        tmpPort.properties["port.side"] = tmpPortSide;
+
+        // Align port to be vertical instead of horizontal
+        tmpPort.width = portHeight;
+        tmpPort.height = portWidth;
+
+        nodeValue.width = 50;
+        nodeValue.height = 50;
+    }
 
     let displayValue = null;
     if (component.parameters.has('value')) {
@@ -90,7 +144,7 @@ function getPortSide(numPins: number, arrangeProps: null | Map<string, number[]>
         for (let i = 0; i < numPins; i++) {
             result.push({
                 pinId: i + 1,
-                side: i % 2 === 0 ? 'WEST' : 'EAST',
+                side: i % 2 === 0 ? PortSide.WEST : PortSide.EAST,
                 order: i + 1,
             });
         }
@@ -129,7 +183,7 @@ function dumpSequence(sequence: [string, ClassComponent, number][]): void  {
     });
 }
 
-export function prepareLayout(
+export async function prepareLayout(
     sequence: [string, ClassComponent, number][],
 ): any {
 
@@ -154,7 +208,7 @@ export function prepareLayout(
 
         // Add the node if it has not been added before
         if (addedNodes.indexOf(useName) === -1 && !(prevNode === null && action === SequenceAction.To)) {
-            const tmpNode = createNode(useName, component);
+            const tmpNode = await createNode(useName, component);
 
             // Priority is used to determine which node is plotted first
             // Earlier elements in the sequence list should have higher priortiy,
@@ -184,7 +238,6 @@ export function prepareLayout(
         layoutOptions: {
             algorithm: 'layered',
             'portLabels.placement': '[INSIDE]',
-            portConstraints: 'FIXED_ORDER',
 
             // So the order of the nodes will also be considered
             // 'considerModelOrder.strategy': 'NODES_AND_EDGES',
@@ -215,4 +268,6 @@ export type OutputGraph = OutputGraphItem[];
 export enum PortSide {
     WEST = 'WEST',
     EAST = 'EAST',
+    SOUTH = 'SOUTH',
+    NORTH = 'NORTH'
 }
