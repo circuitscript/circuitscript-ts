@@ -1,12 +1,23 @@
-import { SVG, registerWindow } from '@svgdotjs/svg.js';
+import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { config, createSVGWindow } from 'svgdom';
 
 let MainCanvas = null;
 
+const supportedFonts = { 
+    'Roboto': 'Roboto-Regular.ttf',
+    'Inter': 'Inter-Regular.ttf', 
+}
+
 export async function prepareSizing(): Promise<void> {
     config.setFontDir('./fonts')
-        .setFontFamilyMappings({ 'Roboto': 'Roboto-Regular.ttf' })
+        .setFontFamilyMappings(supportedFonts)
         .preloadFonts()
+}
+
+export function applyFontsToSVG(canvas: SVGTypeMapping): void {
+    for (const fontName in supportedFonts) {
+        canvas.fontface(fontName, "url('fonts/" + supportedFonts[fontName] + "')");
+    }
 }
 
 export async function measureTextSize(text: string, fontFamily: string, fontSize: number): Promise<{ width: number, height: number }> {

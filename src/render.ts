@@ -3,13 +3,15 @@ import fs from 'fs';
 import { ElkNode } from 'elkjs';
 import { G, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { createSVGWindow } from 'svgdom';
+import { applyFontsToSVG } from './sizing';
+import { SymbolFactory } from './draw_symbols';
 
 const bodyColor = '#FFFEAF';
 const junctionSize = 8;
 const junctionColor = '#111';
 const edgeColor = '#111';
 
-const defaultFont = 'Roboto';
+const defaultFont = 'Inter';
 
 export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     const window = createSVGWindow();
@@ -18,19 +20,14 @@ export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     registerWindow(window, document);
 
     const canvas = SVG(document.documentElement);
-    
-    canvas.style('#insert-here');
-
     const { width, height } = elkNode;
 
     canvas.size(width, height);
+    applyFontsToSVG(canvas);
 
     generateSVGChild(canvas, elkNode);
 
-    let svgOutput = canvas.svg();
-
-    // Need to import font
-    svgOutput = svgOutput.replace("#insert-here", "@import url('https://fonts.googleapis.com/css?family=Roboto')");
+    const svgOutput = canvas.svg();
 
     fs.writeFile(outputPath, svgOutput, (err) => {
         if (err) {
@@ -65,10 +62,9 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
                 .fill(bodyColor)
                 .stroke({ width: 1, color: '#333' });
         } else {
-            if (__symbol === 'gnd') {
-                drawSymbolGnd(group);
-            } else {
-                drawSymbolPower(group);
+            const tmpSymbol = SymbolFactory(__symbol);
+            if (tmpSymbol) {
+                tmpSymbol.draw(group);
             }
         }
     }
@@ -119,10 +115,10 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
 
     // Draw edges
     edges.forEach((edge) => {
-        const { sections = [], junctionPoints = []} = edge;
+        const { sections = [], junctionPoints = [] } = edge;
 
         sections.forEach((section) => {
-            const { startPoint, endPoint, bendPoints = []} = section;
+            const { startPoint, endPoint, bendPoints = [] } = section;
 
             const points = [];
             points.push([startPoint.x, startPoint.y]);
@@ -136,7 +132,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
             group
                 .polyline(points)
                 .fill('none')
-                .stroke({ width: 1, color: edgeColor});
+                .stroke({ width: 1, color: edgeColor });
         });
 
         junctionPoints.forEach(point => {
@@ -165,15 +161,4 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
                 'dominant-baseline': 'hanging',
             });
     });
-}
-
-function drawSymbolGnd(group: G): void {
-    // Assume that the symbol is vertical
-    group.path('M0 0 h50 M10 10 h30 M20 20 h10')
-        .stroke({ width: 3, color: '#333' });
-}
-
-function drawSymbolPower(group: G): void {
-    group.path('M0 50 h50')
-        .stroke({ width: 3, color: '#333' });
 }

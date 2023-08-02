@@ -115,6 +115,9 @@ export class ClassComponent extends Component {
     // This determines how pins are arrange on the component/symbol.
     arrangeProps: Map<string, number[]> | null = null;
 
+    // Used to identify what graphic to draw for this symbol
+    displayProp: string | null = null;
+
     constructor(instanceName: string, numPins: number, className: string) {
         super(instanceName, numPins);
         this.className = className;

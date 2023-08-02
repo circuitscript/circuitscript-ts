@@ -5,11 +5,12 @@ import { SequenceAction } from './objects/ExecutionScope';
 import { isNetComponent } from './execute';
 import { GlobalNames } from './globals';
 import { measureTextSize } from './sizing';
+import { SymbolFactory } from './draw_symbols';
 
 const portWidth = 10;
 const portHeight = 1;
 
-const defaultFont = 'Arial';
+const defaultFont = 'Inter';
 const defaultFontSize = 10;
 
 async function createNode(nodeId: string, component: ClassComponent): Promise<any> {
@@ -51,7 +52,7 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
     const portSides = getPortSide(component.numPins, component.arrangeProps);
 
     const ports = [];
-    
+
     for (let i = 0; i < portSides.length; i++) {
         const { pinId, side } = portSides[i];
 
@@ -106,14 +107,29 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
             tmpPortSide = PortSide.SOUTH;
         }
 
+        const tmpSymbol = SymbolFactory(nodeValue.__symbol);
+        const symbolSize = tmpSymbol.size();
+
         tmpPort.properties["port.side"] = tmpPortSide;
 
         // Align port to be vertical instead of horizontal
         tmpPort.width = portHeight;
         tmpPort.height = portWidth;
 
-        nodeValue.width = 50;
-        nodeValue.height = 50;
+        nodeValue.width = symbolSize.width;
+        nodeValue.height = symbolSize.height;
+    } else {
+        if (component.displayProp !== null) {
+            nodeValue.__symbol = component.displayProp;
+
+            if (nodeValue.__symbol === 'res' || nodeValue.__symbol == 'cap') {
+                const tmpSymbol = SymbolFactory(nodeValue.__symbol);
+                const tmpSize = tmpSymbol.size();
+
+                nodeValue.width = tmpSize.width;
+                nodeValue.height = tmpSize.height;
+            }
+        }
     }
 
     let displayValue = null;
@@ -177,7 +193,7 @@ function getPortSide(numPins: number, arrangeProps: null | Map<string, number[]>
     return result;
 }
 
-function dumpSequence(sequence: [string, ClassComponent, number][]): void  {
+function dumpSequence(sequence: [string, ClassComponent, number][]): void {
     sequence.forEach(([action, component, number]) => {
         console.log(action, component.instanceName, number);
     });

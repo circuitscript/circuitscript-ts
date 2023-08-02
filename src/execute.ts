@@ -209,6 +209,7 @@ export class ExecutionContext {
         pins: PinDefinition[],
         params: ParamDefinition[],
         arrangeProps: any,
+        displayProp: any,
     ): Component {
         const numPins = pins.length;
         const component = new ClassComponent(
@@ -218,6 +219,7 @@ export class ExecutionContext {
         );
 
         component.arrangeProps = arrangeProps;
+        component.displayProp = displayProp;
 
         pins.forEach((pin) => {
             // @ts-ignore

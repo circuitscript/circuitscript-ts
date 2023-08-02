@@ -270,11 +270,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const pins: PinDefinition[] = this.parseCreateComponentPins(
             properties.get('pins'),
         );
-
-        let arrangeProps = null;
-        if (properties.has('arrange')){
-            arrangeProps = properties.get('arrange');
-        }
     
         // Use a unique instance name in the context for now
         let instanceName = this.getExecutor().getUniqueInstanceName('');
@@ -297,7 +292,17 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             instanceName += '_' + appendValue;
         }
 
-        return this.getExecutor().createComponent(instanceName, pins, params, arrangeProps);
+        let arrangeProps = null;
+        if (properties.has('arrange')) {
+            arrangeProps = properties.get('arrange');
+        }
+
+        let displayProp = null;
+        if (properties.has('display')) {
+            displayProp = properties.get('display');
+        }
+
+        return this.getExecutor().createComponent(instanceName, pins, params, arrangeProps, displayProp);
     }
 
     visitProperty_expr(ctx: Property_exprContext): Map<string, any> {
