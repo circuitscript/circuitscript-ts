@@ -2,6 +2,10 @@ import { ParseTreeVisitor } from 'antlr4';
 import {
     Add_component_exprContext,
     Assignment_exprContext,
+    At_blockContext,
+    At_block_pin_exprContext,
+    At_block_pin_expression_complexContext,
+    At_block_pin_expression_simpleContext,
     At_component_exprContext,
     Branch_blocksContext,
     Break_keywordContext,
@@ -15,6 +19,7 @@ import {
     Function_return_exprContext,
     Nested_propertiesContext,
     ParametersContext,
+    Pin_select_expr2Context,
     Pin_select_exprContext,
     Property_exprContext,
     Property_key_exprContext,
@@ -527,6 +532,75 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().printPoint();
 
         return [executionContext, functionName, returnResult];
+    }
+
+    visitPin_select_expr2(ctx: Pin_select_expr2Context) {
+        if (ctx.STRING_VALUE()) {
+            return this.prepareStringValue(ctx.STRING_VALUE().toString());
+        } else if (ctx.INTEGER_VALUE()) {
+            return Number(ctx.INTEGER_VALUE().toString());
+        }
+    }
+
+    visitAt_block_pin_expr(ctx: At_block_pin_exprContext) {
+        const atPin = this.visit(ctx.pin_select_expr2());
+
+        const currentComponent = this.getExecutor().scope.currentComponent;
+        const currentPin = this.getExecutor().scope.currentPin;
+
+        this.getExecutor().atComponent(currentComponent, atPin, true);
+
+        this.getExecutor().print('at block pin expressions');
+
+        if (ctx.at_block_pin_expression_simple()) {
+            this.visit(ctx.at_block_pin_expression_simple());
+        } else if (ctx.at_block_pin_expression_complex()) {
+            this.visit(ctx.at_block_pin_expression_complex());
+        }
+
+        this.getExecutor().print('end at block pin expressions');
+
+        // Go back to the original position
+        this.getExecutor().atComponent(currentComponent, currentPin);
+    }
+
+    visitAt_block(ctx: At_blockContext) {
+        this.getExecutor().print('entering at block');
+
+        this.visit(ctx.at_component_expr());
+
+        const currentComponent = this.getExecutor().scope.currentComponent;
+        const currentPin = this.getExecutor().scope.currentPin;
+
+        this.getExecutor().scope.indentLevel += 1;
+
+        ctx.at_block_expressions_list().forEach(expression => {
+            this.visit(expression);
+        });
+
+        this.getExecutor().scope.indentLevel -= 1;
+
+        // Once all done, then restore
+        this.getExecutor().scope.currentComponent = currentComponent;
+        this.getExecutor().scope.currentPin = currentPin;
+
+        this.getExecutor().print('leaving at block');
+    }
+
+    visitAt_block_pin_expression_simple(ctx: At_block_pin_expression_simpleContext) {
+        if (ctx.expression()) {
+            // Handle any expressions within
+            this.visit(ctx.expression());
+        } else if (ctx.NOT_CONNECTED()) {
+            // Do nothing
+            return;
+        }
+    }
+
+    visitAt_block_pin_expression_complex(ctx: At_block_pin_expression_complexContext) {
+        ctx.expression_list().forEach(item => {
+            this.visit(item);
+        })
     }
 
     pinTypes = [
