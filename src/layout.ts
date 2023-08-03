@@ -3,15 +3,10 @@ import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
 import { SequenceAction } from './objects/ExecutionScope';
 import { isNetComponent } from './execute';
-import { GlobalNames } from './globals';
+import { GlobalNames, defaultFont, defaultFontSize, portHeight, portWidth } from './globals';
 import { measureTextSize } from './sizing';
 import { SymbolFactory } from './draw_symbols';
-
-const portWidth = 10;
-const portHeight = 1;
-
-const defaultFont = 'Inter';
-const defaultFontSize = 10;
+import { PinDefinition } from './objects/PinDefinition';
 
 async function createNode(nodeId: string, component: ClassComponent): Promise<any> {
     const tmpIsNetComponent = isNetComponent(component);
@@ -49,7 +44,7 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
 
     // If arrange props are set, then use it to generate 
     // the placement of the ports
-    const portSides = getPortSide(component.numPins, component.arrangeProps);
+    const portSides = getPortSide(component.pins, component.arrangeProps);
 
     const ports = [];
 
@@ -59,12 +54,27 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
         const pinDef = component.pins.get(pinId);
 
         if (pinDef) {
+
+            let useWidth = portWidth;
+            let useHeight = portHeight;
+
+            if (side === PortSide.WEST || side === PortSide.EAST){
+                useWidth = portWidth;
+                useHeight = portHeight;
+            } else {
+                // Must be vertical port
+                useWidth = portHeight;
+                useHeight = portWidth;
+            }
+
             const port = {
                 id: `${nodeId}.${pinId}`,
-                width: portWidth,
-                height: portHeight,
+                width: useWidth,
+                height: useHeight,
                 properties: {},
-                labels: []
+                labels: [],
+
+                __pinId: pinId,
             }
 
             if (!tmpIsNetComponent) {
@@ -72,16 +82,9 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
                     "port.side": side,
                 }
 
-                const pinIdSize = await measureTextSize(pinId.toString(), defaultFont, defaultFontSize);
                 const pinNameSize = await measureTextSize(pinDef.name, defaultFont, defaultFontSize);
-
-
                 port.labels = [
                     {
-                        text: pinId.toString(),
-                        width: pinIdSize.width,
-                        height: pinIdSize.height,
-                    }, {
                         text: pinDef.name,
                         width: pinNameSize.width,
                         height: pinNameSize.height,
@@ -101,9 +104,11 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
 
         if (component.parameters.get('net_name') === GlobalNames.gnd) {
             nodeValue.__symbol = 'gnd';
+            nodeValue.__symbolExtra = {'name': "GND"}
             tmpPortSide = PortSide.NORTH;
         } else {
             nodeValue.__symbol = 'net';
+            nodeValue.__symbolExtra = {'net_name': component.parameters.get('net_name')}
             tmpPortSide = PortSide.SOUTH;
         }
 
@@ -129,6 +134,20 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
                 nodeValue.width = tmpSize.width;
                 nodeValue.height = tmpSize.height;
             }
+        } else {
+            // Determine the node height based on the max pin height
+            const longestVerticalSide = getLongestVerticalSide(portSides);
+            nodeValue.height = longestVerticalSide * 40;
+
+            const longestHorizontalSide = getLongestHorizontalSide(portSides);
+            let useWidth = 0;
+            if (longestHorizontalSide === 0){
+                useWidth = 100; 
+            } else {
+                useWidth = longestHorizontalSide * 40;
+            }
+
+            nodeValue.width = useWidth;
         }
     }
 
@@ -151,21 +170,31 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
     return nodeValue;
 }
 
-function getPortSide(numPins: number, arrangeProps: null | Map<string, number[]>): { pinId: number, side: string, order: number }[] {
+type PortSideItem = {
+    pinId: number,
+    side: string,
+    order: number
+};
+
+function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
     // Takes the arrangeProps and determines how to arrange pins in the symbol.
 
     const result = [];
 
     if (arrangeProps === null) {
-        for (let i = 0; i < numPins; i++) {
+
+        let counter = 0;
+        for (const [pinId] of pins) {
             result.push({
-                pinId: i + 1,
-                side: i % 2 === 0 ? PortSide.WEST : PortSide.EAST,
-                order: i + 1,
+                pinId,
+                side: counter % 2 === 0 ? PortSide.WEST : PortSide.EAST,
+                order: counter,
             });
+            counter++;
         }
+
     } else {
-        let counter = numPins;
+        let counter = pins.size;
 
         for (const [key, items] of arrangeProps) {
 
@@ -177,6 +206,10 @@ function getPortSide(numPins: number, arrangeProps: null | Map<string, number[]>
                 useItems.reverse();
             } else if (key === 'right') {
                 useSide = PortSide.EAST;
+            } else if (key === 'top') {
+                useSide = PortSide.NORTH;
+            } else if (key === 'bottom') {
+                useSide = PortSide.SOUTH;
             }
 
             useItems.forEach(item => {
@@ -191,6 +224,32 @@ function getPortSide(numPins: number, arrangeProps: null | Map<string, number[]>
     }
 
     return result;
+}
+
+function getLongestVerticalSide(portSides: PortSideItem[]): number {
+    const counters = {
+        [PortSide.EAST]: 0,
+        [PortSide.WEST]: 0,
+    }
+
+    portSides.forEach(item => {
+        counters[item.side] += 1;
+    });
+
+    return Math.max(counters[PortSide.EAST], counters[PortSide.WEST]);
+}
+
+function getLongestHorizontalSide(portSides: PortSideItem[]): number {
+    const counters = {
+        [PortSide.NORTH]: 0,
+        [PortSide.SOUTH]: 0,
+    }
+
+    portSides.forEach(item => {
+        counters[item.side] += 1;
+    });
+
+    return Math.max(counters[PortSide.NORTH], counters[PortSide.SOUTH]);
 }
 
 function dumpSequence(sequence: [string, ClassComponent, number][]): void {
@@ -256,7 +315,7 @@ export async function prepareLayout(
             'portLabels.placement': '[INSIDE]',
 
             // So the order of the nodes will also be considered
-            // 'considerModelOrder.strategy': 'NODES_AND_EDGES',
+            'considerModelOrder.strategy': 'PREFER_EDGES',
 
             // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html
             // 'crossingMinimization.forceNodeModelOrder': 'true',

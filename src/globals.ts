@@ -18,3 +18,14 @@ export enum ParamKeys {
     priority = 'priority',
     net_name = 'net_name',
 }
+
+export const portWidth = 20;
+export const portHeight = 1;
+
+export const defaultFont = 'Inter';
+export const defaultFontSize = 10;
+
+export const bodyColor = '#FFFEAF';
+export const junctionSize = 8;
+export const junctionColor = '#111';
+export const edgeColor = '#111';

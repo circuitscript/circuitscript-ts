@@ -1,12 +1,16 @@
 import { G } from "@svgdotjs/svg.js";
+import { defaultFont } from "./globals";
 
 const defaultSymbolLineColor = '#333';
 const defaultSymbolLineWidth = 2;
 
-interface SymbolGraphic {
-    size(): { width: number, height: number }
+abstract class SymbolGraphic {
 
-    draw(group: G): void
+    drawPortsName = true;
+
+    abstract size(): { width: number, height: number }
+
+    abstract draw(group: G, extra?: {}): void;
 }
 
 export function SymbolFactory(name: string): SymbolGraphic | null {
@@ -23,25 +27,42 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 }
 
 
-export class SymbolPower implements SymbolGraphic {
+export class SymbolPower extends SymbolGraphic {
+
+    drawPortsName = false;
+
     size(): { width: number; height: number; } {
         return {
             width: 50,
-            height: 50,
+            height: 20,
         }
     }
 
-    draw(group: G): void {
-        group.path('M0 50 h50')
-            .stroke(
-                {
-                    width: defaultSymbolLineWidth,
-                    color: defaultSymbolLineColor
-                });
+    draw(group: G, extra?: {}): void {
+        group.path('M10 20 h30')
+            .stroke({
+                width: defaultSymbolLineWidth,
+                color: defaultSymbolLineColor
+            });
+
+        if (extra) {
+            const netName = extra.net_name;
+            group.text(netName)
+                .translate(25, 20 - 2)
+                .fill('#333')
+                .font({
+                    family: defaultFont,
+                    size: 10,
+                    anchor: 'middle',
+                })
+        }
     }
 }
 
-export class SymbolGnd implements SymbolGraphic {
+export class SymbolGnd extends SymbolGraphic {
+
+    drawPortsName = false;
+    
     size(): { width: number; height: number; } {
         return {
             width: 50,
@@ -60,17 +81,20 @@ export class SymbolGnd implements SymbolGraphic {
     }
 }
 
-export class SymbolRes implements SymbolGraphic {
+export class SymbolRes extends SymbolGraphic {
+
+    drawPortsName = false;
+
     size(): { width: number; height: number; } {
         return {
             width: 70,
-            height: 50,
+            height: 30,
         }
     }
 
     draw(group: G): void {
         // Draw rectangle form instead
-        group.path('M0 25 h10 v-10 h50 v20 h-50 v-10 M60 25 h10')
+        group.path('M0 15 h10 v-10 h50 v20 h-50 v-10 M60 15 h10')
             .stroke(
                 {
                     width: defaultSymbolLineWidth,
@@ -80,7 +104,10 @@ export class SymbolRes implements SymbolGraphic {
     }
 }
 
-export class SymbolCap implements SymbolGraphic {
+export class SymbolCap extends SymbolGraphic {
+
+    drawPortsName = false;
+
     size(): { width: number; height: number; } {
         return {
             width: 50,

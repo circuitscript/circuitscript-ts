@@ -5,13 +5,10 @@ import { G, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { createSVGWindow } from 'svgdom';
 import { applyFontsToSVG } from './sizing';
 import { SymbolFactory } from './draw_symbols';
+import { PortSide } from './layout';
+import { bodyColor, defaultFont, edgeColor, junctionSize, junctionColor, portWidth } from './globals';
 
-const bodyColor = '#FFFEAF';
-const junctionSize = 8;
-const junctionColor = '#111';
-const edgeColor = '#111';
 
-const defaultFont = 'Inter';
 
 export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     const window = createSVGWindow();
@@ -51,8 +48,11 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
         width,
         height,
         __symbol = null,
+        __symbolExtra = {},
     } = elkNode;
     group.translate(x, y);
+
+    let drawPortsName = true;
 
     if (id !== 'root') {
         // Draw the main body of the child view
@@ -64,8 +64,10 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
         } else {
             const tmpSymbol = SymbolFactory(__symbol);
             if (tmpSymbol) {
-                tmpSymbol.draw(group);
+                tmpSymbol.draw(group, __symbolExtra);
             }
+
+            drawPortsName = tmpSymbol.drawPortsName;
         }
     }
 
@@ -75,7 +77,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
 
     // draw the ports
     ports.forEach((port) => {
-        const { x, y, width, height, labels = [] } = port;
+        const { x, y, width, height, labels = [], __pinId, properties } = port;
         const portGroup = group.group();
 
         portGroup.translate(x, y);
@@ -84,30 +86,47 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
             .fill('#888')
             .stroke({ width: 1, color: '#333' });
 
-        labels.forEach((label) => {
-            const { x, y, text } = label
+        if (drawPortsName) {
+            // Port should only have 1 label for ELK layout.
+            // The pin ID is drawn after ELK layout.
+            labels.forEach((label) => {
+                const { x, y, text } = label
 
-            portGroup
-                .text(text)
-                .translate(x, y)
+                portGroup
+                    .text(text)
+                    .translate(x, y)
+                    .fill('#333')
+                    .font({
+                        family: defaultFont,
+                        size: 10,
+                    })
+                    .css({
+                        'dominant-baseline': 'hanging',
+                    });
+            });
+
+            const portSide = properties["port.side"];
+            let fontAnchor = 'start';
+            let translateX = 0;
+
+            if (portSide === PortSide.WEST) {
+                fontAnchor = 'end';
+                translateX = portWidth - 2;
+
+            } else if (portSide === PortSide.EAST) {
+                fontAnchor = 'start';
+                translateX = 2;
+            }
+
+            portGroup.text(__pinId)
+                .translate(translateX, -2)
                 .fill('#333')
                 .font({
                     family: defaultFont,
                     size: 10,
-                })
-                .css({
-                    'dominant-baseline': 'hanging',
+                    anchor: fontAnchor,
                 });
-
-            // Draw the text boundaries
-            // portGroup.rect(label.width, label.height)
-            //     .translate(x, y)
-            //     .fill('none')
-            //     .stroke({
-            //         width: 1,
-            //         color: '#333',
-            //     })
-        });
+        }
     });
 
     // Draw these later, so that they are above other elements
