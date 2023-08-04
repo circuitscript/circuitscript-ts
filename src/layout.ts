@@ -1,9 +1,9 @@
 import ELK, { ElkNode } from 'elkjs';
 import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
-import { SequenceAction } from './objects/ExecutionScope';
+import { SequenceAction, SequenceItem } from './objects/ExecutionScope';
 import { isNetComponent } from './execute';
-import { GlobalNames, defaultFont, defaultFontSize, portHeight, portWidth } from './globals';
+import { GlobalNames, LayoutDirection, defaultFont, defaultFontSize, portHeight, portWidth } from './globals';
 import { measureTextSize } from './sizing';
 import { SymbolFactory } from './draw_symbols';
 import { PinDefinition } from './objects/PinDefinition';
@@ -176,7 +176,7 @@ type PortSideItem = {
     order: number
 };
 
-function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
+export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
     // Takes the arrangeProps and determines how to arrange pins in the symbol.
 
     const result = [];
@@ -252,17 +252,24 @@ function getLongestHorizontalSide(portSides: PortSideItem[]): number {
     return Math.max(counters[PortSide.NORTH], counters[PortSide.SOUTH]);
 }
 
-function dumpSequence(sequence: [string, ClassComponent, number][]): void {
-    sequence.forEach(([action, component, number]) => {
-        console.log(action, component.instanceName, number);
+function dumpSequence(sequence: SequenceItem[]): void {
+    sequence.forEach(item => {
+        item = [...item];
+        item[1] = item[1].instanceName;
+        console.log(item.join(" "));
     });
 }
 
 export async function prepareLayout(
-    sequence: [string, ClassComponent, number][],
+    sequence: SequenceItem[],
 ): any {
 
-    // dumpSequence(sequence);
+    dumpSequence(sequence);
+    sequence = applyLayoutDirection(sequence);
+
+    console.log('--');
+    console.log('after apply');
+    dumpSequence(sequence);
 
     const tmpNodes = [];
     const tmpEdges = [];
@@ -315,7 +322,7 @@ export async function prepareLayout(
             'portLabels.placement': '[INSIDE]',
 
             // So the order of the nodes will also be considered
-            'considerModelOrder.strategy': 'PREFER_EDGES',
+            // 'considerModelOrder.strategy': 'PREFER_EDGES',
 
             // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html
             // 'crossingMinimization.forceNodeModelOrder': 'true',
@@ -324,6 +331,39 @@ export async function prepareLayout(
         edges: tmpEdges,
     };
 }
+
+function applyLayoutDirection(sequence: SequenceItem[]): SequenceItem[] {
+    const newSequence: SequenceItem[] = [];
+
+    for (let i = 0; i < sequence.length; i++) {
+        const [action, component, pinId] = sequence[i];
+        if (action === SequenceAction.At) {
+            if (i + 1 < sequence.length-1 && sequence[i + 1][0] === SequenceAction.To) {
+                const direction = sequence[i][3];
+                if (direction === LayoutDirection.LEFT){
+
+                    const [,nextComponent, nextPinId] = sequence[i+1];
+
+                    // swap the order of components
+                    newSequence.push([SequenceAction.At, nextComponent, nextPinId, LayoutDirection.RIGHT]);
+                    newSequence.push([SequenceAction.To, component, pinId]);
+
+                    // Skip over the i+1 item.
+                    i += 1;
+                }
+            } else {
+                // If next item is no a 'to' action, then just add
+                // the item to the new sequence.
+                newSequence.push(sequence[i]);
+            }
+        } else {
+            newSequence.push(sequence[i]);
+        }
+    }
+
+    return newSequence;
+}
+
 
 export async function generateLayout(graph): Promise<ElkNode> {
     const elk = new ELK();
@@ -340,6 +380,7 @@ export type OutputGraphItem = {
 
 export type OutputGraph = OutputGraphItem[];
 
+// Port placement, similar to the values passed into ELK
 export enum PortSide {
     WEST = 'WEST',
     EAST = 'EAST',

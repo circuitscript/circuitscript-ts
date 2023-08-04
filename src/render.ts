@@ -152,6 +152,12 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
                 .polyline(points)
                 .fill('none')
                 .stroke({ width: 1, color: edgeColor });
+
+            // Draw something at the end to mark the 'arrow head'
+            // group.circle(10)
+            //      .translate(endPoint.x-5, endPoint.y-5)
+            //      .fill('#333')
+            //      .stroke({width: 0});
         });
 
         junctionPoints.forEach(point => {

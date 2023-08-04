@@ -1,3 +1,4 @@
+import { PortSide } from '../layout';
 import { PinTypes } from './PinTypes';
 
 export type PinId = number | string;
@@ -11,6 +12,8 @@ export class PinDefinition {
 
     name: string;
     altNames: string[];
+
+    side: string = PortSide.EAST;
 
     constructor(
         id: PinId,

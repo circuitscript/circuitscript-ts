@@ -1,12 +1,13 @@
 import lodash from 'lodash';
 
-import { GlobalNames, ParamKeys } from './globals';
+import { GlobalNames, LayoutDirection, ParamKeys } from './globals';
 import { ClassComponent, Component } from './objects/Component';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition } from './objects/PinDefinition';
 import { CFunction, CFunctionResult } from './objects/types';
+import { PortSide, getPortSide } from './layout';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -218,9 +219,6 @@ export class ExecutionContext {
             GlobalNames.symbol,
         );
 
-        component.arrangeProps = arrangeProps;
-        component.displayProp = displayProp;
-
         pins.forEach((pin) => {
             // @ts-ignore
             component.pins.set(pin.id, pin);
@@ -243,6 +241,16 @@ export class ExecutionContext {
             // Assume net is on 1 pin for now
             this.scope.setNet(component, 1, tmpNet);
         }
+
+        component.arrangeProps = arrangeProps;
+        component.displayProp = displayProp;
+
+        // Determine the side for each pin and update the
+        // pin definition
+        const portSides = getPortSide(component.pins, arrangeProps);
+        portSides.forEach(({ pinId, side }) => {
+            component.pins.get(pinId).side = side;
+        });
 
         this.scope.instances.set(instanceName, component);
 
@@ -366,7 +374,8 @@ export class ExecutionContext {
 
         if (addSequence) {
             const sequenceComponent = this.prepareSequenceComponent(component);
-            this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId]);
+            const layoutDirection = this.getPinLayoutDirection(sequenceComponent, usePinId);
+            this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId, layoutDirection]);
         }
 
         this.printPoint();
@@ -620,6 +629,23 @@ export class ExecutionContext {
         }
 
         return sequenceComponent;
+    }
+
+    private getPinLayoutDirection(component: ClassComponent, pinId: number): LayoutDirection {
+        // Returns the layout direction for a given pin
+        let layoutDirection = LayoutDirection.RIGHT;
+
+        if (component.pins.size > 1) {
+            const portSide = component.pins.get(pinId).side;
+
+            if (portSide === PortSide.EAST) {
+                layoutDirection = LayoutDirection.RIGHT;
+            } else if (portSide === PortSide.WEST) {
+                layoutDirection = LayoutDirection.LEFT;
+            }
+        }
+
+        return layoutDirection;
     }
 }
 

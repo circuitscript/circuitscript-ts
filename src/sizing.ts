@@ -35,10 +35,11 @@ export async function measureTextSize(text: string, fontFamily: string, fontSize
         anchor: 'start',
     }).fill('#333');
 
-    const { width, height } = MainCanvas.bbox();
+    const { width, height }: { width: number, height: number } = MainCanvas.bbox();
     tmpTextElement.remove();
 
     return {
-        width, height
+        width: Math.round(width * 100) / 100,
+        height: Math.round(height * 100) / 100,
     }
 }

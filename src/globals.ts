@@ -19,6 +19,11 @@ export enum ParamKeys {
     net_name = 'net_name',
 }
 
+export enum LayoutDirection {
+    RIGHT = "RIGHT",     // A --> B
+    LEFT = "LEFT",       // B <-- A
+}
+
 export const portWidth = 20;
 export const portHeight = 1;
 

@@ -3,6 +3,7 @@ import lodash from 'lodash';
 import { ClassComponent, Component } from './Component';
 import { Net } from './Net';
 import { CFunction } from './types';
+import { LayoutDirection } from '../globals';
 
 export class ExecutionScope {
     scopeId: number;
@@ -27,7 +28,7 @@ export class ExecutionScope {
     componentGnd: ClassComponent | null = null;
     componentRoot: ClassComponent | null = null;
 
-    // Determines how components are added/joined on the graph
+    // Determines how components are added/joined on the graph graphically.
     // This is very important in "building" up the graph
     // according to the user's order.
     sequence: any[] = [];
@@ -93,4 +94,8 @@ export class ExecutionScope {
 export enum SequenceAction {
     To = 'to',
     At = 'at',
+
+    LayoutDirection = 'layout-direction',
 }
+
+export type SequenceItem = [SequenceAction, ClassComponent, number, LayoutDirection?];
