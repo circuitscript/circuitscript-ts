@@ -33,7 +33,9 @@ export default async function main(): Promise<void> {
 
     const { sequence } = visitor.getGraph();
     const tmpSequence = sequence.map(item => {
-        return item[0] + " " + item[1].instanceName + " " + item[2];
+        const tmp = [...item];
+        tmp[1] = item[1].instanceName;
+        return tmp.join(" | ");
     })
 
     await writeFile('dump/raw-sequence.json', JSON.stringify(tmpSequence, null, 2));

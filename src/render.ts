@@ -6,7 +6,7 @@ import { createSVGWindow } from 'svgdom';
 import { applyFontsToSVG } from './sizing';
 import { SymbolFactory } from './draw_symbols';
 import { PortSide } from './layout';
-import { bodyColor, defaultFont, edgeColor, junctionSize, junctionColor, portWidth } from './globals';
+import { bodyColor, defaultFont, edgeColor, junctionSize, junctionColor, portWidth, defaultFontSize } from './globals';
 
 
 
@@ -134,9 +134,9 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
 
     // Draw edges
     edges.forEach((edge) => {
-        const { sections = [], junctionPoints = [] } = edge;
+        const { sections = [], junctionPoints = [], priority } = edge;
 
-        sections.forEach((section) => {
+        sections.forEach((section, index) => {
             const { startPoint, endPoint, bendPoints = [] } = section;
 
             const points = [];
@@ -154,10 +154,22 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
                 .stroke({ width: 1, color: edgeColor });
 
             // Draw something at the end to mark the 'arrow head'
-            // group.circle(10)
-            //      .translate(endPoint.x-5, endPoint.y-5)
-            //      .fill('#333')
-            //      .stroke({width: 0});
+            group.circle(6)
+                 .translate(endPoint.x-3, endPoint.y-3)
+                 .fill('red')
+                 .stroke({width: 0});
+
+            if (index === 0){
+                group.text(priority)
+                    .translate(startPoint.x, startPoint.y)
+                    .fill('blue')
+                    .font({
+                        family: defaultFont,
+                        size: defaultFontSize,
+                    }).css({
+                        'dominant-baseline': 'hanging',
+                    });
+            }
         });
 
         junctionPoints.forEach(point => {
@@ -186,4 +198,17 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
                 'dominant-baseline': 'hanging',
             });
     });
+
+    // Display priority of the node
+    const { priority=-1 } = elkNode.layoutOptions;
+    group.text(priority.toString())
+        .translate(0,0)
+        .fill('green')
+        .font({
+            family: defaultFont,
+            size: 10
+        }).css({
+            'dominant-baseline': 'hanging',
+        });
+
 }

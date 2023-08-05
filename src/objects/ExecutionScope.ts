@@ -98,4 +98,4 @@ export enum SequenceAction {
     LayoutDirection = 'layout-direction',
 }
 
-export type SequenceItem = [SequenceAction, ClassComponent, number, LayoutDirection?];
+export type SequenceItem = [SequenceAction, ClassComponent, number, LayoutDirection?, string?];

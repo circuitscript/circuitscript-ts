@@ -136,10 +136,10 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
             }
         } else {
             // Determine the node height based on the max pin height
-            const longestVerticalSide = getLongestVerticalSide(portSides);
+            const longestVerticalSide = getLongestVerticalSide(component, portSides);
             nodeValue.height = longestVerticalSide * 40;
 
-            const longestHorizontalSide = getLongestHorizontalSide(portSides);
+            const longestHorizontalSide = getLongestHorizontalSide(component, portSides);
             let useWidth = 0;
             if (longestHorizontalSide === 0){
                 useWidth = 100; 
@@ -195,10 +195,17 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
 
     } else {
         let counter = pins.size;
+        const existingPinIds = Array.from(pins.keys());
 
         for (const [key, items] of arrangeProps) {
 
-            const useItems = [...items];
+            let useItems;
+            if (!Array.isArray(items)){
+                useItems = [items];
+            } else {
+                // Do no mutate original array
+                useItems = [...items];
+            }
 
             let useSide = PortSide.WEST;
             if (key === 'left') {
@@ -213,12 +220,15 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             }
 
             useItems.forEach(item => {
-                result.push({
-                    pinId: item,
-                    side: useSide,
-                    order: counter
-                });
-                counter--;
+                // Only use the pin if it exists!
+                if (existingPinIds.indexOf(item) !== -1) {
+                    result.push({
+                        pinId: item,
+                        side: useSide,
+                        order: counter
+                    });
+                    counter--;
+                }
             });
         }
     }
@@ -226,30 +236,33 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
     return result;
 }
 
-function getLongestVerticalSide(portSides: PortSideItem[]): number {
-    const counters = {
-        [PortSide.EAST]: 0,
-        [PortSide.WEST]: 0,
-    }
-
-    portSides.forEach(item => {
-        counters[item.side] += 1;
-    });
-
-    return Math.max(counters[PortSide.EAST], counters[PortSide.WEST]);
+function getLongestVerticalSide(component: ClassComponent, portSides: PortSideItem[]): number {
+    return commonGetMostSide(component, portSides, [PortSide.EAST, PortSide.WEST]);
 }
 
-function getLongestHorizontalSide(portSides: PortSideItem[]): number {
-    const counters = {
-        [PortSide.NORTH]: 0,
-        [PortSide.SOUTH]: 0,
-    }
+function getLongestHorizontalSide(component: ClassComponent, portSides: PortSideItem[]): number {
+    return commonGetMostSide(component, portSides, [PortSide.NORTH, PortSide.SOUTH]);
+}
 
-    portSides.forEach(item => {
-        counters[item.side] += 1;
+function commonGetMostSide(component: ClassComponent, portSides: PortSideItem[], keys: PortSide[]): number {
+
+    const counters: { [key: string]: number } = {};
+    keys.forEach(key => {
+        counters[key] = 0;
     });
 
-    return Math.max(counters[PortSide.NORTH], counters[PortSide.SOUTH]);
+    portSides.forEach(item => {
+        const { pinId } = item;
+        if (component.pins.has(pinId) && keys.indexOf(item.side) !== -1) {
+            counters[item.side] += 1;
+        }
+    });
+
+    const finalCount = keys.map(item => {
+        return counters[item];
+    });
+
+    return Math.max.apply(null, finalCount);
 }
 
 function dumpSequence(sequence: SequenceItem[]): void {
@@ -264,13 +277,8 @@ export async function prepareLayout(
     sequence: SequenceItem[],
 ): any {
 
-    dumpSequence(sequence);
     sequence = applyLayoutDirection(sequence);
-
-    console.log('--');
-    console.log('after apply');
-    dumpSequence(sequence);
-
+    
     const tmpNodes = [];
     const tmpEdges = [];
 
@@ -295,17 +303,25 @@ export async function prepareLayout(
             // Priority is used to determine which node is plotted first
             // Earlier elements in the sequence list should have higher priortiy,
             // so that's why the priority is backwards
+            // https://eclipse.dev/elk/reference/options/org-eclipse-elk-priority_org-eclipse-elk-layered.html
             tmpNode.layoutOptions["priority"] = sequence.length - i;
+            
             tmpNodes.push(tmpNode);
             addedNodes.push(useName);
         }
 
         // Create the edge, if possible
         if (action === SequenceAction.To && prevNode !== null) {
+
+            const netName = sequence[i][4];
+
             tmpEdges.push({
                 id: `edge_${edgeCounter}`,
                 sources: [`${prevNode}.${prevPin}`],
                 targets: [`${useName}.${pin}`],
+                __netName: netName,
+
+                priority: sequence.length - i,
             });
 
             edgeCounter++;
@@ -319,13 +335,16 @@ export async function prepareLayout(
         id: 'root',
         layoutOptions: {
             algorithm: 'layered',
+
             'portLabels.placement': '[INSIDE]',
 
-            // So the order of the nodes will also be considered
-            // 'considerModelOrder.strategy': 'PREFER_EDGES',
+            // So the order of the nodes AND edges in the array are also be considered.
+            'considerModelOrder.strategy': 'NODES_AND_EDGES',
+            
+            'crossingMinimization.strategy': 'NONE',
 
             // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html
-            // 'crossingMinimization.forceNodeModelOrder': 'true',
+            'crossingMinimization.forceNodeModelOrder': 'true',
         },
         children: tmpNodes,
         edges: tmpEdges,
@@ -337,26 +356,28 @@ function applyLayoutDirection(sequence: SequenceItem[]): SequenceItem[] {
 
     for (let i = 0; i < sequence.length; i++) {
         const [action, component, pinId] = sequence[i];
-        if (action === SequenceAction.At) {
-            if (i + 1 < sequence.length-1 && sequence[i + 1][0] === SequenceAction.To) {
-                const direction = sequence[i][3];
-                if (direction === LayoutDirection.LEFT){
 
-                    const [,nextComponent, nextPinId] = sequence[i+1];
+        // If current action is At and the next action is To, then 
+        // check if need to swap the order to ensure that the 
+        // layout looks graphically ok.
+        if (action === SequenceAction.At && i + 1 < sequence.length - 1 && sequence[i + 1][0] === SequenceAction.To) {
+            const direction = sequence[i][3];
+            if (direction === LayoutDirection.LEFT) {
 
-                    // swap the order of components
-                    newSequence.push([SequenceAction.At, nextComponent, nextPinId, LayoutDirection.RIGHT]);
-                    newSequence.push([SequenceAction.To, component, pinId]);
+                const [, nextComponent, nextPinId, , netName] = sequence[i + 1];
 
-                    // Skip over the i+1 item.
-                    i += 1;
-                }
+                // swap the order of components
+                newSequence.push([SequenceAction.At, nextComponent, nextPinId, LayoutDirection.RIGHT]);
+                newSequence.push([SequenceAction.To, component, pinId, null, netName]);
+
+                // Skip over the i+1 item.
+                i += 1;
             } else {
-                // If next item is no a 'to' action, then just add
-                // the item to the new sequence.
                 newSequence.push(sequence[i]);
             }
         } else {
+            // If next item is no a 'to' action, then just add
+            // the item to the new sequence.
             newSequence.push(sequence[i]);
         }
     }
@@ -364,10 +385,56 @@ function applyLayoutDirection(sequence: SequenceItem[]): SequenceItem[] {
     return newSequence;
 }
 
+function cleanupEdges(graph){
+    const {edges} = graph;
+
+    const tmpNets = new Map<string, Set<string>>();
+
+    edges.forEach(item => {
+        if (!tmpNets.has(item.__netName)){
+            tmpNets.set(item.__netName, new Set<string>());
+        }
+
+        const tmpSet = tmpNets.get(item.__netName);
+
+        // There is only ever 1 source and 1 target
+        const source = item.sources[0];
+        const target = item.targets[0];
+
+        tmpSet.add(source);
+        tmpSet.add(target);
+    });
+
+    const newEdges = [];
+    let edgeCounter = 0;
+
+    for (const [netName, items] of tmpNets) {
+        const tmpArray = Array.from(items);
+
+        if (tmpArray.length > 1) {
+            newEdges.push({
+                id: `edge_${edgeCounter}`,
+                sources: [tmpArray[0]],
+                targets: tmpArray.slice(1),
+                __netName: netName
+            });
+        }
+
+        edgeCounter++;
+    }
+
+    const newGraph = {
+        ...graph,
+        edges: edges,
+    }
+
+    return newGraph;
+}
+
 
 export async function generateLayout(graph): Promise<ElkNode> {
     const elk = new ELK();
-    const result = await elk.layout(graph);
+    const result = await elk.layout(graph, { logging: true, measureExecutionTime: true });
     return result;
 }
 

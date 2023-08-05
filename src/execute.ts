@@ -145,7 +145,7 @@ export class ExecutionContext {
         component1Pin: number,
         component2: ClassComponent,
         component2Pin: number,
-    ): void {
+    ): Net {
         const net1_exists = this.scope.hasNet(component1, component1Pin);
         const net2_exists = this.scope.hasNet(component2, component2Pin);
 
@@ -156,6 +156,8 @@ export class ExecutionContext {
             ? this.scope.getNet(component2, component2Pin)
             : null;
 
+        let returnNet: Net;
+
         if (net1 === null && net2 === null) {
             // Both nets do not exist yet, so create a new one
             // that both will use.
@@ -163,21 +165,30 @@ export class ExecutionContext {
 
             this.scope.setNet(component1, component1Pin, tmpNet);
             this.scope.setNet(component2, component2Pin, tmpNet);
+
+            returnNet = tmpNet;
+
         } else if (net1 === null && net2 !== null) {
             // If net1 does not exist, but net2 exists
             this.scope.setNet(component1, component1Pin, net2);
+            returnNet = net2;
+
         } else if (net1 !== null && net2 === null) {
             // If net1 exists, but net2 does not exist
             this.scope.setNet(component2, component2Pin, net1);
+            returnNet = net1;
+
         } else {
             if (net1 !== net2) {
-                this.mergeNets(net1, net2);
+                returnNet = this.mergeNets(net1, net2);
             }
             // Otherwise, both nets are the same.
         }
+
+        return returnNet;
     }
 
-    private mergeNets(net1: Net, net2: Net): void {
+    private mergeNets(net1: Net, net2: Net): Net {
         // By default merge net2 into net1, net2 will no longer be used.
 
         if (net1 === net2) {
@@ -203,6 +214,8 @@ export class ExecutionContext {
                 this.scope.setNet(component, pin, net1);
             }
         });
+
+        return net1;
     }
 
     createComponent(
@@ -249,9 +262,11 @@ export class ExecutionContext {
         // pin definition
         const portSides = getPortSide(component.pins, arrangeProps);
         portSides.forEach(({ pinId, side }) => {
-            component.pins.get(pinId).side = side;
+            if (component.pins.has(pinId)){
+                component.pins.get(pinId).side = side;
+            }
         });
-
+        
         this.scope.instances.set(instanceName, component);
 
         const pinsOutput = pins.map((pin) => {
@@ -329,7 +344,7 @@ export class ExecutionContext {
             );
         }
 
-        this.linkComponent(
+        const linkedNet = this.linkComponent(
             this.scope.currentComponent,
             this.scope.currentPin,
             component,
@@ -341,7 +356,7 @@ export class ExecutionContext {
 
         if (addSequence) {
             const sequenceComponent = this.prepareSequenceComponent(component);
-            this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId]);
+            this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId, null, linkedNet.name]);
         }
 
         this.printPoint();
