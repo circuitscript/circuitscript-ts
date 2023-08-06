@@ -110,6 +110,8 @@ export class Component {
 export class ClassComponent extends Component {
     className: string;
 
+    // For nets and labels, this is used to identify different
+    // copies of the same object on the schematic
     _linkID?: string | number;
 
     // This determines how pins are arrange on the component/symbol.

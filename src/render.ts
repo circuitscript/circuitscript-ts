@@ -163,6 +163,16 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
             //      .translate(endPoint.x-3, endPoint.y-3)
             //      .fill('red')
             //      .stroke({width: 0});
+
+            if (index === 0) {
+                group.text(priority.toString())
+                    .translate(startPoint.x, startPoint.y)
+                    .fill('red')
+                    .font({
+                        family: defaultFont,
+                        size: defaultFontSize
+                    });
+            }
         });
 
         junctionPoints.forEach(point => {
@@ -172,14 +182,13 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
         // Draw edge labels
         labels.forEach(label => {
             group.text(label.text)
-                    .translate(label.x, label.y)
-                    .fill('blue')
-                    .font({
-                        family: defaultFont,
-                        size: defaultFontSize
-                    });
+                .translate(label.x, label.y)
+                .fill('blue')
+                .font({
+                    family: defaultFont,
+                    size: defaultFontSize
+                });
         });
-
     });
 
     allJunctionPoints.forEach((point) => {
@@ -205,15 +214,15 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
     });
 
     // Display priority of the node
-    // const { priority=-1 } = elkNode.layoutOptions;
-    // group.text(priority.toString())
-    //     .translate(0,0)
-    //     .fill('green')
-    //     .font({
-    //         family: defaultFont,
-    //         size: 10
-    //     }).css({
-    //         'dominant-baseline': 'hanging',
-    //     });
+    const { priority=-1 } = elkNode.layoutOptions;
+    group.text(priority.toString())
+        .translate(0,0)
+        .fill('green')
+        .font({
+            family: defaultFont,
+            size: 10
+        }).css({
+            'dominant-baseline': 'hanging',
+        });
 
 }

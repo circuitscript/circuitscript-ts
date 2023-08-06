@@ -362,11 +362,18 @@ export async function prepareLayout(
         id: 'root',
         layoutOptions: {
             algorithm: 'layered',
+            'nodePlacement.strategy': 'BRANDES_KOEPF',
+            'nodePlacement.bk.fixedAlignment': 'BALANCED',
+
+            // 'layering.strategy': 'INTERACTIVE',
+            // 'cycleBreaking.strategy': 'INTERACTIVE',
 
             'portLabels.placement': '[INSIDE]',
 
             // So the order of the nodes AND edges in the array are also be considered.
-            'considerModelOrder.strategy': 'NODES_AND_EDGES',
+            'considerModelOrder.strategy': 'PREFER_NODES',
+           
+            // 'crossingMinimization.greedySwitch.type': 'OFF',
             
             // https://eclipse.dev/elk/blog/posts/2023/23-01-09-constraining-the-model.html
             'crossingMinimization.strategy': 'NONE',
@@ -382,32 +389,44 @@ export async function prepareLayout(
 function applyLayoutDirection(sequence: SequenceItem[]): SequenceItem[] {
     const newSequence: SequenceItem[] = [];
 
+    // Consider the priority of a given item to determine whether or not to 'flip' 
+    // the direction of the edge
+    const nodePriority = new Map<string, number>();
+
+    // Determine the priority of each component
+    sequence.forEach((item, index) => {
+        const [, component] = item;
+
+        if (!nodePriority.has(component.instanceName)) {
+            nodePriority.set(component.instanceName, sequence.length - index);
+        }
+    });
+
     for (let i = 0; i < sequence.length; i++) {
-        const [action, component, pinId] = sequence[i];
+        const [action, component, pinId, direction] = sequence[i];
 
         // If current action is At and the next action is To, then 
         // check if need to swap the order to ensure that the 
         // layout looks graphically ok.
-        if (action === SequenceAction.At && i + 1 < sequence.length - 1 && sequence[i + 1][0] === SequenceAction.To) {
-            const direction = sequence[i][3];
-            if (direction === LayoutDirection.LEFT) {
+        if (action === SequenceAction.At && i + 1 < sequence.length - 1 && sequence[i + 1][0] === SequenceAction.To && direction === LayoutDirection.LEFT) {
+                
+            const [, nextComponent, nextPinId, , netName] = sequence[i + 1];
 
-                const [, nextComponent, nextPinId, , netName] = sequence[i + 1];
+            // Check the priority of the items, only allow the swap if the current item is smaller in priority
+            // compared to the next component
 
+            if (nodePriority.get(component.instanceName) < nodePriority.get(nextComponent.instanceName)) {
                 // swap the order of components
                 newSequence.push([SequenceAction.At, nextComponent, nextPinId, LayoutDirection.RIGHT]);
                 newSequence.push([SequenceAction.To, component, pinId, null, netName]);
 
                 // Skip over the i+1 item.
                 i += 1;
-            } else {
-                newSequence.push(sequence[i]);
+                continue;
             }
-        } else {
-            // If next item is no a 'to' action, then just add
-            // the item to the new sequence.
-            newSequence.push(sequence[i]);
         }
+
+        newSequence.push(sequence[i]);
     }
 
     return newSequence;

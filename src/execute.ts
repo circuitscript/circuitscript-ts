@@ -366,6 +366,7 @@ export class ExecutionContext {
         component: ClassComponent,
         pinId: number | null,
         addSequence = false,
+        createNetComponent=true,
     ): void {
         this.print('at component');
         this.printPoint();
@@ -388,7 +389,7 @@ export class ExecutionContext {
         }
 
         if (addSequence) {
-            const sequenceComponent = this.prepareSequenceComponent(component);
+            const sequenceComponent = this.prepareSequenceComponent(component, createNetComponent);
             const layoutDirection = this.getPinLayoutDirection(sequenceComponent, usePinId);
             this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId, layoutDirection]);
         }
@@ -495,7 +496,9 @@ export class ExecutionContext {
         this.scope.indentLevel -= 1;
 
         this.print('exit inner branch <<<');
-        this.atComponent(preBranchComponent, preBranchPin, true);
+
+        // Do not duplicate any net symbol since this is a branch
+        this.atComponent(preBranchComponent, preBranchPin, true, false);
     }
 
     breakBranch(): void {
@@ -626,19 +629,30 @@ export class ExecutionContext {
         this.print('-- done merging scope --');
     }
 
-    private prepareSequenceComponent(component: ClassComponent): ClassComponent {
+    private prepareSequenceComponent(component: ClassComponent, createNewNetSymbol = true): ClassComponent {
         let sequenceComponent: ClassComponent;
 
         if (isNetComponent(component) && !isLabelComponent(component)) {
+            // If is a net component and not a label component, then
+            // create a new copy of the same net component.
             if (!this.linkIDs.has(component.instanceName)) {
                 this.linkIDs.set(component.instanceName, 0);
             }
 
             const idNum = this.linkIDs.get(component.instanceName);
             sequenceComponent = lodash.cloneDeep(component);
-            sequenceComponent._linkID = idNum;
 
-            this.linkIDs.set(component.instanceName, idNum + 1);
+            if (createNewNetSymbol) {
+                sequenceComponent._linkID = idNum;
+                this.linkIDs.set(component.instanceName, idNum + 1);
+            } else {
+                // If false, then do no create a new net symbol,
+                // reuse the previous id num. This assumes that the
+                // id num would be correct...
+                if (idNum > 0) {
+                    sequenceComponent._linkID = idNum - 1;
+                }
+            }
         } else {
             sequenceComponent = component;
         }
