@@ -14,6 +14,7 @@ export enum ParamKeys {
 
     // If this is set to 1 (number), then use the component as a net.
     __is_net = '__is_net',
+    __is_label = '__is_label',
 
     priority = 'priority',
     net_name = 'net_name',
@@ -25,7 +26,7 @@ export enum LayoutDirection {
 }
 
 export const portWidth = 20;
-export const portHeight = 1;
+export const portHeight = 2;
 
 export const defaultFont = 'Inter';
 export const defaultFontSize = 10;

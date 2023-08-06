@@ -2,14 +2,15 @@ import ELK, { ElkNode } from 'elkjs';
 import { ClassComponent } from './objects/Component';
 import { NumericValue } from './objects/ParamDefinition';
 import { SequenceAction, SequenceItem } from './objects/ExecutionScope';
-import { isNetComponent } from './execute';
+import { isLabelComponent, isNetComponent } from './execute';
 import { GlobalNames, LayoutDirection, defaultFont, defaultFontSize, portHeight, portWidth } from './globals';
 import { measureTextSize } from './sizing';
-import { SymbolFactory } from './draw_symbols';
+import { SymbolFactory, SymbolLabel } from './draw_symbols';
 import { PinDefinition } from './objects/PinDefinition';
 
 async function createNode(nodeId: string, component: ClassComponent): Promise<any> {
     const tmpIsNetComponent = isNetComponent(component);
+    const tmpIsLabelComponent = isLabelComponent(component);
 
     const { width: labelWidth, height: labelHeight } = await measureTextSize(nodeId, defaultFont, defaultFontSize);
 
@@ -36,7 +37,7 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
     // so do not enforce the fixed side constraint.
 
     // For all other symbols/components, enforce this constraint.
-    if (!tmpIsNetComponent) {
+    if (!tmpIsNetComponent || (tmpIsNetComponent && tmpIsLabelComponent)) {
         // FIXED_ORDER is needed over FIXED_SIDE, so that port.order
         // is taken into consideration too.
         nodeValue.layoutOptions["portConstraints"] = "FIXED_ORDER";
@@ -45,7 +46,6 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
     // If arrange props are set, then use it to generate 
     // the placement of the ports
     const portSides = getPortSide(component.pins, component.arrangeProps);
-
     const ports = [];
 
     for (let i = 0; i < portSides.length; i++) {
@@ -58,7 +58,7 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
             let useWidth = portWidth;
             let useHeight = portHeight;
 
-            if (side === PortSide.WEST || side === PortSide.EAST){
+            if (side === PortSide.WEST || side === PortSide.EAST) {
                 useWidth = portWidth;
                 useHeight = portHeight;
             } else {
@@ -77,7 +77,7 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
                 __pinId: pinId,
             }
 
-            if (!tmpIsNetComponent) {
+            if (!tmpIsNetComponent || (tmpIsNetComponent && tmpIsLabelComponent)) {
                 port.properties = {
                     "port.side": side,
                 }
@@ -96,8 +96,8 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
     }
 
     nodeValue.ports = ports;
-
-    if (tmpIsNetComponent) {
+    
+    if (tmpIsNetComponent && !tmpIsLabelComponent) {
         nodeValue.layoutOptions["portConstraints"] = "FIXED_ORDER";
         const tmpPort = nodeValue.ports[0];
         let tmpPortSide = PortSide.NORTH;
@@ -117,17 +117,44 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
 
         tmpPort.properties["port.side"] = tmpPortSide;
 
-        // Align port to be vertical instead of horizontal
         tmpPort.width = portHeight;
         tmpPort.height = portWidth;
 
         nodeValue.width = symbolSize.width;
         nodeValue.height = symbolSize.height;
+
+    } else if (tmpIsLabelComponent) {
+        const netName = component.parameters.get('net_name') as string;
+        nodeValue.__symbol = "label";
+        nodeValue.__symbolExtra = { 'net_name': netName };
+
+        const { width: labelWidth, height: labelHeight } = await measureTextSize(netName, defaultFont, defaultFontSize);
+
+        const tmpSymbol = SymbolFactory("label") as SymbolLabel;
+        tmpSymbol.width = labelWidth;
+        tmpSymbol.height = labelHeight;
+
+        const tmpSize = tmpSymbol.size();
+
+        nodeValue.width = tmpSize.width;
+        nodeValue.height = tmpSize.height;
+
+        // Force the ports to be at the end of the node.
+        // Although the ports are removed, this seems to work still.
+        nodeValue.layoutOptions["portAlignment.east"] = "END";
+        nodeValue.layoutOptions["portAlignment.west"] = "END";
+
+        // Remove the port
+        nodeValue.ports = [];
+
+        // Force entire node to be referenced as a port.
+        nodeValue.id = nodeValue.id + ".1";
+
     } else {
         if (component.displayProp !== null) {
             nodeValue.__symbol = component.displayProp;
 
-            if (nodeValue.__symbol === 'res' || nodeValue.__symbol == 'cap') {
+            if (nodeValue.__symbol === 'res' || nodeValue.__symbol === 'cap' || nodeValue.__symbol === 'label') {
                 const tmpSymbol = SymbolFactory(nodeValue.__symbol);
                 const tmpSize = tmpSymbol.size();
 
@@ -341,6 +368,7 @@ export async function prepareLayout(
             // So the order of the nodes AND edges in the array are also be considered.
             'considerModelOrder.strategy': 'NODES_AND_EDGES',
             
+            // https://eclipse.dev/elk/blog/posts/2023/23-01-09-constraining-the-model.html
             'crossingMinimization.strategy': 'NONE',
 
             // https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-crossingMinimization-forceNodeModelOrder.html

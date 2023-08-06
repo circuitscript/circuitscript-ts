@@ -19,6 +19,8 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
             return new SymbolGnd();
         case 'net':
             return new SymbolPower();
+        case 'label':
+            return new SymbolLabel();
         case 'res':
             return new SymbolRes();
         case 'cap':
@@ -78,6 +80,38 @@ export class SymbolGnd extends SymbolGraphic {
                     width: defaultSymbolLineWidth,
                     color: defaultSymbolLineColor
                 });
+    }
+}
+
+export class SymbolLabel extends SymbolGraphic {
+    drawPortsName = false;
+
+    width = 80;
+    height = 50;
+
+    size(): { width: number, height: number } {
+        return {
+            width: this.width,
+            height: this.height,
+        }
+    }
+
+    draw(group: G, extra?: {}): void {
+        group.line(0, this.height, this.width, this.height)
+                .fill('none')
+                .stroke({width: 1, color: '#333'});
+
+        if (extra) {
+            const netName = extra.net_name;
+            group.text(netName)
+                .translate(this.width / 2, this.height - 2)
+                .fill('#333')
+                .font({
+                    family: defaultFont,
+                    size: 10,
+                    anchor: 'middle',
+                })
+        }
     }
 }
 

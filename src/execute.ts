@@ -629,7 +629,7 @@ export class ExecutionContext {
     private prepareSequenceComponent(component: ClassComponent): ClassComponent {
         let sequenceComponent: ClassComponent;
 
-        if (isNetComponent(component)) {
+        if (isNetComponent(component) && !isLabelComponent(component)) {
             if (!this.linkIDs.has(component.instanceName)) {
                 this.linkIDs.set(component.instanceName, 0);
             }
@@ -666,9 +666,9 @@ export class ExecutionContext {
 
 export function isNetComponent(component: ClassComponent): boolean {
     // Returns true if the component is a net component
-    if (component.parameters.has(ParamKeys.__is_net)) {
-        return true;
-    }
+    return component.parameters.has(ParamKeys.__is_net);
+}
 
-    return false;
+export function isLabelComponent(component: ClassComponent): boolean {
+    return component.parameters.has(ParamKeys.__is_label);
 }

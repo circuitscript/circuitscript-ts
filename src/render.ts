@@ -8,8 +8,6 @@ import { SymbolFactory } from './draw_symbols';
 import { PortSide } from './layout';
 import { bodyColor, defaultFont, edgeColor, junctionSize, junctionColor, portWidth, defaultFontSize } from './globals';
 
-
-
 export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     const window = createSVGWindow();
     const document = window.document;
@@ -64,6 +62,13 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
         } else {
             const tmpSymbol = SymbolFactory(__symbol);
             if (tmpSymbol) {
+                if (__symbol === "label"){
+                    tmpSymbol.width = width;
+                    tmpSymbol.height = height;
+
+                    // Get the port information
+                    __symbolExtra.ports = ports;
+                }
                 tmpSymbol.draw(group, __symbolExtra);
             }
 
@@ -83,8 +88,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
         portGroup.translate(x, y);
         portGroup
             .rect(width, height)
-            .fill('#888')
-            .stroke({ width: 1, color: '#333' });
+            .fill('#333');
+            // .stroke({ width: 1, color: '#333' });
 
         if (drawPortsName) {
             // Port should only have 1 label for ELK layout.
@@ -134,7 +139,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
 
     // Draw edges
     edges.forEach((edge) => {
-        const { sections = [], junctionPoints = [], priority } = edge;
+        const { sections = [], junctionPoints = [], priority, labels = [] } = edge;
 
         sections.forEach((section, index) => {
             const { startPoint, endPoint, bendPoints = [] } = section;
@@ -154,27 +159,27 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
                 .stroke({ width: 1, color: edgeColor });
 
             // Draw something at the end to mark the 'arrow head'
-            group.circle(6)
-                 .translate(endPoint.x-3, endPoint.y-3)
-                 .fill('red')
-                 .stroke({width: 0});
-
-            if (index === 0){
-                group.text(priority)
-                    .translate(startPoint.x, startPoint.y)
-                    .fill('blue')
-                    .font({
-                        family: defaultFont,
-                        size: defaultFontSize,
-                    }).css({
-                        'dominant-baseline': 'hanging',
-                    });
-            }
+            // group.circle(6)
+            //      .translate(endPoint.x-3, endPoint.y-3)
+            //      .fill('red')
+            //      .stroke({width: 0});
         });
 
         junctionPoints.forEach(point => {
             allJunctionPoints.push(point);
         });
+
+        // Draw edge labels
+        labels.forEach(label => {
+            group.text(label.text)
+                    .translate(label.x, label.y)
+                    .fill('blue')
+                    .font({
+                        family: defaultFont,
+                        size: defaultFontSize
+                    });
+        });
+
     });
 
     allJunctionPoints.forEach((point) => {
@@ -189,7 +194,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
         group
             .text(text)
             .translate(x, y)
-            .fill('#333')
+            .fill('#33333355')
             .font({
                 family: defaultFont,
                 size: 10,
@@ -200,15 +205,15 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
     });
 
     // Display priority of the node
-    const { priority=-1 } = elkNode.layoutOptions;
-    group.text(priority.toString())
-        .translate(0,0)
-        .fill('green')
-        .font({
-            family: defaultFont,
-            size: 10
-        }).css({
-            'dominant-baseline': 'hanging',
-        });
+    // const { priority=-1 } = elkNode.layoutOptions;
+    // group.text(priority.toString())
+    //     .translate(0,0)
+    //     .fill('green')
+    //     .font({
+    //         family: defaultFont,
+    //         size: 10
+    //     }).css({
+    //         'dominant-baseline': 'hanging',
+    //     });
 
 }
