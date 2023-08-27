@@ -1,0 +1,104 @@
+# Schematic for Arduino UNO
+
+def net(net_name):
+    return create component:
+        pins: 1
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 5
+
+def res(value):
+    return create component:
+        pins: 2
+        display: "res"
+        params:
+            value: value
+
+def cap(value):
+    return create component:
+        pins: 2
+        display: "cap"
+        params:
+            value: value
+
+def fuse(value):
+    return create component:
+        pins: 2
+        params:
+            value: value
+
+def esd(value):
+    return create component:
+        pins: 2
+
+def ind(value):
+    return create component:
+        pins: 2
+        params:
+            value: value
+
+def gnd_connect():
+    return create component:
+        pins: 2
+
+def diode():
+    return create component:
+        pins: 2
+
+def led(color):
+    return create component:
+        pins:
+            1: "cathode"
+            2: "anode"
+        params:
+            color: color
+
+def xtal(frequency):
+    return create component:
+        pins:
+            1: "XT1"
+            2: "XT2"
+            3: "GND"
+        arrange:
+            left: 1,2
+            right: 3
+        params:
+            frequency: frequency
+
+# 3V3 output converter
+dcdc_3v3 = create component:
+    pins:
+        1: "IN"
+        2: "GND"
+        3: "\EN"
+        5: "OUT"
+        4: "NC/FB"
+    arrange:
+        left: 1,3,2
+        right: 5,4
+    params:
+        manufacturer_pn: "LP2985-33DBVR"
+
+dcdc_5V = create component:
+    pins:
+        1: input, "ADJ"
+        2: power, "VO"
+        3: power, "VI"
+    params:
+        manufacturer_pn: "MC33269D-5.0"
+
+power_conn = create component:
+    pins: 2
+
+add V5V = net("+5V")
+
+at dcdc_3v3:
+    at pin 1:
+        to V5V
+    at pin 3:
+        to V5V
+    at pin 2:
+        to gnd
+    at pin 5:
+        to V3V3 = net("3v3")

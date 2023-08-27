@@ -1,0 +1,44 @@
+def label(label_name):
+    return create component:
+        pins: 1
+        display: "label"
+        params:
+            __is_net: 1
+            __is_label: 1
+            net_name: label_name
+            priority: 4
+
+def res(value):
+    return create component:
+        pins: 2
+        params:
+            value: value
+
+def conn():
+    return create component:
+        pins: 6
+        arrange:
+            left: 1,2,3
+            right: 4,5,6
+
+conn1 = conn()
+conn2 = conn()
+conn3 = conn()
+conn4 = conn()
+
+#hello_ = label("hello2")
+#at hello_ pin 2 to conn4 pin 2
+
+at conn4 pin 2 add label("hello2")
+
+at conn1 pin 4 to conn2 pin 1
+at conn1 pin 6 to conn2 pin 2
+at conn1 pin 1 to conn2 pin 2
+
+at conn1 pin 6 to conn3 pin 1
+at conn1 pin 5 to conn3 pin 1
+
+at conn2 pin 6 add res(10k) add res(30k) to conn4 pin 3
+at conn2 pin 4 add label("hello") to conn4 pin 1
+at conn3 pin 4 add label("nice")
+

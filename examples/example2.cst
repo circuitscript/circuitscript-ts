@@ -2,12 +2,10 @@
 
 def res(value):
     return create component:
-        pins: 
-            1: input, "A"
-            2: input, "B"
+        pins: 2
         params:
             value: value
-        display:
+        arrange:
             left: 1
             right: 2
 

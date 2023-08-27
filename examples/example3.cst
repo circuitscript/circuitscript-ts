@@ -6,21 +6,21 @@ def res(value):
         params:
             value: value
 
-add R1 = res(0)
+add res(10k)
 branch:
-    add R2 = res(0)
-    add R3 = res(0)
+    add res(20k)
+    add res(30k)
 
     branch:
-        add R4 = res(0)
-        add R5 = res(0)
+        add R4 = res(10k)
+        add R5 = res(10k)
 
     branch:
-        add R6 = res(0)
-        add R7 = res(0)
+        add R6 = res(20k)
+        add R7 = res(20k)
 
-    add res(0)
+    add res(10k)
 branch:
-    add res(0)
+    add res(10k)
 
 to gnd

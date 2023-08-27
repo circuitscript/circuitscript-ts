@@ -1,0 +1,39 @@
+def net(net_name):
+    return create component:
+        pins: 1
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 5
+
+def res(value):
+    return create component:
+        pins: 2
+        display: "res"
+        params:
+            value: value
+
+V5V = net("5V")
+
+at V5V
+branch:
+    add res(10k)
+branch:
+    add res(20k)
+    add res(50k)
+branch:
+    add res(5k)
+branch:
+    add res(1k)
+    add res(2k)
+    add res(3k)
+to gnd
+
+
+at V5V
+add res(30k)
+to gnd
+
+at V5V
+add res(90k)
+to gnd
