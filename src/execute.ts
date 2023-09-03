@@ -8,6 +8,7 @@ import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition } from './objects/PinDefinition';
 import { CFunction, CFunctionResult } from './objects/types';
 import { PortSide, getPortSide } from './layout';
+import { Wire, WireSegment } from './objects/Wire';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -675,6 +676,20 @@ export class ExecutionContext {
         }
 
         return layoutDirection;
+    }
+
+    addWire(segments: [string, number][]): void {
+        const tmp = segments.map(item => {
+            return {
+                direction: item[0],
+                value: item[1]
+            } as WireSegment
+        });
+
+        this.scope.wires.push(new Wire(tmp));
+        this.print('add wire: ', segments);
+
+        this.scope.sequence.push([SequenceAction.Wire, tmp]);
     }
 }
 

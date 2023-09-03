@@ -1,16 +1,35 @@
 import { G } from "@svgdotjs/svg.js";
 import { defaultFont } from "./globals";
 
+/**
+ * Symbols should also define where their ports
+ */
+
 const defaultSymbolLineColor = '#333';
 const defaultSymbolLineWidth = 2;
 
-abstract class SymbolGraphic {
+export abstract class SymbolGraphic {
 
     drawPortsName = true;
+    
+    displayBounds = true;
 
     abstract size(): { width: number, height: number }
 
     abstract draw(group: G, extra?: {}): void;
+
+    // Returns the port position, relative to the symbol origin
+    abstract pinPosition(id: number): { x: number, y: number }
+
+    protected drawBounds(group: G): void {
+        const size = this.size();
+        group.rect(size.width, size.height)
+            .fill('none')
+            .stroke({
+                width: 1,
+                color: '#ccc'
+            });
+    }
 }
 
 export function SymbolFactory(name: string): SymbolGraphic | null {
@@ -36,12 +55,12 @@ export class SymbolPower extends SymbolGraphic {
     size(): { width: number; height: number; } {
         return {
             width: 50,
-            height: 20,
+            height: 30,
         }
     }
 
     draw(group: G, extra?: {}): void {
-        group.path('M10 20 h30')
+        group.path('M10 20 h30 M25 20 v10')
             .stroke({
                 width: defaultSymbolLineWidth,
                 color: defaultSymbolLineColor
@@ -58,6 +77,19 @@ export class SymbolPower extends SymbolGraphic {
                     anchor: 'middle',
                 })
         }
+
+        if (this.displayBounds) {
+            this.drawBounds(group);
+        }
+    }
+
+    pinPosition(id: number): { x: number; y: number; } {
+        if (id === 1) {
+            return {
+                x: 25,
+                y: 30,
+            }
+        }
     }
 }
 
@@ -68,18 +100,30 @@ export class SymbolGnd extends SymbolGraphic {
     size(): { width: number; height: number; } {
         return {
             width: 50,
-            height: 50,
+            height: 30,
         }
     }
 
     draw(group: G): void {
         // Assume that the symbol is vertical
-        group.path('M0 0 h50 M10 10 h30 M20 20 h10')
+        group.path('M25 0 V10 M10 10 h30 M15 15 h20 M20 20 h10')
             .stroke(
                 {
                     width: defaultSymbolLineWidth,
                     color: defaultSymbolLineColor
                 });
+        if(this.displayBounds){
+            this.drawBounds(group);
+        }
+    }
+
+    pinPosition(id: number): { x: number; y: number; } {
+        if (id === 1) {
+            return {
+                x: 25,
+                y: 0,
+            }
+        }
     }
 }
 
@@ -112,6 +156,10 @@ export class SymbolLabel extends SymbolGraphic {
                     anchor: 'middle',
                 })
         }
+
+        if(this.displayBounds){
+            this.drawBounds(group);
+        }
     }
 }
 
@@ -135,6 +183,18 @@ export class SymbolRes extends SymbolGraphic {
                     color: defaultSymbolLineColor
                 })
             .fill('none');
+
+        if(this.displayBounds){
+            this.drawBounds(group);
+        }
+    }
+
+    pinPosition(id: number): { x: number; y: number; } {
+        if (id === 1) {
+            return { x: 0, y: 15 }
+        } else if (id === 2) {
+            return { x: 70, y: 15 }
+        }
     }
 }
 
@@ -157,5 +217,9 @@ export class SymbolCap extends SymbolGraphic {
                     color: defaultSymbolLineColor
                 })
             .fill('none');
+
+        if(this.displayBounds){
+            this.drawBounds(group);
+        }
     }
 }

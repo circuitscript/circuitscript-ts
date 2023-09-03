@@ -7,6 +7,9 @@ import { MainVisitor } from './visitor';
 import { generateLayout, prepareLayout } from './layout';
 import { generateSVG } from './render';
 import { prepareSizing } from './sizing';
+import { prepareLayout2 } from './layout2';
+import { generateSVG2 } from './render2';
+import { SequenceAction } from './objects/ExecutionScope';
 
 export default async function main(): Promise<void> {
     prepareSizing();
@@ -32,21 +35,50 @@ export default async function main(): Promise<void> {
     await writeFile('dump/raw-output.json', JSON.stringify(visitor.dump2(), null, 2));
 
     const { sequence } = visitor.getGraph();
+
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
-        tmp[1] = item[1].instanceName;
+        if (tmp[0] === SequenceAction.Wire){
+            tmp[1] = tmp[1].map(item2 => {
+                return [item2.direction, item2.value].join(",");
+            }).join(" "); 
+        } else {
+            tmp[1] = item[1].instanceName;
+        }
+
         return tmp.join(" | ");
     })
 
     await writeFile('dump/raw-sequence.json', JSON.stringify(tmpSequence, null, 2));
 
-    const graph = await prepareLayout(sequence);
-    await writeFile("dump/pre-elk.json", JSON.stringify(graph, null, 2));
+    const layoutType: LayoutType = LayoutType.Custom;
+    const outputSvgPath = 'output.svg';
 
-    const elkOutput = await generateLayout(graph);
-    await writeFile("dump/elk-output.json", JSON.stringify(elkOutput, null, 2));
+    switch(layoutType){
+        case LayoutType.ELKJS: {
+            const graph = await prepareLayout(sequence);
+            // Use ELKJS to plot
+            await writeFile("dump/pre-elk.json", JSON.stringify(graph, null, 2));
+    
+            const elkOutput = await generateLayout(graph);
+            await writeFile("dump/elk-output.json", JSON.stringify(elkOutput, null, 2));
+    
+            generateSVG(graph, outputSvgPath);
+            break;
+        }
 
-    generateSVG(elkOutput, 'output.svg');
+        case LayoutType.Custom: {
+            const graph = await prepareLayout2(sequence);
+            generateSVG2(graph, outputSvgPath);
+            break;
+        }
+
+    }
+}
+
+enum LayoutType {
+    ELKJS = 1,
+    Custom = 2
 }
 
 async function writeFile(outputPath: string, contents: string): Promise<void> {

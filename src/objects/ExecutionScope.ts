@@ -4,6 +4,7 @@ import { ClassComponent, Component } from './Component';
 import { Net } from './Net';
 import { CFunction } from './types';
 import { LayoutDirection } from '../globals';
+import { Wire, WireSegment } from './Wire';
 
 export class ExecutionScope {
     scopeId: number;
@@ -16,6 +17,8 @@ export class ExecutionScope {
     variables: Map<string, any> = new Map();
 
     branchStack: Map<number, any> = new Map();
+
+    wires: Wire[] = [];
 
     indentLevel = 0;
     netCounter = 1;
@@ -94,8 +97,8 @@ export class ExecutionScope {
 export enum SequenceAction {
     To = 'to',
     At = 'at',
-
+    Wire = 'wire',
     LayoutDirection = 'layout-direction',
 }
 
-export type SequenceItem = [SequenceAction, ClassComponent, number, LayoutDirection?, string?];
+export type SequenceItem = [SequenceAction.To|SequenceAction.At, ClassComponent, number, LayoutDirection?, string?] | [SequenceAction.Wire, WireSegment[]];

@@ -3,19 +3,44 @@
 def net(net_name):
     return create component:
         pins: 1
+        display: "net"
         params:
             __is_net: 1
             net_name: net_name
             priority: 5
 
+def power(net_object):
+    return create component:
+        pins: 1
+        display: "net"
+        params:
+            net: net_object
+
+
 def res(value):
     return create component:
         pins: 2
+        display: "res"
         params:
             value: value
-            
-# Show multiple commands together
-add V5V = net("5V") to R1 = res(10k) at pin 2 to R2 = res(30k) at pin 2 to R3 = res(50k) at pin 2 to gnd
 
-at V5V
-add res(20k) to gnd
+V5V = net("5V")
+
+at V5V pin 1 
+
+wire down 50 right 50
+
+add R1 = res(10k)
+
+wire right 50
+
+add R2 = res(30k)
+
+wire right 10 down 100
+
+to gnd
+
+#add V5V = net("5V") to R1 = res(10k) at pin 2 to R2 = res(30k) at pin 2 to R3 = res(50k) at pin 2 to gnd
+
+#at V5V
+#add res(20k) to gnd

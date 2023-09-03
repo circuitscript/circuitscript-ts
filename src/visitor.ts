@@ -1,4 +1,4 @@
-import { ParseTreeVisitor } from 'antlr4';
+import { ParseTreeVisitor, TerminalNode } from 'antlr4';
 import {
     Add_component_exprContext,
     Assignment_exprContext,
@@ -27,6 +27,8 @@ import {
     Single_line_propertyContext,
     To_component_exprContext,
     Value_exprContext,
+    Wire_exprContext,
+    Wire_path_exprContext,
 } from './antlr/CircuitScriptParser';
 import { ExecutionContext } from './execute';
 import { ClassComponent, Component } from './objects/Component';
@@ -608,6 +610,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         })
     }
 
+    visitWire_expr(ctx: Wire_exprContext): void {
+        const segments: [string, number][] = [];
+
+        ctx.wire_path_expr_list().forEach(item => {
+            segments.push(this.visit(item));
+        });
+
+        this.getExecutor().addWire(segments);
+    }
+
+    visitWire_path_expr(ctx: Wire_path_exprContext): [string, number] {
+        const integerValue = this.parseIntegerValue(ctx.INTEGER_VALUE());
+        const wireDirection = ctx.WIRE_DIRECTION().toString();
+        return [wireDirection, integerValue]
+    }
+
     pinTypes = [
         PinTypes.Any,
         PinTypes.IO,
@@ -692,6 +710,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     private prepareStringValue(value: string): string {
         return value.slice(1, value.length - 1);
+    }
+
+    private parseIntegerValue(token: TerminalNode): number {
+        return Number(token.toString());
     }
 
     protected print(...params: any[]): void {
