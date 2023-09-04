@@ -8,13 +8,18 @@ import { WireSegment } from './objects/Wire';
 
 export async function prepareLayout2(
     sequence: SequenceItem[]
-): any {
+): Promise<{components: RenderComponent[], wires: RenderWire[]}> {
 
-    const placedComponents:RenderComponent[] = [];
-    const placedWires:RenderWire[] = [];
-    
+    // TODO: automatically determine where wires can be added for spacing out
+    // components.
+
+    const placedComponents: RenderComponent[] = [];
+    const placedWires: RenderWire[] = [];
+
+    // Flag to ensure that the first item is well within the canvas
     let isFirstItem = true;
 
+    // The starting position for layout
     let currentX = 0;
     let currentY = 0;
 
@@ -59,7 +64,7 @@ export async function prepareLayout2(
                     const tmpComponent = new RenderComponent(component, useWidth, useHeight);
                     
                     if (isFirstItem){
-                        // Make sure that the component is fully within view
+                        // Make sure that the component is fully within canvas
                         isFirstItem = false;
                         currentX = pinPosition.x;
                         currentY = pinPosition.y;
@@ -73,17 +78,18 @@ export async function prepareLayout2(
 
                     placedComponents.push(tmpComponent);
 
-                    // Is this still needed?
                     currentX = tmpComponent.x + pinPosition.x;
                     currentY = tmpComponent.y + pinPosition.y;
                 }
             } else {
-                // Component already placed, just move curent position
+                // Component already placed, just move curent position to the pin position
                 const tmpComponent = placedComponents[tmpIndex];
                 const relativePinPosition = tmpComponent.symbol.pinPosition(pin);
+
                 currentX = tmpComponent.x + relativePinPosition.x;
                 currentY = tmpComponent.y + relativePinPosition.y;
             }
+
         } else if (action === SequenceAction.Wire) {
             // draw wires
             const wireSegments = sequence[i][1];
@@ -96,11 +102,6 @@ export async function prepareLayout2(
             placedWires.push(wire);
         }
     }
-
-    // Print the bounding boxes
-    placedComponents.forEach(item => {
-        console.log(item.component.instanceName, item.x, item.y, item.width, item.height)
-    })
 
     return {
         components: placedComponents, 

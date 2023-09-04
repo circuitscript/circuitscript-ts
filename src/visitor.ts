@@ -760,6 +760,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return {
             sequence,
             nets,
+            components: Array.from(this.getExecutor().scope.instances.values())
         };
     }
 

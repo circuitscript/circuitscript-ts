@@ -19,7 +19,7 @@ export abstract class SymbolGraphic {
     abstract draw(group: G, extra?: {}): void;
 
     // Returns the port position, relative to the symbol origin
-    abstract pinPosition(id: number): { x: number, y: number }
+    abstract pinPosition(id: number): { x: number, y: number, angle: number }
 
     protected drawBounds(group: G): void {
         const size = this.size();
@@ -83,11 +83,12 @@ export class SymbolPower extends SymbolGraphic {
         }
     }
 
-    pinPosition(id: number): { x: number; y: number; } {
+    pinPosition(id: number): { x: number; y: number; angle: number; } {
         if (id === 1) {
             return {
                 x: 25,
                 y: 30,
+                angle: 90,
             }
         }
     }
@@ -117,11 +118,12 @@ export class SymbolGnd extends SymbolGraphic {
         }
     }
 
-    pinPosition(id: number): { x: number; y: number; } {
+    pinPosition(id: number): { x: number; y: number; angle: number; } {
         if (id === 1) {
             return {
                 x: 25,
                 y: 0,
+                angle: 270,
             }
         }
     }
@@ -174,7 +176,7 @@ export class SymbolRes extends SymbolGraphic {
         }
     }
 
-    draw(group: G): void {
+    draw(group: G, extra: {}): void {
         // Draw rectangle form instead
         group.path('M0 15 h10 v-10 h50 v20 h-50 v-10 M60 15 h10')
             .stroke(
@@ -184,16 +186,41 @@ export class SymbolRes extends SymbolGraphic {
                 })
             .fill('none');
 
+
+        if (extra && (extra.value !== null && extra.value !== undefined)) {
+            // Draw resistor value
+            group.text(extra.value)
+                .translate(35, 20 - 2)
+                .fill('#333')
+                .font({
+                    family: defaultFont,
+                    size: 10,
+                    anchor: 'middle',
+                })
+        }
+
+        if (extra && extra.instance_name) {
+            // draw instance name
+            group.text(extra.instance_name)
+                .translate(10, 0)
+                .fill('#333')
+                .font({
+                    family: defaultFont,
+                    size: 10,
+                    anchor: 'start',
+                })
+        }
+
         if(this.displayBounds){
             this.drawBounds(group);
         }
     }
 
-    pinPosition(id: number): { x: number; y: number; } {
+    pinPosition(id: number): { x: number; y: number; angle: number;} {
         if (id === 1) {
-            return { x: 0, y: 15 }
+            return { x: 0, y: 15, angle: 180}
         } else if (id === 2) {
-            return { x: 70, y: 15 }
+            return { x: 70, y: 15, angle: 0}
         }
     }
 }

@@ -7,6 +7,7 @@ import { RenderComponent, RenderWire } from "./layout2";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, edgeColor } from './globals';
 import { SymbolFactory } from './draw_symbols';
+import { NumericValue } from './objects/ParamDefinition';
 
 export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[]}, outputPath: string): void {
     const window = createSVGWindow();
@@ -17,7 +18,7 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     const canvas = SVG(document.documentElement);
     const { width, height } = calculateBoundingBox(graph.components);
 
-    canvas.size(width, height);
+    canvas.size(500, 500);
     applyFontsToSVG(canvas);
 
     generateSVGChild(canvas, graph.components, graph.wires);
@@ -35,6 +36,8 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
 
 function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: RenderComponent[], wires: RenderWire[]): void {
 
+    const drawPinPosition = false;
+
     components.forEach(item => {
         const { x, y, width, height } = item;
         const group = canvas.group();
@@ -45,17 +48,35 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         if (displaySymbol !== null) {
             const tmpSymbol = SymbolFactory(displaySymbol);
             if (tmpSymbol) {
-                tmpSymbol.draw(group, {});
+                let extra = {};
+                if (item.component.parameters.has('__is_net')) {
+                    extra.net_name = item.component.parameters.get('net_name');
+
+                } else if (item.component.parameters.has('value')) {
+                    let tmpValue = item.component.parameters.get('value');
+                    if (tmpValue instanceof NumericValue){
+                        // Prepare value for display
+                        tmpValue = (tmpValue as NumericValue).value;
+                    }
+                    
+                    extra.value = tmpValue;
+                }
+
+                extra.instance_name = item.component.instanceName;
+
+                tmpSymbol.draw(group, extra);
             }
 
-            const numPins = item.component.numPins;
-            for (let i = 0; i < numPins; i++) {
-                // draw a circle at each port
-                const portPosition = tmpSymbol.pinPosition(i + 1); // 1 - indexed
-                group.circle(5)
-                    .translate(portPosition.x - 5/2, portPosition.y - 5/2)
-                    .fill('#333')
-                    .stroke('none');
+            if (drawPinPosition) {
+                const numPins = item.component.numPins;
+                for (let i = 0; i < numPins; i++) {
+                    // draw a circle at each port
+                    const pinPosition = tmpSymbol.pinPosition(i + 1); // 1 - indexed
+                    group.circle(5)
+                        .translate(pinPosition.x - 5 / 2, pinPosition.y - 5 / 2)
+                        .fill('#333')
+                        .stroke('none');
+                }
             }
 
         } else {
@@ -68,8 +89,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
     });
 
     const wiresGroup = canvas.group().translate(0, 0);
-
-    // Draw wires first
+    
     wires.forEach(wire => {
         const points = wire.points.map(item => {
             return [item.x, item.y];
