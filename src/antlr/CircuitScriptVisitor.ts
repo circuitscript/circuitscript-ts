@@ -1,4 +1,4 @@
-// Generated from CircuitScript.g4 by ANTLR 4.13.0
+// Generated from CircuitScript.g4 by ANTLR 4.13.1
 
 import {ParseTreeVisitor} from 'antlr4';
 
@@ -43,7 +43,6 @@ import { Nested_propertiesContext } from "./CircuitScriptParser";
 import { Single_line_propertyContext } from "./CircuitScriptParser";
 import { Decorator_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
-import { Wire_path_exprContext } from "./CircuitScriptParser";
 
 
 /**
@@ -296,11 +295,5 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitWire_expr?: (ctx: Wire_exprContext) => Result;
-	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.wire_path_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitWire_path_expr?: (ctx: Wire_path_exprContext) => Result;
 }
 

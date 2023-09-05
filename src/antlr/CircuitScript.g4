@@ -115,10 +115,7 @@ property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_pro
 
 decorator_expr: DECORATOR NEWLINE;
 
-wire_expr: 'wire' wire_path_expr+;
-wire_path_expr: WIRE_DIRECTION INTEGER_VALUE;
-
-WIRE_DIRECTION: 'up'|'down'|'left'|'right';
+wire_expr: 'wire' (ID INTEGER_VALUE)+ ;
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';
@@ -130,14 +127,11 @@ INSTANCE_NAME_WITH_PROPERTY: ID '.' [a-zA-Z][a-zA-Z0-9_]+;
 // This value takes a number with an alphabet at the end to indicate 
 // the multipler to the number
 
-
 INTEGER_VALUE: ([-]?[1-9]+[0-9]*) | [0];
 NUMERIC_VALUE: INTEGER_VALUE [kmMunp]? ;
 STRING_VALUE: '"' (.)*? '"';
 PERCENTAGE_VALUE: [1-9]+[0-9]* '%';
 ALPHA_NUMERIC: [a-zA-Z0-9]+;
-
-
 
 OPERATOR: '-'
         | '+'
