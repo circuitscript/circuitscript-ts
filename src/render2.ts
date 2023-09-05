@@ -43,11 +43,10 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         const group = canvas.group();
         group.translate(x, y);
 
-        const { displaySymbol } = item;
+        const { symbol = null } = item;
 
-        if (displaySymbol !== null) {
-            const tmpSymbol = SymbolFactory(displaySymbol);
-            if (tmpSymbol) {
+        if (symbol !== null) {
+            if (symbol) {
                 let extra = {};
                 if (item.component.parameters.has('__is_net')) {
                     extra.net_name = item.component.parameters.get('net_name');
@@ -64,14 +63,14 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
 
                 extra.instance_name = item.component.instanceName;
 
-                tmpSymbol.draw(group, extra);
+                symbol.draw(group, extra);
             }
 
             if (drawPinPosition) {
                 const numPins = item.component.numPins;
                 for (let i = 0; i < numPins; i++) {
                     // draw a circle at each port
-                    const pinPosition = tmpSymbol.pinPosition(i + 1); // 1 - indexed
+                    const pinPosition = symbol.pinPosition(i + 1); // 1 - indexed
                     group.circle(5)
                         .translate(pinPosition.x - 5 / 2, pinPosition.y - 5 / 2)
                         .fill('#333')

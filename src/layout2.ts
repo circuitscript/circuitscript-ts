@@ -1,6 +1,6 @@
 import lodash from 'lodash';
 
-import { SymbolFactory, SymbolGraphic } from "./draw_symbols";
+import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion } from "./draw_symbols";
 import { ClassComponent } from "./objects/Component";
 import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
@@ -31,7 +31,7 @@ export async function prepareLayout2(
         // Component related actions
         if (action === SequenceAction.At || action === SequenceAction.To) {
             // Size all elements first
-            const component = sequence[i][1];
+            const component = sequence[i][1] as ClassComponent;
             const pin = sequence[i][2];
 
             // Make sure component has not been placed yet
@@ -52,35 +52,42 @@ export async function prepareLayout2(
                     displayProp = 'gnd';
                 }
 
+                let tmpSymbol: SymbolGraphic;
+
                 if (displayProp !== null) {
-                    const tmpSymbol = SymbolFactory(displayProp);
-                    const tmpSize = tmpSymbol.size();
-                    useWidth = tmpSize.width;
-                    useHeight = tmpSize.height;
-        
-                    // get the pin position relative to origin of symbol
-                    const pinPosition = tmpSymbol.pinPosition(pin);
-
-                    const tmpComponent = new RenderComponent(component, useWidth, useHeight);
-                    
-                    if (isFirstItem){
-                        // Make sure that the component is fully within canvas
-                        isFirstItem = false;
-                        currentX = pinPosition.x;
-                        currentY = pinPosition.y;
-                    }
-                    
-                    tmpComponent.x = currentX - pinPosition.x;
-                    tmpComponent.y = currentY - pinPosition.y;
-
-                    tmpComponent.displaySymbol = displayProp;
-                    tmpComponent.symbol = tmpSymbol;
-
-                    placedComponents.push(tmpComponent);
-
-                    currentX = tmpComponent.x + pinPosition.x;
-                    currentY = tmpComponent.y + pinPosition.y;
+                    tmpSymbol = SymbolFactory(displayProp);
+                } else {
+                    const symbolPinDefinitions = generateLayoutPinDefinition(component);
+                    tmpSymbol = new SymbolCustom(symbolPinDefinitions);
                 }
+
+                const tmpSize = tmpSymbol.size();
+                useWidth = tmpSize.width;
+                useHeight = tmpSize.height;
+    
+                // get the pin position relative to origin of symbol
+                const pinPosition = tmpSymbol.pinPosition(pin);
+
+                const tmpComponent = new RenderComponent(component, useWidth, useHeight);
+                
+                if (isFirstItem){
+                    // Make sure that the component is fully within canvas
+                    isFirstItem = false;
+                    currentX = pinPosition.x;
+                    currentY = pinPosition.y;
+                }
+                
+                tmpComponent.x = currentX - pinPosition.x;
+                tmpComponent.y = currentY - pinPosition.y;
+
+                tmpComponent.displaySymbol = displayProp;
+                tmpComponent.symbol = tmpSymbol;
+
+                placedComponents.push(tmpComponent);
+
+                currentX = tmpComponent.x + pinPosition.x;
+                currentY = tmpComponent.y + pinPosition.y;
+
             } else {
                 // Component already placed, just move curent position to the pin position
                 const tmpComponent = placedComponents[tmpIndex];
@@ -132,6 +139,62 @@ function findFreeSpace(existingComponents: RenderComponent[], nextComponent: Ren
     return tmpComponent;
 }
 
+function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
+    const pins = component.pins;
+    const symbolPinDefinitions: SymbolPinDefintion[] = [];
+    const existingPinIds = Array.from(pins.keys());
+
+    if (component.arrangeProps === null) {
+        // Automatically split pins 
+        
+        for (let i = 0; i < existingPinIds.length; i++) {
+            symbolPinDefinitions.push({
+                side: (i % 2 === 0) ? "left" : "right",
+                pinId: existingPinIds[i],
+                text: pins.get(existingPinIds[i]).name
+            })
+        }
+    } else {
+        const addedPins = [];
+
+        for (const [key, items] of component.arrangeProps) {
+
+            let useItems;
+            if (!Array.isArray(items)){
+                useItems = [items];
+            } else {
+                // Do no mutate original array
+                useItems = [...items];
+            }
+
+            useItems.forEach(pinId => {
+                // Only use the pin if it exists!
+                if (existingPinIds.indexOf(pinId) !== -1) {
+                    symbolPinDefinitions.push({
+                        side: key,
+                        pinId: pinId,
+                        text: pins.get(pinId).name
+                    });
+                    addedPins.push(pinId);
+                }
+            });
+        }
+
+        // Make sure all existing pins are added, otherwise throw an error
+        const unplacedPins = [];
+        existingPinIds.forEach(item => {
+            if (addedPins.indexOf(item) === -1){
+                unplacedPins.push(item);
+            }
+        });
+
+        if (unplacedPins.length > 0){
+            throw "'arrange' property is defined, but not all pins are specified: " + unplacedPins.join(",");
+        }
+    }
+
+    return symbolPinDefinitions;
+}
 
 export class RenderWire {
     // Starting point of the wire

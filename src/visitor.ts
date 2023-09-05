@@ -613,18 +613,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitWire_expr(ctx: Wire_exprContext): void {
         const segments: [string, number][] = [];
 
-        ctx.wire_path_expr_list().forEach(item => {
-            segments.push(this.visit(item));
+        const ID_list = ctx.ID_list();
+        const integer_list = ctx.INTEGER_VALUE_list();
+
+        const acceptedDirections = ['left', 'right', 'up', 'down']
+
+        ID_list.forEach((item, index) => {
+            const direction = item.getText();
+            if (acceptedDirections.indexOf(direction) !== -1){
+                const integerValue = this.parseIntegerValue(integer_list[index]);
+                segments.push([direction, integerValue]);
+            }
         });
 
         this.getExecutor().addWire(segments);
     }
 
-    visitWire_path_expr(ctx: Wire_path_exprContext): [string, number] {
-        const integerValue = this.parseIntegerValue(ctx.INTEGER_VALUE());
-        const wireDirection = ctx.WIRE_DIRECTION().toString();
-        return [wireDirection, integerValue]
-    }
 
     pinTypes = [
         PinTypes.Any,

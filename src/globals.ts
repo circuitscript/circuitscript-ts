@@ -25,6 +25,11 @@ export enum LayoutDirection {
     LEFT = "LEFT",       // B <-- A
 }
 
+export enum SymbolPinSide {
+    Left = "left",
+    Right = "right"
+}
+
 export const portWidth = 20;
 export const portHeight = 2;
 
