@@ -44,6 +44,7 @@ expression: add_component_expr
         | branch_blocks
         | section_block
         | decorator_expr
+        | style_expr
         ;
 
 branch_blocks: branch_block_inner+;
@@ -114,6 +115,8 @@ property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_pro
                     ;
 
 decorator_expr: DECORATOR NEWLINE;
+
+style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 
 wire_expr: 'wire' (ID INTEGER_VALUE)+ ;
 
