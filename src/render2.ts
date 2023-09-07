@@ -6,7 +6,6 @@ import { G, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { RenderComponent, RenderWire } from "./layout2";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, edgeColor } from './globals';
-import { SymbolFactory } from './draw_symbols';
 import { NumericValue } from './objects/ParamDefinition';
 
 export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[]}, outputPath: string): void {
@@ -40,8 +39,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
 
     components.forEach(item => {
         const { x, y, width, height } = item;
-        const group = canvas.group();
-        group.translate(x, y);
+        const symbolGroup = canvas.group();
+        symbolGroup.translate(x, y);
 
         const { symbol = null } = item;
 
@@ -63,7 +62,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
 
                 extra.instance_name = item.component.instanceName;
 
-                symbol.draw(group, extra);
+                symbol.draw(symbolGroup, extra);
             }
 
             if (drawPinPosition) {
@@ -71,7 +70,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
                 for (let i = 0; i < numPins; i++) {
                     // draw a circle at each port
                     const pinPosition = symbol.pinPosition(i + 1); // 1 - indexed
-                    group.circle(5)
+                    symbolGroup.circle(5)
                         .translate(pinPosition.x - 5 / 2, pinPosition.y - 5 / 2)
                         .fill('#333')
                         .stroke('none');
@@ -81,7 +80,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         } else {
             // draw default shape
 
-            group.rect(width, height)
+            symbolGroup.rect(width, height)
                 .fill(bodyColor)
                 .stroke({ width: 1, color: '#333' });
         }

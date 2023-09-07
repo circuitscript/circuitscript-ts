@@ -61,6 +61,12 @@ export async function prepareLayout2(
                     tmpSymbol = new SymbolCustom(symbolPinDefinitions);
                 }
 
+                // Set rotation of object
+                if (component.styles ){
+                    const {angle = 0} = component.styles;
+                    tmpSymbol.angle = angle as number;
+                }
+
                 const tmpSize = tmpSymbol.size();
                 useWidth = tmpSize.width;
                 useHeight = tmpSize.height;

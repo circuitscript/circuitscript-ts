@@ -25,10 +25,10 @@ import {
     Property_key_exprContext,
     ScriptContext,
     Single_line_propertyContext,
+    Style_exprContext,
     To_component_exprContext,
     Value_exprContext,
     Wire_exprContext,
-    Wire_path_exprContext,
 } from './antlr/CircuitScriptParser';
 import { ExecutionContext } from './execute';
 import { ClassComponent, Component } from './objects/Component';
@@ -629,6 +629,19 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().addWire(segments);
     }
 
+    visitStyle_expr(ctx: Style_exprContext): void {
+        const IDs = ctx.ID_list();
+        const values = ctx.value_expr_list();
+
+        const styles = {};
+
+        IDs.forEach((item, index) => {
+            const ID = item.getText();
+            styles[ID] = this.visit(values[index]);
+        });
+
+        this.getExecutor().setCurrentComponentStyle(styles);
+    }
 
     pinTypes = [
         PinTypes.Any,

@@ -691,6 +691,13 @@ export class ExecutionContext {
 
         this.scope.sequence.push([SequenceAction.Wire, tmp]);
     }
+
+    setCurrentComponentStyle(styles: { [key: string]: number | string }): void {
+        // Add onto to the current component styles
+        for (const key in styles) {
+            this.scope.currentComponent.styles[key] = styles[key];
+        }
+    }
 }
 
 export function isNetComponent(component: ClassComponent): boolean {

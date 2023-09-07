@@ -1,5 +1,6 @@
 import { G } from "@svgdotjs/svg.js";
 import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
+import { vec2 } from "gl-matrix";
 
 /**
  * Symbols should also define where their ports
@@ -13,6 +14,8 @@ export abstract class SymbolGraphic {
     drawPortsName = true;
     
     displayBounds = true;
+    
+    angle = 0;
 
     abstract size(): { width: number, height: number }
 
@@ -21,9 +24,11 @@ export abstract class SymbolGraphic {
     // Returns the port position, relative to the symbol origin
     abstract pinPosition(id: number): { x: number, y: number, angle: number }
 
-    protected drawBounds(group: G): void {
+    protected drawBounds(group: G, originX = 0, originY = 0): void {
         const size = this.size();
+
         group.rect(size.width, size.height)
+            .translate(originX - size.width / 2, originY - size.height / 2)
             .fill('none')
             .stroke({
                 width: 1,
@@ -172,16 +177,35 @@ export class SymbolRes extends SymbolGraphic {
 
     drawPortsName = false;
 
+    // Dimensions when angle = 0
+    width = 70;
+    height = 30;
+
     size(): { width: number; height: number; } {
+        const outVect: vec2 = [0, 0];
+        const originVect: vec2 = [0, 0];
+        const tmpVect: vec2 = [this.width, this.height];
+
+        vec2.rotate(outVect, tmpVect, originVect, this.angle * Math.PI / 180);
+
         return {
-            width: 70,
-            height: 30,
+            width: Math.abs(outVect[0]),
+            height: Math.abs(outVect[1])
         }
     }
 
     draw(group: G, extra: {}): void {
+
+        const innerGroup = group.group();
+
+        // Draw the symbol corner
+        group.circle(5)
+             .translate(-5/2, -5/2)
+             .fill('blue')
+             .stroke('none')
+
         // Draw rectangle form instead
-        group.path('M0 15 h10 v-10 h50 v20 h-50 v-10 M60 15 h10')
+        innerGroup.path('M0 15 h10 v-10 h50 v20 h-50 v-10 M60 15 h10')
             .stroke(
                 {
                     width: defaultSymbolLineWidth,
@@ -189,10 +213,9 @@ export class SymbolRes extends SymbolGraphic {
                 })
             .fill('none');
 
-
         if (extra && (extra.value !== null && extra.value !== undefined)) {
             // Draw resistor value
-            group.text(extra.value)
+            innerGroup.text(extra.value)
                 .translate(35, 20 - 2)
                 .fill('#333')
                 .font({
@@ -204,7 +227,7 @@ export class SymbolRes extends SymbolGraphic {
 
         if (extra && extra.instance_name) {
             // draw instance name
-            group.text(extra.instance_name)
+            innerGroup.text(extra.instance_name)
                 .translate(10, 0)
                 .fill('#333')
                 .font({
@@ -214,16 +237,36 @@ export class SymbolRes extends SymbolGraphic {
                 })
         }
 
-        if(this.displayBounds){
-            this.drawBounds(group);
+        innerGroup.translate(-this.width / 2, -this.height / 2)
+            .rotate(this.angle, this.width / 2, this.height / 2);
+
+        if (this.displayBounds) {
+            this.drawBounds(group, 0, 0);
         }
     }
 
-    pinPosition(id: number): { x: number; y: number; angle: number;} {
+    pinPosition(id: number): { x: number; y: number; angle: number; } {
+        const originPoint: vec2 = [0, 0];
+        const newVec: vec2 = [0, 0];
+        let newAngle;
+        let pinVector: vec2;
+
         if (id === 1) {
-            return { x: 0, y: 15, angle: 180}
+            pinVector = [-this.width / 2, 0];
+            newAngle = (180 + this.angle) % 360;
+
         } else if (id === 2) {
-            return { x: 70, y: 15, angle: 0}
+            pinVector = [this.width / 2, 0];
+            newAngle = (0 + this.angle) % 360;
+        }
+
+        vec2.rotate(newVec, pinVector, originPoint, this.angle * Math.PI / 180);
+        const [newX, newY] = newVec;
+
+        return {
+            x: newX,
+            y: newY,
+            angle: newAngle,
         }
     }
 }
