@@ -1,6 +1,9 @@
 import { G } from "@svgdotjs/svg.js";
-import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
 import { vec2 } from "gl-matrix";
+import * as turf from '@turf/turf';
+
+import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
+
 
 /**
  * Symbols should also define where their ports
@@ -25,15 +28,15 @@ export abstract class SymbolGraphic {
     abstract pinPosition(id: number): { x: number, y: number, angle: number }
 
     protected drawBounds(group: G, originX = 0, originY = 0): void {
-        const size = this.size();
+        // const size = this.size();
 
-        group.rect(size.width, size.height)
-            .translate(originX - size.width / 2, originY - size.height / 2)
-            .fill('none')
-            .stroke({
-                width: 1,
-                color: '#ccc'
-            });
+        // group.rect(size.width, size.height)
+        //     .translate(originX - size.width / 2, originY - size.height / 2)
+        //     .fill('none')
+        //     .stroke({
+        //         width: 1,
+        //         color: '#ccc'
+        //     });
     }
 }
 
@@ -102,33 +105,79 @@ export class SymbolPower extends SymbolGraphic {
 export class SymbolGnd extends SymbolGraphic {
 
     drawPortsName = false;
+
+    drawing: SymbolDrawing;
+
+    width = 50;
+    height = 30;
+
+    constructor(){
+        super();
+
+        const drawing = new SymbolDrawing();
+        drawing.addHLine(-15, 0, 30)
+                .addHLine(-10, 5, 20)
+                .addHLine(-5, 10, 10)
+                .addPin(0, 0, 0, -10, 1);
+
+        this.drawing = drawing;
+        const bbox = drawing.getBoundingBox();
+        this.width = bbox.width;
+        this.height = bbox.height;
+    }
+
     
     size(): { width: number; height: number; } {
         return {
-            width: 50,
-            height: 30,
+            width: this.width,
+            height: this.height,
         }
     }
 
     draw(group: G): void {
         // Assume that the symbol is vertical
-        group.path('M25 0 V10 M10 10 h30 M15 15 h20 M20 20 h10')
-            .stroke(
-                {
-                    width: defaultSymbolLineWidth,
-                    color: defaultSymbolLineColor
-                });
-        if(this.displayBounds){
-            this.drawBounds(group);
+        const innerGroup = group.group();
+
+        // Draw main symbol
+        innerGroup.path(this.drawing.getPath())
+            .stroke({
+                width: defaultSymbolLineWidth,
+                color: defaultSymbolLineColor
+            });
+
+        // Draw pins
+        innerGroup.path(this.drawing.getPinsPath())
+            .stroke({
+                width: defaultSymbolLineWidth,
+                color: '#c00',
+            });
+
+        if (this.displayBounds) {
+            const bbox = this.drawing.getBoundingBox();
+            
+            innerGroup.circle(5)
+                      .translate(-5/2, -5/2)
+                      .fill('#333')
+                      .stroke('none');
+            
+            innerGroup.rect(bbox.width, bbox.height)
+                .translate(bbox.start[0], bbox.start[1])
+                .fill('none')
+                .stroke({
+                    width: 1,
+                    color: '#ccc',
+                })
         }
     }
 
     pinPosition(id: number): { x: number; y: number; angle: number; } {
-        if (id === 1) {
+        const pin = this.drawing.getPinPosition(id);
+
+        if (pin) {
             return {
-                x: 25,
-                y: 0,
-                angle: 270,
+                x: pin.end[0],
+                y: pin.end[1],
+                angle: pin.angle,
             }
         }
     }
@@ -197,13 +246,7 @@ export class SymbolRes extends SymbolGraphic {
     draw(group: G, extra: {}): void {
 
         const innerGroup = group.group();
-
-        // Draw the symbol corner
-        group.circle(5)
-             .translate(-5/2, -5/2)
-             .fill('blue')
-             .stroke('none')
-
+        
         // Draw rectangle form instead
         innerGroup.path('M0 15 h10 v-10 h50 v20 h-50 v-10 M60 15 h10')
             .stroke(
@@ -237,6 +280,7 @@ export class SymbolRes extends SymbolGraphic {
                 })
         }
 
+        // Draw the pin position
         innerGroup.translate(-this.width / 2, -this.height / 2)
             .rotate(this.angle, this.width / 2, this.height / 2);
 
@@ -471,6 +515,121 @@ export class SymbolCustom extends SymbolGraphic {
                         anchor: 'start',
                      })
             }
+        }
+    }
+}
+
+
+class SymbolDrawing {
+
+    items: turf.Feature[] = [];
+
+    // pinId, feature, angle
+    pins: [number, turf.Feature, number][] = [];
+
+    addLine(startX: number, startY: number, endX: number, endY: number): SymbolDrawing {
+        this.items.push(
+            turf.lineString([[startX, startY], [endX, endY]])
+        );
+
+        return this;
+    }
+
+    addPin(startX: number, startY: number, endX: number, endY: number, pinId: number): SymbolDrawing {
+        // Determine the pin angle based on the start and end values.
+
+        let angle = 0;
+
+        if (startX === endX) {
+            if (startY > endY) {
+                angle = 270;
+            } else if (startY < endY) {
+                angle = 90;
+            }
+        } else {
+            if (startX < endX) {
+                angle = 0;
+            } else if (startX > endX) {
+                angle = 180;
+            }
+        }
+
+        this.pins.push([
+            pinId,
+            turf.lineString([[startX, startY], [endX, endY]]),
+            angle
+        ])
+        return this;
+    }
+
+    getPinPosition(pinId: number): { start: [number, number], end: [number, number], angle: number } {
+        const pin = this.pins.find(item => {
+            return item[0] === pinId;
+        });
+
+        if (pin) {
+            const [pinId ,feature, angle] = pin;
+            const coords = turf.getCoords(feature);
+
+            return {
+                start: coords[0],
+                end: coords[1],
+                angle,
+            }
+        }
+    }
+
+    addVLine(startX: number, startY: number, value: number): SymbolDrawing {
+        this.items.push(
+            turf.lineString([[startX, startY], [startX, startY + value]])
+        );
+        return this;
+    }
+
+    addHLine(startX: number, startY: number, value: number): SymbolDrawing {
+        this.items.push(
+            turf.lineString([[startX, startY], [startX + value, startY]])
+        );
+        return this;
+    }
+
+    getPath():string {
+        return this.featuresToPath(this.items);
+    }
+
+    getPinsPath(): string {
+        return this.featuresToPath(this.pins.map(item => {
+            return item[1]
+        }));
+    }
+
+    private featuresToPath(items: turf.Feature[]): string {
+        const paths = [];
+        items.forEach(item => {
+            const coords = turf.getCoords(item);
+            const [startX, startY] = coords[0];
+            const [endX, endY] = coords[1];
+
+            paths.push(`M${startX} ${startY} L${endX} ${endY}`);
+        });
+
+        return paths.join(" ");
+    }
+
+    getBoundingBox(): { width: number, height: number, start: [number, number], end: [number, number] } {
+        const pinFeatures = this.pins.map(pin => {
+            return pin[1];
+        })
+
+        const allItems = [...this.items, ...pinFeatures];
+        const collection = turf.featureCollection(allItems);
+        const [startX, startY, endX, endY] = turf.bbox(collection);
+
+        return {
+            start: [startX, startY],
+            end: [endX, endY],
+            width: endX - startX,
+            height: endY - startY
         }
     }
 }
