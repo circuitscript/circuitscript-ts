@@ -8,8 +8,8 @@ def I2C_chip():
             3: input, "I2C_SCL", "IO1", "XTAL1"
             4: io,    "I2C_SDA", "IO2", "XTAL2"
         arrange:
-            left: 1, 2
-            right: 3, 4
+            left: 1,2
+            right: 3,4
 
 def net(net_name):
     return create component:
@@ -38,17 +38,36 @@ def cap(value):
 V5V = net("5V")
 U1 = I2C_chip()
 
-at V5V to U1 pin "VCC"
-at gnd to U1 pin "GND"
+at V5V pin 1
+wire down 100 right 50
+to U1 pin 1
 
-at U1:
-    #"VCC": to V5V
-    #"GND": to gnd
-    "IO1": 
-        # add I2C_SDA = net("I2C_SDA")
-        add res(10k)
-        to gnd
-    "I2C_SCL": nc
+at U1 pin 2
+wire left 50 down 100
+to gnd
 
-at V5V add cap("100n") to gnd
+#at net("5V")
+#wire down 20
+#add res(5k)
+#wire down 20
+#to U1 pin 3
 
+at U1 pin 3
+wire right 50 up 10
+add res(5k) [angle = -90]
+
+wire up 30 
+add net("5V")
+
+at U1 pin 3
+wire right 100
+
+at U1 pin 4
+wire right 80 up 30
+add res(5k) [angle = -90]
+
+wire up 30
+add net("5V")
+
+at U1 pin 4
+wire right 100
