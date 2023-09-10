@@ -73,16 +73,19 @@ export async function prepareLayout2(
     
                 // get the pin position relative to origin of symbol
                 const pinPosition = tmpSymbol.pinPosition(pin);
-
                 const tmpComponent = new RenderComponent(component, useWidth, useHeight);
-                
-                if (isFirstItem){
+
+                if (isFirstItem) {
                     // Make sure that the component is fully within canvas
                     isFirstItem = false;
-                    currentX = pinPosition.x;
-                    currentY = pinPosition.y;
+
+                    const bounds = tmpSymbol.bounds();
+
+                    // Add the pin position so that the entire symbol is within the canvas
+                    currentX = bounds.start[0] * -1 + pinPosition.x;
+                    currentY = bounds.start[1] * -1 + pinPosition.y;
                 }
-                
+
                 tmpComponent.x = currentX - pinPosition.x;
                 tmpComponent.y = currentY - pinPosition.y;
 
