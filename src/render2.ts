@@ -17,7 +17,7 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     const canvas = SVG(document.documentElement);
     const { width, height } = calculateBoundingBox(graph.components);
 
-    canvas.size(500, 500);
+    canvas.size(1000, 500);
     applyFontsToSVG(canvas);
 
     generateSVGChild(canvas, graph.components, graph.wires);
@@ -61,7 +61,6 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
                 }
 
                 extra.instance_name = item.component.instanceName;
-
                 symbol.draw(symbolGroup, extra);
             }
 
@@ -96,7 +95,6 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
             .fill('none')
             .stroke({ width: 1, color: edgeColor });
     });
-
 }
 
 function calculateBoundingBox(components: RenderComponent[]): { width: number, height: number } {

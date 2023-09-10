@@ -23,7 +23,7 @@ export default async function main(): Promise<void> {
 
     const parser = new CircuitScriptParser(tokens);
     const tree = parser.script();
-    await writeFile('dump/tree.txt', tree.toStringTree(null, parser));
+    await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
 
     const visitor = new MainVisitor();
     try {
