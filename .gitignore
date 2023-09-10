@@ -31,3 +31,6 @@ build/
 src/antlr/*.interp
 src/antlr/*.tokens
 src/antlr/.antlr
+
+*.svg
+dump/*
