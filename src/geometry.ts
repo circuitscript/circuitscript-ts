@@ -1,4 +1,5 @@
 import Flatten from '@flatten-js/core'
+import { measureTextSize2 } from './sizing';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -11,30 +12,55 @@ export class Label extends Flatten.Polygon {
     text: string;
     anchor: string;
 
-    constructor(polygon: Flatten.Polygon, text: string, anchor = 'left') {
+    anchorPoint: [number, number] = [0, 0];
+
+    font = 'default';
+    fontSize = 10;
+
+    constructor(text: string, anchorPoint:[number, number], polygon: Flatten.Polygon, anchor = 'left') {
         super(polygon.vertices);
+
         this.text = text;
         this.anchor = anchor;
+        this.anchorPoint = anchorPoint;
     }
 
     static fromPoint(x: number, y: number, text: string, anchor = 'left'): Label {
-        const tmpWidth = 100;
-        const tmpHeight = 20;
 
-        const polygon = new Flatten.Polygon([
-            [x, y],
-            [x + tmpWidth, y],
-            [x + tmpWidth, y + tmpHeight],
-            [x, y + tmpHeight]
-        ]);
+        const defaultFont = 'Inter';
+
+        // Determine the size of the text
+        const textBoundingBox = measureTextSize2(text, defaultFont, 10);
+
+        const tmpWidth = textBoundingBox.width;
+        const tmpHeight = textBoundingBox.height;
+
+        let polygonCoords: [number, number][] = [];
+        if (anchor === 'left') {
+            polygonCoords = [
+                [x, y - tmpHeight],
+                [x + tmpWidth, y - tmpHeight],
+                [x + tmpWidth, y],
+                [x, y]
+            ];
+        } else if (anchor === 'center') {
+            polygonCoords = [
+                [x - tmpWidth / 2, y - tmpHeight],
+                [x + tmpWidth / 2, y - tmpHeight],
+                [x + tmpWidth / 2, y],
+                [x - tmpWidth / 2, y]
+            ]
+        }
+
+        const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(polygon, text, anchor);
+        return new Label(text, [x, y], polygon, anchor);
     }
 
-    rotate(angle: number, center: Flatten.Point): Label {
-        const polygonRotate = super.rotate(angle, center);
-        return new Label(polygonRotate, this.text, this.anchor);
+    rotate(angle: number, origin: Flatten.Point): Label {
+        const polygonRotate = super.rotate(angle, origin);
+        return new Label(this.text, this.anchorPoint, polygonRotate, this.anchor);
     }
 }
 

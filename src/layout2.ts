@@ -1,6 +1,6 @@
 import lodash from 'lodash';
 
-import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion } from "./draw_symbols";
+import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPower } from "./draw_symbols";
 import { ClassComponent } from "./objects/Component";
 import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
@@ -56,6 +56,11 @@ export async function prepareLayout2(
 
                 if (displayProp !== null) {
                     tmpSymbol = SymbolFactory(displayProp);
+
+                    if (displayProp === 'net'){
+                        (tmpSymbol as SymbolPower).powerLabel = component.parameters.get('net_name') as string;
+                    }
+
                 } else {
                     const symbolPinDefinitions = generateLayoutPinDefinition(component);
                     tmpSymbol = new SymbolCustom(symbolPinDefinitions);

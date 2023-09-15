@@ -21,6 +21,11 @@ export function applyFontsToSVG(canvas: SVGTypeMapping): void {
 }
 
 export async function measureTextSize(text: string, fontFamily: string, fontSize: number): Promise<{ width: number, height: number }> {
+    // Async version, in case measuring text sizes need more time
+    return measureTextSize2(text, fontFamily, fontSize);
+}
+
+export function measureTextSize2(text: string, fontFamily: string, fontSize: number): { width: number, height: number } {    
     // Reuse the canvas, so no need to keep creating
     if (MainCanvas === null) {
         const window = createSVGWindow();

@@ -58,6 +58,8 @@ export abstract class SymbolGraphic {
 
         this.drawPins(innerGroup);
 
+        this.drawLabels(innerGroup);
+
         this.displayBounds && this.drawBounds(group);
     }
 
@@ -109,6 +111,35 @@ export abstract class SymbolGraphic {
                 color: '#c00',
             });
     }
+
+    protected drawLabels(group: G): void {
+        const labels = this.drawing.getLabels();
+        labels.forEach(label => {
+            const tmpLabel = label as Label;
+
+            let useAnchor = 'start';
+            switch(tmpLabel.anchor){
+                case 'left':
+                    useAnchor = 'start';
+                    break;
+                case 'center':
+                    useAnchor = 'middle';
+                    break;
+                case 'right':
+                    useAnchor = 'end';
+                    break;
+            }
+
+            group.text(tmpLabel.text)
+                .translate(tmpLabel.anchorPoint[0], tmpLabel.anchorPoint[1])
+                .fill('#333')
+                .font({
+                    family: defaultFont,
+                    size: 10,
+                    anchor: useAnchor
+                })
+        });
+    }
 }
 
 export function SymbolFactory(name: string): SymbolGraphic | null {
@@ -129,13 +160,15 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 
 export class SymbolPower extends SymbolGraphic {
 
+    powerLabel = "<POWER>";
+
     refreshDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
 
         drawing.addHLine(-15, 0, 30)
                 .addPin(0, 0, 0, 10, 1)
-                .addLabel(0, -20, "POWER", 'center');
+                .addLabel(0, -5, this.powerLabel, 'center');
         
         this.drawing = drawing;
 
@@ -544,6 +577,8 @@ class SymbolDrawing {
 
     angle = 0;
 
+    mainOrigin:[number, number] = [0, 0];
+
     addLine(startX: number, startY: number, endX: number, endY: number): SymbolDrawing {
         this.items.push(
             Geometry.segment([startX, startY], [endX, endY])
@@ -620,23 +655,31 @@ class SymbolDrawing {
     }
 
     getPath(): string {
-        const withAngle = Geometry.groupRotate(this.items, this.angle, [0, 0]);
+        const nonLabels = this.items.filter(item => {
+            return !(item instanceof Label);
+        })
+
+        const withAngle = Geometry.groupRotate(nonLabels, this.angle, this.mainOrigin);
         return this.featuresToPath(withAngle);
     }
 
     getPinsPath(): string {
         const features = this.pins.map(item => item[1]);
-        const withAngle = Geometry.groupRotate(features, this.angle, [0, 0]);
+        const withAngle = Geometry.groupRotate(features, this.angle, this.mainOrigin);
         return this.featuresToPath(withAngle);
+    }
+
+    getLabels(): Feature[] {
+        const labels = this.items.filter(item => item instanceof Label);
+        const withAngle = Geometry.groupRotate(labels, this.angle, this.mainOrigin);
+
+        return withAngle;
     }
 
     private featuresToPath(items: Feature[]): string {
         const paths = [];
 
         items.forEach(item => {
-
-            console.log(item);
-
             // Do not draw labels here
             if (item instanceof Label){
                 return;
@@ -661,7 +704,7 @@ class SymbolDrawing {
             return pin[1];
         })
         const allItems = [...this.items, ...pinFeatures];
-        const withAngle = Geometry.groupRotate(allItems, this.angle, [0, 0]);
+        const withAngle = Geometry.groupRotate(allItems, this.angle, this.mainOrigin);
         
         return Geometry.groupBounds(withAngle);
     }
@@ -676,7 +719,7 @@ class SymbolDrawing {
 
             // Apply angle to feature
 
-            const withAngle = Geometry.rotateDegs(feature, this.angle, [0, 0]);
+            const withAngle = Geometry.rotateDegs(feature, this.angle, this.mainOrigin);
             const coords = Geometry.getCoords(withAngle);
 
             return {
