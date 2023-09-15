@@ -18,6 +18,15 @@ export class NumericValue {
     toString(): string {
         return 'numeric:' + this.value;
     }
+
+    toDisplayString(): string {
+        if (typeof this.value  === 'number'){
+            return this.value.toString();
+            
+        } else if (typeof this.value === 'string'){
+            return this.value;
+        }
+    }
 }
 export class PercentageValue {
     value: string | number;

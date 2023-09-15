@@ -9,7 +9,7 @@ const supportedFonts = {
 }
 
 export async function prepareSizing(): Promise<void> {
-    config.setFontDir('./fonts')
+    await config.setFontDir('./fonts')
         .setFontFamilyMappings(supportedFonts)
         .preloadFonts()
 }
@@ -40,7 +40,7 @@ export function measureTextSize2(text: string, fontFamily: string, fontSize: num
         anchor: 'start',
     }).fill('#333');
 
-    const { width, height }: { width: number, height: number } = MainCanvas.bbox();
+    const { width, height }: { width: number, height: number } = tmpTextElement.bbox();
     tmpTextElement.remove();
 
     return {

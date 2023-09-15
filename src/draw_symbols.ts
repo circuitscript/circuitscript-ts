@@ -1,7 +1,7 @@
 import { G } from "@svgdotjs/svg.js";
 
 import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
-import { Feature, Geometry, Label } from "./geometry";
+import { Feature, Geometry, Label, LabelStyle } from "./geometry";
 
 
 /**
@@ -23,6 +23,9 @@ export abstract class SymbolGraphic {
 
     width: number;
     height: number;
+
+    // Stores a reference of <labelID> to the label value
+    labelTexts = new Map<string, string>();
 
     get angle(): number {
         return this._angle;
@@ -79,9 +82,9 @@ export abstract class SymbolGraphic {
     protected drawBounds(group: G): void {
         const bbox = this.drawing.getBoundingBox();
 
-        group.circle(5)
-            .translate(-5 / 2, -5 / 2)
-            .fill('#333')
+        group.circle(3)
+            .translate(-3 / 2, -3 / 2)
+            .fill('red')
             .stroke('none');
 
         group.rect(bbox.width, bbox.height)
@@ -114,10 +117,12 @@ export abstract class SymbolGraphic {
 
     protected drawLabels(group: G): void {
         const labels = this.drawing.getLabels();
+
         labels.forEach(label => {
             const tmpLabel = label as Label;
 
             let useAnchor = 'start';
+            let dominantBaseline = 'auto';
             switch(tmpLabel.anchor){
                 case 'left':
                     useAnchor = 'start';
@@ -125,20 +130,40 @@ export abstract class SymbolGraphic {
                 case 'center':
                     useAnchor = 'middle';
                     break;
+
+                case 'v-center':
+                    useAnchor = 'middle';
+                    dominantBaseline = 'middle';
+                    break;
+                
                 case 'right':
                     useAnchor = 'end';
                     break;
             }
 
+            const position = tmpLabel.getLabelPosition();
+            
             group.text(tmpLabel.text)
-                .translate(tmpLabel.anchorPoint[0], tmpLabel.anchorPoint[1])
+                .translate(position[0], position[1])
+                .rotate(this.angle, -position[0], -position[1])
                 .fill('#333')
                 .font({
                     family: defaultFont,
-                    size: 10,
-                    anchor: useAnchor
+                    size: tmpLabel.fontSize,
+                    anchor: useAnchor,
+                    'dominant-baseline': dominantBaseline,
                 })
         });
+    }
+
+    setLabelValue(labelId: string, labelValue: string): void {
+        this.labelTexts.set(labelId, labelValue);
+    }
+
+    getLabelValue(labelId: string): string {
+        if (this.labelTexts.has(labelId)) {
+            return this.labelTexts.get(labelId);
+        }
     }
 }
 
@@ -160,16 +185,16 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 
 export class SymbolPower extends SymbolGraphic {
 
-    powerLabel = "<POWER>";
-
     refreshDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
 
+        const netName = this.getLabelValue("net_name");
+
         drawing.addHLine(-15, 0, 30)
-                .addPin(0, 0, 0, 10, 1)
-                .addLabel(0, -5, this.powerLabel, 'center');
-        
+            .addPin(0, 0, 0, 10, 1)
+            .addLabel(0, -5, netName, { fontSize: 10, anchor: 'center' });
+
         this.drawing = drawing;
 
         const bbox = drawing.getBoundingBox();
@@ -284,9 +309,21 @@ export class SymbolRes extends SymbolGraphic {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
 
+        const value = this.getLabelValue("value");
+        const refdes = this.getLabelValue("refdes");
+
         drawing.addRect(0, 0, width, height)
             .addPin(-width / 2, 0, -width / 2 - 10, 0, 1)
-            .addPin(width / 2, 0, width / 2 + 10, 0, 2);
+            .addPin(width / 2, 0, width / 2 + 10, 0, 2)
+            .addLabel(0, 0, value, {
+                fontSize: 10,
+                anchor: 'v-center'
+            })
+            .addLabel(-width / 2, -height / 2 - 5, refdes, {
+                fontSize: 8,
+                anchor: 'left',
+            })
+            ;
 
         const bbox = drawing.getBoundingBox();
         this.width = bbox.width;
@@ -646,9 +683,9 @@ class SymbolDrawing {
         return this;
     }
 
-    addLabel(x: number, y: number, textValue: string, align = 'left'): SymbolDrawing {
+    addLabel(x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
         this.items.push(
-            Geometry.label(x, y, textValue, align)
+            Geometry.label(x, y, textValue, style)
         )
 
         return this;
@@ -669,34 +706,12 @@ class SymbolDrawing {
         return this.featuresToPath(withAngle);
     }
 
-    getLabels(): Feature[] {
-        const labels = this.items.filter(item => item instanceof Label);
-        const withAngle = Geometry.groupRotate(labels, this.angle, this.mainOrigin);
-
-        return withAngle;
+    getLabels(): Label[] {
+        return this.items.filter(item => item instanceof Label) as Label[];
     }
 
     private featuresToPath(items: Feature[]): string {
-        const paths = [];
-
-        items.forEach(item => {
-            // Do not draw labels here
-            if (item instanceof Label){
-                return;
-            }
-
-            const coords = Geometry.getCoords(item);
-            const path = [];
-            for (let i = 0; i < coords.length; i++) {
-                const [x, y] = coords[i];
-                const command = (i === 0) ? 'M' : 'L';
-                path.push(`${command} ${x} ${y}`);
-            }
-
-            paths.push(path.join(' '));
-        });
-
-        return paths.join(" ");
+        return Geometry.featuresToPath(items);
     }
 
     getBoundingBox(): { width: number, height: number, start: [number, number], end: [number, number] } {

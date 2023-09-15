@@ -57,9 +57,15 @@ export async function prepareLayout2(
                 if (displayProp !== null) {
                     tmpSymbol = SymbolFactory(displayProp);
 
-                    if (displayProp === 'net'){
-                        (tmpSymbol as SymbolPower).powerLabel = component.parameters.get('net_name') as string;
+                    if (displayProp === 'net') {
+                        tmpSymbol.setLabelValue("net_name", component.parameters.get('net_name') as string);
                     }
+
+                    if (component.parameters.has('value')) {
+                        tmpSymbol.setLabelValue('value', component.parameters.get('value').toDisplayString());
+                    }
+
+                    tmpSymbol.setLabelValue('refdes', component.instanceName);
 
                 } else {
                     const symbolPinDefinitions = generateLayoutPinDefinition(component);

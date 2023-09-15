@@ -6,6 +6,11 @@ export type Polygon = Flatten.Polygon;
 
 export type Feature = Segment | Polygon | Label;
 
+export type LabelStyle = {
+    font?: string,
+    fontSize?: number,
+    anchor?: string,
+}
 
 export class Label extends Flatten.Polygon {
 
@@ -14,23 +19,32 @@ export class Label extends Flatten.Polygon {
 
     anchorPoint: [number, number] = [0, 0];
 
+    boundingBox: { width: number, height: number } = { width: -1, height: -1 };
+    polygon: Polygon;
+
     font = 'default';
     fontSize = 10;
 
-    constructor(text: string, anchorPoint:[number, number], polygon: Flatten.Polygon, anchor = 'left') {
+    constructor(text: string, fontSize: number, anchorPoint: [number, number], polygon: Flatten.Polygon, anchor = 'left') {
         super(polygon.vertices);
 
         this.text = text;
         this.anchor = anchor;
         this.anchorPoint = anchorPoint;
+        this.fontSize = fontSize;
+
+        this.boundingBox = polygon.box;
+        this.polygon = polygon;
     }
 
-    static fromPoint(x: number, y: number, text: string, anchor = 'left'): Label {
+    static fromPoint(x: number, y: number, text: string, style: LabelStyle): Label {
 
         const defaultFont = 'Inter';
 
+        const { fontSize = 10, anchor = 'left' } = style;
+
         // Determine the size of the text
-        const textBoundingBox = measureTextSize2(text, defaultFont, 10);
+        const textBoundingBox = measureTextSize2(text, defaultFont, fontSize);
 
         const tmpWidth = textBoundingBox.width;
         const tmpHeight = textBoundingBox.height;
@@ -50,17 +64,27 @@ export class Label extends Flatten.Polygon {
                 [x + tmpWidth / 2, y],
                 [x - tmpWidth / 2, y]
             ]
+        } else if (anchor === 'v-center') {
+            polygonCoords = [
+                [x - tmpWidth / 2, y - tmpHeight / 2],
+                [x + tmpWidth / 2, y - tmpHeight / 2],
+                [x + tmpWidth / 2, y + tmpHeight / 2],
+                [x - tmpWidth / 2, y + tmpHeight / 2]]
         }
 
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(text, [x, y], polygon, anchor);
+        return new Label(text, fontSize, [x, y], polygon, anchor);
     }
 
     rotate(angle: number, origin: Flatten.Point): Label {
         const polygonRotate = super.rotate(angle, origin);
-        return new Label(this.text, this.anchorPoint, polygonRotate, this.anchor);
+        return new Label(this.text, this.fontSize, this.anchorPoint, polygonRotate, this.anchor);
+    }
+
+    getLabelPosition(): [number, number] {
+        return this.anchorPoint;
     }
 }
 
@@ -72,8 +96,8 @@ export class Geometry {
         return new Flatten.Point(x, y);
     }
 
-    static label(x: number, y: number, text: string, anchor = 'left'): Label {
-        return Label.fromPoint(x, y, text, anchor);
+    static label(x: number, y: number, text: string, style: LabelStyle): Label {
+        return Label.fromPoint(x, y, text, style);
     }
 
     static segment(start: [number, number], end: [number, number]): Segment {
@@ -152,4 +176,26 @@ export class Geometry {
         console.log('unknown type', feature);
     }
 
+    static featuresToPath(items: Feature[]): string {
+        const paths = [];
+
+        items.forEach(item => {
+            // Do not draw labels here
+            if (item instanceof Label){
+                return;
+            }
+
+            const coords = Geometry.getCoords(item);
+            const path = [];
+            for (let i = 0; i < coords.length; i++) {
+                const [x, y] = coords[i];
+                const command = (i === 0) ? 'M' : 'L';
+                path.push(`${command} ${x} ${y}`);
+            }
+
+            paths.push(path.join(' '));
+        });
+
+        return paths.join(" ");
+    }
 }
