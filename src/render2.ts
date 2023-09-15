@@ -15,12 +15,13 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     registerWindow(window, document);
 
     const canvas = SVG(document.documentElement);
-    const { width, height } = calculateBoundingBox(graph.components);
-
-    canvas.size(1000, 500);
     applyFontsToSVG(canvas);
 
     generateSVGChild(canvas, graph.components, graph.wires);
+    const {x, y, width, height} = canvas.bbox();
+
+    canvas.size(width, height);
+    canvas.viewbox(x, y, width, height);
 
     const svgOutput = canvas.svg();
 

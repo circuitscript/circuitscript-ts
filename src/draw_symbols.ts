@@ -111,7 +111,7 @@ export abstract class SymbolGraphic {
         group.path(this.drawing.getPinsPath())
             .stroke({
                 width: defaultSymbolLineWidth,
-                color: '#c00',
+                color: '#333',
             });
     }
 
@@ -184,7 +184,6 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 
 
 export class SymbolPower extends SymbolGraphic {
-
     refreshDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
@@ -203,31 +202,6 @@ export class SymbolPower extends SymbolGraphic {
     }
 
     drawPortsName = false;
-
-
-    // draw(group: G, extra?: {}): void {
-    //     group.path('M10 20 h30 M25 20 v10')
-    //         .stroke({
-    //             width: defaultSymbolLineWidth,
-    //             color: defaultSymbolLineColor
-    //         });
-
-    //     if (extra) {
-    //         const netName = extra.net_name;
-    //         group.text(netName)
-    //             .translate(25, 20 - 2)
-    //             .fill('#333')
-    //             .font({
-    //                 family: defaultFont,
-    //                 size: 10,
-    //                 anchor: 'middle',
-    //             })
-    //     }
-
-    //     if (this.displayBounds) {
-    //         this.drawBounds(group);
-    //     }
-    // }
 }
 
 export class SymbolGnd extends SymbolGraphic {
@@ -330,68 +304,6 @@ export class SymbolRes extends SymbolGraphic {
         this.height = bbox.height;
 
         this.drawing = drawing;
-    }
-
-    drawOld(group: G, extra: {}): void {
-
-        const innerGroup = group.group();
-
-        innerGroup.path(this.drawing.getPath())
-                .fill('none')
-                .stroke({
-                    width: defaultSymbolLineWidth,
-                    color: defaultSymbolLineColor
-                });
-
-        // Draw pins
-        innerGroup.path(this.drawing.getPinsPath())
-            .stroke({
-                width: defaultSymbolLineWidth,
-                color: '#c00',
-            });
-
-        // // Draw rectangle form instead
-        // innerGroup.path('M0 15 h10 v-10 h50 v20 h-50 v-10 M60 15 h10')
-        //     .stroke(
-        //         {
-        //             width: defaultSymbolLineWidth,
-        //             color: defaultSymbolLineColor
-        //         })
-        //     .fill('none');
-
-        // if (extra && (extra.value !== null && extra.value !== undefined)) {
-        //     // Draw resistor value
-        //     innerGroup.text(extra.value)
-        //         .translate(35, 20 - 2)
-        //         .fill('#333')
-        //         .font({
-        //             family: defaultFont,
-        //             size: 10,
-        //             anchor: 'middle',
-        //         })
-        // }
-
-        // if (extra && extra.instance_name) {
-        //     // draw instance name
-        //     innerGroup.text(extra.instance_name)
-        //         .translate(10, 0)
-        //         .fill('#333')
-        //         .font({
-        //             family: defaultFont,
-        //             size: 10,
-        //             anchor: 'start',
-        //         })
-        // }
-
-        // // Draw the pin position
-        // innerGroup.translate(-this.width / 2, -this.height / 2)
-        //     .rotate(this.angle, this.width / 2, this.height / 2);
-
-        // if (this.displayBounds) {
-        //     this.drawBounds(group, 0, 0);
-        // }
-
-        this.displayBounds && this.drawBounds(group);
     }
 }
 
