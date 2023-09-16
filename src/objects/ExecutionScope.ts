@@ -27,6 +27,8 @@ export class ExecutionScope {
     currentComponent: ClassComponent | null = null;
     currentPin: number | null = null;
 
+    currentWireId = -1;
+
     netGnd: Net | null = null;
     componentGnd: ClassComponent | null = null;
     componentRoot: ClassComponent | null = null;
@@ -98,7 +100,11 @@ export enum SequenceAction {
     To = 'to',
     At = 'at',
     Wire = 'wire',
-    LayoutDirection = 'layout-direction',
+
+    WireJump = 'wire-jump',
 }
 
-export type SequenceItem = [SequenceAction.To|SequenceAction.At, ClassComponent, number, LayoutDirection?, string?] | [SequenceAction.Wire, WireSegment[]];
+export type SequenceItem =
+    [SequenceAction.To | SequenceAction.At, ClassComponent, number, LayoutDirection?, string?] |
+    [SequenceAction.Wire, number, WireSegment[]] |
+    [SequenceAction.WireJump, number];

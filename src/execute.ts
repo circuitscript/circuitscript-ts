@@ -355,9 +355,12 @@ export class ExecutionContext {
         this.scope.currentComponent = component;
         this.scope.currentPin = pinId;
 
+        // Currently no wire references
+        this.scope.currentWireId = -1;
+
         if (addSequence) {
             const sequenceComponent = this.prepareSequenceComponent(component);
-            this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId, null, linkedNet.name]);
+            this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId, linkedNet.name]);
         }
 
         this.printPoint();
@@ -389,10 +392,13 @@ export class ExecutionContext {
             this.scope.currentPin = usePinId;
         }
 
+        // Insertion point is current at a component pin, so clear
+        // any wire references
+        this.scope.currentWireId = -1;
+
         if (addSequence) {
             const sequenceComponent = this.prepareSequenceComponent(component, createNetComponent);
-            const layoutDirection = this.getPinLayoutDirection(sequenceComponent, usePinId);
-            this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId, layoutDirection]);
+            this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId]);
         }
 
         this.printPoint();
@@ -401,7 +407,7 @@ export class ExecutionContext {
     enterBranches(): void {
         this.scope.branchStack.set(this.scope.indentLevel, {
             // Tracks the position when the branch is entered
-            entered_at: [this.scope.currentComponent, this.scope.currentPin],
+            entered_at: [this.scope.currentComponent, this.scope.currentPin, this.scope.currentWireId],
             inner_branches: new Map<number, any>(),
             current_index: null,
         });
@@ -410,10 +416,17 @@ export class ExecutionContext {
     }
 
     exitBranches(): void {
+        false && this.joinBranches();
+        
+        this.print('exit branches');
+    }
+
+    joinBranches(): void {
         // When exiting/leaving a group of branches
         const innerBranches = this.scope.branchStack.get(
             this.scope.indentLevel,
         )['inner_branches'];
+
         const lastNets: [number, [ClassComponent, number, Net]][] = [];
 
         // Gather all the last nets that should be joined together
@@ -458,8 +471,6 @@ export class ExecutionContext {
             this.scope.currentComponent = comp1;
             this.scope.currentPin = pin1;
         }
-
-        this.print('exit branches');
     }
 
     enterBranch(branchIndex: number): void {
@@ -492,7 +503,7 @@ export class ExecutionContext {
         stackRef['branch_index'] = null;
 
         // Restore the latest entry in the branch stack
-        const [preBranchComponent, preBranchPin] = stackRef['entered_at'];
+        const [preBranchComponent, preBranchPin, preBranchWireId] = stackRef['entered_at'];
 
         this.scope.indentLevel -= 1;
 
@@ -500,6 +511,10 @@ export class ExecutionContext {
 
         // Do not duplicate any net symbol since this is a branch
         this.atComponent(preBranchComponent, preBranchPin, true, false);
+
+        if (preBranchWireId !== -1){
+            this.scope.sequence.push([SequenceAction.WireJump, preBranchWireId]);
+        }
     }
 
     breakBranch(): void {
@@ -686,10 +701,14 @@ export class ExecutionContext {
             } as WireSegment
         });
 
+        // This ID is used to identify/jump to wires later
+        const wireId = this.scope.wires.length;
+
         this.scope.wires.push(new Wire(tmp));
         this.print('add wire: ', segments);
 
-        this.scope.sequence.push([SequenceAction.Wire, tmp]);
+        this.scope.currentWireId = wireId;
+        this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
     }
 
     setCurrentComponentStyle(styles: { [key: string]: number | string }): void {

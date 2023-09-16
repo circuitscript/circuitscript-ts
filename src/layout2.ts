@@ -1,6 +1,6 @@
 import lodash from 'lodash';
 
-import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPower } from "./draw_symbols";
+import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion } from "./draw_symbols";
 import { ClassComponent } from "./objects/Component";
 import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
@@ -22,6 +22,9 @@ export async function prepareLayout2(
     // The starting position for layout
     let currentX = 0;
     let currentY = 0;
+
+    // Keeps track of the wire positions
+    const wiresLookup = new Map<number, WireLookupInfo>();
 
     for (let i = 0; i < sequence.length; i++) {
         // Do not need to handle nested components for now
@@ -119,7 +122,10 @@ export async function prepareLayout2(
 
         } else if (action === SequenceAction.Wire) {
             // draw wires
-            const wireSegments = sequence[i][1];
+            const [,wireId, wireSegments] = sequence[i] as [SequenceAction.Wire, number, WireSegment[]];
+            const startX = currentX;
+            const startY = currentY;
+
             const wire = new RenderWire(currentX, currentY, wireSegments);
 
             const wireEnd = wire.getWireEnd();
@@ -127,6 +133,20 @@ export async function prepareLayout2(
             currentY = wireEnd.y;
 
             placedWires.push(wire);
+
+            wiresLookup.set(wireId, {
+                start: [startX, startY],
+                end: [currentX, currentY]
+            });
+
+        } else if (action === SequenceAction.WireJump) {
+            const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
+
+            if (wiresLookup.has(wireId)) {
+                const wireInfo = wiresLookup.get(wireId);
+                currentX = wireInfo.end[0];
+                currentY = wireInfo.end[1];
+            }
         }
     }
 
@@ -134,6 +154,11 @@ export async function prepareLayout2(
         components: placedComponents, 
         wires: placedWires
     };
+}
+
+type WireLookupInfo = {
+    start: [x: number, y: number],
+    end: [x: number, y: number]
 }
 
 function findFreeSpace(existingComponents: RenderComponent[], nextComponent: RenderComponent): RenderComponent {
