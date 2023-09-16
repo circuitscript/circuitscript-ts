@@ -1,14 +1,14 @@
 import fs from 'fs';
 
 import { createSVGWindow } from 'svgdom';
-import { G, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
+import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { RenderComponent, RenderWire } from "./layout2";
+import { RenderComponent, RenderJunction, RenderWire } from "./layout2";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, edgeColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
 
-export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[]}, outputPath: string): void {
+export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}, outputPath: string): void {
     const window = createSVGWindow();
     const document = window.document;
 
@@ -17,11 +17,15 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     const canvas = SVG(document.documentElement);
     applyFontsToSVG(canvas);
 
-    generateSVGChild(canvas, graph.components, graph.wires);
+    generateSVGChild(canvas, graph.components, graph.wires, graph.junctions);
     const {x, y, width, height} = canvas.bbox();
 
-    canvas.size(width, height);
-    canvas.viewbox(x, y, width, height);
+    const margin = 5;
+    const widthAndMargin = width + margin * 2;
+    const heightAndMargin = height + margin * 2;
+
+    canvas.size(widthAndMargin, heightAndMargin);
+    canvas.viewbox(x - margin, y - margin, widthAndMargin, heightAndMargin);
 
     const svgOutput = canvas.svg();
 
@@ -34,7 +38,7 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     });
 }
 
-function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: RenderComponent[], wires: RenderWire[]): void {
+function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]): void {
 
     const drawPinPosition = false;
 
@@ -95,6 +99,16 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         wiresGroup.polyline(points)
             .fill('none')
             .stroke({ width: 1, color: edgeColor });
+    });
+
+    const junctionRadius = 5;
+
+    const junctionGroup = canvas.group().translate(0, 0);
+    junctions.forEach(item => {
+        junctionGroup.circle(junctionRadius)
+                     .translate(item.x - junctionRadius/2, item.y - junctionRadius/2)
+                     .fill('#333')
+                     .stroke('none');
     });
 }
 

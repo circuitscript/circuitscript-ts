@@ -1,7 +1,7 @@
 import { G } from "@svgdotjs/svg.js";
 
 import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
-import { Feature, Geometry, Label, LabelStyle } from "./geometry";
+import { Feature, Geometry, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry";
 
 
 /**
@@ -63,7 +63,7 @@ export abstract class SymbolGraphic {
 
         this.drawLabels(innerGroup);
 
-        this.displayBounds && this.drawBounds(group);
+        // this.displayBounds && this.drawBounds(group);
     }
 
     // Returns the port position, relative to the symbol origin
@@ -121,23 +121,40 @@ export abstract class SymbolGraphic {
         labels.forEach(label => {
             const tmpLabel = label as Label;
 
+            const {
+                fontSize = 10,
+                anchor = HorizontalAlign.Left, 
+                vanchor = VerticalAlign.Bottom,
+            } = tmpLabel.style;
+
             let useAnchor = 'start';
             let dominantBaseline = 'auto';
-            switch(tmpLabel.anchor){
-                case 'left':
+
+            switch(anchor){
+                case HorizontalAlign.Left:
                     useAnchor = 'start';
                     break;
-                case 'center':
+
+                case HorizontalAlign.Middle:
                     useAnchor = 'middle';
                     break;
 
-                case 'v-center':
-                    useAnchor = 'middle';
+                case HorizontalAlign.Right:
+                    useAnchor = 'end';
+                    break;
+            }
+
+            switch(vanchor){
+                case VerticalAlign.Top:
+                    dominantBaseline = 'hanging';
+                    break;
+
+                case VerticalAlign.Middle:
                     dominantBaseline = 'middle';
                     break;
-                
-                case 'right':
-                    useAnchor = 'end';
+
+                case VerticalAlign.Bottom:
+                    dominantBaseline = 'text-top';
                     break;
             }
 
@@ -149,7 +166,7 @@ export abstract class SymbolGraphic {
                 .fill('#333')
                 .font({
                     family: defaultFont,
-                    size: tmpLabel.fontSize,
+                    size: fontSize,
                     anchor: useAnchor,
                     'dominant-baseline': dominantBaseline,
                 })
@@ -184,6 +201,7 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 
 
 export class SymbolPower extends SymbolGraphic {
+
     refreshDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
@@ -192,7 +210,8 @@ export class SymbolPower extends SymbolGraphic {
 
         drawing.addHLine(-15, 0, 30)
             .addPin(0, 0, 0, 10, 1)
-            .addLabel(0, -5, netName, { fontSize: 10, anchor: 'center' });
+            .addLabel(0, -5, netName,
+                { fontSize: 10, anchor: HorizontalAlign.Middle });
 
         this.drawing = drawing;
 
@@ -201,17 +220,9 @@ export class SymbolPower extends SymbolGraphic {
         this.height = bbox.height;
     }
 
-    drawPortsName = false;
 }
 
 export class SymbolGnd extends SymbolGraphic {
-
-    drawPortsName = false;
-
-    drawing: SymbolDrawing;
-
-    width = 50;
-    height = 30;
 
     refreshDrawing(): void {
         const drawing = new SymbolDrawing();
@@ -269,13 +280,6 @@ export class SymbolLabel extends SymbolGraphic {
 
 export class SymbolRes extends SymbolGraphic {
 
-    drawPortsName = false;
-
-    drawing: SymbolDrawing;
-
-    width: number;
-    height: number;
-
     refreshDrawing(): void {
         const width = 50;
         const height = 20;
@@ -291,11 +295,12 @@ export class SymbolRes extends SymbolGraphic {
             .addPin(width / 2, 0, width / 2 + 10, 0, 2)
             .addLabel(0, 0, value, {
                 fontSize: 10,
-                anchor: 'v-center'
+                anchor: HorizontalAlign.Middle,
+                vanchor: VerticalAlign.Middle,
             })
             .addLabel(-width / 2, -height / 2 - 5, refdes, {
                 fontSize: 8,
-                anchor: 'left',
+                anchor: HorizontalAlign.Left,
             })
             ;
 
@@ -309,37 +314,31 @@ export class SymbolRes extends SymbolGraphic {
 
 export class SymbolCap extends SymbolGraphic {
 
-    drawPortsName = false;
+    refreshDrawing(): void {
+        const width = 30;
+        const height = 40;
 
-    size(): { width: number; height: number; } {
-        return {
-            width: 50,
-            height: 50,
-        }
+        const drawing = new SymbolDrawing();
+        drawing.angle = this._angle;
+
+        const value = this.getLabelValue("value");
+
+        drawing.addHLine(-width / 2, -3, width)
+            .addHLine(-width / 2, 3, width)
+            .addPin(0, -3, 0, -height / 2, 1)
+            .addPin(0, 3, 0, height / 2, 2)
+            .addLabel(width / 2 + 2, 0, value, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+            })
+            ;
+
+        const bbox = drawing.getBoundingBox();
+        this.width = bbox.width;
+        this.height = bbox.height;
+
+        this.drawing = drawing;
     }
-
-    draw(group: G): void {
-        group.path('M20 10 v30 M30 10 v30 M0 25 h20 M50 25 h-20')
-            .stroke(
-                {
-                    width: defaultSymbolLineWidth,
-                    color: defaultSymbolLineColor
-                })
-            .fill('none');
-
-        if(this.displayBounds){
-            this.drawBounds(group);
-        }
-    }
-
-    pinPosition(id: number): { x: number; y: number; angle: number; } {
-        if (id === 1){
-            return {x: 0, y: 25, angle: 180}
-        } else if (id === 2){
-            return {x: 50, y: 25, angle: 0}
-        }
-    }
-
 }
 
 export class SymbolCustom extends SymbolGraphic {
@@ -676,3 +675,4 @@ export type SymbolPinDefintion = {
     pinId: number,
     text: string, // Display value at the pin
 }
+

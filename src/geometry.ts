@@ -9,13 +9,14 @@ export type Feature = Segment | Polygon | Label;
 export type LabelStyle = {
     font?: string,
     fontSize?: number,
-    anchor?: string,
+    
+    anchor?: HorizontalAlign.Left | HorizontalAlign.Middle | HorizontalAlign.Right, // Horizontal anchor
+    vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
 }
 
 export class Label extends Flatten.Polygon {
 
     text: string;
-    anchor: string;
 
     anchorPoint: [number, number] = [0, 0];
 
@@ -23,15 +24,16 @@ export class Label extends Flatten.Polygon {
     polygon: Polygon;
 
     font = 'default';
-    fontSize = 10;
 
-    constructor(text: string, fontSize: number, anchorPoint: [number, number], polygon: Flatten.Polygon, anchor = 'left') {
+    style: LabelStyle;
+
+    constructor(text: string, anchorPoint: [number, number], polygon: Flatten.Polygon, style: LabelStyle) {
         super(polygon.vertices);
 
         this.text = text;
-        this.anchor = anchor;
         this.anchorPoint = anchorPoint;
-        this.fontSize = fontSize;
+
+        this.style = style;
 
         this.boundingBox = polygon.box;
         this.polygon = polygon;
@@ -41,7 +43,9 @@ export class Label extends Flatten.Polygon {
 
         const defaultFont = 'Inter';
 
-        const { fontSize = 10, anchor = 'left' } = style;
+        const { fontSize = 10,
+            anchor = HorizontalAlign.Left,
+            vanchor = VerticalAlign.Bottom } = style;
 
         // Determine the size of the text
         const textBoundingBox = measureTextSize2(text, defaultFont, fontSize);
@@ -50,37 +54,38 @@ export class Label extends Flatten.Polygon {
         const tmpHeight = textBoundingBox.height;
 
         let polygonCoords: [number, number][] = [];
-        if (anchor === 'left') {
+        if (anchor === HorizontalAlign.Left) {
             polygonCoords = [
                 [x, y - tmpHeight],
                 [x + tmpWidth, y - tmpHeight],
                 [x + tmpWidth, y],
                 [x, y]
             ];
-        } else if (anchor === 'center') {
+        } else if (anchor === HorizontalAlign.Middle && vanchor === VerticalAlign.Middle) {
+            polygonCoords = [
+                [x - tmpWidth / 2, y - tmpHeight / 2],
+                [x + tmpWidth / 2, y - tmpHeight / 2],
+                [x + tmpWidth / 2, y + tmpHeight / 2],
+                [x - tmpWidth / 2, y + tmpHeight / 2]];
+                
+        } else if (anchor === HorizontalAlign.Middle) {
             polygonCoords = [
                 [x - tmpWidth / 2, y - tmpHeight],
                 [x + tmpWidth / 2, y - tmpHeight],
                 [x + tmpWidth / 2, y],
                 [x - tmpWidth / 2, y]
             ]
-        } else if (anchor === 'v-center') {
-            polygonCoords = [
-                [x - tmpWidth / 2, y - tmpHeight / 2],
-                [x + tmpWidth / 2, y - tmpHeight / 2],
-                [x + tmpWidth / 2, y + tmpHeight / 2],
-                [x - tmpWidth / 2, y + tmpHeight / 2]]
-        }
+        } 
 
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(text, fontSize, [x, y], polygon, anchor);
+        return new Label(text, [x, y], polygon, style);
     }
 
     rotate(angle: number, origin: Flatten.Point): Label {
         const polygonRotate = super.rotate(angle, origin);
-        return new Label(this.text, this.fontSize, this.anchorPoint, polygonRotate, this.anchor);
+        return new Label(this.text, this.anchorPoint, polygonRotate, this.style);
     }
 
     getLabelPosition(): [number, number] {
@@ -198,4 +203,16 @@ export class Geometry {
 
         return paths.join(" ");
     }
+}
+
+export enum HorizontalAlign {
+    Left = 'left',
+    Middle = 'middle',
+    Right = 'right',
+}
+
+export enum VerticalAlign {
+    Top = 'top',
+    Middle = 'middle',
+    Bottom = 'bottom',
 }

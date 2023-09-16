@@ -8,7 +8,7 @@ import { WireSegment } from './objects/Wire';
 
 export async function prepareLayout2(
     sequence: SequenceItem[]
-): Promise<{components: RenderComponent[], wires: RenderWire[]}> {
+): Promise<{components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}> {
 
     // TODO: automatically determine where wires can be added for spacing out
     // components.
@@ -25,6 +25,9 @@ export async function prepareLayout2(
 
     // Keeps track of the wire positions
     const wiresLookup = new Map<number, WireLookupInfo>();
+
+    // Tracks if wire points (start and ends only) have been repeated
+    const wirePointCounts: WirePointCount[] = [];
 
     for (let i = 0; i < sequence.length; i++) {
         // Do not need to handle nested components for now
@@ -139,6 +142,26 @@ export async function prepareLayout2(
                 end: [currentX, currentY]
             });
 
+            const foundStartPos = wirePointCounts.find(item => {
+                return (item[0] === startX && item[1] === startY);
+            });
+
+            if (foundStartPos) {
+                foundStartPos[2]++;
+            } else {
+                wirePointCounts.push([startX, startY, 1]);
+            }
+
+            const foundEndPos = wirePointCounts.find(item => {
+                return item[0] === currentX && item[1] === currentY;
+            });
+
+            if (foundEndPos) {
+                foundEndPos[2]++;
+            } else {
+                wirePointCounts.push([currentX, currentY, 1]);
+            }
+
         } else if (action === SequenceAction.WireJump) {
             const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
 
@@ -150,9 +173,19 @@ export async function prepareLayout2(
         }
     }
 
+    const junctions: RenderJunction[] = [];
+
+    wirePointCounts.forEach(item => {
+        const [x, y, count] = item;
+        if (count > 1) {
+            junctions.push(new RenderJunction(x, y));
+        }
+    });
+
     return {
-        components: placedComponents, 
-        wires: placedWires
+        components: placedComponents,
+        wires: placedWires,
+        junctions,
     };
 }
 
@@ -160,6 +193,7 @@ type WireLookupInfo = {
     start: [x: number, y: number],
     end: [x: number, y: number]
 }
+type WirePointCount = [x: number, y: number, count: number];
 
 function findFreeSpace(existingComponents: RenderComponent[], nextComponent: RenderComponent): RenderComponent {
 
@@ -279,6 +313,16 @@ export class RenderWire {
 
     getWireEnd(): { x: number, y: number } {
         return this.points[this.points.length - 1];
+    }
+}
+
+export class RenderJunction {
+    x: number;
+    y: number;
+
+    constructor(x: number, y: number){
+        this.x = x;
+        this.y = y;
     }
 }
 
