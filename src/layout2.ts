@@ -71,11 +71,15 @@ export async function prepareLayout2(
                         tmpSymbol.setLabelValue('value', component.parameters.get('value').toDisplayString());
                     }
 
-                    tmpSymbol.setLabelValue('refdes', component.instanceName);
-
                 } else {
                     const symbolPinDefinitions = generateLayoutPinDefinition(component);
                     tmpSymbol = new SymbolCustom(symbolPinDefinitions);
+                }
+
+                tmpSymbol.setLabelValue('refdes', component.instanceName);
+
+                if (component.parameters.has('MPN')){
+                    tmpSymbol.setLabelValue('MPN', component.parameters.get('MPN'));
                 }
 
                 // Set rotation of object
@@ -83,6 +87,8 @@ export async function prepareLayout2(
                     const {angle = 0} = component.styles;
                     tmpSymbol.angle = angle as number;
                 }
+
+                tmpSymbol.refreshDrawing();
 
                 const tmpSize = tmpSymbol.size();
                 useWidth = tmpSize.width;

@@ -5,7 +5,7 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
 import { RenderComponent, RenderJunction, RenderWire } from "./layout2";
 import { applyFontsToSVG } from './sizing';
-import { bodyColor, edgeColor } from './globals';
+import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
 
 export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}, outputPath: string): void {
@@ -98,16 +98,15 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         });
         wiresGroup.polyline(points)
             .fill('none')
-            .stroke({ width: 1, color: edgeColor });
+            .stroke({ width: 1, color: wireColor });
     });
 
-    const junctionRadius = 5;
 
     const junctionGroup = canvas.group().translate(0, 0);
     junctions.forEach(item => {
-        junctionGroup.circle(junctionRadius)
-                     .translate(item.x - junctionRadius/2, item.y - junctionRadius/2)
-                     .fill('#333')
+        junctionGroup.circle(junctionSize)
+                     .translate(item.x - junctionSize/2, item.y - junctionSize/2)
+                     .fill(junctionColor)
                      .stroke('none');
     });
 }

@@ -36,10 +36,6 @@ export abstract class SymbolGraphic {
         this.refreshDrawing();
     }
 
-    constructor() {
-        this.refreshDrawing();
-    }
-
     abstract refreshDrawing(): void;
 
     size(): { width: number; height: number; } {
@@ -103,7 +99,7 @@ export abstract class SymbolGraphic {
                 width: defaultSymbolLineWidth,
                 color: defaultSymbolLineColor
             })
-            .fill('none');
+            .fill(bodyColor);
     }
 
     protected drawPins(group: G): void {
@@ -359,12 +355,16 @@ export class SymbolCustom extends SymbolGraphic {
 
     pins: SymbolPinLayout[] = [];
 
-    constructor(pinDefinition: SymbolPinDefintion[]){
+    constructor(pinDefinition: SymbolPinDefintion[]) {
         super();
+
         // define the left and right pins only for now
         this.pinDefinition = pinDefinition;
+    }
 
+    refreshDrawing(): void {
         // Determine the size based on the definition
+
         const leftPins = this.pinDefinition.filter(item => {
             return item.side === SymbolPinSide.Left;
         });
@@ -373,49 +373,61 @@ export class SymbolCustom extends SymbolGraphic {
             return item.side === SymbolPinSide.Right;
         });
 
-        // This width also includes the width size
-        this.width = this.bodyWidth + 2 * this.pinLength;
+        const drawing = new SymbolDrawing();
 
-        this.height = (1 + Math.max(leftPins.length, rightPins.length)) * this.pinSpacing;
+        const bodyWidth = this.bodyWidth;
+        const bodyHeight = (1 + Math.max(leftPins.length, rightPins.length)) * this.pinSpacing;
+
+        drawing.addRect(0, 0, bodyWidth, bodyHeight);
 
         // Setup the pins
+        const leftPinStart = -bodyWidth / 2;
+        const rightPinStart = bodyWidth / 2;
+        const pinStartY = -bodyHeight / 2;
+
         leftPins.forEach((pin, index) => {
-            const pinY = (index + 1) * this.pinSpacing // Includes the offset too
-            this.pins.push({
-                pinId: pin.pinId,
-                angle: 180,
-                text: pin.text,
-                start: {
-                    x: 0,
-                    y: pinY,
-                },
-                end: {
-                    x: -this.pinLength,
-                    y: pinY
-                }
+            const pinY = pinStartY + (index + 1) * this.pinSpacing // Includes the offset too
+            drawing.addPin(leftPinStart, pinY, leftPinStart - this.pinLength, pinY, pin.pinId);
+            drawing.addLabel(leftPinStart + 4, pinY, pin.text, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Middle,
             });
         });
 
         rightPins.forEach((pin, index) => {
-            const pinY = (index + 1) * this.pinSpacing // Includes the offset too
-            this.pins.push({
-                pinId: pin.pinId,
-                angle: 0,
-                text: pin.text,
-                start: {
-                    x: this.bodyWidth,
-                    y: pinY,
-                },
-                end: {
-                    x: this.bodyWidth + this.pinLength,
-                    y: pinY
-                }
+            const pinY = pinStartY + (index + 1) * this.pinSpacing // Includes the offset too
+            drawing.addPin(rightPinStart, pinY, rightPinStart + this.pinLength, pinY, pin.pinId);
+            drawing.addLabel(rightPinStart - 4, pinY, pin.text, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Right,
+                vanchor: VerticalAlign.Middle,
             });
         });
-    }
 
-    refreshDrawing(): void {
-        // throw new Error("Method not implemented.");
+        const instanceName = this.getLabelValue("refdes");
+        const MPN = this.getLabelValue("MPN");
+
+        drawing.addLabel(-bodyWidth/2, -bodyHeight/2 - 4, instanceName, {
+            fontSize: 10,
+            anchor: HorizontalAlign.Left,
+        });
+
+        drawing.addLabel(-bodyWidth/2, bodyHeight/2 + 4, MPN, {
+            fontSize: 10,
+            anchor: HorizontalAlign.Left,
+            vanchor: VerticalAlign.Top,
+        });
+
+        this.drawing = drawing;
+
+        // const {width, height} = drawing.getBoundingBox();
+        // this.width = width;
+        // this.height = height;
+
+        // This width also includes the pin length
+        this.width = this.bodyWidth + 2 * this.pinLength;
+        this.height = (1 + Math.max(leftPins.length, rightPins.length)) * this.pinSpacing;
     }
 
     size(): {width: number, height: number} {
@@ -425,94 +437,94 @@ export class SymbolCustom extends SymbolGraphic {
         }
     }
 
-    pinPosition(id: number): { x: number; y: number; angle: number; } {
-        const matchingPin = this.pins.find(item => {
-            return item.pinId === id;
-        });
+    // pinPosition(id: number): { x: number; y: number; angle: number; } {
+    //     const matchingPin = this.pins.find(item => {
+    //         return item.pinId === id;
+    //     });
 
-        if (matchingPin) {
-            return {
-                x: matchingPin.end.x,
-                y: matchingPin.end.y,
-                angle: matchingPin.angle,
-            }
-        }
-    }
+    //     if (matchingPin) {
+    //         return {
+    //             x: matchingPin.end.x,
+    //             y: matchingPin.end.y,
+    //             angle: matchingPin.angle,
+    //         }
+    //     }
+    // }
 
-    draw(group: G, extra={}): void {
-        // Draw the body first
-        group.rect(this.bodyWidth, this.height)
-             .fill(bodyColor)
-             .stroke({
-                width: defaultSymbolLineWidth,
-                color: defaultSymbolLineColor
-             });
+    // draw(group: G, extra={}): void {
+    //     // Draw the body first
+    //     group.rect(this.bodyWidth, this.height)
+    //          .fill(bodyColor)
+    //          .stroke({
+    //             width: defaultSymbolLineWidth,
+    //             color: defaultSymbolLineColor
+    //          });
 
-        this.pins.forEach(item => {
-            group.line([
-                [item.start.x, item.start.y],
-                [item.end.x, item.end.y]
-            ]).stroke({
-                width: defaultSymbolLineWidth,
-                color: defaultSymbolLineColor
-            });
+    //     this.pins.forEach(item => {
+    //         group.line([
+    //             [item.start.x, item.start.y],
+    //             [item.end.x, item.end.y]
+    //         ]).stroke({
+    //             width: defaultSymbolLineWidth,
+    //             color: defaultSymbolLineColor
+    //         });
 
-            let textX = item.start.x;
-            const textY = item.start.y;
-            let textAnchor = 'start';
+    //         let textX = item.start.x;
+    //         const textY = item.start.y;
+    //         let textAnchor = 'start';
 
-            let pinIdX = item.start.x - 5;
-            const pinIdY = item.start.y - 3;
-            let pinIdAnchor = 'start';
+    //         let pinIdX = item.start.x - 5;
+    //         const pinIdY = item.start.y - 3;
+    //         let pinIdAnchor = 'start';
 
-            if (item.angle === 180) {
-                textX = item.start.x + this.pinTextPadding;
-                textAnchor = 'start';
+    //         if (item.angle === 180) {
+    //             textX = item.start.x + this.pinTextPadding;
+    //             textAnchor = 'start';
 
-                pinIdX = item.start.x - 5;
-                pinIdAnchor = 'end';
-            } else {
-                textX = item.start.x - this.pinTextPadding;
-                textAnchor = 'end';
+    //             pinIdX = item.start.x - 5;
+    //             pinIdAnchor = 'end';
+    //         } else {
+    //             textX = item.start.x - this.pinTextPadding;
+    //             textAnchor = 'end';
 
-                pinIdX = item.start.x + 5;
-                pinIdAnchor = 'start';
-            }
+    //             pinIdX = item.start.x + 5;
+    //             pinIdAnchor = 'start';
+    //         }
 
-            // Position pin text/name within body
-            group.text(item.text)
-                .translate(textX, textY)
-                .font({
-                    family: defaultFont,
-                    size: 10,
-                    anchor: textAnchor,
-                    'dominant-baseline': 'central',
-                });
+    //         // Position pin text/name within body
+    //         group.text(item.text)
+    //             .translate(textX, textY)
+    //             .font({
+    //                 family: defaultFont,
+    //                 size: 10,
+    //                 anchor: textAnchor,
+    //                 'dominant-baseline': 'central',
+    //             });
 
-            group.text(item.pinId.toString())
-                 .translate(pinIdX, pinIdY)
-                 .font({
-                    family: defaultFont,
-                    size: 10,
-                    anchor: pinIdAnchor,
-                 })
-        });
+    //         group.text(item.pinId.toString())
+    //              .translate(pinIdX, pinIdY)
+    //              .font({
+    //                 family: defaultFont,
+    //                 size: 10,
+    //                 anchor: pinIdAnchor,
+    //              })
+    //     });
         
-        if (extra){
-            const {instance_name = null} = extra;
+    //     if (extra){
+    //         const {instance_name = null} = extra;
 
-            if (instance_name !== null){
-                // draw the instance name
-                group.text(instance_name)
-                     .translate(0, -5)
-                     .font({
-                        family: defaultFont,
-                        size: 10,
-                        anchor: 'start',
-                     })
-            }
-        }
-    }
+    //         if (instance_name !== null){
+    //             // draw the instance name
+    //             group.text(instance_name)
+    //                  .translate(0, -5)
+    //                  .font({
+    //                     family: defaultFont,
+    //                     size: 10,
+    //                     anchor: 'start',
+    //                  })
+    //         }
+    //     }
+    // }
 }
 
 
@@ -628,10 +640,12 @@ class SymbolDrawing {
     getBoundingBox(): { width: number, height: number, start: [number, number], end: [number, number] } {
         const pinFeatures = this.pins.map(pin => {
             return pin[1];
-        })
+        });
+
         const allItems = [...this.items, ...pinFeatures];
+
         const withAngle = Geometry.groupRotate(allItems, this.angle, this.mainOrigin);
-        
+
         return Geometry.groupBounds(withAngle);
     }
 

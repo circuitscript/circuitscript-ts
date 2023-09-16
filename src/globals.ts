@@ -37,6 +37,6 @@ export const defaultFont = 'Inter';
 export const defaultFontSize = 10;
 
 export const bodyColor = '#FFFEAF';
-export const junctionSize = 8;
-export const junctionColor = '#111';
-export const edgeColor = '#111';
+export const junctionSize = 5;
+export const junctionColor = 'rgb(0, 132, 0)';
+export const wireColor = 'rgb(0, 132, 0)';

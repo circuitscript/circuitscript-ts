@@ -6,7 +6,7 @@ import { createSVGWindow } from 'svgdom';
 import { applyFontsToSVG } from './sizing';
 import { SymbolFactory } from './draw_symbols';
 import { PortSide } from './layout';
-import { bodyColor, defaultFont, edgeColor, junctionSize, junctionColor, portWidth, defaultFontSize } from './globals';
+import { bodyColor, defaultFont, wireColor, junctionSize, junctionColor, portWidth, defaultFontSize } from './globals';
 
 export function generateSVG(elkNode: ElkNode, outputPath: string): void {
     const window = createSVGWindow();
@@ -156,7 +156,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, elkNode: ElkNode)
             group
                 .polyline(points)
                 .fill('none')
-                .stroke({ width: 1, color: edgeColor });
+                .stroke({ width: 1, color: wireColor });
 
             // Draw something at the end to mark the 'arrow head'
             // group.circle(6)
