@@ -1,4 +1,5 @@
-# show function definition, basics of circuit manipulation
+# Show function definition, basics of circuit manipulation.
+# Also shows basic branching.
 
 def net(net_name):
     return create component:
@@ -9,14 +10,6 @@ def net(net_name):
             net_name: net_name
             priority: 5
 
-def power(net_object):
-    return create component:
-        pins: 1
-        display: "net"
-        params:
-            net: net_object
-
-
 def res(value):
     return create component:
         pins: 2
@@ -25,22 +18,29 @@ def res(value):
             value: value
 
 V5V = net("5V")
-
 at V5V pin 1 
-
-wire down 50 right 50
+wire down 20 right 20
 
 add R1 = res(10k)
+wire right 20
 
-wire right 50
+branch:
+    wire down 20
+    add R2 = res(30k) [angle = 90]
+    wire down 20
 
-add R2 = res(30k)
+    to gnd
 
-wire right 10 down 100
+branch:
+    wire right 60 
+    
+    branch:
+        wire down 20
+        add R3 = res(30k) [angle = 90]
+        wire down 20
+        to gnd
 
-to gnd
-
-#add V5V = net("5V") to R1 = res(10k) at pin 2 to R2 = res(30k) at pin 2 to R3 = res(50k) at pin 2 to gnd
-
-#at V5V
-#add res(20k) to gnd
+    wire right 60 down 20
+    add R4 = res(10k) [angle=90]
+    wire down 20
+    to gnd
