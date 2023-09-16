@@ -5,6 +5,7 @@ import { ClassComponent } from "./objects/Component";
 import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
 import { WireSegment } from './objects/Wire';
+import { NumericValue } from './objects/ParamDefinition';
 
 export async function prepareLayout2(
     sequence: SequenceItem[]
@@ -68,7 +69,16 @@ export async function prepareLayout2(
                     }
 
                     if (component.parameters.has('value')) {
-                        tmpSymbol.setLabelValue('value', component.parameters.get('value').toDisplayString());
+
+                        let displayString = "";
+                        const tmpValue = component.parameters.get('value');
+                        if (typeof tmpValue == 'object' && (tmpValue instanceof NumericValue)){
+                            displayString = (tmpValue as NumericValue).toDisplayString();
+                        } else {
+                            displayString = tmpValue;
+                        }
+
+                        tmpSymbol.setLabelValue('value', displayString);
                     }
 
                 } else {
@@ -183,7 +193,10 @@ export async function prepareLayout2(
 
     wirePointCounts.forEach(item => {
         const [x, y, count] = item;
-        if (count > 1) {
+
+        // Need to be at least 3 or more. If there are 2,
+        // then it could just be a bend or a straight line.
+        if (count > 2) {
             junctions.push(new RenderJunction(x, y));
         }
     });

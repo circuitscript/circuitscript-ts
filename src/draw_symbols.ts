@@ -229,6 +229,7 @@ export class SymbolGnd extends SymbolGraphic {
             .addPin(0, 0, 0, -10, 1);
 
         this.drawing = drawing;
+        
         const bbox = drawing.getBoundingBox();
         this.width = bbox.width;
         this.height = bbox.height;
@@ -236,42 +237,25 @@ export class SymbolGnd extends SymbolGraphic {
 }
 
 export class SymbolLabel extends SymbolGraphic {
-    pinPosition(id: number): { x: number; y: number; angle: number; } {
-        throw new Error("Method not implemented.");
+
+    refreshDrawing(): void {
+
+        const value = this.getLabelValue("value");
+
+        const drawing = new SymbolDrawing();
+        drawing.addLabel(0, -2, value, {
+            fontSize: 10,
+            anchor: HorizontalAlign.Left
+        })
+            .addPin(0, 0, 0, 0, 1);
+
+        this.drawing = drawing;
+
+        const bbox = drawing.getBoundingBox();
+        this.width = bbox.width;
+        this.height = bbox.height;
     }
-    drawPortsName = false;
 
-    width = 80;
-    height = 50;
-
-    size(): { width: number, height: number } {
-        return {
-            width: this.width,
-            height: this.height,
-        }
-    }
-
-    draw(group: G, extra?: {}): void {
-        group.line(0, this.height, this.width, this.height)
-                .fill('none')
-                .stroke({width: 1, color: '#333'});
-
-        if (extra) {
-            const netName = extra.net_name;
-            group.text(netName)
-                .translate(this.width / 2, this.height - 2)
-                .fill('#333')
-                .font({
-                    family: defaultFont,
-                    size: 10,
-                    anchor: 'middle',
-                })
-        }
-
-        if(this.displayBounds){
-            this.drawBounds(group);
-        }
-    }
 }
 
 export class SymbolRes extends SymbolGraphic {
@@ -430,101 +414,6 @@ export class SymbolCustom extends SymbolGraphic {
         this.height = (1 + Math.max(leftPins.length, rightPins.length)) * this.pinSpacing;
     }
 
-    size(): {width: number, height: number} {
-        return {
-            width: this.width,
-            height: this.height,
-        }
-    }
-
-    // pinPosition(id: number): { x: number; y: number; angle: number; } {
-    //     const matchingPin = this.pins.find(item => {
-    //         return item.pinId === id;
-    //     });
-
-    //     if (matchingPin) {
-    //         return {
-    //             x: matchingPin.end.x,
-    //             y: matchingPin.end.y,
-    //             angle: matchingPin.angle,
-    //         }
-    //     }
-    // }
-
-    // draw(group: G, extra={}): void {
-    //     // Draw the body first
-    //     group.rect(this.bodyWidth, this.height)
-    //          .fill(bodyColor)
-    //          .stroke({
-    //             width: defaultSymbolLineWidth,
-    //             color: defaultSymbolLineColor
-    //          });
-
-    //     this.pins.forEach(item => {
-    //         group.line([
-    //             [item.start.x, item.start.y],
-    //             [item.end.x, item.end.y]
-    //         ]).stroke({
-    //             width: defaultSymbolLineWidth,
-    //             color: defaultSymbolLineColor
-    //         });
-
-    //         let textX = item.start.x;
-    //         const textY = item.start.y;
-    //         let textAnchor = 'start';
-
-    //         let pinIdX = item.start.x - 5;
-    //         const pinIdY = item.start.y - 3;
-    //         let pinIdAnchor = 'start';
-
-    //         if (item.angle === 180) {
-    //             textX = item.start.x + this.pinTextPadding;
-    //             textAnchor = 'start';
-
-    //             pinIdX = item.start.x - 5;
-    //             pinIdAnchor = 'end';
-    //         } else {
-    //             textX = item.start.x - this.pinTextPadding;
-    //             textAnchor = 'end';
-
-    //             pinIdX = item.start.x + 5;
-    //             pinIdAnchor = 'start';
-    //         }
-
-    //         // Position pin text/name within body
-    //         group.text(item.text)
-    //             .translate(textX, textY)
-    //             .font({
-    //                 family: defaultFont,
-    //                 size: 10,
-    //                 anchor: textAnchor,
-    //                 'dominant-baseline': 'central',
-    //             });
-
-    //         group.text(item.pinId.toString())
-    //              .translate(pinIdX, pinIdY)
-    //              .font({
-    //                 family: defaultFont,
-    //                 size: 10,
-    //                 anchor: pinIdAnchor,
-    //              })
-    //     });
-        
-    //     if (extra){
-    //         const {instance_name = null} = extra;
-
-    //         if (instance_name !== null){
-    //             // draw the instance name
-    //             group.text(instance_name)
-    //                  .translate(0, -5)
-    //                  .font({
-    //                     family: defaultFont,
-    //                     size: 10,
-    //                     anchor: 'start',
-    //                  })
-    //         }
-    //     }
-    // }
 }
 
 
