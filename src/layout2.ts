@@ -214,29 +214,6 @@ type WireLookupInfo = {
 }
 type WirePointCount = [x: number, y: number, count: number];
 
-function findFreeSpace(existingComponents: RenderComponent[], nextComponent: RenderComponent): RenderComponent {
-
-    // Shallow clone to get the positon only
-    const tmpComponent = new RenderComponent(nextComponent.component, nextComponent.width, nextComponent.height);
-    tmpComponent.x = nextComponent.x;
-    tmpComponent.y = nextComponent.y;
-
-    const margin = 20;
-
-    // Finds a location that does not overlap with existing components
-    for (let i = 0; i < existingComponents.length; i++) {
-        const currentComponent = existingComponents[i];
-
-        if (tmpComponent.doesOverlap(currentComponent)){
-            // move right to the "end" of the current component
-            const moveToX = currentComponent.x + currentComponent.width + margin;
-            tmpComponent.x = moveToX;
-        }
-    }
-
-    return tmpComponent;
-}
-
 function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
     const pins = component.pins;
     const symbolPinDefinitions: SymbolPinDefintion[] = [];
