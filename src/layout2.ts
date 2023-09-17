@@ -11,23 +11,18 @@ export async function prepareLayout2(
     sequence: SequenceItem[]
 ): Promise<{components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}> {
 
-    // TODO: automatically determine where wires can be added for spacing out
-    // components.
-
     const placedComponents: RenderComponent[] = [];
     const placedWires: RenderWire[] = [];
 
-    // Flag to ensure that the first item is well within the canvas
-    let isFirstItem = true;
-
-    // The starting position for layout
+    // The starting position for layout.
     let currentX = 0;
     let currentY = 0;
 
-    // Keeps track of the wire positions
+    // Keeps track of the wire positions.
     const wiresLookup = new Map<number, WireLookupInfo>();
 
-    // Tracks if wire points (start and ends only) have been repeated
+    // Tracks if wire points (start and ends only) have been repeated.
+    // This is used to determine junction points.
     const wirePointCounts: WirePointCount[] = [];
 
     for (let i = 0; i < sequence.length; i++) {
@@ -89,7 +84,7 @@ export async function prepareLayout2(
                 tmpSymbol.setLabelValue('refdes', component.instanceName);
 
                 if (component.parameters.has('MPN')){
-                    tmpSymbol.setLabelValue('MPN', component.parameters.get('MPN'));
+                    tmpSymbol.setLabelValue('MPN', component.parameters.get('MPN') as string);
                 }
 
                 // Set rotation of object
@@ -98,6 +93,7 @@ export async function prepareLayout2(
                     tmpSymbol.angle = angle as number;
                 }
 
+                // Draw symbol in memory to determine the size/bounds.
                 tmpSymbol.refreshDrawing();
 
                 const tmpSize = tmpSymbol.size();
@@ -107,17 +103,6 @@ export async function prepareLayout2(
                 // get the pin position relative to origin of symbol
                 const pinPosition = tmpSymbol.pinPosition(pin);
                 const tmpComponent = new RenderComponent(component, useWidth, useHeight);
-
-                if (isFirstItem) {
-                    // Make sure that the component is fully within canvas
-                    isFirstItem = false;
-
-                    const bounds = tmpSymbol.bounds();
-
-                    // Add the pin position so that the entire symbol is within the canvas
-                    currentX = bounds.start[0] * -1 + pinPosition.x;
-                    currentY = bounds.start[1] * -1 + pinPosition.y;
-                }
 
                 tmpComponent.x = currentX - pinPosition.x;
                 tmpComponent.y = currentY - pinPosition.y;
