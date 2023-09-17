@@ -1,0 +1,165 @@
+# Second block of the Arduino UNO schematic
+
+# Basic components
+
+def net(net_name):
+    return create component:
+        pins: 1
+        display: "net"
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 5
+
+def res(value):
+    return create component:
+        pins: 2
+        display: "res"
+        params:
+            value: value
+
+def cap(value):
+    return create component:
+        pins: 2
+        display: "cap"
+        params:
+            value: value
+            
+def diode():
+    return create component:
+        pins: 
+            1: input, "A"
+            2: input, "C"
+
+
+def power_input():
+    return create component:
+        pins: 3
+        arrange:
+            left: 1,3
+            right: 2
+
+def V5V_DCDC_1():
+    return create component:
+        pins:
+            3: input, "IN"
+            4: output, "OUT1"
+            2: output, "OUT2"
+            1: power, "GND"
+        arrange:
+            left: 3, 1
+            right: 2, 4
+        params:
+            MPN: "MC33269ST-5.0T3"
+
+def V5V_DCDC_2():
+    return create component:
+        pins:
+            3: input, "VI"
+            2: output, "OUT"
+            1: any, "ADJ"
+        arrange:
+            left: 3, 1
+            right: 2
+        params:
+            MPN: "MC33269D-5.0"
+
+def opamp():
+    return create component:
+        pins:
+            3: any, "+"
+            2: any, "-"
+            1: any, "1"
+        arrange:
+            left: 3 ,2
+            right: 1
+        params:
+            MPN: "LM358D"
+
+def mosfet():
+    return create component:
+        pins:
+            1: any, "GATE"
+            2: any, "SOURCE"
+            3: any, "DRAIN"
+        arrange:
+            right: 1, 3
+            left: 2
+        params:
+            MPN: "FDN304V"
+
+def LP2985():
+    return create component:
+        pins:
+            1: power, "IN"
+            3: input, "\E\N"
+            2: any, "GND"
+            4: any, "NC/FB"
+            5: power, "OUT"
+        arrange:
+            left: 1,3,2
+            right: 5,4
+        params:
+            MPN: "LP2985-33DBVR"
+
+def label(value):
+    return create component:
+        pins: 1
+        display: "label"
+        params:
+            value: value
+
+at label("VIN")
+wire right 20 down 20
+add res(10k) [angle = 90]
+wire down 20
+branch:
+    wire down 20
+    add res(10k) [angle = 90]
+    wire down 20
+    to gnd
+
+wire right 100
+to U1A = opamp() pin 3
+
+at U1A:
+    pin 2:
+        wire left 40
+        add label("3V3")
+    pin 1:
+        wire right 20 down 140 left 20
+        to T1 = mosfet() pin 1
+
+at T1 pin 2
+wire left 40
+add label("USBVCC")
+
+at T1 pin "DRAIN"
+wire right 60
+
+branch:
+    wire up 20
+    add net("5V")
+
+wire right 20
+branch:
+    wire right 20 
+    to U2 = LP2985() pin 1
+
+wire down 20 right 20
+to U2 pin 3
+
+at U2:
+    pin 2:
+        wire left 20 down 40
+        to gnd
+    pin 5:
+        wire right 20
+        branch:
+            wire down 20
+            add cap(1u)
+            wire down 20
+            to gnd
+
+        wire up 20
+        add net("3V3")
