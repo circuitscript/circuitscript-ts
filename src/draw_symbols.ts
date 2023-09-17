@@ -261,7 +261,7 @@ export class SymbolLabel extends SymbolGraphic {
 export class SymbolRes extends SymbolGraphic {
 
     refreshDrawing(): void {
-        const width = 50;
+        const width = 40;
         const height = 20;
 
         const drawing = new SymbolDrawing();
@@ -271,8 +271,8 @@ export class SymbolRes extends SymbolGraphic {
         const refdes = this.getLabelValue("refdes");
 
         drawing.addRect(0, 0, width, height)
-            .addPin(-width / 2, 0, -width / 2 - 10, 0, 1)
-            .addPin(width / 2, 0, width / 2 + 10, 0, 2)
+            .addPin(-width / 2, 0, -width / 2 - 20, 0, 1)
+            .addPin(width / 2, 0, width / 2 + 20, 0, 2)
             .addLabel(0, 0, value, {
                 fontSize: 10,
                 anchor: HorizontalAlign.Middle,
