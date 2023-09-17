@@ -21,10 +21,6 @@ export async function prepareLayout2(
     // Keeps track of the wire positions.
     const wiresLookup = new Map<number, WireLookupInfo>();
 
-    // Tracks if wire points (start and ends only) have been repeated.
-    // This is used to determine junction points.
-    const wirePointCounts: WirePointCount[] = [];
-
     for (let i = 0; i < sequence.length; i++) {
         // Do not need to handle nested components for now
 
@@ -44,52 +40,25 @@ export async function prepareLayout2(
             // Component not placed yet
             if (tmpIndex === -1) {
                 let { displayProp = null } = component;
-
-                // Provide some defaults first
-                let useWidth = 100;
-                let useHeight = 100;
+                let tmpSymbol: SymbolGraphic;
 
                 // If it is a gnd net, then use the gnd symbol
-                if (displayProp === null && component.parameters.get('net_name') === GlobalNames.gnd){
+                if (displayProp === null && component.parameters.get('net_name') === GlobalNames.gnd) {
                     displayProp = 'gnd';
                 }
 
-                let tmpSymbol: SymbolGraphic;
-
                 if (displayProp !== null) {
                     tmpSymbol = SymbolFactory(displayProp);
-
-                    if (displayProp === 'net') {
-                        tmpSymbol.setLabelValue("net_name", component.parameters.get('net_name') as string);
-                    }
-
-                    if (component.parameters.has('value')) {
-
-                        let displayString = "";
-                        const tmpValue = component.parameters.get('value');
-                        if (typeof tmpValue == 'object' && (tmpValue instanceof NumericValue)){
-                            displayString = (tmpValue as NumericValue).toDisplayString();
-                        } else {
-                            displayString = tmpValue;
-                        }
-
-                        tmpSymbol.setLabelValue('value', displayString);
-                    }
-
                 } else {
                     const symbolPinDefinitions = generateLayoutPinDefinition(component);
                     tmpSymbol = new SymbolCustom(symbolPinDefinitions);
                 }
 
-                tmpSymbol.setLabelValue('refdes', component.instanceName);
-
-                if (component.parameters.has('MPN')){
-                    tmpSymbol.setLabelValue('MPN', component.parameters.get('MPN') as string);
-                }
+                applyComponentParamsToSymbol(displayProp, component, tmpSymbol);
 
                 // Set rotation of object
-                if (component.styles ){
-                    const {angle = 0} = component.styles;
+                if (component.styles) {
+                    const { angle = 0 } = component.styles;
                     tmpSymbol.angle = angle as number;
                 }
 
@@ -97,9 +66,9 @@ export async function prepareLayout2(
                 tmpSymbol.refreshDrawing();
 
                 const tmpSize = tmpSymbol.size();
-                useWidth = tmpSize.width;
-                useHeight = tmpSize.height;
-    
+                const useWidth = tmpSize.width;
+                const useHeight = tmpSize.height;
+
                 // get the pin position relative to origin of symbol
                 const pinPosition = tmpSymbol.pinPosition(pin);
                 const tmpComponent = new RenderComponent(component, useWidth, useHeight);
@@ -107,7 +76,6 @@ export async function prepareLayout2(
                 tmpComponent.x = currentX - pinPosition.x;
                 tmpComponent.y = currentY - pinPosition.y;
 
-                tmpComponent.displaySymbol = displayProp;
                 tmpComponent.symbol = tmpSymbol;
 
                 placedComponents.push(tmpComponent);
@@ -130,7 +98,7 @@ export async function prepareLayout2(
             const startX = currentX;
             const startY = currentY;
 
-            const wire = new RenderWire(currentX, currentY, wireSegments);
+            const wire = new RenderWire(startX, startY, wireSegments);
 
             const wireEnd = wire.getWireEnd();
             currentX = wireEnd.x;
@@ -143,26 +111,6 @@ export async function prepareLayout2(
                 end: [currentX, currentY]
             });
 
-            const foundStartPos = wirePointCounts.find(item => {
-                return (item[0] === startX && item[1] === startY);
-            });
-
-            if (foundStartPos) {
-                foundStartPos[2]++;
-            } else {
-                wirePointCounts.push([startX, startY, 1]);
-            }
-
-            const foundEndPos = wirePointCounts.find(item => {
-                return item[0] === currentX && item[1] === currentY;
-            });
-
-            if (foundEndPos) {
-                foundEndPos[2]++;
-            } else {
-                wirePointCounts.push([currentX, currentY, 1]);
-            }
-
         } else if (action === SequenceAction.WireJump) {
             const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
 
@@ -174,8 +122,31 @@ export async function prepareLayout2(
         }
     }
 
-    const junctions: RenderJunction[] = [];
+    const wirePoints: [x: number, y: number][] = [];
+    for (const [, wireInfo] of wiresLookup) {
+        const { start, end } = wireInfo;
+        wirePoints.push(start);
+        wirePoints.push(end);
+    }
 
+    // Tracks if wire points (start and ends only) have been repeated.
+    // This is used to determine junction points.
+    const wirePointCounts = wirePoints.reduce((accum, point) => {
+        const found = accum.find(item => {
+            return item[0] === point[0] && item[1] === point[1]
+        });
+
+        if (found) {
+            found[2]++;
+        } else {
+            accum.push([point[0], point[1], 1]);
+        }
+
+        return accum;
+
+    }, [] as WirePointCount[]);
+
+    const junctions: RenderJunction[] = [];
     wirePointCounts.forEach(item => {
         const [x, y, count] = item;
 
@@ -254,6 +225,32 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
     }
 
     return symbolPinDefinitions;
+}
+
+function applyComponentParamsToSymbol(displayProp: string, component: ClassComponent, symbol: SymbolGraphic): void {
+    if (displayProp === 'net') {
+        symbol.setLabelValue("net_name", component.parameters.get('net_name') as string);
+    }
+
+    if (component.parameters.has('value')) {
+
+        let displayString = "";
+        const tmpValue = component.parameters.get('value');
+        if (typeof tmpValue == 'object' && (tmpValue instanceof NumericValue)) {
+            displayString = (tmpValue as NumericValue).toDisplayString();
+        } else {
+            displayString = tmpValue;
+        }
+
+        symbol.setLabelValue('value', displayString);
+    }
+
+    symbol.setLabelValue('refdes', component.instanceName);
+
+    if (component.parameters.has('MPN')) {
+        symbol.setLabelValue('MPN', component.parameters.get('MPN') as string);
+    }
+
 }
 
 export class RenderWire {
