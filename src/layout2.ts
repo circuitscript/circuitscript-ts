@@ -11,12 +11,16 @@ export async function prepareLayout2(
     sequence: SequenceItem[]
 ): Promise<{components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}> {
 
-    const placedComponents: RenderComponent[] = [];
-    const placedWires: RenderWire[] = [];
+    const placedItems: RenderItem[] = [];
 
-    // The starting position for layout.
-    let currentX = 0;
-    let currentY = 0;
+    let isFirstItem = true;
+
+    let previousItem: RenderComponent | RenderWire| null = null;
+
+    // For components, this offset will be used for the pin position
+    let prevItemOffsetX = 0;
+    let prevItemOffsetY = 0;
+
 
     // Keeps track of the wire positions.
     const wiresLookup = new Map<number, WireLookupInfo>();
@@ -25,6 +29,7 @@ export async function prepareLayout2(
         // Do not need to handle nested components for now
 
         const action = sequence[i][0];
+        let tmpComponent: RenderComponent;
 
         // Component related actions
         if (action === SequenceAction.At || action === SequenceAction.To) {
@@ -33,8 +38,10 @@ export async function prepareLayout2(
             const pin = sequence[i][2];
 
             // Make sure component has not been placed yet
-            const tmpIndex = placedComponents.findIndex(item => {
-                return lodash.isEqual(item.component, component);
+            const tmpIndex = placedItems.findIndex(item => {
+                if (item instanceof RenderComponent) {
+                    return lodash.isEqual(item.component, component);
+                }
             });
 
             // Component not placed yet
@@ -69,64 +76,95 @@ export async function prepareLayout2(
                 const useWidth = tmpSize.width;
                 const useHeight = tmpSize.height;
 
-                // get the pin position relative to origin of symbol
-                const pinPosition = tmpSymbol.pinPosition(pin);
-                const tmpComponent = new RenderComponent(component, useWidth, useHeight);
-
-                tmpComponent.x = currentX - pinPosition.x;
-                tmpComponent.y = currentY - pinPosition.y;
-
+                tmpComponent = new RenderComponent(component, useWidth, useHeight);
                 tmpComponent.symbol = tmpSymbol;
 
-                placedComponents.push(tmpComponent);
+                // get the pin position relative to origin of symbol
+                const pinPosition = tmpSymbol.pinPosition(pin);
+                let referenceItem = null;
 
-                currentX = tmpComponent.x + pinPosition.x;
-                currentY = tmpComponent.y + pinPosition.y;
+                if (isFirstItem){
+                    isFirstItem = false;
+                    referenceItem = 0;
+                } else {
+                    referenceItem = previousItem;
+                }
+
+                tmpComponent.position = [referenceItem, prevItemOffsetX, prevItemOffsetY, pinPosition.x, pinPosition.y];
+
+                previousItem = tmpComponent;
+                prevItemOffsetX = pinPosition.x;
+                prevItemOffsetY = pinPosition.y;
+
+                placedItems.push(tmpComponent);
 
             } else {
                 // Component already placed, just move curent position to the pin position
-                const tmpComponent = placedComponents[tmpIndex];
+                const tmpComponent = placedItems[tmpIndex] as RenderComponent;
                 const relativePinPosition = tmpComponent.symbol.pinPosition(pin);
 
-                currentX = tmpComponent.x + relativePinPosition.x;
-                currentY = tmpComponent.y + relativePinPosition.y;
+                previousItem = tmpComponent;
+                prevItemOffsetX = relativePinPosition.x;
+                prevItemOffsetY = relativePinPosition.y;
             }
 
         } else if (action === SequenceAction.Wire) {
             // draw wires
             const [,wireId, wireSegments] = sequence[i] as [SequenceAction.Wire, number, WireSegment[]];
-            const startX = currentX;
-            const startY = currentY;
 
-            const wire = new RenderWire(startX, startY, wireSegments);
+            const wire = new RenderWire(0, 0, wireSegments);
+            wire.id = wireId;
+
+            // Start position of the wire
+            wire.position = [previousItem, prevItemOffsetX, prevItemOffsetY, 0, 0];
 
             const wireEnd = wire.getWireEnd();
-            currentX = wireEnd.x;
-            currentY = wireEnd.y;
 
-            placedWires.push(wire);
+            placedItems.push(wire);
 
             wiresLookup.set(wireId, {
-                start: [startX, startY],
-                end: [currentX, currentY]
+                wire,
+                end: [wireEnd.x, wireEnd.y]
             });
+
+            previousItem = wire;
+            prevItemOffsetX = wireEnd.x;
+            prevItemOffsetY = wireEnd.y;
 
         } else if (action === SequenceAction.WireJump) {
             const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
 
             if (wiresLookup.has(wireId)) {
                 const wireInfo = wiresLookup.get(wireId);
-                currentX = wireInfo.end[0];
-                currentY = wireInfo.end[1];
+                previousItem = wireInfo.wire;
+                [prevItemOffsetX, prevItemOffsetY] = wireInfo.end;
             }
         }
     }
 
+    // Resolve the positions of items
+    placedItems.forEach((item) => {
+        const dPositions = resolvePosition(item, placedItems);
+
+        // Merge all results together
+        const finalPosition = dPositions.reduce((accum, value) => {
+            accum[0] += value[0];
+            accum[1] += value[1];
+            return accum;
+        }, [0, 0]);
+
+        item.x = finalPosition[0];
+        item.y = finalPosition[1];
+    });
+
+
+    const junctions: RenderJunction[] = [];
+
     const wirePoints: [x: number, y: number][] = [];
     for (const [, wireInfo] of wiresLookup) {
-        const { start, end } = wireInfo;
-        wirePoints.push(start);
-        wirePoints.push(end);
+        const { wire, end } = wireInfo;
+        wirePoints.push([wire.x, wire.y]);
+        wirePoints.push([wire.x + end[0], wire.y + end[1]]);
     }
 
     // Tracks if wire points (start and ends only) have been repeated.
@@ -146,7 +184,7 @@ export async function prepareLayout2(
 
     }, [] as WirePointCount[]);
 
-    const junctions: RenderJunction[] = [];
+
     wirePointCounts.forEach(item => {
         const [x, y, count] = item;
 
@@ -157,6 +195,14 @@ export async function prepareLayout2(
         }
     });
 
+    const placedComponents = placedItems.filter(item => {
+        return item instanceof RenderComponent;
+    }) as RenderComponent[];
+
+    const placedWires = placedItems.filter(item => {
+        return item instanceof RenderWire;
+    }) as RenderWire[];
+
     return {
         components: placedComponents,
         wires: placedWires,
@@ -164,8 +210,40 @@ export async function prepareLayout2(
     };
 }
 
+type RenderItem = RenderComponent | RenderWire;
+
+// Components are always position relative to another position
+// The position of ANOTHER component is described by:
+//      refItem has position = [x1, y1]
+//      At a given pin, the pin has an offset relative to the origin of refItem, let this offset be [offsetX, offsetY]
+//      The position at the pin in absolute coords is [x1 + offsetX, y1 + offsetY]
+// The current component pin has an offset relative to it's own origin (not refItem) of [pinX, pinY]
+// So the current component position is [x1 + offsetX - pinX, y1 + offsetY - pinY]
+type RenderPosition = [refItem: RenderItem | 0, offsetX: number, offsetY: number, pinX: number, pinY: number];
+
+function resolvePosition(targetItem: RenderItem, renderItems: RenderItem[], depth = 0): [x: number, y: number][] {    
+    const [refItem, refOffsetX, refOffsetY, pinX, pinY] = targetItem.position;
+
+    if (refItem === 0) {
+        // If is the first item, then return the pin offset
+        return [[-pinX, -pinY]];
+
+    } else {
+        const result = [[refOffsetX - pinX, refOffsetY - pinY]];
+
+        for (let i = 0; i < renderItems.length; i++) {
+            if (refItem === renderItems[i]) {
+                const innerResults = resolvePosition(refItem, renderItems, depth + 1);
+                return result.concat(innerResults);
+            }
+        }
+
+        return result;
+    }
+}
+
 type WireLookupInfo = {
-    start: [x: number, y: number],
+    wire: RenderWire,
     end: [x: number, y: number]
 }
 type WirePointCount = [x: number, y: number, count: number];
@@ -258,6 +336,10 @@ export class RenderWire {
     x = -1;
     y = -1;
 
+    id: number;
+
+    position: RenderPosition;
+
     segments: WireSegment[] = [];
     points = [];
 
@@ -298,6 +380,8 @@ export class RenderJunction {
     x: number;
     y: number;
 
+    position: RenderPosition;
+
     constructor(x: number, y: number){
         this.x = x;
         this.y = y;
@@ -312,6 +396,8 @@ export class RenderComponent {
 
     x = -1;
     y = -1;
+
+    position: RenderPosition;
 
     width: number;
     height: number;

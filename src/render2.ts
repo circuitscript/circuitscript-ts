@@ -81,7 +81,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
     
     wires.forEach(wire => {
         const points = wire.points.map(item => {
-            return [item.x, item.y];
+            return [wire.x + item.x, wire.y + item.y];
         });
         wiresGroup.polyline(points)
             .fill('none')
@@ -96,6 +96,12 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
                      .fill(junctionColor)
                      .stroke('none');
     });
+
+    // Draw origin
+    canvas.group().translate(0,0)
+        .circle(5)
+        .translate(-5/2, -5/2)
+        .stroke('none').fill('red');
 }
 
 function getBounds(components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]): { xmin: number, xmax: number, ymin: number, ymax: number } {
