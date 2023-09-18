@@ -15,12 +15,13 @@ export async function prepareLayout2(
 
     let isFirstItem = true;
 
-    let previousItem: RenderComponent | RenderWire| null = null;
+    const connectionsGraph: LayoutPosition[] = [];
+
+    let previousItem: RenderComponent | RenderWire | null = null;
 
     // For components, this offset will be used for the pin position
     let prevItemOffsetX = 0;
     let prevItemOffsetY = 0;
-
 
     // Keeps track of the wire positions.
     const wiresLookup = new Map<number, WireLookupInfo>();
@@ -81,14 +82,40 @@ export async function prepareLayout2(
 
                 // get the pin position relative to origin of symbol
                 const pinPosition = tmpSymbol.pinPosition(pin);
-                let referenceItem = null;
+                let referenceItem:RenderItem | null | 0 = null;
 
-                if (isFirstItem){
+                if (isFirstItem) {
                     isFirstItem = false;
                     referenceItem = 0;
                 } else {
-                    referenceItem = previousItem;
+                    if (action === SequenceAction.At) {
+                        referenceItem = null;
+                        prevItemOffsetX = 0;
+                        prevItemOffsetY = 0;
+
+                    } else if (action === SequenceAction.To) {
+                        referenceItem = previousItem;
+
+                        // assume previous item in connectionGraph array is connected to this item
+                        connectionsGraph[connectionsGraph.length - 1].next = {
+                            item: tmpComponent,
+                            offsetX: pinPosition.x,
+                            offsetY: pinPosition.y
+                        }
+                    }
                 }
+
+                connectionsGraph.push({
+                    item: tmpComponent,
+                    offsetX: pinPosition.x,
+                    offsetY: pinPosition.y,
+
+                    prev: {
+                        item: referenceItem,
+                        offsetX: prevItemOffsetX,
+                        offsetY: prevItemOffsetY,
+                    }
+                });
 
                 tmpComponent.position = [referenceItem, prevItemOffsetX, prevItemOffsetY, pinPosition.x, pinPosition.y];
 
@@ -99,13 +126,38 @@ export async function prepareLayout2(
                 placedItems.push(tmpComponent);
 
             } else {
-                // Component already placed, just move curent position to the pin position
+                // Component already placed, just move current position to the pin position
                 const tmpComponent = placedItems[tmpIndex] as RenderComponent;
-                const relativePinPosition = tmpComponent.symbol.pinPosition(pin);
+                const pinPosition = tmpComponent.symbol.pinPosition(pin);
+
+                if (action === SequenceAction.At) {
+                    previousItem = null;
+                    prevItemOffsetX = 0;
+                    prevItemOffsetY = 0;
+
+                } else if (action === SequenceAction.To) {
+                    connectionsGraph[connectionsGraph.length - 1].next = {
+                        item: tmpComponent,
+                        offsetX: pinPosition.x,
+                        offsetY: pinPosition.y
+                    }
+                }
+
+                connectionsGraph.push({
+                    item: tmpComponent,
+                    offsetX: pinPosition.x,
+                    offsetY: pinPosition.y,
+
+                    prev: {
+                        item: previousItem,
+                        offsetX: prevItemOffsetX,
+                        offsetY: prevItemOffsetY,
+                    }
+                });
 
                 previousItem = tmpComponent;
-                prevItemOffsetX = relativePinPosition.x;
-                prevItemOffsetY = relativePinPosition.y;
+                prevItemOffsetX = pinPosition.x;
+                prevItemOffsetY = pinPosition.y;
             }
 
         } else if (action === SequenceAction.Wire) {
@@ -127,6 +179,22 @@ export async function prepareLayout2(
                 end: [wireEnd.x, wireEnd.y]
             });
 
+            connectionsGraph[connectionsGraph.length-1].next = {
+                item: wire,
+                offsetX: 0,
+                offsetY: 0,
+            };
+
+            connectionsGraph.push({
+                item: wire,
+                offsetX: 0, offsetY: 0,
+                prev: {
+                    item: previousItem,
+                    offsetX: prevItemOffsetX,
+                    offsetY: prevItemOffsetY
+                }
+            });
+
             previousItem = wire;
             prevItemOffsetX = wireEnd.x;
             prevItemOffsetY = wireEnd.y;
@@ -141,21 +209,41 @@ export async function prepareLayout2(
             }
         }
     }
+    
+    connectionsGraph.forEach((connection, index) => {
+        const {item, prev, next} = connection;        
+    });
 
     // Resolve the positions of items
-    placedItems.forEach((item) => {
-        const dPositions = resolvePosition(item, placedItems);
+    // placedItems.forEach((item, index) => {
 
-        // Merge all results together
-        const finalPosition = dPositions.reduce((accum, value) => {
-            accum[0] += value[0];
-            accum[1] += value[1];
-            return accum;
-        }, [0, 0]);
+    //     if (item instanceof RenderComponent){
+    //         console.log(index, 'component', item.component.instanceName);
+    //     } else if (item instanceof RenderWire){
+    //         console.log(index, 'wire', item.id);
+    //     }
 
-        item.x = finalPosition[0];
-        item.y = finalPosition[1];
-    });
+    //     const dPositions = resolvePosition(item, placedItems);
+    //     console.log(index, dPositions);
+
+    //     if (dPositions !== null){
+
+    //         // Do not add up if any item in the list is null.
+    //         // If there is a null item, it means that somewhere a component's
+    //         // position cannot be resolved.
+    //         if (dPositions.indexOf(null) === -1){
+    //             // Merge all results together
+    //             const finalPosition = dPositions.reduce((accum, value) => {
+    //                 accum[0] += value[0];
+    //                 accum[1] += value[1];
+    //                 return accum;
+    //             }, [0, 0]);
+
+    //             item.x = finalPosition[0];
+    //             item.y = finalPosition[1];
+    //         }
+    //     }
+    // });
 
 
     const junctions: RenderJunction[] = [];
@@ -221,12 +309,15 @@ type RenderItem = RenderComponent | RenderWire;
 // So the current component position is [x1 + offsetX - pinX, y1 + offsetY - pinY]
 type RenderPosition = [refItem: RenderItem | 0, offsetX: number, offsetY: number, pinX: number, pinY: number];
 
-function resolvePosition(targetItem: RenderItem, renderItems: RenderItem[], depth = 0): [x: number, y: number][] {    
+function resolvePosition(targetItem: RenderItem, renderItems: RenderItem[], depth = 0): [x: number, y: number][] | null {    
     const [refItem, refOffsetX, refOffsetY, pinX, pinY] = targetItem.position;
 
     if (refItem === 0) {
         // If is the first item, then return the pin offset
         return [[-pinX, -pinY]];
+
+    } else if (refItem === null){
+        return null;
 
     } else {
         const result = [[refOffsetX - pinX, refOffsetY - pinY]];
@@ -238,7 +329,40 @@ function resolvePosition(targetItem: RenderItem, renderItems: RenderItem[], dept
             }
         }
 
+        // If reached here, it means there was no matches found for refItem
         return result;
+    }
+}
+
+// function resolvePosition2(position:LayoutPosition){
+//     const {prev, next, item, offsetX, offsetY} = position;
+
+//     if (prev && prev.item === 0){
+//         return [[-offsetX, -offsetY]];
+    
+//     } else if (prev && prev.item !== 0 && prev.item !== null){
+//         // If prev item is valid, then use it to find the correct position
+//         const result = [prev.offsetX - offsetX, prev.offsetY - offsetY];
+
+//         resolvePosition2(prev.item);
+//     }
+// }
+
+type LayoutPosition = {
+    item: RenderItem,
+    offsetX: number,
+    offsetY: number, 
+
+    prev: {
+        item: RenderItem | 0, 
+        offsetX: number, 
+        offsetY: number,
+    }
+
+    next?: {
+        item: RenderItem,
+        offsetX: number, 
+        offsetY: number,
     }
 }
 
