@@ -1,4 +1,4 @@
-import lodash from 'lodash';
+import graphlib from '@dagrejs/graphlib';
 
 import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion } from "./draw_symbols";
 import { ClassComponent } from "./objects/Component";
@@ -11,20 +11,15 @@ export async function prepareLayout2(
     sequence: SequenceItem[]
 ): Promise<{components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}> {
 
-    const placedItems: RenderItem[] = [];
-
-    let isFirstItem = true;
-
-    const connectionsGraph: LayoutPosition[] = [];
-
-    let previousItem: RenderComponent | RenderWire | null = null;
-
-    // For components, this offset will be used for the pin position
-    let prevItemOffsetX = 0;
-    let prevItemOffsetY = 0;
+    let previousNodePin: string | null = null;
 
     // Keeps track of the wire positions.
     const wiresLookup = new Map<number, WireLookupInfo>();
+
+    const graph = new graphlib.Graph({
+        directed: false,
+        compound: true,
+    });
 
     for (let i = 0; i < sequence.length; i++) {
         // Do not need to handle nested components for now
@@ -36,17 +31,9 @@ export async function prepareLayout2(
         if (action === SequenceAction.At || action === SequenceAction.To) {
             // Size all elements first
             const component = sequence[i][1] as ClassComponent;
-            const pin = sequence[i][2];
+            const pin = sequence[i][2] as number;
 
-            // Make sure component has not been placed yet
-            const tmpIndex = placedItems.findIndex(item => {
-                if (item instanceof RenderComponent) {
-                    return lodash.isEqual(item.component, component);
-                }
-            });
-
-            // Component not placed yet
-            if (tmpIndex === -1) {
+            if (!graph.hasNode(component.instanceName)) {
                 let { displayProp = null } = component;
                 let tmpSymbol: SymbolGraphic;
 
@@ -80,222 +67,218 @@ export async function prepareLayout2(
                 tmpComponent = new RenderComponent(component, useWidth, useHeight);
                 tmpComponent.symbol = tmpSymbol;
 
-                // get the pin position relative to origin of symbol
-                const pinPosition = tmpSymbol.pinPosition(pin);
-                let referenceItem:RenderItem | null | 0 = null;
+                graph.setNode(component.instanceName, ['component', tmpComponent]);
 
-                if (isFirstItem) {
-                    isFirstItem = false;
-                    referenceItem = 0;
-                } else {
-                    if (action === SequenceAction.At) {
-                        referenceItem = null;
-                        prevItemOffsetX = 0;
-                        prevItemOffsetY = 0;
-
-                    } else if (action === SequenceAction.To) {
-                        referenceItem = previousItem;
-
-                        // assume previous item in connectionGraph array is connected to this item
-                        connectionsGraph[connectionsGraph.length - 1].next = {
-                            item: tmpComponent,
-                            offsetX: pinPosition.x,
-                            offsetY: pinPosition.y
-                        }
-                    }
+                // Create nodes for the component pins and link it to the component
+                for(const [pinId, ] of component.pins){
+                    const edgeName = getPinNodeName(component, pinId);
+                    graph.setNode(edgeName, ['pin', tmpComponent, pinId]);
+                    graph.setEdge(component.instanceName, edgeName);
                 }
-
-                connectionsGraph.push({
-                    item: tmpComponent,
-                    offsetX: pinPosition.x,
-                    offsetY: pinPosition.y,
-
-                    prev: {
-                        item: referenceItem,
-                        offsetX: prevItemOffsetX,
-                        offsetY: prevItemOffsetY,
-                    }
-                });
-
-                tmpComponent.position = [referenceItem, prevItemOffsetX, prevItemOffsetY, pinPosition.x, pinPosition.y];
-
-                previousItem = tmpComponent;
-                prevItemOffsetX = pinPosition.x;
-                prevItemOffsetY = pinPosition.y;
-
-                placedItems.push(tmpComponent);
-
-            } else {
-                // Component already placed, just move current position to the pin position
-                const tmpComponent = placedItems[tmpIndex] as RenderComponent;
-                const pinPosition = tmpComponent.symbol.pinPosition(pin);
-
-                if (action === SequenceAction.At) {
-                    previousItem = null;
-                    prevItemOffsetX = 0;
-                    prevItemOffsetY = 0;
-
-                } else if (action === SequenceAction.To) {
-                    connectionsGraph[connectionsGraph.length - 1].next = {
-                        item: tmpComponent,
-                        offsetX: pinPosition.x,
-                        offsetY: pinPosition.y
-                    }
-                }
-
-                connectionsGraph.push({
-                    item: tmpComponent,
-                    offsetX: pinPosition.x,
-                    offsetY: pinPosition.y,
-
-                    prev: {
-                        item: previousItem,
-                        offsetX: prevItemOffsetX,
-                        offsetY: prevItemOffsetY,
-                    }
-                });
-
-                previousItem = tmpComponent;
-                prevItemOffsetX = pinPosition.x;
-                prevItemOffsetY = pinPosition.y;
             }
+
+            if (action === SequenceAction.To) {
+                graph.setEdge(previousNodePin, getPinNodeName(component, pin))
+            }
+
+            previousNodePin = getPinNodeName(component, pin);
 
         } else if (action === SequenceAction.Wire) {
             // draw wires
-            const [,wireId, wireSegments] = sequence[i] as [SequenceAction.Wire, number, WireSegment[]];
+            const [, wireId, wireSegments] = sequence[i] as [SequenceAction.Wire, number, WireSegment[]];
 
             const wire = new RenderWire(0, 0, wireSegments);
             wire.id = wireId;
 
-            // Start position of the wire
-            wire.position = [previousItem, prevItemOffsetX, prevItemOffsetY, 0, 0];
-
             const wireEnd = wire.getWireEnd();
-
-            placedItems.push(wire);
-
             wiresLookup.set(wireId, {
                 wire,
                 end: [wireEnd.x, wireEnd.y]
             });
 
-            connectionsGraph[connectionsGraph.length-1].next = {
-                item: wire,
-                offsetX: 0,
-                offsetY: 0,
-            };
+            const wireName = 'wire:'+wire.id;
 
-            connectionsGraph.push({
-                item: wire,
-                offsetX: 0, offsetY: 0,
-                prev: {
-                    item: previousItem,
-                    offsetX: prevItemOffsetX,
-                    offsetY: prevItemOffsetY
-                }
-            });
+            graph.setNode(wireName, ['wire', wire]);
+            graph.setNode(wireName + ' pin:0', ['pin', wire, 0]);
+            graph.setNode(wireName + ' pin:1', ['pin', wire, 1]);
 
-            previousItem = wire;
-            prevItemOffsetX = wireEnd.x;
-            prevItemOffsetY = wireEnd.y;
+            graph.setEdge(wireName, wireName + ' pin:0');
+            graph.setEdge(wireName, wireName + ' pin:1');
+
+            // Connect previous node to pin:0 of the wire
+            graph.setEdge(previousNodePin, wireName + ' pin:0');
+            previousNodePin = wireName + ' pin:1';
 
         } else if (action === SequenceAction.WireJump) {
             const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
-
-            if (wiresLookup.has(wireId)) {
-                const wireInfo = wiresLookup.get(wireId);
-                previousItem = wireInfo.wire;
-                [prevItemOffsetX, prevItemOffsetY] = wireInfo.end;
-            }
+            previousNodePin = 'wire:' + wireId + ' pin:1';
         }
     }
+
+    console.log(graphlib.json.write(graph));
+
+    // Go through the graph starting from the first node?
+    const componentGraphs = graphlib.alg.components(graph);
+
+    console.log('inner graphs', componentGraphs.length);
+
+    componentGraphs.forEach(innerGraph => {
+
+        let isFirstItem = false;
+        
+        let currentX = 0;
+        let currentY = 0;
+
+        const placedItems = [];
+
+        // assume that the first position is at the origin
+        innerGraph.forEach(nodeName => {
+            const nodeValue = graph.node(nodeName);
+            const nodeType = nodeValue[0];
+
+            if (nodeType === 'pin'){
+                // Only do something if it's a pin, otherwise do nothing
+                const [,renderItem, pin] = nodeValue;
+                // console.log(renderItemString(renderItem), pin);
+
+                let offsetX = 0;
+                let offsetY = 0;
+
+                if (renderItem instanceof RenderComponent){
+                    const pinPosition = renderItem.symbol.pinPosition(pin);
+                    offsetX = pinPosition.x;
+                    offsetY = pinPosition.y;
+
+                    if (isFirstItem){
+                        isFirstItem = false;
     
-    connectionsGraph.forEach((connection, index) => {
-        const {item, prev, next} = connection;        
+                        // Move item to origin
+                        renderItem.x = -offsetX;
+                        renderItem.y = -offsetY;
+                        placedItems.push(renderItem.component.instanceName);
+
+                    } else {
+                        // If render item is not seen before, then place it down
+                        if (placedItems.indexOf(renderItem.component.instanceName) === -1) {
+                            renderItem.x = currentX - offsetX;
+                            renderItem.y = currentY - offsetY;
+                            placedItems.push(renderItem.component.instanceName);
+
+                        } else {
+                            // If render item is seen before, then just move the current position
+                            // to the pin position
+                            currentX = renderItem.x + offsetX;
+                            currentY = renderItem.y + offsetY;
+                        }
+                    }
+
+                } else if (renderItem instanceof RenderWire) {
+
+                    if (placedItems.indexOf('wire:' + renderItem.id) === -1){
+                        // If wire is not placed yet, then place the wire based on 
+                        // the current pin.
+
+                        if (pin === 0){
+                            offsetX = 0;
+                            offsetY = 0;
+
+                        } else if (pin === 1){
+                            const wireEnd = renderItem.getWireEnd();
+                            offsetX = -wireEnd.x;
+                            offsetY = -wireEnd.y;
+                        }
+
+                        currentX += offsetX;
+                        currentY += offsetY;
+
+                        renderItem.x = currentX;
+                        renderItem.y = currentY;
+
+                        placedItems.push('wire:' + renderItem.id);
+
+                    } else {
+                        // If wire is already placed, then depending on the
+                        // pin number, update the current position
+                        if (pin === 0) {
+                            currentX = renderItem.x;
+                            currentY = renderItem.y;
+
+                        } else if (pin === 1){
+                            const wireEnd = renderItem.getWireEnd();
+                            currentX = renderItem.x + wireEnd.x;
+                            currentY = renderItem.y + wireEnd.y;
+                        }
+                    }
+
+                }   
+            }
+        });
     });
 
-    // Resolve the positions of items
-    // placedItems.forEach((item, index) => {
+    const placedComponents = [];
+    const placedWires = [];
 
-    //     if (item instanceof RenderComponent){
-    //         console.log(index, 'component', item.component.instanceName);
-    //     } else if (item instanceof RenderWire){
-    //         console.log(index, 'wire', item.id);
-    //     }
-
-    //     const dPositions = resolvePosition(item, placedItems);
-    //     console.log(index, dPositions);
-
-    //     if (dPositions !== null){
-
-    //         // Do not add up if any item in the list is null.
-    //         // If there is a null item, it means that somewhere a component's
-    //         // position cannot be resolved.
-    //         if (dPositions.indexOf(null) === -1){
-    //             // Merge all results together
-    //             const finalPosition = dPositions.reduce((accum, value) => {
-    //                 accum[0] += value[0];
-    //                 accum[1] += value[1];
-    //                 return accum;
-    //             }, [0, 0]);
-
-    //             item.x = finalPosition[0];
-    //             item.y = finalPosition[1];
-    //         }
-    //     }
-    // });
+    const tmpNodes = graph.nodes();
+    tmpNodes.forEach(item => {
+        const nodeValue = graph.node(item);
+        const [nodeType] = nodeValue;
+        if (nodeType === 'component'){
+            placedComponents.push(nodeValue[1]);
+        } else if(nodeType === 'wire'){
+            placedWires.push(nodeValue[1]);
+        }
+    });
 
 
     const junctions: RenderJunction[] = [];
 
-    const wirePoints: [x: number, y: number][] = [];
-    for (const [, wireInfo] of wiresLookup) {
-        const { wire, end } = wireInfo;
-        wirePoints.push([wire.x, wire.y]);
-        wirePoints.push([wire.x + end[0], wire.y + end[1]]);
-    }
 
-    // Tracks if wire points (start and ends only) have been repeated.
-    // This is used to determine junction points.
-    const wirePointCounts = wirePoints.reduce((accum, point) => {
-        const found = accum.find(item => {
-            return item[0] === point[0] && item[1] === point[1]
+    if (false) {
+        const wirePoints: [x: number, y: number][] = [];
+        for (const [, wireInfo] of wiresLookup) {
+            const { wire, end } = wireInfo;
+            wirePoints.push([wire.x, wire.y]);
+            wirePoints.push([wire.x + end[0], wire.y + end[1]]);
+        }
+
+        // Tracks if wire points (start and ends only) have been repeated.
+        // This is used to determine junction points.
+        const wirePointCounts = wirePoints.reduce((accum, point) => {
+            const found = accum.find(item => {
+                return item[0] === point[0] && item[1] === point[1]
+            });
+
+            if (found) {
+                found[2]++;
+            } else {
+                accum.push([point[0], point[1], 1]);
+            }
+
+            return accum;
+
+        }, [] as WirePointCount[]);
+
+
+        wirePointCounts.forEach(item => {
+            const [x, y, count] = item;
+
+            // Need to be at least 3 or more. If there are 2,
+            // then it could just be a bend or a straight line.
+            if (count > 2) {
+                junctions.push(new RenderJunction(x, y));
+            }
         });
-
-        if (found) {
-            found[2]++;
-        } else {
-            accum.push([point[0], point[1], 1]);
-        }
-
-        return accum;
-
-    }, [] as WirePointCount[]);
-
-
-    wirePointCounts.forEach(item => {
-        const [x, y, count] = item;
-
-        // Need to be at least 3 or more. If there are 2,
-        // then it could just be a bend or a straight line.
-        if (count > 2) {
-            junctions.push(new RenderJunction(x, y));
-        }
-    });
-
-    const placedComponents = placedItems.filter(item => {
-        return item instanceof RenderComponent;
-    }) as RenderComponent[];
-
-    const placedWires = placedItems.filter(item => {
-        return item instanceof RenderWire;
-    }) as RenderWire[];
+    }
 
     return {
         components: placedComponents,
         wires: placedWires,
         junctions,
     };
+}
+
+function getPinNodeName(component: ClassComponent, pin:number): string {
+    return component.instanceName + " pin:" + pin;
 }
 
 type RenderItem = RenderComponent | RenderWire;
@@ -521,8 +504,6 @@ export class RenderComponent {
     x = -1;
     y = -1;
 
-    position: RenderPosition;
-
     width: number;
     height: number;
 
@@ -541,6 +522,14 @@ export class RenderComponent {
         const condition4 = isPointOverlap(this.x, this.y + this.height, other);
 
         return condition1 || condition2 || condition3 || condition4; 
+    }
+}
+
+function renderItemString(renderItem: RenderItem): string {
+    if (renderItem instanceof RenderComponent) {
+        return `component:${renderItem.component.instanceName}`;
+    } else if (renderItem instanceof RenderWire) {
+        return `wire:${renderItem.id}`;
     }
 }
 
