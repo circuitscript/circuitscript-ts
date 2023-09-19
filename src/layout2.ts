@@ -9,9 +9,10 @@ import { NumericValue } from './objects/ParamDefinition';
 
 export async function prepareLayout2(
     sequence: SequenceItem[]
-): Promise<{components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}> {
+): Promise<{ components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[] }> {
 
-    let previousNodePin: string | null = null;
+    let previousNode: string | null = null;
+    let previousPin: number | null = null;
 
     // Keeps track of the wire positions.
     const wiresLookup = new Map<number, WireLookupInfo>();
@@ -68,20 +69,14 @@ export async function prepareLayout2(
                 tmpComponent.symbol = tmpSymbol;
 
                 graph.setNode(component.instanceName, ['component', tmpComponent]);
-
-                // Create nodes for the component pins and link it to the component
-                for(const [pinId, ] of component.pins){
-                    const edgeName = getPinNodeName(component, pinId);
-                    graph.setNode(edgeName, ['pin', tmpComponent, pinId]);
-                    graph.setEdge(component.instanceName, edgeName);
-                }
             }
 
             if (action === SequenceAction.To) {
-                graph.setEdge(previousNodePin, getPinNodeName(component, pin))
+                graph.setEdge(previousNode, component.instanceName, makeEdgeName(previousNode, previousPin, component.instanceName, pin));
             }
 
-            previousNodePin = getPinNodeName(component, pin);
+            previousNode = component.instanceName;
+            previousPin = pin;
 
         } else if (action === SequenceAction.Wire) {
             // draw wires
@@ -99,19 +94,17 @@ export async function prepareLayout2(
             const wireName = 'wire:'+wire.id;
 
             graph.setNode(wireName, ['wire', wire]);
-            graph.setNode(wireName + ' pin:0', ['pin', wire, 0]);
-            graph.setNode(wireName + ' pin:1', ['pin', wire, 1]);
-
-            graph.setEdge(wireName, wireName + ' pin:0');
-            graph.setEdge(wireName, wireName + ' pin:1');
 
             // Connect previous node to pin:0 of the wire
-            graph.setEdge(previousNodePin, wireName + ' pin:0');
-            previousNodePin = wireName + ' pin:1';
+            graph.setEdge(previousNode, wireName, makeEdgeName(previousNode, previousPin, wireName, 0));
+
+            previousNode = wireName;
+            previousPin = 1;
 
         } else if (action === SequenceAction.WireJump) {
             const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
-            previousNodePin = 'wire:' + wireId + ' pin:1';
+            previousNode = 'wire:' + wireId;
+            previousPin = 1;
         }
     }
 
@@ -197,6 +190,7 @@ export async function prepareLayout2(
                         placedItems.push('wire:' + renderItem.id);
 
                     } else {
+
                         // If wire is already placed, then depending on the
                         // pin number, update the current position
                         if (pin === 0) {
@@ -281,73 +275,11 @@ function getPinNodeName(component: ClassComponent, pin:number): string {
     return component.instanceName + " pin:" + pin;
 }
 
+function makeEdgeName(instanceName1: string, instancePin1: number, instanceName2: string, instancePin2: number): string {
+    return `${instanceName1} pin:${instancePin1} -- ${instanceName2} pin:${instancePin2}`;
+}
+
 type RenderItem = RenderComponent | RenderWire;
-
-// Components are always position relative to another position
-// The position of ANOTHER component is described by:
-//      refItem has position = [x1, y1]
-//      At a given pin, the pin has an offset relative to the origin of refItem, let this offset be [offsetX, offsetY]
-//      The position at the pin in absolute coords is [x1 + offsetX, y1 + offsetY]
-// The current component pin has an offset relative to it's own origin (not refItem) of [pinX, pinY]
-// So the current component position is [x1 + offsetX - pinX, y1 + offsetY - pinY]
-type RenderPosition = [refItem: RenderItem | 0, offsetX: number, offsetY: number, pinX: number, pinY: number];
-
-function resolvePosition(targetItem: RenderItem, renderItems: RenderItem[], depth = 0): [x: number, y: number][] | null {    
-    const [refItem, refOffsetX, refOffsetY, pinX, pinY] = targetItem.position;
-
-    if (refItem === 0) {
-        // If is the first item, then return the pin offset
-        return [[-pinX, -pinY]];
-
-    } else if (refItem === null){
-        return null;
-
-    } else {
-        const result = [[refOffsetX - pinX, refOffsetY - pinY]];
-
-        for (let i = 0; i < renderItems.length; i++) {
-            if (refItem === renderItems[i]) {
-                const innerResults = resolvePosition(refItem, renderItems, depth + 1);
-                return result.concat(innerResults);
-            }
-        }
-
-        // If reached here, it means there was no matches found for refItem
-        return result;
-    }
-}
-
-// function resolvePosition2(position:LayoutPosition){
-//     const {prev, next, item, offsetX, offsetY} = position;
-
-//     if (prev && prev.item === 0){
-//         return [[-offsetX, -offsetY]];
-    
-//     } else if (prev && prev.item !== 0 && prev.item !== null){
-//         // If prev item is valid, then use it to find the correct position
-//         const result = [prev.offsetX - offsetX, prev.offsetY - offsetY];
-
-//         resolvePosition2(prev.item);
-//     }
-// }
-
-type LayoutPosition = {
-    item: RenderItem,
-    offsetX: number,
-    offsetY: number, 
-
-    prev: {
-        item: RenderItem | 0, 
-        offsetX: number, 
-        offsetY: number,
-    }
-
-    next?: {
-        item: RenderItem,
-        offsetX: number, 
-        offsetY: number,
-    }
-}
 
 type WireLookupInfo = {
     wire: RenderWire,
@@ -445,8 +377,6 @@ export class RenderWire {
 
     id: number;
 
-    position: RenderPosition;
-
     segments: WireSegment[] = [];
     points = [];
 
@@ -486,8 +416,6 @@ export class RenderWire {
 export class RenderJunction {
     x: number;
     y: number;
-
-    position: RenderPosition;
 
     constructor(x: number, y: number){
         this.x = x;
