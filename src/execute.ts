@@ -651,8 +651,6 @@ export class ExecutionContext {
         let sequenceComponent: ClassComponent;
 
         if (isNetComponent(component) && !isLabelComponent(component)) {
-            console.log('here', component, createNewNetSymbol)
-            
             // If is a net component and not a label component, then
             // create a new copy of the same net component.
             if (!this.linkIDs.has(component.instanceName)) {
@@ -662,12 +660,15 @@ export class ExecutionContext {
             const idNum = this.linkIDs.get(component.instanceName);
             sequenceComponent = lodash.cloneDeep(component);
 
-            console.log('here 1');
+            // For now, only allow gnd symbols to create new instances
+            // automatically.
+            if (component.parameters.get('net_name') !== 'gnd'){
+                createNewNetSymbol = false;
+            }
 
             if (createNewNetSymbol) {
                 sequenceComponent._linkID = idNum;
                 this.linkIDs.set(component.instanceName, idNum + 1);
-                console.log('here 2');
             } else {
                 // If false, then do no create a new net symbol,
                 // reuse the previous id num. This assumes that the
@@ -676,7 +677,6 @@ export class ExecutionContext {
                     sequenceComponent._linkID = idNum - 1;
                 }
             }
-            console.log('here 3');
         } else {
             sequenceComponent = component;
         }
