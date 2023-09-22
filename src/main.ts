@@ -1,3 +1,5 @@
+import 'source-map-support/register'
+
 import fs from 'fs';
 import CircuitScriptParser from './antlr/CircuitScriptParser';
 import CircuitScriptLexer from './antlr/CircuitScriptLexer';
@@ -12,7 +14,7 @@ import { generateSVG2 } from './render2';
 import { SequenceAction } from './objects/ExecutionScope';
 
 export default async function main(): Promise<void> {
-    prepareSizing();
+    await prepareSizing();
 
     const fileName = process.argv[2];
     const data = await readFile(fileName);
@@ -39,9 +41,12 @@ export default async function main(): Promise<void> {
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
         if (tmp[0] === SequenceAction.Wire){
-            tmp[1] = tmp[1].map(item2 => {
+            tmp[2] = tmp[2].map(item2 => {
                 return [item2.direction, item2.value].join(",");
             }).join(" "); 
+            
+        } else if (tmp[0] === SequenceAction.WireJump){
+            
         } else {
             tmp[1] = item[1].instanceName;
         }
