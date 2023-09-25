@@ -3,7 +3,7 @@ import fs from 'fs';
 import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { RenderComponent, RenderJunction, RenderWire } from "./layout2";
+import { RenderComponent, RenderJunction, RenderWire, getBounds } from "./layout2";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
@@ -43,7 +43,14 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
     // Draw the display grid
     const bounds = getBounds(components, wires, junctions);
 
-    drawGrid(canvas.group().translate(0,0), {x: bounds.xmin, y: bounds.ymin, x2: bounds.xmax, y2: bounds.ymax});
+    drawGrid(
+        canvas.group().translate(0, 0),
+        {
+            x: bounds.xmin,
+            y: bounds.ymin,
+            x2: bounds.xmax,
+            y2: bounds.ymax
+        });
 
     components.forEach(item => {
         const { x, y, width, height } = item;
@@ -102,43 +109,6 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         .circle(5)
         .translate(-5/2, -5/2)
         .stroke('none').fill('red');
-}
-
-function getBounds(components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]): { xmin: number, xmax: number, ymin: number, ymax: number } {
-    const points = [];
-
-    components.forEach(item => {
-        const bbox = item.symbol.drawing.getBoundingBox();
-
-        const [x1, y1] = bbox.start;
-        const [x2, y2] = bbox.end;
-
-        points.push([x1 + item.x, y1 + item.y]);
-        points.push([x2 + item.x, y2 + item.y]);
-    });
-
-    wires.forEach(item => {
-        item.points.forEach(point => {
-            points.push([point.x, point.y]);
-        });
-    });
-
-    junctions.forEach(item => {
-        points.push([item.x, item.y]);
-    });
-
-    const xValues = points.map(item => item[0]);
-    const yValues = points.map(item => item[1]);
-
-    const xmin = Math.min(...xValues);
-    const xmax = Math.max(...xValues);
-
-    const ymin = Math.min(...yValues);
-    const ymax = Math.max(...yValues);
-
-    return {
-        xmin, xmax, ymin, ymax,
-    }
 }
 
 function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: number }): void {

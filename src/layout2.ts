@@ -68,11 +68,12 @@ export async function prepareLayout2(
                 tmpComponent = new RenderComponent(component, useWidth, useHeight);
                 tmpComponent.symbol = tmpSymbol;
 
-                graph.setNode(getInstanceName(component), ['component', tmpComponent]);
+                // Record the sequence number to determine priority
+                graph.setNode(getInstanceName(component), ['component', tmpComponent, i]);
             }
 
             if (action === SequenceAction.To) {
-                graph.setEdge(previousNode, getInstanceName(component), makeEdgeValue(previousNode, previousPin, getInstanceName(component), pin));
+                graph.setEdge(previousNode, getInstanceName(component), makeEdgeValue(previousNode, previousPin, getInstanceName(component), pin, i));
             }
 
             previousNode = getInstanceName(component);
@@ -93,10 +94,11 @@ export async function prepareLayout2(
 
             const wireName = 'wire:'+wire.id;
 
-            graph.setNode(wireName, ['wire', wire]);
+            // Record the sequence number to determine priority
+            graph.setNode(wireName, ['wire', wire, i]);
 
             // Connect previous node to pin:0 of the wire
-            graph.setEdge(previousNode, wireName, makeEdgeValue(previousNode, previousPin, wireName, 0));
+            graph.setEdge(previousNode, wireName, makeEdgeValue(previousNode, previousPin, wireName, 0, i));
 
             previousNode = wireName;
             previousPin = 1;
@@ -108,7 +110,7 @@ export async function prepareLayout2(
         }
     }
 
-    walkAndPlaceGraph(graph);
+    placeGraph(graph);
 
     const placedComponents = [];
     const placedWires = [];
@@ -170,14 +172,107 @@ export async function prepareLayout2(
     };
 }
 
-function walkAndPlaceGraph(graph: graphlib.Graph): void {
-    console.log('walk and place graph');
+function placeGraph(graph: graphlib.Graph): void {
+    const subGraphs = graphlib.alg.components(graph);
+    const subGraphsStarts = [];
 
-    const firstNodeId = graph.nodes()[0];
-    const firstEdge = graph.edges()[0];
+    // Find the starting point of the graph
+    subGraphs.forEach(innerGraph => {
+        // Find node with the lowest sequence number and used 
+        // as the starting node
+
+        let smallestNodeIdLevel = Number.POSITIVE_INFINITY;
+        let smallestNodeId: string | null = null;
+
+        innerGraph.forEach(nodeId => {
+            const [, , sequenceId] = graph.node(nodeId);
+
+            if (sequenceId < smallestNodeIdLevel){
+                smallestNodeIdLevel = sequenceId;
+                smallestNodeId = nodeId;
+            }
+        });
+
+        subGraphsStarts.push(smallestNodeId);
+    });
+
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    subGraphsStarts.forEach((nodeId, index) => {
+        walkAndPlaceGraph(graph, nodeId);
+
+        const innerGraph = subGraphs[index];
+
+        const components: RenderComponent[] = [];
+        const wires: RenderWire[] = [];
+
+        innerGraph.forEach(nodeId => {
+            const [nodeType, item,] = graph.node(nodeId);
+            if (nodeType === 'component') {
+                components.push(item);
+            } else if (nodeType === 'wire') {
+                wires.push(item);
+            }
+        });
+
+        const bounds = getBounds(components, wires, []);
+
+        // Apply the offset to move items
+        const combinedItems = [...components, ...wires];
+        combinedItems.forEach(item => {
+            item.x += offsetX;
+            item.y += offsetY;
+        });
+
+        // Find the next grid
+        const nextGridYStart = Math.ceil(bounds.ymax / 20) * 20;
+        offsetY += nextGridYStart + 20;
+    });
+
+    // For each subgraph, find the bounds of the subgraph
+}
+
+function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string): void {
+
+    const firstNodeEdges = graph.nodeEdges(firstNodeId);
+
+    let useEdge = null;
+
+    if (firstNodeEdges){
+        const tmpEdges = [];
+
+        // Find the edge with the largest value
+        firstNodeEdges.forEach(item => {
+            tmpEdges.push(graph.edge(item));
+        });
+
+        // Sort by the priority/sequence number
+        tmpEdges.sort((a, b) => {
+            const [, , , , sequenceIdA] = a;
+            const [, , , , sequenceIdB] = b;
+
+            if (sequenceIdA < sequenceIdB) {
+                return -1;
+            } else if (sequenceIdA > sequenceIdB) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
+        if (tmpEdges.length > 0){
+            const [node1, , node2] = tmpEdges[0];
+            useEdge = graph.edge(node1, node2);
+        }
+    }
+
+    if (useEdge === null){
+        return;
+    }
 
     // Position the first pin placed at (0,0);
-    const [nodeId1, pin1, ] = graph.edge(firstEdge);
+    const [nodeId1, pin1, ] = useEdge;
     const [, node1] = graph.node(nodeId1);
     placeNodeAtPosition(0, 0, node1, pin1);
 
@@ -189,11 +284,7 @@ function walkAndPlaceGraph(graph: graphlib.Graph): void {
     const maxCounter = 1000;
 
     while (counter < maxCounter) {
-        console.log('====== ' + counter + ' ======');
         const neighbours = getNeighbours(graph, currentNodes);
-
-        console.log('got neighbors', neighbours);
-
         const nextCurrentNodes: string[] = [];
 
         neighbours.forEach(([prevNodeId, nodeId]) => {
@@ -243,8 +334,6 @@ function placeNodeAtPosition(fromX: number, fromY: number, item: RenderItem, pin
         item.x = fromX - pinPosition.x;
         item.y = fromY - pinPosition.y; 
 
-        console.log('placing component', item.component.instanceName, item.x, item.y);
-
     } else if (item instanceof RenderWire){
         if (pin === 0){
             item.x = fromX;
@@ -292,8 +381,9 @@ function getNeighbours(graph: graphlib.Graph, nodeIds: string[]): [from: string,
     }, [] as [from: string, to: string][]);
 }
 
-function makeEdgeValue(instanceName1: string, instancePin1: number, instanceName2: string, instancePin2: number): string {
-    return [instanceName1, instancePin1, instanceName2, instancePin2];
+function makeEdgeValue(instanceName1: string, instancePin1: number, instanceName2: string, instancePin2: number, priority: number): 
+    [instance1: string, instancePin1: number, instance2: string, instancePin2: number, priority: number] {
+    return [instanceName1, instancePin1, instanceName2, instancePin2, priority];
     // return `${instanceName1}:pin:${instancePin1} -- ${instanceName2}:pin:${instancePin2}`;
 }
 
@@ -394,8 +484,46 @@ function applyComponentParamsToSymbol(displayProp: string, component: ClassCompo
     if (component.parameters.has('MPN')) {
         symbol.setLabelValue('MPN', component.parameters.get('MPN') as string);
     }
-
 }
+
+
+export function getBounds(components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]): { xmin: number, xmax: number, ymin: number, ymax: number } {
+    const points = [];
+
+    components.forEach(item => {
+        const bbox = item.symbol.drawing.getBoundingBox();
+
+        const [x1, y1] = bbox.start;
+        const [x2, y2] = bbox.end;
+
+        points.push([x1 + item.x, y1 + item.y]);
+        points.push([x2 + item.x, y2 + item.y]);
+    });
+
+    wires.forEach(item => {
+        item.points.forEach(point => {
+            points.push([point.x, point.y]);
+        });
+    });
+
+    junctions.forEach(item => {
+        points.push([item.x, item.y]);
+    });
+
+    const xValues = points.map(item => item[0]);
+    const yValues = points.map(item => item[1]);
+
+    const xmin = Math.min(...xValues);
+    const xmax = Math.max(...xValues);
+
+    const ymin = Math.min(...yValues);
+    const ymax = Math.max(...yValues);
+
+    return {
+        xmin, xmax, ymin, ymax,
+    }
+}
+
 
 export class RenderWire {
     // Starting point of the wire
@@ -477,14 +605,6 @@ export class RenderComponent {
         const condition4 = isPointOverlap(this.x, this.y + this.height, other);
 
         return condition1 || condition2 || condition3 || condition4; 
-    }
-}
-
-function renderItemString(renderItem: RenderItem): string {
-    if (renderItem instanceof RenderComponent) {
-        return `component:${renderItem.component.instanceName}`;
-    } else if (renderItem instanceof RenderWire) {
-        return `wire:${renderItem.id}`;
     }
 }
 
