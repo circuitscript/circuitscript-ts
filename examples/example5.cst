@@ -116,10 +116,16 @@ wire down 20 right 100
 to U1A = opamp() pin 3
 
 at label("3V3")
-wire left 40
+wire right 40
 to U1A pin 2
 
 at U1A pin 1
 wire right 20
 add label("OUT")
 wire right 40
+
+at label("VIN_2")
+wire right 40 down 20
+add res(10k) [angle = 90]
+wire down 20
+to gnd
