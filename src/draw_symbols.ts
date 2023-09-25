@@ -377,6 +377,13 @@ export class SymbolCustom extends SymbolGraphic {
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Middle,
             });
+
+            // Add the pin number
+            drawing.addLabel(leftPinStart - 2 , pinY - 2, pin.pinId.toString(), {
+                fontSize: 8,
+                anchor: HorizontalAlign.Right,
+                vanchor: VerticalAlign.Bottom,
+            });
         });
 
         rightPins.forEach((pin, index) => {
@@ -386,6 +393,13 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: 10,
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Middle,
+            });
+
+            // Add the pin number
+            drawing.addLabel(rightPinStart + 2 , pinY - 2, pin.pinId.toString(), {
+                fontSize: 8,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Bottom,
             });
         });
 
