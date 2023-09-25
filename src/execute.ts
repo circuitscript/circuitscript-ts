@@ -236,7 +236,6 @@ export class ExecutionContext {
         );
 
         pins.forEach((pin) => {
-            // @ts-ignore
             component.pins.set(pin.id, pin);
         });
 
