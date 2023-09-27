@@ -97,7 +97,7 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
 property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
 
 data_expr: (value_expr | ID | function_call_expr | create_component_expr | assignment_expr );
-value_expr: INTEGER_VALUE | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE;
+value_expr: INTEGER_VALUE | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE | blank_expr;
 
 function_def_expr: 'def' ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
 function_expr: expression | function_return_expr;
@@ -117,6 +117,7 @@ property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_pro
 decorator_expr: DECORATOR NEWLINE;
 
 style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
+blank_expr: '[' INTEGER_VALUE ']';
 
 wire_expr: 'wire' (ID INTEGER_VALUE)+ ;
 

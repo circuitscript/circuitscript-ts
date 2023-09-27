@@ -43,6 +43,7 @@ import { Nested_propertiesContext } from "./CircuitScriptParser";
 import { Single_line_propertyContext } from "./CircuitScriptParser";
 import { Decorator_exprContext } from "./CircuitScriptParser";
 import { Style_exprContext } from "./CircuitScriptParser";
+import { Blank_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
 
 
@@ -296,6 +297,12 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitStyle_expr?: (ctx: Style_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.blank_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBlank_expr?: (ctx: Blank_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.wire_expr`.
 	 * @param ctx the parse tree
