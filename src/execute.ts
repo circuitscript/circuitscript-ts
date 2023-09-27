@@ -227,7 +227,9 @@ export class ExecutionContext {
         params: ParamDefinition[],
         arrangeProps: any,
         displayProp: any,
+        width: null | number,
     ): Component {
+
         const numPins = pins.length;
         const component = new ClassComponent(
             instanceName,
@@ -259,13 +261,16 @@ export class ExecutionContext {
 
         component.arrangeProps = arrangeProps;
         component.displayProp = displayProp;
+        component.widthProp = width;
 
         // Determine the side for each pin and update the
         // pin definition
         const portSides = getPortSide(component.pins, arrangeProps);
-        portSides.forEach(({ pinId, side }) => {
+        portSides.forEach(({ pinId, side, position }) => {
             if (component.pins.has(pinId)){
-                component.pins.get(pinId).side = side;
+                const tmpPin = component.pins.get(pinId);
+                tmpPin.side = side;
+                tmpPin.position = position;
             }
         });
         

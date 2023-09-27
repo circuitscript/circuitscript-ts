@@ -357,10 +357,13 @@ export class SymbolCustom extends SymbolGraphic {
             return item.side === SymbolPinSide.Right;
         });
 
+        const maxLeftPins = Math.max(...leftPins.map(item => item.position)) + 1;
+        const maxRightPins = Math.max(...rightPins.map(item => item.position)) + 1;
+
         const drawing = new SymbolDrawing();
 
         const bodyWidth = this.bodyWidth;
-        const bodyHeight = (1 + Math.max(leftPins.length, rightPins.length)) * this.pinSpacing;
+        const bodyHeight = (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing;
 
         drawing.addRect(0, 0, bodyWidth, bodyHeight);
 
@@ -370,7 +373,8 @@ export class SymbolCustom extends SymbolGraphic {
         const pinStartY = -bodyHeight / 2;
 
         leftPins.forEach((pin, index) => {
-            const pinY = pinStartY + (index + 1) * this.pinSpacing // Includes the offset too
+            const position = pin.position;
+            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
             drawing.addPin(leftPinStart, pinY, leftPinStart - this.pinLength, pinY, pin.pinId);
             drawing.addLabel(leftPinStart + 4, pinY, pin.text, {
                 fontSize: 10,
@@ -387,7 +391,8 @@ export class SymbolCustom extends SymbolGraphic {
         });
 
         rightPins.forEach((pin, index) => {
-            const pinY = pinStartY + (index + 1) * this.pinSpacing // Includes the offset too
+            const position = pin.position;
+            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
             drawing.addPin(rightPinStart, pinY, rightPinStart + this.pinLength, pinY, pin.pinId);
             drawing.addLabel(rightPinStart - 4, pinY, pin.text, {
                 fontSize: 10,
@@ -591,5 +596,6 @@ export type SymbolPinDefintion = {
     side: string,
     pinId: number,
     text: string, // Display value at the pin
+    position: number,
 }
 

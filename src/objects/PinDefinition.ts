@@ -15,6 +15,8 @@ export class PinDefinition {
 
     side: string = PortSide.EAST;
 
+    position = -1;
+
     constructor(
         id: PinId,
         idType: PinIdType,

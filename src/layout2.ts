@@ -35,7 +35,7 @@ export async function prepareLayout2(
             const pin = sequence[i][2] as number;
 
             if (!graph.hasNode(getInstanceName(component))) {
-                let { displayProp = null } = component;
+                let { displayProp = null, widthProp = null } = component;
                 let tmpSymbol: SymbolGraphic;
 
                 // If it is a gnd net, then use the gnd symbol
@@ -56,6 +56,10 @@ export async function prepareLayout2(
                 if (component.styles) {
                     const { angle = 0 } = component.styles;
                     tmpSymbol.angle = angle as number;
+                }
+
+                if (tmpSymbol instanceof SymbolCustom && widthProp){
+                    tmpSymbol.bodyWidth = widthProp;
                 }
 
                 // Draw symbol in memory to determine the size/bounds.
@@ -287,6 +291,8 @@ function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string): void {
         const neighbours = getNeighbours(graph, currentNodes);
         const nextCurrentNodes: string[] = [];
 
+        console.log('current neighbors', neighbours);
+
         neighbours.forEach(([prevNodeId, nodeId]) => {
             if (placedNodes.indexOf(nodeId) === -1) {
 
@@ -308,6 +314,8 @@ function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string): void {
                     usePin2 = pin1;
                 }
 
+                console.log('placing', edgeNode1, pin1, edgeNode2, pin2);
+
                 const nodePinPosition = getNodePositionAtPin(node1, usePin1);
                 placeNodeAtPosition(nodePinPosition[0], nodePinPosition[1], node2, usePin2);
 
@@ -324,6 +332,8 @@ function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string): void {
         currentNodes = nextCurrentNodes;
 
         counter++;
+
+        console.log('-------------------------');
     }
 }
 
@@ -410,13 +420,15 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
     const existingPinIds = Array.from(pins.keys());
 
     if (component.arrangeProps === null) {
-        // Automatically split pins 
-        
+        // Automatically split pins
         for (let i = 0; i < existingPinIds.length; i++) {
+            const pinPosition = Math.floor(i/2);
+
             symbolPinDefinitions.push({
                 side: (i % 2 === 0) ? "left" : "right",
                 pinId: existingPinIds[i],
-                text: pins.get(existingPinIds[i]).name
+                text: pins.get(existingPinIds[i]).name,
+                position: pinPosition,
             })
         }
     } else {
@@ -438,13 +450,14 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
                     symbolPinDefinitions.push({
                         side: key,
                         pinId: pinId,
-                        text: pins.get(pinId).name
+                        text: pins.get(pinId).name,
+                        position: pins.get(pinId).position,
                     });
                     addedPins.push(pinId);
                 }
             });
         }
-
+        
         // Make sure all existing pins are added, otherwise throw an error
         const unplacedPins = [];
         existingPinIds.forEach(item => {
@@ -500,9 +513,9 @@ export function getBounds(components: RenderComponent[], wires: RenderWire[], ju
         points.push([x2 + item.x, y2 + item.y]);
     });
 
-    wires.forEach(item => {
-        item.points.forEach(point => {
-            points.push([point.x, point.y]);
+    wires.forEach(wire => {
+        wire.points.forEach(point => {
+            points.push([wire.x + point.x, wire.y + point.y]);
         });
     });
 

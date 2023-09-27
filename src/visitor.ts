@@ -7,6 +7,7 @@ import {
     At_block_pin_expression_complexContext,
     At_block_pin_expression_simpleContext,
     At_component_exprContext,
+    Blank_exprContext,
     Branch_blocksContext,
     Break_keywordContext,
     Component_select_exprContext,
@@ -186,7 +187,20 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return this.prepareStringValue(stringValue.toString());
         } else if (percValue) {
             return new PercentageValue(percValue.toString());
+        } else if (ctx.blank_expr()){
+            return this.visit(ctx.blank_expr());
         }
+    }
+
+    visitBlank_expr(ctx: Blank_exprContext) {
+        const integerValue = ctx.INTEGER_VALUE();
+        if (integerValue) {
+            return {
+                'blank': Number(integerValue.toString())
+            }
+        }
+
+        return null;
     }
 
     visitPin_select_expr(ctx: Pin_select_exprContext) {
@@ -304,7 +318,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             displayProp = properties.get('display');
         }
 
-        return this.getExecutor().createComponent(instanceName, pins, params, arrangeProps, displayProp);
+        let width = null;
+        if (properties.has('width')){
+            width = properties.get('width');
+        }
+
+        return this.getExecutor().createComponent(instanceName, pins, params, arrangeProps, displayProp, width);
     }
 
     visitProperty_expr(ctx: Property_exprContext): Map<string, any> {

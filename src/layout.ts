@@ -200,7 +200,8 @@ async function createNode(nodeId: string, component: ClassComponent): Promise<an
 type PortSideItem = {
     pinId: number,
     side: string,
-    order: number
+    order: number,
+    position: number,
 };
 
 export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
@@ -216,6 +217,7 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
                 pinId,
                 side: counter % 2 === 0 ? PortSide.WEST : PortSide.EAST,
                 order: counter,
+                position: Math.floor(counter/2),
             });
             counter++;
         }
@@ -225,7 +227,6 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
         const existingPinIds = Array.from(pins.keys());
 
         for (const [key, items] of arrangeProps) {
-
             let useItems;
             if (!Array.isArray(items)){
                 useItems = [items];
@@ -237,7 +238,6 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             let useSide = PortSide.WEST;
             if (key === 'left') {
                 useSide = PortSide.WEST;
-                useItems.reverse();
             } else if (key === 'right') {
                 useSide = PortSide.EAST;
             } else if (key === 'top') {
@@ -246,20 +246,30 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
                 useSide = PortSide.SOUTH;
             }
 
+            let position = 0;
+
             useItems.forEach(item => {
+                if (typeof item === 'object'){
+                    if (item.blank){
+                        position += item.blank;
+                    }
+                }
+
                 // Only use the pin if it exists!
                 if (existingPinIds.indexOf(item) !== -1) {
                     result.push({
                         pinId: item,
                         side: useSide,
+                        position,
                         order: counter
                     });
                     counter--;
+                    position += 1;
                 }
             });
         }
     }
-
+    
     return result;
 }
 

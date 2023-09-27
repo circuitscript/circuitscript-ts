@@ -120,6 +120,8 @@ export class ClassComponent extends Component {
     // Used to identify what graphic to draw for this symbol
     displayProp: string | null = null;
 
+    widthProp: number | null = null;
+
     styles: { [key: string]: number | string } = {};
 
     constructor(instanceName: string, numPins: number, className: string) {
