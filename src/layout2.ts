@@ -22,8 +22,8 @@ export async function prepareLayout2(
         compound: true,
     });
 
+    // Based on the sequence steps create all the graph connections first
     for (let i = 0; i < sequence.length; i++) {
-        // Do not need to handle nested components for now
 
         const action = sequence[i][0];
         let tmpComponent: RenderComponent;
@@ -130,9 +130,7 @@ export async function prepareLayout2(
         }
     });
 
-
     const junctions: RenderJunction[] = [];
-
 
     const wirePoints: [x: number, y: number][] = [];
     for (const [, wireInfo] of wiresLookup) {
@@ -204,9 +202,9 @@ function placeGraph(graph: graphlib.Graph): void {
     let offsetY = 0;
     
     subGraphsStarts.forEach((nodeId, index) => {
-        walkAndPlaceGraph(graph, nodeId);
-
         const innerGraph = subGraphs[index];
+
+        walkAndPlaceGraph(graph, nodeId, innerGraph);
 
         const components: RenderComponent[] = [];
         const wires: RenderWire[] = [];
@@ -237,104 +235,71 @@ function placeGraph(graph: graphlib.Graph): void {
     // For each subgraph, find the bounds of the subgraph
 }
 
-function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string): void {
+function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, subgraphNodes: string[]): void {
+    const edges = graph.edges();
 
-    const firstNodeEdges = graph.nodeEdges(firstNodeId);
+    let firstNodePlaced = false;
 
-    let useEdge = null;
+    edges.forEach(edge => {
+        const { v } = edge;
 
-    if (firstNodeEdges){
-        const tmpEdges = [];
+        // If the subgraph nodes v, then the edge is within the subgraph.
+        // No need to check w, since w must also be in the subgraph.
+        if (subgraphNodes.indexOf(v) !== -1) {
+            const [nodeId1, pin1, nodeId2, pin2] = graph.edge(edge);
 
-        // Find the edge with the largest value
-        firstNodeEdges.forEach(item => {
-            tmpEdges.push(graph.edge(item));
-        });
+            const [, node1] = graph.node(nodeId1);
+            const [, node2] = graph.node(nodeId2);
 
-        // Sort by the priority/sequence number
-        tmpEdges.sort((a, b) => {
-            const [, , , , sequenceIdA] = a;
-            const [, , , , sequenceIdB] = b;
-
-            if (sequenceIdA < sequenceIdB) {
-                return -1;
-            } else if (sequenceIdA > sequenceIdB) {
-                return 1;
-            } else {
-                return 0;
+            if (nodeId1 === firstNodeId && !firstNodePlaced) {
+                placeNodeAtPosition(0, 0, node1, pin1);
+                firstNodePlaced = true;
+                node1.isFloating = false;
             }
-        });
 
-        if (tmpEdges.length > 0){
-            const [node1, , node2] = tmpEdges[0];
-            useEdge = graph.edge(node1, node2);
-        }
-    }
+            if (!node1.isFloating && node2.isFloating) {
+                const [x, y] = getNodePositionAtPin(node1, pin1);
+                placeNodeAtPosition(x, y, node2, pin2);
+                node2.isFloating = false;
 
-    if (useEdge === null){
-        return;
-    }
+                placeFloatingItems(graph, node2);
 
-    // Position the first pin placed at (0,0);
-    const [nodeId1, pin1, ] = useEdge;
-    const [, node1] = graph.node(nodeId1);
-    placeNodeAtPosition(0, 0, node1, pin1);
+            } else if (node1.isFloating && !node2.isFloating) {
+                const [x, y] = getNodePositionAtPin(node2, pin2);
+                placeNodeAtPosition(x, y, node1, pin1);
+                node1.isFloating = false;
 
-    // Place the first node
-    let currentNodes = [firstNodeId];
-    const placedNodes = [firstNodeId];
+                placeFloatingItems(graph, node1);
 
-    let counter = 0;
-    const maxCounter = 1000;
-
-    while (counter < maxCounter) {
-        const neighbours = getNeighbours(graph, currentNodes);
-        const nextCurrentNodes: string[] = [];
-
-        console.log('current neighbors', neighbours);
-
-        neighbours.forEach(([prevNodeId, nodeId]) => {
-            if (placedNodes.indexOf(nodeId) === -1) {
-
-                // Get the position of prev node id to place this node id
-                const [, node1] = graph.node(prevNodeId);
-                const [, node2] = graph.node(nodeId);
-
-                // The direction of the node does not matter
-                const [edgeNode1, pin1, edgeNode2, pin2] = graph.edge(prevNodeId, nodeId);
-
-                let usePin1: number;
-                let usePin2: number;
-
-                if (edgeNode1 === prevNodeId) {
-                    usePin1 = pin1;
-                    usePin2 = pin2;
-                } else {
-                    usePin1 = pin2;
-                    usePin2 = pin1;
-                }
-
-                console.log('placing', edgeNode1, pin1, edgeNode2, pin2);
-
-                const nodePinPosition = getNodePositionAtPin(node1, usePin1);
-                placeNodeAtPosition(nodePinPosition[0], nodePinPosition[1], node2, usePin2);
-
-                nextCurrentNodes.push(nodeId);
-
-                placedNodes.push(nodeId);
+            } else if (node1.isFloating && node2.isFloating) {
+                node1.floatingRelativeTo.push([pin1, nodeId2, pin2]);
+                node2.floatingRelativeTo.push([pin2, nodeId1, pin1]);
             }
-        });
-
-        if (nextCurrentNodes.length === 0) {
-            break;
         }
+    });
+}
 
-        currentNodes = nextCurrentNodes;
+function placeFloatingItems(graph: graphlib.Graph, item: RenderItem, depth = 0): void {
+    // Assume that item already has a fixed position
 
-        counter++;
-
-        console.log('-------------------------');
+    if (depth > 100) {
+        throw "Too many levels when placing floating items";
     }
+
+    const { floatingRelativeTo = [] } = item;
+
+    floatingRelativeTo.forEach(entry => {
+        const [selfPin, nodeId, pin] = entry;
+        const [, tmpNode] = graph.node(nodeId);
+
+        if (tmpNode.isFloating) {
+            const [x, y] = getNodePositionAtPin(item, selfPin);
+            placeNodeAtPosition(x, y, tmpNode, pin);
+            tmpNode.isFloating = false;
+
+            placeFloatingItems(graph, tmpNode, depth + 1);
+        }
+    });
 }
 
 function placeNodeAtPosition(fromX: number, fromY: number, item: RenderItem, pin: number): void {
@@ -537,18 +502,22 @@ export function getBounds(components: RenderComponent[], wires: RenderWire[], ju
     }
 }
 
-
-export class RenderWire {
-    // Starting point of the wire
+export class RenderObject {
     x = -1;
     y = -1;
 
-    id: number;
+    isFloating = true;
+    floatingRelativeTo: [selfPin: number, nodeId: string, pin: number][] = [];
+}
 
+
+export class RenderWire extends RenderObject {
+    id: number;
     segments: WireSegment[] = [];
     points = [];
 
     constructor(x: number, y: number, segments: WireSegment[]) {
+        super();
         this.x = x;
         this.y = y;
         this.segments = segments;
@@ -581,24 +550,11 @@ export class RenderWire {
     }
 }
 
-export class RenderJunction {
-    x: number;
-    y: number;
-
-    constructor(x: number, y: number){
-        this.x = x;
-        this.y = y;
-    }
-}
-
-export class RenderComponent {
+export class RenderComponent extends RenderObject {
     // Holds the render information of the component (position)
 
     component: ClassComponent;
     symbol: SymbolGraphic;
-
-    x = -1;
-    y = -1;
 
     width: number;
     height: number;
@@ -606,6 +562,7 @@ export class RenderComponent {
     displaySymbol: string | null = null;
 
     constructor(component: ClassComponent, width: number, height: number) {
+        super();
         this.component = component;
         this.width = width;
         this.height = height;
@@ -618,6 +575,16 @@ export class RenderComponent {
         const condition4 = isPointOverlap(this.x, this.y + this.height, other);
 
         return condition1 || condition2 || condition3 || condition4; 
+    }
+}
+
+export class RenderJunction {
+    x: number;
+    y: number;
+
+    constructor(x: number, y: number){
+        this.x = x;
+        this.y = y;
     }
 }
 
