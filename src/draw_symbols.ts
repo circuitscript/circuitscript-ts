@@ -28,7 +28,7 @@ export abstract class SymbolGraphic {
     labelTexts = new Map<string, string>();
 
     get angle(): number {
-        return this._angle;
+        return (this._angle % 360);
     }
 
     set angle(value: number) {
@@ -123,20 +123,26 @@ export abstract class SymbolGraphic {
                 vanchor = VerticalAlign.Bottom,
             } = tmpLabel.style;
 
-            let useAnchor = 'start';
+            let anchorStyle = 'start';
             let dominantBaseline = 'auto';
 
-            switch(anchor){
+            let useAnchor = anchor;
+            if (this.angle === 180){
+                // Special case to flip the text instead of rotating
+                useAnchor = this.flipTextAnchor(anchor);
+            }
+
+            switch(useAnchor){
                 case HorizontalAlign.Left:
-                    useAnchor = 'start';
+                    anchorStyle = 'start';
                     break;
 
                 case HorizontalAlign.Middle:
-                    useAnchor = 'middle';
+                    anchorStyle = 'middle';
                     break;
 
                 case HorizontalAlign.Right:
-                    useAnchor = 'end';
+                    anchorStyle = 'end';
                     break;
             }
 
@@ -156,17 +162,32 @@ export abstract class SymbolGraphic {
 
             const position = tmpLabel.getLabelPosition();
             
-            group.text(tmpLabel.text)
-                .translate(position[0], position[1])
-                .rotate(this.angle, -position[0], -position[1])
+            const text = group.text(tmpLabel.text)
                 .fill('#333')
                 .font({
                     family: defaultFont,
                     size: fontSize,
-                    anchor: useAnchor,
+                    anchor: anchorStyle,
                     'dominant-baseline': dominantBaseline,
-                })
+                });
+
+            if (this.angle === 180){
+                text.translate(-position[0], position[1]);
+            } else {
+                text.translate(position[0], position[1])
+                    .rotate(this.angle, -position[0], -position[1]);
+            }
         });
+    }
+
+    flipTextAnchor(value: HorizontalAlign): HorizontalAlign {
+        if (value === HorizontalAlign.Left) {
+            return HorizontalAlign.Right
+        } else if (value === HorizontalAlign.Right) {
+            return HorizontalAlign.Left;
+        } else {
+            return HorizontalAlign.Middle;
+        }
     }
 
     setLabelValue(labelId: string, labelValue: string): void {
@@ -361,6 +382,7 @@ export class SymbolCustom extends SymbolGraphic {
         const maxRightPins = Math.max(...rightPins.map(item => item.position)) + 1;
 
         const drawing = new SymbolDrawing();
+        drawing.angle = this._angle;
 
         const bodyWidth = this.bodyWidth;
         const bodyHeight = (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing;
@@ -372,7 +394,7 @@ export class SymbolCustom extends SymbolGraphic {
         const rightPinStart = bodyWidth / 2;
         const pinStartY = -bodyHeight / 2;
 
-        leftPins.forEach((pin, index) => {
+        leftPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
             drawing.addPin(leftPinStart, pinY, leftPinStart - this.pinLength, pinY, pin.pinId);
@@ -390,7 +412,7 @@ export class SymbolCustom extends SymbolGraphic {
             });
         });
 
-        rightPins.forEach((pin, index) => {
+        rightPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
             drawing.addPin(rightPinStart, pinY, rightPinStart + this.pinLength, pinY, pin.pinId);
@@ -423,10 +445,6 @@ export class SymbolCustom extends SymbolGraphic {
         });
 
         this.drawing = drawing;
-
-        // const {width, height} = drawing.getBoundingBox();
-        // this.width = width;
-        // this.height = height;
 
         // This width also includes the pin length
         this.width = this.bodyWidth + 2 * this.pinLength;
