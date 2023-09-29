@@ -6,6 +6,7 @@ import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
 import { WireSegment } from './objects/Wire';
 import { NumericValue } from './objects/ParamDefinition';
+import { Geometry } from './geometry';
 
 export async function prepareLayout2(
     sequence: SequenceItem[]
@@ -547,6 +548,9 @@ export class RenderWire extends RenderObject {
 
         this.segments.forEach(segment => {
             const { direction, value } = segment;
+
+            let didAddPoint = false;
+
             if (direction === 'down') {
                 tmpY += value;
             } else if (direction === 'up') {
@@ -555,16 +559,55 @@ export class RenderWire extends RenderObject {
                 tmpX -= value;
             } else if (direction === 'right') {
                 tmpX += value;
-            } else if (direction === 'auto') {
+            } else if (direction === 'auto' || direction === "auto_") {
+                // 'auto' means both x and y. 'auto_' is the same as 'auto', but
+                // uses the alternative path to the target.
                 const { valueXY = [0, 0] } = segment;
-                tmpX += valueXY[0];
-                tmpY += valueXY[1];
+
+                const tmpPoints = this.getAutoPoints(valueXY, direction);
+
+                tmpPoints.forEach(point => {
+                    tmpX += point[0];
+                    tmpY += point[1];
+                    points.push({ x: tmpX, y: tmpY });
+                });
+                didAddPoint = true;
             }
 
-            points.push({ x: tmpX, y: tmpY });
+            if(!didAddPoint){
+                points.push({ x: tmpX, y: tmpY });
+            }
         });
 
         this.points = points;
+    }
+
+    getAutoPoints(value: [x: number, y: number], direction: 'auto' | 'auto_'): [dx: number, dy: number][] {
+        const inQuadrant = Geometry.getQuadrant(value[0], value[1]);
+        const [dx, dy] = value;
+
+        // Clockwise direction
+        if (direction === 'auto') {
+            switch (inQuadrant) {
+                case 0:
+                case 2:
+                    return [[dx, 0], [0, dy]];
+                case 1:
+                case 3:
+                    return [[0, dy], [dx, 0]];
+            }
+        } else if (direction === 'auto_') {
+            switch (inQuadrant) {
+                case 0:
+                case 2:
+                    return [[0, dy], [dx, 0]];
+                case 1:
+                case 3:
+                    return [[dx, 0], [0, dy]];
+            }
+        }
+
+        return [[0, 0]];
     }
 
     getWireEnd(): { x: number, y: number } {
@@ -572,11 +615,9 @@ export class RenderWire extends RenderObject {
     }
 
     isEndAutoLength(): boolean {
-        if (this.segments.length > 0){
-            if (this.segments[this.segments.length - 1].value === null){
-                // If only direction, then it is an auto length
-                return true;
-            }
+        if (this.segments.length > 0) {
+            // If only direction, then it is an auto length
+            return this.segments[this.segments.length - 1].value === null;
         }
 
         return false;
@@ -633,6 +674,7 @@ export class RenderWire extends RenderObject {
                 break;
 
             case 'auto':
+            case 'auto_':
                 // Always assume positive values
                 valueXY = [
                     untilX - tmpX,

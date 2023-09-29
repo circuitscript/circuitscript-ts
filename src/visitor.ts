@@ -664,7 +664,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 if (skipNext) {
                     i += 1;
                 }
-            } else if (textValue === "auto") {
+            } else if (textValue === "auto" || textValue === "auto_") {
+                // Two different auto modes to decide how to form the
+                // connecting wire
                 segments.push([textValue]);
             }
         }

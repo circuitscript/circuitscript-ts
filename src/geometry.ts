@@ -202,6 +202,17 @@ export class Geometry {
 
         return paths.join(" ");
     }
+
+    static angle(dx: number, dy: number): number {
+        // Angle is relative to the x-axis going clockwise
+        const line = new Flatten.Segment(new Flatten.Point(0, 0), new Flatten.Point(dx, dy));
+        return line.slope * 180 / Math.PI;
+    }
+
+    static getQuadrant(dx: number, dy: number): number {
+        const angle = Geometry.angle(dx, dy);
+        return Number(Math.floor(angle/90));
+    }
 }
 
 export enum HorizontalAlign {
