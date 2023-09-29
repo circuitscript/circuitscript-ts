@@ -215,7 +215,14 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitAdd_component_expr(ctx: Add_component_exprContext) {
         const component: ClassComponent = this.visit(ctx.data_expr());
-        this.getExecutor().addComponentExisting(component);
+
+        let pinValue = null;
+        // If a pin is specified, then add it at pin
+        if (ctx.pin_select_expr()){
+            pinValue = this.visit(ctx.pin_select_expr());
+        }
+
+        this.getExecutor().addComponentExisting(component, pinValue);
     }
 
     visitAt_component_expr(ctx: At_component_exprContext) {

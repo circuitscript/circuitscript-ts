@@ -84,9 +84,9 @@ export class Component {
         if (pinIndex + 1 <= this.numPins) {
             return pinIndex + 1;
         } else {
-            // No more next pin, so just return the
-            // same index
-            return pinIndex;
+            // No more next pin, so just wrap around.
+            // Might not be the right behaviour...
+            return 1;
         }
     }
 

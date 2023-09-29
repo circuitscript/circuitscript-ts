@@ -58,7 +58,7 @@ property_set_expr2:
 	INSTANCE_NAME_WITH_PROPERTY ':' INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
-add_component_expr: 'add' data_expr;
+add_component_expr: 'add' data_expr pin_select_expr?;
 
 component_select_expr: (data_expr pin_select_expr?) | pin_select_expr;
 pin_select_expr:        'pin' (INTEGER_VALUE | STRING_VALUE);
