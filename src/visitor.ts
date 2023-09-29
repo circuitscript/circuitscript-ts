@@ -637,7 +637,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitWire_expr(ctx: Wire_exprContext): void {
-        const segments: [string, number][] = [];
+        const segments: [string, number?][] = [];
 
         const ID_list = ctx.ID_list();
         const integer_list = ctx.INTEGER_VALUE_list();
@@ -647,8 +647,16 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         ID_list.forEach((item, index) => {
             const direction = item.getText();
             if (acceptedDirections.indexOf(direction) !== -1){
-                const integerValue = this.parseIntegerValue(integer_list[index]);
-                segments.push([direction, integerValue]);
+                const segment:[string, number?] = [direction];
+
+                // If the last segment does not have any value, then it is 
+                // an auto length
+                if (index < integer_list.length){
+                    const integerValue = this.parseIntegerValue(integer_list[index]);
+                    segment.push(integerValue);
+                }
+                
+                segments.push(segment);
             }
         });
 

@@ -12,4 +12,5 @@ export class Wire {
 export type WireSegment = {
     direction: 'up' | 'down' | 'left' | 'right';
     value: number,
+    until?: [instanceName: string, pin: number],
 }

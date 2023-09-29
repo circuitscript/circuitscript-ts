@@ -14,9 +14,6 @@ export async function prepareLayout2(
     let previousNode: string | null = null;
     let previousPin: number | null = null;
 
-    // Keeps track of the wire positions.
-    const wiresLookup = new Map<number, WireLookupInfo>();
-
     const graph = new graphlib.Graph({
         directed: false,
         compound: true,
@@ -90,12 +87,6 @@ export async function prepareLayout2(
             const wire = new RenderWire(0, 0, wireSegments);
             wire.id = wireId;
 
-            const wireEnd = wire.getWireEnd();
-            wiresLookup.set(wireId, {
-                wire,
-                end: [wireEnd.x, wireEnd.y]
-            });
-
             const wireName = 'wire:'+wire.id;
 
             // Record the sequence number to determine priority
@@ -116,28 +107,29 @@ export async function prepareLayout2(
 
     placeGraph(graph);
 
-    const placedComponents = [];
-    const placedWires = [];
+    const placedComponents:RenderComponent[] = [];
+    const placedWires:RenderWire[] = [];
 
     const tmpNodes = graph.nodes();
     tmpNodes.forEach(item => {
         const nodeValue = graph.node(item);
-        const [nodeType] = nodeValue;
+        const [nodeType, nodeItem]:[string, RenderItem] = nodeValue;
         if (nodeType === 'component'){
-            placedComponents.push(nodeValue[1]);
+            placedComponents.push(nodeItem as RenderComponent);
         } else if(nodeType === 'wire'){
-            placedWires.push(nodeValue[1]);
+            placedWires.push(nodeItem as RenderWire);
         }
     });
 
     const junctions: RenderJunction[] = [];
 
     const wirePoints: [x: number, y: number][] = [];
-    for (const [, wireInfo] of wiresLookup) {
-        const { wire, end } = wireInfo;
+
+    placedWires.forEach(wire => {
+        const end = wire.getWireEnd();
         wirePoints.push([wire.x, wire.y]);
-        wirePoints.push([wire.x + end[0], wire.y + end[1]]);
-    }
+        wirePoints.push([wire.x + end.x, wire.y + end.y]);
+    });
 
     // Tracks if wire points (start and ends only) have been repeated.
     // This is used to determine junction points.
@@ -246,10 +238,10 @@ function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, subgraphN
         // If the subgraph nodes v, then the edge is within the subgraph.
         // No need to check w, since w must also be in the subgraph.
         if (subgraphNodes.indexOf(v) !== -1) {
-            const [nodeId1, pin1, nodeId2, pin2] = graph.edge(edge);
+            const [nodeId1, pin1, nodeId2, pin2]: [string, number, string, number] = graph.edge(edge);
 
-            const [, node1] = graph.node(nodeId1);
-            const [, node2] = graph.node(nodeId2);
+            const [, node1]: [string, RenderItem] = graph.node(nodeId1);
+            const [, node2]: [string, RenderItem] = graph.node(nodeId2);
 
             if (nodeId1 === firstNodeId && !firstNodePlaced) {
                 placeNodeAtPosition(0, 0, node1, pin1);
@@ -257,24 +249,50 @@ function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, subgraphN
                 node1.isFloating = false;
             }
 
-            if (!node1.isFloating && node2.isFloating) {
-                const [x, y] = getNodePositionAtPin(node1, pin1);
-                placeNodeAtPosition(x, y, node2, pin2);
-                node2.isFloating = false;
+            let fixedNode: RenderItem;
+            let fixedNodePin: number;
 
-                placeFloatingItems(graph, node2);
+            let floatingNode: RenderItem;
+            let floatingNodePin: number;
+
+            if (!node1.isFloating && node2.isFloating) {
+                fixedNode = node1;
+                fixedNodePin = pin1;
+
+                floatingNode = node2;
+                floatingNodePin = pin2;
 
             } else if (node1.isFloating && !node2.isFloating) {
-                const [x, y] = getNodePositionAtPin(node2, pin2);
-                placeNodeAtPosition(x, y, node1, pin1);
-                node1.isFloating = false;
+                fixedNode = node2;
+                fixedNodePin = pin2;
 
-                placeFloatingItems(graph, node1);
+                floatingNode = node1;
+                floatingNodePin = pin1;
 
             } else if (node1.isFloating && node2.isFloating) {
                 node1.floatingRelativeTo.push([pin1, nodeId2, pin2]);
                 node2.floatingRelativeTo.push([pin2, nodeId1, pin1]);
             }
+
+            if (fixedNode && floatingNode){
+                const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
+                placeNodeAtPosition(x, y, floatingNode, floatingNodePin);
+                floatingNode.isFloating = false;
+
+                placeFloatingItems(graph, floatingNode);
+            }
+
+            [node1, node2].forEach(item => {
+                if (item instanceof RenderWire){
+                    if (item.isEndAutoLength()){
+                        const [instanceName, pin] = item.getEndAuto();
+                        const [, targetNode]:[string, RenderItem] = graph.node(instanceName);
+
+                        const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
+                        item.setEndAuto(untilX, untilY);
+                    }
+                } 
+            });
         }
     });
 }
@@ -373,10 +391,6 @@ function getInstanceName(component: ClassComponent): string {
 
 type RenderItem = RenderComponent | RenderWire;
 
-type WireLookupInfo = {
-    wire: RenderWire,
-    end: [x: number, y: number]
-}
 type WirePointCount = [x: number, y: number, count: number];
 
 function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
@@ -522,8 +536,12 @@ export class RenderWire extends RenderObject {
         this.y = y;
         this.segments = segments;
 
-        let tmpX = this.x;
-        let tmpY = this.y;
+        this.refreshPoints();
+    }
+
+    refreshPoints(): void {
+        let tmpX = 0;
+        let tmpY = 0;
 
         const points = [{ x: tmpX, y: tmpY }];
 
@@ -547,6 +565,71 @@ export class RenderWire extends RenderObject {
 
     getWireEnd(): { x: number, y: number } {
         return this.points[this.points.length - 1];
+    }
+
+    isEndAutoLength(): boolean {
+        if (this.segments.length > 0){
+            if (this.segments[this.segments.length - 1].value === null){
+                // If only direction, then it is an auto length
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    getEndAuto():[instanceName:string, pin: number] {
+        if (this.segments.length > 0){
+            return this.segments[this.segments.length -1].until;
+        } else {
+            throw "No segments in wire!"
+        }
+    }
+
+    setEndAuto(untilX: number, untilY: number): void {
+
+        // Find the last accumulated position up to the last item
+        const excludeLastSegment = this.segments.slice(0, this.segments.length-1);
+
+        let tmpX = this.x;
+        let tmpY = this.y;
+
+        excludeLastSegment.forEach(segment => {
+            const { direction, value } = segment;
+            if (direction === 'down') {
+                tmpY += value;
+            } else if (direction === 'up') {
+                tmpY -= value;
+            } else if (direction === 'left') {
+                tmpX -= value;
+            } else if (direction === 'right') {
+                tmpX += value;
+            }
+        });
+
+        // Based on the last segment direction, determine the
+        // value. Since value is set, then the segment will no longer
+        // be considered as an 'auto length' segment.
+        let useValue = null;
+        const lastSegment = this.segments[this.segments.length-1];
+        switch(lastSegment.direction){
+            case 'left':
+                useValue = tmpX - untilX;
+                break;
+            case 'right':
+                useValue = untilX - tmpX;
+                break;
+            case 'up':
+                useValue = untilY - tmpY;
+                break;
+            case 'down':
+                useValue = tmpY - untilY;
+                break;
+        }
+
+        lastSegment.value = useValue;
+
+        this.refreshPoints();
     }
 }
 

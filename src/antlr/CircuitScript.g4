@@ -119,7 +119,7 @@ decorator_expr: DECORATOR NEWLINE;
 style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 blank_expr: '[' INTEGER_VALUE ']';
 
-wire_expr: 'wire' (ID INTEGER_VALUE)+ ;
+wire_expr: 'wire' (ID | ((ID INTEGER_VALUE)+ ID?));
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';

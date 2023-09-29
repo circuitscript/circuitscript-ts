@@ -298,8 +298,15 @@ export class ExecutionContext {
         );
     }
 
-    addComponentExisting(component: ClassComponent): void {
-        const startPin = component.getDefaultPin();
+    addComponentExisting(component: ClassComponent, pin = null): void {
+        let startPin;
+
+        if (pin === null) {
+            startPin = component.getDefaultPin();
+        } else {
+            startPin = pin;
+        }
+
         const nextPin = component.getNextPinAfter(startPin);
 
         // Add to sequence
@@ -366,6 +373,19 @@ export class ExecutionContext {
 
         if (addSequence) {
             const sequenceComponent = this.prepareSequenceComponent(component);
+
+            if (this.scope.sequence.length > 0) {
+                // Check if the previous entry is a wire
+                const [entryType, , segments]: [SequenceAction, number, WireSegment[]] = this.scope.sequence[this.scope.sequence.length - 1];
+                if (entryType === SequenceAction.Wire) {
+                    if (isWireSegmentsEndAuto(segments)) {
+                        segments[segments.length - 1].until = [
+                            sequenceComponent.instanceName, pinId
+                        ];
+                    }
+                }
+            }
+
             this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId, linkedNet.name]);
         }
 
@@ -705,11 +725,12 @@ export class ExecutionContext {
         return layoutDirection;
     }
 
-    addWire(segments: [string, number][]): void {
+    addWire(segments: [string, number?][]): void {
         const tmp = segments.map(item => {
+            const [direction, value=null] = item;
             return {
-                direction: item[0],
-                value: item[1]
+                direction,
+                value
             } as WireSegment
         });
 
@@ -729,6 +750,16 @@ export class ExecutionContext {
             this.scope.currentComponent.styles[key] = styles[key];
         }
     }
+}
+
+function isWireSegmentsEndAuto(segments:WireSegment[]): boolean {
+    if (segments.length > 0){
+        if (segments[segments.length -1].value === null){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 export function isNetComponent(component: ClassComponent): boolean {
