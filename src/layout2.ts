@@ -555,6 +555,10 @@ export class RenderWire extends RenderObject {
                 tmpX -= value;
             } else if (direction === 'right') {
                 tmpX += value;
+            } else if (direction === 'auto') {
+                const { valueXY = [0, 0] } = segment;
+                tmpX += valueXY[0];
+                tmpY += valueXY[1];
             }
 
             points.push({ x: tmpX, y: tmpY });
@@ -611,7 +615,9 @@ export class RenderWire extends RenderObject {
         // value. Since value is set, then the segment will no longer
         // be considered as an 'auto length' segment.
         let useValue = null;
+        let valueXY = null;
         const lastSegment = this.segments[this.segments.length-1];
+
         switch(lastSegment.direction){
             case 'left':
                 useValue = tmpX - untilX;
@@ -625,9 +631,22 @@ export class RenderWire extends RenderObject {
             case 'down':
                 useValue = tmpY - untilY;
                 break;
+
+            case 'auto':
+                // Always assume positive values
+                valueXY = [
+                    untilX - tmpX,
+                    untilY - tmpY,
+                ];
+
+                // Set to 0, to mark that auto length
+                // calculation has already been done.
+                useValue = 0;
+                break;
         }
 
         lastSegment.value = useValue;
+        lastSegment.valueXY = valueXY !== null ? valueXY : null;
 
         this.refreshPoints();
     }

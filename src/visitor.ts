@@ -638,27 +638,36 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitWire_expr(ctx: Wire_exprContext): void {
         const segments: [string, number?][] = [];
+        const acceptedDirections = ['left', 'right', 'up', 'down'];
 
-        const ID_list = ctx.ID_list();
-        const integer_list = ctx.INTEGER_VALUE_list();
+        // Ignore 'wire'
+        const parts = ctx.children.slice(1);
 
-        const acceptedDirections = ['left', 'right', 'up', 'down']
+        for (let i = 0; i < parts.length; i++) {
+            const textValue = parts[i].getText();
+            if (acceptedDirections.indexOf(textValue) !== -1) {
+                const segment: [string, number?] = [textValue];
 
-        ID_list.forEach((item, index) => {
-            const direction = item.getText();
-            if (acceptedDirections.indexOf(direction) !== -1){
-                const segment:[string, number?] = [direction];
+                let skipNext = false;
 
-                // If the last segment does not have any value, then it is 
-                // an auto length
-                if (index < integer_list.length){
-                    const integerValue = this.parseIntegerValue(integer_list[index]);
-                    segment.push(integerValue);
+                if (i + 1 < parts.length) {
+                    const nextValue = parts[i + 1].getText();
+                    const nextValueNumber = Number(nextValue);
+                    if (!isNaN(nextValueNumber)) {
+                        segment.push(nextValueNumber);
+                        skipNext = true;
+                    }
                 }
-                
+
                 segments.push(segment);
+
+                if (skipNext) {
+                    i += 1;
+                }
+            } else if (textValue === "auto") {
+                segments.push([textValue]);
             }
-        });
+        }
 
         this.getExecutor().addWire(segments);
     }

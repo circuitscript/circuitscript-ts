@@ -10,7 +10,8 @@ export class Wire {
 }
 
 export type WireSegment = {
-    direction: 'up' | 'down' | 'left' | 'right';
+    direction: 'up' | 'down' | 'left' | 'right' | 'auto';
     value: number,
+    valueXY?: [x: number, y: number],
     until?: [instanceName: string, pin: number],
 }
