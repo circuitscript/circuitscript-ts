@@ -17,6 +17,28 @@ export default async function main(): Promise<void> {
     await prepareSizing();
 
     const fileName = process.argv[2];
+    await renderScript(fileName);
+
+    let watch = false;
+    if (process.argv.length > 2){
+        if (process.argv[3] === "w"){
+            watch = true;
+        }
+    }
+
+    if (watch){
+        fs.watch(fileName, (event, targetFile) => {
+            if (event === 'change') {
+                renderScript(fileName).then(() => {
+                    console.log('Done');
+                });
+            }
+        });
+    }
+}
+
+async function renderScript(fileName: string): Promise<void> {
+    
     const data = await readFile(fileName);
 
     const chars = new CharStream(data);
@@ -36,7 +58,9 @@ export default async function main(): Promise<void> {
 
     await writeFile('dump/raw-output.json', JSON.stringify(visitor.dump2(), null, 2));
 
-    const { sequence } = visitor.getGraph();
+    const { sequence, nets } = visitor.getGraph();
+
+    visitor.getExecutor().scope.printNets();
 
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
@@ -73,7 +97,7 @@ export default async function main(): Promise<void> {
         }
 
         case LayoutType.Custom: {
-            const graph = await prepareLayout2(sequence);
+            const graph = await prepareLayout2(sequence, nets);
             generateSVG2(graph, outputSvgPath);
             break;
         }
