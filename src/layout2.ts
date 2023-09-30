@@ -7,10 +7,13 @@ import { GlobalNames } from './globals';
 import { WireSegment } from './objects/Wire';
 import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
+import { Net } from './objects/Net';
+import Flatten from '@flatten-js/core';
 
 export async function prepareLayout2(
-    sequence: SequenceItem[]
-): Promise<{ components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[] }> {
+    sequence: SequenceItem[],
+    nets: [ClassComponent, pin: number, net: Net][],
+): Promise<{ components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[], mergedWires: MergedWire[] }> {
 
     let previousNode: string | null = null;
     let previousPin: number | null = null;
@@ -71,11 +74,12 @@ export async function prepareLayout2(
                 tmpComponent.symbol = tmpSymbol;
 
                 // Record the sequence number to determine priority
-                graph.setNode(getInstanceName(component), ['component', tmpComponent, i]);
+                graph.setNode(getInstanceName(component), [RenderItemType.Component, tmpComponent, i]);
             }
 
             if (action === SequenceAction.To) {
-                graph.setEdge(previousNode, getInstanceName(component), makeEdgeValue(previousNode, previousPin, getInstanceName(component), pin, i));
+                graph.setEdge(previousNode, getInstanceName(component),
+                    makeEdgeValue(previousNode, previousPin, getInstanceName(component), pin, i));
             }
 
             previousNode = getInstanceName(component);
@@ -88,10 +92,28 @@ export async function prepareLayout2(
             const wire = new RenderWire(0, 0, wireSegments);
             wire.id = wireId;
 
-            const wireName = 'wire:'+wire.id;
+            let useNetName = null;
+
+            if (previousNode !== null) {
+                const [prevNodeType, prevNodeItem] = graph.node(previousNode);
+                if (prevNodeType === RenderItemType.Component) {
+                    // Find the net of the wire
+                    const matchingItem = nets.find(([comp, pin]) => {
+                        return comp.instanceName === previousNode && pin === previousPin;
+                    });
+
+                    useNetName = matchingItem !== undefined ? matchingItem[2].name : null;
+
+                } else if (prevNodeType === RenderItemType.Wire) {
+                    useNetName = (prevNodeItem as RenderWire).netName;
+                }
+            }
+
+            wire.netName = useNetName;
+            const wireName = 'wire:' + wire.id;
 
             // Record the sequence number to determine priority
-            graph.setNode(wireName, ['wire', wire, i]);
+            graph.setNode(wireName, [RenderItemType.Wire, wire, i]);
 
             // Connect previous node to pin:0 of the wire
             graph.setEdge(previousNode, wireName, makeEdgeValue(previousNode, previousPin, wireName, 0, i));
@@ -108,61 +130,65 @@ export async function prepareLayout2(
 
     placeGraph(graph);
 
-    const placedComponents:RenderComponent[] = [];
-    const placedWires:RenderWire[] = [];
+    const placedComponents: RenderComponent[] = [];
+    const placedWires: RenderWire[] = [];
 
     const tmpNodes = graph.nodes();
     tmpNodes.forEach(item => {
         const nodeValue = graph.node(item);
-        const [nodeType, nodeItem]:[string, RenderItem] = nodeValue;
-        if (nodeType === 'component'){
+        const [nodeType, nodeItem]: [string, RenderItem] = nodeValue;
+
+        if (nodeType === RenderItemType.Component) {
             placedComponents.push(nodeItem as RenderComponent);
-        } else if(nodeType === 'wire'){
+
+        } else if (nodeType === RenderItemType.Wire) {
             placedWires.push(nodeItem as RenderWire);
         }
     });
 
+    const wireGroups = new Map<string, RenderWire[]>();
+
+    // Merge wires in the same group?
+    placedWires.forEach(wire => {
+        const {netName} = wire;
+        if (!wireGroups.has(netName)){
+            wireGroups.set(netName, []);
+        }
+
+        wireGroups.get(netName).push(wire);
+    });
+
     const junctions: RenderJunction[] = [];
 
-    const wirePoints: [x: number, y: number][] = [];
+    const mergedWires:MergedWire[] = [];
 
-    placedWires.forEach(wire => {
-        const end = wire.getWireEnd();
-        wirePoints.push([wire.x, wire.y]);
-        wirePoints.push([wire.x + end.x, wire.y + end.y]);
-    });
-
-    // Tracks if wire points (start and ends only) have been repeated.
-    // This is used to determine junction points.
-    const wirePointCounts = wirePoints.reduce((accum, point) => {
-        const found = accum.find(item => {
-            return item[0] === point[0] && item[1] === point[1]
+    for (const [key, wires] of wireGroups) {
+        // Merge all wires together?
+        const allLines = wires.map(wire => {
+            return wire.points.map(pt => {
+                return {
+                    x: wire.x + pt.x,
+                    y: wire.y + pt.y,
+                }
+            });
         });
 
-        if (found) {
-            found[2]++;
-        } else {
-            accum.push([point[0], point[1], 1]);
-        }
+        const { intersectPoints, segments } = Geometry.mergeWires(allLines);
+        mergedWires.push({
+            netName: key,
+            segments,
+            intersectPoints,
+        });
 
-        return accum;
-
-    }, [] as WirePointCount[]);
-
-
-    wirePointCounts.forEach(item => {
-        const [x, y, count] = item;
-
-        // Need to be at least 3 or more. If there are 2,
-        // then it could just be a bend or a straight line.
-        if (count > 2) {
+        intersectPoints.forEach(([x, y]) => {
             junctions.push(new RenderJunction(x, y));
-        }
-    });
+        });
+    }
 
     return {
         components: placedComponents,
         wires: placedWires,
+        mergedWires,
         junctions,
     };
 }
@@ -204,9 +230,9 @@ function placeGraph(graph: graphlib.Graph): void {
 
         innerGraph.forEach(nodeId => {
             const [nodeType, item,] = graph.node(nodeId);
-            if (nodeType === 'component') {
+            if (nodeType === RenderItemType.Component) {
                 components.push(item);
-            } else if (nodeType === 'wire') {
+            } else if (nodeType === RenderItemType.Wire) {
                 wires.push(item);
             }
         });
@@ -531,6 +557,10 @@ export class RenderWire extends RenderObject {
     segments: WireSegment[] = [];
     points = [];
 
+    // Net name is used to determine if wires
+    // can overlap
+    netName: string;
+
     constructor(x: number, y: number, segments: WireSegment[]) {
         super();
         this.x = x;
@@ -694,6 +724,12 @@ export class RenderWire extends RenderObject {
     }
 }
 
+export type MergedWire = {
+    netName: string,
+    segments: Flatten.Segment[],
+    intersectPoints: [x: number, y: number][],
+}
+
 export class RenderComponent extends RenderObject {
     // Holds the render information of the component (position)
 
@@ -734,4 +770,9 @@ export class RenderJunction {
 
 function isPointOverlap(x: number, y: number, other: RenderComponent): boolean {
     return (x >= other.x && y >= other.y && x <= (other.x + other.width) && y <= (other.y + other.height));
+}
+
+enum RenderItemType {
+    Wire = 'wire',
+    Component = 'component',
 }

@@ -213,7 +213,103 @@ export class Geometry {
         const angle = Geometry.angle(dx, dy);
         return Number(Math.floor(angle/90));
     }
+
+    static mergeWires(wirePoints: {x: number, y:number}[][]): {intersectPoints:[x: number, y:number][], segments: Flatten.Segment[]}{
+
+        // This array stores segments that only intersect
+        // at the endpoints.
+        const keepSegments:Flatten.Segment[] = [];
+
+        wirePoints.forEach(points => {
+            
+            const tmpPoints = points.map(pt => {
+                return new Flatten.Point(pt.x, pt.y);
+            });
+
+            // Generate segments from the points
+            for (let i = 0; i < tmpPoints.length - 1; i++) {
+                const pt1 = tmpPoints[i];
+                const pt2 = tmpPoints[i + 1];
+
+                let addSegment = true;
+                // Check if the segment overlaps other segments
+                for (let j = 0; j < keepSegments.length; j++) {
+                    const tmpSegment = keepSegments[j];
+                    const dist1 = tmpSegment.distanceTo(pt1);
+                    const dist2 = tmpSegment.distanceTo(pt2);
+
+                    if (dist1[0] === 0 && dist2[0] !== 0) {
+                        // If one point is in the segment, then split this segment into
+                        // 2
+                        const splitResult = tmpSegment.split(pt1);
+                        if (splitResult[0] !== null && splitResult[1] !== null){
+                            keepSegments.splice(j, 1, splitResult[0]);
+                            keepSegments.splice(j+1, 0, splitResult[1]);
+                            break;
+                        }
+
+                    } else if (dist1[0] !== 0 && dist2[0] === 0){
+                        const splitResult = tmpSegment.split(pt2);
+                        if (splitResult[0] !== null && splitResult[1] !== null){
+                            keepSegments.splice(j, 1, splitResult[0]);
+                            keepSegments.splice(j+1, 0, splitResult[1]);
+                            break;
+                        }
+
+                    } else if (dist1[0] === 0 && dist2[0] === 0) {
+                        // If both points have zero distance, it means that the segment is
+                        // completely overlapping. Need to determine which is the longer segment.
+                        addSegment = false;
+                        break;
+                    }
+                }
+
+                if (addSegment) {
+                    const newSegment = new Flatten.Segment(pt1, pt2);
+                    keepSegments.push(newSegment);
+                }
+            }
+        });
+
+        const trackWirePoints: [x: number, y: number][] = [];
+
+        keepSegments.forEach(segment => {
+            trackWirePoints.push([segment.start.x, segment.start.y]);
+            trackWirePoints.push([segment.end.x, segment.end.y]);
+        });
+
+        // Determine intersection points by going through each segment start
+        // and end points and accumulating on overlapping points.
+        const wirePointCounts = trackWirePoints.reduce((accum, point) => {
+            const found = accum.find(item => {
+                return item[0] === point[0] && item[1] === point[1]
+            });
+
+            if (found) {
+                found[2]++;
+            } else {
+                accum.push([point[0], point[1], 1]);
+            }
+            return accum;
+
+        }, [] as WirePointCount[]);
+
+        const intersectPoints = wirePointCounts.reduce((accum, entry) => {
+            const [x, y, count] = entry;
+            if (count > 1){
+                accum.push([x, y, count]);
+            }
+            return accum;
+        }, []);
+
+        return {
+            intersectPoints,
+            segments: keepSegments,
+        }
+    }
 }
+
+type WirePointCount = [x: number, y: number, count: number];
 
 export enum HorizontalAlign {
     Left = 'left',

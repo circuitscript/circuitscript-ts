@@ -3,12 +3,12 @@ import fs from 'fs';
 import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { RenderComponent, RenderJunction, RenderWire, getBounds } from "./layout2";
+import { MergedWire, RenderComponent, RenderJunction, RenderWire, getBounds } from "./layout2";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
 
-export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]}, outputPath: string): void {
+export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[], mergedWires: MergedWire[]}, outputPath: string): void {
     const window = createSVGWindow();
     const document = window.document;
 
@@ -17,7 +17,7 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     const canvas = SVG(document.documentElement);
     applyFontsToSVG(canvas);
 
-    generateSVGChild(canvas, graph.components, graph.wires, graph.junctions);
+    generateSVGChild(canvas, graph.components, graph.wires, graph.junctions, graph.mergedWires);
     const {x, y, width, height} = canvas.bbox();
 
     const margin = 5;
@@ -38,7 +38,7 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     });
 }
 
-function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]): void {
+function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[], mergedWires:MergedWire[]): void {
 
     // Draw the display grid
     const bounds = getBounds(components, wires, junctions);
@@ -84,24 +84,47 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         }
     });
 
-    const wiresGroup = canvas.group().translate(0, 0);
+    // Original method of drawing wires, this is deprecated
+    // in favor of merged wires.
+    // const wiresGroup = canvas.group().translate(0, 0);
     
-    wires.forEach(wire => {
-        const points = wire.points.map(item => {
-            return [wire.x + item.x, wire.y + item.y];
+    // wires.forEach(wire => {
+    //     const points = wire.points.map(item => {
+    //         return [wire.x + item.x, wire.y + item.y];
+    //     });
+    //     wiresGroup.polyline(points)
+    //         .fill('none')
+    //         .stroke({ width: 1, color: wireColor });
+    // });
+
+    const mergedWireGroup = canvas.group();
+
+    // draw the merged wires
+    mergedWires.forEach(tmpItem => {
+        const { segments, intersectPoints } = tmpItem;
+
+        segments.forEach(segment => {
+            const pt1 = [segment.start.x, segment.start.y];
+            const pt2 = [segment.end.x, segment.end.y];
+            mergedWireGroup.line([pt1, pt2])
+                .stroke({ width: 1, color: wireColor, linecap: 'square' })
+                .fill('none');
         });
-        wiresGroup.polyline(points)
-            .fill('none')
-            .stroke({ width: 1, color: wireColor });
-    });
 
+        intersectPoints.forEach(point => {
+            const [x, y, count] = point;
+            mergedWireGroup.circle(junctionSize)
+                            .translate(x - junctionSize/2, y - junctionSize/2)
+                            .fill(junctionColor)
+                            .stroke('none')
 
-    const junctionGroup = canvas.group().translate(0, 0);
-    junctions.forEach(item => {
-        junctionGroup.circle(junctionSize)
-                     .translate(item.x - junctionSize/2, item.y - junctionSize/2)
-                     .fill(junctionColor)
-                     .stroke('none');
+            mergedWireGroup.text(count.toString())
+                            .translate(x + 2, y + 2)
+                            .font({
+                                family: 'Inter',
+                                size: 10,
+                            })
+        });
     });
 
     // Draw origin
