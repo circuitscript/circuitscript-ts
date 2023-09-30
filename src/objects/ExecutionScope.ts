@@ -90,8 +90,21 @@ export class ExecutionScope {
     }
 
     printNets(): void {
-        this.nets.forEach(([component, pin, net]) => {
-            console.log(component.instanceName, pin, '=>', net.name);
+        const sortedNet = [...this.nets].sort((a, b) => {
+            const netA = a[2].name;
+            const netB = b[2].name;
+
+            if (netA > netB){
+                return 1;
+            } else if (netA < netB){
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+
+        sortedNet.forEach(([component, pin, net]) => {
+            console.log(net.name.padEnd(10), '=>', component.instanceName, pin);
         });
     }
 }

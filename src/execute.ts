@@ -342,8 +342,6 @@ export class ExecutionContext {
             }
         }
 
-        this.printPoint();
-
         if (
             this.scope.hasNet(
                 this.scope.currentComponent,
@@ -399,8 +397,6 @@ export class ExecutionContext {
         createNetComponent=true,
     ): void {
         this.print('at component');
-        this.printPoint();
-
         this.scope.currentComponent = component;
 
         let usePinId: number;
@@ -738,7 +734,14 @@ export class ExecutionContext {
         const wireId = this.scope.wires.length;
 
         this.scope.wires.push(new Wire(tmp));
-        this.print('add wire: ', segments);
+
+        const output = [];
+        segments.forEach(item => {
+            output.push(item.join(","));
+        });
+
+
+        this.print('add wire: ', output.join("|"));
 
         this.scope.currentWireId = wireId;
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
