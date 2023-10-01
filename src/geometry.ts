@@ -218,6 +218,7 @@ export class Geometry {
         intersectPoints: WirePointCount[],
         segments: [x: number, y: number][][]
     } {
+        // Merge wire segments to reduce overlaps and minimize segments
 
         // This array stores segments that only intersect
         // at the endpoints.
@@ -241,29 +242,92 @@ export class Geometry {
                     new Flatten.Segment(pt1, pt2)
                 ];
 
-                // Check if the segment overlaps other segments
+                // Check if the new segment overlaps other existing segments
                 for (let j = 0; j < existingSegments.length; j++) {
                     const currentSegment = existingSegments[j];
 
                     for (let k = 0; k < newSegments.length; k++) {
                         const newSegment = newSegments[k];
-                        const intersection = currentSegment.intersect(newSegment);
 
-                        if (intersection.length > 0) {
+                        // Check if segments are equivalent
+                        const segmentsAreSame = newSegment.equalTo(currentSegment) || newSegment.reverse().equalTo(currentSegment);
+
+                        if (segmentsAreSame){
+                            // remove segment from new segments
+                            newSegments.splice(k, 1);
+                            j = Math.max(0, j-1);
+                            break;
+                        }
+
+                        const intersectPoints = currentSegment.intersect(newSegment);
+                        if (intersectPoints.length > 0) {
+
                             // There should only be one possible intersection between two 
                             // segments (that are not parallel).
-                            const [intersectPoint] = intersection;
 
-                            const splitResult1 = currentSegment.split(intersectPoint);
-                            replaceSegments(existingSegments, j, splitResult1);
+                            // If they are parallel and overlapping, then there will be
+                            // two intersection points
 
-                            const splitResult2 = newSegment.split(intersectPoint);
-                            const replacedNewCount = replaceSegments(newSegments, k, splitResult2);
-                            
-                            // If there is a change to new count, then do not parse any further
-                            if (replacedNewCount > 1){
-                                break;
+                            const endToEndIntersect = intersectPoints.length === 1 &&
+                                (
+                                    currentSegment.end.equalTo(newSegment.start) || currentSegment.end.equalTo(newSegment.end) ||
+                                    currentSegment.start.equalTo(newSegment.start) || currentSegment.start.equalTo(newSegment.end)
+                                );
+
+                            if (endToEndIntersect) {
+                                // If end to end intersect, then do nothing and continue
+                                continue;
                             }
+
+                            // There will be a max of 4 segments in this array.
+                            const splitSegments: Flatten.Segment[] = [];
+
+                            intersectPoints.forEach(intersectPoint => {
+                                const splitResult1 = currentSegment.split(intersectPoint);
+                                const splitResult2 = newSegment.split(intersectPoint);
+
+                                // Merge all segments into same array
+                                [...splitResult1, ...splitResult2].forEach(segment => {
+                                    if (segment !== null) {
+
+                                        const matchingSegmentIndex = splitSegments.findIndex(item => {
+                                            return item.equalTo(segment);
+                                        });
+
+                                        // Make sure segment does not already exist, to prevent duplicates.
+                                        // Ensure that segment does not match the current segment or new segment,
+                                        // this only ensures that segments that have been split are added!
+                                        if (matchingSegmentIndex === -1 &&
+                                            !segment.equalTo(currentSegment) && !segment.equalTo(newSegment)) {
+                                            splitSegments.push(segment);
+                                        }
+                                    }
+                                });
+                            });
+
+                            // Find split segments that are part of currentSegment
+                            const splitCurrentSegments: Flatten.Segment[] = [];
+
+                            // Find split segments that are part of new segment
+                            const splitNewSegments: Flatten.Segment[] = [];
+
+                            splitSegments.forEach(segment => {
+                                // Priority is given to current segment, since it is already in the existing
+                                // segments array.
+                                if (currentSegment.contains(segment.start) && currentSegment.contains(segment.end)) {
+                                    splitCurrentSegments.push(segment);
+                                } else {
+                                    // If split segments not part of current segment, they must
+                                    // belong to the new segment!
+                                    splitNewSegments.push(segment);
+                                }
+                            });
+
+                            replaceSegments(existingSegments, j, splitCurrentSegments);
+                            replaceSegments(newSegments, k, splitNewSegments);
+
+                            // Decrement j, so that the segment is parsed again
+                            j = Math.max(0, j-1);
                         }
                     }
                 }
@@ -299,7 +363,7 @@ export class Geometry {
 
         // Filter out points that have less than 3 intersections
         const intersectPoints = accumPoints.reduce((accum, entry) => {
-            if (entry[2] > 1){
+            if (entry[2] > 2){
                 accum.push(entry);
             }
             return accum;
@@ -322,7 +386,9 @@ export class Geometry {
 
 function replaceSegments(segments: Flatten.Segment[], index: number, replacedSegments: Flatten.Segment[]): number {
     // Remove the original segment at position
-    segments.splice(index, 1);
+    if (replacedSegments.length > 0){
+        segments.splice(index, 1);
+    }
 
     // Update the split sections back into the original existing
     // segments array
