@@ -238,103 +238,102 @@ ioh_conn = create component:
     arrange:
         left: 8,7,6,5,4,3,2,1
 
-at net("5V")
-wire down 20
-branch:
-    wire right 40
-    to atmega pin 32
-wire down 20
-branch:
-    wire right 40
-    to atmega pin 4
-wire left 40 down 20
-add cap(100n)
-wire down 20
-to gnd
-
-at atmega pin 3
-wire left 20 down 260
-branch:
-    wire right 20 
-    to atmega pin 100
-branch:
-    wire down 40
-    to gnd
-branch:
-    wire left 20
-    to tmp = solder_bridge() pin 2
-
-at tmp pin 1
-wire left 20 
-branch:
-    wire up 60 right 100
-    add label("UGND")
-    wire right 100
-    to atmega pin 28
-
-
-at atmega pin 24
-wire left 40
-branch:
-    wire left 240 up 200 right 40 
-    to icsp_conn2 pin 5
-    
-wire up 20
-add res(10k) [angle=-90]
-wire auto_
-to icsp_conn2 pin 2
-
-wire right 20 up 20
-to net("5V")
-
-at atmega pin 17 
-wire right 20
-add label("MISO2")
-wire right 60 up 200 left 640 auto
-to icsp_conn2 pin 1
-
-at atmega pin 16
-wire right 20
-add label("MOSI2")
-wire right 80 auto_
-to icsp_conn2 pin 4
-
-at atmega pin 15
-wire right 20
-add label("SCK2")
-wire right 100 up 260 left 660 auto
-to icsp_conn2 pin 3
-
-at icsp_conn2 pin 6
-wire right 20 down 20
-to gnd
-
-at atmega pin 2 
-wire left 120
-branch:
-    wire left 20
-    to osc1 pin 1
-
-wire up 40 left 240 wire down 20
-add R1 = res(1M) [angle=90]
-
-at osc1 pin 3
-wire left 20 down 20
-to gnd
-
-at atmega pin 1
-wire left 20
-add res(27) pin 2
-wire left 20
-
-branch:
-    wire auto_
-    to osc1 pin 2
-
-wire down 20 auto
-to R1 pin 2
-
 at atmega:
+    32:
+        wire left 40 
+        branch:
+            wire up 20
+            to net("5V")
+        wire down 20
+        branch:
+            wire auto 
+            to atmega pin 4
+        wire left 40 down 20
+        add cap(100n)
+        to gnd
+
+    3:
+        wire left 20 down 260
+        branch:
+            wire auto
+            to atmega pin 100
+        branch:
+            wire down 40
+            to gnd
+        wire left 20
+        
+        add tmp = solder_bridge() pin 2
+        wire left 20
+        branch:
+            wire auto
+            to atmega pin 28
+
+    24:
+        wire left 40
+        branch:
+            wire left 240 up 200 right 40
+            to icsp_conn2 pin 5
+        wire up 20
+        add res(10k) [angle=-90]
+        wire auto_
+        to icsp_conn2 pin 2
+
+        at icsp_conn2 pin 2
+        wire right 20 up 20
+        to net("5V")
+    
+    28:
+        wire left 100
+        add label("UGND")
+
+    17:
+        wire right 20
+        add label("MISO2")
+        wire right 60 up 200 left 640 auto
+        to icsp_conn2 pin 1
+
+    16:
+        wire right 20
+        add label("MOSI2")
+        wire right 80 auto_
+        to icsp_conn2 pin 4
+
+    15:
+        wire right 20
+        add label("SCK2")
+        wire right 100 up 260 left 660 auto
+        to icsp_conn2 pin 3
+
+        at icsp_conn2 pin 6
+        wire right 20 down 20
+        to gnd
+
+    2:
+        wire left 120
+        branch:
+            wire left 20
+            to osc1 pin 1
+
+        wire up 40 left 240 wire down 20
+        add R1 = res(1M) [angle=90]
+
+        at osc1 pin 3
+        wire left 20 down 20
+        to gnd
+    
+    1:
+        wire left 20
+        add res(27) pin 2
+        wire left 20
+
+        branch:
+            wire auto_
+            to osc1 pin 2
+
+        wire down 20 auto
+        to R1 pin 2
+
+
     31:
         wire left 100
         add label("USBVCC")
@@ -419,9 +418,9 @@ at usb_conn:
         wire down 360 right 220
         to tmp pin 1
 
-at tmp pin 1
-wire left 80
-to usb_conn pin 4
+        at tmp pin 1
+        wire left 80
+        to usb_conn pin 4
 
 at atmega:
     8:
@@ -672,7 +671,6 @@ reset_button = create component:
         left: 1,2,5
         right: 3,4
 
-
 at icsp_conn:
     6:
         wire right 20 down 20
@@ -693,11 +691,10 @@ at icsp_conn:
         wire right 20
         to reset_button pin 2
 
-        at reset_button:
-            4:
-                wire right 20 up 20
-                branch:
-                    wire left 20
-                    to reset_button pin 3
-                wire up 40 right 40 down 20
-                to gnd
+        at reset_button pin 4
+        wire right 20 up 20
+        branch:
+            wire left 20
+            to reset_button pin 3
+        wire up 40 right 40 down 20
+        to gnd
