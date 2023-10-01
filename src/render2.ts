@@ -104,8 +104,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
         const { segments, intersectPoints } = tmpItem;
 
         segments.forEach(segment => {
-            const pt1 = [segment.start.x, segment.start.y];
-            const pt2 = [segment.end.x, segment.end.y];
+            const pt1 = segment[0];
+            const pt2 = segment[1];
             mergedWireGroup.line([pt1, pt2])
                 .stroke({ width: 1, color: wireColor, linecap: 'square' })
                 .fill('none');
@@ -113,17 +113,20 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
 
         intersectPoints.forEach(point => {
             const [x, y, count] = point;
-            mergedWireGroup.circle(junctionSize)
-                            .translate(x - junctionSize/2, y - junctionSize/2)
-                            .fill(junctionColor)
-                            .stroke('none')
 
-            mergedWireGroup.text(count.toString())
-                            .translate(x + 2, y + 2)
-                            .font({
-                                family: 'Inter',
-                                size: 10,
-                            })
+            if (count > 2){
+                mergedWireGroup.circle(junctionSize)
+                                .translate(x - junctionSize/2, y - junctionSize/2)
+                                .fill(junctionColor)
+                                .stroke('none');
+            };
+
+            // mergedWireGroup.text(count.toString())
+            //                 .translate(x + 2, y + 2)
+            //                 .font({
+            //                     family: 'Inter',
+            //                     size: 10,
+            //                 })
         });
     });
 

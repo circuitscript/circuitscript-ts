@@ -163,7 +163,8 @@ export async function prepareLayout2(
     const mergedWires:MergedWire[] = [];
 
     for (const [key, wires] of wireGroups) {
-        // Merge all wires together?
+
+        // Create array of all wires with the same net name
         const allLines = wires.map(wire => {
             return wire.points.map(pt => {
                 return {
@@ -726,8 +727,8 @@ export class RenderWire extends RenderObject {
 
 export type MergedWire = {
     netName: string,
-    segments: Flatten.Segment[],
-    intersectPoints: [x: number, y: number][],
+    segments: [x: number, y:number][][],
+    intersectPoints: [x: number, y: number, count: number][],
 }
 
 export class RenderComponent extends RenderObject {

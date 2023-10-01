@@ -214,14 +214,17 @@ export class Geometry {
         return Number(Math.floor(angle/90));
     }
 
-    static mergeWires(wirePoints: {x: number, y:number}[][]): {intersectPoints:[x: number, y:number][], segments: Flatten.Segment[]}{
+    static mergeWires(wirePoints: { x: number, y: number }[][]): {
+        intersectPoints: WirePointCount[],
+        segments: [x: number, y: number][][]
+    } {
 
         // This array stores segments that only intersect
         // at the endpoints.
-        const keepSegments:Flatten.Segment[] = [];
+        const existingSegments: Flatten.Segment[] = [];
 
         wirePoints.forEach(points => {
-            
+
             const tmpPoints = points.map(pt => {
                 return new Flatten.Point(pt.x, pt.y);
             });
@@ -231,56 +234,56 @@ export class Geometry {
                 const pt1 = tmpPoints[i];
                 const pt2 = tmpPoints[i + 1];
 
-                let addSegment = true;
+                // Array stores segments to be added to existing segments.
+                // The initial segment may be split into small segments,
+                // so this is maintained in a array
+                const newSegments = [
+                    new Flatten.Segment(pt1, pt2)
+                ];
+
                 // Check if the segment overlaps other segments
-                for (let j = 0; j < keepSegments.length; j++) {
-                    const tmpSegment = keepSegments[j];
-                    const dist1 = tmpSegment.distanceTo(pt1);
-                    const dist2 = tmpSegment.distanceTo(pt2);
+                for (let j = 0; j < existingSegments.length; j++) {
+                    const currentSegment = existingSegments[j];
 
-                    if (dist1[0] === 0 && dist2[0] !== 0) {
-                        // If one point is in the segment, then split this segment into
-                        // 2
-                        const splitResult = tmpSegment.split(pt1);
-                        if (splitResult[0] !== null && splitResult[1] !== null){
-                            keepSegments.splice(j, 1, splitResult[0]);
-                            keepSegments.splice(j+1, 0, splitResult[1]);
-                            break;
+                    for (let k = 0; k < newSegments.length; k++) {
+                        const newSegment = newSegments[k];
+                        const intersection = currentSegment.intersect(newSegment);
+
+                        if (intersection.length > 0) {
+                            // There should only be one possible intersection between two 
+                            // segments (that are not parallel).
+                            const [intersectPoint] = intersection;
+
+                            const splitResult1 = currentSegment.split(intersectPoint);
+                            replaceSegments(existingSegments, j, splitResult1);
+
+                            const splitResult2 = newSegment.split(intersectPoint);
+                            const replacedNewCount = replaceSegments(newSegments, k, splitResult2);
+                            
+                            // If there is a change to new count, then do not parse any further
+                            if (replacedNewCount > 1){
+                                break;
+                            }
                         }
-
-                    } else if (dist1[0] !== 0 && dist2[0] === 0){
-                        const splitResult = tmpSegment.split(pt2);
-                        if (splitResult[0] !== null && splitResult[1] !== null){
-                            keepSegments.splice(j, 1, splitResult[0]);
-                            keepSegments.splice(j+1, 0, splitResult[1]);
-                            break;
-                        }
-
-                    } else if (dist1[0] === 0 && dist2[0] === 0) {
-                        // If both points have zero distance, it means that the segment is
-                        // completely overlapping. Need to determine which is the longer segment.
-                        addSegment = false;
-                        break;
                     }
                 }
 
-                if (addSegment) {
-                    const newSegment = new Flatten.Segment(pt1, pt2);
-                    keepSegments.push(newSegment);
-                }
+                newSegments.forEach(segment => {
+                    existingSegments.push(segment);
+                });
             }
         });
 
         const trackWirePoints: [x: number, y: number][] = [];
 
-        keepSegments.forEach(segment => {
+        existingSegments.forEach(segment => {
             trackWirePoints.push([segment.start.x, segment.start.y]);
             trackWirePoints.push([segment.end.x, segment.end.y]);
         });
 
         // Determine intersection points by going through each segment start
         // and end points and accumulating on overlapping points.
-        const wirePointCounts = trackWirePoints.reduce((accum, point) => {
+        const intersectPoints = trackWirePoints.reduce((accum, point) => {
             const found = accum.find(item => {
                 return item[0] === point[0] && item[1] === point[1]
             });
@@ -294,19 +297,36 @@ export class Geometry {
 
         }, [] as WirePointCount[]);
 
-        const intersectPoints = wirePointCounts.reduce((accum, entry) => {
-            const [x, y, count] = entry;
-            if (count > 1){
-                accum.push([x, y, count]);
-            }
-            return accum;
-        }, []);
+        // Convert to just a simple array
+        const segments:[x: number, y:number][][] = existingSegments.map(segment => {
+            return [
+                [segment.start.x, segment.start.y],
+                [segment.end.x, segment.end.y]
+            ]
+        });
 
         return {
             intersectPoints,
-            segments: keepSegments,
+            segments,
         }
     }
+}
+
+function replaceSegments(segments: Flatten.Segment[], index: number, replacedSegments: Flatten.Segment[]): number {
+    // Remove the original segment at position
+    segments.splice(index, 1);
+
+    // Update the split sections back into the original existing
+    // segments array
+    let counter = 0;
+    replacedSegments.forEach(item => {
+        if (item !== null) {
+            segments.splice(index + counter, 0, item);
+            counter++;
+        }
+    });
+
+    return counter;
 }
 
 type WirePointCount = [x: number, y: number, count: number];
