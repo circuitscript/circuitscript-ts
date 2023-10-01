@@ -113,14 +113,11 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
 
         intersectPoints.forEach(point => {
             const [x, y, count] = point;
-
-            if (count > 2){
-                mergedWireGroup.circle(junctionSize)
-                                .translate(x - junctionSize/2, y - junctionSize/2)
-                                .fill(junctionColor)
-                                .stroke('none');
-            };
-
+            mergedWireGroup.circle(junctionSize)
+                            .translate(x - junctionSize/2, y - junctionSize/2)
+                            .fill(junctionColor)
+                            .stroke('none');
+                            
             // mergedWireGroup.text(count.toString())
             //                 .translate(x + 2, y + 2)
             //                 .font({

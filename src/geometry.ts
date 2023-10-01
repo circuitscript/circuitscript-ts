@@ -283,7 +283,7 @@ export class Geometry {
 
         // Determine intersection points by going through each segment start
         // and end points and accumulating on overlapping points.
-        const intersectPoints = trackWirePoints.reduce((accum, point) => {
+        const accumPoints = trackWirePoints.reduce((accum, point) => {
             const found = accum.find(item => {
                 return item[0] === point[0] && item[1] === point[1]
             });
@@ -295,6 +295,14 @@ export class Geometry {
             }
             return accum;
 
+        }, [] as WirePointCount[]);
+
+        // Filter out points that have less than 3 intersections
+        const intersectPoints = accumPoints.reduce((accum, entry) => {
+            if (entry[2] > 1){
+                accum.push(entry);
+            }
+            return accum;
         }, [] as WirePointCount[]);
 
         // Convert to just a simple array

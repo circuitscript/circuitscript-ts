@@ -26,7 +26,7 @@ describe('geometry merge wires test', () => {
         ]);
 
         expect(intersectPoints).toStrictEqual([
-            [200, 100, 2],
+            [ 200, 100, 2 ]
         ])
     });
 
@@ -61,7 +61,7 @@ describe('geometry merge wires test', () => {
         ])
     });
 
-    test.only('wire connected at some point of wire 2', () => {
+    test('wire connected at some point of wire 2', () => {
 
         const wire1 = [
             { x: 100, y: 100 },
