@@ -2,7 +2,7 @@ import lodash from 'lodash';
 
 import { ClassComponent, Component } from './Component';
 import { Net } from './Net';
-import { CFunction } from './types';
+import { CFunction, ComponentPinNet } from './types';
 import { LayoutDirection } from '../globals';
 import { Wire, WireSegment } from './Wire';
 
@@ -89,22 +89,29 @@ export class ExecutionScope {
         return this.nets;
     }
 
-    printNets(): void {
+    dumpNets(): ComponentPinNet[] {
         const sortedNet = [...this.nets].sort((a, b) => {
             const netA = a[2].name;
             const netB = b[2].name;
 
-            if (netA > netB){
+            if (netA > netB) {
                 return 1;
-            } else if (netA < netB){
+            } else if (netA < netB) {
                 return -1;
             } else {
                 return 0;
             }
         });
 
-        sortedNet.forEach(([component, pin, net]) => {
-            console.log(net.name.padEnd(10), '=>', component.instanceName, pin);
+        return sortedNet.map(([component, pin, net]) => {
+            return [net.name, component.instanceName, pin];
+        });
+    }
+
+    printNets(): void {
+        this.dumpNets().forEach(item => {
+            const [netName, instanceName, pin] = item;
+            console.log(netName.padEnd(10), '=>', instanceName, pin);
         });
     }
 }
