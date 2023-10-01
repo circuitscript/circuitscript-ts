@@ -598,9 +598,11 @@ export class RenderWire extends RenderObject {
                 const tmpPoints = this.getAutoPoints(valueXY, direction);
 
                 tmpPoints.forEach(point => {
-                    tmpX += point[0];
-                    tmpY += point[1];
-                    points.push({ x: tmpX, y: tmpY });
+                    if (point[0] !== 0 || point[1] !== 0){
+                        tmpX += point[0];
+                        tmpY += point[1];
+                        points.push({ x: tmpX, y: tmpY });
+                    }
                 });
                 didAddPoint = true;
             }
