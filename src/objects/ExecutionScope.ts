@@ -34,6 +34,7 @@ export class ExecutionScope {
     // This is the main gnd net of the circuit scope
     componentGnd: ClassComponent | null = null;
 
+    // This is the first component in the circuit scope
     componentRoot: ClassComponent | null = null;
     
     // Tracks the counter for copies of each component instance
@@ -89,6 +90,17 @@ export class ExecutionScope {
             this.nets.push([component, pin, net]);
         } else {
             this.nets[result][2] = net;
+        }
+    }
+
+    removeNet(component: Component, pin: number): void {
+        const result = this.nets.findIndex(([tmpComponent, tmpPin]) => {
+            // lodash isEqual is needed because deep equality is needed
+            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
+        });
+
+        if (result !== -1) {
+            this.nets.splice(result, 1);
         }
     }
 

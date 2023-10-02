@@ -647,18 +647,27 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
         for (let i = 0; i < parts.length; i++) {
             const textValue = parts[i].getText();
+
             if (acceptedDirections.indexOf(textValue) !== -1) {
+                // If a direction is specified, then the value 
+                // must also be specified, otherwise throw an error
                 const segment: [string, number?] = [textValue];
 
                 let skipNext = false;
+                let invalidValue = true;
 
                 if (i + 1 < parts.length) {
                     const nextValue = parts[i + 1].getText();
                     const nextValueNumber = Number(nextValue);
                     if (!isNaN(nextValueNumber)) {
+                        invalidValue = false;
                         segment.push(nextValueNumber);
                         skipNext = true;
                     }
+                }
+
+                if (invalidValue) {
+                    throw `Invalid value provided for direction ${textValue} in wire`;
                 }
 
                 segments.push(segment);

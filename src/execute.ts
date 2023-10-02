@@ -643,14 +643,27 @@ export class ExecutionContext {
         const linkRootComponent = true;
 
         if (linkRootComponent) {
-            // join the child_scope's __root net to the current component / pin
+            // Join the child_scope's __root net to the current component / pin
             const tmpRoot = childScope.componentRoot;
 
-            // put the __root of the child component at the current component pin
-            this.toComponent(tmpRoot, 1);
-        }
+            // Get the net of the root scope first
+            const netConnectedToRoot = childScope.getNet(tmpRoot, 1);
 
-        this.print('merging GNDs');
+            if (netConnectedToRoot !== null){
+                // Only if the child scope root component is connected 
+                // to a net, then merge them together.
+                const currentNet = this.scope.getNet(
+                    currentComponent, currentPin
+                );
+
+                netConnectedToRoot.priority = currentNet.priority - 1;
+
+                // Connect current component to the root component, since the
+                // net priority of the current component and pin is higher,
+                // then the root component's net will be merged in.
+                this.toComponent(tmpRoot, 1);
+            }
+        }
 
         // Link the GND nets together
         // To ensure the root GND has precedence, increase the priority temporarily
@@ -660,8 +673,11 @@ export class ExecutionContext {
         this.atComponent(childGnd, 1);
 
         this.toComponent(this.scope.componentGnd, 1);
-
         this.scope.netGnd.priority -= 1;
+
+        // Remove the child scope gnd since it is absorbed 
+        // into parent scope.
+        this.scope.removeNet(childScope.componentGnd, 1);
 
         // Merge the sequences together, need to renumber the wire ids
         const wireIdOffset = this.scope.wires.length;
