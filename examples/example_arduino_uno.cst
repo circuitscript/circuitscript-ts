@@ -698,3 +698,21 @@ at icsp_conn:
             to reset_button pin 3
         wire up 40 right 40 down 20
         to gnd
+
+
+# Block for 5V leds
+at net("5V")
+wire down 20
+branch:
+    wire right 20
+    add res(1k)
+    wire right 40
+    add led1 = led("yellow") 
+    wire right 20 down 20
+    to gnd
+
+branch:
+    wire down 40 right 20
+    add res(1k)
+    wire right 20 up 40
+    to led1 pin 1
