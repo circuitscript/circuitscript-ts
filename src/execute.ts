@@ -30,9 +30,6 @@ export class ExecutionContext {
     // If true, then do not print any messages
     silent = false;
 
-    // Move into scope instead?
-    linkIDs: Map<string, number> = new Map();
-
     constructor(
         name: string,
         executionLevel = 0,
@@ -141,7 +138,7 @@ export class ExecutionContext {
         return tmpName;
     }
 
-    linkComponent(
+    private linkComponentPinNet(
         component1: ClassComponent,
         component1Pin: number,
         component2: ClassComponent,
@@ -193,7 +190,6 @@ export class ExecutionContext {
 
     private mergeNets(net1: Net, net2: Net): Net {
         // By default merge net2 into net1, net2 will no longer be used.
-
         if (net1 === net2) {
             return;
         }
@@ -356,7 +352,7 @@ export class ExecutionContext {
             );
         }
 
-        const linkedNet = this.linkComponent(
+        const linkedNet = this.linkComponentPinNet(
             this.scope.currentComponent,
             this.scope.currentPin,
             component,
@@ -579,6 +575,7 @@ export class ExecutionContext {
         // If the function does not exist in the current execution context,
         // then try to search in the upper execution context
         if (__runFunc === null && this.resolveFunction !== null) {
+            this.print(`searching for function ${functionName} in upper context`)
             __runFunc = this.resolveFunction(functionName);
         }
 
@@ -609,16 +606,22 @@ export class ExecutionContext {
 
         const tmpIgnore = [childScope.componentGnd, childScope.componentRoot];
 
-        // Rename instance names with the addition of the namespace
         for (const [instanceName, component] of tmpInstances) {
-            // Ignore the root component of the child scope
+            // Rename instance names with the addition of the namespace
+            const newInstanceName = `${namespace}.${instanceName}`;
+            component.instanceName = newInstanceName;
+
+            // Do not add root and gnd components of child scope to the
+            // parent scope
             if (tmpIgnore.indexOf(component) !== -1) {
                 continue;
             }
 
-            const newInstanceName = `${namespace}.${instanceName}`;
-            component.instanceName = newInstanceName;
-            this.scope.instances.set(newInstanceName, component);
+            if (!this.scope.instances.has(newInstanceName)) {
+                this.scope.instances.set(newInstanceName, component);
+            } else {
+                throw "Invalid instance name to merge into parent scope!";
+            }
         }
 
         // Update all net names in the child scope with the namespace
@@ -630,17 +633,14 @@ export class ExecutionContext {
             }
         });
 
-        // Merge nets
+        // Merge all nets into parent scope
         tmpNets.forEach(([component, pin, net]) => {
-            // Do not carry over the gnd component from the child scope
-            if (component !== childScope.componentGnd) {
-                this.scope.setNet(component, pin, net);
-            }
+            this.scope.setNet(component, pin, net);
         });
 
         // If true, then then __root component of the child_scope will
         // be connected to the current component/pin of the parent
-        const linkRootComponent = false;
+        const linkRootComponent = true;
 
         if (linkRootComponent) {
             // join the child_scope's __root net to the current component / pin
@@ -650,16 +650,68 @@ export class ExecutionContext {
             this.toComponent(tmpRoot, 1);
         }
 
+        this.print('merging GNDs');
+
         // Link the GND nets together
         // To ensure the root GND has precedence, increase the priority temporarily
         this.scope.netGnd.priority += 1;
 
         const childGnd = childScope.componentGnd;
-        this.atComponent(childGnd, null);
+        this.atComponent(childGnd, 1);
 
         this.toComponent(this.scope.componentGnd, 1);
 
         this.scope.netGnd.priority -= 1;
+
+        // Merge the sequences together, need to renumber the wire ids
+        const wireIdOffset = this.scope.wires.length;
+
+        const componentGndName = this.scope.componentGnd.instanceName;
+
+        let gndCopyIdOffset = 0;
+        if (!this.scope.copyIDs.has(componentGndName)) {
+            this.scope.copyIDs.set(componentGndName, 0);
+        } else {
+            gndCopyIdOffset = this.scope.copyIDs.get(componentGndName);
+        }
+
+
+        let incrementGndLinkId = 0;
+
+        childScope.sequence.forEach(action => {
+            if (action[0] === SequenceAction.Wire) {
+                // Need to have new IDs for wires
+                const [, innerWireId, segments] = action;
+
+                this.scope.sequence.push(
+                    [SequenceAction.Wire, wireIdOffset + innerWireId, segments]
+                );
+
+                this.scope.wires.push(new Wire(segments));
+
+            } else if (action[0] === SequenceAction.WireJump) {
+                // Wire IDs in wire jumps need to be updated.
+                const jumpWireId = wireIdOffset + action[1];
+                this.scope.sequence.push(
+                    [SequenceAction.WireJump, jumpWireId]
+                );
+            } else if (action[0] === SequenceAction.At || action[0] === SequenceAction.To) {
+                const tmpComponent: ClassComponent = action[1];
+
+                // Check if the component is a gnd component
+                if (isNetComponent(tmpComponent) && tmpComponent.parameters.get('net_name') === 'gnd') {
+                    // Is a gnd net
+                    tmpComponent._copyID = gndCopyIdOffset + incrementGndLinkId;
+                    incrementGndLinkId += 1;
+                }
+
+                this.scope.sequence.push(action);
+            }
+        });
+
+        // Update the link ID counter for the gnd component
+        this.scope.copyIDs.set(componentGndName, 
+            gndCopyIdOffset + incrementGndLinkId);
 
         this.scope.currentComponent = currentComponent;
         this.scope.currentPin = currentPin;
@@ -673,11 +725,11 @@ export class ExecutionContext {
         if (isNetComponent(component) && !isLabelComponent(component)) {
             // If is a net component and not a label component, then
             // create a new copy of the same net component.
-            if (!this.linkIDs.has(component.instanceName)) {
-                this.linkIDs.set(component.instanceName, 0);
+            if (!this.scope.copyIDs.has(component.instanceName)) {
+                this.scope.copyIDs.set(component.instanceName, 0);
             }
 
-            const idNum = this.linkIDs.get(component.instanceName);
+            const idNum = this.scope.copyIDs.get(component.instanceName);
             sequenceComponent = lodash.cloneDeep(component);
 
             // For now, only allow gnd symbols to create new instances
@@ -687,14 +739,16 @@ export class ExecutionContext {
             }
 
             if (createNewNetSymbol) {
-                sequenceComponent._linkID = idNum;
-                this.linkIDs.set(component.instanceName, idNum + 1);
+                sequenceComponent._copyID = idNum;
+
+                // Set linkIDs to the next value to use
+                this.scope.copyIDs.set(component.instanceName, idNum + 1);
             } else {
                 // If false, then do no create a new net symbol,
                 // reuse the previous id num. This assumes that the
                 // id num would be correct...
                 if (idNum > 0) {
-                    sequenceComponent._linkID = idNum - 1;
+                    sequenceComponent._copyID = idNum - 1;
                 }
             }
         } else {
