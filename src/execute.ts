@@ -652,9 +652,17 @@ export class ExecutionContext {
             if (netConnectedToRoot !== null){
                 // Only if the child scope root component is connected 
                 // to a net, then merge them together.
-                const currentNet = this.scope.getNet(
+                let currentNet = this.scope.getNet(
                     currentComponent, currentPin
                 );
+
+                if (currentNet === null){
+                    // Current net does not exist yet, so create it
+                    const tmpNet = new Net(this.getUniqueNetName());
+
+                    this.scope.setNet(currentComponent, currentPin, tmpNet);
+                    currentNet = tmpNet
+                }
 
                 netConnectedToRoot.priority = currentNet.priority - 1;
 
