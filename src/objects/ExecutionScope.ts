@@ -30,8 +30,15 @@ export class ExecutionScope {
     currentWireId = -1;
 
     netGnd: Net | null = null;
+
+    // This is the main gnd net of the circuit scope
     componentGnd: ClassComponent | null = null;
+
     componentRoot: ClassComponent | null = null;
+    
+    // Tracks the counter for copies of each component instance
+    // Copies are the same component electrically, but different symbols.
+    copyIDs: Map<string, number> = new Map();
 
     // Determines how components are added/joined on the graph graphically.
     // This is very important in "building" up the graph

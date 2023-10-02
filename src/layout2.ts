@@ -8,7 +8,6 @@ import { WireSegment } from './objects/Wire';
 import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
 import { Net } from './objects/Net';
-import Flatten from '@flatten-js/core';
 
 export async function prepareLayout2(
     sequence: SequenceItem[],
@@ -411,8 +410,8 @@ function makeEdgeValue(instanceName1: string, instancePin1: number, instanceName
 function getInstanceName(component: ClassComponent): string {
     // Gets the instance including the link ID
     let instanceName = component.instanceName;
-    if (component._linkID) {
-        instanceName += ("#" + component._linkID);
+    if (component._copyID) {
+        instanceName += ("#" + component._copyID);
     }
     return instanceName;
 }

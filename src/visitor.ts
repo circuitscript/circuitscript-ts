@@ -448,12 +448,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             // search through the execution stack in reverse to find if the func_name exists
             this.print('find function', functionName);
             const reversed = [...executionStack].reverse();
-            reversed.forEach((context) => {
+
+            for (let i = 0; i < reversed.length; i++) {
+                const context = reversed[i];
                 if (context.hasFunction(functionName)) {
                     return context.getFunction(functionName);
                 }
-            });
-
+            }
             return null;
         };
 

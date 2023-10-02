@@ -112,7 +112,7 @@ export class ClassComponent extends Component {
 
     // For nets, labels and gnds, this can be used to identify different
     // copies of the same symbol on the schematic
-    _linkID?: string | number;
+    _copyID?: number;
 
     // This determines how pins are arrange on the component/symbol.
     arrangeProps: Map<string, number[]> | null = null;
