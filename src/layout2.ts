@@ -9,20 +9,30 @@ import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
 import { Net } from './objects/Net';
 
+export type BoundBox = {
+    xmin: number, ymin: number,
+    xmax: number, ymax: number,
+}
+
 export async function prepareLayout2(
     sequence: SequenceItem[],
     nets: [ClassComponent, pin: number, net: Net][],
-): Promise<{ components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[], mergedWires: MergedWire[] }> {
+): Promise<{ components: RenderComponent[], wires: RenderWire[], 
+    junctions: RenderJunction[], mergedWires: MergedWire[],
+    debugRects: BoundBox[] }> {
 
     let previousNode: string | null = null;
     let previousPin: number | null = null;
+    
+    let debugRects: BoundBox[] = [];
 
     const graph = new graphlib.Graph({
         directed: false,
         compound: true,
     });
 
-    // Based on the sequence steps create all the graph connections first
+    // Based on the sequence steps create all the graph connections first and 
+    // determine the size of all items
     for (let i = 0; i < sequence.length; i++) {
 
         const action = sequence[i][0];
@@ -127,7 +137,8 @@ export async function prepareLayout2(
         }
     }
 
-    placeGraph(graph);
+    const tmpBounds = placeGraph(graph);
+    debugRects = debugRects.concat(tmpBounds);
 
     const placedComponents: RenderComponent[] = [];
     const placedWires: RenderWire[] = [];
@@ -190,12 +201,19 @@ export async function prepareLayout2(
         wires: placedWires,
         mergedWires,
         junctions,
+
+        debugRects,
     };
 }
 
-function placeGraph(graph: graphlib.Graph): void {
+function placeGraph(graph: graphlib.Graph): BoundBox [] {
+    // Lays out nodes in each subgraph and spaces out 
+    // each separate subgraph.
+
     const subGraphs = graphlib.alg.components(graph);
     const subGraphsStarts = [];
+
+    const subgraphBounds: BoundBox[] = [];
 
     // Find the starting point of the graph
     subGraphs.forEach(innerGraph => {
@@ -219,6 +237,8 @@ function placeGraph(graph: graphlib.Graph): void {
 
     let offsetX = 0;
     let offsetY = 0;
+
+    let firstOffsetX = 0;
     
     subGraphsStarts.forEach((nodeId, index) => {
         const innerGraph = subGraphs[index];
@@ -237,24 +257,44 @@ function placeGraph(graph: graphlib.Graph): void {
             }
         });
 
+        // Get the existing bounds
         const bounds = getBounds(components, wires, []);
 
-        // Apply the offset to move items
-        const combinedItems = [...components, ...wires];
-        combinedItems.forEach(item => {
-            item.x += offsetX;
-            item.y += offsetY;
-        });
+        console.log(index, bounds);
 
-        // Find the next grid
-        const nextGridYStart = Math.ceil(bounds.ymax / 20) * 20;
-        offsetY += nextGridYStart + 20;
+        // Use the bounds of the first subgraph to determine the position
+        // of the other subgraphs
+        if (index === 0){
+            firstOffsetX = bounds.xmin;
+
+            // Items of the first subgraph do not need any offset
+        } else {
+
+            offsetX = 0; //firstOffsetX - bounds.xmin;
+
+            const nearestGrid = Math.floor(bounds.ymin / 20) * 20;
+
+            // Place the items in the subgraph with the given offset
+            const combinedItems = [...components, ...wires];
+            combinedItems.forEach(item => {
+                item.x += offsetX;
+                item.y += (offsetY - nearestGrid);
+            });
+        }
+
+        // Find the next position to place next subgraph
+        const finalBounds = getBounds(components, wires, []);
+        offsetY = Math.ceil(finalBounds.ymax / 20 + 1) * 20;
+        
+        subgraphBounds.push(finalBounds);
     });
 
     // For each subgraph, find the bounds of the subgraph
+    return subgraphBounds;
 }
 
-function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, subgraphNodes: string[]): void {
+function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, 
+    subgraphNodes: string[]): void {
     const edges = graph.edges();
 
     let firstNodePlaced = false;
@@ -506,8 +546,10 @@ function applyComponentParamsToSymbol(displayProp: string, component: ClassCompo
 }
 
 
-export function getBounds(components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[]): { xmin: number, xmax: number, ymin: number, ymax: number } {
-    const points = [];
+export function getBounds(components: RenderComponent[], 
+    wires: RenderWire[], junctions: RenderJunction[]): BoundBox{
+    
+        const points = [];
 
     components.forEach(item => {
         const bbox = item.symbol.drawing.getBoundingBox();
