@@ -3,12 +3,15 @@ import fs from 'fs';
 import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { MergedWire, RenderComponent, RenderJunction, RenderWire, getBounds } from "./layout2";
+import { BoundBox, MergedWire, RenderComponent, RenderJunction, RenderWire, getBounds } from "./layout2";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
 
-export function generateSVG2(graph: {components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[], mergedWires: MergedWire[]}, outputPath: string): void {
+export function generateSVG2(graph: {components: RenderComponent[], 
+    wires: RenderWire[], junctions: RenderJunction[], 
+    mergedWires: MergedWire[], debugRects: BoundBox[]}, outputPath: string): void {
+    
     const window = createSVGWindow();
     const document = window.document;
 
@@ -17,7 +20,10 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     const canvas = SVG(document.documentElement);
     applyFontsToSVG(canvas);
 
-    generateSVGChild(canvas, graph.components, graph.wires, graph.junctions, graph.mergedWires);
+    generateSVGChild(canvas, 
+        graph.components, graph.wires, graph.junctions, graph.mergedWires,
+        graph.debugRects,
+        );
     const {x, y, width, height} = canvas.bbox();
 
     const margin = 5;
@@ -38,7 +44,10 @@ export function generateSVG2(graph: {components: RenderComponent[], wires: Rende
     });
 }
 
-function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: RenderComponent[], wires: RenderWire[], junctions: RenderJunction[], mergedWires:MergedWire[]): void {
+function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, 
+    components: RenderComponent[], wires: RenderWire[], 
+    junctions: RenderJunction[], mergedWires:MergedWire[],
+    debugRects: BoundBox[]): void {
 
     // Draw the display grid
     const bounds = getBounds(components, wires, junctions);
@@ -126,6 +135,17 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, components: Rende
             //                 })
         });
     });
+
+    // const debugRectsGroup = canvas.group();
+    // debugRects.forEach(box => {
+    //     // Draw a rect
+    //     const width = box.xmax - box.xmin;
+    //     const height = box.ymax - box.ymin;
+    //     const tmpRect = debugRectsGroup.rect(width, height)
+    //                         .fill('none')
+    //                         .stroke({ width: 1, color: '#000'});
+    //     tmpRect.translate(box.xmin, box.ymin);
+    // });
 
     // Draw origin
     canvas.group().translate(0,0)

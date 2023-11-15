@@ -24,6 +24,7 @@ export async function prepareLayout2(
     let previousNode: string | null = null;
     let previousPin: number | null = null;
     
+    // Store rects for debugging bounds
     let debugRects: BoundBox[] = [];
 
     const graph = new graphlib.Graph({
@@ -351,9 +352,11 @@ function walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string,
 
             [node1, node2].forEach(item => {
                 if (item instanceof RenderWire){
+
                     if (item.isEndAutoLength()){
-                        const [instanceName, pin] = item.getEndAuto();
-                        const [, targetNode]:[string, RenderItem] = graph.node(instanceName);
+                        const [instance, pin] = item.getEndAuto();
+                        const [, targetNode]:[string, RenderItem] = 
+                            graph.node(instance.instanceName);
 
                         const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
                         item.setEndAuto(untilX, untilY);
@@ -697,9 +700,9 @@ export class RenderWire extends RenderObject {
         return false;
     }
 
-    getEndAuto():[instanceName:string, pin: number] {
-        if (this.segments.length > 0){
-            return this.segments[this.segments.length -1].until;
+    getEndAuto(): [instance: ClassComponent, pin: number] {
+        if (this.segments.length > 0) {
+            return this.segments[this.segments.length - 1].until;
         } else {
             throw "No segments in wire!"
         }

@@ -377,13 +377,13 @@ export class ExecutionContext {
 
             if (this.scope.sequence.length > 0) {
                 // Check if the previous entry is a wire
-                const [entryType, , segments]: [SequenceAction, number, WireSegment[]] = this.scope.sequence[this.scope.sequence.length - 1];
-                if (entryType === SequenceAction.Wire) {
-                    if (isWireSegmentsEndAuto(segments)) {
-                        segments[segments.length - 1].until = [
-                            sequenceComponent.instanceName, pinId
-                        ];
-                    }
+                const [entryType, , segments]: [SequenceAction, number, WireSegment[]] = 
+                    this.scope.sequence[this.scope.sequence.length - 1];
+                
+                if (entryType === SequenceAction.Wire && isWireSegmentsEndAuto(segments)) {
+                    segments[segments.length - 1].until = [
+                        sequenceComponent, pinId
+                    ];
                 }
             }
 
