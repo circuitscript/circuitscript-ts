@@ -25,7 +25,7 @@ import { DenterHelper } from './../denter/DenterHelper';
     }
 } 
 
-script: (expression | NEWLINE)+;
+script: (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
 expression: add_component_expr
