@@ -123,8 +123,15 @@ INSTANCE_NAME_WITH_PROPERTY: ID '.' [a-zA-Z][a-zA-Z0-9_]+;
 // This value takes a number with an alphabet at the end to indicate 
 // the multipler to the number
 
-INTEGER_VALUE: ([-]?[1-9]+[0-9]*) | [0];
-NUMERIC_VALUE: INTEGER_VALUE [kmMunp]? ;
+fragment DecimalIntegerLiteral
+    : '0'
+    | [1-9] [0-9_]*
+    ;
+
+INTEGER_VALUE: ([-]? [1-9]+ [0-9]*) | [0];
+DECIMAL_VALUE: DecimalIntegerLiteral '.' [0-9][0-9_]*;
+
+NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [kmMunp]?;
 STRING_VALUE: '"' (.)*? '"';
 PERCENTAGE_VALUE: [1-9]+[0-9]* '%';
 ALPHA_NUMERIC: [a-zA-Z0-9]+;

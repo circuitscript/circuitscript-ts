@@ -261,8 +261,6 @@ function placeGraph(graph: graphlib.Graph): BoundBox [] {
         // Get the existing bounds
         const bounds = getBounds(components, wires, []);
 
-        console.log(index, bounds);
-
         // Use the bounds of the first subgraph to determine the position
         // of the other subgraphs
         if (index === 0){
