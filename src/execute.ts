@@ -9,6 +9,7 @@ import { PinDefinition } from './objects/PinDefinition';
 import { CFunction, CFunctionResult } from './objects/types';
 import { PortSide, getPortSide } from './layout';
 import { Wire, WireSegment } from './objects/Wire';
+import { Logger } from './logger';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -30,14 +31,18 @@ export class ExecutionContext {
     // If true, then do not print any messages
     silent = false;
 
+    logger: Logger;
+
     constructor(
         name: string,
         executionLevel = 0,
         indentLevel = 0,
         silent = false,
+        logger: Logger,
     ) {
         this.name = name;
         this.executionLevel = executionLevel;
+        this.logger = logger;
 
         this.scope = ExecutionScope.create();
         this.scope.indentLevel = indentLevel;
@@ -55,16 +60,18 @@ export class ExecutionContext {
     }
 
     print(...params: any[]): void {
-        if (this.silent) {
-            return;
-        }
-
         const indentOutput = ''.padStart(this.scope.indentLevel * 4, '    ');
         const indentLevelText = this.scope.indentLevel
             .toString()
             .padStart(3, ' ');
 
         const args = ['[' + indentLevelText + ']', indentOutput, ...params];
+
+        this.logger.add(args.join(' '));
+
+        if (this.silent) {
+            return;
+        }
         console.log.apply(null, args);
     }
 
