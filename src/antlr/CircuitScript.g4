@@ -42,17 +42,12 @@ expression: add_component_expr
 
         | at_block
         | branch_blocks
-        | section_block
-        | decorator_expr
         | style_expr
         ;
 
 branch_blocks: branch_block_inner+;
 branch_block_inner:
 	'branch' ':' INDENT (NEWLINE | expression)+ DEDENT;
-
-section_block: 
-    'section' STRING_VALUE? ':' INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:
 	INSTANCE_NAME_WITH_PROPERTY ':' INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
@@ -85,7 +80,6 @@ at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_blo
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
 at_block_pin_expression_complex: INDENT ( NEWLINE | expression)+ DEDENT;
 
-
 break_keyword: 'break';
 
 assignment_expr: ID '=' data_expr;
@@ -114,7 +108,6 @@ property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_pro
                     | data_expr (',' data_expr)*                    # single_line_property
                     ;
 
-decorator_expr: DECORATOR NEWLINE;
 
 style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 blank_expr: '[' INTEGER_VALUE ']';
@@ -124,7 +117,6 @@ wire_expr: 'wire' ID (INTEGER_VALUE | ID)*;
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';
 
-DECORATOR: '@'[a-zA-Z0-9_]+;
 ID: [_a-zA-Z][_a-zA-Z0-9]*;
 INSTANCE_NAME_WITH_PROPERTY: ID '.' [a-zA-Z][a-zA-Z0-9_]+;
 

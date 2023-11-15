@@ -7,7 +7,6 @@ import { ScriptContext } from "./CircuitScriptParser";
 import { ExpressionContext } from "./CircuitScriptParser";
 import { Branch_blocksContext } from "./CircuitScriptParser";
 import { Branch_block_innerContext } from "./CircuitScriptParser";
-import { Section_blockContext } from "./CircuitScriptParser";
 import { Property_set_expr2Context } from "./CircuitScriptParser";
 import { Assignment_expr2Context } from "./CircuitScriptParser";
 import { Add_component_exprContext } from "./CircuitScriptParser";
@@ -41,7 +40,6 @@ import { Property_exprContext } from "./CircuitScriptParser";
 import { Property_key_exprContext } from "./CircuitScriptParser";
 import { Nested_propertiesContext } from "./CircuitScriptParser";
 import { Single_line_propertyContext } from "./CircuitScriptParser";
-import { Decorator_exprContext } from "./CircuitScriptParser";
 import { Style_exprContext } from "./CircuitScriptParser";
 import { Blank_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
@@ -79,12 +77,6 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitBranch_block_inner?: (ctx: Branch_block_innerContext) => Result;
-	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.section_block`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitSection_block?: (ctx: Section_blockContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.property_set_expr2`.
 	 * @param ctx the parse tree
@@ -285,12 +277,6 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitSingle_line_property?: (ctx: Single_line_propertyContext) => Result;
-	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.decorator_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitDecorator_expr?: (ctx: Decorator_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.style_expr`.
 	 * @param ctx the parse tree
