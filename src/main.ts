@@ -134,7 +134,7 @@ async function renderScript(fileName: string): Promise<void> {
         case LayoutType.Custom: {
             try {
                 const layoutEngine = new LayoutEngine();
-                const graph = await layoutEngine.prepareLayout2(sequence, nets);
+                const graph = await layoutEngine.runLayout(sequence, nets);
                 await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
 
                 generateSVG2(graph, outputSvgPath);

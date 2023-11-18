@@ -32,27 +32,106 @@ export class LayoutEngine {
         return "[" + value +"]" + padding
     }
 
-    async prepareLayout2(
+    async runLayout(
         sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]
     ): Promise<{ components: RenderComponent[], wires: RenderWire[], 
         junctions: RenderJunction[], mergedWires: MergedWire[],
         debugRects: BoundBox[] }> {
     
-        let previousNode: string | null = null;
-        let previousPin: number | null = null;
-        
         // Store rects for debugging bounds
         let debugRects: BoundBox[] = [];
     
         this.print('===== creating graph and populating with nodes =====');
 
+        const graph = this.generateLayoutGraph(sequence, nets);
+
+        this.print('===== done populating graph =====');
+        this.print('');
+
+        const tmpBounds = this.placeGraph(graph);
+        debugRects = debugRects.concat(tmpBounds);
+    
+        const placedComponents: RenderComponent[] = [];
+        const placedWires: RenderWire[] = [];
+    
+        const tmpNodes = graph.nodes();
+        tmpNodes.forEach(item => {
+            const nodeValue = graph.node(item);
+            const [nodeType, nodeItem]: [string, RenderItem] = nodeValue;
+    
+            if (nodeType === RenderItemType.Component) {
+                placedComponents.push(nodeItem as RenderComponent);
+    
+            } else if (nodeType === RenderItemType.Wire) {
+                placedWires.push(nodeItem as RenderWire);
+            }
+        });
+    
+        const wireGroups = new Map<string, RenderWire[]>();
+    
+        // Merge wires in the same group?
+        placedWires.forEach(wire => {
+            const {netName} = wire;
+            if (!wireGroups.has(netName)){
+                wireGroups.set(netName, []);
+            }
+    
+            wireGroups.get(netName).push(wire);
+        });
+    
+        const junctions: RenderJunction[] = [];
+    
+        const mergedWires:MergedWire[] = [];
+    
+        for (const [key, wires] of wireGroups) {
+    
+            // Create array of all wires with the same net name
+            const allLines = wires.map(wire => {
+                return wire.points.map(pt => {
+                    return {
+                        x: wire.x + pt.x,
+                        y: wire.y + pt.y,
+                    }
+                });
+            });
+    
+            const { intersectPoints, segments } = Geometry.mergeWires(allLines);
+            mergedWires.push({
+                netName: key,
+                segments,
+                intersectPoints,
+            });
+    
+            intersectPoints.forEach(([x, y]) => {
+                junctions.push(new RenderJunction(x, y));
+            });
+        }
+    
+        return {
+            components: placedComponents,
+            wires: placedWires,
+            mergedWires,
+            junctions,
+    
+            debugRects,
+        };
+    }
+
+    generateLayoutGraph(sequence: SequenceItem[],
+        nets: [ClassComponent, pin: number, net: Net][]): graphlib.Graph {
+        // Based on the sequence of actions, generate a graph that links
+        // the nodes (components and wires)
+
+        let previousNode: string | null = null;
+        let previousPin: number | null = null;
+
         const graph = new graphlib.Graph({
             directed: false,
             compound: true,
         });
-    
-        // Based on the sequence steps create all the graph connections first and 
+
+        // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
         for (let i = 0; i < sequence.length; i++) {
     
@@ -165,78 +244,8 @@ export class LayoutEngine {
             }
         }
 
-        this.print('===== done populating graph =====');
-        this.print('');
-
-        const tmpBounds = this.placeGraph(graph);
-        debugRects = debugRects.concat(tmpBounds);
-    
-        const placedComponents: RenderComponent[] = [];
-        const placedWires: RenderWire[] = [];
-    
-        const tmpNodes = graph.nodes();
-        tmpNodes.forEach(item => {
-            const nodeValue = graph.node(item);
-            const [nodeType, nodeItem]: [string, RenderItem] = nodeValue;
-    
-            if (nodeType === RenderItemType.Component) {
-                placedComponents.push(nodeItem as RenderComponent);
-    
-            } else if (nodeType === RenderItemType.Wire) {
-                placedWires.push(nodeItem as RenderWire);
-            }
-        });
-    
-        const wireGroups = new Map<string, RenderWire[]>();
-    
-        // Merge wires in the same group?
-        placedWires.forEach(wire => {
-            const {netName} = wire;
-            if (!wireGroups.has(netName)){
-                wireGroups.set(netName, []);
-            }
-    
-            wireGroups.get(netName).push(wire);
-        });
-    
-        const junctions: RenderJunction[] = [];
-    
-        const mergedWires:MergedWire[] = [];
-    
-        for (const [key, wires] of wireGroups) {
-    
-            // Create array of all wires with the same net name
-            const allLines = wires.map(wire => {
-                return wire.points.map(pt => {
-                    return {
-                        x: wire.x + pt.x,
-                        y: wire.y + pt.y,
-                    }
-                });
-            });
-    
-            const { intersectPoints, segments } = Geometry.mergeWires(allLines);
-            mergedWires.push({
-                netName: key,
-                segments,
-                intersectPoints,
-            });
-    
-            intersectPoints.forEach(([x, y]) => {
-                junctions.push(new RenderJunction(x, y));
-            });
-        }
-    
-        return {
-            components: placedComponents,
-            wires: placedWires,
-            mergedWires,
-            junctions,
-    
-            debugRects,
-        };
+        return graph
     }
-
 
     placeGraph(graph: graphlib.Graph): BoundBox[] {
         // Lays out nodes in each subgraph and spaces out 
