@@ -17,9 +17,11 @@ export type BoundBox = {
 
 export class LayoutEngine {
 
-    logger:Logger;
+    logger: Logger;
 
-    constructor(){
+    placeSubgraphVersion = 2;
+
+    constructor() {
         this.logger = new Logger();
     }
 
@@ -29,7 +31,7 @@ export class LayoutEngine {
 
     protected padLevel(value: number): string {
         const padding = ''.padStart(value * 4, ' ');
-        return "[" + value +"]" + padding
+        return "[" + value + "]" + padding
     }
 
     async runLayout(
@@ -58,6 +60,14 @@ export class LayoutEngine {
         });
         this.print('===== end edges =====');
         this.print()
+
+        this.print('===== graph nodes =====');
+        const nodes = graph.nodes();
+        nodes.forEach(node => {
+            this.print(node, graph.node(node));
+        });
+        this.print('===== end nodes =====');
+        this.print('');
 
         const tmpBounds = this.placeGraph(graph);
         debugRects = debugRects.concat(tmpBounds);
@@ -232,7 +242,7 @@ export class LayoutEngine {
                 }
     
                 wire.netName = useNetName;
-                const wireName = 'wire:' + wire.id;
+                const wireName = getWireName(wire.id);
     
                 // Record the sequence number to determine priority
                 graph.setNode(wireName, [RenderItemType.Wire, wire, i]);
@@ -249,7 +259,7 @@ export class LayoutEngine {
             } else if (action === SequenceAction.WireJump) {
                 this.print(...sequence[i]);
                 const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
-                previousNode = 'wire:' + wireId;
+                previousNode = getWireName(wireId);
                 previousPin = 1;
             }
         }
@@ -359,20 +369,255 @@ export class LayoutEngine {
         // nodes within the subgraph, then try and place the nodes in the subgraph.
 
         const allEdges = graph.edges();
-        let firstNodePlaced = false;
 
-        allEdges.forEach(edge => {
+        const subgraphEdges = allEdges.reduce((accum, edge) => {
             const { v } = edge;
-
             // If the subgraph nodes v, then the edge is within the subgraph.
             // No need to check w, since w must also be in the subgraph.
-            const isNodeInSubgraph = subgraphNodes.indexOf(v) !== -1;
+            if (subgraphNodes.indexOf(v) !== -1) {
+                accum.push(edge);
+            }
+            return accum;
+        }, [] as graphlib.Edge[]);
 
-            if (!isNodeInSubgraph) {
-                return;
+        if (this.placeSubgraphVersion === 1){
+            this.placeSubgraph(graph, firstNodeId, subgraphEdges);
+        } else if (this.placeSubgraphVersion === 2) {
+            this.placeSubgraphV2(graph, firstNodeId, subgraphEdges);
+        }
+    }
+
+    placeSubgraphV2(graph:graphlib.Graph, firstNodeId: string,
+        subgraphEdges: graphlib.Edge[]): void {
+        
+        let firstNodePlaced = false;
+
+        // In this strategy, isFloating is used to indicate if the node 
+        // has an assigned position
+
+        // Stores node origins. The earlier the node in this list, the 
+        // higher the priority it has to be merged.
+        const nodeOrigins: RenderItem[] = [];
+        
+        // Stores the nodes that are part of the origin tree. It is enough to
+        // just store the name of the nodes.
+        const nodeOriginTree: Map<string, string[]> = new Map();
+
+        function findNodeOrigin(nodeId: string): string | null {
+            const keys = Array.from(nodeOriginTree.keys());
+
+            for (let i = 0; i < keys.length; i++) {
+                const nodesLinkedToOrigin = nodeOriginTree.get(keys[i]);
+                if (nodesLinkedToOrigin.indexOf(nodeId) !== -1) {
+                    return keys[i];
+                }
             }
 
-            const [nodeId1, pin1, nodeId2, pin2]: 
+            return null;
+        }
+
+        subgraphEdges.forEach(edge => {
+            const [nodeId1, pin1, nodeId2, pin2]:
+                [string, number, string, number] = graph.edge(edge);
+
+            const [, node1]: [string, RenderItem] = graph.node(nodeId1);
+            const [, node2]: [string, RenderItem] = graph.node(nodeId2);
+
+            if (nodeId1 === firstNodeId && !firstNodePlaced) {
+                this.print('first node placed at origin');
+                this.placeNodeAtPosition(0, 0, node1, pin1);
+                firstNodePlaced = true;
+                node1.isFloating = false;
+
+                nodeOrigins.push(node1);
+                nodeOriginTree.set(node1.toString(), [node1.toString()]);
+            }
+
+            let fixedNode: RenderItem;
+            let fixedNodePin: number;
+
+            let floatingNode: RenderItem;
+            let floatingNodePin: number;
+
+            this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
+                '[', node2, pin2, node2.isFloating, ']');
+
+            if (!node1.isFloating && node2.isFloating) {
+                fixedNode = node1;
+                fixedNodePin = pin1;
+
+                floatingNode = node2;
+                floatingNodePin = pin2;
+
+            } else if (node1.isFloating && !node2.isFloating) {
+                fixedNode = node2;
+                fixedNodePin = pin2;
+
+                floatingNode = node1;
+                floatingNodePin = pin1;
+
+            } else if (node1.isFloating && node2.isFloating) {
+                // If both nodes are floating, then set node1 as an origin node
+                nodeOrigins.push(node1);
+                nodeOriginTree.set(node1.toString(), [node1.toString()]);
+                this.print('creating new origin node at', node1);
+
+                this.placeNodeAtPosition(0, 0, node1, pin1);
+
+                fixedNode = node1;
+                fixedNodePin = pin1;
+
+                floatingNode = node2;
+                floatingNodePin = pin2;
+            
+            } else if(!node1.isFloating && !node2.isFloating){
+                // If both nodes are fixed, then check how to merge them
+
+                const nodeOrigin1 = findNodeOrigin(node1.toString());
+                const nodeOrigin2 = findNodeOrigin(node2.toString());
+
+                // If have different node origins, then merge them together
+                if (nodeOrigin1 !== nodeOrigin2){
+                    // Merge both origin trees
+                    this.mergeNodeOrigins(
+                        graph, node1, pin1, node2, pin2,
+                        nodeOrigin1, nodeOrigin2, nodeOrigins,
+                        nodeOriginTree,
+                    );
+                }
+            }
+
+            if (fixedNode && floatingNode){
+                this.print('place floating node', floatingNode, 'pin', floatingNodePin, 
+                    'to', fixedNode, 'pin', fixedNodePin);
+
+                const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
+                this.placeNodeAtPosition(x, y, floatingNode, floatingNodePin);
+                floatingNode.isFloating = false;
+
+                // Find origin of the fixed node and add the floating node
+                // into the node origin tree.
+                const nodeOrigin = findNodeOrigin(fixedNode.toString());
+                nodeOriginTree.get(nodeOrigin).push(floatingNode.toString());
+                this.print('linking node', floatingNode, 'to origin node', nodeOrigin);
+            }
+
+            [node1, node2].forEach(item => {
+                if (item instanceof RenderWire && item.isEndAutoLength()){
+                    this.print('auto length wire', item);
+
+                    const [instance, pin] = item.getEndAuto();
+                    const [, targetNode]:[string, RenderItem] = 
+                        graph.node(instance.instanceName);
+
+                    const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
+                    item.setEndAuto(untilX, untilY);
+                }
+            });
+
+        });
+    }
+
+    mergeNodeOrigins(graph: graphlib.Graph, node1: RenderItem, pin1: number, node2: RenderItem, pin2: number,
+        nodeOrigin1: string, nodeOrigin2: string,
+        nodeOrigins: RenderItem[],
+        nodeOriginTree: Map<string, string[]>): void {
+
+        // Determine the priority of the merge
+        const nodeOrigin1Index = nodeOrigins.findIndex(item => {
+            return item.toString() === nodeOrigin1;
+        });
+
+        const nodeOrigin2Index = nodeOrigins.findIndex(item => {
+            return item.toString() === nodeOrigin2;
+        });
+
+        // The higher index will be merged INTO the lower index, so the 
+        // lower index node origin remains.
+        let keepNodeOrigin: string;
+        let otherNodeOrigin: string;
+
+        let fixedNode: RenderItem;
+        let fixedNodePin: number;
+
+        let mergedNode: RenderItem;
+        let mergedNodePin: number;
+
+        if (nodeOrigin1Index < nodeOrigin2Index){
+            keepNodeOrigin = nodeOrigin1;
+            otherNodeOrigin = nodeOrigin2;
+
+            fixedNode = node1;
+            fixedNodePin = pin1;
+
+            mergedNode = node2;
+            mergedNodePin = pin2;
+
+        } else {
+            keepNodeOrigin = nodeOrigin2;
+            otherNodeOrigin = nodeOrigin1;
+
+            fixedNode = node2;
+            fixedNodePin = pin2;
+
+            mergedNode = node1;
+            mergedNodePin = pin1;
+        }
+
+        this.print('merging node origins, fixed:', keepNodeOrigin, 
+            ', other:', otherNodeOrigin);
+
+        // Find position at pin of the fixed node, at the node origin
+        // that remains.
+        const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
+
+        // Get the position of the node's pin relative to the node's origin
+        // point. This returns the offset to the node origin.
+        const [otherNodeOriginX, otherNodeOriginY] = 
+            getNodePositionAtPin(mergedNode, mergedNodePin);
+
+        const offsetX = x - otherNodeOriginX
+        const offsetY = y - otherNodeOriginY;
+
+        this.print('offset of other origin:', offsetX, offsetY);
+
+        const otherItemsInNodeOrigin = nodeOriginTree.get(otherNodeOrigin);
+        this.print('nodes in other origin:' , otherItemsInNodeOrigin);
+
+        otherItemsInNodeOrigin.forEach(item => {
+            let nodeId: string;
+            if (item.startsWith('component:')){
+                nodeId = item.replace('component:', '');
+            }  else {
+                nodeId = item;
+            }
+
+            const [, renderItem] = graph.node(nodeId);
+            this.translateNodeBy(offsetX, offsetY, renderItem);
+        });   
+        
+        // Merge the list of items in other node origin into the node origin
+        // that is kept.
+        const newList = nodeOriginTree.get(keepNodeOrigin)
+            .concat(otherItemsInNodeOrigin);
+
+        nodeOriginTree.set(keepNodeOrigin, newList);
+        
+        // Remove other node origin as a key
+        nodeOriginTree.delete(otherNodeOrigin);
+
+        this.print('removed other origin');
+        this.print('merge completed');
+    }
+
+
+    placeSubgraph(graph: graphlib.Graph, firstNodeId: string,
+        subgraphEdges: graphlib.Edge[]): void {
+
+        let firstNodePlaced = false;
+
+        subgraphEdges.forEach(edge => {
+            const [nodeId1, pin1, nodeId2, pin2]:
                 [string, number, string, number] = graph.edge(edge);
 
             const [, node1]: [string, RenderItem] = graph.node(nodeId1);
@@ -430,20 +675,21 @@ export class LayoutEngine {
                 if (item instanceof RenderWire){
 
                     if (item.isEndAutoLength()){
-                        console.log("auto length wire", item);
-
                         const [instance, pin] = item.getEndAuto();
                         const [, targetNode]:[string, RenderItem] = 
                             graph.node(instance.instanceName);
 
                         const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
-
-                        console.log('until', targetNode, pin);
                         item.setEndAuto(untilX, untilY);
                     }
                 } 
             });
         });
+    }
+
+    translateNodeBy(offsetX: number, offsetY: number, item: RenderItem): void {
+        item.x += offsetX;
+        item.y += offsetY;
     }
 
     placeNodeAtPosition(fromX: number, fromY: number, item: RenderItem, pin: number, depth=0): void {
@@ -552,6 +798,10 @@ function getInstanceName(component: ClassComponent): string {
         instanceName += ("#" + component._copyID);
     }
     return instanceName;
+}
+
+function getWireName(wireId: number): string {
+    return 'wire:' + wireId;
 }
 
 type RenderItem = RenderComponent | RenderWire;
@@ -866,7 +1116,7 @@ export class RenderWire extends RenderObject {
     }
 
     toString(): string {
-        return "wire:" + this.id.toString();
+        return getWireName(this.id);
     }
 }
 
