@@ -393,22 +393,24 @@ export class LayoutEngine {
         let firstNodePlaced = false;
 
         // In this strategy, isFloating is used to indicate if the node 
-        // has an assigned position
+        // has an assigned position. This strategy builds up groups of nodes
+        // that share the same origin node. When group of nodes of overlap, they
+        // are merged together and will have the same origin node.
 
-        // Stores node origins. The earlier the node in this list, the 
+        // Stores origin nodes. The earlier the node in this list, the 
         // higher the priority it has to be merged.
-        const nodeOrigins: RenderItem[] = [];
+        const originNodes: RenderItem[] = [];
         
-        // Stores the nodes that are part of the origin tree. It is enough to
-        // just store the name of the nodes.
-        const nodeOriginTree: Map<string, string[]> = new Map();
+        // Stores the nodes that are linked to the node origin. The map key is 
+        // the instance name of the origin node.
+        const originNodeGroups: Map<string, RenderItem[]> = new Map();
 
-        function findNodeOrigin(nodeId: string): string | null {
-            const keys = Array.from(nodeOriginTree.keys());
+        function findOriginNode(node: RenderItem): string | null {
+            const keys = Array.from(originNodeGroups.keys());
 
             for (let i = 0; i < keys.length; i++) {
-                const nodesLinkedToOrigin = nodeOriginTree.get(keys[i]);
-                if (nodesLinkedToOrigin.indexOf(nodeId) !== -1) {
+                const nodesLinkedToOrigin = originNodeGroups.get(keys[i]);
+                if (nodesLinkedToOrigin.indexOf(node) !== -1) {
                     return keys[i];
                 }
             }
@@ -429,8 +431,8 @@ export class LayoutEngine {
                 firstNodePlaced = true;
                 node1.isFloating = false;
 
-                nodeOrigins.push(node1);
-                nodeOriginTree.set(node1.toString(), [node1.toString()]);
+                originNodes.push(node1);
+                originNodeGroups.set(node1.toString(), [node1]);
             }
 
             let fixedNode: RenderItem;
@@ -458,11 +460,13 @@ export class LayoutEngine {
 
             } else if (node1.isFloating && node2.isFloating) {
                 // If both nodes are floating, then set node1 as an origin node
-                nodeOrigins.push(node1);
-                nodeOriginTree.set(node1.toString(), [node1.toString()]);
+                // and set it as not floating.
+                originNodes.push(node1);
+                originNodeGroups.set(node1.toString(), [node1]);
                 this.print('creating new origin node at', node1);
 
                 this.placeNodeAtPosition(0, 0, node1, pin1);
+                node1.isFloating = false;
 
                 fixedNode = node1;
                 fixedNodePin = pin1;
@@ -472,17 +476,18 @@ export class LayoutEngine {
             
             } else if(!node1.isFloating && !node2.isFloating){
                 // If both nodes are fixed, then check how to merge them
+                const originNode1 = findOriginNode(node1);
+                const originNode2 = findOriginNode(node2);
 
-                const nodeOrigin1 = findNodeOrigin(node1.toString());
-                const nodeOrigin2 = findNodeOrigin(node2.toString());
+                this.print('both nodes are already placed, comparing origin nodes:', originNode1, originNode2);
 
                 // If have different node origins, then merge them together
-                if (nodeOrigin1 !== nodeOrigin2){
+                if (originNode1 !== originNode2){
                     // Merge both origin trees
-                    this.mergeNodeOrigins(
-                        graph, node1, pin1, node2, pin2,
-                        nodeOrigin1, nodeOrigin2, nodeOrigins,
-                        nodeOriginTree,
+                    this.mergeOriginNodes(
+                        node1, pin1, node2, pin2,
+                        originNode1, originNode2, originNodes,
+                        originNodeGroups,
                     );
                 }
             }
@@ -495,11 +500,13 @@ export class LayoutEngine {
                 this.placeNodeAtPosition(x, y, floatingNode, floatingNodePin);
                 floatingNode.isFloating = false;
 
+                this.print('set node as not floating:', floatingNode);
+
                 // Find origin of the fixed node and add the floating node
                 // into the node origin tree.
-                const nodeOrigin = findNodeOrigin(fixedNode.toString());
-                nodeOriginTree.get(nodeOrigin).push(floatingNode.toString());
-                this.print('linking node', floatingNode, 'to origin node', nodeOrigin);
+                const originNode = findOriginNode(fixedNode);
+                originNodeGroups.get(originNode).push(floatingNode);
+                this.print('linking node', floatingNode, 'to origin node', originNode);
             }
 
             [node1, node2].forEach(item => {
@@ -518,24 +525,25 @@ export class LayoutEngine {
         });
     }
 
-    mergeNodeOrigins(graph: graphlib.Graph, node1: RenderItem, pin1: number, node2: RenderItem, pin2: number,
-        nodeOrigin1: string, nodeOrigin2: string,
-        nodeOrigins: RenderItem[],
-        nodeOriginTree: Map<string, string[]>): void {
+    mergeOriginNodes(node1: RenderItem, pin1: number, 
+        node2: RenderItem, pin2: number,
+        originNode1: string, originNode2: string,
+        originNodes: RenderItem[],
+        originNodeGroups: Map<string, RenderItem[]>): void {
 
         // Determine the priority of the merge
-        const nodeOrigin1Index = nodeOrigins.findIndex(item => {
-            return item.toString() === nodeOrigin1;
+        const originNode1Index = originNodes.findIndex(item => {
+            return item.toString() === originNode1;
         });
 
-        const nodeOrigin2Index = nodeOrigins.findIndex(item => {
-            return item.toString() === nodeOrigin2;
+        const originNode2Index = originNodes.findIndex(item => {
+            return item.toString() === originNode2;
         });
 
         // The higher index will be merged INTO the lower index, so the 
         // lower index node origin remains.
-        let keepNodeOrigin: string;
-        let otherNodeOrigin: string;
+        let keepOriginNode: string;
+        let otherOriginNode: string;
 
         let fixedNode: RenderItem;
         let fixedNodePin: number;
@@ -543,9 +551,9 @@ export class LayoutEngine {
         let mergedNode: RenderItem;
         let mergedNodePin: number;
 
-        if (nodeOrigin1Index < nodeOrigin2Index){
-            keepNodeOrigin = nodeOrigin1;
-            otherNodeOrigin = nodeOrigin2;
+        if (originNode1Index < originNode2Index){
+            keepOriginNode = originNode1;
+            otherOriginNode = originNode2;
 
             fixedNode = node1;
             fixedNodePin = pin1;
@@ -554,8 +562,8 @@ export class LayoutEngine {
             mergedNodePin = pin2;
 
         } else {
-            keepNodeOrigin = nodeOrigin2;
-            otherNodeOrigin = nodeOrigin1;
+            keepOriginNode = originNode2;
+            otherOriginNode = originNode1;
 
             fixedNode = node2;
             fixedNodePin = pin2;
@@ -564,8 +572,8 @@ export class LayoutEngine {
             mergedNodePin = pin1;
         }
 
-        this.print('merging node origins, fixed:', keepNodeOrigin, 
-            ', other:', otherNodeOrigin);
+        this.print('merging origin node groups, fixed:', keepOriginNode, 
+            ', other:', otherOriginNode);
 
         // Find position at pin of the fixed node, at the node origin
         // that remains.
@@ -581,30 +589,22 @@ export class LayoutEngine {
 
         this.print('offset of other origin:', offsetX, offsetY);
 
-        const otherItemsInNodeOrigin = nodeOriginTree.get(otherNodeOrigin);
-        this.print('nodes in other origin:' , otherItemsInNodeOrigin);
+        const otherItemsLinkedToOriginNode = originNodeGroups.get(otherOriginNode);
+        this.print('nodes in other origin:' , otherItemsLinkedToOriginNode);
 
-        otherItemsInNodeOrigin.forEach(item => {
-            let nodeId: string;
-            if (item.startsWith('component:')){
-                nodeId = item.replace('component:', '');
-            }  else {
-                nodeId = item;
-            }
-
-            const [, renderItem] = graph.node(nodeId);
-            this.translateNodeBy(offsetX, offsetY, renderItem);
+        otherItemsLinkedToOriginNode.forEach(item => {
+            this.translateNodeBy(offsetX, offsetY, item);
         });   
         
         // Merge the list of items in other node origin into the node origin
         // that is kept.
-        const newList = nodeOriginTree.get(keepNodeOrigin)
-            .concat(otherItemsInNodeOrigin);
+        const newList = originNodeGroups.get(keepOriginNode)
+            .concat(otherItemsLinkedToOriginNode);
 
-        nodeOriginTree.set(keepNodeOrigin, newList);
+        originNodeGroups.set(keepOriginNode, newList);
         
         // Remove other node origin as a key
-        nodeOriginTree.delete(otherNodeOrigin);
+        originNodeGroups.delete(otherOriginNode);
 
         this.print('removed other origin');
         this.print('merge completed');
