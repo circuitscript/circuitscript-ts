@@ -49,6 +49,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     junctions: RenderJunction[], mergedWires:MergedWire[],
     debugRects: BoundBox[]): void {
 
+    const displayWireId = false;
+
     // Draw the display grid
     const bounds = getBounds(components, wires, junctions);
 
@@ -93,18 +95,20 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         }
     });
 
-    // Original method of drawing wires, this is deprecated
-    // in favor of merged wires.
-    // const wiresGroup = canvas.group().translate(0, 0);
-    
-    // wires.forEach(wire => {
-    //     const points = wire.points.map(item => {
-    //         return [wire.x + item.x, wire.y + item.y];
-    //     });
-    //     wiresGroup.polyline(points)
-    //         .fill('none')
-    //         .stroke({ width: 1, color: wireColor });
-    // });
+    if (displayWireId){
+        // Debugging method to draw the wire id next to the wires.
+        const wiresGroup = canvas.group().translate(0, 0);
+        
+        wires.forEach(wire => {
+            // Draw the wire id at the start of the wire
+            wiresGroup.text(wire.id.toString())
+                .font({
+                    family: 'Inter',
+                    size: 10,
+                })
+                .translate(wire.x+5, wire.y+5)
+        });
+    }
 
     const mergedWireGroup = canvas.group();
 

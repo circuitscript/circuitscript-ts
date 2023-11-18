@@ -43,6 +43,8 @@ export class LayoutEngine {
     
         // Store rects for debugging bounds
         let debugRects: BoundBox[] = [];
+
+        const logNodesAndEdges = false;
     
         this.print('===== creating graph and populating with nodes =====');
 
@@ -51,23 +53,25 @@ export class LayoutEngine {
         this.print('===== done populating graph =====');
         this.print('');
 
-        this.print('===== graph edges =====');
-        // dump all edges in the graph
-        const allEdges = graph.edges();
-        allEdges.forEach(edge => {
-            const [nodeId1, pin1, nodeId2, pin2] = graph.edge(edge);
-            this.print(nodeId1, 'pin', pin1, '-----', nodeId2, 'pin', pin2);
-        });
-        this.print('===== end edges =====');
-        this.print()
+        if (logNodesAndEdges){
+            this.print('===== graph edges =====');
+            // dump all edges in the graph
+            const allEdges = graph.edges();
+            allEdges.forEach(edge => {
+                const [nodeId1, pin1, nodeId2, pin2] = graph.edge(edge);
+                this.print(nodeId1, 'pin', pin1, '-----', nodeId2, 'pin', pin2);
+            });
+            this.print('===== end edges =====');
+            this.print()
 
-        this.print('===== graph nodes =====');
-        const nodes = graph.nodes();
-        nodes.forEach(node => {
-            this.print(node, graph.node(node));
-        });
-        this.print('===== end nodes =====');
-        this.print('');
+            this.print('===== graph nodes =====');
+            const nodes = graph.nodes();
+            nodes.forEach(node => {
+                this.print(node, graph.node(node));
+            });
+            this.print('===== end nodes =====');
+            this.print('');
+        }
 
         const tmpBounds = this.placeGraph(graph);
         debugRects = debugRects.concat(tmpBounds);

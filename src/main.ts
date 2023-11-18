@@ -42,6 +42,8 @@ async function renderScript(fileName: string): Promise<void> {
     
     const data = await readFile(fileName);
 
+    const time1 = new Date();
+
     const chars = new CharStream(data);
     const lexer = new CircuitScriptLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -56,7 +58,7 @@ async function renderScript(fileName: string): Promise<void> {
 
     const tree = parser.script();
     
-    await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
+    // await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
 
     const visitor = new MainVisitor(true);
     let didHaveParseError = false;
@@ -70,6 +72,8 @@ async function renderScript(fileName: string): Promise<void> {
     if (didHaveParseError || errorListener.hasParseErrors()) {
         return;
     }
+
+    console.log("Parsing took:", (new Date()) - time1);
 
     await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
@@ -114,10 +118,17 @@ async function renderScript(fileName: string): Promise<void> {
         case LayoutType.Custom: {
             try {
                 const layoutEngine = new LayoutEngine();
+                const time2 = new Date();
                 const graph = await layoutEngine.runLayout(sequence, nets);
+                
+                const timeDiff = (new Date()) - time2;
+                console.log('Layout took:', timeDiff);
+
                 await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
 
+                const time3 = new Date();
                 generateSVG2(graph, outputSvgPath);
+                console.log('Render took:', (new Date()) - time3);
             } catch(err) {
                 console.log('Failed to render:');
                 console.log(err)
