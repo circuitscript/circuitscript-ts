@@ -9,7 +9,7 @@ import { MainVisitor } from './visitor';
 import { generateLayout, prepareLayout } from './layout';
 import { generateSVG } from './render';
 import { prepareSizing } from './sizing';
-import { prepareLayout2 } from './layout2';
+import { LayoutEngine } from './layout2';
 import { generateSVG2 } from './render2';
 import { SequenceAction } from './objects/ExecutionScope';
 
@@ -37,6 +37,26 @@ export default async function main(): Promise<void> {
     }
 }
 
+class CircuitscriptParserErrorListener {
+
+    syntaxErrorCounter = 0;
+
+    syntaxError(recognizer: Recognizer<TSymbol>,
+        offendingSymbol: TSymbol,
+        line: number,
+        column: number,
+        msg: string,
+        e: RecognitionException | undefined) {
+        console.log("Syntax error: ", msg);
+
+        this.syntaxErrorCounter ++;
+    }
+
+    hasParseErrors(): boolean {
+        return (this.syntaxErrorCounter > 0);
+    }
+}
+
 async function renderScript(fileName: string): Promise<void> {
     
     const data = await readFile(fileName);
@@ -46,21 +66,36 @@ async function renderScript(fileName: string): Promise<void> {
     const tokens = new CommonTokenStream(lexer);
 
     const parser = new CircuitScriptParser(tokens);
+
+    // Clear any existing error listeners and use the custom one only
+    parser.removeErrorListeners();
+
+    const errorListener = new CircuitscriptParserErrorListener();
+
+    parser.addErrorListener(errorListener);
+
     const tree = parser.script();
+    
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
 
-    const visitor = new MainVisitor();
+    const visitor = new MainVisitor(true);
+    let didHaveParseError = false;
     try {
         visitor.visit(tree);
     } catch (err) {
-        console.log('got error', err);
+        console.log('got error:', err);
+        didHaveParseError = true;
     }
 
-    await writeFile('dump/raw-output.json', JSON.stringify(visitor.dump2(), null, 2));
+    if (didHaveParseError || errorListener.hasParseErrors()) {
+        return;
+    }
+
+    await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
+
+    await writeFile('dump/raw-parser.txt', visitor.logger.dump());
 
     const { sequence, nets } = visitor.getGraph();
-
-    visitor.getExecutor().scope.printNets();
 
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
@@ -78,7 +113,7 @@ async function renderScript(fileName: string): Promise<void> {
         return tmp.join(" | ");
     })
 
-    await writeFile('dump/raw-sequence.json', JSON.stringify(tmpSequence, null, 2));
+    await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
 
     const layoutType: LayoutType = LayoutType.Custom;
     const outputSvgPath = 'output.svg';
@@ -97,8 +132,16 @@ async function renderScript(fileName: string): Promise<void> {
         }
 
         case LayoutType.Custom: {
-            const graph = await prepareLayout2(sequence, nets);
-            generateSVG2(graph, outputSvgPath);
+            try {
+                const layoutEngine = new LayoutEngine();
+                const graph = await layoutEngine.prepareLayout2(sequence, nets);
+                await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
+
+                generateSVG2(graph, outputSvgPath);
+            } catch(err) {
+                console.log('Failed to render:');
+                console.log(err)
+            }
             break;
         }
 
