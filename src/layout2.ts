@@ -49,6 +49,16 @@ export class LayoutEngine {
         this.print('===== done populating graph =====');
         this.print('');
 
+        this.print('===== graph edges =====');
+        // dump all edges in the graph
+        const allEdges = graph.edges();
+        allEdges.forEach(edge => {
+            const [nodeId1, pin1, nodeId2, pin2] = graph.edge(edge);
+            this.print(nodeId1, 'pin', pin1, '-----', nodeId2, 'pin', pin2);
+        });
+        this.print('===== end edges =====');
+        this.print()
+
         const tmpBounds = this.placeGraph(graph);
         debugRects = debugRects.concat(tmpBounds);
     
@@ -254,7 +264,7 @@ export class LayoutEngine {
         const subGraphs = graphlib.alg.components(graph);
         const subGraphsStarts = [];
 
-        this.print('===== placing graphs =====');
+        this.print('===== placing subgraphs =====');
         this.print('number of subgraphs: ', subGraphs.length);
 
         const subgraphBounds: BoundBox[] = [];
@@ -345,87 +355,94 @@ export class LayoutEngine {
 
     walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, 
         subgraphNodes: string[]): void {
-        const edges = graph.edges();
+        // Go through all edges in the main graph and for each edge that contains
+        // nodes within the subgraph, then try and place the nodes in the subgraph.
 
+        const allEdges = graph.edges();
         let firstNodePlaced = false;
 
-        edges.forEach(edge => {
+        allEdges.forEach(edge => {
             const { v } = edge;
 
             // If the subgraph nodes v, then the edge is within the subgraph.
             // No need to check w, since w must also be in the subgraph.
-            if (subgraphNodes.indexOf(v) !== -1) {
-                const [nodeId1, pin1, nodeId2, pin2]: [string, number, string, number] = graph.edge(edge);
+            const isNodeInSubgraph = subgraphNodes.indexOf(v) !== -1;
 
-                const [, node1]: [string, RenderItem] = graph.node(nodeId1);
-                const [, node2]: [string, RenderItem] = graph.node(nodeId2);
-
-                if (nodeId1 === firstNodeId && !firstNodePlaced) {
-                    this.print('first node placed at origin');
-                    this.placeNodeAtPosition(0, 0, node1, pin1);
-                    firstNodePlaced = true;
-                    node1.isFloating = false;
-                }
-
-                let fixedNode: RenderItem;
-                let fixedNodePin: number;
-
-                let floatingNode: RenderItem;
-                let floatingNodePin: number;
-
-                this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
-                    '[', node2, pin2, node2.isFloating, ']');
-
-                if (!node1.isFloating && node2.isFloating) {
-                    fixedNode = node1;
-                    fixedNodePin = pin1;
-
-                    floatingNode = node2;
-                    floatingNodePin = pin2;
-
-                } else if (node1.isFloating && !node2.isFloating) {
-                    fixedNode = node2;
-                    fixedNodePin = pin2;
-
-                    floatingNode = node1;
-                    floatingNodePin = pin1;
-
-                } else if (node1.isFloating && node2.isFloating) {
-                    this.print('both nodes are floating', node1, 'pin', pin1,
-                        'and', node2, 'pin', pin2);
-                    node1.floatingRelativeTo.push([pin1, nodeId2, pin2]);
-                    node2.floatingRelativeTo.push([pin2, nodeId1, pin1]);
-                }
-
-                if (fixedNode && floatingNode){
-                    this.print('place floating node', floatingNode, 'pin', floatingNodePin, 
-                        'to', fixedNode, 'pin', fixedNodePin);
-
-                    const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
-                    this.placeNodeAtPosition(x, y, floatingNode, floatingNodePin);
-                    floatingNode.isFloating = false;
-
-                    this.placeFloatingItems(graph, floatingNode);
-                }
-
-                [node1, node2].forEach(item => {
-                    if (item instanceof RenderWire){
-
-                        if (item.isEndAutoLength()){
-                            console.log("auto length wire", item);
-
-                            const [instance, pin] = item.getEndAuto();
-                            const [, targetNode]:[string, RenderItem] = 
-                                graph.node(instance.instanceName);
-
-                            const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
-
-                            console.log('until', targetNode, pin);
-                            item.setEndAuto(untilX, untilY);
-                        }
-                    } 
-                });
+            if (!isNodeInSubgraph) {
+                return;
             }
+
+            const [nodeId1, pin1, nodeId2, pin2]: 
+                [string, number, string, number] = graph.edge(edge);
+
+            const [, node1]: [string, RenderItem] = graph.node(nodeId1);
+            const [, node2]: [string, RenderItem] = graph.node(nodeId2);
+
+            if (nodeId1 === firstNodeId && !firstNodePlaced) {
+                this.print('first node placed at origin');
+                this.placeNodeAtPosition(0, 0, node1, pin1);
+                firstNodePlaced = true;
+                node1.isFloating = false;
+            }
+
+            let fixedNode: RenderItem;
+            let fixedNodePin: number;
+
+            let floatingNode: RenderItem;
+            let floatingNodePin: number;
+
+            this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
+                '[', node2, pin2, node2.isFloating, ']');
+
+            if (!node1.isFloating && node2.isFloating) {
+                fixedNode = node1;
+                fixedNodePin = pin1;
+
+                floatingNode = node2;
+                floatingNodePin = pin2;
+
+            } else if (node1.isFloating && !node2.isFloating) {
+                fixedNode = node2;
+                fixedNodePin = pin2;
+
+                floatingNode = node1;
+                floatingNodePin = pin1;
+
+            } else if (node1.isFloating && node2.isFloating) {
+                this.print('both nodes are floating', node1, 'pin', pin1,
+                    'and', node2, 'pin', pin2);
+                node1.floatingRelativeTo.push([pin1, nodeId2, pin2]);
+                node2.floatingRelativeTo.push([pin2, nodeId1, pin1]);
+            }
+
+            if (fixedNode && floatingNode){
+                this.print('place floating node', floatingNode, 'pin', floatingNodePin, 
+                    'to', fixedNode, 'pin', fixedNodePin);
+
+                const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
+                this.placeNodeAtPosition(x, y, floatingNode, floatingNodePin);
+                floatingNode.isFloating = false;
+
+                this.placeFloatingItems(graph, floatingNode);
+            }
+
+            [node1, node2].forEach(item => {
+                if (item instanceof RenderWire){
+
+                    if (item.isEndAutoLength()){
+                        console.log("auto length wire", item);
+
+                        const [instance, pin] = item.getEndAuto();
+                        const [, targetNode]:[string, RenderItem] = 
+                            graph.node(instance.instanceName);
+
+                        const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
+
+                        console.log('until', targetNode, pin);
+                        item.setEndAuto(untilX, untilY);
+                    }
+                } 
+            });
         });
     }
 
@@ -461,6 +478,8 @@ export class LayoutEngine {
         if (floatingRelativeTo.length > 0){
 
             this.print(this.padLevel(depth), 'place relative to', item);
+            this.print(this.padLevel(depth), 'relative to', 
+                JSON.stringify(floatingRelativeTo));
 
             floatingRelativeTo.forEach(entry => {
                 const [selfPin, nodeId, pin] = entry;
@@ -472,6 +491,8 @@ export class LayoutEngine {
                     tmpNode.isFloating = false;
         
                     this.placeFloatingItems(graph, tmpNode, depth + 1);
+                } else {
+                    this.print(this.padLevel(depth), 'skipping', tmpNode, 'as it is not floating');
                 }
             });
 
@@ -674,7 +695,7 @@ export class RenderObject {
 export class RenderWire extends RenderObject {
     id: number;
     segments: WireSegment[] = [];
-    points = [];
+    points:{x: number, y:number}[] = [];
 
     // Net name is used to determine if wires
     // can overlap
