@@ -213,6 +213,11 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
             return new SymbolRes();
         case 'cap':
             return new SymbolCap();
+
+        case 'diode':
+            return new SymbolDiode();
+        case 'led':
+            return new SymbolLED();
     }
 }
 
@@ -316,7 +321,7 @@ export class SymbolRes extends SymbolGraphic {
 export class SymbolCap extends SymbolGraphic {
 
     refreshDrawing(): void {
-        const width = 30;
+        const width = 20;
         const height = 40;
 
         const drawing = new SymbolDrawing();
@@ -335,6 +340,58 @@ export class SymbolCap extends SymbolGraphic {
             ;
 
         const bbox = drawing.getBoundingBox();
+        this.width = bbox.width;
+        this.height = bbox.height;
+
+        this.drawing = drawing;
+    }
+}
+
+export class SymbolDiode extends SymbolGraphic {
+    
+    refreshDrawing(): void {
+        const width = 20;
+        const height = 20;
+
+        const drawing = new SymbolDrawing();
+        drawing.angle = this._angle;
+    
+        drawing.addVLine(width/2, -height/2, height)
+            .addVLine(-width/2, -height/2, height)
+            .addLine(-width/2, -height/2, width/2, 0)
+            .addLine(-width/2, height/2, width/2, 0)
+            .addPin(width/2, 0, width/2 + 20, 0, 1)
+            .addPin(-width/2, 0, -width/2 -20, 0, 2)
+
+        const bbox = drawing.getBoundingBox();
+
+        this.width = bbox.width;
+        this.height = bbox.height;
+
+        this.drawing = drawing;
+    }
+}
+
+export class SymbolLED extends SymbolGraphic {
+    
+    refreshDrawing(): void {
+        const width = 20;
+        const height = 20;
+
+        const drawing = new SymbolDrawing();
+        drawing.angle = this._angle;
+    
+        drawing.addVLine(width/2, -height/2, height)
+            .addVLine(-width/2, -height/2, height)
+            .addLine(-width/2, -height/2, width/2, 0)
+            .addLine(-width/2, height/2, width/2, 0)
+            .addLine(0, 8, 5, 18)
+            .addLine(3, 8, 8, 18)
+            .addPin(width/2, 0, width/2 + 20, 0, 1)
+            .addPin(-width/2, 0, -width/2 -20, 0, 2)
+
+        const bbox = drawing.getBoundingBox();
+
         this.width = bbox.width;
         this.height = bbox.height;
 
