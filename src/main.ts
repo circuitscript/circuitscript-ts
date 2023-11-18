@@ -4,7 +4,7 @@ import fs from 'fs';
 import CircuitScriptParser from './antlr/CircuitScriptParser';
 import CircuitScriptLexer from './antlr/CircuitScriptLexer';
 
-import { CharStream, CommonTokenStream } from 'antlr4';
+import { CharStream, CommonTokenStream, ErrorListener } from 'antlr4';
 import { MainVisitor } from './visitor';
 import { generateLayout, prepareLayout } from './layout';
 import { generateSVG } from './render';
@@ -37,25 +37,6 @@ export default async function main(): Promise<void> {
     }
 }
 
-class CircuitscriptParserErrorListener {
-
-    syntaxErrorCounter = 0;
-
-    syntaxError(recognizer: Recognizer<TSymbol>,
-        offendingSymbol: TSymbol,
-        line: number,
-        column: number,
-        msg: string,
-        e: RecognitionException | undefined) {
-        console.log("Syntax error: ", msg);
-
-        this.syntaxErrorCounter ++;
-    }
-
-    hasParseErrors(): boolean {
-        return (this.syntaxErrorCounter > 0);
-    }
-}
 
 async function renderScript(fileName: string): Promise<void> {
     
@@ -71,7 +52,6 @@ async function renderScript(fileName: string): Promise<void> {
     parser.removeErrorListeners();
 
     const errorListener = new CircuitscriptParserErrorListener();
-
     parser.addErrorListener(errorListener);
 
     const tree = parser.script();
@@ -174,6 +154,36 @@ async function readFile(fileName: string): Promise<string> {
             resolve(data);
         });
     });
+}
+
+
+class CircuitscriptParserErrorListener extends ErrorListener {
+
+    syntaxErrorCounter = 0;
+
+    syntaxError(recognizer: Recognizer<TSymbol>,
+        offendingSymbol: TSymbol,
+        line: number,
+        column: number,
+        msg: string,
+        e: RecognitionException | undefined) {
+        console.log("Syntax error at line", line, ':', column, ' - ', msg);
+
+        this.syntaxErrorCounter++;
+    }
+
+    reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs) {
+    }
+
+    reportAttemptingFullContext(recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs) {
+    }
+
+    reportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs) {
+    }
+
+    hasParseErrors(): boolean {
+        return (this.syntaxErrorCounter > 0);
+    }
 }
 
 if (require.main === module) {
