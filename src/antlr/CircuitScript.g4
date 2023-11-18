@@ -91,7 +91,7 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
 property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
 
 data_expr: (value_expr | ID | function_call_expr | create_component_expr | assignment_expr );
-value_expr: INTEGER_VALUE | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE | blank_expr;
+value_expr: NUMERIC_VALUE | DECIMAL_VALUE | INTEGER_VALUE | STRING_VALUE | PERCENTAGE_VALUE | blank_expr;
 
 function_def_expr: 'def' ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
 function_expr: expression | function_return_expr;
@@ -130,8 +130,8 @@ fragment DecimalIntegerLiteral
 
 INTEGER_VALUE: ([-]? [1-9]+ [0-9]*) | [0];
 DECIMAL_VALUE: DecimalIntegerLiteral '.' [0-9][0-9_]*;
-
 NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [kmMunp]?;
+
 STRING_VALUE: '"' (.)*? '"';
 PERCENTAGE_VALUE: [1-9]+[0-9]* '%';
 ALPHA_NUMERIC: [a-zA-Z0-9]+;

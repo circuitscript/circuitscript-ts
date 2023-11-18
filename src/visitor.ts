@@ -186,9 +186,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const numericValue = ctx.NUMERIC_VALUE();
         const stringValue = ctx.STRING_VALUE();
         const percValue = ctx.PERCENTAGE_VALUE();
+        const decimalValue = ctx.DECIMAL_VALUE();
 
         if (integerValue) {
             return Number(integerValue.toString());
+        } else if (decimalValue){
+            return Number(decimalValue.toString());
         } else if (numericValue) {
             return new NumericValue(numericValue.toString());
         } else if (stringValue) {
