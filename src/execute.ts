@@ -606,6 +606,7 @@ export class ExecutionContext {
         // after the merge operation
         const currentComponent = this.scope.currentComponent;
         const currentPin = this.scope.currentPin;
+        const currentWireId = this.scope.currentWireId;
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
@@ -649,9 +650,10 @@ export class ExecutionContext {
         // be connected to the current component/pin of the parent
         const linkRootComponent = true;
 
+        const tmpRoot = childScope.componentRoot;
+
         if (linkRootComponent) {
             // Join the child_scope's __root net to the current component / pin
-            const tmpRoot = childScope.componentRoot;
 
             // Get the net of the root scope first
             const netConnectedToRoot = childScope.getNet(tmpRoot, 1);
@@ -709,10 +711,12 @@ export class ExecutionContext {
 
         let incrementGndLinkId = 0;
 
-        childScope.sequence.forEach(action => {
-            if (action[0] === SequenceAction.Wire) {
+        childScope.sequence.forEach(sequenceAction => {
+            const [action] = sequenceAction;
+
+            if (action === SequenceAction.Wire) {
                 // Need to have new IDs for wires
-                const [, innerWireId, segments] = action;
+                const [, innerWireId, segments] = sequenceAction;
 
                 this.scope.sequence.push(
                     [SequenceAction.Wire, wireIdOffset + innerWireId, segments]
@@ -720,23 +724,38 @@ export class ExecutionContext {
 
                 this.scope.wires.push(new Wire(segments));
 
-            } else if (action[0] === SequenceAction.WireJump) {
+            } else if (action === SequenceAction.WireJump) {
                 // Wire IDs in wire jumps need to be updated.
-                const jumpWireId = wireIdOffset + action[1];
+                const jumpWireId = wireIdOffset + sequenceAction[1];
                 this.scope.sequence.push(
                     [SequenceAction.WireJump, jumpWireId]
                 );
-            } else if (action[0] === SequenceAction.At || action[0] === SequenceAction.To) {
-                const tmpComponent: ClassComponent = action[1];
+            } else if (action === SequenceAction.At || action === SequenceAction.To) {
+                const tmpComponent: ClassComponent = sequenceAction[1];
 
                 // Check if the component is a gnd component
                 if (isNetComponent(tmpComponent) && tmpComponent.parameters.get('net_name') === 'gnd') {
                     // Is a gnd net
                     tmpComponent._copyID = gndCopyIdOffset + incrementGndLinkId;
                     incrementGndLinkId += 1;
+
+                } else if (tmpComponent === tmpRoot) {
+                    // If this sequence action contains the root component,
+                    // then replace it with a corresponding sequence action.
+                    // If current wire id is set, then use a wire jump sequence
+                    // action, otherwise use at/to action.
+
+                    if (currentWireId !== -1){
+                        sequenceAction = [SequenceAction.WireJump, currentWireId];
+
+                    } else {
+                        // If is the root component, then replace it by the current
+                        // component and pin
+                        sequenceAction = [action, currentComponent, currentPin];
+                    }                    
                 }
 
-                this.scope.sequence.push(action);
+                this.scope.sequence.push(sequenceAction);
             }
         });
 
