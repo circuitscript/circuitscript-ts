@@ -1,10 +1,8 @@
 import 'source-map-support/register'
 
 import fs from 'fs';
-import CircuitScriptParser from './antlr/CircuitScriptParser';
-import CircuitScriptLexer from './antlr/CircuitScriptLexer';
+import path from 'path';
 
-import { CharStream, CommonTokenStream, ErrorListener } from 'antlr4';
 import { MainVisitor } from './visitor';
 import { generateLayout, prepareLayout } from './layout';
 import { generateSVG } from './render';
@@ -12,6 +10,7 @@ import { prepareSizing } from './sizing';
 import { LayoutEngine } from './layout2';
 import { generateSVG2 } from './render2';
 import { SequenceAction } from './objects/ExecutionScope';
+import { parseFileWithVisitor } from './parser';
 
 export default async function main(): Promise<void> {
     await prepareSizing();
@@ -38,42 +37,30 @@ export default async function main(): Promise<void> {
 }
 
 
-async function renderScript(fileName: string): Promise<void> {
-    
-    const data = await readFile(fileName);
-
-    const time1 = new Date();
-
-    const chars = new CharStream(data);
-    const lexer = new CircuitScriptLexer(chars);
-    const tokens = new CommonTokenStream(lexer);
-
-    const parser = new CircuitScriptParser(tokens);
-
-    // Clear any existing error listeners and use the custom one only
-    parser.removeErrorListeners();
-
-    const errorListener = new CircuitscriptParserErrorListener();
-    parser.addErrorListener(errorListener);
-
-    const tree = parser.script();
-    
-    // await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
+async function renderScript(scriptPath: string): Promise<void> {
 
     const visitor = new MainVisitor(true);
-    let didHaveParseError = false;
-    try {
-        visitor.visit(tree);
-    } catch (err) {
-        console.log('got error:', err);
-        didHaveParseError = true;
+
+    visitor.onImportFile = (visitor: MainVisitor, importPath: string): void => {
+        const currentDirectory = path.dirname(scriptPath);
+
+        // Check if different files exist first
+        const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
+        visitor.print('importing path:', tmpFilePath);
+
+        const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
+
+        const { hasError, hasParseError, timeTaken } =
+            parseFileWithVisitor(visitor, fileData);
     }
 
-    if (didHaveParseError || errorListener.hasParseErrors()) {
-        return;
-    }
+    const scriptData = await readFile(scriptPath);
 
-    console.log("Parsing took:", (new Date()) - time1);
+    const { tree, parser,
+        hasParseError, hasError, timeTaken } = parseFileWithVisitor(visitor, scriptData);
+
+    await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
+    console.log("Parsing took:", timeTaken);
 
     await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
@@ -165,36 +152,6 @@ async function readFile(fileName: string): Promise<string> {
             resolve(data);
         });
     });
-}
-
-
-class CircuitscriptParserErrorListener extends ErrorListener {
-
-    syntaxErrorCounter = 0;
-
-    syntaxError(recognizer: Recognizer<TSymbol>,
-        offendingSymbol: TSymbol,
-        line: number,
-        column: number,
-        msg: string,
-        e: RecognitionException | undefined) {
-        console.log("Syntax error at line", line, ':', column, ' - ', msg);
-
-        this.syntaxErrorCounter++;
-    }
-
-    reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs) {
-    }
-
-    reportAttemptingFullContext(recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs) {
-    }
-
-    reportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs) {
-    }
-
-    hasParseErrors(): boolean {
-        return (this.syntaxErrorCounter > 0);
-    }
 }
 
 if (require.main === module) {

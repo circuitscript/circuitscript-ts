@@ -39,6 +39,7 @@ Point:      'point';
 
 Return:     'return';
 Define:     'def';
+Import:     'import';
 
 script: (expression | NEWLINE)+ EOF;
 
@@ -55,6 +56,7 @@ expression: add_component_expr
         | assignment_expr
         | wire_expr
         | point_expr
+        | import_expr
 
         | at_block
         | branch_blocks
@@ -129,8 +131,9 @@ style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 blank_expr: '[' INTEGER_VALUE ']';
 
 wire_expr: Wire ID (INTEGER_VALUE | ID)*;
-
 point_expr: Point ID;
+
+import_expr: Import ID;
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';

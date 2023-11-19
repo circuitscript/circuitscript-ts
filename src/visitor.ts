@@ -18,6 +18,7 @@ import {
     Function_call_exprContext,
     Function_def_exprContext,
     Function_return_exprContext,
+    Import_exprContext,
     Nested_propertiesContext,
     ParametersContext,
     Pin_select_expr2Context,
@@ -59,6 +60,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     silent = false;
 
     logger: Logger;
+
+    onImportFile = (visitor: MainVisitor, filePath:string) => {
+    }
 
     constructor(silent = false) {
         super();
@@ -729,6 +733,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().addPoint(ID.toString());
     }
 
+    visitImport_expr(ctx: Import_exprContext): void {
+        const ID = ctx.ID().toString(); // filename
+        this.print('import', ID);
+        this.onImportFile(this, ID);
+        this.print('done import' ID);
+    }
+
     pinTypes = [
         PinTypes.Any,
         PinTypes.IO,
@@ -819,7 +830,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return Number(token.toString());
     }
 
-    protected print(...params: any[]): void {
+    print(...params: any[]): void {
         const indentOutput = ''.padStart(this.indentLevel * 4, '    ');
         const indentLevelText = this.indentLevel.toString().padStart(3, ' ');
 
