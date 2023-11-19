@@ -49,7 +49,6 @@ async function renderScript(scriptPath: string): Promise<void> {
         visitor.print('importing path:', tmpFilePath);
 
         const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
-
         const { hasError, hasParseError, timeTaken } =
             parseFileWithVisitor(visitor, fileData);
     }
@@ -58,6 +57,8 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     const { tree, parser,
         hasParseError, hasError, timeTaken } = parseFileWithVisitor(visitor, scriptData);
+
+    visitor.annotateComponents();
 
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
     console.log("Parsing took:", timeTaken);
