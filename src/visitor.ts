@@ -893,6 +893,32 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return items;
     }
 
+    getNetList() {
+        const netlist = [];
+
+        const instances = this.getExecutor().scope.instances;
+        for (const [instanceName, instance] of instances) {
+            const pinNets = this.resolveNets(
+                this.getExecutor().scope,
+                instance,
+            );
+
+            const componentItem = {
+                instanceName,
+                instance,
+                pins: {},
+            };
+
+            pinNets.forEach((item) => {
+                componentItem.pins[item.pin.id] = item.netName;
+            });
+
+            netlist.push(componentItem)
+        }
+        
+        return netlist;
+    }
+
     getGraph() {
         const sequence = this.getExecutor().scope.sequence;
         const nets = this.getExecutor().scope.getNets();
@@ -902,6 +928,28 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             nets,
             components: Array.from(this.getExecutor().scope.instances.values())
         };
+    }
+
+    annotateComponents(): void {
+        const annotater = new ComponentAnnotater();
+
+        const instances = this.getExecutor().scope.instances;
+
+        for (const [, instance] of instances) {
+            if (instance.assignedRefDes === null) {
+                if (instance.typeProp === 'label' ||
+                    instance.typeProp === 'net' ||
+                    instance.typeProp === null) {
+                    continue;
+                }
+
+                const newRefDes = annotater.getAnnotation(instance.typeProp);
+
+                if (newRefDes !== null) {
+                    instance.assignedRefDes = newRefDes;
+                }
+            }
+        }
     }
 
     private resolveNets(
@@ -927,5 +975,43 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         return result;
+    }
+}
+
+
+
+const ComponentRefDesPrefixes = {
+    'res': 'R',
+    'cap': 'C',
+    'ind': 'L',
+    'diode': 'D',
+    'conn': 'J',
+    'transistor': 'Q',
+    'relay': 'K',
+    'ic': 'U',
+
+    '?': '?',
+}
+
+class ComponentAnnotater {
+
+    counter = {};
+
+    constructor(){
+        for(const key in ComponentRefDesPrefixes){
+            this.counter[key] = 1;
+        }
+
+        this.counter['?'] = 1;
+    }
+
+    getAnnotation(type: string): string {
+        if (this.counter[type] === undefined){
+            type = '?';
+        }
+
+        const currentCount = this.counter[type];
+        this.counter[type]++;
+        return ComponentRefDesPrefixes[type] + currentCount;
     }
 }

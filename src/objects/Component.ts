@@ -126,6 +126,8 @@ export class ClassComponent extends Component {
 
     styles: { [key: string]: number | string } = {};
 
+    assignedRefDes: string | null = null;
+
     constructor(instanceName: string, numPins: number, className: string) {
         super(instanceName, numPins);
         this.className = className;
