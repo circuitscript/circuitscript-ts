@@ -59,6 +59,7 @@ def led(color):
         pins:
             1: "cathode"
             2: "anode"
+        display: "led"
         params:
             color: color
 
@@ -201,27 +202,6 @@ usb_conn = create component:
         right: 1,2,3,4
         left: 5,6
 
-# 3V3 output converter
-dcdc_3v3 = create component:
-    pins:
-        1: "IN"
-        2: "GND"
-        3: "\EN"
-        5: "OUT"
-        4: "NC/FB"
-    params:
-        manufacturer_pn: "LP2985-33DBVR"
-
-dcdc_5V = create component:
-    pins:
-        1: input, "ADJ"
-        2: power, "VO"
-        3: power, "VI"
-    params:
-        manufacturer_pn: "MC33269D-5.0"
-
-power_conn = create component:
-    pins: 2
 
 iol_conn = create component:
     pins: 8
@@ -262,25 +242,30 @@ at atmega:
             to gnd
         wire left 20
         
-        add tmp = solder_bridge() pin 2
+        add solder_bridge() pin 2
         wire left 20
         branch:
             wire auto
             to atmega pin 28
+        wire left 60
+        point tmp
 
     24:
         wire left 40
         branch:
             wire left 240 up 200 right 40
             to icsp_conn2 pin 5
+
+        branch:
+            at net("5V")
+            wire down 20 left 20
+            to icsp_conn2 pin 2
+            point tmp4
+
         wire up 20
         add res(10k) [angle=-90]
         wire auto_
-        to icsp_conn2 pin 2
-
-        at icsp_conn2 pin 2
-        wire right 20 up 20
-        to net("5V")
+        to tmp4
     
     28:
         wire left 100
@@ -315,7 +300,8 @@ at atmega:
             to osc1 pin 1
 
         wire up 40 left 240 wire down 20
-        add R1 = res(1M) [angle=90]
+        add res(1M) [angle=90]
+        point tmp5
 
         at osc1 pin 3
         wire left 20 down 20
@@ -330,9 +316,8 @@ at atmega:
             wire auto_
             to osc1 pin 2
 
-        wire down 20 auto
-        to R1 pin 2
-
+        wire down 20 auto 
+        to tmp5
 
     31:
         wire left 100
@@ -360,8 +345,8 @@ at atmega:
             
         wire down 100
         add diode() [angle=90]
-        wire down 20
-        to usb_conn pin 5
+        wire down 20 left 80
+        point tmp3
 
     29:
         wire left 100 
@@ -379,8 +364,8 @@ at atmega:
             to usb_conn pin 3
         wire down 80
         add diode() [angle=90]
-        wire down 20
-        to usb_conn pin 5
+        wire auto
+        to tmp3
 
     27:
         wire left 100
@@ -388,8 +373,8 @@ at atmega:
         wire left 160
         wire down 80
         add cap(1u)
-        wire down 60
-        to usb_conn pin 4
+        wire auto
+        to tmp
 
 at usb_conn:
     5:
@@ -400,37 +385,33 @@ at usb_conn:
 
         wire down 100
         add label("USHIELD") [angle=90]
-        wire down 160 right 320
-
-        branch:
-            wire right 40
+        wire auto_
+        to tmp3
 
         wire down 20
         add ind(1u) [angle=90]
-        wire down 20 
-        branch:
-            wire right 380 up 120
-            to usb_conn pin 4
+        wire down 20
+        point tmp2
 
     4:
         wire right 20 down 40
         add label("UGND") [angle=90]
-        wire down 360 right 220
-        to tmp pin 1
+        wire auto_
+        to tmp2
+        wire auto_
+        to tmp
 
-        at tmp pin 1
-        wire left 80
-        to usb_conn pin 4
 
 at atmega:
     8:
         wire right 100 down 220 right 600
         add res(1k)
         wire right 100 up 200 
-        wire left 40
-        to atmega8 pin 3
+        branch:
+            wire left 40
+            to atmega8 pin 3
 
-        wire right 100
+        wire right 60
         to iol_conn pin 2
         
     9:
@@ -449,8 +430,10 @@ at atmega:
         add diode()
         wire right 20
         add res(1k)
-        wire right 20 up 100 
-        to tmp_net = net("5V")
+        wire right 20 up 80 
+        point tmp6
+        wire up 20 
+        to net("5V")
 
     11:
         wire right 40
@@ -459,9 +442,8 @@ at atmega:
         add diode()
         wire right 20
         add res(1k)
-        wire right 20
-        to tmp_net pin 1
-
+        wire auto 
+        to tmp6
 
 power_conn2 = create component:
     pins: 6
@@ -500,19 +482,22 @@ at atmega8:
             wire up 20
             to net("5V")
         branch:
-            wire left 40 up 420 right 80
-            add label("RESET")
-            wire right 40
+            wire left 40 up 420 right 120
             to power_conn2 pin 1
+
+            wire left 40
+            add label("RESET")
         
         wire left 60
         branch:
             wire left 20
-            add reset_en = solder_bridge() pin 2
+            add solder_bridge() pin 2
+            point tmp7
         wire down 40 left 180
         branch:
             wire auto
-            to reset_en pin 1
+            to tmp7
+
         wire down 20
         add cap(100n)
         wire down 200
@@ -532,7 +517,7 @@ at atmega8:
         branch:
             wire up 20
             to net("5V")
-        wire left 20 down 20
+        wire down 20
         add cap(100n)
         wire down 20
         to gnd
@@ -570,8 +555,7 @@ at atmega8:
     5:
         wire auto to iol_conn pin 4
     6:
-        wire auto 
-        to iol_conn pin 5
+        wire auto to iol_conn pin 5
     11: 
         wire auto to iol_conn pin 6
     12:
@@ -645,18 +629,17 @@ at ioh_conn:
         branch:
             wire up 20
             add res(1k) pin 2 [angle=90]
-            wire up 40
-            add tmp2 = diode() [angle=-90]
             wire up 20
+            point tmp8
+            wire up 20
+            add diode() [angle=-90]
+            wire up 40 right 40 down 20
+            to gnd
 
         wire right 60 up 20
         add res(1k) pin 2 [angle=90]
-        wire up 20 left 60
-        to tmp2 pin 1
-
-        at tmp2 pin 2
-        wire up 40 right 40 down 20
-        to gnd
+        wire up 20 auto
+        to tmp8
 
     5:
         wire left 80
@@ -706,13 +689,192 @@ wire down 20
 branch:
     wire right 20
     add res(1k)
-    wire right 40
-    add led1 = led("yellow") 
+    wire right 20
+    point tmp9
+    wire right 20
+    add led("green") pin 2
     wire right 20 down 20
     to gnd
+wire down 40 right 20
+add res(1k)
+wire auto_
+to tmp9
 
+# 3V3 output converter
+dcdc_3v3 = create component:
+    pins:
+        1: "IN"
+        2: "GND"
+        3: "\EN"
+        5: "OUT"
+        4: "NC/FB"
+    params:
+        manufacturer_pn: "LP2985-33DBVR"
+    arrange:
+        left: 1,3,2
+        right: 5, [1], 4
+
+dcdc_5V = create component:
+    pins:
+        1: input, "ADJ"
+        2: power, "VO"
+        3: power, "VI"
+    arrange:
+        left: 3, 1
+        right: 2
+    params:
+        manufacturer_pn: "MC33269D-5.0"
+
+dcdc_5V_2 = create component:
+    pins:
+        1: power, "GND"
+        2: power, "OUT"
+        4: power, "OUT"
+        3: power, "IN"
+    arrange:
+        left: 3, 1
+        right: 4,2
+    params:
+        manufacturer_pn: "MC33269ST-5.0T3"
+
+# Block for power
+opamp_1 = create component:
+    pins: 
+        1: "OUT"
+        2: "-"
+        3: "+"
+    arrange:
+        left: 3,[1],2
+        right: [1], 1
+    width: 40
+    param:
+        manufacturer_pn: "LM358D"
+
+fet = create component:
+    pins: 3
+    arrange:
+        left: 1
+        right: 2,3
+    param:
+        manufacturer_pn: "FDN304V"
+
+at label("VIN")
+wire right 40 down 20
+add res(10k) [angle=90]
+wire down 20
 branch:
-    wire down 40 right 20
-    add res(1k)
-    wire right 20 up 40
-    to led1 pin 1
+    wire down 20
+    add res(10k) [angle=90]
+    to gnd
+wire right 80
+add label("CMP")
+wire right 20
+to opamp_1 pin 3
+
+at label("3V3")
+wire right 40
+to opamp_1 pin 2
+
+at label("USBVCC")
+wire right 40 to fet pin 1
+
+at opamp_1 pin 1
+wire right 80 down 100 left 20
+to fet pin 2
+
+at fet pin 3
+wire right 60
+branch:
+    wire up 20
+    to net("5V")
+wire right 60
+branch:
+    wire right 20
+    to dcdc_3v3 pin 1
+wire auto_
+to dcdc_3v3 pin 3
+
+at dcdc_3v3:
+    2:
+        wire left 20 down 20
+        to gnd
+
+    5:
+        wire right 20
+        add label("3V3")
+        wire right 20 down 20
+        add cap(1u)
+        to gnd
+    
+
+
+# Block for 5V power
+power_conn = create component:
+    pins: 3
+    arrange:
+        left: 1,3
+        right: 2
+
+at power_conn:
+    1:
+        wire left 20 down 20
+        branch:
+            wire auto
+            to power_conn pin 3
+        wire down 20
+        to gnd
+    2:
+        wire right 20
+        add label("PWRIN")
+        wire right 40
+        add diode()
+        wire right 40
+        point tmp10
+        branch:
+            wire down 20
+            add cap(47u)
+            to gnd
+
+at dcdc_5V:
+    1:
+        wire left 20 down 20
+        to gnd
+    3:
+        wire left 80
+        to tmp10
+
+        wire up 20
+        branch:
+            wire right 20
+            add label("VIN")
+            wire right 40
+        wire up 100 right 60
+        to dcdc_5V_2 pin 3
+    2:
+        wire right 20
+        point tmp11
+        wire right 80
+        point tmp11
+        branch:
+            wire down 20
+            add cap(47u)
+            to gnd
+        wire right 60
+        branch:
+            wire down 20
+            add cap(100n)
+            to gnd
+        wire right 20 up 20
+        to net("5V")
+
+at dcdc_5V_2:
+    1:
+        wire left 20 down 20
+        to gnd
+    4:
+        wire right 20 down 20
+        branch:
+            wire auto 
+            to dcdc_5V_2 pin 2
+        wire auto
+        to tmp11
