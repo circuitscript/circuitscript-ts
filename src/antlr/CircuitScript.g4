@@ -109,7 +109,13 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
 property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
 
 data_expr: (value_expr | ID | function_call_expr | create_component_expr | assignment_expr );
-value_expr: NUMERIC_VALUE | DECIMAL_VALUE | INTEGER_VALUE | STRING_VALUE | PERCENTAGE_VALUE | blank_expr;
+value_expr: NUMERIC_VALUE 
+    | DECIMAL_VALUE 
+    | INTEGER_VALUE 
+    | STRING_VALUE 
+    | PERCENTAGE_VALUE
+    | BOOLEAN_VALUE 
+    | blank_expr;
 
 function_def_expr: Define ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
 function_expr: expression | function_return_expr;
@@ -137,6 +143,8 @@ import_expr: Import ID;
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';
+
+BOOLEAN_VALUE:  'true' | 'false';
 
 ID: [_a-zA-Z][_a-zA-Z0-9]*;
 INSTANCE_NAME_WITH_PROPERTY: ID '.' [a-zA-Z][a-zA-Z0-9_]+;

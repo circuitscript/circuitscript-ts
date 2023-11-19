@@ -873,6 +873,22 @@ export class ExecutionContext {
         this.toComponent(componentPoint, 1, true);
     }
 
+    setProperty(nameWithProp: string, value: any): void {
+        this.print('set property', nameWithProp, 'value', value);
+        const parts = nameWithProp.split(".");
+        const idName = parts[0];
+
+        // Check if instance exists
+        if (this.scope.instances.has(idName)) {
+            const component = this.scope.instances.get(idName);
+
+            const paramName = parts[1];
+            component.parameters.set(paramName, value);
+        } else if (this.scope.variables.has(idName)) {
+            throw "Not implemented yet!";
+        }
+    }
+
     setCurrentComponentStyle(styles: { [key: string]: number | string }): void {
         // Add onto to the current component styles
         for (const key in styles) {

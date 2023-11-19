@@ -26,6 +26,7 @@ import {
     Point_exprContext,
     Property_exprContext,
     Property_key_exprContext,
+    Property_set_exprContext,
     ScriptContext,
     Single_line_propertyContext,
     Style_exprContext,
@@ -192,8 +193,17 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const stringValue = ctx.STRING_VALUE();
         const percValue = ctx.PERCENTAGE_VALUE();
         const decimalValue = ctx.DECIMAL_VALUE();
+        const booleanValue = ctx.BOOLEAN_VALUE();
 
-        if (integerValue) {
+        if (booleanValue) {
+            const stringValue = booleanValue.getText();
+            if (stringValue === 'true') {
+                return true;
+            } else if (stringValue === 'false') {
+                return false;
+            }
+
+        } else if (integerValue) {
             return Number(integerValue.toString());
         } else if (decimalValue){
             return Number(decimalValue.toString());
@@ -737,8 +747,15 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const ID = ctx.ID().toString(); // filename
         this.print('import', ID);
         this.onImportFile(this, ID);
-        this.print('done import' ID);
+        this.print('done import', ID);
     }
+
+    visitProperty_set_expr(ctx: Property_set_exprContext): void {
+        const result = this.visit(ctx.data_expr());
+        const instanceNameWithProp = ctx.INSTANCE_NAME_WITH_PROPERTY().toString();
+        this.getExecutor().setProperty(instanceNameWithProp, result);
+    }
+    
 
     pinTypes = [
         PinTypes.Any,
