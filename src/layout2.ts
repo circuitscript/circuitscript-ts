@@ -521,6 +521,10 @@ export class LayoutEngine {
                     const [, targetNode]:[string, RenderItem] = 
                         graph.node(instance.instanceName);
 
+                    if (targetNode.isFloating){
+                        throw "Cannot create auto wire with floating node! Wire id: " + item.id + " to node " +  instance + " pin "+ pin;
+                    }
+                    
                     const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
                     item.setEndAuto(untilX, untilY);
                 }
