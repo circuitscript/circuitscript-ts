@@ -1,43 +1,4 @@
-def net(net_name):
-    return create component:
-        pins: 1
-        display: "net"
-        type: "net"
-        params:
-            __is_net: 1
-            net_name: net_name
-            priority: 5
-
-def label(value):
-    return create component:
-        pins: 1
-        display: "label"
-        type: "label"
-        params:
-            value: value
-
-def res(value):
-    return create component:
-        pins: 2
-        display: "res"
-        type: "res"
-        params:
-            value: value
-
-def cap(value):
-    return create component:
-        pins: 2
-        display: "cap"
-        type: "cap"
-        params:
-            value: value
-
-def ind(value):
-    return create component:
-        pins: 2
-        type: "ind"
-        params:
-            value: value
+import lib
 
 def decoupling_cap(value):
     wire down 20
@@ -78,6 +39,15 @@ def power_conn():
             to net("+3V3")
 
     return conn1
+
+def tmp_label(name):
+    wire left 60
+    add label(name)
+
+def tmp_label_right(name):
+    wire right 20
+    add label(name)
+    wire right 40
 
 def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_label, output_label):
     
@@ -187,14 +157,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_
             wire right 20 down 20
             to tps54227 pin 6
 
-def tmp_label(name):
-    wire left 60
-    add label(name)
 
-def tmp_label_right(name):
-    wire right 20
-    add label(name)
-    wire right 40
     
 def main():
     barrel_jack = create component:
@@ -335,12 +298,6 @@ def main():
             wire left 20 down 20
             to gnd
 
-def led(color):
-    return create component:
-        pins: 2
-        display: "led"
-        type: "diode"
-
 def mosfet():
     return create component:
         pins: 3
@@ -348,13 +305,6 @@ def mosfet():
         arrange:
             left: 1
             right: 3,2
-
-
-def diode():
-    return create component:
-        pins: 2
-        type: "diode"
-        display: "diode"
 
 def decoupling_cap(value):
     branch:

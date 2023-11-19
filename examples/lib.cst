@@ -1,0 +1,52 @@
+def net(net_name):
+    return create component:
+        pins: 1
+        display: "net"
+        type: "net"
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 5
+
+def label(value):
+    return create component:
+        pins: 1
+        display: "label"
+        type: "label"
+        params:
+            value: value
+
+def res(value):
+    return create component:
+        pins: 2
+        display: "res"
+        type: "res"
+        params:
+            value: value
+
+def cap(value):
+    return create component:
+        pins: 2
+        display: "cap"
+        type: "cap"
+        params:
+            value: value
+
+def ind(value):
+    return create component:
+        pins: 2
+        type: "ind"
+        params:
+            value: value
+
+def diode():
+    return create component:
+        pins: 2
+        type: "diode"
+        display: "diode"
+
+def led(color):
+    return create component:
+        pins: 2
+        display: "led"
+        type: "diode"
