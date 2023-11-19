@@ -122,6 +122,8 @@ export class ClassComponent extends Component {
 
     widthProp: number | null = null;
 
+    typeProp: string | null = null;
+
     styles: { [key: string]: number | string } = {};
 
     constructor(instanceName: string, numPins: number, className: string) {

@@ -228,9 +228,12 @@ export class ExecutionContext {
         instanceName: string,
         pins: PinDefinition[],
         params: ParamDefinition[],
-        arrangeProps: any,
-        displayProp: any,
-        width: null | number,
+        props: {
+            arrange?: Map<string, number[]>,
+            display?: string,
+            type?: string,
+            width?: number
+        }
     ): Component {
 
         const numPins = pins.length;
@@ -239,7 +242,6 @@ export class ExecutionContext {
             numPins,
             GlobalNames.symbol,
         );
-
         pins.forEach((pin) => {
             component.pins.set(pin.id, pin);
         });
@@ -262,13 +264,17 @@ export class ExecutionContext {
             this.scope.setNet(component, 1, tmpNet);
         }
 
-        component.arrangeProps = arrangeProps;
-        component.displayProp = displayProp;
-        component.widthProp = width;
+        const {arrange = null} = props;
+
+        component.arrangeProps = arrange;
+        component.displayProp = props.display ?? null;
+        component.widthProp = props.width ?? null;
+
+        component.typeProp = props.type ?? null;
 
         // Determine the side for each pin and update the
         // pin definition
-        const portSides = getPortSide(component.pins, arrangeProps);
+        const portSides = getPortSide(component.pins, arrange);
         portSides.forEach(({ pinId, side, position }) => {
             if (component.pins.has(pinId)){
                 const tmpPin = component.pins.get(pinId);

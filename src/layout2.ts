@@ -131,7 +131,9 @@ export class LayoutEngine {
                 junctions.push(new RenderJunction(x, y));
             });
         }
-    
+
+        this.annotateComponents(placedComponents);
+
         return {
             components: placedComponents,
             wires: placedWires,
@@ -140,6 +142,32 @@ export class LayoutEngine {
     
             debugRects,
         };
+    }
+
+    annotateComponents(items: RenderComponent[]): void {
+
+        const annotater = new ComponentAnnotater();
+
+        items.forEach(item => {
+            if (item.assignedRefDes === null) {
+                if (item.component.typeProp === 'label' || 
+                    item.component.typeProp === 'net' || 
+                    item.component.typeProp === null){
+                    return;
+                }
+
+                const newRefDes = annotater.getAnnotation(item.component.typeProp);
+
+                if (newRefDes !== null) {
+                    item.assignedRefDes = newRefDes;
+                    item.symbol.setLabelValue("refdes", newRefDes);
+
+                    // Force a refresh of the drawing so that the updated 
+                    // refdes is rendered.
+                    item.symbol.refreshDrawing();
+                }
+            }
+        });
     }
 
     generateLayoutGraph(sequence: SequenceItem[],
@@ -1145,6 +1173,8 @@ export class RenderComponent extends RenderObject {
 
     displaySymbol: string | null = null;
 
+    assignedRefDes: string | null = null;
+
     constructor(component: ClassComponent, width: number, height: number) {
         super();
         this.component = component;
@@ -1178,6 +1208,42 @@ export class RenderJunction {
 
 function isPointOverlap(x: number, y: number, other: RenderComponent): boolean {
     return (x >= other.x && y >= other.y && x <= (other.x + other.width) && y <= (other.y + other.height));
+}
+
+const ComponentRefDesPrefixes = {
+    'res': 'R',
+    'cap': 'C',
+    'ind': 'L',
+    'diode': 'D',
+    'conn': 'J',
+    'transistor': 'Q',
+    'relay': 'K',
+    'ic': 'U',
+
+    '?': '?',
+}
+
+class ComponentAnnotater {
+
+    counter = {};
+
+    constructor(){
+        for(const key in ComponentRefDesPrefixes){
+            this.counter[key] = 1;
+        }
+
+        this.counter['?'] = 1;
+    }
+
+    getAnnotation(type: string): string {
+        if (this.counter[type] === undefined){
+            type = '?';
+        }
+
+        const currentCount = this.counter[type];
+        this.counter[type]++;
+        return ComponentRefDesPrefixes[type] + currentCount;
+    }
 }
 
 enum RenderItemType {

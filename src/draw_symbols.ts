@@ -308,7 +308,7 @@ export class SymbolRes extends SymbolGraphic {
                 vanchor: VerticalAlign.Middle,
             })
             .addLabel(-width / 2, -height / 2 - 5, refdes, {
-                fontSize: 8,
+                fontSize: 10,
                 anchor: HorizontalAlign.Left,
             })
             ;
@@ -330,15 +330,21 @@ export class SymbolCap extends SymbolGraphic {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
 
+        const refdes = this.getLabelValue("refdes");
         const value = this.getLabelValue("value");
 
         drawing.addHLine(-width / 2, -3, width)
             .addHLine(-width / 2, 3, width)
             .addPin(0, -3, 0, -height / 2, 1)
             .addPin(0, 3, 0, height / 2, 2)
-            .addLabel(width / 2 + 2, 0, value, {
+            .addLabel(width / 2 + 2, 0, refdes, {
                 fontSize: 10,
                 anchor: HorizontalAlign.Left,
+            })
+            .addLabel(width / 2 + 2, 12, value, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Top,
             })
             ;
 
@@ -358,13 +364,20 @@ export class SymbolDiode extends SymbolGraphic {
 
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
-    
+        const refdes = this.getLabelValue("refdes");
+
         drawing.addVLine(width/2, -height/2, height)
             .addVLine(-width/2, -height/2, height)
             .addLine(-width/2, -height/2, width/2, 0)
             .addLine(-width/2, height/2, width/2, 0)
             .addPin(width/2, 0, width/2 + 20, 0, 1)
             .addPin(-width/2, 0, -width/2 -20, 0, 2)
+
+            .addLabel(width / 2 + 5, 5, refdes, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Top,
+            })
 
         const bbox = drawing.getBoundingBox();
 
@@ -383,6 +396,8 @@ export class SymbolLED extends SymbolGraphic {
 
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
+
+        const refdes = this.getLabelValue("refdes");
     
         drawing.addVLine(width/2, -height/2, height)
             .addVLine(-width/2, -height/2, height)
@@ -392,6 +407,12 @@ export class SymbolLED extends SymbolGraphic {
             .addLine(3, 8, 8, 18)
             .addPin(width/2, 0, width/2 + 20, 0, 1)
             .addPin(-width/2, 0, -width/2 -20, 0, 2)
+
+            .addLabel(width / 2 + 5, 5, refdes, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Top,
+            })
 
         const bbox = drawing.getBoundingBox();
 

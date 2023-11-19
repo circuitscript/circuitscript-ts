@@ -337,12 +337,25 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             displayProp = properties.get('display');
         }
 
+        let typeProp = null;
+        if (properties.has('type')){
+            typeProp = properties.get('type');
+        }
+
         let width = null;
         if (properties.has('width')){
             width = properties.get('width');
         }
 
-        return this.getExecutor().createComponent(instanceName, pins, params, arrangeProps, displayProp, width);
+        const props = {
+            arrange: arrangeProps,
+            display: displayProp,
+            type: typeProp,
+            width: width,
+        }
+
+        return this.getExecutor().createComponent(instanceName, pins, params, 
+            props);
     }
 
     visitProperty_expr(ctx: Property_exprContext): Map<string, any> {
