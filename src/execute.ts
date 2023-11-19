@@ -328,6 +328,10 @@ export class ExecutionContext {
     ): void {
         this.print('to component');
 
+        if (!(component instanceof ClassComponent)){
+            throw "Not a valid component!";
+        }
+
         if (pinId === null) {
             pinId = component.getDefaultPin();
         } else {
@@ -849,6 +853,18 @@ export class ExecutionContext {
 
         this.scope.currentWireId = wireId;
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
+    }
+
+    addPoint(pointId: string): void {
+        if (this.scope.instances.has(pointId)){
+            this.print('Warning: ' + pointId +' is being redefined');
+        }
+        
+        const componentPoint = ClassComponent.simple("point." + pointId, 1, "point");
+        componentPoint.displayProp = "junction";
+
+        this.scope.instances.set(pointId, componentPoint);
+        this.toComponent(componentPoint, 1, true);
     }
 
     setCurrentComponentStyle(styles: { [key: string]: number | string }): void {

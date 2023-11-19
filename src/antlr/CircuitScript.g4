@@ -25,6 +25,21 @@ import { DenterHelper } from './../denter/DenterHelper';
     }
 } 
 
+// Keywords
+Break:      'break';
+Branch:     'branch';
+Create:     'create';
+Component:  'component';
+Wire:       'wire';
+Pin:        'pin';
+Add:        'add';
+At:         'at';
+To:         'to';
+Point:      'point';
+
+Return:     'return';
+Define:     'def';
+
 script: (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
@@ -39,6 +54,7 @@ expression: add_component_expr
         | function_call_expr
         | assignment_expr
         | wire_expr
+        | point_expr
 
         | at_block
         | branch_blocks
@@ -47,26 +63,26 @@ expression: add_component_expr
 
 branch_blocks: branch_block_inner+;
 branch_block_inner:
-	'branch' ':' INDENT (NEWLINE | expression)+ DEDENT;
+	Branch ':' INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:
 	INSTANCE_NAME_WITH_PROPERTY ':' INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
-add_component_expr: 'add' data_expr pin_select_expr?;
+add_component_expr: Add data_expr pin_select_expr?;
 
 component_select_expr: (data_expr pin_select_expr?) | pin_select_expr;
-pin_select_expr:        'pin' (INTEGER_VALUE | STRING_VALUE);
+pin_select_expr:        Pin (INTEGER_VALUE | STRING_VALUE);
 // This does not have the 'pin' word
 pin_select_expr2: INTEGER_VALUE | STRING_VALUE;
 
-at_component_expr:      'at' component_select_expr;
+at_component_expr:      At component_select_expr;
 // at_component_expr_next:   'at' component_select_expr (',' component_select_expr)*;
 
-to_component_expr: 'to' component_select_expr (',' component_select_expr)*;
+to_component_expr: To component_select_expr (',' component_select_expr)*;
 // pin_select_expr_next:   'pin' INTEGER_VALUE (',' INTEGER_VALUE)?;
 
-at_to_multiple_expr: 'at' component_select_expr 'to' component_select_expr (',' component_select_expr)* ':' INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;
+at_to_multiple_expr: At component_select_expr To component_select_expr (',' component_select_expr)* ':' INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;
 at_to_multiple_line_expr: pin_select_expr2 ':' at_to_multiple_line_expr_to_pin (',' at_to_multiple_line_expr_to_pin)*;
 
 at_to_multiple_line_expr_to_pin: (INTEGER_VALUE | NOT_CONNECTED);
@@ -80,7 +96,7 @@ at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_blo
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
 at_block_pin_expression_complex: INDENT ( NEWLINE | expression)+ DEDENT;
 
-break_keyword: 'break';
+break_keyword: Break;
 
 assignment_expr: ID '=' data_expr;
 keyword_assignment_expr: ID '=' data_expr;
@@ -93,14 +109,14 @@ property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
 data_expr: (value_expr | ID | function_call_expr | create_component_expr | assignment_expr );
 value_expr: NUMERIC_VALUE | DECIMAL_VALUE | INTEGER_VALUE | STRING_VALUE | PERCENTAGE_VALUE | blank_expr;
 
-function_def_expr: 'def' ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
+function_def_expr: Define ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
 function_expr: expression | function_return_expr;
 
 function_args_expr: ID (',' ID)*;
 function_call_expr: ID '(' parameters? ')';
-function_return_expr: 'return' data_expr ;
+function_return_expr: Return data_expr ;
 
-create_component_expr: 'create' 'component' ':' INDENT ( property_expr | NEWLINE)+ DEDENT;
+create_component_expr: Create Component ':' INDENT ( property_expr | NEWLINE)+ DEDENT;
 
 property_expr: property_key_expr ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;
@@ -112,7 +128,9 @@ property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_pro
 style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 blank_expr: '[' INTEGER_VALUE ']';
 
-wire_expr: 'wire' ID (INTEGER_VALUE | ID)*;
+wire_expr: Wire ID (INTEGER_VALUE | ID)*;
+
+point_expr: Point ID;
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';

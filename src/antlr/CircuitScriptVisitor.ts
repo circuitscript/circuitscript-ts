@@ -43,6 +43,7 @@ import { Single_line_propertyContext } from "./CircuitScriptParser";
 import { Style_exprContext } from "./CircuitScriptParser";
 import { Blank_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
+import { Point_exprContext } from "./CircuitScriptParser";
 
 
 /**
@@ -295,5 +296,11 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitWire_expr?: (ctx: Wire_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.point_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPoint_expr?: (ctx: Point_exprContext) => Result;
 }
 

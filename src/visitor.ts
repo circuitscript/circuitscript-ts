@@ -22,6 +22,7 @@ import {
     ParametersContext,
     Pin_select_expr2Context,
     Pin_select_exprContext,
+    Point_exprContext,
     Property_exprContext,
     Property_key_exprContext,
     ScriptContext,
@@ -708,6 +709,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         });
 
         this.getExecutor().setCurrentComponentStyle(styles);
+    }
+
+    visitPoint_expr(ctx: Point_exprContext): void {
+        const ID = ctx.ID();
+        this.getExecutor().addPoint(ID.toString());
     }
 
     pinTypes = [
