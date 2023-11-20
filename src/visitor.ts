@@ -893,8 +893,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return items;
     }
 
-    getNetList() {
-        const netlist = [];
+    getNetList(): NetListItem[] {
+        const netlist: NetListItem[] = [];
 
         const instances = this.getExecutor().scope.instances;
         for (const [instanceName, instance] of instances) {
@@ -908,14 +908,16 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 instance,
                 pins: {},
             };
-
             pinNets.forEach((item) => {
-                componentItem.pins[item.pin.id] = item.netName;
+                componentItem.pins[item.pin.id] = {
+                    netName: item.netName,
+                    netBaseName: item.netBaseName
+                }
             });
 
             netlist.push(componentItem)
         }
-        
+
         return netlist;
     }
 
@@ -955,7 +957,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     private resolveNets(
         scope: ExecutionScope,
         instance: Component,
-    ): { pin: PinDefinition; netName: string }[] {
+    ): { pin: PinDefinition; netName: string, netBaseName: string }[] {
         // Returns the list of nets that the component pins are
         // connected to.
 
@@ -963,14 +965,18 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
         for (const [pinId, pin] of instance.pins) {
             let netName = 'NO_NET';
+            let netBaseName = 'NO_NET';
 
             if (scope.hasNet(instance, pinId)) {
-                netName = scope.getNet(instance, pinId).name;
+                const netObject = scope.getNet(instance, pinId);
+                netName = netObject.name;
+                netBaseName = netObject.baseName;
             }
 
             result.push({
                 pin: pin,
                 netName: netName,
+                netBaseName,
             });
         }
 
@@ -1014,4 +1020,10 @@ class ComponentAnnotater {
         this.counter[type]++;
         return ComponentRefDesPrefixes[type] + currentCount;
     }
+}
+
+export type NetListItem = {
+    instanceName: string,
+    instance: ClassComponent,
+    pins: { [key: string | number]: string },
 }

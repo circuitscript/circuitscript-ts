@@ -11,6 +11,7 @@ import { LayoutEngine } from './layout2';
 import { generateSVG2 } from './render2';
 import { SequenceAction } from './objects/ExecutionScope';
 import { parseFileWithVisitor } from './parser';
+import { generateKiCADNetList } from './export';
 
 export default async function main(): Promise<void> {
     await prepareSizing();
@@ -48,6 +49,7 @@ async function renderScript(scriptPath: string): Promise<void> {
         const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
         visitor.print('importing path:', tmpFilePath);
 
+
         const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
         const { hasError, hasParseError, timeTaken } =
             parseFileWithVisitor(visitor, fileData);
@@ -59,6 +61,9 @@ async function renderScript(scriptPath: string): Promise<void> {
         hasParseError, hasError, timeTaken } = parseFileWithVisitor(visitor, scriptData);
 
     visitor.annotateComponents();
+
+    const kicadNetList = generateKiCADNetList(visitor.getNetList());
+    await writeFile('dump/kicad.net', kicadNetList);
 
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
     console.log("Parsing took:", timeTaken);
