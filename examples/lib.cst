@@ -23,6 +23,8 @@ def res(value):
         type: "res"
         params:
             value: value
+            size: "0402"
+            footprint: "Resistor_SMD:R_0402_1005Metric"
 
 def cap(value):
     return create component:
@@ -31,6 +33,8 @@ def cap(value):
         type: "cap"
         params:
             value: value
+            size: "0402"
+            footprint: "Capacitor_SMD:C_0402_1005Metric"
 
 def ind(value):
     return create component:
@@ -47,6 +51,11 @@ def diode():
 
 def led(color):
     return create component:
-        pins: 2
+        pins:   
+            1: "cathode"
+            2: "anode"
         display: "led"
         type: "diode"
+        params:
+            size: "0603"
+            footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"

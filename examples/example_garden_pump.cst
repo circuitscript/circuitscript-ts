@@ -12,6 +12,26 @@ def conn1x4():
         type: "conn"
         arrange:
             left: 1,2,3,4
+        params:
+            footprint: "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+
+def conn1x11():
+    return create component:
+        pins: 11
+        type: "conn"
+        arrange:
+            left: 1,2,3,4,5,6,7,8,9,10,11
+        params:
+            footprint: "Connector_PinSocket_2.54mm:PinSocket_1x11_P2.54mm_Vertical"
+
+def conn1x2():
+    return create component:
+        pins: 2
+        type: "conn"
+        arrange:
+            left: 1,2
+        params:
+            footprint: "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical"
 
 def conn1x5():
     return create component:
@@ -20,6 +40,8 @@ def conn1x5():
         type: "conn"
         arrange:
             left: 1,2,3,4,5
+        params:
+            footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
 
 def power_conn():
     conn1 = conn1x4()
@@ -49,7 +71,7 @@ def tmp_label_right(name):
     add label(name)
     wire right 40
 
-def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_label, output_label):
+def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_label, output_label, inductor_footprint):
     
     # the 3v3 supply
     tps54227 = create component:
@@ -69,6 +91,16 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_
         arrange:
             left: 9, 10, 1, 3, 4
             right: 8, 6, 7, 2, 5, 11
+        params:
+            footprint: "GardenRelay:VSON-10-1EP_3x3mm_P0.5mm_EP1.65x2.4mm_ThermalVias"
+
+    power_inductor = create component:
+        pins: 2
+        type: "ind"
+        params:
+            value: inductor_value
+            footprint: inductor_footprint
+
 
     at tps54227:
         1:
@@ -120,7 +152,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_
                 wire left 60
                 to tps54227 pin 7
             wire right 40
-            add ind(inductor_value)
+            add power_inductor
             wire right 20
             branch:
                 wire down 20
@@ -167,6 +199,8 @@ def main():
         type: "conn"
         arrange:
             right: 1,2
+        params:
+            footprint: "Connector_BarrelJack:BarrelJack_CUI_PJ-063AH_Horizontal_CircularHoles"
 
     at barrel_jack:
         1:
@@ -211,14 +245,10 @@ def main():
             wire left 20 down 20    
             to gnd
 
-    block1 = tps54227_block(3.3u, 73.2k, 22.1k, "EN_3V3", "+3V3")
-    block2 = tps54227_block(4.7u, 124k, 22.1k, "EN_5V", "5V#")
+    block1 = tps54227_block(3.3u, 73.2k, 22.1k, "EN_3V3", "+3V3", "GardenRelay:NR6020T3R3N")
+    block2 = tps54227_block(4.7u, 124k, 22.1k, "EN_5V", "5V#", "GardenRelay:NRS8030T4R7MJGJ")
 
-    J103 = create component:
-        pins: 2
-        type: "conn"
-        arrange:
-            left: 1,2
+    J103 = conn1x2()
 
     at J103:
         1:
@@ -228,11 +258,7 @@ def main():
             wire left 40
             add label("EN")
 
-    J105 = create component:
-        pins: 11
-        type: "conn"
-        arrange:
-            left: 1,2,3,4,5,6,7,8,9,10,11
+    J105 = conn1x11()
 
     at J105:
         1: tmp_label("ADC1")
@@ -249,36 +275,29 @@ def main():
             to gnd
         11: tmp_label("ADC7") 
 
-    J106 = create component:
-        pins: 2
-        type: "conn"
-        arrange:
-            right: 1,2
+    J106 = conn1x2()
 
     at J106:
         1: 
-            wire right 80 down 20 to gnd
-        2: tmp_label_right("GPIO13")
+            wire left 80 down 20 to gnd
+        2: tmp_label("GPIO13")
 
-    J107 = create component:
-        pins: 11
-        type: "conn"
-        arrange:
-            right: 1,2,3,4,5,6,7,8,9,10,11
+    J107 = conn1x11()
+
     at J107:
-        1: tmp_label_right("GPIO5")
+        1: tmp_label("GPIO5")
         2: 
-            wire right 100 down 20
+            wire left 100 down 20
             to gnd
-        3: tmp_label_right("GPIO6")
-        4: tmp_label_right("GPIO7")
-        5: tmp_label_right("GPIO8")
-        6: tmp_label_right("GPIO9")
-        7: tmp_label_right("GPIO10")
-        8: tmp_label_right("ADC5")
-        9: tmp_label_right("ADC6")
-        10: tmp_label_right("GPIO11")
-        11: tmp_label_right("GPIO12")
+        3: tmp_label("GPIO6")
+        4: tmp_label("GPIO7")
+        5: tmp_label("GPIO8")
+        6: tmp_label("GPIO9")
+        7: tmp_label("GPIO10")
+        8: tmp_label("ADC5")
+        9: tmp_label("ADC6")
+        10: tmp_label("GPIO11")
+        11: tmp_label("GPIO12")
 
     J109 = conn1x4()
     at J109:
@@ -305,6 +324,8 @@ def mosfet():
         arrange:
             left: 1
             right: 3,2
+        params:
+            footprint: "Package_TO_SOT_SMD:SOT-23"
 
 def decoupling_cap(value):
     branch:
@@ -312,6 +333,15 @@ def decoupling_cap(value):
         add cap(value)
         wire down 20
         to gnd
+
+def diode2():
+    return create component:
+        pins: 2
+        type: "diode"
+        display: "diode"
+        params:
+            footprint: "GardenRelay:S1A"
+
 
 def pump_block(enable_name, sense_out):
     conn = conn1x5()
@@ -330,6 +360,8 @@ def pump_block(enable_name, sense_out):
         arrange:
             left: 2, [1], 5
             right: 4,3,1
+        params:
+            footprint: "GardenRelay:AZ943-1CH-12DEF"
 
     diff_amp = create component:
         pins: 
@@ -338,9 +370,12 @@ def pump_block(enable_name, sense_out):
             3: "+"
             4: "-"
             5: "V-"
+        type: "ic"
         arrange:
             left: 3,[1], 4
             right: 2,1,5
+        params:
+            footprint: "Package_TO_SOT_SMD:SOT-23-5"
 
     at label("SENSE+")
     wire right 40 
@@ -414,7 +449,7 @@ def pump_block(enable_name, sense_out):
         wire right 80
         add relay pin 2
     wire down 20
-    add diode() [angle=-90]
+    add diode2() [angle=-90]
     wire down 20
     branch:
         wire right 40
@@ -447,7 +482,7 @@ def pump_block(enable_name, sense_out):
                 add label("CONN+")
                 wire right 40
             wire down 20
-            add diode() [angle=-90]
+            add diode2() [angle=-90]
             wire down 20
             branch:
                 wire right 40
