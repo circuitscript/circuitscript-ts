@@ -1,5 +1,6 @@
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { config, createSVGWindow } from 'svgdom';
+import { InterFontEncoded } from './fonts';
 
 let MainCanvas = null;
 
@@ -16,7 +17,7 @@ export async function prepareSizing(): Promise<void> {
 
 export function applyFontsToSVG(canvas: SVGTypeMapping): void {
     for (const fontName in supportedFonts) {
-        canvas.fontface(fontName, "url('fonts/" + supportedFonts[fontName] + "')");
+        canvas.fontface(fontName, "url('" + InterFontEncoded + "')");
     }
 }
 
