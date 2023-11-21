@@ -41,6 +41,16 @@ Return:     'return';
 Define:     'def';
 Import:     'import';
 
+If:         'if';
+Not:        '!';
+
+Equals:     '==';
+NotEquals:  '!=';
+Addition:   '+';
+Minus:      '-';
+Divide:     '/';
+Multiply:   '*';
+
 script: (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
@@ -61,6 +71,7 @@ expression: add_component_expr
         | at_block
         | branch_blocks
         | style_expr
+        | print_expr
         ;
 
 branch_blocks: branch_block_inner+;
@@ -108,7 +119,24 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
 
 property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
 
-data_expr: (value_expr | ID | function_call_expr | create_component_expr | assignment_expr );
+data_expr: value_expr                       #DataExpr
+    | ID                                    #DataExpr
+    | function_call_expr                    #DataExpr
+    | create_component_expr                 #DataExpr
+    | assignment_expr                       #DataExpr
+    | data_expr binary_operator data_expr   #BinaryOperatorExpr
+    | unary_operator data_expr              #UnaryOperatorExpr
+    ;
+
+binary_operator: Equals 
+    | NotEquals
+    | Addition
+    | Minus
+    | Multiply
+    | Divide;
+
+unary_operator: Not;
+
 value_expr: NUMERIC_VALUE 
     | DECIMAL_VALUE 
     | INTEGER_VALUE 
@@ -116,6 +144,8 @@ value_expr: NUMERIC_VALUE
     | PERCENTAGE_VALUE
     | BOOLEAN_VALUE 
     | blank_expr;
+
+print_expr: 'print' '(' data_expr ')';
 
 function_def_expr: Define ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
 function_expr: expression | function_return_expr;

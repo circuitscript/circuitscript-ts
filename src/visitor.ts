@@ -7,12 +7,13 @@ import {
     At_block_pin_expression_complexContext,
     At_block_pin_expression_simpleContext,
     At_component_exprContext,
+    BinaryOperatorExprContext,
     Blank_exprContext,
     Branch_blocksContext,
     Break_keywordContext,
     Component_select_exprContext,
     Create_component_exprContext,
-    Data_exprContext,
+    DataExprContext,
     ExpressionContext,
     Function_args_exprContext,
     Function_call_exprContext,
@@ -24,6 +25,7 @@ import {
     Pin_select_expr2Context,
     Pin_select_exprContext,
     Point_exprContext,
+    Print_exprContext,
     Property_exprContext,
     Property_key_exprContext,
     Property_set_exprContext,
@@ -31,6 +33,7 @@ import {
     Single_line_propertyContext,
     Style_exprContext,
     To_component_exprContext,
+    UnaryOperatorExprContext,
     Value_exprContext,
     Wire_exprContext,
 } from './antlr/CircuitScriptParser';
@@ -429,7 +432,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         PinTypes.Power,
     ];
 
-    visitData_expr(ctx: Data_exprContext) {
+    visitDataExpr(ctx: DataExprContext) {
         let value;
         if (ctx.value_expr()) {
             value = this.visit(ctx.value_expr());
@@ -458,6 +461,63 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         return value;
+    }
+
+    visitBinaryOperatorExpr(ctx: BinaryOperatorExprContext): boolean | number {
+        const value1 = this.visit(ctx.data_expr(0));
+        const value2 = this.visit(ctx.data_expr(1));
+
+        const binaryOperatorType = ctx.binary_operator();
+
+        if (binaryOperatorType.Equals()) {
+            return value1 == value2; // Boolean result
+        } else if (binaryOperatorType.NotEquals()) {
+            return value1 != value2;
+
+        } else if (binaryOperatorType.Addition()) {
+            if (Number.isFinite(value1) && Number.isFinite(value2)) {
+                return value1 + value2;
+            } else {
+                throw "Failed to add values";
+            }
+        } else if (binaryOperatorType.Minus()) {
+            if (Number.isFinite(value1) && Number.isFinite(value2)) {
+                return value1 - value2;
+            } else {
+                throw "Failed to subtract values";
+            }
+        } else if (binaryOperatorType.Divide()) {
+            if (Number.isFinite(value1) && Number.isFinite(value2)) {
+                return value1 / value2;
+            } else {
+                throw "Failed to divide values";
+            }
+        } else if (binaryOperatorType.Multiply()) {
+            if (Number.isFinite(value1) && Number.isFinite(value2)) {
+                return value1 * value2;
+            } else {
+                throw "Failed to multiply values";
+            }
+        }
+    }
+    
+    visitUnaryOperatorExpr(ctx: UnaryOperatorExprContext): boolean | number {
+        const value = this.visit(ctx.data_expr());
+        const unaryOperator = ctx.unary_operator();
+
+        if (unaryOperator.Not()) {
+            if (typeof value === 'boolean') {
+                return !value;
+            } else {
+                throw "Failed to do Not operator";
+            }
+        } else if (unaryOperator.If()) {
+            if (value) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     visitFunction_args_expr(ctx: Function_args_exprContext): string[] {
@@ -757,6 +817,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().setProperty(instanceNameWithProp, result);
     }
     
+
+    visitPrint_expr(ctx: Print_exprContext): void {
+        const value = this.visit(ctx.data_expr());
+        console.log("::", value);
+    }
 
     pinTypes = [
         PinTypes.Any,

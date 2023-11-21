@@ -28,8 +28,13 @@ import { Assignment_exprContext } from "./CircuitScriptParser";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser";
 import { ParametersContext } from "./CircuitScriptParser";
 import { Property_set_exprContext } from "./CircuitScriptParser";
-import { Data_exprContext } from "./CircuitScriptParser";
+import { DataExprContext } from "./CircuitScriptParser";
+import { UnaryOperatorExprContext } from "./CircuitScriptParser";
+import { BinaryOperatorExprContext } from "./CircuitScriptParser";
+import { Binary_operatorContext } from "./CircuitScriptParser";
+import { Unary_operatorContext } from "./CircuitScriptParser";
 import { Value_exprContext } from "./CircuitScriptParser";
+import { Print_exprContext } from "./CircuitScriptParser";
 import { Function_def_exprContext } from "./CircuitScriptParser";
 import { Function_exprContext } from "./CircuitScriptParser";
 import { Function_args_exprContext } from "./CircuitScriptParser";
@@ -206,17 +211,50 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 */
 	visitProperty_set_expr?: (ctx: Property_set_exprContext) => Result;
 	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.data_expr`.
+	 * Visit a parse tree produced by the `DataExpr`
+	 * labeled alternative in `CircuitScriptParser.data_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitData_expr?: (ctx: Data_exprContext) => Result;
+	visitDataExpr?: (ctx: DataExprContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `UnaryOperatorExpr`
+	 * labeled alternative in `CircuitScriptParser.data_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUnaryOperatorExpr?: (ctx: UnaryOperatorExprContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `BinaryOperatorExpr`
+	 * labeled alternative in `CircuitScriptParser.data_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBinaryOperatorExpr?: (ctx: BinaryOperatorExprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.binary_operator`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBinary_operator?: (ctx: Binary_operatorContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.unary_operator`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUnary_operator?: (ctx: Unary_operatorContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.value_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitValue_expr?: (ctx: Value_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.print_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPrint_expr?: (ctx: Print_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.function_def_expr`.
 	 * @param ctx the parse tree
