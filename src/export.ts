@@ -1,3 +1,4 @@
+import { ComponentTypes } from "./globals";
 import { NumericValue } from "./objects/ParamDefinition";
 import { NetListItem } from "./visitor";
 
@@ -23,8 +24,12 @@ export function generateKiCADNetList(netlist: NetListItem[]): string {
                 instanceDetails.push([Id('value'), value]);
             }
 
-            instanceDetails.push([Id('footprint'), 
-                instance.parameters.get('footprint')]);
+            if (instance.parameters.has('footprint')){
+                instanceDetails.push([Id('footprint'), 
+                    instance.parameters.get('footprint')]);
+            } else {
+                console.log(instance.assignedRefDes, instance.instanceName, 'does not have footprint');
+            }
 
             componentsList.push(instanceDetails);
 
@@ -42,6 +47,13 @@ export function generateKiCADNetList(netlist: NetListItem[]): string {
                     [Id('pin'), key],
                     [Id('pintype'), "passive"]
                 ])
+            }
+        } else {
+            if (instance.typeProp !== ComponentTypes.label && 
+                instance.typeProp !== ComponentTypes.net && 
+                instance.typeProp !== ComponentTypes.point && 
+                instance.typeProp !== null){
+                console.log('Skipping', instance.instanceName);
             }
         }
     });

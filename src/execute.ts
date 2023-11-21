@@ -1,6 +1,6 @@
 import lodash from 'lodash';
 
-import { GlobalNames, LayoutDirection, ParamKeys } from './globals';
+import { ComponentTypes, GlobalNames, LayoutDirection, ParamKeys } from './globals';
 import { ClassComponent, Component } from './objects/Component';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
@@ -82,6 +82,8 @@ export class ExecutionContext {
             1,
             '__root',
         );
+        componentRoot.typeProp = ComponentTypes.net;
+
         this.scope.instances.set(GlobalNames.__root, componentRoot);
 
         this.scope.currentComponent = componentRoot;
@@ -92,6 +94,8 @@ export class ExecutionContext {
 
     private setupGnd(): void {
         const componentGnd = ClassComponent.simple(GlobalNames.gnd, 1, 'gnd');
+        componentGnd.typeProp = ComponentTypes.net;
+
         const params = componentGnd.parameters;
 
         const defaultPriority = 100;
@@ -269,7 +273,6 @@ export class ExecutionContext {
         component.arrangeProps = arrange;
         component.displayProp = props.display ?? null;
         component.widthProp = props.width ?? null;
-
         component.typeProp = props.type ?? null;
 
         // Determine the side for each pin and update the
@@ -867,7 +870,8 @@ export class ExecutionContext {
         }
         
         const componentPoint = ClassComponent.simple("point." + pointId, 1, "point");
-        componentPoint.displayProp = "junction";
+        componentPoint.displayProp = "point";
+        componentPoint.typeProp = ComponentTypes.point;
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, true);

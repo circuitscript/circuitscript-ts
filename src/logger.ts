@@ -8,7 +8,7 @@ export class Logger {
     }
 
     add(message: string): void {
-        this.logs.push(message);
+        this.logs.push((new Date()).toISOString()+" | " + message);
     }
 
     dump(): string {

@@ -214,8 +214,8 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
         case 'cap':
             return new SymbolCap();
 
-        case 'junction':
-            return new SymbolJunctionHidden();
+        case 'point':
+            return new SymbolPointHidden();
 
         case 'diode':
             return new SymbolDiode();
@@ -423,7 +423,7 @@ export class SymbolLED extends SymbolGraphic {
     }
 }
 
-export class SymbolJunctionHidden extends SymbolGraphic {
+export class SymbolPointHidden extends SymbolGraphic {
     refreshDrawing(): void {
         const drawing = new SymbolDrawing();
 

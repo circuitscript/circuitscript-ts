@@ -40,3 +40,11 @@ export const bodyColor = '#FFFEAF';
 export const junctionSize = 5;
 export const junctionColor = 'rgb(0, 132, 0)';
 export const wireColor = 'rgb(0, 132, 0)';
+
+
+export enum ComponentTypes {
+    gnd = 'gnd',
+    net = 'net',
+    label = 'label',
+    point = 'point'
+}
