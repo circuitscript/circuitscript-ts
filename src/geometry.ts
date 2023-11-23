@@ -143,7 +143,10 @@ export class Geometry {
         });
     }
 
-    static groupBounds(features: Feature[]): {start: [number, number], end: [number, number], width: number, height: number} {
+    static groupBounds(features: Feature[]): {
+        start: [number, number], end: [number, number],
+        width: number, height: number
+    } {
 
         let minX = Number.POSITIVE_INFINITY;
         let minY = Number.POSITIVE_INFINITY;
@@ -155,7 +158,7 @@ export class Geometry {
             const box = feature.box;
             box.xmin !== undefined && (minX = Math.min(minX, box.xmin));
             box.ymin !== undefined && (minY = Math.min(minY, box.ymin));
-            
+
             box.xmax !== undefined && (maxX = Math.max(maxX, box.xmax));
             box.ymax !== undefined && (maxY = Math.max(maxY, box.ymax));
         });

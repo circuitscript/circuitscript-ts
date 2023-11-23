@@ -45,10 +45,6 @@ export abstract class SymbolGraphic {
         }
     }
 
-    bounds() {
-        return this.drawing.getBoundingBox();
-    }
-
     draw(group: G, extra?: {}): void {
         // Assume that the symbol is vertical
         const innerGroup = group.group();
@@ -59,7 +55,26 @@ export abstract class SymbolGraphic {
 
         this.drawLabels(innerGroup);
 
+        this.drawPlaceRemove(innerGroup, extra);
+
         // this.displayBounds && this.drawBounds(group);
+    }
+
+    drawPlaceRemove(group: G, extra?: { place?: boolean }): void {
+        if (extra && extra.place === false) {
+            // Do not place this component!
+            // Draw the x
+            const { start, end } = this.drawing.getBoundingBox(true);
+
+            group.path([
+                "M", start[0], start[1], "L", end[0], end[1],
+                "M", end[0], start[1], "L", start[0], end[1]
+            ].join(" "))
+                .stroke({
+                    width: defaultSymbolLineWidth,
+                    color: 'red'
+                });
+        }
     }
 
     // Returns the port position, relative to the symbol origin
@@ -656,14 +671,29 @@ class SymbolDrawing {
         return Geometry.featuresToPath(items);
     }
 
-    getBoundingBox(): { width: number, height: number, start: [number, number], end: [number, number] } {
+    getBoundingBox(excludeLabels = false): {
+        width: number, height: number,
+        start: SimplePoint, end: SimplePoint
+    } {
+        // If excludeLabels is true, then do not add labels to the list
+        // of items to measure the boundaries.
+
         const pinFeatures = this.pins.map(pin => {
             return pin[1];
         });
 
-        const allItems = [...this.items, ...pinFeatures];
+        const drawingFeatures = this.items.reduce((accum, item) => {
+            if (!excludeLabels || (excludeLabels && !(item instanceof Label))){
+                accum.push(item);
+            }
 
-        const withAngle = Geometry.groupRotate(allItems, this.angle, this.mainOrigin);
+            return accum;
+
+        }, [] as Feature[]);
+
+        const measureItems = [...drawingFeatures, ...pinFeatures];
+
+        const withAngle = Geometry.groupRotate(measureItems, this.angle, this.mainOrigin);
 
         return Geometry.groupBounds(withAngle);
     }
@@ -690,6 +720,8 @@ class SymbolDrawing {
     }
 
 }
+
+type SimplePoint = [x: number, y: number];
 
 type SymbolPinLayout = {
     pinId: number,

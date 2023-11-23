@@ -86,7 +86,15 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
             }
 
             extra.instance_name = item.component.instanceName;
+            
+            if (item.component.parameters.has('place')){
+                extra.place = item.component.parameters.get('place');
+            } else {
+                extra.place = true; // Default is to place the item
+            }
+
             symbol.draw(symbolGroup, extra);
+
         } else {
             // draw default shape
             symbolGroup.rect(width, height)

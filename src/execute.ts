@@ -47,6 +47,11 @@ export class ExecutionContext {
         this.scope = ExecutionScope.create();
         this.scope.indentLevel = indentLevel;
 
+        // setup the print function
+        this.scope.functions.set('print', (value) => {
+            console.log(value);
+        });
+
         this.setupRoot();
         this.setupGnd();
 
@@ -888,8 +893,11 @@ export class ExecutionContext {
 
             const paramName = parts[1];
             component.parameters.set(paramName, value);
+            
         } else if (this.scope.variables.has(idName)) {
             throw "Not implemented yet!";
+        } else {
+            throw "Unknown identifier: " + idName;
         }
     }
 
