@@ -1,6 +1,6 @@
 
 import { ComponentPinNet } from '../src/objects/types';
-import { runScript } from './helpers';
+import { findItem, runScript } from './helpers';
 
 describe('test parsing', () => {
 
@@ -19,6 +19,18 @@ describe('test parsing', () => {
 
         expect(parseStatus).toBe(true);
         expect(netOutput).toStrictEqual(expected);
+    });
+
+    test('component annotation', async () => {
+        const [parseStatus,, visitor] = await runScript(script4);
+        expect(parseStatus).toBe(true);
+
+        visitor.annotateComponents();
+        const instances = visitor.dumpInstances();
+
+        expect(findItem(instances, 'res', 'R1', 'numeric:10k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R2', 'numeric:20k')).not.toBeNull();
+        expect(findItem(instances, 'cap', 'C1', 'numeric:100n')).not.toBeNull();
     });
 });
 
@@ -132,3 +144,34 @@ const allScripts: [string, ComponentPinNet[]][] = [
     [script2, expected2],
     [script3, expected3],
 ];
+
+
+const script4 = `
+import lib
+
+variant = "MainVariantX"
+
+at net("5V")
+wire down 20
+branch:
+    wire down 20
+    add res(10k) [angle = 90]
+    ..place = (variant == "MainVariant")
+    wire down 20 to gnd
+
+wire right 40
+branch:
+    wire down 20
+    add res(20k) [angle=90]
+    ..place = true
+    wire down 20
+    to gnd
+
+wire right 40
+branch:
+    wire down 20
+    add cap(100n)
+    wire down 20
+    to gnd
+
+`
