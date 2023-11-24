@@ -47,7 +47,13 @@
                     "diagnostics": false
                 }
             ]
-        }
+        },
+        "collectCoverageFrom": [
+            "src/**/*.ts"
+        ],
+        "coveragePathIgnorePatterns": [
+            "src/antlr"
+        ]
     },
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "Apache-2.0",
@@ -56,7 +62,6 @@
         "@flatten-js/core": "^1.4.3",
         "@svgdotjs/svg.js": "^3.2.0",
         "antlr4": "^4.13.0",
-        "elkjs": "^0.8.2",
         "express": "^4.18.2",
         "lodash": "^4.17.21",
         "svgdom": "^0.1.14",
