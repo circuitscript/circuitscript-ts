@@ -28,9 +28,13 @@ import { Assignment_exprContext } from "./CircuitScriptParser";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser";
 import { ParametersContext } from "./CircuitScriptParser";
 import { Property_set_exprContext } from "./CircuitScriptParser";
+import { Double_dot_property_set_exprContext } from "./CircuitScriptParser";
+import { AdditionExprContext } from "./CircuitScriptParser";
+import { MultiplyExprContext } from "./CircuitScriptParser";
 import { DataExprContext } from "./CircuitScriptParser";
 import { UnaryOperatorExprContext } from "./CircuitScriptParser";
 import { BinaryOperatorExprContext } from "./CircuitScriptParser";
+import { RoundedBracketsExprContext } from "./CircuitScriptParser";
 import { Binary_operatorContext } from "./CircuitScriptParser";
 import { Unary_operatorContext } from "./CircuitScriptParser";
 import { Value_exprContext } from "./CircuitScriptParser";
@@ -45,6 +49,7 @@ import { Property_exprContext } from "./CircuitScriptParser";
 import { Property_key_exprContext } from "./CircuitScriptParser";
 import { Nested_propertiesContext } from "./CircuitScriptParser";
 import { Single_line_propertyContext } from "./CircuitScriptParser";
+import { Rounded_brackets_exprContext } from "./CircuitScriptParser";
 import { Style_exprContext } from "./CircuitScriptParser";
 import { Blank_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
@@ -211,6 +216,26 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 */
 	visitProperty_set_expr?: (ctx: Property_set_exprContext) => Result;
 	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.double_dot_property_set_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDouble_dot_property_set_expr?: (ctx: Double_dot_property_set_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `AdditionExpr`
+	 * labeled alternative in `CircuitScriptParser.data_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAdditionExpr?: (ctx: AdditionExprContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `MultiplyExpr`
+	 * labeled alternative in `CircuitScriptParser.data_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMultiplyExpr?: (ctx: MultiplyExprContext) => Result;
+	/**
 	 * Visit a parse tree produced by the `DataExpr`
 	 * labeled alternative in `CircuitScriptParser.data_expr`.
 	 * @param ctx the parse tree
@@ -231,6 +256,13 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitBinaryOperatorExpr?: (ctx: BinaryOperatorExprContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `RoundedBracketsExpr`
+	 * labeled alternative in `CircuitScriptParser.data_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRoundedBracketsExpr?: (ctx: RoundedBracketsExprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.binary_operator`.
 	 * @param ctx the parse tree
@@ -317,6 +349,12 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitSingle_line_property?: (ctx: Single_line_propertyContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.rounded_brackets_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRounded_brackets_expr?: (ctx: Rounded_brackets_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.style_expr`.
 	 * @param ctx the parse tree

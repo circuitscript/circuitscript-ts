@@ -884,14 +884,22 @@ export class ExecutionContext {
 
     setProperty(nameWithProp: string, value: any): void {
         this.print('set property', nameWithProp, 'value', value);
-        const parts = nameWithProp.split(".");
-        const idName = parts[0];
+
+        let idName: string;
+        let paramName: string;
+
+        if (nameWithProp.startsWith('..')){
+            idName = this.scope.currentComponent.instanceName;
+            paramName = nameWithProp.substring(2);
+        } else {
+            const parts = nameWithProp.split(".");
+            idName = parts[0];
+            paramName = parts[1];
+        }
 
         // Check if instance exists
         if (this.scope.instances.has(idName)) {
             const component = this.scope.instances.get(idName);
-
-            const paramName = parts[1];
             component.parameters.set(paramName, value);
             
         } else if (this.scope.variables.has(idName)) {

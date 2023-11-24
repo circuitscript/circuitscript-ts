@@ -60,6 +60,7 @@ expression: add_component_expr
         | at_component_expr
         | property_set_expr
         | property_set_expr2
+        | double_dot_property_set_expr
         | break_keyword
         | function_def_expr
         | function_call_expr
@@ -118,22 +119,23 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
             | (keyword_assignment_expr (',' keyword_assignment_expr)*);
 
 property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
+double_dot_property_set_expr: '..' ID '=' data_expr;
 
-data_expr: value_expr                       #DataExpr
-    | ID                                    #DataExpr
-    | function_call_expr                    #DataExpr
-    | create_component_expr                 #DataExpr
-    | assignment_expr                       #DataExpr
-    | data_expr binary_operator data_expr   #BinaryOperatorExpr
-    | unary_operator data_expr              #UnaryOperatorExpr
-    ;
+data_expr: data_expr (Multiply | Divide) data_expr      #MultiplyExpr
+    | data_expr (Addition | Minus) data_expr            #AdditionExpr
+    | ID                                                #DataExpr
+    | function_call_expr                                #DataExpr
+    | create_component_expr                             #DataExpr
+    | assignment_expr                                   #DataExpr
+    | data_expr binary_operator data_expr               #BinaryOperatorExpr
+    | unary_operator data_expr                          #UnaryOperatorExpr
+    | '(' data_expr ')'                                 #RoundedBracketsExpr
+    | value_expr                                        #DataExpr
+    ;           
 
 binary_operator: Equals 
     | NotEquals
-    | Addition
-    | Minus
-    | Multiply
-    | Divide;
+    ;
 
 unary_operator: Not;
 
@@ -162,6 +164,7 @@ property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_pro
                     | data_expr (',' data_expr)*                    # single_line_property
                     ;
 
+rounded_brackets_expr: '(' ( expression | data_expr ) ')';
 
 style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 blank_expr: '[' INTEGER_VALUE ']';

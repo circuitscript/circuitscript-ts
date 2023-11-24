@@ -1,6 +1,7 @@
 import { ParseTreeVisitor, TerminalNode } from 'antlr4';
 import {
     Add_component_exprContext,
+    AdditionExprContext,
     Assignment_exprContext,
     At_blockContext,
     At_block_pin_exprContext,
@@ -14,12 +15,14 @@ import {
     Component_select_exprContext,
     Create_component_exprContext,
     DataExprContext,
+    Double_dot_property_set_exprContext,
     ExpressionContext,
     Function_args_exprContext,
     Function_call_exprContext,
     Function_def_exprContext,
     Function_return_exprContext,
     Import_exprContext,
+    MultiplyExprContext,
     Nested_propertiesContext,
     ParametersContext,
     Pin_select_expr2Context,
@@ -29,6 +32,8 @@ import {
     Property_exprContext,
     Property_key_exprContext,
     Property_set_exprContext,
+    RoundedBracketsExprContext,
+    Rounded_brackets_exprContext,
     ScriptContext,
     Single_line_propertyContext,
     Style_exprContext,
@@ -473,31 +478,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return value1 == value2; // Boolean result
         } else if (binaryOperatorType.NotEquals()) {
             return value1 != value2;
-
-        } else if (binaryOperatorType.Addition()) {
-            if (Number.isFinite(value1) && Number.isFinite(value2)) {
-                return value1 + value2;
-            } else {
-                throw "Failed to add values";
-            }
-        } else if (binaryOperatorType.Minus()) {
-            if (Number.isFinite(value1) && Number.isFinite(value2)) {
-                return value1 - value2;
-            } else {
-                throw "Failed to subtract values";
-            }
-        } else if (binaryOperatorType.Divide()) {
-            if (Number.isFinite(value1) && Number.isFinite(value2)) {
-                return value1 / value2;
-            } else {
-                throw "Failed to divide values";
-            }
-        } else if (binaryOperatorType.Multiply()) {
-            if (Number.isFinite(value1) && Number.isFinite(value2)) {
-                return value1 * value2;
-            } else {
-                throw "Failed to multiply values";
-            }
         }
     }
     
@@ -517,6 +497,28 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             } else {
                 return false;
             }
+        }
+    }
+
+    visitMultiplyExpr(ctx: MultiplyExprContext) {
+        const value1 = this.visit(ctx.data_expr(0));
+        const value2 = this.visit(ctx.data_expr(1));
+
+        if (ctx.Multiply()) {
+            return value1 * value2;
+        } else if (ctx.Divide()) {
+            return value1 / value2;
+        }
+    }
+
+    visitAdditionExpr(ctx: AdditionExprContext) {
+        const value1 = this.visit(ctx.data_expr(0));
+        const value2 = this.visit(ctx.data_expr(1));
+
+        if (ctx.Addition()) {
+            return value1 + value2;
+        } else if (ctx.Minus()) {
+            return value1 - value2;
         }
     }
 
@@ -816,11 +818,33 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const instanceNameWithProp = ctx.INSTANCE_NAME_WITH_PROPERTY().toString();
         this.getExecutor().setProperty(instanceNameWithProp, result);
     }
+
+    IS THIS A GOOD IDEA?
+
+    visitDouble_dot_property_set_expr(ctx: Double_dot_property_set_exprContext) {
+        const result = this.visit(ctx.data_expr());
+        const propertyName = ctx.ID().getText();
+        this.getExecutor().setProperty('..' + propertyName, result);
+    }
     
 
     visitPrint_expr(ctx: Print_exprContext): void {
         const value = this.visit(ctx.data_expr());
         console.log("::", value);
+    }
+
+    visitRounded_brackets_expr(ctx:Rounded_brackets_exprContext) {
+        if (ctx.expression()){
+            return this.visit(ctx.expression());
+
+        } else if (ctx.data_expr()){
+            const result = this.visit(ctx.data_expr());
+            console.log(result);
+        }
+    }
+
+    visitRoundedBracketsExpr(ctx: RoundedBracketsExprContext){
+        return this.visit(ctx.data_expr());
     }
 
     pinTypes = [
