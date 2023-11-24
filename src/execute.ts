@@ -1,13 +1,12 @@
 import lodash from 'lodash';
 
-import { ComponentTypes, GlobalNames, LayoutDirection, ParamKeys } from './globals';
+import { ComponentTypes, GlobalNames, ParamKeys } from './globals';
 import { ClassComponent, Component } from './objects/Component';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
-import { PinDefinition } from './objects/PinDefinition';
+import { PinDefinition, PortSide } from './objects/PinDefinition';
 import { CFunction, CFunctionResult } from './objects/types';
-import { PortSide, getPortSide } from './layout';
 import { Wire, WireSegment } from './objects/Wire';
 import { Logger } from './logger';
 
@@ -826,22 +825,22 @@ export class ExecutionContext {
         return sequenceComponent;
     }
 
-    private getPinLayoutDirection(component: ClassComponent, pinId: number): LayoutDirection {
-        // Returns the layout direction for a given pin
-        let layoutDirection = LayoutDirection.RIGHT;
+    // private getPinLayoutDirection(component: ClassComponent, pinId: number): LayoutDirection {
+    //     // Returns the layout direction for a given pin
+    //     let layoutDirection = LayoutDirection.RIGHT;
 
-        if (component.pins.size > 1) {
-            const portSide = component.pins.get(pinId).side;
+    //     if (component.pins.size > 1) {
+    //         const portSide = component.pins.get(pinId).side;
 
-            if (portSide === PortSide.EAST) {
-                layoutDirection = LayoutDirection.RIGHT;
-            } else if (portSide === PortSide.WEST) {
-                layoutDirection = LayoutDirection.LEFT;
-            }
-        }
+    //         if (portSide === PortSide.EAST) {
+    //             layoutDirection = LayoutDirection.RIGHT;
+    //         } else if (portSide === PortSide.WEST) {
+    //             layoutDirection = LayoutDirection.LEFT;
+    //         }
+    //     }
 
-        return layoutDirection;
-    }
+    //     return layoutDirection;
+    // }
 
     addWire(segments: [string, number?][]): void {
         const tmp = segments.map(item => {
@@ -935,3 +934,79 @@ export function isNetComponent(component: ClassComponent): boolean {
 export function isLabelComponent(component: ClassComponent): boolean {
     return component.parameters.has(ParamKeys.__is_label);
 }
+
+export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
+    // Takes the arrangeProps and determines how to arrange pins in the symbol.
+
+    const result = [];
+
+    if (arrangeProps === null) {
+
+        let counter = 0;
+        for (const [pinId] of pins) {
+            result.push({
+                pinId,
+                side: counter % 2 === 0 ? PortSide.WEST : PortSide.EAST,
+                order: counter,
+                position: Math.floor(counter/2),
+            });
+            counter++;
+        }
+
+    } else {
+        let counter = pins.size;
+        const existingPinIds = Array.from(pins.keys());
+
+        for (const [key, items] of arrangeProps) {
+            let useItems;
+            if (!Array.isArray(items)){
+                useItems = [items];
+            } else {
+                // Do no mutate original array
+                useItems = [...items];
+            }
+
+            let useSide = PortSide.WEST;
+            if (key === 'left') {
+                useSide = PortSide.WEST;
+            } else if (key === 'right') {
+                useSide = PortSide.EAST;
+            } else if (key === 'top') {
+                useSide = PortSide.NORTH;
+            } else if (key === 'bottom') {
+                useSide = PortSide.SOUTH;
+            }
+
+            let position = 0;
+
+            useItems.forEach(item => {
+                if (typeof item === 'object'){
+                    if (item.blank){
+                        position += item.blank;
+                    }
+                }
+
+                // Only use the pin if it exists!
+                if (existingPinIds.indexOf(item) !== -1) {
+                    result.push({
+                        pinId: item,
+                        side: useSide,
+                        position,
+                        order: counter
+                    });
+                    counter--;
+                    position += 1;
+                }
+            });
+        }
+    }
+    
+    return result;
+}
+
+type PortSideItem = {
+    pinId: number,
+    side: string,
+    order: number,
+    position: number,
+};

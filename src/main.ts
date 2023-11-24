@@ -4,8 +4,6 @@ import fs from 'fs';
 import path from 'path';
 
 import { MainVisitor } from './visitor';
-import { generateLayout, prepareLayout } from './layout';
-import { generateSVG } from './render';
 import { prepareSizing } from './sizing';
 import { LayoutEngine } from './layout2';
 import { generateSVG2 } from './render2';
@@ -20,13 +18,13 @@ export default async function main(): Promise<void> {
     await renderScript(fileName);
 
     let watch = false;
-    if (process.argv.length > 2){
-        if (process.argv[3] === "w"){
+    if (process.argv.length > 2) {
+        if (process.argv[3] === "w") {
             watch = true;
         }
     }
 
-    if (watch){
+    if (watch) {
         fs.watch(fileName, (event, targetFile) => {
             if (event === 'change') {
                 renderScript(fileName).then(() => {
@@ -63,7 +61,7 @@ async function renderScript(scriptPath: string): Promise<void> {
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
     console.log("Parsing took:", timeTaken);
 
-    if (hasError || hasParseError){
+    if (hasError || hasParseError) {
         console.log('Error while parsing');
         return;
     }
@@ -81,13 +79,13 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
-        if (tmp[0] === SequenceAction.Wire){
+        if (tmp[0] === SequenceAction.Wire) {
             tmp[2] = tmp[2].map(item2 => {
                 return [item2.direction, item2.value].join(",");
-            }).join(" "); 
-            
-        } else if (tmp[0] === SequenceAction.WireJump){
-            
+            }).join(" ");
+
+        } else if (tmp[0] === SequenceAction.WireJump) {
+
         } else {
             tmp[1] = item[1].instanceName;
         }
@@ -97,43 +95,24 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
 
-    const layoutType: LayoutType = LayoutType.Custom;
     const outputSvgPath = 'output.svg';
 
-    switch(layoutType){
-        case LayoutType.ELKJS: {
-            const graph = await prepareLayout(sequence);
-            // Use ELKJS to plot
-            await writeFile("dump/pre-elk.json", JSON.stringify(graph, null, 2));
-    
-            const elkOutput = await generateLayout(graph);
-            await writeFile("dump/elk-output.json", JSON.stringify(elkOutput, null, 2));
-    
-            generateSVG(graph, outputSvgPath);
-            break;
-        }
+    try {
+        const layoutEngine = new LayoutEngine();
+        const time2 = new Date();
+        const graph = await layoutEngine.runLayout(sequence, nets);
 
-        case LayoutType.Custom: {
-            try {
-                const layoutEngine = new LayoutEngine();
-                const time2 = new Date();
-                const graph = await layoutEngine.runLayout(sequence, nets);
-                
-                const timeDiff = (new Date()) - time2;
-                console.log('Layout took:', timeDiff);
+        const timeDiff = (new Date()) - time2;
+        console.log('Layout took:', timeDiff);
 
-                await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
+        await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
 
-                const time3 = new Date();
-                generateSVG2(graph, outputSvgPath);
-                console.log('Render took:', (new Date()) - time3);
-            } catch(err) {
-                console.log('Failed to render:');
-                console.log(err)
-            }
-            break;
-        }
-
+        const time3 = new Date();
+        generateSVG2(graph, outputSvgPath);
+        console.log('Render took:', (new Date()) - time3);
+    } catch (err) {
+        console.log('Failed to render:');
+        console.log(err)
     }
 }
 

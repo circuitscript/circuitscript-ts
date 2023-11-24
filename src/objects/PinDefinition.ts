@@ -1,4 +1,3 @@
-import { PortSide } from '../layout';
 import { PinTypes } from './PinTypes';
 
 export type PinId = number | string;
@@ -38,5 +37,13 @@ export enum PinIdType {
     Int = 'int',
     Str = 'str',
 }
+
+export enum PortSide {
+    WEST = 'WEST',
+    EAST = 'EAST',
+    SOUTH = 'SOUTH',
+    NORTH = 'NORTH'
+}
+
 
 export class PinReference {}

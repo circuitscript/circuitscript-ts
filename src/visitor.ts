@@ -491,12 +491,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             } else {
                 throw "Failed to do Not operator";
             }
-        } else if (unaryOperator.If()) {
-            if (value) {
-                return true;
-            } else {
-                return false;
-            }
         }
     }
 
@@ -818,9 +812,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const instanceNameWithProp = ctx.INSTANCE_NAME_WITH_PROPERTY().toString();
         this.getExecutor().setProperty(instanceNameWithProp, result);
     }
-
-    IS THIS A GOOD IDEA?
-
+    
     visitDouble_dot_property_set_expr(ctx: Double_dot_property_set_exprContext) {
         const result = this.visit(ctx.data_expr());
         const propertyName = ctx.ID().getText();
@@ -956,6 +948,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     dumpNets(): ComponentPinNet[]  {
         return this.getExecutor().scope.dumpNets();
+    }
+
+    dumpVariables(): Map<string, any> {
+        return this.getExecutor().scope.variables;
     }
 
     dump2() {
