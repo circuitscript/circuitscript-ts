@@ -60,13 +60,18 @@ async function renderScript(scriptPath: string): Promise<void> {
     const { tree, parser,
         hasParseError, hasError, timeTaken } = parseFileWithVisitor(visitor, scriptData);
 
+    await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
+    console.log("Parsing took:", timeTaken);
+
+    if (hasError || hasParseError){
+        console.log('Error while parsing');
+        return;
+    }
+
     visitor.annotateComponents();
 
     const kicadNetList = generateKiCADNetList(visitor.getNetList());
     await writeFile('dump/kicad.net', kicadNetList);
-
-    await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
-    console.log("Parsing took:", timeTaken);
 
     await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
