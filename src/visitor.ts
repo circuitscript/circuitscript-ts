@@ -71,7 +71,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     logger: Logger;
 
-    onImportFile = (visitor: MainVisitor, filePath:string) => {
+    onImportFile = (visitor: MainVisitor, filePath:string): void => {
+        throw "Import file not implemented"
     }
 
     constructor(silent = false) {
@@ -952,6 +953,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     dumpVariables(): Map<string, any> {
         return this.getExecutor().scope.variables;
+    }
+
+    dumpInstances(): Map<string, ClassComponent> {
+        return this.getExecutor().scope.instances;
     }
 
     dump2() {

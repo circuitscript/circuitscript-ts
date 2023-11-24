@@ -1,5 +1,3 @@
-import fs from 'fs';
-
 import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
@@ -10,7 +8,7 @@ import { NumericValue } from './objects/ParamDefinition';
 
 export function generateSVG2(graph: {components: RenderComponent[], 
     wires: RenderWire[], junctions: RenderJunction[], 
-    mergedWires: MergedWire[], debugRects: BoundBox[]}, outputPath: string): void {
+    mergedWires: MergedWire[], debugRects: BoundBox[]}): string {
     
     const window = createSVGWindow();
     const document = window.document;
@@ -33,15 +31,7 @@ export function generateSVG2(graph: {components: RenderComponent[],
     canvas.size(widthAndMargin, heightAndMargin);
     canvas.viewbox(x - margin, y - margin, widthAndMargin, heightAndMargin);
 
-    const svgOutput = canvas.svg();
-
-    fs.writeFile(outputPath, svgOutput, (err) => {
-        if (err) {
-            console.log('error writing to file: ', err);
-        } else {
-            console.log('saved to', outputPath);
-        }
-    });
+    return canvas.svg();
 }
 
 function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, 

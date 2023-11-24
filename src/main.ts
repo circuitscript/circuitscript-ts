@@ -108,7 +108,16 @@ async function renderScript(scriptPath: string): Promise<void> {
         await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const time3 = new Date();
-        generateSVG2(graph, outputSvgPath);
+        const svgOutput = generateSVG2(graph);
+
+        fs.writeFile(outputSvgPath, svgOutput, (err) => {
+            if (err) {
+                console.log('error writing to file: ', err);
+            } else {
+                console.log('saved to', outputSvgPath);
+            }
+        });
+
         console.log('Render took:', (new Date()) - time3);
     } catch (err) {
         console.log('Failed to render:');

@@ -16,9 +16,9 @@ export async function prepareSizing(): Promise<void> {
 }
 
 export function applyFontsToSVG(canvas: SVGTypeMapping): void {
-    for (const fontName in supportedFonts) {
-        canvas.fontface(fontName, "url('" + InterFontEncoded + "')");
-    }
+    // for (const fontName in supportedFonts) {
+    //     canvas.fontface(fontName, "url('" + InterFontEncoded + "')");
+    // }
 }
 
 export async function measureTextSize(text: string, fontFamily: string, fontSize: number): Promise<{ width: number, height: number }> {

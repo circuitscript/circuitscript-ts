@@ -1,5 +1,6 @@
 import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing';
+import { defaultFont } from './globals';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -40,8 +41,6 @@ export class Label extends Flatten.Polygon {
     }
 
     static fromPoint(x: number, y: number, text: string, style: LabelStyle): Label {
-
-        const defaultFont = 'Inter';
 
         const { fontSize = 10,
             anchor = HorizontalAlign.Left,
