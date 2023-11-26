@@ -15,15 +15,15 @@ describe('test parsing', () => {
         // Access scripts like this to prevent having to 
         // define the script content before the test itself
         const [script, expected] = allScripts[index];
-        const [parseStatus, netOutput] = await runScript(script);
+        const {hasError, componentPinNets} = await runScript(script);
 
-        expect(parseStatus).toBe(true);
-        expect(netOutput).toStrictEqual(expected);
+        expect(hasError).toBe(false);
+        expect(componentPinNets).toStrictEqual(expected);
     });
 
     test('component annotation', async () => {
-        const [parseStatus,, visitor] = await runScript(script4);
-        expect(parseStatus).toBe(true);
+        const { hasError, visitor } = await runScript(script4);
+        expect(hasError).toBe(false);
 
         visitor.annotateComponents();
         const instances = visitor.dumpInstances();

@@ -2,27 +2,36 @@ import path from 'path';
 import fs from 'fs';
 
 import CircuitScriptParser from '../src/antlr/CircuitScriptParser';
-import CircuitScriptLexer from '../src/antlr/CircuitScriptLexer';
 
 import { CharStream, CommonTokenStream } from 'antlr4';
 import { MainVisitor } from '../src/visitor';
 import { ComponentPinNet } from '../src/objects/types';
-import { parseFileWithVisitor } from '../src/parser';
+import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser';
 import { ClassComponent } from '../src/objects/Component';
+import { MainLexer } from '../src/lexer';
 
 
-export async function runScript(script: string): Promise<[result: boolean, ComponentPinNet[], visitor: MainVisitor]> {
+export async function runScript(script: string): Promise<{visitor: MainVisitor, 
+    hasError: boolean, 
+    componentPinNets:ComponentPinNet[]}> {
+    
     const chars = new CharStream(script);
-    const lexer = new CircuitScriptLexer(chars);
+    const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 
     const parser = new CircuitScriptParser(tokens);
+    // Clear any existing error listeners and use the custom one only
+    parser.removeErrorListeners();
+
+    const errorListener = new CircuitscriptParserErrorListener();
+    parser.addErrorListener(errorListener);
+    
     const tree = parser.script();
 
     const scriptPath = "./examples/helpers.ts";
 
     const visitor = new MainVisitor(true);
-    visitor.onImportFile = (visitor: MainVisitor, importPath: string): void => {
+    visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
         const currentDirectory = path.dirname(scriptPath);
 
         // Check if different files exist first
@@ -32,15 +41,23 @@ export async function runScript(script: string): Promise<[result: boolean, Compo
         const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
         const { hasError, hasParseError, timeTaken } =
             parseFileWithVisitor(visitor, fileData);
+
+        return { hasError, hasParseError };
     }
 
+    let hasError = false;
     try {
         visitor.visit(tree);
-        return [true, visitor.dumpNets(), visitor];
-
     } catch (err) {
+        hasError = true;
         console.log('got error:', err);
-        return [false, null, null];
+    }
+
+    hasError = hasError || errorListener.hasParseErrors();
+
+    return {
+        visitor, hasError,
+        componentPinNets: visitor.dumpNets(),
     }
 }
 

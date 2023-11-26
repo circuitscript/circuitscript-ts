@@ -5,8 +5,8 @@ import { runScript } from "./helpers";
 describe('Render tests', () => {
 
     test('component annotation', async () => {
-        const [parseStatus,, visitor] = await runScript(script1);
-        expect(parseStatus).toBe(true);
+        const {hasError, visitor} = await runScript(script1);
+        expect(hasError).toBe(false);
         visitor.annotateComponents();
 
         const { sequence, nets } = visitor.getGraph();

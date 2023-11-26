@@ -11,7 +11,9 @@ describe('Simple math tests', () => {
         ["a = 10 / 2", 5],
         ["a = 1 + 9 / 3", 4]
     ])('math test - %s', async (script, expectedResult) => {
-        const [, , visitor] = await runScript(script);
+        const {visitor, hasError} = await runScript(script);
+
+        expect(hasError).toBe(false);
 
         const variables = visitor.dumpVariables();
         expect(variables.get('a')).toBe(expectedResult);
