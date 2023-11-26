@@ -16,7 +16,6 @@ import {
     Create_component_exprContext,
     DataExprContext,
     Double_dot_property_set_exprContext,
-    ExpressionContext,
     Function_args_exprContext,
     Function_call_exprContext,
     Function_def_exprContext,
@@ -93,58 +92,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return this.executionStack[this.executionStack.length - 1];
     }
 
-    visit(ctx) {
-        // The visit method is moved out from ParseTreeVisitor
-        // because its implementation is different that the
-        // python version.
-        if (Array.isArray(ctx)) {
-            const allResults = [];
-            let result: any = null;
-
-            for (let i = 0; i < ctx.length; i++) {
-                // Follow the python version
-                if (!this.shouldVisitNextChild(ctx, result)) {
-                    return result;
-                }
-
-                const child = ctx[i];
-                const childResult = child.accept(this);
-                allResults.push(childResult);
-                result = childResult;
-            }
-
-            return result;
-        } else {
-            return ctx.accept(this);
-        }
-    }
-
-    visitChildren(ctx) {
-        // Moved out from ParseTreeVisitor
-        if (ctx.children) {
-            return this.visit(ctx.children);
-        } else {
-            return null;
-        }
-    }
-
-    shouldVisitNextChild(node, currentResult): boolean {
-        // If result is -1, then do no parse further children
-        if (currentResult === -1) {
-            return false;
-        }
-        return true;
-    }
-
     visitScript(ctx: ScriptContext): any {
         this.print('===', 'start', '===');
         const result = this.visitChildren(ctx);
         this.print('===', 'end', '===');
         return result;
-    }
-
-    visitExpression(ctx: ExpressionContext) {
-        return this.visitChildren(ctx);
     }
 
     visitParameters(ctx: ParametersContext) {
