@@ -7,7 +7,7 @@ describe('test parsing', () => {
     test.each([
         [0, "create component command"],
         [1, "function to create component and branching"],
-        [2, "nested branching, add with pin selected"]
+        [2, "nested branching, add with pin selected"],
     ])('parse script - %d: %s', async (index, description) => {
         // Test only parsing, does not check the correctness of the 
         // parsed result!
@@ -31,6 +31,22 @@ describe('test parsing', () => {
         expect(findItem(instances, 'res', 'R1', 'numeric:10k')).not.toBeNull();
         expect(findItem(instances, 'res', 'R2', 'numeric:20k')).not.toBeNull();
         expect(findItem(instances, 'cap', 'C1', 'numeric:100n')).not.toBeNull();
+    });
+
+    test('indents in function definition', async() => {
+        // Check that indents within parantheses/brackets are ignored.
+        const script = `
+def test1(a, 
+  b,
+    c):
+    return a + b + c
+
+print(test1(1,2,3))
+`
+        const { hasError, visitor } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        expect(visitor.printStream[0]).toBe(6);
     });
 });
 

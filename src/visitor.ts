@@ -71,6 +71,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     logger: Logger;
 
+    printStream: string[] = [];
+    printToConsole = true;
+
     onImportFile = (visitor: MainVisitor, filePath:string): {hasError:boolean, hasParseError: boolean} => {
         throw "Import file not implemented"
     }
@@ -829,7 +832,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitPrint_expr(ctx: Print_exprContext): void {
         const value = this.visit(ctx.data_expr());
-        console.log("::", value);
+        if (this.printToConsole) {
+            console.log("::", value);
+        }
+        this.printStream.push(value);
     }
 
     visitRounded_brackets_expr(ctx:Rounded_brackets_exprContext) {

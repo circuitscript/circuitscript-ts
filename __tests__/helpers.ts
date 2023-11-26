@@ -31,6 +31,8 @@ export async function runScript(script: string): Promise<{visitor: MainVisitor,
     const scriptPath = "./examples/helpers.ts";
 
     const visitor = new MainVisitor(true);
+    visitor.printToConsole = false; // do not clutter the console log
+
     visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
         const currentDirectory = path.dirname(scriptPath);
 
