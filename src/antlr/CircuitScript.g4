@@ -5,26 +5,6 @@ grammar CircuitScript;
 
 tokens { INDENT, DEDENT }
 
-@lexer::header{
-import CircuitScriptParser from './CircuitScriptParser';
-import { DenterHelper } from './../denter/DenterHelper';
-}
-
-@lexer::members {
-    denter: DenterHelper | null = null;
-
-    nextToken(): Token {
-        if (this.denter === null) {
-            this.denter = new DenterHelper(
-                CircuitScriptParser.NEWLINE, CircuitScriptParser.INDENT, CircuitScriptParser.DEDENT, false, () => {
-                    return super.nextToken();
-                });
-        }
-
-        return this.denter.nextToken();
-    }
-} 
-
 // Keywords
 Break:      'break';
 Branch:     'branch';
@@ -77,10 +57,10 @@ expression: add_component_expr
 
 branch_blocks: branch_block_inner+;
 branch_block_inner:
-	Branch ':' INDENT (NEWLINE | expression)+ DEDENT;
+	Branch ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:
-	INSTANCE_NAME_WITH_PROPERTY ':' INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
+	INSTANCE_NAME_WITH_PROPERTY ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
 add_component_expr: Add data_expr pin_select_expr?;
@@ -96,19 +76,19 @@ at_component_expr:      At component_select_expr;
 to_component_expr: To component_select_expr (',' component_select_expr)*;
 // pin_select_expr_next:   'pin' INTEGER_VALUE (',' INTEGER_VALUE)?;
 
-at_to_multiple_expr: At component_select_expr To component_select_expr (',' component_select_expr)* ':' INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;
+at_to_multiple_expr: At component_select_expr To component_select_expr (',' component_select_expr)* ':' NEWLINE INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;
 at_to_multiple_line_expr: pin_select_expr2 ':' at_to_multiple_line_expr_to_pin (',' at_to_multiple_line_expr_to_pin)*;
 
 at_to_multiple_line_expr_to_pin: (INTEGER_VALUE | NOT_CONNECTED);
 
-at_block: at_component_expr ':' INDENT (NEWLINE | at_block_expressions) + DEDENT;
+at_block: at_component_expr ':' NEWLINE INDENT (NEWLINE | at_block_expressions) + DEDENT;
 at_block_expressions: expression | at_block_pin_expr;
 
 // Expression to allow direct pin assignment
 at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_block_pin_expression_complex);
 
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
-at_block_pin_expression_complex: INDENT ( NEWLINE | expression)+ DEDENT;
+at_block_pin_expression_complex: NEWLINE INDENT ( NEWLINE | expression)+ DEDENT;
 
 break_keyword: Break;
 
@@ -149,19 +129,19 @@ value_expr: NUMERIC_VALUE
 
 print_expr: 'print' '(' data_expr ')';
 
-function_def_expr: Define ID '(' function_args_expr? ')' ':' INDENT (NEWLINE | function_expr) + DEDENT;
+function_def_expr: Define ID '(' function_args_expr? ')' ':' NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
 function_expr: expression | function_return_expr;
 
 function_args_expr: ID (',' ID)*;
 function_call_expr: ID '(' parameters? ')';
 function_return_expr: Return data_expr ;
 
-create_component_expr: Create Component ':' INDENT ( property_expr | NEWLINE)+ DEDENT;
+create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
 
 property_expr: property_key_expr ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;
-property_value_expr: (INDENT (NEWLINE | property_expr)+ DEDENT)     # nested_properties
-                    | data_expr (',' data_expr)*                    # single_line_property
+property_value_expr: NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT     # nested_properties
+                    | data_expr (',' data_expr)*                          # single_line_property
                     ;
 
 rounded_brackets_expr: '(' ( expression | data_expr ) ')';
@@ -173,6 +153,9 @@ wire_expr: Wire ID (INTEGER_VALUE | ID)*;
 point_expr: Point ID;
 
 import_expr: Import ID;
+
+OPEN_PAREN : '(' {this.openBrace();};
+CLOSE_PAREN : ')' {this.closeBrace();};
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';
@@ -204,7 +187,17 @@ OPERATOR: '-'
         | '/';
 
 WS: [ \t]+ -> skip;
-NEWLINE: ('\r'? '\n' ' '*);
+
+NEWLINE
+ : ( {this.atStartOfInput()}?   SPACES
+   | ( '\r'? '\n' | '\r' | '\f' ) SPACES?
+   )
+   {this.onNewLine();}
+ ;
+
+ fragment SPACES
+ : [ \t]+
+ ;
 
 // Follow python's comment symbol for now
 fragment COMMENT: '#' ~[\r\n\f]*;

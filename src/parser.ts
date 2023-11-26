@@ -1,14 +1,16 @@
-import { CharStream, CommonTokenStream, ErrorListener } from 'antlr4';
+import { CharStream, CommonTokenStream, ErrorListener, Token } from 'antlr4';
 
-import CircuitScriptParser from './antlr/CircuitScriptParser';
 import CircuitScriptLexer from './antlr/CircuitScriptLexer';
+import CircuitScriptParser from './antlr/CircuitScriptParser';
+
 import { MainVisitor } from './visitor';
+import { MainLexer } from './lexer';
 
 export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
     const time1 = new Date();
 
     const chars = new CharStream(data);
-    const lexer = new CircuitScriptLexer(chars);
+    const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 
     const parser = new CircuitScriptParser(tokens);
@@ -31,6 +33,8 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
 
     const timeTaken = (new Date()) - time1;
 
+    // dumpTokens(tokens.tokens, lexer, data);
+    
     return {
         tree, parser,
         hasParseError: errorListener.hasParseErrors(),
@@ -39,7 +43,32 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
     };
 }
 
-class CircuitscriptParserErrorListener extends ErrorListener {
+function dumpTokens(tokens:Token[], lexer: CircuitScriptLexer, scriptData: string): void {
+    tokens.forEach(item => {
+        if (item.type !== -1) {
+            let stringValue = "";
+            let textPart = "";
+
+            if (lexer.symbolicNames[item.type] !== null && lexer.symbolicNames[item.type] !== undefined) {
+                stringValue = lexer.symbolicNames[item.type];
+                if (stringValue !== "NEWLINE") {
+                    textPart = scriptData.substring(item.start, item.stop + 1);
+                } else {
+                    textPart = item.text.length-1;
+                }
+            } else if (lexer.literalNames[item.type] !== null && lexer.literalNames[item.type] !== undefined) {
+                stringValue = lexer.literalNames[item.type];
+                textPart = scriptData.substring(item.start, item.stop + 1);
+            } else {
+                stringValue = item._text;
+            }
+
+            console.log('line', item.line + ':' + item.column, `\t${stringValue} (${item.type})`.padEnd(30), textPart);
+        }
+    });
+}
+
+export class CircuitscriptParserErrorListener extends ErrorListener {
 
     syntaxErrorCounter = 0;
 

@@ -40,7 +40,7 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     const visitor = new MainVisitor(true);
 
-    visitor.onImportFile = (visitor: MainVisitor, importPath: string): void => {
+    visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
         const currentDirectory = path.dirname(scriptPath);
 
         // Check if different files exist first
@@ -51,6 +51,8 @@ async function renderScript(scriptPath: string): Promise<void> {
         const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
         const { hasError, hasParseError, timeTaken } =
             parseFileWithVisitor(visitor, fileData);
+
+        return { hasError, hasParseError }
     }
 
     const scriptData = await readFile(scriptPath);

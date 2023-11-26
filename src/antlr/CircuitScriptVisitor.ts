@@ -1,4 +1,4 @@
-// Generated from CircuitScript.g4 by ANTLR 4.13.1
+// Generated from ./src/antlr/CircuitScript.g4 by ANTLR 4.13.1
 
 import {ParseTreeVisitor} from 'antlr4';
 

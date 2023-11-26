@@ -71,7 +71,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     logger: Logger;
 
-    onImportFile = (visitor: MainVisitor, filePath:string): void => {
+    onImportFile = (visitor: MainVisitor, filePath:string): {hasError:boolean, hasParseError: boolean} => {
         throw "Import file not implemented"
     }
 
@@ -804,7 +804,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitImport_expr(ctx: Import_exprContext): void {
         const ID = ctx.ID().toString(); // filename
         this.print('import', ID);
-        this.onImportFile(this, ID);
+        const {hasError,hasParseError} = this.onImportFile(this, ID);
+
+        if (hasError || hasParseError){
+            this.print('import', ID, 'failed');
+            throw `import ${ID} failed`;
+        } 
+
         this.print('done import', ID);
     }
 
