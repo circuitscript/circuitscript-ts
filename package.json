@@ -32,7 +32,8 @@
         "test": "jest",
         "test-coverage": "jest --coverage",
         "prettier": "prettier --config .prettierrc --write .",
-        "test:watch": "jest --watch"
+        "test:watch": "jest --watch",
+        "antlr": "antlr4 -Dlanguage=TypeScript ./src/antlr/CircuitScript.g4 -no-listener -visitor"
     },
     "jest": {
         "preset": "ts-jest",
