@@ -7,12 +7,17 @@ import { MainVisitor } from './visitor';
 import { MainLexer } from './lexer';
 
 export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
-    const time1 = new Date();
-
     const chars = new CharStream(data);
     const lexer = new MainLexer(chars);
-    const tokens = new CommonTokenStream(lexer);
 
+    const time0 = new Date();
+
+    const tokens = new CommonTokenStream(lexer);
+    tokens.fill();
+
+    const lexerTimeTaken = (new Date()).getTime() - time0.getTime();
+
+    const time1 = new Date();
     const parser = new CircuitScriptParser(tokens);
     // Clear any existing error listeners and use the custom one only
     parser.removeErrorListeners();
@@ -31,7 +36,7 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
         hasError = true;
     }
 
-    const timeTaken = (new Date()) - time1;
+    const parserTimeTaken = (new Date()).getTime() - time1.getTime();
 
     // dumpTokens(tokens.tokens, lexer, data);
     
@@ -39,7 +44,8 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
         tree, parser,
         hasParseError: errorListener.hasParseErrors(),
         hasError,
-        timeTaken,
+        parserTimeTaken,
+        lexerTimeTaken,
     };
 }
 

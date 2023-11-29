@@ -47,9 +47,8 @@ async function renderScript(scriptPath: string): Promise<void> {
         const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
         visitor.print('importing path:', tmpFilePath);
 
-
         const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
-        const { hasError, hasParseError, timeTaken } =
+        const { hasError, hasParseError } =
             parseFileWithVisitor(visitor, fileData);
 
         return { hasError, hasParseError }
@@ -58,11 +57,15 @@ async function renderScript(scriptPath: string): Promise<void> {
     const scriptData = await readFile(scriptPath);
 
     const { tree, parser,
-        hasParseError, hasError, timeTaken } = parseFileWithVisitor(visitor, scriptData);
+        hasParseError, hasError, 
+        parserTimeTaken, 
+        lexerTimeTaken } = parseFileWithVisitor(visitor, scriptData);
+
+    console.log('Lexing took:', lexerTimeTaken);
+    console.log('Parsing took:', parserTimeTaken);
 
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
-    console.log("Parsing took:", timeTaken);
-
+    
     if (hasError || hasParseError) {
         console.log('Error while parsing');
         return;
