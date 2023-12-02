@@ -7,7 +7,7 @@ import { CharStream, CommonTokenStream } from 'antlr4';
 import { MainVisitor } from '../src/visitor';
 import { ComponentPinNet } from '../src/objects/types';
 import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser';
-import { ClassComponent } from '../src/objects/Component';
+import { ClassComponent } from '../src/objects/ClassComponent';
 import { MainLexer } from '../src/lexer';
 
 
