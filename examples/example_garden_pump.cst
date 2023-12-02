@@ -71,8 +71,9 @@ def tmp_label_right(name):
     add label(name)
     wire right 40
 
-def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_label, output_label, inductor_footprint):
-    
+def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, 
+    enable_label, output_label, inductor_footprint, place=true):
+
     # the 3v3 supply
     tps54227 = create component:
         pins:
@@ -118,7 +119,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_
                 to tps54227 pin 10
             wire left 20 up 100 left 60
             branch:
-                decoupling_cap(100n)
+                decoupling_cap(100n, false)
             wire left 40
             branch:
                 decoupling_cap(10u)
@@ -171,6 +172,8 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, enable_
             branch:
                 wire down 20
                 add cap(10p)
+                ..place = false
+
                 wire auto
                 to fb_point
             wire right 60
@@ -327,10 +330,11 @@ def mosfet():
         params:
             footprint: "Package_TO_SOT_SMD:SOT-23"
 
-def decoupling_cap(value):
+def decoupling_cap(value, place=true):
     branch:
         wire down 20
         add cap(value)
+        ..place = place
         wire down 20
         to gnd
 

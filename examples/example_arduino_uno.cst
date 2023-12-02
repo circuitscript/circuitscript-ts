@@ -427,7 +427,7 @@ at atmega:
         wire right 40
         add label("RXLED")
         wire right 100 down 100 right 60
-        add diode()
+        add led("yellow") pin 1 [angle=180]
         wire right 20
         add res(1k)
         wire right 20 up 80 
@@ -439,7 +439,7 @@ at atmega:
         wire right 40
         add label("TXLED")
         wire right 120 down 40 right 40
-        add diode()
+        add led("yellow") pin 1 [angle=180]
         wire right 20
         add res(1k)
         wire auto 
