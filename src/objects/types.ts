@@ -20,3 +20,6 @@ export type ValueType = boolean | number | string |
 export type CallableParameter = 
     ['keyword', key: string, value: ValueType] | 
     ['position', key: number, value: ValueType];
+
+export type FunctionDefinedParameter = [name: string, defaultValue: ValueType] 
+    | [name: string];

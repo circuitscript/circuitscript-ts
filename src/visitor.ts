@@ -52,7 +52,8 @@ import {
 import { PinDefinition, PinIdType } from './objects/PinDefinition';
 import { PinTypes } from './objects/PinTypes';
 import { ExecutionScope } from './objects/ExecutionScope';
-import { CallableParameter, ComponentPin, ComponentPinNet, ValueType } from './objects/types';
+import { CallableParameter, ComponentPin, ComponentPinNet, 
+    FunctionDefinedParameter, ValueType } from './objects/types';
 import { Logger } from './logger';
 import { ComponentTypes } from './globals';
 
@@ -465,34 +466,33 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitFunction_args_expr(ctx: Function_args_exprContext) {
+    visitFunction_args_expr(ctx: Function_args_exprContext):
+        FunctionDefinedParameter[] {
+
         const defaultValuesProvided = ctx.value_expr_list();
         // The last <defaultValuesProvided> IDs have default values
         const IDs = ctx.ID_list(); // Do in reverse
 
         const boundary = IDs.length - defaultValuesProvided.length;
 
-        const argumentNames = [];
-
-        IDs.forEach((id, index) => {
+        return IDs.map((id, index) => {
             if (index >= boundary) {
-                const defaultValue = this.visit(defaultValuesProvided[index-boundary]);
-                argumentNames.push([id.getText(), defaultValue])
+                const defaultValue =
+                    this.visit(defaultValuesProvided[index - boundary]);
+                return [id.getText(), defaultValue];
             } else {
-                argumentNames.push([id.getText()]);
+                return [id.getText()];
             }
         });
-
-        return argumentNames;
     }
 
     visitFunction_def_expr(ctx: Function_def_exprContext) {
         const functionName = ctx.ID().getText();
 
         // These are the defined arguments for the function
-        let functionArgs: string[] = [];
+        let funcDefinedParameters: FunctionDefinedParameter[] = [];
         if (ctx.function_args_expr()) {
-            functionArgs = this.visit(ctx.function_args_expr());
+            funcDefinedParameters = this.visit(ctx.function_args_expr());
         }
 
         const executionStack = this.executionStack;
@@ -538,12 +538,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             // Add the execution context to the end of the execution stack
             executionStack.push(newExecutor);
 
-            // setup the params in the execution scope if there are any function arguments
-            if (functionArgs) {
+            // Setup the params in the execution scope if there 
+            // are any function parameters
+            if (funcDefinedParameters) {
 
                 // Check if the arguments match up
-                for (let i = 0; i < functionArgs.length; i++) {
-                    const tmpFuncArg = functionArgs[i];
+                for (let i = 0; i < funcDefinedParameters.length; i++) {
+                    const tmpFuncArg = funcDefinedParameters[i];
 
                     if (i < passedInArgs.length) {
                         const tmpPassedInArgs = passedInArgs[i];
