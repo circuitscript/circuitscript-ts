@@ -48,6 +48,21 @@ print(test1(1,2,3))
 
         expect(visitor.printStream[0]).toBe(6);
     });
+
+    test('double dot syntax', async () => {
+        // Check that the double dot syntax works for 'place' parameter
+        const {hasError, visitor} = await runScript(script5);
+        expect(hasError).toBe(false);
+
+        visitor.annotateComponents();
+        const instances = visitor.dumpInstances();
+
+        const item1 = findItem(instances, 'res', 'R1', 'numeric:10k');
+        expect(item1.parameters.get('place')).toBe(false);
+
+        const item2 = findItem(instances, 'res', 'R2', 'numeric:20k');
+        expect(item2.parameters.get('place')).toBe(true);
+    });
 });
 
 
@@ -190,4 +205,20 @@ branch:
     wire down 20
     to gnd
 
+`;
+
+const script5 = `
+import lib
+at net("5V")
+wire down 20
+
+add res(10k)
+..place = false
+
+wire down 20
+
+add res(20k)
+..place = true
+wire down 20
+to gnd
 `
