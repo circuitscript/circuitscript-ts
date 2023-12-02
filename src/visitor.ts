@@ -52,8 +52,8 @@ import {
 import { PinDefinition, PinIdType } from './objects/PinDefinition';
 import { PinTypes } from './objects/PinTypes';
 import { ExecutionScope } from './objects/ExecutionScope';
-import { CallableParameter, ComponentPin, ComponentPinNet, 
-    FunctionDefinedParameter, ValueType } from './objects/types';
+import { CFunctionResult, CallableParameter, ComplexType, ComponentPin, 
+    ComponentPinNet, FunctionDefinedParameter, ValueType } from './objects/types';
 import { Logger } from './logger';
 import { ComponentTypes } from './globals';
 
@@ -128,10 +128,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return returnList;
     }
 
-    visitAssignment_expr(ctx: Assignment_exprContext) {
+    visitAssignment_expr(ctx: Assignment_exprContext): ComplexType {
         const variableName = ctx.ID().getText();
 
-        const value = this.visit(ctx.data_expr());
+        const value = this.visit(ctx.data_expr()) as ComplexType;
         if (this.getExecutor().hasFunction(variableName)) {
             throw (
                 "Cannot have variable or instance named as function name '" +
@@ -141,6 +141,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         if (value instanceof ClassComponent) {
+            // If value is a class component, then update the instance name
             const instances = this.getExecutor().scope.instances;
             const tmpComponent: ClassComponent = value;
 
@@ -153,9 +154,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             instances.set(variableName, tmpComponent);
 
             this.getExecutor().print(
-                `assigned '${variableName}' to new ClassComponent`,
+                `assigned '${variableName}' to ClassComponent`,
             );
         } else {
+            // Otherwise, assign variable name to value
             this.getExecutor().scope.variables.set(variableName, value);
         }
 
@@ -229,7 +231,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             this.getExecutor().toComponent(component, pin, true);
         });
 
-        return this.getExecutor().getPoint();
+        return this.getExecutor().getCurrentPoint();
     }
 
     visitComponent_select_expr(ctx: Component_select_exprContext): ComponentPin {
@@ -262,7 +264,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         });
 
         this.getExecutor().exitBranches();
-        return this.getExecutor().getPoint();
+        return this.getExecutor().getCurrentPoint();
     }
 
     visitBreak_keyword(): number {
@@ -275,7 +277,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return -1;
     }
 
-    visitCreate_component_expr(ctx: Create_component_exprContext): Component {
+    visitCreate_component_expr(ctx: Create_component_exprContext): ClassComponent {
         const properties = new Map<string, any>();
 
         ctx.property_expr_list().forEach((item) => {
@@ -382,8 +384,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitDataExpr(ctx: DataExprContext) {
-        let value : ValueType | ClassComponent;
+    visitDataExpr(ctx: DataExprContext): ComplexType {
+        let value : ComplexType;
 
         if (ctx.value_expr()) {
             value = this.visit(ctx.value_expr()) as ValueType;
@@ -396,7 +398,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 value = scope.instances.get(idName) as ClassComponent;
                 
             } else if (scope.variables.has(idName)) {
-                value = scope.variables.get(idName) as (ClassComponent | ValueType);
+                value = scope.variables.get(idName) as ComplexType;
 
             } else if (this.pinTypesList.indexOf(idName) !== -1) {
                 // Not sure if just returning the string is enough...
@@ -406,13 +408,18 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             }
 
         } else if (ctx.function_call_expr()) {
-            const functionCallReturn = this.visit(ctx.function_call_expr());
+            const functionCallReturn: [functionName: string, result: CFunctionResult] =
+                this.visit(ctx.function_call_expr());
+
             // This is the returned component from the function call
-            value = functionCallReturn[2];
+            value = functionCallReturn[1][1] as ComplexType
+
         } else if (ctx.assignment_expr()) {
-            value = this.visit(ctx.assignment_expr());
+            value = this.visit(ctx.assignment_expr()) as ComplexType;
+
         } else if (ctx.create_component_expr()) {
-            value = this.visit(ctx.create_component_expr());
+            value = this.visit(ctx.create_component_expr()) as ClassComponent;
+        
         }
 
         return value;
@@ -444,9 +451,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitMultiplyExpr(ctx: MultiplyExprContext) {
-        const value1 = this.visit(ctx.data_expr(0));
-        const value2 = this.visit(ctx.data_expr(1));
+    visitMultiplyExpr(ctx: MultiplyExprContext): number {
+        const value1 = this.visit(ctx.data_expr(0)) as number;
+        const value2 = this.visit(ctx.data_expr(1)) as number;
 
         if (ctx.Multiply()) {
             return value1 * value2;
@@ -455,9 +462,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitAdditionExpr(ctx: AdditionExprContext) {
-        const value1 = this.visit(ctx.data_expr(0));
-        const value2 = this.visit(ctx.data_expr(1));
+    visitAdditionExpr(ctx: AdditionExprContext): number {
+        const value1 = this.visit(ctx.data_expr(0)) as number;
+        const value2 = this.visit(ctx.data_expr(1)) as number;
 
         if (ctx.Addition()) {
             return value1 + value2;
@@ -486,7 +493,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         });
     }
 
-    visitFunction_def_expr(ctx: Function_def_exprContext) {
+    visitFunction_def_expr(ctx: Function_def_exprContext): void {
         const functionName = ctx.ID().getText();
 
         // These are the defined arguments for the function
@@ -513,8 +520,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return null;
         };
 
-        const __runFunc = (passedInArgs:[]) => {
-            // Create a new execution context, so that the commands are executed only
+        const __runFunc = (passedInParameters:CallableParameter[]): [
+            executionContext: ExecutionContext, 
+            result: ComplexType | null] => {
+            
+                // Create a new execution context, so that the commands are executed only
             // within this context. Components and nets will be local to this context for now.
 
             const executionContextName =
@@ -540,47 +550,15 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             // Setup the params in the execution scope if there 
             // are any function parameters
-            if (funcDefinedParameters) {
 
-                // Check if the arguments match up
-                for (let i = 0; i < funcDefinedParameters.length; i++) {
-                    const tmpFuncArg = funcDefinedParameters[i];
+            this.setupDefinedParameters(
+                functionName,
+                funcDefinedParameters,
+                passedInParameters,
+                newExecutor
+            );
 
-                    if (i < passedInArgs.length) {
-                        const tmpPassedInArgs = passedInArgs[i];
-
-                        if (tmpPassedInArgs[0] === 'position') {
-                            // If value is passed in as function parameter, then
-                            // use it in the scope.
-                            const variableName = tmpFuncArg[0];
-                            newExecutor.print(
-                                'set variable in scope, var name: ',
-                                variableName,
-                            );
-                            newExecutor.scope.variables.set(
-                                variableName,
-                                tmpPassedInArgs[2],
-                            );
-                        }
-                    } else if (tmpFuncArg.length === 2) {
-                        // Value was not provided to function, but a default 
-                        // value is provided.
-                        const variableName = tmpFuncArg[0];
-                        const defaultValue = tmpFuncArg[1];
-                        newExecutor.print(
-                            'set variable in scope, var name: ',
-                            variableName,
-                        );
-                        newExecutor.scope.variables.set(
-                            variableName, defaultValue,
-                        );
-                    } else {
-                        throw `Invalid arguments for function '${functionName}'`;
-                    }
-                }
-            }
-
-            let returnValue = null;
+            let returnValue: ComplexType | null = null;
 
             // Execute the expressions within the context
             const expressionList = ctx.function_expr_list();
@@ -597,9 +575,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             // Function execution is completed, get the last executor
             const lastExecution = executionStack.pop();
-
-            // self.dump_scope(last_execution.scope)
-
+            
             // Merge what ever was created in the scope with the outer scope
             const nextLastExecution = executionStack[executionStack.length - 1];
             nextLastExecution.mergeScope(
@@ -614,15 +590,64 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().createFunction(functionName, __runFunc);
     }
 
-    visitFunction_return_expr(ctx: Function_return_exprContext) {
-        this.getExecutor().print('return from function');
-        const returnValue = this.visit(ctx.data_expr());
+    private setupDefinedParameters(
+        functionName: string,
+        funcDefinedParameters: FunctionDefinedParameter[], 
+        passedInParameters: CallableParameter[], 
+        executor: ExecutionContext): void {
+        
+        // Check if the arguments match up
+        for (let i = 0; i < funcDefinedParameters.length; i++) {
+            const tmpFuncArg = funcDefinedParameters[i];
 
-        this.getExecutor().stopFurtherExpressions = true;
-        this.getExecutor().returnValue = returnValue;
+            if (i < passedInParameters.length) {
+                const tmpPassedInArgs = passedInParameters[i];
+
+                if (tmpPassedInArgs[0] === 'position') {
+                    // If value is passed in as function parameter, then
+                    // use it in the scope.
+                    const variableName = tmpFuncArg[0];
+                    executor.print(
+                        'set variable in scope, var name: ',
+                        variableName,
+                    );
+                    executor.scope.variables.set(
+                        variableName,
+                        tmpPassedInArgs[2],
+                    );
+                }
+            } else if (tmpFuncArg.length === 2) {
+                // Value was not provided to function, but a default 
+                // value is provided.
+                const variableName = tmpFuncArg[0];
+                const defaultValue = tmpFuncArg[1];
+                executor.print(
+                    'set variable in scope, var name: ',
+                    variableName,
+                );
+                executor.scope.variables.set(
+                    variableName, defaultValue,
+                );
+            } else {
+                throw `Invalid arguments for function '${functionName}'`;
+            }
+        }
     }
 
-    visitFunction_call_expr(ctx: Function_call_exprContext) {
+    visitFunction_return_expr(ctx: Function_return_exprContext): ComplexType {
+        const executor = this.getExecutor();
+        executor.print('return from function');
+        const returnValue = this.visit(ctx.data_expr()) as ComplexType;
+
+        executor.stopFurtherExpressions = true;
+        executor.returnValue = returnValue;
+
+        return returnValue;
+    }
+
+    visitFunction_call_expr(ctx: Function_call_exprContext):
+        [functionName: string, result: CFunctionResult] {
+
         this.getExecutor().printPoint();
 
         let parameters: CallableParameter[] = [];
@@ -631,12 +656,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         const functionName = ctx.ID().getText();
-        const [executionContext, returnResult] =
+        const executionResult =
             this.getExecutor().callFunction(functionName, parameters);
 
         this.getExecutor().printPoint();
 
-        return [executionContext, functionName, returnResult];
+        return [functionName, executionResult];
     }
 
     visitPin_select_expr2(ctx: Pin_select_expr2Context): string | number {
@@ -647,15 +672,17 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitAt_block_pin_expr(ctx: At_block_pin_exprContext) {
+    visitAt_block_pin_expr(ctx: At_block_pin_exprContext): ComponentPin {
         const atPin: number | string = this.visit(ctx.pin_select_expr2());
 
-        const currentComponent = this.getExecutor().scope.currentComponent;
-        const currentPin = this.getExecutor().scope.currentPin;
+        const executor = this.getExecutor();
 
-        this.getExecutor().atComponent(currentComponent, atPin, true);
+        const currentComponent = executor.scope.currentComponent;
+        const currentPin = executor.scope.currentPin;
 
-        this.getExecutor().print('at block pin expressions');
+        executor.atComponent(currentComponent, atPin, true);
+
+        executor.print('at block pin expressions');
 
         if (ctx.at_block_pin_expression_simple()) {
             this.visit(ctx.at_block_pin_expression_simple());
@@ -663,36 +690,39 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             this.visit(ctx.at_block_pin_expression_complex());
         }
 
-        this.getExecutor().print('end at block pin expressions');
+        executor.print('end at block pin expressions');
 
         // Go back to the original position
-        this.getExecutor().atComponent(currentComponent, currentPin);
+        return executor.atComponent(currentComponent, currentPin);
     }
 
-    visitAt_block(ctx: At_blockContext) {
-        this.getExecutor().print('entering at block');
+    visitAt_block(ctx: At_blockContext): ComponentPin {
+        const executor = this.getExecutor();
+        executor.print('entering at block');
 
         this.visit(ctx.at_component_expr());
 
-        const currentComponent = this.getExecutor().scope.currentComponent;
-        const currentPin = this.getExecutor().scope.currentPin;
+        const currentComponent = executor.scope.currentComponent;
+        const currentPin = executor.scope.currentPin;
 
-        this.getExecutor().scope.indentLevel += 1;
+        executor.scope.indentLevel += 1;
 
         ctx.at_block_expressions_list().forEach(expression => {
             this.visit(expression);
         });
 
-        this.getExecutor().scope.indentLevel -= 1;
+        executor.scope.indentLevel -= 1;
 
         // Once all done, then restore
-        this.getExecutor().scope.currentComponent = currentComponent;
-        this.getExecutor().scope.currentPin = currentPin;
+        executor.scope.currentComponent = currentComponent;
+        executor.scope.currentPin = currentPin;
 
-        this.getExecutor().print('leaving at block');
+        executor.print('leaving at block');
+
+        return executor.getCurrentPoint();
     }
 
-    visitAt_block_pin_expression_simple(ctx: At_block_pin_expression_simpleContext) {
+    visitAt_block_pin_expression_simple(ctx: At_block_pin_expression_simpleContext): void {
         if (ctx.expression()) {
             // Handle any expressions within
             this.visit(ctx.expression());
@@ -702,10 +732,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitAt_block_pin_expression_complex(ctx: At_block_pin_expression_complexContext) {
+    visitAt_block_pin_expression_complex(ctx: At_block_pin_expression_complexContext): ComponentPin {
         ctx.expression_list().forEach(item => {
             this.visit(item);
         })
+
+        return this.getExecutor().getCurrentPoint();
     }
 
     visitWire_expr(ctx: Wire_exprContext): void {
@@ -769,9 +801,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().setCurrentComponentStyle(styles);
     }
 
-    visitPoint_expr(ctx: Point_exprContext): void {
+    visitPoint_expr(ctx: Point_exprContext): ComponentPin {
         const ID = ctx.ID();
-        this.getExecutor().addPoint(ID.toString());
+        return this.getExecutor().addPoint(ID.getText());
     }
 
     visitImport_expr(ctx: Import_exprContext): void {
@@ -906,10 +938,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     private prepareStringValue(value: string): string {
         return value.slice(1, value.length - 1);
-    }
-
-    private parseIntegerValue(token: TerminalNode): number {
-        return Number(token.toString());
     }
 
     print(...params: any[]): void {

@@ -156,7 +156,7 @@ export class ExecutionContext {
         return tmpName;
     }
 
-    getPoint(): ComponentPin {
+    getCurrentPoint(): ComponentPin {
         return [this.scope.currentComponent, this.scope.currentPin];
     }
 
@@ -249,7 +249,7 @@ export class ExecutionContext {
             type?: string,
             width?: number
         }
-    ): Component {
+    ): ClassComponent {
 
         const numPins = pins.length;
         const component = new ClassComponent(
@@ -340,7 +340,7 @@ export class ExecutionContext {
 
         this.printPoint();
 
-        return this.getPoint();
+        return this.getCurrentPoint();
     }
 
     toComponent(
@@ -424,7 +424,7 @@ export class ExecutionContext {
         pinId: number | null,
         addSequence = false,
         createNetComponent=true,
-    ): void {
+    ): ComponentPin {
         this.print('at component');
         this.scope.currentComponent = component;
 
@@ -453,6 +453,8 @@ export class ExecutionContext {
         }
 
         this.printPoint();
+
+        return this.getCurrentPoint();
     }
 
     enterBranches(): void {
@@ -598,7 +600,7 @@ export class ExecutionContext {
 
     callFunction(
         functionName: string,
-        functionParams: CallableParameter[] = [],
+        functionParams: CallableParameter[],
     ): CFunctionResult {
         let __runFunc: CFunction | null = null;
 
@@ -886,17 +888,19 @@ export class ExecutionContext {
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
     }
 
-    addPoint(pointId: string): void {
-        if (this.scope.instances.has(pointId)){
-            this.print('Warning: ' + pointId +' is being redefined');
+    addPoint(pointId: string): ComponentPin {
+        if (this.scope.instances.has(pointId)) {
+            this.print('Warning: ' + pointId + ' is being redefined');
         }
-        
+
         const componentPoint = ClassComponent.simple("point." + pointId, 1, "point");
         componentPoint.displayProp = "point";
         componentPoint.typeProp = ComponentTypes.point;
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, true);
+
+        return this.getCurrentPoint();
     }
 
     setProperty(nameWithProp: string, value: any): void {
