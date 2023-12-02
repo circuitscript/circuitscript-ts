@@ -1,5 +1,5 @@
 import { ExecutionContext } from '../execute';
-import { ClassComponent } from './Component';
+import { ClassComponent } from './ClassComponent';
 import { Net } from './Net';
 import { NumericValue, PercentageValue, PinBlankValue } from './ParamDefinition';
 

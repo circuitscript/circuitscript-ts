@@ -1,6 +1,6 @@
 import lodash from 'lodash';
 
-import { ClassComponent } from './Component';
+import { ClassComponent } from './ClassComponent';
 import { Net } from './Net';
 import { CFunction, ComponentPinNet, ComponentPinNetPair, ValueType } from './types';
 import { LayoutDirection } from '../globals';

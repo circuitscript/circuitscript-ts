@@ -41,7 +41,7 @@ import {
     Wire_exprContext,
 } from './antlr/CircuitScriptParser';
 import { ExecutionContext } from './execute';
-import { ClassComponent } from './objects/Component';
+import { ClassComponent } from './objects/ClassComponent';
 import {
     NumericValue,
     ParamDefinition,

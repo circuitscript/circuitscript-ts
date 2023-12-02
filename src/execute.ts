@@ -1,7 +1,7 @@
 import lodash from 'lodash';
 
 import { ComponentTypes, GlobalNames, ParamKeys } from './globals';
-import { ClassComponent } from './objects/Component';
+import { ClassComponent } from './objects/ClassComponent';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';

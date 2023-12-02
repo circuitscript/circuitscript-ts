@@ -1,7 +1,7 @@
 import graphlib from '@dagrejs/graphlib';
 
 import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion } from "./draw_symbols";
-import { ClassComponent } from "./objects/Component";
+import { ClassComponent } from "./objects/ClassComponent";
 import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
 import { WireSegment } from './objects/Wire';
