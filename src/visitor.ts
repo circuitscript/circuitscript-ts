@@ -1,4 +1,4 @@
-import { ParseTreeVisitor, TerminalNode } from 'antlr4';
+import { ParseTreeVisitor } from 'antlr4';
 import {
     Add_component_exprContext,
     AdditionExprContext,
@@ -11,7 +11,6 @@ import {
     BinaryOperatorExprContext,
     Blank_exprContext,
     Branch_blocksContext,
-    Break_keywordContext,
     Component_select_exprContext,
     Create_component_exprContext,
     DataExprContext,
@@ -42,7 +41,7 @@ import {
     Wire_exprContext,
 } from './antlr/CircuitScriptParser';
 import { ExecutionContext } from './execute';
-import { ClassComponent, Component } from './objects/Component';
+import { ClassComponent } from './objects/Component';
 import {
     NumericValue,
     ParamDefinition,
@@ -1069,7 +1068,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     private resolveNets(
         scope: ExecutionScope,
-        instance: Component,
+        instance: ClassComponent,
     ): { pin: PinDefinition; netName: string, netBaseName: string }[] {
         // Returns the list of nets that the component pins are
         // connected to.

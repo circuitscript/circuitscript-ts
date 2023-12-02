@@ -1,7 +1,8 @@
 import { PinDefinition, PinIdType } from './PinDefinition';
 import { PinTypes } from './PinTypes';
 
-export class Component {
+export class ClassComponent {
+
     // A component has an instance_name to identify it
     // num_pins: The maximum number of pins that are avaible from this component
     // Note: the pin number starts from 1
@@ -14,9 +15,30 @@ export class Component {
     // Maps pin indexes to the pin definition
     pins: Map<number, PinDefinition> = new Map();
 
-    constructor(instanceName: string, numPins = 1) {
+    className: string;
+
+    // For nets, labels and gnds, this can be used to identify different
+    // copies of the same symbol on the schematic
+    _copyID?: number;
+
+    // This determines how pins are arrange on the component/symbol.
+    arrangeProps: Map<string, number[]> | null = null;
+
+    // Used to identify what graphic to draw for this symbol
+    displayProp: string | null = null;
+
+    widthProp: number | null = null;
+
+    typeProp: string | null = null;
+
+    styles: { [key: string]: number | string } = {};
+
+    assignedRefDes: string | null = null;
+
+    constructor(instanceName: string, numPins: number, className: string) {
         this.instanceName = instanceName;
         this.numPins = numPins;
+        this.className = className;
     }
 
     setupPins(): void {
@@ -104,33 +126,6 @@ export class Component {
 
     toString(): string {
         return this.instanceName;
-    }
-}
-
-export class ClassComponent extends Component {
-    className: string;
-
-    // For nets, labels and gnds, this can be used to identify different
-    // copies of the same symbol on the schematic
-    _copyID?: number;
-
-    // This determines how pins are arrange on the component/symbol.
-    arrangeProps: Map<string, number[]> | null = null;
-
-    // Used to identify what graphic to draw for this symbol
-    displayProp: string | null = null;
-
-    widthProp: number | null = null;
-
-    typeProp: string | null = null;
-
-    styles: { [key: string]: number | string } = {};
-
-    assignedRefDes: string | null = null;
-
-    constructor(instanceName: string, numPins: number, className: string) {
-        super(instanceName, numPins);
-        this.className = className;
     }
 
     static simple(
