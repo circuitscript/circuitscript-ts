@@ -1,5 +1,3 @@
-import lodash from 'lodash';
-
 import { ComponentTypes, GlobalNames, ParamKeys } from './globals';
 import { ClassComponent } from './objects/ClassComponent';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
@@ -817,7 +815,7 @@ export class ExecutionContext {
             }
 
             const idNum = this.scope.copyIDs.get(component.instanceName);
-            sequenceComponent = lodash.cloneDeep(component);
+            sequenceComponent = component.clone();
 
             // For now, only allow gnd symbols to create new instances
             // automatically.

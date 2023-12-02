@@ -15,6 +15,7 @@ export class ClassComponent {
     // Maps pin indexes to the pin definition
     pins: Map<number, PinDefinition> = new Map();
 
+    // The cached values are used for easier comparison/equality check.
     _cachedPins: string;
     _cachedParams: string;
 
@@ -59,7 +60,7 @@ export class ClassComponent {
             );
         }
 
-        this._cachedPins = JSON.stringify(Object.fromEntries(this.pins));
+        this.refreshPinsCache();
     }
 
     getDefaultPin(): number {
@@ -127,6 +128,15 @@ export class ClassComponent {
             JSON.stringify(Object.fromEntries(this.parameters));
     }
 
+    private refreshPinsCache(): void {
+        this._cachedPins = JSON.stringify(Object.fromEntries(this.pins));
+    }
+
+    refreshCache(): void {
+        this.refreshParamCache();
+        this.refreshPinsCache();
+    }
+
     getParam(key: string): number | string {
         if (this.parameters.has(key)) {
             return this.parameters.get(key);
@@ -150,7 +160,8 @@ export class ClassComponent {
     }
 
     isEqual(other: ClassComponent): boolean {
-        // Use manual comparison as this is faster
+        // Use manual comparison as this is faster than lodash.
+        // Make sure that all important props are added.
         return this.instanceName === other.instanceName 
             && this.numPins === other.numPins
             && this.className === other.className
@@ -161,5 +172,32 @@ export class ClassComponent {
             && this.typeProp === other.typeProp
             && this._cachedPins === other._cachedPins
             && this._cachedParams === other._cachedParams;
+    }
+
+    clone(): ClassComponent {
+        // returns new copy
+        const component = new ClassComponent(
+            this.instanceName, this.numPins, this.className);
+
+        component._copyID = this._copyID;
+        component.arrangeProps = this.arrangeProps;
+        component.displayProp = this.displayProp;
+        component.widthProp = this.widthProp;
+        component.typeProp = this.typeProp;
+
+        for (const [key, value] of this.parameters) {
+            component.parameters.set(key, value);
+        }
+
+        for (const [key, value] of this.pins) {
+            component.pins.set(key, value);
+        }
+
+        for (const key in this.styles) {
+            component.styles[key] = this.styles[key];
+        }
+
+        component.refreshCache();
+        return component;
     }
 }
