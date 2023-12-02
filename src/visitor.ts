@@ -472,11 +472,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitFunction_args_expr(ctx: Function_args_exprContext): string[] {
-        // Returns list of param names
+    visitFunction_args_expr(ctx: Function_args_exprContext) {
+        const defaultValuesProvided = ctx.value_expr_list();
+        // The last <defaultValuesProvided> IDs have default values
+        const IDs = ctx.ID_list(); // Do in reverse
+
+        const boundary = IDs.length - defaultValuesProvided.length;
+
         const argumentNames = [];
-        ctx.ID_list().forEach((item) => {
-            argumentNames.push(item.toString());
+
+        IDs.forEach((id, index) => {
+            if (index >= boundary) {
+                const defaultValue = this.visit(defaultValuesProvided[index-boundary]);
+                argumentNames.push([id.getText(), defaultValue])
+            } else {
+                argumentNames.push([id.getText()]);
+            }
         });
 
         return argumentNames;
@@ -486,7 +497,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const functionName = ctx.ID().toString();
 
         // These are the defined arguments for the function
-        let functionArgs: string[] | null = null;
+        let functionArgs: string[] = [];
         if (ctx.function_args_expr()) {
             functionArgs = this.visit(ctx.function_args_expr());
         }
@@ -509,7 +520,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return null;
         };
 
-        const __runFunc = (passedInArgs) => {
+        const __runFunc = (passedInArgs:[]) => {
             // Create a new execution context, so that the commands are executed only
             // within this context. Components and nets will be local to this context for now.
 
@@ -536,30 +547,43 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             // setup the params in the execution scope if there are any function arguments
             if (functionArgs) {
-                if (passedInArgs === null) {
-                    throw `Function '${functionName}' expects arguments`;
-                }
 
-                passedInArgs.forEach((item) => {
-                    if (item[0] === 'position') {
-                        // Only parse position arguments for now
-                        const position = item[1];
+                // Check if the arguments match up
+                for (let i = 0; i < functionArgs.length; i++) {
+                    const tmpFuncArg = functionArgs[i];
 
-                        if (position < functionArgs.length) {
-                            const variableName = functionArgs[position];
+                    if (i < passedInArgs.length) {
+                        const tmpPassedInArgs = passedInArgs[i];
+
+                        if (tmpPassedInArgs[0] === 'position') {
+                            // If value is passed in as function parameter, then
+                            // use it in the scope.
+                            const variableName = tmpFuncArg[0];
                             newExecutor.print(
                                 'set variable in scope, var name: ',
                                 variableName,
                             );
                             newExecutor.scope.variables.set(
                                 variableName,
-                                item[2],
+                                tmpPassedInArgs[2],
                             );
-                        } else {
-                            throw 'Invalid function parameter';
                         }
+                    } else if (tmpFuncArg.length === 2) {
+                        // Value was not provided to function, but a default 
+                        // value is provided.
+                        const variableName = tmpFuncArg[0];
+                        const defaultValue = tmpFuncArg[1];
+                        newExecutor.print(
+                            'set variable in scope, var name: ',
+                            variableName,
+                        );
+                        newExecutor.scope.variables.set(
+                            variableName, defaultValue,
+                        );
+                    } else {
+                        throw `Invalid arguments for function '${functionName}'`;
                     }
-                });
+                }
             }
 
             let returnValue = null;
@@ -607,7 +631,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitFunction_call_expr(ctx: Function_call_exprContext) {
         this.getExecutor().printPoint();
 
-        let parameters = null;
+        let parameters = [];
         if (ctx.parameters()) {
             parameters = this.visit(ctx.parameters());
         }

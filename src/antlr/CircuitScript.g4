@@ -132,7 +132,11 @@ print_expr: 'print' '(' data_expr ')';
 function_def_expr: Define ID '(' function_args_expr? ')' ':' NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
 function_expr: expression | function_return_expr;
 
-function_args_expr: ID (',' ID)*;
+function_args_expr: 
+    ID (',' ID)* (',' ID '=' value_expr)*
+    | ID '=' value_expr (',' ID '=' value_expr)*
+    ;
+
 function_call_expr: ID '(' parameters? ')';
 function_return_expr: Return data_expr ;
 
