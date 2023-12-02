@@ -39,3 +39,11 @@ export class PercentageValue {
         return this.value.toString();
     }
 }
+
+export class PinBlankValue {
+    blank: number;
+
+    constructor(value: number) {
+        this.blank = value;
+    }
+}

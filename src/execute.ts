@@ -6,7 +6,7 @@ import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition, PortSide } from './objects/PinDefinition';
-import { CFunction, CFunctionResult } from './objects/types';
+import { CFunction, CFunctionResult, CallableParameter, ComponentPin } from './objects/types';
 import { Wire, WireSegment } from './objects/Wire';
 import { Logger } from './logger';
 
@@ -31,6 +31,9 @@ export class ExecutionContext {
     silent = false;
 
     logger: Logger;
+
+    __functionCache = {};
+
 
     constructor(
         name: string,
@@ -153,6 +156,10 @@ export class ExecutionContext {
         return tmpName;
     }
 
+    getPoint(): ComponentPin {
+        return [this.scope.currentComponent, this.scope.currentPin];
+    }
+
     private linkComponentPinNet(
         component1: ClassComponent,
         component1Pin: number,
@@ -224,7 +231,7 @@ export class ExecutionContext {
         // and change them to net1
         const scopeNets = this.scope.getNets();
         scopeNets.forEach(([component, pin, net]) => {
-            if (lodash.isEqual(net, net2)) {
+            if (Net.isSame(net, net2)) {
                 this.scope.setNet(component, pin, net1);
             }
         });
@@ -314,7 +321,7 @@ export class ExecutionContext {
         );
     }
 
-    addComponentExisting(component: ClassComponent, pin = null): void {
+    addComponentExisting(component: ClassComponent, pin = null): ComponentPin {
         let startPin;
 
         if (pin === null) {
@@ -332,6 +339,8 @@ export class ExecutionContext {
         this.atComponent(component, nextPin, true);
 
         this.printPoint();
+
+        return this.getPoint();
     }
 
     toComponent(
@@ -575,6 +584,7 @@ export class ExecutionContext {
 
     createFunction(functionName: string, __runFunc: CFunction): void {
         this.scope.functions.set(functionName, __runFunc);
+        this.__functionCache[functionName] = __runFunc;
         this.print(`defined new function '${functionName}'`);
     }
 
@@ -588,20 +598,29 @@ export class ExecutionContext {
 
     callFunction(
         functionName: string,
-        functionParams: any[] | null = null,
+        functionParams: CallableParameter[] = [],
     ): CFunctionResult {
         let __runFunc: CFunction | null = null;
 
-        if (this.hasFunction(functionName)) {
-            __runFunc = this.getFunction(functionName);
-        }
+        // Function is not cached yet, so look for it
+        if (this.__functionCache[functionName] === undefined){
+            if (this.hasFunction(functionName)) {
+                __runFunc = this.getFunction(functionName);
+            }
+    
+            // If the function does not exist in the current execution context,
+            // then try to search in the upper execution context
+            if (__runFunc === null && this.resolveFunction !== null) {
+                this.print(`searching for function ${functionName} in upper context`)
+                __runFunc = this.resolveFunction(functionName);
+            }
+            this.print('save function to cache:', functionName);
+            this.__functionCache[functionName] = __runFunc;
 
-        // If the function does not exist in the current execution context,
-        // then try to search in the upper execution context
-        if (__runFunc === null && this.resolveFunction !== null) {
-            this.print(`searching for function ${functionName} in upper context`)
-            __runFunc = this.resolveFunction(functionName);
-        }
+        } else {
+            this.print('found function in cache:', functionName);
+            __runFunc = this.__functionCache[functionName];
+        }        
 
         if (__runFunc !== null) {
             this.print(`call function '${functionName}'`);
@@ -629,8 +648,6 @@ export class ExecutionContext {
         const tmpInstances = childScope.instances;
         const tmpNets = childScope.getNets();
 
-        const tmpIgnore = [childScope.componentGnd, childScope.componentRoot];
-
         for (const [instanceName, component] of tmpInstances) {
             // Rename instance names with the addition of the namespace
             const newInstanceName = `${namespace}.${instanceName}`;
@@ -638,7 +655,8 @@ export class ExecutionContext {
 
             // Do not add root and gnd components of child scope to the
             // parent scope
-            if (tmpIgnore.indexOf(component) !== -1) {
+            if (component === childScope.componentGnd || 
+                component === childScope.componentRoot){
                 continue;
             }
 

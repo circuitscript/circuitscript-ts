@@ -2,7 +2,7 @@ import lodash from 'lodash';
 
 import { ClassComponent, Component } from './Component';
 import { Net } from './Net';
-import { CFunction, ComponentPinNet } from './types';
+import { CFunction, ComponentPinNet, ValueType } from './types';
 import { LayoutDirection } from '../globals';
 import { Wire, WireSegment } from './Wire';
 
@@ -14,7 +14,7 @@ export class ExecutionScope {
 
     functions: Map<string, CFunction> = new Map();
 
-    variables: Map<string, any> = new Map();
+    variables: Map<string, ValueType | ClassComponent> = new Map();
 
     branchStack: Map<number, any> = new Map();
 

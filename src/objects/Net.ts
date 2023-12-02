@@ -19,4 +19,11 @@ export class Net {
     toString(): string {
         return this.name;
     }
+
+    static isSame(netA: Net, netB: Net): boolean {
+        return netA.name === netB.name &&
+            netA.baseName === netB.baseName &&
+            netA.priority === netB.priority &&
+            netA.type === netB.type;
+    }
 }
