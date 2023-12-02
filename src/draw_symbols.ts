@@ -33,10 +33,21 @@ export abstract class SymbolGraphic {
 
     set angle(value: number) {
         this._angle = value;
-        this.refreshDrawing();
     }
 
-    abstract refreshDrawing(): void;
+    refreshDrawing(): void {
+        this.generateDrawing();
+        this.calculateSize();
+    }
+
+    calculateSize(): void {
+        const { width, height } = this.drawing.getBoundingBox();
+        this.width = width;
+        this.height = height;
+    }
+
+    // Subclasses should implement this
+    abstract generateDrawing(): void;
 
     size(): { width: number; height: number; } {
         return {
@@ -242,7 +253,7 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 
 export class SymbolPower extends SymbolGraphic {
 
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
 
@@ -254,17 +265,13 @@ export class SymbolPower extends SymbolGraphic {
                 { fontSize: 10, anchor: HorizontalAlign.Middle });
 
         this.drawing = drawing;
-
-        const bbox = drawing.getBoundingBox();
-        this.width = bbox.width;
-        this.height = bbox.height;
     }
 
 }
 
 export class SymbolGnd extends SymbolGraphic {
 
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
         drawing.addHLine(-15, 0, 30)
@@ -273,16 +280,12 @@ export class SymbolGnd extends SymbolGraphic {
             .addPin(0, 0, 0, -10, 1);
 
         this.drawing = drawing;
-        
-        const bbox = drawing.getBoundingBox();
-        this.width = bbox.width;
-        this.height = bbox.height;
     }
 }
 
 export class SymbolLabel extends SymbolGraphic {
 
-    refreshDrawing(): void {
+    generateDrawing(): void {
 
         const value = this.getLabelValue("value");
 
@@ -294,17 +297,13 @@ export class SymbolLabel extends SymbolGraphic {
             .addPin(0, 0, 0, 0, 1);
 
         this.drawing = drawing;
-
-        const bbox = drawing.getBoundingBox();
-        this.width = bbox.width;
-        this.height = bbox.height;
     }
 
 }
 
 export class SymbolRes extends SymbolGraphic {
 
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const width = 40;
         const height = 20;
 
@@ -328,17 +327,13 @@ export class SymbolRes extends SymbolGraphic {
             })
             ;
 
-        const bbox = drawing.getBoundingBox();
-        this.width = bbox.width;
-        this.height = bbox.height;
-
         this.drawing = drawing;
     }
 }
 
 export class SymbolCap extends SymbolGraphic {
 
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const width = 20;
         const height = 40;
 
@@ -363,17 +358,13 @@ export class SymbolCap extends SymbolGraphic {
             })
             ;
 
-        const bbox = drawing.getBoundingBox();
-        this.width = bbox.width;
-        this.height = bbox.height;
-
         this.drawing = drawing;
     }
 }
 
 export class SymbolDiode extends SymbolGraphic {
     
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const width = 20;
         const height = 20;
 
@@ -392,12 +383,7 @@ export class SymbolDiode extends SymbolGraphic {
                 fontSize: 10,
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Top,
-            })
-
-        const bbox = drawing.getBoundingBox();
-
-        this.width = bbox.width;
-        this.height = bbox.height;
+            });
 
         this.drawing = drawing;
     }
@@ -405,7 +391,7 @@ export class SymbolDiode extends SymbolGraphic {
 
 export class SymbolLED extends SymbolGraphic {
     
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const width = 20;
         const height = 20;
 
@@ -427,26 +413,18 @@ export class SymbolLED extends SymbolGraphic {
                 fontSize: 10,
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Top,
-            })
-
-        const bbox = drawing.getBoundingBox();
-
-        this.width = bbox.width;
-        this.height = bbox.height;
+            });
 
         this.drawing = drawing;
     }
 }
 
 export class SymbolPointHidden extends SymbolGraphic {
-    refreshDrawing(): void {
+    generateDrawing(): void {
         const drawing = new SymbolDrawing();
-
         drawing.addPin(0, 0, 0, 0, 1);
 
         this.drawing = drawing;
-        this.width = 0;
-        this.height = 0;
     }
 }
 
@@ -468,6 +446,9 @@ export class SymbolCustom extends SymbolGraphic {
 
     pins: SymbolPinLayout[] = [];
 
+    _cacheLeftPins: SymbolPinDefintion[];
+    _cacheRightPins: SymbolPinDefintion[];
+
     constructor(pinDefinition: SymbolPinDefintion[]) {
         super();
 
@@ -475,7 +456,7 @@ export class SymbolCustom extends SymbolGraphic {
         this.pinDefinition = pinDefinition;
     }
 
-    refreshDrawing(): void {
+    generateDrawing(): void {
         // Determine the size based on the definition
 
         const leftPins = this.pinDefinition.filter(item => {
@@ -553,10 +534,15 @@ export class SymbolCustom extends SymbolGraphic {
         });
 
         this.drawing = drawing;
+        this._cacheLeftPins = leftPins;
+        this._cacheRightPins = rightPins;
+    }
 
+    calculateSize(): void {
         // This width also includes the pin length
         this.width = this.bodyWidth + 2 * this.pinLength;
-        this.height = (1 + Math.max(leftPins.length, rightPins.length)) * this.pinSpacing;
+        this.height = (1 + Math.max(this._cacheLeftPins.length, 
+            this._cacheRightPins.length)) * this.pinSpacing;
     }
 
 }

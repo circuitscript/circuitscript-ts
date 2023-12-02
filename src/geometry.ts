@@ -155,11 +155,11 @@ export class Geometry {
 
         features.forEach(feature => {
             const box = feature.box;
-            box.xmin !== undefined && (minX = Math.min(minX, box.xmin));
-            box.ymin !== undefined && (minY = Math.min(minY, box.ymin));
+            minX = Math.min(minX, box.xmin);
+            minY = Math.min(minY, box.ymin);
 
-            box.xmax !== undefined && (maxX = Math.max(maxX, box.xmax));
-            box.ymax !== undefined && (maxY = Math.max(maxY, box.ymax));
+            maxX = Math.max(maxX, box.xmax);
+            maxY = Math.max(maxY, box.ymax);
         });
 
         return {

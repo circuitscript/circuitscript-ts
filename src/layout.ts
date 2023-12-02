@@ -34,12 +34,12 @@ export class LayoutEngine {
         return "[" + value + "]" + padding
     }
 
-    async runLayout(
+    runLayout(
         sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]
-    ): Promise<{ components: RenderComponent[], wires: RenderWire[], 
+    ): {components: RenderComponent[], wires: RenderWire[], 
         junctions: RenderJunction[], mergedWires: MergedWire[],
-        debugRects: BoundBox[] }> {
+        debugRects: BoundBox[]} {
     
         // Store rects for debugging bounds
         let debugRects: BoundBox[] = [];
@@ -47,9 +47,8 @@ export class LayoutEngine {
         const logNodesAndEdges = false;
     
         this.print('===== creating graph and populating with nodes =====');
-
         const graph = this.generateLayoutGraph(sequence, nets);
-
+        
         this.print('===== done populating graph =====');
         this.print('');
 
@@ -155,6 +154,8 @@ export class LayoutEngine {
             compound: true,
         });
 
+        this.print('sequence length:', sequence.length);
+
         // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
         for (let i = 0; i < sequence.length; i++) {
@@ -169,8 +170,10 @@ export class LayoutEngine {
                 // Size all elements first
                 const component = sequence[i][1] as ClassComponent;
                 const pin = sequence[i][2] as number;
+
+                const tmpInstanceName = getInstanceName(component);
     
-                if (!graph.hasNode(getInstanceName(component))) {
+                if (!graph.hasNode(tmpInstanceName)) {
                     let { displayProp = null, widthProp = null } = component;
                     let tmpSymbol: SymbolGraphic;
     
@@ -205,23 +208,21 @@ export class LayoutEngine {
                     // Draw symbol in memory to determine the size/bounds.
                     tmpSymbol.refreshDrawing();
     
-                    const tmpSize = tmpSymbol.size();
-                    const useWidth = tmpSize.width;
-                    const useHeight = tmpSize.height;
-    
+                    const { width: useWidth, height: useHeight } = tmpSymbol.size();
+
                     tmpComponent = new RenderComponent(component, useWidth, useHeight);
                     tmpComponent.symbol = tmpSymbol;
     
                     // Record the sequence number to determine priority
-                    graph.setNode(getInstanceName(component), [RenderItemType.Component, tmpComponent, i]);
+                    graph.setNode(tmpInstanceName, [RenderItemType.Component, tmpComponent, i]);
                 }
     
                 if (action === SequenceAction.To) {
-                    graph.setEdge(previousNode, getInstanceName(component),
-                        makeEdgeValue(previousNode, previousPin, getInstanceName(component), pin, i));
+                    graph.setEdge(previousNode, tmpInstanceName,
+                        makeEdgeValue(previousNode, previousPin, tmpInstanceName, pin, i));
                 }
     
-                previousNode = getInstanceName(component);
+                previousNode = tmpInstanceName
                 previousPin = pin;
     
             } else if (action === SequenceAction.Wire) {
