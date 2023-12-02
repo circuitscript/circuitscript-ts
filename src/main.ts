@@ -5,11 +5,12 @@ import path from 'path';
 
 import { MainVisitor } from './visitor';
 import { prepareSizing } from './sizing';
-import { LayoutEngine } from './layout2';
-import { generateSVG2 } from './render2';
+import { LayoutEngine } from './layout';
+import { generateSVG2 } from './render';
 import { SequenceAction } from './objects/ExecutionScope';
 import { parseFileWithVisitor } from './parser';
 import { generateKiCADNetList } from './export';
+import { SimpleStopwatch } from './utils';
 
 export default async function main(): Promise<void> {
     await prepareSizing();
@@ -104,16 +105,17 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     try {
         const layoutEngine = new LayoutEngine();
-        const time2 = new Date();
-        const graph = await layoutEngine.runLayout(sequence, nets);
+        const layoutTimer = new SimpleStopwatch();
 
-        const timeDiff = (new Date()) - time2;
-        console.log('Layout took:', timeDiff);
+        const graph = layoutEngine.runLayout(sequence, nets);
+
+        console.log('Layout took:', layoutTimer.lap());
 
         await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
 
-        const time3 = new Date();
+        const generateSvgTimer = new SimpleStopwatch();
         const svgOutput = generateSVG2(graph);
+        console.log('Render took:', generateSvgTimer.lap());
 
         fs.writeFile(outputSvgPath, svgOutput, (err) => {
             if (err) {
@@ -122,8 +124,6 @@ async function renderScript(scriptPath: string): Promise<void> {
                 console.log('saved to', outputSvgPath);
             }
         });
-
-        console.log('Render took:', (new Date()) - time3);
     } catch (err) {
         console.log('Failed to render:');
         console.log(err)

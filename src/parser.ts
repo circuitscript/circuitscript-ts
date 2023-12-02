@@ -5,19 +5,20 @@ import CircuitScriptParser from './antlr/CircuitScriptParser';
 
 import { MainVisitor } from './visitor';
 import { MainLexer } from './lexer';
+import { SimpleStopwatch } from './utils';
 
 export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
     const chars = new CharStream(data);
     const lexer = new MainLexer(chars);
 
-    const time0 = new Date();
+    const lexerTimer = new SimpleStopwatch();
 
     const tokens = new CommonTokenStream(lexer);
     tokens.fill();
 
-    const lexerTimeTaken = (new Date()).getTime() - time0.getTime();
+    const lexerTimeTaken = lexerTimer.lap();
 
-    const time1 = new Date();
+    const parserTimer = new SimpleStopwatch();
     const parser = new CircuitScriptParser(tokens);
     // Clear any existing error listeners and use the custom one only
     parser.removeErrorListeners();
@@ -36,7 +37,7 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
         hasError = true;
     }
 
-    const parserTimeTaken = (new Date()).getTime() - time1.getTime();
+    const parserTimeTaken = parserTimer.lap();
 
     // dumpTokens(tokens.tokens, lexer, data);
     
