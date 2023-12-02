@@ -1,5 +1,5 @@
-import { LayoutEngine } from "../src/layout2";
-import { generateSVG2 } from "../src/render2";
+import { LayoutEngine } from "../src/layout";
+import { generateSVG2 } from "../src/render";
 import { runScript } from "./helpers";
 
 describe('Render tests', () => {
