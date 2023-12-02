@@ -1,5 +1,3 @@
-import lodash from 'lodash';
-
 import { ClassComponent } from './ClassComponent';
 import { Net } from './Net';
 import { CFunction, ComponentPinNet, ComponentPinNetPair, ValueType } from './types';
@@ -58,21 +56,19 @@ export class ExecutionScope {
         return scope;
     }
 
-    hasNet(component: ClassComponent, pin: number): boolean {
-        const result = this.nets.find(([tmpComponent, tmpPin]) => {
-            // lodash isEqual is needed because deep equality is needed
-            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
+    private findNet(component: ClassComponent, pin: number): ComponentPinNetPair {
+        return this.nets.find(([tmpComponent, tmpPin]) => {
+            // Use manual equality, much faster than using lodash
+            return tmpComponent.isEqual(component) && tmpPin === pin;
         });
+    }
 
-        return result !== undefined;
+    hasNet(component: ClassComponent, pin: number): boolean {
+        return this.findNet(component, pin) !== undefined;
     }
 
     getNet(component: ClassComponent, pin: number): Net {
-        const result = this.nets.find(([tmpComponent, tmpPin]) => {
-            // lodash isEqual is needed because deep equality is needed
-            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
-        });
-
+        const result = this.findNet(component, pin);
         if (result) {
             return result[2]; // net
         }
@@ -81,10 +77,8 @@ export class ExecutionScope {
     }
 
     setNet(component: ClassComponent, pin: number, net: Net): void {
-        const result = this.nets.findIndex(([tmpComponent, tmpPin]) => {
-            // lodash isEqual is needed because deep equality is needed
-            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
-        });
+        const pair = this.findNet(component, pin);
+        const result = this.nets.indexOf(pair);
 
         if (result === -1) {
             this.nets.push([component, pin, net]);
@@ -94,10 +88,8 @@ export class ExecutionScope {
     }
 
     removeNet(component: ClassComponent, pin: number): void {
-        const result = this.nets.findIndex(([tmpComponent, tmpPin]) => {
-            // lodash isEqual is needed because deep equality is needed
-            return lodash.isEqual(component, tmpComponent) && tmpPin === pin;
-        });
+        const pair = this.findNet(component, pin);
+        const result = this.nets.indexOf(pair);
 
         if (result !== -1) {
             this.nets.splice(result, 1);

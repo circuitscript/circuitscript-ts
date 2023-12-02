@@ -15,6 +15,9 @@ export class ClassComponent {
     // Maps pin indexes to the pin definition
     pins: Map<number, PinDefinition> = new Map();
 
+    _cachedPins: string;
+    _cachedParams: string;
+
     className: string;
 
     // For nets, labels and gnds, this can be used to identify different
@@ -55,6 +58,8 @@ export class ClassComponent {
                 ),
             );
         }
+
+        this._cachedPins = JSON.stringify(Object.fromEntries(this.pins));
     }
 
     getDefaultPin(): number {
@@ -114,6 +119,12 @@ export class ClassComponent {
 
     setParam(key: string, value: number | string): void {
         this.parameters.set(key, value);
+        this.refreshParamCache();
+    }
+
+    private refreshParamCache(): void {
+        this._cachedParams = 
+            JSON.stringify(Object.fromEntries(this.parameters));
     }
 
     getParam(key: string): number | string {
@@ -136,5 +147,19 @@ export class ClassComponent {
         const component = new ClassComponent(instanceName, numPins, className);
         component.setupPins();
         return component;
+    }
+
+    isEqual(other: ClassComponent): boolean {
+        // Use manual comparison as this is faster
+        return this.instanceName === other.instanceName 
+            && this.numPins === other.numPins
+            && this.className === other.className
+            && this._copyID === other._copyID
+            && this.arrangeProps === other.arrangeProps
+            && this.displayProp === other.displayProp 
+            && this.widthProp === other.widthProp
+            && this.typeProp === other.typeProp
+            && this._cachedPins === other._cachedPins
+            && this._cachedParams === other._cachedParams;
     }
 }
