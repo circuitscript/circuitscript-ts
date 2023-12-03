@@ -222,15 +222,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         if (ctx.ID()){
-            // This can be used to modify the orientation of the component.
-            const addExtra = ctx.ID().getText();
-            if (this.acceptedDirections.indexOf(addExtra) !== -1){
-                // a valid direction
-                component.setParam('_addDirection', addExtra);
-                component.setParam('_addPin', pinValue);
-            } else {
-                throw "Invalid modifier for add";
-            }
+            this.setComponentOrientation(
+                component, pinValue, ctx.ID().getText());
         }
 
         return this.getExecutor().addComponentExisting(component, pinValue);
@@ -239,19 +232,35 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitAt_component_expr(ctx: At_component_exprContext): ComponentPin {
         const [component, pin] = this.visit(ctx.component_select_expr());
 
-        this.getExecutor().atComponent(component, pin, {
+        const currentPoint = this.getExecutor().atComponent(component, pin, {
             addSequence: true,
             cloneNetComponent: true
         });
-        return [component, pin];
+        
+        if (ctx.ID()){
+            // If there is ID specified, then it can only be for the 
+            // component orientation.
+            this.setComponentOrientation(currentPoint[0], 
+                currentPoint[1], ctx.ID().getText())
+        }
+        
+        return currentPoint;
     }
 
     visitTo_component_expr(ctx: To_component_exprContext): ComponentPin  {
+        let currentPoint: ComponentPin;
         ctx.component_select_expr_list().forEach((item) => {
             const [component, pin] = this.visit(item);
-            this.getExecutor().toComponent(component, pin, {
+            currentPoint = this.getExecutor().toComponent(component, pin, {
                 addSequence: true, cloneNetComponent: true});
         });
+
+        if (ctx.ID()){
+            // If there is ID specified, then it can only be for the 
+            // component orientation.
+            this.setComponentOrientation(currentPoint[0], 
+                currentPoint[1], ctx.ID().getText())
+        }
 
         return this.getExecutor().getCurrentPoint();
     }
@@ -413,8 +422,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             value = this.visit(ctx.value_expr()) as ValueType;
 
         } else if (ctx.ID()) {
+            const executor = this.getExecutor();
             const idName = ctx.ID().getText();
-            const scope = this.getExecutor().scope;
+            const scope = executor.scope;
+
+            let variableNotFound = false;
 
             if (scope.instances.has(idName)) {
                 value = scope.instances.get(idName) as ClassComponent;
@@ -425,7 +437,19 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             } else if (this.pinTypesList.indexOf(idName) !== -1) {
                 // Not sure if just returning the string is enough...
                 value = idName;
-            } else {
+                
+            } else if (executor.resolveVariable !== null) {
+                // Try to find the variable in the upper contexts
+                const foundVariable = executor.resolveVariable(idName);
+
+                if (foundVariable.found) {
+                    value = foundVariable.value;
+                } else {
+                    variableNotFound = true;
+                }
+            }
+
+            if (variableNotFound){
                 throw "Could not find variable '" + idName + "'";
             }
 
@@ -542,6 +566,32 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return null;
         };
 
+        const resolveVariable = (variableName: string) => {
+            this.print('find variable', variableName);
+            const reversed = [...executionStack].reverse();
+
+            for (let i = 0; i < reversed.length; i++) {
+                const context = reversed[i];
+                if (context.scope.variables.has(variableName)) {
+                    return {
+                        found: true,
+                        value: context.scope.variables.get(variableName),
+                        type: 'value',
+                    };
+                } else if (context.scope.instances.has(variableName)){
+                    return {
+                        found: true,
+                        value: context.scope.instances.get(variableName),
+                        type: 'instance',
+                    }
+                }
+            }
+
+            return {
+                found: false
+            } 
+        }
+
         const __runFunc = (passedInParameters:CallableParameter[]): [
             executionContext: ExecutionContext, 
             result: ComplexType | null] => {
@@ -566,6 +616,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             );
 
             newExecutor.resolveFunction = resolveFunction;
+            newExecutor.resolveVariable = resolveVariable;
 
             // Add the execution context to the end of the execution stack
             executionStack.push(newExecutor);
@@ -1117,6 +1168,19 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         return result;
+    }
+
+    private setComponentOrientation(component: ClassComponent, pin: number,
+        orientation: string): void {
+
+        // This can be used to modify the orientation of the component.
+        if (this.acceptedDirections.indexOf(orientation) !== -1) {
+            // a valid direction
+            component.setParam('_addDirection', orientation);
+            component.setParam('_addPin', pin);
+        } else {
+            throw "Invalid modifier for orientation";
+        }
     }
 }
 

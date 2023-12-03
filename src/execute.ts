@@ -16,7 +16,10 @@ export class ExecutionContext {
 
     scope: ExecutionScope;
 
-    resolveFunction: any = null;
+    resolveFunction: ((functionName:string) => any) | null = null;
+
+    // Resolves both variables and instances in upper contexts
+    resolveVariable: (variableName: string) => ({found: boolean, value?: any}) = null;
 
     // If true, then do no evaluate further expressions.
     // Used for function state control
@@ -342,7 +345,7 @@ export class ExecutionContext {
         options?: {
             addSequence?: boolean,
             cloneNetComponent?: boolean,
-        }): void {
+        }): ComponentPin {
         this.print('to component');
 
         const { addSequence = false, cloneNetComponent = false } = options ?? {};
@@ -417,6 +420,8 @@ export class ExecutionContext {
         }
 
         this.printPoint();
+
+        return this.getCurrentPoint();
     }
 
     atComponent(
