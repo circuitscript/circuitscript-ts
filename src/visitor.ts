@@ -249,7 +249,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitTo_component_expr(ctx: To_component_exprContext): ComponentPin  {
         ctx.component_select_expr_list().forEach((item) => {
             const [component, pin] = this.visit(item);
-            this.getExecutor().toComponent(component, pin, true);
+            this.getExecutor().toComponent(component, pin, {
+                addSequence: true, cloneNetComponent: true});
         });
 
         return this.getExecutor().getCurrentPoint();

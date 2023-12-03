@@ -18,6 +18,8 @@ describe('test parsing', () => {
         const {hasError, componentPinNets} = await runScript(script);
 
         expect(hasError).toBe(false);
+        console.log("here", componentPinNets);
+
         expect(componentPinNets).toStrictEqual(expected);
     });
 
@@ -64,7 +66,7 @@ print(test1(1,2,3))
         expect(item2.parameters.get('place')).toBe(true);
     });
 
-    test.only('net references are cloned in "at" command', async () => {
+    test('net references are cloned in "at" command', async () => {
         // Check that nets are cloned when referenced in 'at' commands
         const {hasError, visitor} = await runScript(script6);
         expect(hasError).toBe(false);
@@ -139,7 +141,8 @@ to gnd
 const expected2: ComponentPinNet[] = [
     ["gnd", "gnd", 1],
     ["gnd", "J1", 1],
-    ["gnd", "J1", 3]
+    ["gnd", "J1", 3],
+    ["gnd", "gnd:0", 1]
 ];
 
 const script3 = `

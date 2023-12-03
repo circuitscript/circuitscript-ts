@@ -324,7 +324,7 @@ export class ExecutionContext {
         const nextPin = component.getNextPinAfter(startPin);
 
         // Add to sequence
-        this.toComponent(component, startPin, true);
+        this.toComponent(component, startPin, {addSequence: true});
 
         this.print('move to next pin: ' + nextPin);
         this.atComponent(component, nextPin, {
@@ -339,9 +339,17 @@ export class ExecutionContext {
     toComponent(
         component: ClassComponent,
         pinId: number | null,
-        addSequence = false,
-    ): void {
+        options?: {
+            addSequence?: boolean,
+            cloneNetComponent?: boolean,
+        }): void {
         this.print('to component');
+
+        const { addSequence = false, cloneNetComponent = false } = options ?? {};
+
+        if (cloneNetComponent && this.isNetOnlyComponent(component)) {
+            component = this.cloneComponent(component);
+        }
 
         if (!(component instanceof ClassComponent)){
             throw "Not a valid component!";
@@ -392,8 +400,6 @@ export class ExecutionContext {
         this.scope.currentWireId = -1;
 
         if (addSequence) {
-            const sequenceComponent = this.prepareSequenceComponent(component);
-
             if (this.scope.sequence.length > 0) {
                 // Check if the previous entry is a wire
                 const [entryType, , segments]: [SequenceAction, number, WireSegment[]] = 
@@ -401,12 +407,13 @@ export class ExecutionContext {
                 
                 if (entryType === SequenceAction.Wire && isWireSegmentsEndAuto(segments)) {
                     segments[segments.length - 1].until = [
-                        sequenceComponent, pinId
+                        component, pinId
                     ];
                 }
             }
 
-            this.scope.sequence.push([SequenceAction.To, sequenceComponent, pinId, linkedNet.name]);
+            this.scope.sequence.push([SequenceAction.To, component, 
+                pinId, linkedNet.name]);
         }
 
         this.printPoint();
@@ -463,7 +470,8 @@ export class ExecutionContext {
     }
 
     private cloneComponent(component: ClassComponent): ClassComponent {
-        // This creates a clone from a given net component
+        // This creates a clone from a given net component, assume only
+        // has 1 pin
 
         let clonedComponent: ClassComponent = null;
 
@@ -476,13 +484,25 @@ export class ExecutionContext {
         const idNum = this.scope.copyIDs.get(component.instanceName);
         clonedComponent = component.clone();
         clonedComponent._copyID = idNum;
+        clonedComponent._copyFrom = component;
 
         // Set linkIDs to the next value to use
         this.scope.copyIDs.set(component.instanceName, idNum + 1);
 
+        const cloneInstanceName = component.instanceName + ':' + idNum;
+
         // Add the cloned component
-        this.scope.instances.set(component.instanceName+":" + idNum, 
+        this.scope.instances.set(cloneInstanceName, 
             clonedComponent);
+        clonedComponent.instanceName = cloneInstanceName;
+
+        // Link pin of cloned component onto the same net
+        this.linkComponentPinNet(
+            component, 1,
+            clonedComponent, 1
+        );
+
+        this.print('created clone of net component:', cloneInstanceName);
 
         return clonedComponent;
     }
@@ -548,7 +568,7 @@ export class ExecutionContext {
                 const [, [comp2, pin2]] = item;
 
                 this.atComponent(comp1, pin1, {addSequence: true});
-                this.toComponent(comp2, pin2, true);
+                this.toComponent(comp2, pin2, {addSequence: true});
             });
 
             this.scope.currentComponent = comp1;
@@ -928,7 +948,7 @@ export class ExecutionContext {
         componentPoint.typeProp = ComponentTypes.point;
 
         this.scope.instances.set(pointId, componentPoint);
-        this.toComponent(componentPoint, 1, true);
+        this.toComponent(componentPoint, 1, {addSequence: true});
 
         return this.getCurrentPoint();
     }
