@@ -9,6 +9,7 @@ describe('test parsing', () => {
         [1, "function to create component and branching"],
         [2, "nested branching, add with pin selected"],
         [3, "'at' and 'to' commands will clone net components"],
+        [4, "resolve instances in upper contexts"],
     ])('parse script - %d: %s', async (index, description) => {
         // Test only parsing, does not check the correctness of the 
         // parsed result!
@@ -17,6 +18,8 @@ describe('test parsing', () => {
         // define the script content before the test itself
         const [script, expected] = allScripts[index];
         const {hasError, componentPinNets} = await runScript(script);
+
+        console.log(componentPinNets);
 
         expect(hasError).toBe(false);
         expect(componentPinNets).toStrictEqual(expected);
@@ -218,6 +221,35 @@ const expected6: ComponentPinNet[] = [
     ['net_1.out', 'res_2.COMP_1_10k', 2]
 ];
 
+const script7 = `
+import lib
+
+v5v = net("5V")
+
+def tmp1():
+    at v5v
+    wire down 20
+    add res(10k)
+    wire down 20
+    to gnd
+
+tmp1()
+
+tmp1()`
+
+const expected7: ComponentPinNet[] = [
+    ['gnd', 'gnd', 1],
+    ['gnd', 'tmp1_0.gnd:0', 1],
+    ['gnd', 'tmp1_0.res_0.COMP_1_10k', 2],
+    ['gnd', 'tmp1_1.gnd:0', 1],
+    ['gnd', 'tmp1_1.res_1.COMP_1_10k', 2],
+    ['tmp1_0.NET_1', 'tmp1_0.v5v:0', 1],
+    ['tmp1_0.NET_1', 'tmp1_0.res_0.COMP_1_10k', 1],
+    ['tmp1_1.NET_1', 'v5v', 1],
+    ['tmp1_1.NET_1', 'tmp1_1.v5v:0', 1],
+    ['tmp1_1.NET_1', 'tmp1_1.res_1.COMP_1_10k', 1]
+];
+
 // Store in an array, so that it is accessible
 // during the test itself.
 const allScripts: [string, ComponentPinNet[]][] = [
@@ -225,6 +257,7 @@ const allScripts: [string, ComponentPinNet[]][] = [
     [script2, expected2],
     [script3, expected3],
     [script6, expected6],
+    [script7, expected7],
 ];
 
 
