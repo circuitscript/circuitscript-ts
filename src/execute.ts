@@ -327,7 +327,9 @@ export class ExecutionContext {
         this.toComponent(component, startPin, true);
 
         this.print('move to next pin: ' + nextPin);
-        this.atComponent(component, nextPin, true);
+        this.atComponent(component, nextPin, {
+            addSequence: true
+        });
 
         this.printPoint();
 
@@ -413,10 +415,18 @@ export class ExecutionContext {
     atComponent(
         component: ClassComponent,
         pinId: number | null,
-        addSequence = false,
-        createNetComponent=true,
-    ): ComponentPin {
+        options?: {
+            addSequence?: boolean,
+            cloneNetComponent?: boolean,
+        }): ComponentPin {
         this.print('at component');
+
+        const { addSequence = false, cloneNetComponent = false } = options ?? {};
+
+        if (cloneNetComponent && this.isNetOnlyComponent(component)) {
+            component = this.cloneComponent(component);
+        }
+
         this.scope.currentComponent = component;
 
         let usePinId: number;
@@ -434,20 +444,47 @@ export class ExecutionContext {
             this.scope.currentPin = usePinId;
         }
 
-        // Insertion point is current at a component pin, so clear
+        // Insertion point is currently at a component pin, so clear
         // any wire references
         this.scope.currentWireId = -1;
 
         if (addSequence) {
-            // Creates a clone of the sequence component
-            const sequenceComponent = 
-                this.prepareSequenceComponent(component, createNetComponent);
-            this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId]);
+            this.scope.sequence.push([SequenceAction.At, 
+                component, usePinId]);
         }
 
         this.printPoint();
 
         return this.getCurrentPoint();
+    }
+
+    private isNetOnlyComponent(component: ClassComponent): boolean {
+        return isNetComponent(component) && !isLabelComponent(component);
+    }
+
+    private cloneComponent(component: ClassComponent): ClassComponent {
+        // This creates a clone from a given net component
+
+        let clonedComponent: ClassComponent = null;
+
+        // If is a net component and not a label component, then
+        // create a new copy of the same net component.
+        if (!this.scope.copyIDs.has(component.instanceName)) {
+            this.scope.copyIDs.set(component.instanceName, 0);
+        }
+
+        const idNum = this.scope.copyIDs.get(component.instanceName);
+        clonedComponent = component.clone();
+        clonedComponent._copyID = idNum;
+
+        // Set linkIDs to the next value to use
+        this.scope.copyIDs.set(component.instanceName, idNum + 1);
+
+        // Add the cloned component
+        this.scope.instances.set(component.instanceName+":" + idNum, 
+            clonedComponent);
+
+        return clonedComponent;
     }
 
     enterBranches(): void {
@@ -510,7 +547,7 @@ export class ExecutionContext {
             tmpList.forEach((item) => {
                 const [, [comp2, pin2]] = item;
 
-                this.atComponent(comp1, pin1, true);
+                this.atComponent(comp1, pin1, {addSequence: true});
                 this.toComponent(comp2, pin2, true);
             });
 
@@ -556,7 +593,7 @@ export class ExecutionContext {
         this.print('exit inner branch <<<');
 
         // Do not duplicate any net symbol since this is a branch
-        this.atComponent(preBranchComponent, preBranchPin, true, false);
+        this.atComponent(preBranchComponent, preBranchPin, {addSequence: true});
 
         if (preBranchWireId !== -1){
             this.scope.sequence.push([SequenceAction.WireJump, preBranchWireId]);

@@ -238,7 +238,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitAt_component_expr(ctx: At_component_exprContext): ComponentPin {
         const [component, pin] = this.visit(ctx.component_select_expr());
-        this.getExecutor().atComponent(component, pin, true);
+
+        this.getExecutor().atComponent(component, pin, {
+            addSequence: true,
+            cloneNetComponent: true
+        });
         return [component, pin];
     }
 
@@ -349,8 +353,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             width,
         }
 
-        return this.getExecutor().createComponent(instanceName, pins, params,
-            props);
+        return this.getExecutor().createComponent(instanceName, 
+            pins, params, props);
     }
 
     visitProperty_expr(ctx: Property_exprContext): Map<string, any> {
@@ -697,7 +701,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const currentComponent = executor.scope.currentComponent;
         const currentPin = executor.scope.currentPin;
 
-        executor.atComponent(currentComponent, atPin, true);
+        executor.atComponent(currentComponent, atPin, {
+            addSequence: true
+        });
 
         executor.print('at block pin expressions');
 

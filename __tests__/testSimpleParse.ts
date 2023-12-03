@@ -63,6 +63,20 @@ print(test1(1,2,3))
         const item2 = findItem(instances, 'res', 'R2', 'numeric:20k');
         expect(item2.parameters.get('place')).toBe(true);
     });
+
+    test.only('net references are cloned in "at" command', async () => {
+        // Check that nets are cloned when referenced in 'at' commands
+        const {hasError, visitor} = await runScript(script6);
+        expect(hasError).toBe(false);
+
+        visitor.annotateComponents();
+        const instances = visitor.dumpInstances();
+
+        // check that the instances exists
+        expect(instances.get('vcc')).not.toBeNull();
+        expect(instances.get('vcc:0')).not.toBeNull();
+        expect(instances.get('vcc:1')).not.toBeNull();
+    });
 });
 
 
@@ -219,6 +233,30 @@ wire down 20
 
 add res(20k)
 ..place = true
+wire down 20
+to gnd
+`;
+
+const script6 = `
+import lib
+
+vcc = net("3v3")
+
+at vcc
+wire down 20
+to gnd
+
+at vcc
+wire down 20
+add res(10k) down
+wire down 20
+to gnd
+
+at vcc
+wire down 20
+add res(20k) down
+wire down 20
+add res(30k) down
 wire down 20
 to gnd
 `
