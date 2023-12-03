@@ -192,9 +192,8 @@ export class LayoutEngine {
                     applyComponentParamsToSymbol(displayProp, component, tmpSymbol);
     
                     // Set rotation of object
-                    if (component.styles) {
-                        const { angle = 0 } = component.styles;
-                        tmpSymbol.angle = angle as number;
+                    if (component.parameters.has('angle')) {
+                        tmpSymbol.angle = component.parameters.get('angle') as number;
                     }
     
                     if (tmpSymbol instanceof SymbolCustom && widthProp){
