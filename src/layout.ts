@@ -192,7 +192,10 @@ export class LayoutEngine {
                     applyComponentParamsToSymbol(displayProp, component, tmpSymbol);
     
                     // Set rotation of object
+                    let didSetAngle = false;
+
                     if (component.parameters.has('angle')) {
+                        didSetAngle = true;
                         tmpSymbol.angle = component.parameters.get('angle') as number;
                     }
     
@@ -204,6 +207,19 @@ export class LayoutEngine {
                         tmpSymbol.setLabelValue("refdes", component.assignedRefDes);
                     }
     
+                    if (!didSetAngle && component.parameters.has('_addDirection')){
+                        // If there is an _addDirection specified, then the angle
+                        // must be updated accordingly. If angle is already set,
+                        // then skip this.
+                        tmpSymbol.refreshDrawing(false);
+
+                        tmpSymbol.angle = calculateSymbolAngle(
+                            tmpSymbol,
+                            component.parameters.get('_addPin') as number,
+                            component.parameters.get('_addDirection') as string,
+                        );
+                    }
+
                     // Draw symbol in memory to determine the size/bounds.
                     tmpSymbol.refreshDrawing();
     
@@ -905,6 +921,35 @@ function applyComponentParamsToSymbol(displayProp: string, component: ClassCompo
     }
 }
 
+function calculateSymbolAngle(symbol: SymbolGraphic, 
+    pin: number, direction:string): number {
+    let useAngle = 0;
+
+    let directionVector = 0;
+    switch(direction){
+        case 'right':
+            directionVector = 0;
+            break;
+        case 'down':
+            directionVector = 90;
+            break;
+        case 'left':
+            directionVector = 180;
+            break;
+        case 'up':
+            directionVector = 270;
+            break;
+    }
+
+    const {angle: pinVector} = symbol.pinPosition(pin);
+
+    // Reverse the vector to point the other way
+    const pinVectorReversed = (pinVector + 180) % 360;
+
+    useAngle = directionVector - pinVectorReversed;
+
+    return useAngle;
+}
 
 export function getBounds(components: RenderComponent[], 
     wires: RenderWire[], junctions: RenderJunction[]): BoundBox{

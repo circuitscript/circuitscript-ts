@@ -74,6 +74,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     printStream: string[] = [];
     printToConsole = true;
 
+    acceptedDirections = ['left', 'right', 'up', 'down'];
+
     pinTypesList: string[] = [
         PinTypes.Any,
         PinTypes.Input,
@@ -207,12 +209,28 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitAdd_component_expr(ctx: Add_component_exprContext): ComponentPin {
-        const component: ClassComponent = this.visit(ctx.data_expr());
+        // The component is always the last item
+        const component: ClassComponent = 
+            this.visit(ctx.data_expr());
 
         let pinValue: number | null = null;
         // If a pin is specified, then add it at pin
         if (ctx.pin_select_expr()) {
             pinValue = this.visit(ctx.pin_select_expr());
+        } else {
+            pinValue = component.getDefaultPin();
+        }
+
+        if (ctx.ID()){
+            // This can be used to modify the orientation of the component.
+            const addExtra = ctx.ID().getText();
+            if (this.acceptedDirections.indexOf(addExtra) !== -1){
+                // a valid direction
+                component.setParam('_addDirection', addExtra);
+                component.setParam('_addPin', pinValue);
+            } else {
+                throw "Invalid modifier for add";
+            }
         }
 
         return this.getExecutor().addComponentExisting(component, pinValue);
@@ -741,7 +759,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitWire_expr(ctx: Wire_exprContext): void {
         const segments: [string, number?][] = [];
-        const acceptedDirections = ['left', 'right', 'up', 'down'];
 
         // Ignore 'wire'
         const parts = ctx.children.slice(1);
@@ -749,7 +766,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         for (let i = 0; i < parts.length; i++) {
             const textValue = parts[i].getText();
 
-            if (acceptedDirections.indexOf(textValue) !== -1) {
+            if (this.acceptedDirections.indexOf(textValue) !== -1) {
                 // If a direction is specified, then the value 
                 // must also be specified, otherwise throw an error
                 const segment: [string, number?] = [textValue];

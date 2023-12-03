@@ -319,15 +319,8 @@ export class ExecutionContext {
         );
     }
 
-    addComponentExisting(component: ClassComponent, pin = null): ComponentPin {
-        let startPin;
-
-        if (pin === null) {
-            startPin = component.getDefaultPin();
-        } else {
-            startPin = pin;
-        }
-
+    addComponentExisting(component: ClassComponent, pin: number): ComponentPin {
+        const startPin = pin;
         const nextPin = component.getNextPinAfter(startPin);
 
         // Add to sequence
@@ -446,7 +439,9 @@ export class ExecutionContext {
         this.scope.currentWireId = -1;
 
         if (addSequence) {
-            const sequenceComponent = this.prepareSequenceComponent(component, createNetComponent);
+            // Creates a clone of the sequence component
+            const sequenceComponent = 
+                this.prepareSequenceComponent(component, createNetComponent);
             this.scope.sequence.push([SequenceAction.At, sequenceComponent, usePinId]);
         }
 

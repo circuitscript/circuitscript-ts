@@ -35,9 +35,9 @@ export abstract class SymbolGraphic {
         this._angle = value;
     }
 
-    refreshDrawing(): void {
+    refreshDrawing(calculateSize = true): void {
         this.generateDrawing();
-        this.calculateSize();
+        calculateSize && this.calculateSize();
     }
 
     calculateSize(): void {
@@ -372,12 +372,14 @@ export class SymbolDiode extends SymbolGraphic {
         drawing.angle = this._angle;
         const refdes = this.getLabelValue("refdes");
 
+        // Diode is drawn horizontally
+        //  -|>|-
         drawing.addVLine(width/2, -height/2, height)
             .addVLine(-width/2, -height/2, height)
             .addLine(-width/2, -height/2, width/2, 0)
             .addLine(-width/2, height/2, width/2, 0)
-            .addPin(width/2, 0, width/2 + 20, 0, 1)
-            .addPin(-width/2, 0, -width/2 -20, 0, 2)
+            .addPin(width/2, 0, width/2 + 20, 0, 2)     // Cathode
+            .addPin(-width/2, 0, -width/2 -20, 0, 1)    // Anode
 
             .addLabel(width / 2 + 5, 5, refdes, {
                 fontSize: 10,
