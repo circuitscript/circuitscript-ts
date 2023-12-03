@@ -148,12 +148,12 @@ branch:
     
     branch:
         wire down 20
-        add diode() [angle=90]
+        add diode() ..angle = 90
 
     wire left 20
     add diode() pin 2
     wire left 20 down 20
-    add diode() [angle=90]
+    add diode() ..angle = 90
 
 wire right 40 
 add diode()
@@ -186,14 +186,14 @@ at net("5V")
 wire down 20
 branch:
     wire down 20
-    add res(10k) [angle = 90]
+    add res(10k) ..angle = 90
     ..place = (variant == "MainVariant")
     wire down 20 to gnd
 
 wire right 40
 branch:
     wire down 20
-    add res(20k) [angle=90]
+    add res(20k) ..angle = 90
     ..place = true
     wire down 20
     to gnd
