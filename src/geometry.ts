@@ -28,6 +28,10 @@ export class Label extends Flatten.Polygon {
 
     style: LabelStyle;
 
+    get box() {
+        return this.polygon.box;
+    }
+
     constructor(text: string, anchorPoint: [number, number], polygon: Flatten.Polygon, style: LabelStyle) {
         super(polygon.vertices);
 
@@ -47,34 +51,11 @@ export class Label extends Flatten.Polygon {
             vanchor = VerticalAlign.Bottom } = style;
 
         // Determine the size of the text
-        const textBoundingBox = measureTextSize2(text, defaultFont, fontSize);
+        const { width, height } =
+            measureTextSize2(text, defaultFont, fontSize);
 
-        const tmpWidth = textBoundingBox.width;
-        const tmpHeight = textBoundingBox.height;
-
-        let polygonCoords: [number, number][] = [];
-        if (anchor === HorizontalAlign.Left) {
-            polygonCoords = [
-                [x, y - tmpHeight],
-                [x + tmpWidth, y - tmpHeight],
-                [x + tmpWidth, y],
-                [x, y]
-            ];
-        } else if (anchor === HorizontalAlign.Middle && vanchor === VerticalAlign.Middle) {
-            polygonCoords = [
-                [x - tmpWidth / 2, y - tmpHeight / 2],
-                [x + tmpWidth / 2, y - tmpHeight / 2],
-                [x + tmpWidth / 2, y + tmpHeight / 2],
-                [x - tmpWidth / 2, y + tmpHeight / 2]];
-                
-        } else if (anchor === HorizontalAlign.Middle) {
-            polygonCoords = [
-                [x - tmpWidth / 2, y - tmpHeight],
-                [x + tmpWidth / 2, y - tmpHeight],
-                [x + tmpWidth / 2, y],
-                [x - tmpWidth / 2, y]
-            ]
-        } 
+        const polygonCoords =
+            labelPolygonForAnchors(x, y, width, height, anchor, vanchor);
 
         const polygon = new Flatten.Polygon(polygonCoords);
 
@@ -155,11 +136,15 @@ export class Geometry {
 
         features.forEach(feature => {
             const box = feature.box;
-            box.xmin !== undefined && (minX = Math.min(minX, box.xmin));
-            box.ymin !== undefined && (minY = Math.min(minY, box.ymin));
+            if (box.xmin === undefined){
+                throw "Invalid box!";
+            }
 
-            box.xmax !== undefined && (maxX = Math.max(maxX, box.xmax));
-            box.ymax !== undefined && (maxY = Math.max(maxY, box.ymax));
+            minX = Math.min(minX, box.xmin);
+            minY = Math.min(minY, box.ymin);
+
+            maxX = Math.max(maxX, box.xmax);
+            maxY = Math.max(maxY, box.ymax);
         });
 
         return {
@@ -403,6 +388,93 @@ function replaceSegments(segments: Flatten.Segment[], index: number, replacedSeg
     });
 
     return counter;
+}
+
+function labelPolygonForAnchors(x: number, y: number, width: number, height: number, 
+    hAnchor: HorizontalAlign, vAnchor: VerticalAlign): [x: number, y: number][]{
+
+    // Vectors in terms of width and height, with respect
+    // to the anchor point (both hAnchor and vAnchor)
+    let coordVectors = [];
+
+    if (hAnchor === HorizontalAlign.Left){
+        if (vAnchor === VerticalAlign.Bottom){
+            coordVectors = [
+                [0, 0],
+                [0, -1],
+                [1, -1],
+                [1, 1],
+            ];
+        } else if (vAnchor === VerticalAlign.Middle){
+            coordVectors = [
+                [0, -0.5],
+                [0, 0.5],
+                [1, 0.5],
+                [1, -0.5],
+            ]; 
+        } else if (vAnchor === VerticalAlign.Top){
+            coordVectors = [
+                [0, 0],
+                [1, 0],
+                [1, 1],
+                [0, 1],
+            ]; 
+        }
+    } else if (hAnchor === HorizontalAlign.Right){
+        if (vAnchor === VerticalAlign.Bottom){
+            coordVectors = [
+                [0, 0],
+                [-1, 0],
+                [-1, -1],
+                [0, -1],
+            ]; 
+        } else if (vAnchor === VerticalAlign.Middle){
+            coordVectors = [
+                [0, -0.5],
+                [0, 0.5],
+                [-1, 0.5],
+                [-1, -0.5],
+            ]; 
+        } else if (vAnchor === VerticalAlign.Top){
+            coordVectors = [
+                [0, 0],
+                [0, 1],
+                [-1, 1],
+                [-1, 0]
+            ]; 
+        }
+    }
+    else if (hAnchor === HorizontalAlign.Middle){
+        if (vAnchor === VerticalAlign.Bottom){
+            coordVectors = [
+                [-0.5, 0],
+                [-0.5, -1],
+                [0.5, -1],
+                [0.5, 0]
+            ]; 
+        } else if (vAnchor === VerticalAlign.Middle){
+            coordVectors = [
+                [-0.5, 0.5],
+                [-0.5, -0.5],
+                [0.5, -0.5],
+                [0.5, 0.5],
+            ]; 
+        } else if (vAnchor === VerticalAlign.Top){
+            coordVectors = [
+                [0.5, 0],
+                [0.5, 1],
+                [-0.5, 1],
+                [-0.5, 0]
+            ]; 
+        }
+    }
+    
+    return coordVectors.map(([vx, vy]) => {
+        return [
+            x + vx * width,
+            y + vy * height
+        ]
+    });
 }
 
 type WirePointCount = [x: number, y: number, count: number];

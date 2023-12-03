@@ -522,16 +522,16 @@ export class SymbolCustom extends SymbolGraphic {
         const instanceName = this.getLabelValue("refdes");
         const MPN = this.getLabelValue("MPN");
 
-        drawing.addLabel(-bodyWidth/2, -bodyHeight/2 - 4, instanceName, {
+        instanceName && drawing.addLabel(-bodyWidth/2, -bodyHeight/2 - 4, instanceName, {
             fontSize: 10,
             anchor: HorizontalAlign.Left,
         });
 
-        drawing.addLabel(-bodyWidth/2, bodyHeight/2 + 4, MPN, {
-            fontSize: 10,
-            anchor: HorizontalAlign.Left,
-            vanchor: VerticalAlign.Top,
-        });
+        MPN && drawing.addLabel(-bodyWidth/2, bodyHeight/2 + 4, MPN, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Top,
+            });
 
         this.drawing = drawing;
         this._cacheLeftPins = leftPins;
