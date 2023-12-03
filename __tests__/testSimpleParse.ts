@@ -8,6 +8,7 @@ describe('test parsing', () => {
         [0, "create component command"],
         [1, "function to create component and branching"],
         [2, "nested branching, add with pin selected"],
+        [3, "'at' and 'to' commands will clone net components"],
     ])('parse script - %d: %s', async (index, description) => {
         // Test only parsing, does not check the correctness of the 
         // parsed result!
@@ -18,8 +19,6 @@ describe('test parsing', () => {
         const {hasError, componentPinNets} = await runScript(script);
 
         expect(hasError).toBe(false);
-        console.log("here", componentPinNets);
-
         expect(componentPinNets).toStrictEqual(expected);
     });
 
@@ -64,20 +63,6 @@ print(test1(1,2,3))
 
         const item2 = findItem(instances, 'res', 'R2', 'numeric:20k');
         expect(item2.parameters.get('place')).toBe(true);
-    });
-
-    test('net references are cloned in "at" command', async () => {
-        // Check that nets are cloned when referenced in 'at' commands
-        const {hasError, visitor} = await runScript(script6);
-        expect(hasError).toBe(false);
-
-        visitor.annotateComponents();
-        const instances = visitor.dumpInstances();
-
-        // check that the instances exists
-        expect(instances.get('vcc')).not.toBeNull();
-        expect(instances.get('vcc:0')).not.toBeNull();
-        expect(instances.get('vcc:1')).not.toBeNull();
     });
 });
 
@@ -183,7 +168,55 @@ const expected3: ComponentPinNet[] = [
     ["NET_2", "diode_1.COMP_1", 1],
     ["NET_2", "diode_2.COMP_1", 1],
     ["gnd", "gnd", 1]
-]
+];
+
+const script6 = `
+import lib
+
+vcc = net("3v3")
+midpt = net("out")
+
+at vcc
+wire down 20
+to gnd
+
+at vcc
+wire down 20
+add res(20k) down
+wire down 20
+branch:
+    wire down 20
+    add res(20k) down
+    wire down 20
+    to gnd
+wire right 60
+to midpt ..angle = 90
+
+at vcc
+wire down 20
+add res(10k) down
+wire down 20 right 40 up 20
+to midpt
+`;
+
+const expected6: ComponentPinNet[] = [
+    ['gnd', 'gnd', 1],
+    ['gnd', 'vcc', 1],
+    ['gnd', 'vcc:0', 1],
+    ['gnd', 'gnd:0', 1],
+    ['gnd', 'vcc:1', 1],
+    ['gnd', 'res_0.COMP_1_20k', 1],
+    ['gnd', 'gnd:1', 1],
+    ['gnd', 'res_1.COMP_1_20k', 2],
+    ['gnd', 'vcc:2', 1],
+    ['gnd', 'res_2.COMP_1_10k', 1],
+    ['net_1.out', 'midpt', 1],
+    ['net_1.out', 'res_0.COMP_1_20k', 2],
+    ['net_1.out', 'res_1.COMP_1_20k', 1],
+    ['net_1.out', 'midpt:0', 1],
+    ['net_1.out', 'midpt:1', 1],
+    ['net_1.out', 'res_2.COMP_1_10k', 2]
+];
 
 // Store in an array, so that it is accessible
 // during the test itself.
@@ -191,6 +224,7 @@ const allScripts: [string, ComponentPinNet[]][] = [
     [script1, expected1],
     [script2, expected2],
     [script3, expected3],
+    [script6, expected6],
 ];
 
 
@@ -240,26 +274,3 @@ wire down 20
 to gnd
 `;
 
-const script6 = `
-import lib
-
-vcc = net("3v3")
-
-at vcc
-wire down 20
-to gnd
-
-at vcc
-wire down 20
-add res(10k) down
-wire down 20
-to gnd
-
-at vcc
-wire down 20
-add res(20k) down
-wire down 20
-add res(30k) down
-wire down 20
-to gnd
-`
