@@ -1,5 +1,10 @@
 import lib
 
+# define global nets
+v12v = net("12V")
+v3v3 = net("3V3")
+v5v = net("5V")
+
 def decoupling_cap(value):
     wire down 20
     add cap(value)
@@ -44,11 +49,10 @@ def conn1x5():
             footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
 
 def power_conn():
-    conn1 = conn1x4()
-    at conn1:
+    at conn1 = conn1x4():
         1: 
             wire left 20 up 20
-            to net("12V")
+            to v12v
         2:
             wire left 20
             branch:
@@ -58,7 +62,8 @@ def power_conn():
             to gnd
         4:
             wire down 40 left 20
-            to net("+3V3")
+            to v3v3
+            ..angle = -90
 
     return conn1
 
@@ -109,8 +114,8 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
             add res(10k) pin 2
             wire left 40
             add label(enable_label)
-            wire left 40
-            to net("12V")
+            wire left 20
+            to v12v left
 
         9:
             wire left 20
@@ -128,7 +133,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
                 decoupling_cap(10u)
 
             wire up 20
-            to net("12V")
+            to v12v
 
         3: 
             wire left 100 down 20
@@ -157,7 +162,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
             wire right 20
             branch:
                 wire down 20
-                add res(upper_fb_resistor) [angle=90]
+                add res(upper_fb_resistor) down
                 wire down 20
                 branch:
                     wire left 40
@@ -166,7 +171,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
                 wire down 20
                 point fb_point
                 wire down 20
-                add res(lower_fb_resistor) [angle=90]
+                add res(lower_fb_resistor) down
                 to gnd
             wire right 60
             branch:
@@ -188,7 +193,8 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
 
         8:
             wire right 20
-            add cap(100n) [angle=-90]
+            add cap(100n)
+            ..angle = -90
             wire right 20 down 20
             to tps54227 pin 6
 
@@ -210,7 +216,7 @@ def main():
             wire right 20
             branch:
                 wire up 20
-                add net("12V")
+                add v12v
 
             wire right 40
             branch:
@@ -243,7 +249,7 @@ def main():
                 wire down 20 right 20
                 to J104 pin 3
             wire left 20
-            to net("5V")
+            to v5v left
         4:
             wire left 20 down 20    
             to gnd
@@ -256,7 +262,7 @@ def main():
     at J103:
         1:
             wire left 40 up 40
-            add net("+3V3")
+            add v3v3
         2:
             wire left 40
             add label("EN")
@@ -352,7 +358,7 @@ def pump_block(enable_name, sense_out):
     at conn:
         1:
             wire left 20 up 20
-            to net("12V")
+            to v12v
         2: tmp_label("LOAD_SUPPLY")
         3: tmp_label("+5V")
         4: tmp_label("CONN+")
@@ -394,7 +400,7 @@ def pump_block(enable_name, sense_out):
     at diff_amp:
         2:
             wire right 20 up 20
-            to net("+3V3")
+            to v3v3
         5:
             wire right 20 down 20
             to gnd
@@ -422,7 +428,7 @@ def pump_block(enable_name, sense_out):
         to diff_amp pin 4
 
     wire down 20
-    add res(20k) [angle=90]
+    add res(20k) down
     wire down 20 left 40
     add label("VCC")
 
@@ -430,14 +436,14 @@ def pump_block(enable_name, sense_out):
     wire right 40 
     branch:
         wire down 20
-        add led("RED") pin 2[angle=90]
+        add led("RED") pin 2 down
         wire down 20
-        add res(130) [angle=90]
+        add res(130) down
         wire down 20 to gnd
     wire right 40
     branch:
         wire down 20
-        add res(1k) [angle=90]
+        add res(1k) down
         wire down 20
         to gnd
 
@@ -447,13 +453,13 @@ def pump_block(enable_name, sense_out):
     wire right 20 down 20
     to gnd
 
-    at net("12V")
+    at v12v
     wire down 20
     branch:
         wire right 80
         add relay pin 2
     wire down 20
-    add diode2() [angle=-90]
+    add diode2() pin 2 down
     wire down 20
     branch:
         wire right 40
@@ -486,7 +492,7 @@ def pump_block(enable_name, sense_out):
                 add label("CONN+")
                 wire right 40
             wire down 20
-            add diode2() [angle=-90]
+            add diode2() pin 2 down
             wire down 20
             branch:
                 wire right 40
