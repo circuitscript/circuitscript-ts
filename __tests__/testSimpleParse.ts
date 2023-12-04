@@ -181,10 +181,6 @@ midpt = net("out")
 
 at vcc
 wire down 20
-to gnd
-
-at vcc
-wire down 20
 add res(20k) down
 wire down 20
 branch:
@@ -203,22 +199,20 @@ to midpt
 `;
 
 const expected6: ComponentPinNet[] = [
-    ['gnd', 'gnd', 1],
-    ['gnd', 'vcc', 1],
-    ['gnd', 'vcc:0', 1],
-    ['gnd', 'gnd:0', 1],
-    ['gnd', 'vcc:1', 1],
-    ['gnd', 'res_0.COMP_1_20k', 1],
-    ['gnd', 'gnd:1', 1],
-    ['gnd', 'res_1.COMP_1_20k', 2],
-    ['gnd', 'vcc:2', 1],
-    ['gnd', 'res_2.COMP_1_10k', 1],
-    ['net_1.out', 'midpt', 1],
-    ['net_1.out', 'res_0.COMP_1_20k', 2],
-    ['net_1.out', 'res_1.COMP_1_20k', 1],
-    ['net_1.out', 'midpt:0', 1],
-    ['net_1.out', 'midpt:1', 1],
-    ['net_1.out', 'res_2.COMP_1_10k', 2]
+    [ 'gnd', 'gnd', 1 ],
+    [ 'gnd', 'gnd:0', 1 ],
+    [ 'gnd', 'res_1.COMP_1_20k', 2 ],
+    [ 'net_0.3v3', 'vcc', 1 ],
+    [ 'net_0.3v3', 'vcc:0', 1 ],
+    [ 'net_0.3v3', 'res_0.COMP_1_20k', 1 ],
+    [ 'net_0.3v3', 'vcc:1', 1 ],
+    [ 'net_0.3v3', 'res_2.COMP_1_10k', 1 ],
+    [ 'net_1.out', 'midpt', 1 ],
+    [ 'net_1.out', 'res_0.COMP_1_20k', 2 ],
+    [ 'net_1.out', 'res_1.COMP_1_20k', 1 ],
+    [ 'net_1.out', 'midpt:0', 1 ],
+    [ 'net_1.out', 'midpt:1', 1 ],
+    [ 'net_1.out', 'res_2.COMP_1_10k', 2 ]
 ];
 
 const script7 = `
