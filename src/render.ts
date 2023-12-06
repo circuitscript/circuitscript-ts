@@ -160,7 +160,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         const height = bounds.ymax - bounds.ymin;
         const tmpRect = frameGroup.rect(width, height)
             .fill('none')
-            .stroke({ width: 1, color: '#000080' });
+            .stroke({ width: 1, color: '#111' });
         tmpRect.translate(bounds.xmin, bounds.ymin);
     });
 

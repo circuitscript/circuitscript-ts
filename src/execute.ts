@@ -700,6 +700,7 @@ export class ExecutionContext {
         const currentComponent = this.scope.currentComponent;
         const currentPin = this.scope.currentPin;
         const currentWireId = this.scope.currentWireId;
+        const currentFrameId = this.scope.currentFrameId;
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
@@ -788,8 +789,11 @@ export class ExecutionContext {
         // into parent scope.
         this.scope.removeNet(childScope.componentGnd, 1);
 
-        // Merge the sequences together, need to renumber the wire ids
+        // Merge the sequences together, need to renumber the wire ids.
         const wireIdOffset = this.scope.wires.length;
+
+        // Need to renumber the frame ids too.
+        const frameIdOffset = this.scope.frames.length;
 
         const componentGndName = this.scope.componentGnd.instanceName;
 
@@ -846,7 +850,13 @@ export class ExecutionContext {
                         sequenceAction = [action, currentComponent, currentPin];
                     }                    
                 }
+                this.scope.sequence.push(sequenceAction);
 
+            } else if (action === SequenceAction.Frame){
+                const frame: Frame = sequenceAction[1];
+                frame.frameId += frameIdOffset;
+                
+                this.scope.frames.push(frame);
                 this.scope.sequence.push(sequenceAction);
             }
         });
