@@ -1,14 +1,15 @@
 import graphlib from '@dagrejs/graphlib';
 
-import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion } from "./draw_symbols";
+import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolText } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
-import { SequenceAction, SequenceItem } from "./objects/ExecutionScope";
+import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames } from './globals';
 import { WireSegment } from './objects/Wire';
 import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
 import { Net } from './objects/Net';
 import { Logger } from './logger';
+import { Frame } from './objects/Frame';
 
 export type BoundBox = {
     xmin: number, ymin: number,
@@ -37,17 +38,17 @@ export class LayoutEngine {
     runLayout(
         sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]
-    ): {components: RenderComponent[], wires: RenderWire[], 
+    ): {
+        components: RenderComponent[], wires: RenderWire[],
         junctions: RenderJunction[], mergedWires: MergedWire[],
-        debugRects: BoundBox[]} {
-    
-        // Store rects for debugging bounds
-        let debugRects: BoundBox[] = [];
-
+        frameObjects: RenderFrame[],
+        textObjects: RenderText[]
+    } {
         const logNodesAndEdges = false;
     
         this.print('===== creating graph and populating with nodes =====');
-        const graph = this.generateLayoutGraph(sequence, nets);
+        const {graph, frameObjects, instanceFrameMapping} = 
+            this.generateLayoutGraph(sequence, nets);
         
         this.print('===== done populating graph =====');
         this.print('');
@@ -72,8 +73,10 @@ export class LayoutEngine {
             this.print('');
         }
 
-        const tmpBounds = this.placeGraph(graph);
-        debugRects = debugRects.concat(tmpBounds);
+        const {textObjects} = this.placeGraph(graph, 
+            frameObjects, instanceFrameMapping);
+        
+        // debugRects = debugRects.concat(tmpBounds);
     
         const placedComponents: RenderComponent[] = [];
         const placedWires: RenderWire[] = [];
@@ -136,13 +139,18 @@ export class LayoutEngine {
             wires: placedWires,
             mergedWires,
             junctions,
-    
-            debugRects,
+
+            frameObjects,
+            textObjects
         };
     }
 
     generateLayoutGraph(sequence: SequenceItem[],
-        nets: [ClassComponent, pin: number, net: Net][]): graphlib.Graph {
+        nets: [ClassComponent, pin: number, net: Net][]): {
+            graph: graphlib.Graph,
+            instanceFrameMapping: Map<string, number>
+            frameObjects: RenderFrame[],
+         } {
         // Based on the sequence of actions, generate a graph that links
         // the nodes (components and wires)
 
@@ -155,6 +163,10 @@ export class LayoutEngine {
         });
 
         this.print('sequence length:', sequence.length);
+
+        const frameStack = [];
+        const instanceFrameMapping: Map<string, number> = new Map();
+        const frameObjects:RenderFrame[] = [];
 
         // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
@@ -230,6 +242,10 @@ export class LayoutEngine {
     
                     // Record the sequence number to determine priority
                     graph.setNode(tmpInstanceName, [RenderItemType.Component, tmpComponent, i]);
+
+                    const currentFrameId = frameStack[frameStack.length-1] ?? -1;
+                    // Assign frameId to the instance name
+                    instanceFrameMapping.set(tmpInstanceName, currentFrameId);
                 }
     
                 if (action === SequenceAction.To) {
@@ -285,13 +301,32 @@ export class LayoutEngine {
                 const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
                 previousNode = getWireName(wireId);
                 previousPin = 1;
+            } else if (action === SequenceAction.Frame){
+                const [, frameObject, frameAction] = sequence[i];
+
+                if (frameAction === FrameAction.Enter){
+                    frameStack.push(frameObject.frameId);
+                    frameObjects.push(new RenderFrame(frameObject));
+
+                } else if (frameAction === FrameAction.Exit){
+                    frameStack.pop();
+                }
             }
         }
 
-        return graph
+        return {
+            graph,
+            instanceFrameMapping,
+            frameObjects,
+        }
     }
 
-    placeGraph(graph: graphlib.Graph): BoundBox[] {
+    placeGraph(graph: graphlib.Graph, frameObjects: RenderFrame[], 
+        instanceFrameMapping: Map<string, number>): {
+            subgraphBounds: BoundBox[],
+            textObjects: RenderText[],
+         } {
+        
         // Lays out nodes in each subgraph and spaces out 
         // each separate subgraph.
 
@@ -327,6 +362,8 @@ export class LayoutEngine {
         let offsetY = 0;
 
         let firstOffsetX = 0;
+        const textObjects:RenderText[] = [];
+
 
         subGraphsStarts.forEach((nodeId, index) => {
             const innerGraph = subGraphs[index];
@@ -336,20 +373,62 @@ export class LayoutEngine {
 
             this.walkAndPlaceGraph(graph, nodeId, innerGraph);
 
-            const components: RenderComponent[] = [];
+            // Store all render objects to calculate bounds.
+            const renderItems: (RenderComponent | RenderText)[] = [];
+
             const wires: RenderWire[] = [];
 
             innerGraph.forEach(nodeId => {
                 const [nodeType, item,] = graph.node(nodeId);
                 if (nodeType === RenderItemType.Component) {
-                    components.push(item);
+                    renderItems.push(item);
                 } else if (nodeType === RenderItemType.Wire) {
                     wires.push(item);
                 }
             });
 
             // Get the existing bounds
-            const bounds = getBounds(components, wires, []);
+            let bounds = getBounds(renderItems, wires, [], []);
+
+            const framePadding = 20;
+            const hasFrame = instanceFrameMapping.has(nodeId) && 
+                instanceFrameMapping.get(nodeId) >= 0;
+
+            let renderFrame: RenderFrame;
+            
+            if (hasFrame){
+                // nodeId is within a frame, so check if need to draw title.
+                // increase the bounds outwards to have some padding
+                // bounds = resizeBounds(bounds, framePadding);
+                const frameId = instanceFrameMapping.get(nodeId);
+
+                // Find the frame
+                renderFrame = frameObjects.find(item => {
+                    return item.frame.frameId === frameId;
+                });
+
+                if (renderFrame === undefined){
+                    throw "Frame could not be found!";
+                }
+
+                const frameObject = renderFrame.frame;
+
+                if(frameObject.properties.has('title')){
+                    const titleObject = new RenderText(frameObject.properties.get('title'));
+                    titleObject.fontSize = 16;
+                    titleObject.fontWeight = 'bold';
+                    
+                    titleObject.x = bounds.xmin + (bounds.xmax - bounds.xmin)/2;
+                    titleObject.y = bounds.ymin - framePadding;
+                    titleObject.symbol.refreshDrawing();
+
+                    textObjects.push(titleObject);
+                    renderItems.push(titleObject);
+                }  
+                
+                bounds = getBounds(renderItems, wires, [], []);
+                bounds = resizeBounds(bounds, framePadding);
+            }
 
             // Use the bounds of the first subgraph to determine the position
             // of the other subgraphs
@@ -368,7 +447,7 @@ export class LayoutEngine {
                 this.print('place subgraph at index', index, ' at offset', offsetX, tmpOffsetY);
 
                 // Place the items in the subgraph with the given offset
-                const combinedItems = [...components, ...wires];
+                const combinedItems = [...renderItems, ...wires];
                 combinedItems.forEach(item => {
                     item.x += offsetX;
                     item.y += tmpOffsetY;
@@ -376,14 +455,24 @@ export class LayoutEngine {
             }
 
             // Find the next position to place next subgraph
-            const finalBounds = getBounds(components, wires, []);
-            offsetY = Math.ceil(finalBounds.ymax / 20 + 1) * 20;
-
-            subgraphBounds.push(finalBounds);
+            let tmpBounds = getBounds(renderItems, wires, [], []);
+            
+            if (hasFrame){
+                tmpBounds = resizeBounds(tmpBounds, framePadding);
+                if (renderFrame){
+                    renderFrame.bounds = tmpBounds;
+                }
+            }
+            offsetY = Math.ceil(tmpBounds.ymax / 20 + 1) * 20;
+            subgraphBounds.push(tmpBounds);
         });
 
         // For each subgraph, find the bounds of the subgraph
-        return subgraphBounds;
+        return {
+            subgraphBounds,
+            frameObjects,
+            textObjects,
+        };
     }
 
 
@@ -823,7 +912,7 @@ function getInstanceName(component: ClassComponent): string {
     // Gets the instance including the link ID
     let instanceName = component.instanceName;
     if (component._copyID) {
-        instanceName += ("#" + component._copyID);
+        instanceName += (":" + component._copyID);
     }
     return instanceName;
 }
@@ -832,7 +921,7 @@ function getWireName(wireId: number): string {
     return 'wire:' + wireId;
 }
 
-type RenderItem = RenderComponent | RenderWire;
+type RenderItem = RenderComponent | RenderWire | RenderText;
 
 type WirePointCount = [x: number, y: number, count: number];
 
@@ -951,8 +1040,9 @@ function calculateSymbolAngle(symbol: SymbolGraphic,
     return useAngle;
 }
 
-export function getBounds(components: RenderComponent[], 
-    wires: RenderWire[], junctions: RenderJunction[]): BoundBox{
+export function getBounds(
+    components: (RenderComponent|RenderText)[], 
+    wires: RenderWire[], junctions: RenderJunction[], frames: RenderFrame[]): BoundBox{
     
         const points = [];
 
@@ -975,6 +1065,11 @@ export function getBounds(components: RenderComponent[],
     junctions.forEach(item => {
         points.push([item.x, item.y]);
     });
+
+    frames.forEach(item => {
+        points.push([item.bounds.xmin, item.bounds.ymin]);
+        points.push([item.bounds.xmax, item.bounds.ymax]);
+    })
 
     const xValues = points.map(item => item[0]);
     const yValues = points.map(item => item[1]);
@@ -1215,6 +1310,46 @@ export class RenderComponent extends RenderObject {
     }
 }
 
+export class RenderText extends RenderObject {
+    symbol: SymbolText;
+
+    _fontSize = 12;
+    _fontWeight = 'regular';
+
+    get fontSize (): number {
+        return this._fontSize;
+    }
+
+    set fontSize(value: number) {
+        this._fontSize = value;
+        this.symbol.fontSize = value;
+    }
+
+    get fontWeight(): string {
+        return this._fontWeight;
+    }
+
+    set fontWeight(value: string) {
+        this._fontWeight = value;
+        this.symbol.fontWeight = value;
+    }
+
+    constructor(text: string) {
+        super();
+        this.symbol = new SymbolText(text);
+    }
+}
+
+export class RenderFrame extends RenderObject {
+    bounds: BoundBox | null = null;
+    frame: Frame;
+
+    constructor(frame: Frame) {
+        super();
+        this.frame = frame;
+    }
+}
+
 export class RenderJunction {
     x: number;
     y: number;
@@ -1225,6 +1360,8 @@ export class RenderJunction {
     }
 }
 
+
+
 function isPointOverlap(x: number, y: number, other: RenderComponent): boolean {
     return (x >= other.x && y >= other.y && x <= (other.x + other.width) && y <= (other.y + other.height));
 }
@@ -1232,4 +1369,19 @@ function isPointOverlap(x: number, y: number, other: RenderComponent): boolean {
 enum RenderItemType {
     Wire = 'wire',
     Component = 'component',
+}
+
+type FrameInfo = [
+    frame: Frame, 
+    levels: number[],
+]
+
+function resizeBounds(bounds: BoundBox, value: number): BoundBox {
+    return {
+        xmin: bounds.xmin - value,
+        xmax: bounds.xmax + value,
+
+        ymin: bounds.ymin - value,
+        ymax: bounds.ymax + value
+    }
 }

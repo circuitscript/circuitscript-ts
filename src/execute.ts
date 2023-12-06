@@ -1,12 +1,13 @@
 import { ComponentTypes, GlobalNames, ParamKeys } from './globals';
 import { ClassComponent } from './objects/ClassComponent';
-import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
+import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition, PortSide } from './objects/PinDefinition';
 import { CFunction, CFunctionResult, CallableParameter, ComponentPin } from './objects/types';
 import { Wire, WireSegment } from './objects/Wire';
 import { Logger } from './logger';
+import { Frame } from './objects/Frame';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -399,8 +400,7 @@ export class ExecutionContext {
         this.scope.currentComponent = component;
         this.scope.currentPin = pinId;
 
-        // Currently no wire references
-        this.scope.currentWireId = -1;
+        this.scope.clearActive();
 
         if (addSequence) {
             if (this.scope.sequence.length > 0) {
@@ -457,8 +457,8 @@ export class ExecutionContext {
         }
 
         // Insertion point is currently at a component pin, so clear
-        // any wire references
-        this.scope.currentWireId = -1;
+        // any wire/frame selected.
+        this.scope.clearActive();
 
         if (addSequence) {
             this.scope.sequence.push([SequenceAction.At, 
@@ -936,10 +936,9 @@ export class ExecutionContext {
             output.push(item.join(","));
         });
 
-
         this.print('add wire: ', output.join("|"));
 
-        this.scope.currentWireId = wireId;
+        this.scope.setActive(ActiveObject.Wire, wireId);
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
     }
 
@@ -963,9 +962,11 @@ export class ExecutionContext {
 
         let idName: string;
         let paramName: string;
+        
+        let useActive = false;
 
         if (nameWithProp.startsWith('..')){
-            idName = this.scope.currentComponent.instanceName;
+            useActive = true;
             paramName = nameWithProp.substring(2);
         } else {
             const parts = nameWithProp.split(".");
@@ -973,15 +974,22 @@ export class ExecutionContext {
             paramName = parts[1];
         }
 
-        // Check if instance exists
-        if (this.scope.instances.has(idName)) {
-            const component = this.scope.instances.get(idName);
-            component.parameters.set(paramName, value);
-            
-        } else if (this.scope.variables.has(idName)) {
-            throw "Not implemented yet!";
+        if (useActive && this.scope.currentFrameId !== -1) {
+            // If there is some frame selected, then update frame params
+            this.scope.frames[this.scope.currentFrameId - 1].properties.set(paramName, value);
         } else {
-            throw "Unknown identifier: " + idName;
+            idName = this.scope.currentComponent.instanceName;
+
+            // Check if instance exists
+            if (this.scope.instances.has(idName)) {
+                const component = this.scope.instances.get(idName);
+                component.parameters.set(paramName, value);
+
+            } else if (this.scope.variables.has(idName)) {
+                throw "Not implemented yet!";
+            } else {
+                throw "Unknown identifier: " + idName;
+            }
         }
     }
 
@@ -990,6 +998,30 @@ export class ExecutionContext {
         for (const key in styles) {
             this.scope.currentComponent.styles[key] = styles[key];
         }
+    }
+
+    enterFrame(): number {
+        // Frame 0 is the 'base' frame
+        const frameId = this.scope.frames.length + 1;
+        const frameObject = new Frame(frameId);
+        this.scope.frames.push(frameObject);
+
+        this.scope.sequence.push([SequenceAction.Frame,
+            frameObject, FrameAction.Enter]);
+
+        this.scope.currentFrameId = frameId;
+        this.scope.setActive(ActiveObject.Frame, frameId);
+
+        // TODO: allow frame properties to be set in double dot expressions
+        // TODO: also allow frames to be assigned in variables for reuse?
+
+        return frameId;
+    }
+
+    exitFrame(frameId: number): void {
+        const frame = this.scope.frames[frameId-1];
+        this.scope.sequence.push([SequenceAction.Frame,
+            frame, FrameAction.Exit]);
     }
 }
 

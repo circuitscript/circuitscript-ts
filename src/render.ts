@@ -1,15 +1,19 @@
 import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { BoundBox, MergedWire, RenderComponent, RenderJunction, RenderWire, getBounds } from "./layout";
+import { BoundBox, MergedWire, RenderComponent, RenderFrame, RenderJunction, RenderText, RenderWire, getBounds } from "./layout";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
 
-export function generateSVG2(graph: {components: RenderComponent[], 
-    wires: RenderWire[], junctions: RenderJunction[], 
-    mergedWires: MergedWire[], debugRects: BoundBox[]}): string {
-    
+export function generateSVG2(graph: {
+    components: RenderComponent[],
+    wires: RenderWire[], junctions: RenderJunction[],
+    mergedWires: MergedWire[], debugRects: BoundBox[],
+    frameObjects: RenderFrame[],
+    textObjects: RenderText[],
+    }): string {
+
     const window = createSVGWindow();
     const document = window.document;
 
@@ -20,7 +24,7 @@ export function generateSVG2(graph: {components: RenderComponent[],
 
     generateSVGChild(canvas, 
         graph.components, graph.wires, graph.junctions, graph.mergedWires,
-        graph.debugRects,
+        graph.frameObjects, graph.textObjects,
         );
     const {x, y, width, height} = canvas.bbox();
 
@@ -37,12 +41,12 @@ export function generateSVG2(graph: {components: RenderComponent[],
 function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, 
     components: RenderComponent[], wires: RenderWire[], 
     junctions: RenderJunction[], mergedWires:MergedWire[],
-    debugRects: BoundBox[]): void {
+    frameObjects:RenderFrame[], textObjects: RenderText[] ): void {
 
     const displayWireId = false;
 
     // Draw the display grid
-    const bounds = getBounds(components, wires, junctions);
+    const bounds = getBounds(components, wires, junctions, frameObjects);
 
     drawGrid(
         canvas.group().translate(0, 0),
@@ -148,6 +152,24 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     //                         .stroke({ width: 1, color: '#000'});
     //     tmpRect.translate(box.xmin, box.ymin);
     // });
+
+    const frameGroup = canvas.group();
+    frameObjects.forEach(item => {
+        const { bounds } = item;
+        const width = bounds.xmax - bounds.xmin;
+        const height = bounds.ymax - bounds.ymin;
+        const tmpRect = frameGroup.rect(width, height)
+            .fill('none')
+            .stroke({ width: 1, color: '#000080' });
+        tmpRect.translate(bounds.xmin, bounds.ymin);
+    });
+
+    textObjects.forEach(item => {
+        const {x, y, symbol} = item;
+        const innerGroup = canvas.group();
+        innerGroup.translate(x, y);
+        symbol.draw(innerGroup);
+    });
 
     // Draw origin
     canvas.group().translate(0,0)

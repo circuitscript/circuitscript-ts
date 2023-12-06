@@ -147,6 +147,7 @@ export abstract class SymbolGraphic {
                 fontSize = 10,
                 anchor = HorizontalAlign.Left, 
                 vanchor = VerticalAlign.Bottom,
+                fontWeight = 'regular',
             } = tmpLabel.style;
 
             let anchorStyle = 'start';
@@ -195,6 +196,7 @@ export abstract class SymbolGraphic {
                     size: fontSize,
                     anchor: anchorStyle,
                     'dominant-baseline': dominantBaseline,
+                    weight: fontWeight,
                 });
 
             if (this.angle === 180){
@@ -425,6 +427,29 @@ export class SymbolPointHidden extends SymbolGraphic {
     generateDrawing(): void {
         const drawing = new SymbolDrawing();
         drawing.addPin(0, 0, 0, 0, 1);
+
+        this.drawing = drawing;
+    }
+}
+
+export class SymbolText extends SymbolGraphic {
+
+    text: string;
+    fontSize = 10;
+    fontWeight = 'regular';
+
+    constructor(text: string){
+        super();
+        this.text = text;
+    }
+
+    generateDrawing(): void {
+        const drawing = new SymbolDrawing();
+        drawing.addLabel(0, 0, this.text, {
+            fontSize: this.fontSize,
+            anchor: HorizontalAlign.Middle,
+            fontWeight: this.fontWeight,
+        });
 
         this.drawing = drawing;
     }

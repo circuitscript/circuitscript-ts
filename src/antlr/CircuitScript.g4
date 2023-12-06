@@ -48,7 +48,8 @@ expression: add_component_expr
         | wire_expr
         | point_expr
         | import_expr
-
+        | frame_expr
+        
         | at_block
         | branch_blocks
         | style_expr
@@ -157,6 +158,8 @@ wire_expr: Wire ID (INTEGER_VALUE | ID)*;
 point_expr: Point ID;
 
 import_expr: Import ID;
+
+frame_expr: 'frame' ':' NEWLINE INDENT (NEWLINE | expression+)+ DEDENT;
 
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};

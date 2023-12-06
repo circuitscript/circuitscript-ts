@@ -3,6 +3,7 @@ import { Net } from './Net';
 import { CFunction, ComponentPinNet, ComponentPinNetPair, ValueType } from './types';
 import { LayoutDirection } from '../globals';
 import { Wire, WireSegment } from './Wire';
+import { Frame } from './Frame';
 
 export class ExecutionScope {
     scopeId: number;
@@ -17,6 +18,7 @@ export class ExecutionScope {
     branchStack: Map<number, any> = new Map();
 
     wires: Wire[] = [];
+    frames: Frame[] = [];
 
     indentLevel = 0;
     netCounter = 1;
@@ -26,6 +28,7 @@ export class ExecutionScope {
     currentPin: number | null = null;
 
     currentWireId = -1;
+    currentFrameId = -1;
 
     netGnd: Net | null = null;
 
@@ -43,7 +46,7 @@ export class ExecutionScope {
     // This is very important in "building" up the graph
     // according to the user's order.
     sequence: any[] = [];
-
+    
     constructor(scopeId: number) {
         this.scopeId = scopeId;
     }
@@ -125,6 +128,25 @@ export class ExecutionScope {
             console.log(netName.padEnd(10), '=>', instanceName, pin);
         });
     }
+    
+    setActive(type: ActiveObject, item: any): void {
+        // Reset the state and ensure that only one of the 
+        // active object is selected.
+
+        this.clearActive();
+
+        if (type === ActiveObject.Wire) {
+            this.currentWireId = item;
+        } else if (type === ActiveObject.Frame) {
+            this.currentFrameId = item;
+        }
+    }
+
+    clearActive(): void {
+        // Clears any current selected wire or frame
+        this.currentWireId = -1;
+        this.currentFrameId = -1;
+    }
 }
 
 export enum SequenceAction {
@@ -133,9 +155,24 @@ export enum SequenceAction {
     Wire = 'wire',
 
     WireJump = 'wire-jump',
+
+    Frame = 'frame',
 }
 
+export enum FrameAction {
+    Enter = 'enter',
+    Exit = 'exit',
+}
+
+export enum ActiveObject {
+    Frame = 'frame',
+    Wire = 'wire',
+}
+
+
 export type SequenceItem =
-    [SequenceAction.To | SequenceAction.At, ClassComponent, number, LayoutDirection?, string?] |
-    [SequenceAction.Wire, number, WireSegment[]] |
-    [SequenceAction.WireJump, number];
+    [SequenceAction.To | SequenceAction.At, ClassComponent, number, LayoutDirection?, string?]
+    | [SequenceAction.Wire, number, WireSegment[]]
+    | [SequenceAction.WireJump, number]
+    | [SequenceAction.Frame, Frame, "enter" | "exit"]
+    ;

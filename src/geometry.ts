@@ -10,6 +10,7 @@ export type Feature = Segment | Polygon | Label;
 export type LabelStyle = {
     font?: string,
     fontSize?: number,
+    fontWeight?: string,
     
     anchor?: HorizontalAlign.Left | HorizontalAlign.Middle | HorizontalAlign.Right, // Horizontal anchor
     vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
@@ -48,11 +49,13 @@ export class Label extends Flatten.Polygon {
 
         const { fontSize = 10,
             anchor = HorizontalAlign.Left,
-            vanchor = VerticalAlign.Bottom } = style;
+            vanchor = VerticalAlign.Bottom,
+            fontWeight = 'regular',
+         } = style;
 
         // Determine the size of the text
         const { width, height } =
-            measureTextSize2(text, defaultFont, fontSize);
+            measureTextSize2(text, defaultFont, fontSize, fontWeight);
 
         const polygonCoords =
             labelPolygonForAnchors(x, y, width, height, anchor, vanchor);

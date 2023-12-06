@@ -15,9 +15,12 @@ import {
     Create_component_exprContext,
     DataExprContext,
     Double_dot_property_set_exprContext,
+    ExpressionContext,
+    Frame_exprContext,
     Function_args_exprContext,
     Function_call_exprContext,
     Function_def_exprContext,
+    Function_exprContext,
     Function_return_exprContext,
     Import_exprContext,
     MultiplyExprContext,
@@ -309,15 +312,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitCreate_component_expr(ctx: Create_component_exprContext): ClassComponent {
-        const properties = new Map<string, any>();
-
-        ctx.property_expr_list().forEach((item) => {
-            const result: Map<string, any> = this.visit(item); // Map should be returned
-
-            for (const [key, value] of result) {
-                properties.set(key, value);
-            }
-        });
+        const properties = this.getPropertyExprList(ctx.property_expr_list());
 
         const pins: PinDefinition[] = this.parseCreateComponentPins(
             properties.get('pins'),
@@ -631,20 +626,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 newExecutor
             );
 
-            let returnValue: ComplexType | null = null;
-
-            // Execute the expressions within the context
-            const expressionList = ctx.function_expr_list();
-            for (let i = 0; i < expressionList.length; i++) {
-                const expr = expressionList[i];
-                this.visit(expr);
-
-                // If this flag is set, then do not parse anything further!
-                if (newExecutor.stopFurtherExpressions) {
-                    returnValue = newExecutor.returnValue;
-                    break;
-                }
-            }
+            const returnValue = this.runExpressions(newExecutor,
+                ctx.function_expr_list());
 
             // Function execution is completed, get the last executor
             const lastExecution = executionStack.pop();
@@ -928,6 +911,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return this.visit(ctx.data_expr());
     }
 
+    visitFrame_expr(ctx: Frame_exprContext): void  {
+        const frameId = this.getExecutor().enterFrame();
+        this.runExpressions(this.getExecutor(), ctx.expression_list());
+        this.getExecutor().exitFrame(frameId);
+    }
+
     pinTypes = [
         PinTypes.Any,
         PinTypes.IO,
@@ -1098,13 +1087,14 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     getGraph() {
-        const sequence = this.getExecutor().scope.sequence;
-        const nets = this.getExecutor().scope.getNets();
+        const executor = this.getExecutor();
+        const sequence = executor.scope.sequence;
+        const nets = executor.scope.getNets();
 
         return {
             sequence,
             nets,
-            components: Array.from(this.getExecutor().scope.instances.values())
+            components: Array.from(executor.scope.instances.values())
         };
     }
 
@@ -1181,6 +1171,42 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         } else {
             throw "Invalid modifier for orientation";
         }
+    }
+
+    private getPropertyExprList(items: Property_exprContext[]): Map<string, any>{
+        const properties = new Map<string, any>();
+
+        items.forEach((item) => {
+            const result: Map<string, any> = this.visit(item); // Map should be returned
+
+            for (const [key, value] of result) {
+                properties.set(key, value);
+            }
+        });
+
+        return properties;
+    }
+
+    private runExpressions(executor: ExecutionContext,
+        expressions: ExpressionContext[] | Function_exprContext[]): ComplexType {
+
+        let returnValue: ComplexType | null = null;
+
+        // Execute the expressions within the context
+        for (let i = 0; i < expressions.length; i++) {
+            const expr = expressions[i];
+
+            // The correct executor MUST be on the top/end of the stack!
+            this.visit(expr);
+
+            // If this flag is set, then do not parse anything further!
+            if (executor.stopFurtherExpressions) {
+                returnValue = executor.returnValue;
+                break;
+            }
+        }
+
+        return returnValue;
     }
 }
 

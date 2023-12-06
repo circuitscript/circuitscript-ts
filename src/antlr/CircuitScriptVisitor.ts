@@ -55,6 +55,7 @@ import { Blank_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
 import { Point_exprContext } from "./CircuitScriptParser";
 import { Import_exprContext } from "./CircuitScriptParser";
+import { Frame_exprContext } from "./CircuitScriptParser";
 
 
 /**
@@ -385,5 +386,11 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitImport_expr?: (ctx: Import_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.frame_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitFrame_expr?: (ctx: Frame_exprContext) => Result;
 }
 
