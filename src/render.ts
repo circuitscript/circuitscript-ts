@@ -1,7 +1,8 @@
 import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { BoundBox, MergedWire, RenderComponent, RenderFrame, RenderJunction, RenderText, RenderWire, getBounds } from "./layout";
+import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
+    RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds, getBoundsSize } from "./layout";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
@@ -155,13 +156,15 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
 
     const frameGroup = canvas.group();
     frameObjects.forEach(item => {
-        const { bounds } = item;
-        const width = bounds.xmax - bounds.xmin;
-        const height = bounds.ymax - bounds.ymin;
-        const tmpRect = frameGroup.rect(width, height)
-            .fill('none')
-            .stroke({ width: 1, color: '#111' });
-        tmpRect.translate(bounds.xmin, bounds.ymin);
+        if (item.type === RenderFrameType.Container && item.frame.frameId !== -1) {
+            const { bounds } = item;
+            const {width, height} = getBoundsSize(bounds);
+            const tmpRect = frameGroup.rect(width, height)
+                .fill('none')
+                .stroke({ width: 1, color: '#111' });
+                
+            tmpRect.translate(item.x, item.y);
+        }
     });
 
     textObjects.forEach(item => {

@@ -854,9 +854,12 @@ export class ExecutionContext {
 
             } else if (action === SequenceAction.Frame){
                 const frame: Frame = sequenceAction[1];
-                frame.frameId += frameIdOffset;
+                const frameAction: string = sequenceAction[2];
+                if (frameAction === FrameAction.Enter){
+                    frame.frameId += frameIdOffset;   
+                    this.scope.frames.push(frame);
+                }
                 
-                this.scope.frames.push(frame);
                 this.scope.sequence.push(sequenceAction);
             }
         });
