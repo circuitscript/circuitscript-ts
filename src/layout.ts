@@ -10,11 +10,7 @@ import { Geometry } from './geometry';
 import { Net } from './objects/Net';
 import { Logger } from './logger';
 import { Frame } from './objects/Frame';
-
-export type BoundBox = {
-    xmin: number, ymin: number,
-    xmax: number, ymax: number,
-}
+import { BoundBox, getBoundsSize, resizeToNearestGrid } from './utils';
 
 export class LayoutEngine {
 
@@ -1041,8 +1037,6 @@ function getWireName(wireId: number): string {
 
 type RenderItem = RenderComponent | RenderWire | RenderText;
 
-type WirePointCount = [x: number, y: number, count: number];
-
 function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
     const pins = component.pins;
     const symbolPinDefinitions: SymbolPinDefintion[] = [];
@@ -1466,6 +1460,8 @@ export class RenderFrame extends RenderObject {
     bounds: BoundBox | null = null;
     frame: Frame;
 
+    // Store all items in the same array so that the order of frames
+    // can be identified.
     innerItems: (RenderComponent | RenderFrame)[] = [];
     
     translateX = 0;
@@ -1512,38 +1508,4 @@ type SubGraphInfo = {
     bounds: BoundBox;
 }
 
-
-function resizeBounds(bounds: BoundBox, value: number): BoundBox {
-    return {
-        xmin: bounds.xmin - value,
-        xmax: bounds.xmax + value,
-
-        ymin: bounds.ymin - value,
-        ymax: bounds.ymax + value
-    }
-}
-
-export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
-    
-    // These extra values force the bounds to be expanded if it is already
-    // to the grid, otherwise the expanded grid might "just nice" fit.
-    const addXMin = (bounds.xmin % gridSize) === 0 ? -1: 0;
-    const addYMin = (bounds.ymin % gridSize) === 0 ? -1: 0;
-    const addXMax = (bounds.xmax % gridSize) === 0 ? 1 : 0;
-    const addYMax = (bounds.ymax % gridSize) === 0 ? 1 : 0;
-
-    return {
-        xmin: Math.floor((bounds.xmin + addXMin) / gridSize) * gridSize,
-        ymin: Math.floor((bounds.ymin + addYMin) / gridSize) * gridSize,
-
-        xmax: Math.ceil((bounds.xmax + addXMax) / gridSize) * gridSize,
-        ymax: Math.ceil((bounds.ymax + addYMax) / gridSize) * gridSize,
-    }
-}
-
-export function getBoundsSize(bounds: BoundBox): {width: number, height: number} {
-    return {
-        width: bounds.xmax - bounds.xmin,
-        height: bounds.ymax - bounds.ymin,
-    }
-}
+export { BoundBox };

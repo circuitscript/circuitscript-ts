@@ -2,7 +2,7 @@ import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
-    RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds, getBoundsSize } from "./layout";
+    RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout";
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
