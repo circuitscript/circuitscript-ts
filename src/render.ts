@@ -155,14 +155,23 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     // });
 
     const frameGroup = canvas.group();
+
     frameObjects.forEach(item => {
-        if (item.type === RenderFrameType.Container && item.frame.frameId !== -1) {
+        if (item.frame.frameId !== -1) {
             const { bounds } = item;
-            const {width, height} = getBoundsSize(bounds);
+            const { width, height } = getBoundsSize(bounds);
+
+            let strokeColor = '#111';
+            if (item.type === RenderFrameType.Container) {
+                strokeColor = '#111';
+            } else {
+                strokeColor = '#aaa';
+            }
+
             const tmpRect = frameGroup.rect(width, height)
                 .fill('none')
-                .stroke({ width: 1, color: '#111' });
-                
+                .stroke({ width: 1, color: strokeColor });
+
             tmpRect.translate(item.x, item.y);
         }
     });

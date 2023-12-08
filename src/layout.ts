@@ -47,7 +47,7 @@ export class LayoutEngine {
         const logNodesAndEdges = false;
     
         this.print('===== creating graph and populating with nodes =====');
-        const {graph, frameObjects } = 
+        const {graph, layoutFrames } = 
             this.generateLayoutGraph(sequence, nets);
         
         this.print('===== done populating graph =====');
@@ -87,7 +87,7 @@ export class LayoutEngine {
             });
         }
 
-        this.placeFrames(graph, subgraphInfo, frameObjects);
+        const frameObjects = this.placeFrames(graph, subgraphInfo, layoutFrames);
         
         // debugRects = debugRects.concat(tmpBounds);
     
@@ -158,40 +158,78 @@ export class LayoutEngine {
         };
     }
 
-    placeFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[], frameObjects: RenderFrame[]): void {
-        // Change frameObjects array such that it only consists of nested frames.
-        // Move components not explicitly in frames into virtual frames.
+    placeFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[],
+        frameObjects: RenderFrame[]): RenderFrame[] {
 
+        // Lays out frames and all the items within the frames.
+
+        // The base/default frame will always be the first element
         const baseFrame = frameObjects[0];
-        
-        // Update render frames so that frames consist of only nested frames.
-        // Subgraphs are wrapped inside a subgraph frame.
-        this.walkFrame(graph, subgraphInfo, baseFrame);
 
-        this.print('===== dump frames =====');
-        this.dumpFrame(baseFrame);
-        this.print('===== dump frames =====');
+        // Update render frames so that frames consist of only nested frames.
+        // Layout is easier, since it only has to consider frames.
+        // Subgraphs are wrapped inside a subgraph frame.
+        this.prepareFrames(graph, subgraphInfo, baseFrame);
+
+        const logFrames = false;
+        if (logFrames) {
+            this.print('===== dump frames =====');
+            this.dumpFrame(baseFrame);
+            this.print('===== dump frames =====');
+        }
 
         this.placeAndSizeFrame(baseFrame);
 
-        // All items in the frames are now placed properly
-        // Create a tree with the final positions
-
+        // All items in the frames are now ready for final placement.
         baseFrame.x = 0;
         baseFrame.y = 0;
 
         this.print('===== flatten frame items =====');
-        this.flattenFrameItems(baseFrame);
+        this.applyFrameOffset(baseFrame);
         this.print('===== flatten frame items =====');
+
+        // Collect all frames
+        return this.collectFrames(baseFrame);
     }
 
-    flattenFrameItems(frame: RenderFrame, level=0): void {
+    collectFrames(frame: RenderFrame, level = 0): RenderFrame[] {
+        // Unwrap subgraph frames within nested frames.
+
+        const innerItems = frame.innerItems as RenderFrame[];
+
+        const frames: RenderFrame[] = [];
+
+        innerItems.forEach(item => {
+            if (item.type === RenderFrameType.Subgraph) {
+                frames.push(item);
+            } else if (item.type === RenderFrameType.Container) {
+
+                const numSubgraphs = (item.innerItems as RenderFrame[]).filter(item => {
+                    return item.type === RenderFrameType.Subgraph
+                }).length;
+
+                // If this frame only contains subgraph frames, then keep 
+                // this container frame.
+                if (numSubgraphs === item.innerItems.length){
+                    frames.push(item);
+                } else {
+                    const innerFrames = this.collectFrames(item, level + 1);
+                    frames.push(...innerFrames);
+                }                
+            }
+        });
+
+        return frames;
+    }
+
+    applyFrameOffset(frame: RenderFrame, level = 0): void {
         this.print(level, "".padStart(level * 4), 'frame', frame.x, frame.y);
         const innerItems = frame.innerItems as RenderFrame[];
 
         innerItems.forEach(innerFrame => {
-            if (innerFrame.type === RenderFrameType.Subgraph){
-                this.print(level, "".padStart(level * 4), 'subgraph frame', innerFrame.x, innerFrame.y);
+            if (innerFrame.type === RenderFrameType.Subgraph) {
+                this.print(level, "".padStart(level * 4), 'subgraph frame',
+                    innerFrame.x, innerFrame.y);
 
                 innerFrame.innerItems.forEach(item2 => {
                     item2.x += frame.x + innerFrame.x - innerFrame.translateX;
@@ -202,41 +240,52 @@ export class LayoutEngine {
                 innerFrame.x += frame.x;
                 innerFrame.y += frame.y;
 
-                this.print(level, "".padStart(level * 4), 'container frame', innerFrame.x, innerFrame.y);
-                this.flattenFrameItems(innerFrame, level + 1);
+                this.print(level, "".padStart(level * 4), 'container frame',
+                    innerFrame.x, innerFrame.y);
+                this.applyFrameOffset(innerFrame, level + 1);
             }
         });
     }
 
-
     placeAndSizeFrame(frame: RenderFrame, level = 0): void {
+        // Recursively walk through the frame's inner items and lay them out
+        // depending on their bounds and position in the parent frame.
+
         const innerItems = frame.innerItems as RenderFrame[];
         const framePadding = 20;
 
         let accumY = 0;
 
-        // This is used to determine the bounds of this frame
+        // This is used to determine the final bounds of this frame
         const boundPoints = [];
 
         innerItems.forEach(innerFrame => {
-            if (innerFrame.type === RenderFrameType.Subgraph){
+            if (innerFrame.type === RenderFrameType.Subgraph) {
                 // Set translate such that the origin of the frame is at it's 
                 // upper left corner.
+                innerFrame.bounds = resizeToNearestGrid(innerFrame.bounds, 20);
+                
                 innerFrame.translateX = innerFrame.bounds.xmin;
                 innerFrame.translateY = innerFrame.bounds.ymin;
+
             } else {
                 this.placeAndSizeFrame(innerFrame, level + 1);
             }
 
+            // For now, align to the left side.
             innerFrame.x = 0;
             innerFrame.y = accumY;
 
-            const frameSize = getBoundsSize(innerFrame.bounds);
-            accumY += frameSize.height + framePadding;
+            const { width: frameWidth, height: frameHeight } =
+                getBoundsSize(innerFrame.bounds);
 
-            boundPoints.push([innerFrame.x, innerFrame.y]);
-            boundPoints.push([innerFrame.x + frameSize.width, 
-                innerFrame.y + frameSize.height]);
+            accumY += frameHeight + framePadding;
+
+            boundPoints.push(
+                [innerFrame.x, innerFrame.y],
+                [innerFrame.x + frameWidth,
+                innerFrame.y + frameHeight]
+            );
         });
 
         // Determine the bounds based on the points;
@@ -268,26 +317,27 @@ export class LayoutEngine {
         });
     }
 
-    walkFrame(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[], frame: RenderFrame, level = 0): void {
-
-        let ignoreItems: string[] = [];
+    prepareFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[], frame: RenderFrame, level = 0): void {
+        const ignoreItems: string[] = [];
 
         frame.innerItems = frame.innerItems.reduce((accum, item) => {
             if (item instanceof RenderFrame) {
-                this.walkFrame(graph, subgraphInfo, item, level + 1);
+                // If this is frame, then go into this frame and also wrap
+                // subgraphs.
+                this.prepareFrames(graph, subgraphInfo, item, level + 1);
                 accum.push(item);
             } else {
                 const instanceName = item.component.instanceName;
 
                 if (ignoreItems.indexOf(instanceName) === -1) {
-                    // Only if not ignored already, then create the virtual
+                    // Only if not ignored already, then create the subgraph
                     // frame for the given component.
                     const subgraph = subgraphInfo.find(item => {
                         return item.components.indexOf(instanceName) !== -1;
                     });
 
                     if (subgraph !== undefined) {
-                        const tmpFrame = new RenderFrame(null, RenderFrameType.Subgraph);
+                        const tmpFrame = new RenderFrame(new Frame(-2), RenderFrameType.Subgraph);
                         tmpFrame.innerItems = subgraph.components.map(instanceName => {
                             const [, component,] = graph.node(instanceName);
                             return component;
@@ -295,11 +345,11 @@ export class LayoutEngine {
 
                         // Set the size of the frame to be the size of the subgraph
                         tmpFrame.bounds = subgraph.bounds;
+                        ignoreItems.push(...subgraph.components);
 
-                        ignoreItems = ignoreItems.concat(subgraph.components);
                         accum.push(tmpFrame);
                     } else {
-                        console.log('could not find subgraph for', instanceName);
+                        throw `Could not find subgraph for ${instanceName}`;
                     }
                 }
             }
@@ -311,7 +361,7 @@ export class LayoutEngine {
     generateLayoutGraph(sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]): {
             graph: graphlib.Graph,
-            frameObjects: RenderFrame[],
+            layoutFrames: RenderFrame[],
          } {
         // Based on the sequence of actions, generate a graph that links
         // the nodes (components and wires)
@@ -331,7 +381,7 @@ export class LayoutEngine {
         const baseRenderFrame = new RenderFrame(new Frame(-1));
 
         const frameStack: RenderFrame[] = [baseRenderFrame];
-        const frameObjects: RenderFrame[] = [baseRenderFrame];
+        const layoutFrames: RenderFrame[] = [baseRenderFrame];
 
         // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
@@ -473,7 +523,7 @@ export class LayoutEngine {
                     const prevFrame = frameStack[frameStack.length-1];
 
                     const newFrame = new RenderFrame(frameObject);
-                    frameObjects.push(newFrame);
+                    layoutFrames.push(newFrame);
                     frameStack.push(newFrame);
 
                     // If the previous frame exists, then add the new frame
@@ -489,7 +539,7 @@ export class LayoutEngine {
 
         return {
             graph,
-            frameObjects,
+            layoutFrames,
         }
     }
 
@@ -1484,7 +1534,25 @@ function resizeBounds(bounds: BoundBox, value: number): BoundBox {
     }
 }
 
-function getBoundsSize(bounds: BoundBox): {width: number, height: number} {
+export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
+    
+    // These extra values force the bounds to be expanded if it is already
+    // to the grid, otherwise the expanded grid might "just nice" fit.
+    const addXMin = (bounds.xmin % gridSize) === 0 ? -1: 0;
+    const addYMin = (bounds.ymin % gridSize) === 0 ? -1: 0;
+    const addXMax = (bounds.xmax % gridSize) === 0 ? 1 : 0;
+    const addYMax = (bounds.ymax % gridSize) === 0 ? 1 : 0;
+
+    return {
+        xmin: Math.floor((bounds.xmin + addXMin) / gridSize) * gridSize,
+        ymin: Math.floor((bounds.ymin + addYMin) / gridSize) * gridSize,
+
+        xmax: Math.ceil((bounds.xmax + addXMax) / gridSize) * gridSize,
+        ymax: Math.ceil((bounds.ymax + addYMax) / gridSize) * gridSize,
+    }
+}
+
+export function getBoundsSize(bounds: BoundBox): {width: number, height: number} {
     return {
         width: bounds.xmax - bounds.xmin,
         height: bounds.ymax - bounds.ymin,
