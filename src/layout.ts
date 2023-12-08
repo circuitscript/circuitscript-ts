@@ -47,7 +47,7 @@ export class LayoutEngine {
         const logNodesAndEdges = false;
     
         this.print('===== creating graph and populating with nodes =====');
-        const {graph, layoutFrames } = 
+        const {graph, containerFrames } = 
             this.generateLayoutGraph(sequence, nets);
         
         this.print('===== done populating graph =====');
@@ -87,10 +87,9 @@ export class LayoutEngine {
             });
         }
 
-        const frameObjects = this.placeFrames(graph, subgraphInfo, layoutFrames);
+        const subgraphFrames = this.placeFrames(graph, subgraphInfo, containerFrames);
+        const frameObjects = [...subgraphFrames, ...containerFrames];
         
-        // debugRects = debugRects.concat(tmpBounds);
-    
         const placedComponents: RenderComponent[] = [];
         const placedWires: RenderWire[] = [];
     
@@ -189,10 +188,10 @@ export class LayoutEngine {
         this.print('===== flatten frame items =====');
 
         // Collect all frames
-        return this.collectFrames(baseFrame);
+        return this.collectSubgraphFrames(baseFrame);
     }
 
-    collectFrames(frame: RenderFrame, level = 0): RenderFrame[] {
+    collectSubgraphFrames(frame: RenderFrame, level = 0): RenderFrame[] {
         // Unwrap subgraph frames within nested frames.
 
         const innerItems = frame.innerItems as RenderFrame[];
@@ -203,19 +202,8 @@ export class LayoutEngine {
             if (item.type === RenderFrameType.Subgraph) {
                 frames.push(item);
             } else if (item.type === RenderFrameType.Container) {
-
-                const numSubgraphs = (item.innerItems as RenderFrame[]).filter(item => {
-                    return item.type === RenderFrameType.Subgraph
-                }).length;
-
-                // If this frame only contains subgraph frames, then keep 
-                // this container frame.
-                if (numSubgraphs === item.innerItems.length){
-                    frames.push(item);
-                } else {
-                    const innerFrames = this.collectFrames(item, level + 1);
-                    frames.push(...innerFrames);
-                }                
+                const innerFrames = this.collectSubgraphFrames(item, level + 1);    
+                frames.push(...innerFrames);       
             }
         });
 
@@ -288,7 +276,8 @@ export class LayoutEngine {
             );
         });
 
-        // Determine the bounds based on the points;
+        // Determine the bounds based on the points. The points should already
+        // be aligned to the grid
         frame.bounds = getBoundsFromPoints(boundPoints);
     }
 
@@ -361,7 +350,7 @@ export class LayoutEngine {
     generateLayoutGraph(sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]): {
             graph: graphlib.Graph,
-            layoutFrames: RenderFrame[],
+            containerFrames: RenderFrame[],
          } {
         // Based on the sequence of actions, generate a graph that links
         // the nodes (components and wires)
@@ -381,7 +370,7 @@ export class LayoutEngine {
         const baseRenderFrame = new RenderFrame(new Frame(-1));
 
         const frameStack: RenderFrame[] = [baseRenderFrame];
-        const layoutFrames: RenderFrame[] = [baseRenderFrame];
+        const containerFrames: RenderFrame[] = [baseRenderFrame];
 
         // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
@@ -523,7 +512,7 @@ export class LayoutEngine {
                     const prevFrame = frameStack[frameStack.length-1];
 
                     const newFrame = new RenderFrame(frameObject);
-                    layoutFrames.push(newFrame);
+                    containerFrames.push(newFrame);
                     frameStack.push(newFrame);
 
                     // If the previous frame exists, then add the new frame
@@ -539,7 +528,7 @@ export class LayoutEngine {
 
         return {
             graph,
-            layoutFrames,
+            containerFrames,
         }
     }
 
