@@ -167,6 +167,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
                 strokeColor = '#111';
             } else {
                 strokeColor = '#aaa';
+                return;
             }
 
             const tmpRect = frameGroup.rect(width, height)
