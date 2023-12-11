@@ -6,6 +6,7 @@ import { BoundBox, MergedWire, RenderComponent, RenderFrame,
 import { applyFontsToSVG } from './sizing';
 import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
+import { getBoundsSize } from './utils';
 
 export function generateSVG2(graph: {
     components: RenderComponent[],
@@ -183,8 +184,10 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         symbol.draw(innerGroup);
     });
 
+    const drawOrigin = false;
+
     // Draw origin
-    canvas.group().translate(0,0)
+    drawOrigin && canvas.group().translate(0,0)
         .circle(5)
         .translate(-5/2, -5/2)
         .stroke('none').fill('red');

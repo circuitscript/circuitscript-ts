@@ -26,6 +26,14 @@ export function resizeBounds(bounds: BoundBox, value: number): BoundBox {
     }
 }
 
+export function printBounds(bounds: BoundBox): string {
+    if (bounds !== null){
+        return `[${bounds.xmin}, ${bounds.ymin} to ${bounds.xmax}, ${bounds.ymax}]`;
+    } else {
+        return 'null';
+    }
+}
+
 export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
     
     // These extra values force the bounds to be expanded if it is already

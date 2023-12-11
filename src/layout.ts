@@ -10,7 +10,7 @@ import { Geometry } from './geometry';
 import { Net } from './objects/Net';
 import { Logger } from './logger';
 import { Frame } from './objects/Frame';
-import { BoundBox, getBoundsSize, resizeToNearestGrid } from './utils';
+import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid } from './utils';
 
 export class LayoutEngine {
 
@@ -24,6 +24,10 @@ export class LayoutEngine {
 
     protected print(...params: any[]): void {
         this.logger.add(params.join(' '));
+    }
+
+    protected printLevel(level: number, ...params: any[]): void {
+        this.logger.add(this.padLevel(level) + params.join(' '));
     }
 
     protected padLevel(value: number): string {
@@ -160,6 +164,7 @@ export class LayoutEngine {
 
         // The base/default frame will always be the first element
         const baseFrame = frameObjects[0];
+        baseFrame.padding = 0;
 
         // Update render frames so that frames consist of only nested frames.
         // Layout is easier, since it only has to consider frames.
@@ -211,21 +216,23 @@ export class LayoutEngine {
         const innerItems = frame.innerItems as RenderFrame[];
 
         innerItems.forEach(innerFrame => {
+            // Translate the subgraph frame by the parent frame's position
+            innerFrame.x += frame.x;
+            innerFrame.y += frame.y;
+
             if (innerFrame.type === RenderFrameType.Subgraph) {
                 this.print(level, "".padStart(level * 4), 'subgraph frame',
                     innerFrame.x, innerFrame.y);
 
                 innerFrame.innerItems.forEach(item2 => {
-                    item2.x += frame.x + innerFrame.x - innerFrame.translateX;
-                    item2.y += frame.y + innerFrame.y - innerFrame.translateY;
+                    item2.x += innerFrame.x - innerFrame.translateX;
+                    item2.y += innerFrame.y - innerFrame.translateY;
                 });
 
             } else {
-                innerFrame.x += frame.x;
-                innerFrame.y += frame.y;
-
                 this.print(level, "".padStart(level * 4), 'container frame',
                     innerFrame.x, innerFrame.y);
+                    
                 this.applyFrameOffset(innerFrame, level + 1);
             }
         });
@@ -235,46 +242,65 @@ export class LayoutEngine {
         // Recursively walk through the frame's inner items and lay them out
         // depending on their bounds and position in the parent frame.
 
-        const innerItems = frame.innerItems as RenderFrame[];
-        const framePadding = 20;
+        const innerFrames = frame.innerItems as RenderFrame[];
+        const gridSize = 20;
 
         let accumY = 0;
 
         // This is used to determine the final bounds of this frame
         const boundPoints = [];
 
-        innerItems.forEach(innerFrame => {
+        // First pass collects the size of all inner frames
+        const frameSizes = innerFrames.map(innerFrame => {
             if (innerFrame.type === RenderFrameType.Subgraph) {
                 // Set translate such that the origin of the frame is at it's 
                 // upper left corner.
-                innerFrame.bounds = resizeToNearestGrid(innerFrame.bounds, 20);
-                
+                innerFrame.bounds = resizeToNearestGrid(
+                    innerFrame.bounds, gridSize);
+
                 innerFrame.translateX = innerFrame.bounds.xmin;
                 innerFrame.translateY = innerFrame.bounds.ymin;
 
             } else {
+                // If this is a container frame, then apply the same strategy
+                // to size the inner items of this frame.
                 this.placeAndSizeFrame(innerFrame, level + 1);
             }
 
-            // For now, align to the left side.
-            innerFrame.x = 0;
-            innerFrame.y = accumY;
+            return innerFrame.bounds;
+        });
 
-            const { width: frameWidth, height: frameHeight } =
-                getBoundsSize(innerFrame.bounds);
+        // Find the largest width (should already be aligned to grid size).
+        const maxWidth = Math.max(...frameSizes.map(item => {
+            const { width } = getBoundsSize(item);
+            return width;
+        }));
 
-            accumY += frameHeight + framePadding;
+        const offsetX = frame.padding;
+        const offsetY = frame.padding;
+
+        // Second pass arranges the items and sets the height
+        innerFrames.forEach(innerFrame => {
+            // Align to nearest grid
+            const { width: frameWidth, height: frameHeight }
+                = getBoundsSize(innerFrame.bounds);
+
+            // Align to the center, but also to the nearest grid size.
+            innerFrame.x = offsetX + Math.floor((maxWidth / 2 - frameWidth / 2) / gridSize) * gridSize;
+            innerFrame.y = offsetY + accumY;
+
+            accumY += (frameHeight + frame.padding);
 
             boundPoints.push(
                 [innerFrame.x, innerFrame.y],
-                [innerFrame.x + frameWidth,
-                innerFrame.y + frameHeight]
+                [innerFrame.x + frameWidth, innerFrame.y + frameHeight]
             );
         });
 
         // Determine the bounds based on the points. The points should already
-        // be aligned to the grid
-        frame.bounds = getBoundsFromPoints(boundPoints);
+        // be aligned to the grid, add the frame padding to expand the bounds correctly.
+        frame.bounds = resizeBounds(getBoundsFromPoints(boundPoints), 
+            frame.padding);
     }
 
     dumpFrame(frame: RenderFrame, level = 0): void {
@@ -322,7 +348,9 @@ export class LayoutEngine {
                     });
 
                     if (subgraph !== undefined) {
-                        const tmpFrame = new RenderFrame(new Frame(-2), RenderFrameType.Subgraph);
+                        const tmpFrame = new RenderFrame(new Frame(-2), 
+                            RenderFrameType.Subgraph);
+                        tmpFrame.subgraphId = instanceName;
                         tmpFrame.innerItems = subgraph.components.map(instanceName => {
                             const [, component,] = graph.node(instanceName);
                             return component;
@@ -1179,8 +1207,9 @@ export function getBounds(
     });
 
     frames.forEach(item => {
-        // points.push([item.bounds.xmin, item.bounds.ymin]);
-        // points.push([item.bounds.xmax, item.bounds.ymax]);
+        const {width, height} = getBoundsSize(item.bounds);
+        points.push([item.x, item.y]);
+        points.push([item.x + width, item.y + height]);
     })
 
     return getBoundsFromPoints(points);
@@ -1467,12 +1496,27 @@ export class RenderFrame extends RenderObject {
     translateX = 0;
     translateY = 0;
 
+    padding = 20;
+
+    subgraphId = "";
+
     type: RenderFrameType;
 
     constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
         super();
         this.frame = frame;
         this.type = type;
+    }
+
+    toString(): string {
+        let name = "";
+        if (this.type === RenderFrameType.Container) {
+            name = 'container_' + this.frame.frameId;
+        } else if (this.type === RenderFrameType.Subgraph) {
+            name = 'subgraph_' + this.subgraphId;
+        }
+
+        return name + ": " + this.x + "," + this.y + " bounds:" + printBounds(this.bounds);
     }
 }
 
