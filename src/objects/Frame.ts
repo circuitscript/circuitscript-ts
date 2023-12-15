@@ -1,8 +1,12 @@
 export class Frame {
-    properties: Map<string, any> = new Map();
+    parameters: Map<string, any> = new Map();
     frameId: number;
 
     constructor(frameId: number) {
         this.frameId = frameId;
     }
+}
+
+export enum FrameParamKeys {
+    Title = 'title'
 }

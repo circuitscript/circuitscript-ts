@@ -9,7 +9,7 @@ import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
 import { Net } from './objects/Net';
 import { Logger } from './logger';
-import { Frame } from './objects/Frame';
+import { Frame, FrameParamKeys } from './objects/Frame';
 import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid } from './utils';
 
 export class LayoutEngine {
@@ -87,8 +87,9 @@ export class LayoutEngine {
             });
         }
 
-        const subgraphFrames = this.placeFrames(graph, subgraphInfo, containerFrames);
-        const frameObjects = [...subgraphFrames, ...containerFrames];
+        const {textObjects, elementFrames} = 
+            this.placeFrames(graph, subgraphInfo, containerFrames);
+        const frameObjects = [...elementFrames, ...containerFrames];
         
         const placedComponents: RenderComponent[] = [];
         const placedWires: RenderWire[] = [];
@@ -153,12 +154,15 @@ export class LayoutEngine {
             junctions,
 
             frameObjects,
-            textObjects: [],
+            textObjects,
         };
     }
 
     placeFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[],
-        frameObjects: RenderFrame[]): RenderFrame[] {
+        frameObjects: RenderFrame[]): {
+            elementFrames: RenderFrame[],
+            textObjects: RenderText[],
+        } {
 
         // Lays out frames and all the items within the frames.
 
@@ -169,7 +173,8 @@ export class LayoutEngine {
         // Update render frames so that frames consist of only nested frames.
         // Layout is easier, since it only has to consider frames.
         // Subgraphs are wrapped inside a subgraph frame.
-        this.prepareFrames(graph, subgraphInfo, baseFrame);
+        const { textObjects, elementFrames } =
+            this.prepareFrames(graph, subgraphInfo, baseFrame);
 
         const logFrames = false;
         if (logFrames) {
@@ -188,11 +193,13 @@ export class LayoutEngine {
         this.applyFrameOffset(baseFrame);
         this.print('===== flatten frame items =====');
 
-        // Collect all frames
-        return this.collectSubgraphFrames(baseFrame);
+        return {
+            elementFrames,
+            textObjects,
+        }
     }
 
-    collectSubgraphFrames(frame: RenderFrame, level = 0): RenderFrame[] {
+    collectElementFrames(frame: RenderFrame, level = 0): RenderFrame[] {
         // Unwrap subgraph frames within nested frames.
 
         const innerItems = frame.innerItems as RenderFrame[];
@@ -200,10 +207,10 @@ export class LayoutEngine {
         const frames: RenderFrame[] = [];
 
         innerItems.forEach(item => {
-            if (item.type === RenderFrameType.Subgraph) {
+            if (item.type === RenderFrameType.Elements) {
                 frames.push(item);
             } else if (item.type === RenderFrameType.Container) {
-                const innerFrames = this.collectSubgraphFrames(item, level + 1);    
+                const innerFrames = this.collectElementFrames(item, level + 1);    
                 frames.push(...innerFrames);       
             }
         });
@@ -220,8 +227,8 @@ export class LayoutEngine {
             innerFrame.x += frame.x;
             innerFrame.y += frame.y;
 
-            if (innerFrame.type === RenderFrameType.Subgraph) {
-                this.print(level, "".padStart(level * 4), 'subgraph frame',
+            if (innerFrame.type === RenderFrameType.Elements) {
+                this.print(level, "".padStart(level * 4), 'element frame',
                     innerFrame.x, innerFrame.y);
 
                 innerFrame.innerItems.forEach(item2 => {
@@ -252,7 +259,7 @@ export class LayoutEngine {
 
         // First pass collects the size of all inner frames
         const frameSizes = innerFrames.map(innerFrame => {
-            if (innerFrame.type === RenderFrameType.Subgraph) {
+            if (innerFrame.type === RenderFrameType.Elements) {
                 // Set translate such that the origin of the frame is at it's 
                 // upper left corner.
                 innerFrame.bounds = resizeToNearestGrid(
@@ -311,9 +318,9 @@ export class LayoutEngine {
             // items must only be of type RenderFrame
             item = item as RenderFrame;
             
-            if (item.type === RenderFrameType.Subgraph) {
+            if (item.type === RenderFrameType.Elements) {
                 this.print(level, "".padStart(level * 4),
-                    'subgraph frame, items:', item.innerItems.map(item => {
+                    'element frame, items:', item.innerItems.map(item => {
                         if (item instanceof RenderComponent) {
                             return item.component.instanceName;
                         } else if (item instanceof RenderWire) {
@@ -328,39 +335,53 @@ export class LayoutEngine {
         });
     }
 
-    prepareFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[], frame: RenderFrame, level = 0): void {
+    prepareFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[], 
+        frame: RenderFrame, level = 0): {
+            elementFrames: RenderFrame[],
+            textObjects: RenderText[] 
+        } {
+        
         const ignoreItems: string[] = [];
+        const textObjects = [];
+        const elementFrames = [];
 
         frame.innerItems = frame.innerItems.reduce((accum, item) => {
             if (item instanceof RenderFrame) {
-                // If this is frame, then go into this frame and also wrap
-                // subgraphs.
-                this.prepareFrames(graph, subgraphInfo, item, level + 1);
+                // If this is frame, then go into this frame and wrap it's 
+                // elements into element frames.
+                const objects = 
+                    this.prepareFrames(graph, subgraphInfo, item, level + 1);
+                textObjects.push(...objects.textObjects);
+                elementFrames.push(...objects.elementFrames);
+
                 accum.push(item);
-            } else {
+            } else if (item instanceof RenderComponent){
                 const instanceName = item.component.instanceName;
 
                 if (ignoreItems.indexOf(instanceName) === -1) {
-                    // Only if not ignored already, then create the subgraph
-                    // frame for the given component.
+                    // Only if not ignored already, then create the elements
+                    // frame for the subgraph containing the instance.
                     const subgraph = subgraphInfo.find(item => {
                         return item.components.indexOf(instanceName) !== -1;
                     });
 
                     if (subgraph !== undefined) {
                         const tmpFrame = new RenderFrame(new Frame(-2), 
-                            RenderFrameType.Subgraph);
+                            RenderFrameType.Elements);
                         tmpFrame.subgraphId = instanceName;
-                        tmpFrame.innerItems = subgraph.components.map(instanceName => {
-                            const [, component,] = graph.node(instanceName);
-                            return component;
-                        });
+                        tmpFrame.innerItems = 
+                            subgraph.components.map(instanceName => {
+                                const [, component,] = graph.node(instanceName);
+                                return component;
+                            });
 
-                        // Set the size of the frame to be the size of the subgraph
+                        // Set the size of the element frame to be the size of 
+                        // the subgraph
                         tmpFrame.bounds = subgraph.bounds;
                         ignoreItems.push(...subgraph.components);
 
                         accum.push(tmpFrame);
+                        elementFrames.push(tmpFrame);
                     } else {
                         throw `Could not find subgraph for ${instanceName}`;
                     }
@@ -369,6 +390,55 @@ export class LayoutEngine {
 
             return accum;
         }, [] as RenderFrame[]);
+
+        // If the frame has a title specified, then this is added as an 
+        // element frame.
+        if (frame.type === RenderFrameType.Container) {
+            const frameObject = frame.frame;
+            if (frameObject.parameters.has(FrameParamKeys.Title)) {
+                const title = 
+                    frameObject.parameters.get(FrameParamKeys.Title) as string;
+                
+                // Add the element frame containing the text item
+                const tmpFrame = new RenderFrame(new Frame(-2),
+                    RenderFrameType.Elements);
+                tmpFrame.subgraphId = title.replace(/\s/g, "_");
+
+                const textObject = new RenderText(title);
+                textObject.fontSize = 16;
+                textObject.fontWeight = 'bold';
+
+                textObject.symbol.refreshDrawing();
+
+                tmpFrame.innerItems.push(textObject);
+
+                tmpFrame.bounds = {
+                    xmin: 0,
+                    ymin: 0,
+                    xmax: textObject.symbol.width,
+                    ymax: textObject.symbol.height
+                }
+
+                // For now, text is aligned to center and bottom of text.
+                textObject.x = textObject.symbol.width/2;
+                textObject.y = textObject.symbol.height/2;
+
+                // Add as first element
+                frame.innerItems.splice(0, 0, tmpFrame);
+
+                this.printLevel(level, frame, 'added text', tmpFrame);
+
+                textObjects.push(textObject);
+
+                // Add the start
+                elementFrames.splice(0, 0, tmpFrame);
+            }
+        }
+
+        return {
+            elementFrames,
+            textObjects,
+        }
     }
 
     generateLayoutGraph(sequence: SequenceItem[],
@@ -1491,7 +1561,7 @@ export class RenderFrame extends RenderObject {
 
     // Store all items in the same array so that the order of frames
     // can be identified.
-    innerItems: (RenderComponent | RenderFrame)[] = [];
+    innerItems: (RenderComponent | RenderFrame | RenderText)[] = [];
     
     translateX = 0;
     translateY = 0;
@@ -1512,8 +1582,8 @@ export class RenderFrame extends RenderObject {
         let name = "";
         if (this.type === RenderFrameType.Container) {
             name = 'container_' + this.frame.frameId;
-        } else if (this.type === RenderFrameType.Subgraph) {
-            name = 'subgraph_' + this.subgraphId;
+        } else if (this.type === RenderFrameType.Elements) {
+            name = 'elements_' + this.subgraphId;
         }
 
         return name + ": " + this.x + "," + this.y + " bounds:" + printBounds(this.bounds);
@@ -1522,7 +1592,7 @@ export class RenderFrame extends RenderObject {
 
 export enum RenderFrameType {
     Container = 1,
-    Subgraph = 2,
+    Elements = 2, // Holds subgraphs and text.
 }
 
 export class RenderJunction {

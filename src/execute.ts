@@ -989,7 +989,8 @@ export class ExecutionContext {
 
         if (useActive && this.scope.currentFrameId !== -1) {
             // If there is some frame selected, then update frame params
-            this.scope.frames[this.scope.currentFrameId - 1].properties.set(paramName, value);
+            this.scope.frames[this.scope.currentFrameId - 1]
+                .parameters.set(paramName, value);
         } else {
             idName = this.scope.currentComponent.instanceName;
 

@@ -165,7 +165,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
             let strokeColor = '#111';
             if (item.type === RenderFrameType.Container) {
                 strokeColor = '#111';
-            } else {
+            } else if (item.type === RenderFrameType.Elements){
                 strokeColor = '#aaa';
                 return;
             }
