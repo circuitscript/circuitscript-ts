@@ -16,16 +16,18 @@ export default async function main(): Promise<void> {
     await prepareSizing();
 
     const fileName = process.argv[2];
-    await renderScript(fileName);
-
     let watch = false;
     if (process.argv.length > 2) {
         if (process.argv[3] === "w") {
             watch = true;
+            console.log('watching for file changes...');
         }
     }
 
+    await renderScript(fileName);
+
     if (watch) {
+        
         fs.watch(fileName, (event, targetFile) => {
             if (event === 'change') {
                 renderScript(fileName).then(() => {
@@ -65,6 +67,8 @@ async function renderScript(scriptPath: string): Promise<void> {
     console.log('Lexing took:', lexerTimeTaken);
     console.log('Parsing took:', parserTimeTaken);
 
+    // console.log(visitor.dumpNets());
+
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
     
     if (hasError || hasParseError) {
@@ -85,19 +89,22 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
-        if (tmp[0] === SequenceAction.Wire) {
+
+        const action = tmp[0];
+
+        if (action === SequenceAction.Wire) {
             tmp[2] = tmp[2].map(item2 => {
                 return [item2.direction, item2.value].join(",");
             }).join(" ");
-
-        } else if (tmp[0] === SequenceAction.WireJump) {
-
-        } else {
+        } else if (action === SequenceAction.Frame) {
+            tmp[1] = item[1].frameId;
+            
+        } else if (action !== SequenceAction.WireJump) {
             tmp[1] = item[1].instanceName;
         }
 
         return tmp.join(" | ");
-    })
+    });
 
     await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
 
