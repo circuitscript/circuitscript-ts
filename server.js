@@ -1,5 +1,4 @@
 const express = require('express')
-const path = require('path');
 const ws = require('ws');
 const fs = require('fs');
 
@@ -39,17 +38,7 @@ wsServer.on('connection', socket => {
     });
 });
 
-app.get('/', function (req, res) {
-    res.send('Hello World')
-});
-
-app.get('/refresh.html', function (req, res) {
-    res.sendFile(path.join(__dirname, 'refresh.html'));
-});
-
-app.get('/output.svg', function (req, res) {
-    res.sendFile(path.join(__dirname, 'output.svg'));
-});
+app.use(express.static('./'))
 
 const server = app.listen(3000);
 server.on('upgrade', (request, socket, head) => {
