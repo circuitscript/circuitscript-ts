@@ -107,96 +107,98 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
             value: inductor_value
             footprint: inductor_footprint
 
+    frame:
+        ..title = "12V to " + output_label + " DCDC converter"
 
-    at tps54227:
-        1:
-            wire left 20
-            add res(10k) pin 2
-            wire left 40
-            add label(enable_label)
-            wire left 20
-            to v12v left
-
-        9:
-            wire left 20
-            branch:
-                wire down 20 right 20
-                to tps54227 pin 10
-            wire left 20 up 100 left 60
-            branch:
-                decoupling_cap(100n, false)
-            wire left 40
-            branch:
-                decoupling_cap(10u)
-            wire left 40
-            branch:
-                decoupling_cap(10u)
-
-            wire up 20
-            to v12v
-
-        3: 
-            wire left 100 down 20
-            decoupling_cap(1u)
-
-        4:
-            wire left 40
-            decoupling_cap(3300p)
-        
-        5: 
-            wire right 20 down 20
-            branch:
+        at tps54227:
+            1:
                 wire left 20
-                to tps54227 pin 11
-            wire down 20
-            to gnd
+                add res(10k) pin 2
+                wire left 40
+                add label(enable_label)
+                wire left 20
+                to v12v left
 
-        6:
-            wire right 60
-            branch:
-                wire down 20
-                wire left 60
-                to tps54227 pin 7
-            wire right 40
-            add power_inductor
-            wire right 20
-            branch:
-                wire down 20
-                add res(upper_fb_resistor) down
-                wire down 20
+            9:
+                wire left 20
                 branch:
-                    wire left 40
-                    wire auto_
-                    to tps54227 pin 2
+                    wire down 20 right 20
+                    to tps54227 pin 10
+                wire left 20 up 100 left 60
+                branch:
+                    decoupling_cap(100n, false)
+                wire left 40
+                branch:
+                    decoupling_cap(10u)
+                wire left 40
+                branch:
+                    decoupling_cap(10u)
+
+                wire up 20
+                to v12v
+
+            3: 
+                wire left 100 down 20
+                decoupling_cap(1u)
+
+            4:
+                wire left 40
+                decoupling_cap(3300p)
+            
+            5: 
+                wire right 20 down 20
+                branch:
+                    wire left 20
+                    to tps54227 pin 11
                 wire down 20
-                point fb_point
-                wire down 20
-                add res(lower_fb_resistor) down
                 to gnd
-            wire right 60
-            branch:
-                wire down 20
-                add cap(10p)
-                ..place = false
 
-                wire auto
-                to fb_point
-            wire right 60
-            branch:
-                decoupling_cap(22u)
-            wire right 60
-            branch:
-                decoupling_cap(22u)
-            wire right 40
-            add label(output_label)
-            wire right 40
+            6:
+                wire right 60
+                branch:
+                    wire down 20
+                    wire left 60
+                    to tps54227 pin 7
+                wire right 40
+                add power_inductor
+                wire right 20
+                branch:
+                    wire down 20
+                    add res(upper_fb_resistor) down
+                    wire down 20
+                    branch:
+                        wire left 40
+                        wire auto_
+                        to tps54227 pin 2
+                    wire down 20
+                    point fb_point
+                    wire down 20
+                    add res(lower_fb_resistor) down
+                    to gnd
+                wire right 60
+                branch:
+                    wire down 20
+                    add cap(10p)
+                    ..place = false
 
-        8:
-            wire right 20
-            add cap(100n)
-            ..angle = -90
-            wire right 20 down 20
-            to tps54227 pin 6
+                    wire auto
+                    to fb_point
+                wire right 60
+                branch:
+                    decoupling_cap(22u)
+                wire right 60
+                branch:
+                    decoupling_cap(22u)
+                wire right 40
+                add label(output_label)
+                wire right 40
+
+            8:
+                wire right 20
+                add cap(100n)
+                ..angle = -90
+                wire right 20 down 20
+                to tps54227 pin 6
 
 
     
@@ -354,15 +356,6 @@ def diode2():
 
 
 def pump_block(enable_name, sense_out):
-    conn = conn1x5()
-    at conn:
-        1:
-            wire left 20 up 20
-            to v12v
-        2: tmp_label("LOAD_SUPPLY")
-        3: tmp_label("+5V")
-        4: tmp_label("CONN+")
-        5: tmp_label("CONN-")
 
     relay = create component:
         pins: 5
@@ -387,123 +380,145 @@ def pump_block(enable_name, sense_out):
         params:
             footprint: "Package_TO_SOT_SMD:SOT-23-5"
 
-    at label("SENSE+")
-    wire right 40 
-    add res(1k)
-    wire right 20
-    point tmp1
+    frame:
+        ..title = "Pump control block (" + enable_name + ")"
+        
+        frame:
+            ..title = "Connector"
+            conn = conn1x5()
+            at conn:
+                1:
+                    wire left 20 up 20
+                    to v12v
+                2: tmp_label("LOAD_SUPPLY")
+                3: tmp_label("+5V")
+                4: tmp_label("CONN+")
+                5: tmp_label("CONN-")
 
-    branch:
-        wire right 40
-        to diff_amp pin 3
+        frame:
+            ..title = "Current sense for "+ sense_out
+        
+            at label("SENSE+")
+            wire right 40 
+            add res(1k)
+            wire right 20
+            point tmp1
 
-    at diff_amp:
-        2:
-            wire right 20 up 20
-            to v3v3
-        5:
+            branch:
+                wire right 40
+                to diff_amp pin 3
+
+            at diff_amp:
+                2:
+                    wire right 20 up 20
+                    to v3v3
+                5:
+                    wire right 20 down 20
+                    to gnd
+                1: 
+                    wire right 40
+                    branch:
+                        wire up 100 left 40
+                        add res(20k) pin 2
+                        wire auto_
+                        to tmp1
+
+                    wire right 40
+                    decoupling_cap(100n)
+                    wire right 40
+                    add label(sense_out)
+                    wire right 40
+
+            at label("SENSE-")
+            wire right 40
+            add res(1k)
+            wire right 20
+            
+            branch:
+                wire right 40
+                to diff_amp pin 4
+
+            wire down 20
+            add res(20k) down
+            wire down 20 left 40
+            add label("VCC")
+
+        frame:
+            ..title = "Relay control for " + enable_name
+
+            at label(enable_name)
+            wire right 40 
+            branch:
+                wire down 20
+                add led("RED") pin 2 down
+                wire down 20
+                add res(130) down
+                wire down 20 to gnd
+            wire right 40
+            branch:
+                wire down 20
+                add res(1k) down
+                wire down 20
+                to gnd
+
+            wire right 20
+            add Q1 = mosfet()
+            at Q1 pin 2 
             wire right 20 down 20
             to gnd
-        1: 
-            wire right 40
+
+            at v12v
+            wire down 20
             branch:
-                wire up 100 left 40
-                add res(20k) pin 2
-                wire auto_
-                to tmp1
-
-            wire right 40
-            decoupling_cap(100n)
-            wire right 40
-            add label(sense_out)
-            wire right 40
-
-    at label("SENSE-")
-    wire right 40
-    add res(1k)
-    wire right 20
-    
-    branch:
-        wire right 40
-        to diff_amp pin 4
-
-    wire down 20
-    add res(20k) down
-    wire down 20 left 40
-    add label("VCC")
-
-    at label(enable_name)
-    wire right 40 
-    branch:
-        wire down 20
-        add led("RED") pin 2 down
-        wire down 20
-        add res(130) down
-        wire down 20 to gnd
-    wire right 40
-    branch:
-        wire down 20
-        add res(1k) down
-        wire down 20
-        to gnd
-
-    wire right 20
-    add Q1 = mosfet()
-    at Q1 pin 2 
-    wire right 20 down 20
-    to gnd
-
-    at v12v
-    wire down 20
-    branch:
-        wire right 80
-        add relay pin 2
-    wire down 20
-    add diode2() pin 2 down
-    wire down 20
-    branch:
-        wire right 40
-        wire auto
-        to relay pin 5
-    wire left 40 up 80 left 60
-    to Q1 pin 3
-
-    at relay:
-        4:
-            wire right 20
-            branch:
-                wire up 100 right 140
-                add label("SENSE+")
-                wire right 60
-            wire right 20
-            add res(0.05)
-            wire right 20
-            branch:
-                wire up 80 right 20
-                add label("SENSE-")
-                wire right 60
-            wire right 20
-            add label("LOAD_SUPPLY")
-            wire right 80
-        1:
-            wire right 20
-            branch:
-                wire right 40
-                add label("CONN+")
-                wire right 40
+                wire right 80
+                add relay pin 2
             wire down 20
             add diode2() pin 2 down
             wire down 20
             branch:
                 wire right 40
-                add label("CONN-")
-                wire right 40
-            wire down 20
-            to gnd  
+                wire auto
+                to relay pin 5
+            wire left 40 up 80 left 60
+            to Q1 pin 3
+
+            at relay:
+                4:
+                    wire right 20
+                    branch:
+                        wire up 100 right 140
+                        add label("SENSE+")
+                        wire right 60
+                    wire right 20
+                    add res(0.05)
+                    wire right 20
+                    branch:
+                        wire up 80 right 20
+                        add label("SENSE-")
+                        wire right 60
+                    wire right 20
+                    add label("LOAD_SUPPLY")
+                    wire right 80
+                1:
+                    wire right 20
+                    branch:
+                        wire right 40
+                        add label("CONN+")
+                        wire right 40
+                    wire down 20
+                    add diode2() pin 2 down
+                    wire down 20
+                    branch:
+                        wire right 40
+                        add label("CONN-")
+                        wire right 40
+                    wire down 20
+                    to gnd  
 
 main()
 
-pump_block("GPIO1", "ADC1")
+i = 1
+pump_block("GPIO" + i, "ADC" + i)
 pump_block("GPIO2", "ADC2")
 pump_block("GPIO3", "ADC3")
 pump_block("GPIO4", "ADC4")
