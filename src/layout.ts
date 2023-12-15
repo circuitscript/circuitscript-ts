@@ -296,7 +296,7 @@ export class LayoutEngine {
             innerFrame.x = offsetX + Math.floor((maxWidth / 2 - frameWidth / 2) / gridSize) * gridSize;
             innerFrame.y = offsetY + accumY;
 
-            accumY += (frameHeight + frame.padding);
+            accumY += (frameHeight + frame.gap);
 
             boundPoints.push(
                 [innerFrame.x, innerFrame.y],
@@ -1565,7 +1565,9 @@ export class RenderFrame extends RenderObject {
     translateX = 0;
     translateY = 0;
 
-    padding = 20;
+    padding = 20; // Inner frame padding
+
+    gap = 20;     // Spacing between inner frames
 
     subgraphId = "";
 
