@@ -34,3 +34,5 @@ src/antlr/.antlr
 
 *.svg
 dump/*
+
+!__tests__/**/*.svg
