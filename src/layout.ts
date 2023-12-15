@@ -409,19 +409,18 @@ export class LayoutEngine {
                 textObject.fontWeight = 'bold';
 
                 textObject.symbol.refreshDrawing();
-
                 tmpFrame.innerItems.push(textObject);
 
+                const tmpBox = textObject.symbol.drawing.getBoundingBox();
                 tmpFrame.bounds = {
-                    xmin: 0,
-                    ymin: 0,
-                    xmax: textObject.symbol.width,
-                    ymax: textObject.symbol.height
-                }
+                    xmin: tmpBox.start[0],
+                    ymin: tmpBox.start[1],
+                    xmax: tmpBox.start[0] + tmpBox.width,
+                    ymax: tmpBox.start[1] + tmpBox.height
+                };
 
-                // For now, text is aligned to center and bottom of text.
-                textObject.x = textObject.symbol.width/2;
-                textObject.y = textObject.symbol.height/2;
+                textObject.x = 0;
+                textObject.y = 0;
 
                 // Add as first element
                 frame.innerItems.splice(0, 0, tmpFrame);

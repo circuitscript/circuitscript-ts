@@ -1,6 +1,7 @@
 import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing';
 import { defaultFont } from './globals';
+import { Box } from '@svgdotjs/svg.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -29,11 +30,14 @@ export class Label extends Flatten.Polygon {
 
     style: LabelStyle;
 
+    textMeasurementBounds: Box;
+
     get box() {
         return this.polygon.box;
     }
 
-    constructor(text: string, anchorPoint: [number, number], polygon: Flatten.Polygon, style: LabelStyle) {
+    constructor(text: string, anchorPoint: [number, number], 
+        polygon: Flatten.Polygon, style: LabelStyle, bounds: Box) {
         super(polygon.vertices);
 
         this.text = text;
@@ -43,6 +47,8 @@ export class Label extends Flatten.Polygon {
 
         this.boundingBox = polygon.box;
         this.polygon = polygon;
+
+        this.textMeasurementBounds = bounds;
     }
 
     static fromPoint(x: number, y: number, text: string, style: LabelStyle): Label {
@@ -54,21 +60,31 @@ export class Label extends Flatten.Polygon {
          } = style;
 
         // Determine the size of the text
-        const { width, height } =
-            measureTextSize2(text, defaultFont, fontSize, fontWeight);
+        const { width, height, box } =
+            measureTextSize2(text, defaultFont, fontSize, fontWeight, 
+                anchor, vanchor);
 
-        const polygonCoords =
-            labelPolygonForAnchors(x, y, width, height, anchor, vanchor);
+        // const polygonCoords =
+            // labelPolygonForAnchors(x, y, width, height, anchor, vanchor);
+
+        const polygonCoords = [
+            [box.x, box.y],
+            [box.x2, box.y],
+            [box.x2, box.y2],
+            [box.x, box.y2],
+            [box.x, box.y],
+        ] as [x: number, y: number][];
 
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(text, [x, y], polygon, style);
+        return new Label(text, [x, y], polygon, style, box);
     }
 
     rotate(angle: number, origin: Flatten.Point): Label {
         const polygonRotate = super.rotate(angle, origin);
-        return new Label(this.text, this.anchorPoint, polygonRotate, this.style);
+        return new Label(this.text, this.anchorPoint, polygonRotate, 
+            this.style, this.textMeasurementBounds);
     }
 
     getLabelPosition(): [number, number] {

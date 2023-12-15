@@ -189,14 +189,19 @@ export abstract class SymbolGraphic {
 
             const position = tmpLabel.getLabelPosition();
             
+            let useFont = defaultFont;
+            if (fontWeight === 'bold'){
+                useFont = 'Inter-Bold';
+            }
+
             const text = group.text(tmpLabel.text)
                 .fill('#333')
                 .font({
-                    family: defaultFont,
+                    family: useFont,
                     size: fontSize,
                     anchor: anchorStyle,
                     'dominant-baseline': dominantBaseline,
-                    weight: fontWeight,
+                    // weight: fontWeight,
                 });
 
             if (this.angle === 180){
@@ -647,6 +652,20 @@ class SymbolDrawing {
                 [centerX + width2, centerY + height2],
                 [centerX - width2, centerY + height2],
                 [centerX - width2, centerY - height2]
+            ])
+        );
+
+        return this;
+    }
+
+    addRect2(x: number, y: number, x2: number, y2: number): SymbolDrawing {
+        this.items.push(
+            Geometry.polygon([
+                [x, y],
+                [x2, y],
+                [x2, y2],
+                [x, y2],
+                [x, y]
             ])
         );
 
