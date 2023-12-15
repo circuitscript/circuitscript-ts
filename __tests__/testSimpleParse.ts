@@ -19,8 +19,6 @@ describe('test parsing', () => {
         const [script, expected] = allScripts[index];
         const {hasError, componentPinNets} = await runScript(script);
 
-        console.log(componentPinNets);
-
         expect(hasError).toBe(false);
         expect(componentPinNets).toStrictEqual(expected);
     });

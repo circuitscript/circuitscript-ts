@@ -1,0 +1,15 @@
+import lib
+
+v5v = net("5V")
+
+def tmp1():
+
+    at v5v left
+    wire right 40
+    add res(10k)
+    wire right 40
+    to gnd right
+
+tmp1()
+
+tmp1()

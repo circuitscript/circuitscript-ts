@@ -1,17 +1,21 @@
+import fs from 'fs';
+
 import { LayoutEngine } from "../src/layout";
 import { generateSVG2 } from "../src/render";
 import { runScript } from "./helpers";
-import { RenderTestExpectedOutput1, RenderTestExpectedOutput2, 
-    RenderTestExpectedOutput3, 
-    RenderTestScript1, RenderTestScript2, RenderTestScript3 } from "./renderTestData";
+
+const mainPath = '__tests__/renderData/';
 
 describe('Render tests', () => {
 
     test.each([
-        [RenderTestScript1, RenderTestExpectedOutput1],
-        [RenderTestScript2, RenderTestExpectedOutput2],
-        [RenderTestScript3, RenderTestExpectedOutput3],
-    ])('component annotation and render', async (script, expectedSvgOutput) => {
+        ['variant and branch rendering', 'script1.cst'],
+        ['simple function', 'script2.cst'],
+        ['simple frame', 'script3.cst'],
+        
+    ])('render - %s', async (title, scriptPath) => {
+
+        const script = fs.readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toBe(false);
         visitor.annotateComponents();
@@ -22,6 +26,8 @@ describe('Render tests', () => {
         const graph = await layoutEngine.runLayout(sequence, nets);
 
         const svgOutput = generateSVG2(graph);
+
+        const expectedSvgOutput = fs.readFileSync(mainPath + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toBe(expectedSvgOutput);
     });
 });
