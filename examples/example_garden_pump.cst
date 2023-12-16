@@ -213,120 +213,129 @@ def main():
         params:
             footprint: "Connector_BarrelJack:BarrelJack_CUI_PJ-063AH_Horizontal_CircularHoles"
 
-    at barrel_jack:
-        1:
-            wire right 20
-            branch:
-                wire up 20
-                add v12v
+    frame:
+        ..title = "Power connectors"
+        ..direction = "row"
 
-            wire right 40
-            branch:
-                decoupling_cap(10u)
+        at barrel_jack:
+            1:
+                wire right 20
+                branch:
+                    wire up 20
+                    add v12v
 
-            wire right 40
-            branch:
-                decoupling_cap(10u)
+                wire right 40
+                branch:
+                    decoupling_cap(10u)
 
-            wire right 40
-            branch:
-                decoupling_cap(10u)
+                wire right 40
+                branch:
+                    decoupling_cap(10u)
 
-        2:
-            wire right 20 down 20
-            to gnd
+                wire right 40
+                branch:
+                    decoupling_cap(10u)
 
-    # create power connectors
-    J102 = power_conn()
-    J108 = power_conn()
+            2:
+                wire right 20 down 20
+                to gnd
 
-    J104 = conn1x4()
-    at J104:
-        1:
-            wire left 20
-            to label("5V#")
-        2:
-            wire left 20
-            branch:
-                wire down 20 right 20
-                to J104 pin 3
-            wire left 20
-            to v5v left
-        4:
-            wire left 20 down 20    
-            to gnd
+        # create power connectors
+        J102 = power_conn()
+        J108 = power_conn()
+
+        J104 = conn1x4()
+
+        at J104:
+            1:
+                wire left 20
+                to label("5V#")
+            2:
+                wire left 20
+                branch:
+                    wire down 20 right 20
+                    to J104 pin 3
+                wire left 20
+                to v5v left
+            4:
+                wire left 20 down 20    
+                to gnd
 
     block1 = tps54227_block(3.3u, 73.2k, 22.1k, "EN_3V3", "+3V3", "GardenRelay:NR6020T3R3N")
     block2 = tps54227_block(4.7u, 124k, 22.1k, "EN_5V", "5V#", "GardenRelay:NRS8030T4R7MJGJ")
 
-    J103 = conn1x2()
+    frame:
+        ..title = "ESP32 board connector"
+        ..direction = "row"
+        
+        J103 = conn1x2()
 
-    at J103:
-        1:
-            wire left 40 up 40
-            add v3v3
-        2:
-            wire left 40
-            add label("EN")
+        at J103:
+            1:
+                wire left 40 up 40
+                add v3v3
+            2:
+                wire left 40
+                add label("EN")
 
-    J105 = conn1x11()
+        J105 = conn1x11()
 
-    at J105:
-        1: tmp_label("ADC1")
-        2: tmp_label("ADC2")
-        3: tmp_label("GPIO1")
-        4: tmp_label("GPIO2")
-        5: tmp_label("ADC3")
-        6: tmp_label("GPIO3")
-        7: tmp_label("ADC4")
-        8: tmp_label("GPIO4")
-        9: tmp_label("ADC8")
-        10:
-            wire left 80 down 20
-            to gnd
-        11: tmp_label("ADC7") 
+        at J105:
+            1: tmp_label("ADC1")
+            2: tmp_label("ADC2")
+            3: tmp_label("GPIO1")
+            4: tmp_label("GPIO2")
+            5: tmp_label("ADC3")
+            6: tmp_label("GPIO3")
+            7: tmp_label("ADC4")
+            8: tmp_label("GPIO4")
+            9: tmp_label("ADC8")
+            10:
+                wire left 80 down 20
+                to gnd
+            11: tmp_label("ADC7") 
 
-    J106 = conn1x2()
+        J106 = conn1x2()
 
-    at J106:
-        1: 
-            wire left 80 down 20 to gnd
-        2: tmp_label("GPIO13")
+        at J106:
+            1: 
+                wire left 80 down 20 to gnd
+            2: tmp_label("GPIO13")
 
-    J107 = conn1x11()
+        J107 = conn1x11()
 
-    at J107:
-        1: tmp_label("GPIO5")
-        2: 
-            wire left 100 down 20
-            to gnd
-        3: tmp_label("GPIO6")
-        4: tmp_label("GPIO7")
-        5: tmp_label("GPIO8")
-        6: tmp_label("GPIO9")
-        7: tmp_label("GPIO10")
-        8: tmp_label("ADC5")
-        9: tmp_label("ADC6")
-        10: tmp_label("GPIO11")
-        11: tmp_label("GPIO12")
+        at J107:
+            1: tmp_label("GPIO5")
+            2: 
+                wire left 100 down 20
+                to gnd
+            3: tmp_label("GPIO6")
+            4: tmp_label("GPIO7")
+            5: tmp_label("GPIO8")
+            6: tmp_label("GPIO9")
+            7: tmp_label("GPIO10")
+            8: tmp_label("ADC5")
+            9: tmp_label("ADC6")
+            10: tmp_label("GPIO11")
+            11: tmp_label("GPIO12")
 
-    J109 = conn1x4()
-    at J109:
-        1: tmp_label("GPIO11")
-        2: tmp_label("GPIO12")
-        3: tmp_label("GPIO13")
-        4: 
-            wire left 60 
-            add label("+5V")
+        J109 = conn1x4()
+        at J109:
+            1: tmp_label("GPIO11")
+            2: tmp_label("GPIO12")
+            3: tmp_label("GPIO13")
+            4: 
+                wire left 60 
+                add label("+5V")
 
-    J110 = conn1x4()
-    at J110:
-        1: tmp_label("GPIO10")
-        2: tmp_label("GPIO9")
-        3: tmp_label("+3V3")
-        4: 
-            wire left 20 down 20
-            to gnd
+        J110 = conn1x4()
+        at J110:
+            1: tmp_label("GPIO10")
+            2: tmp_label("GPIO9")
+            3: tmp_label("+3V3")
+            4: 
+                wire left 20 down 20
+                to gnd
 
 def mosfet():
     return create component:
@@ -382,9 +391,13 @@ def pump_block(enable_name, sense_out):
 
     frame:
         ..title = "Pump control block (" + enable_name + ")"
+        ..direction = "row"
         
         frame:
             ..title = "Connector"
+            ..border = 0
+            ..padding = 0
+
             conn = conn1x5()
             at conn:
                 1:
@@ -397,6 +410,8 @@ def pump_block(enable_name, sense_out):
 
         frame:
             ..title = "Current sense for "+ sense_out
+            ..border = 0
+            ..padding = 0
         
             at label("SENSE+")
             wire right 40 
@@ -445,6 +460,8 @@ def pump_block(enable_name, sense_out):
 
         frame:
             ..title = "Relay control for " + enable_name
+            ..border = 0
+            ..padding = 0
 
             at label(enable_name)
             wire right 40 
