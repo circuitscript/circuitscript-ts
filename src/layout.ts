@@ -164,32 +164,42 @@ export class LayoutEngine {
             textObjects: RenderText[],
         } {
 
-        // Lays out frames and all the items within the frames.
-
         // The base/default frame will always be the first element
         const baseFrame = frameObjects[0];
         baseFrame.padding = 0;
         baseFrame.borderWidth = 0;
 
-        // Update render frames so that frames consist of only nested frames.
-        // Layout is easier, since it only has to consider frames.
-        // Subgraphs are wrapped inside a subgraph frame.
-        const { textObjects, elementFrames } =
-            this.prepareFrames(graph, subgraphInfo, baseFrame);
-
-        const logFrames = false;
-        if (logFrames) {
-            this.print('===== dump frames =====');
-            this.dumpFrame(baseFrame);
-            this.print('===== dump frames =====');
-        }
-
-        this.placeAndSizeFrame(baseFrame);
-
-        // All items in the frames are now ready for final placement.
         baseFrame.x = 0;
         baseFrame.y = 0;
 
+        let textObjects: RenderText[] = [];
+        let elementFrames: RenderFrame[] = [];
+
+        baseFrame.bounds = {
+            xmin: 0, ymin: 0,
+            xmax: 0, ymax: 0,
+        }
+
+        if (subgraphInfo.length > 0){
+            // Update render frames so that frames consist of only nested frames.
+            // Layout is easier, since it only has to consider frames.
+            // Subgraphs are wrapped inside a subgraph frame.
+            const result =
+                this.prepareFrames(graph, subgraphInfo, baseFrame);
+            textObjects = result.textObjects;
+            elementFrames = result.elementFrames;
+
+            const logFrames = false;
+            if (logFrames) {
+                this.print('===== dump frames =====');
+                this.dumpFrame(baseFrame);
+                this.print('===== dump frames =====');
+            }
+
+            this.placeAndSizeFrame(baseFrame);
+        }
+       
+        // All items in the frames are now ready for final placement.   
         this.print('===== flatten frame items =====');
         this.applyFrameOffset(baseFrame);
         this.print('===== flatten frame items =====');
