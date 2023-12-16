@@ -439,6 +439,14 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
                 if (foundVariable.found) {
                     value = foundVariable.value;
+
+                    if (foundVariable.type === 'instance') {
+                        // Add nets on the pins into the scope
+                        const { nets = [] } = foundVariable;
+                        nets.forEach(([component, pin, net]) => {
+                            executor.scope.setNet(component, pin, net);
+                        });
+                    }
                 } else {
                     variableNotFound = true;
                 }
@@ -574,9 +582,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                         type: 'value',
                     };
                 } else if (context.scope.instances.has(variableName)){
+
+                    // Find nets that are associated with the instance
+                    const instance = context.scope.instances.get(variableName);
+                    const nets = [];
+
+                    for (const [pinNumber, pinDef] of instance.pins) {
+                        const tmpNet = context.scope.getNet(instance, pinNumber);
+                        if (tmpNet) {
+                            nets.push([instance, pinNumber, tmpNet]);
+                        }
+                    }
+
                     return {
                         found: true,
-                        value: context.scope.instances.get(variableName),
+                        value: instance,
+                        nets, 
                         type: 'instance',
                     }
                 }

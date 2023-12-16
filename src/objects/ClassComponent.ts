@@ -23,8 +23,8 @@ export class ClassComponent {
 
     // For nets, labels and gnds, this can be used to identify different
     // copies of the same symbol on the schematic
-    _copyID?: number;
-    _copyFrom?: ClassComponent;
+    _copyID?: number = null;
+    _copyFrom?: ClassComponent = null;
 
     // This determines how pins are arrange on the component/symbol.
     arrangeProps: Map<string, number[]> | null = null;

@@ -271,7 +271,7 @@ export class ExecutionContext {
         });
 
         if (paramsMap.has(ParamKeys.__is_net)) {
-            const netName = paramsMap.get('net_name');
+            const netName = paramsMap.get(ParamKeys.net_name);
             const priority = paramsMap.get(ParamKeys.priority);
 
             const tmpNet = new Net(netName, priority);
@@ -700,7 +700,6 @@ export class ExecutionContext {
         const currentComponent = this.scope.currentComponent;
         const currentPin = this.scope.currentPin;
         const currentWireId = this.scope.currentWireId;
-        const currentFrameId = this.scope.currentFrameId;
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
@@ -830,7 +829,7 @@ export class ExecutionContext {
                 const tmpComponent: ClassComponent = sequenceAction[1];
 
                 // Check if the component is a gnd component
-                if (isNetComponent(tmpComponent) && tmpComponent.parameters.get('net_name') === 'gnd') {
+                if (isNetComponent(tmpComponent) && tmpComponent.parameters.get(ParamKeys.net_name) === 'gnd') {
                     // Is a gnd net
                     tmpComponent._copyID = gndCopyIdOffset + incrementGndLinkId;
                     incrementGndLinkId += 1;
@@ -872,45 +871,6 @@ export class ExecutionContext {
         this.scope.currentPin = currentPin;
 
         this.print('-- done merging scope --');
-    }
-
-    private prepareSequenceComponent(component: ClassComponent, createNewNetSymbol = true): ClassComponent {
-        let sequenceComponent: ClassComponent;
-
-        if (isNetComponent(component) && !isLabelComponent(component)) {
-            // If is a net component and not a label component, then
-            // create a new copy of the same net component.
-            if (!this.scope.copyIDs.has(component.instanceName)) {
-                this.scope.copyIDs.set(component.instanceName, 0);
-            }
-
-            const idNum = this.scope.copyIDs.get(component.instanceName);
-            sequenceComponent = component.clone();
-
-            // For now, only allow gnd symbols to create new instances
-            // automatically.
-            if (component.parameters.get('net_name') !== 'gnd'){
-                createNewNetSymbol = false;
-            }
-
-            if (createNewNetSymbol) {
-                sequenceComponent._copyID = idNum;
-
-                // Set linkIDs to the next value to use
-                this.scope.copyIDs.set(component.instanceName, idNum + 1);
-            } else {
-                // If false, then do no create a new net symbol,
-                // reuse the previous id num. This assumes that the
-                // id num would be correct...
-                if (idNum > 0) {
-                    sequenceComponent._copyID = idNum - 1;
-                }
-            }
-        } else {
-            sequenceComponent = component;
-        }
-
-        return sequenceComponent;
     }
 
     // private getPinLayoutDirection(component: ClassComponent, pinId: number): LayoutDirection {

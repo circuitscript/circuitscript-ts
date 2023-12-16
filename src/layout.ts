@@ -3,7 +3,7 @@ import graphlib from '@dagrejs/graphlib';
 import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolText } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope";
-import { GlobalNames } from './globals';
+import { GlobalNames, ParamKeys } from './globals';
 import { WireSegment } from './objects/Wire';
 import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
@@ -533,7 +533,7 @@ export class LayoutEngine {
                     let tmpSymbol: SymbolGraphic;
     
                     // If it is a gnd net, then use the gnd symbol
-                    if (displayProp === null && component.parameters.get('net_name') === GlobalNames.gnd) {
+                    if (displayProp === null && component.parameters.get(ParamKeys.net_name) === GlobalNames.gnd) {
                         displayProp = 'gnd';
                     }
     
@@ -1259,7 +1259,7 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
 
 function applyComponentParamsToSymbol(displayProp: string, component: ClassComponent, symbol: SymbolGraphic): void {
     if (displayProp === 'net') {
-        symbol.setLabelValue("net_name", component.parameters.get('net_name') as string);
+        symbol.setLabelValue("net_name", component.parameters.get(ParamKeys.net_name) as string);
     }
 
     if (component.parameters.has('value')) {

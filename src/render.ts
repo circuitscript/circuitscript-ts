@@ -4,7 +4,7 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout";
 import { applyFontsToSVG } from './sizing';
-import { bodyColor, junctionColor, junctionSize, wireColor } from './globals';
+import { ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals';
 import { NumericValue } from './objects/ParamDefinition';
 import { getBoundsSize } from './utils';
 
@@ -69,7 +69,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         if (symbol !== null && symbol) {
             let extra = {};
             if (item.component.parameters.has('__is_net')) {
-                extra.net_name = item.component.parameters.get('net_name');
+                extra.net_name = item.component.parameters.get(ParamKeys.net_name);
 
             } else if (item.component.parameters.has('value')) {
                 let tmpValue = item.component.parameters.get('value');
@@ -156,6 +156,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     // });
 
     const frameGroup = canvas.group();
+    const showElementFrames = false;
 
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
@@ -167,7 +168,9 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
                 strokeColor = '#111';
             } else if (item.type === RenderFrameType.Elements){
                 strokeColor = '#aaa';
-                return;
+                if (!showElementFrames){
+                    return;
+                }
             }
 
             const tmpRect = frameGroup.rect(width, height)
