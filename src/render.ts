@@ -158,8 +158,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     const frameGroup = canvas.group();
 
     frameObjects.forEach(item => {
-        if (item.frame.frameId !== -1) {
-            const { bounds } = item;
+        const { bounds, borderWidth } = item;
+        if (borderWidth > 0){
             const { width, height } = getBoundsSize(bounds);
 
             let strokeColor = '#111';
@@ -172,7 +172,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
 
             const tmpRect = frameGroup.rect(width, height)
                 .fill('none')
-                .stroke({ width: 1, color: strokeColor });
+                .stroke({ width: borderWidth, color: strokeColor });
 
             tmpRect.translate(item.x, item.y);
         }

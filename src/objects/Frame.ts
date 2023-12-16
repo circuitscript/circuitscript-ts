@@ -8,5 +8,13 @@ export class Frame {
 }
 
 export enum FrameParamKeys {
-    Title = 'title'
+    Title = 'title',
+    Direction = 'direction',
+    Padding = 'padding',
+    Border = 'border',
+}
+
+export enum FramePlotDirection {
+    Row = 'row',
+    Column = 'column',
 }

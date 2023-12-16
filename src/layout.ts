@@ -9,8 +9,8 @@ import { NumericValue } from './objects/ParamDefinition';
 import { Geometry } from './geometry';
 import { Net } from './objects/Net';
 import { Logger } from './logger';
-import { Frame, FrameParamKeys } from './objects/Frame';
-import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid } from './utils';
+import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame';
+import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils';
 
 export class LayoutEngine {
 
@@ -169,6 +169,7 @@ export class LayoutEngine {
         // The base/default frame will always be the first element
         const baseFrame = frameObjects[0];
         baseFrame.padding = 0;
+        baseFrame.borderWidth = 0;
 
         // Update render frames so that frames consist of only nested frames.
         // Layout is easier, since it only has to consider frames.
@@ -252,6 +253,7 @@ export class LayoutEngine {
         const innerFrames = frame.innerItems as RenderFrame[];
         const gridSize = 20;
 
+        let accumX = 0;
         let accumY = 0;
 
         // This is used to determine the final bounds of this frame
@@ -283,6 +285,29 @@ export class LayoutEngine {
             return width;
         }));
 
+        const maxHeight = Math.max(...frameSizes.map(item => {
+            const { height } = getBoundsSize(item);
+            return height;
+        }));
+
+        let widthForTitle = 0;
+        if (frame.direction === FramePlotDirection.Row) {
+            widthForTitle = frameSizes.reduce((accum, item, index) => {
+                if ((frame.innerItems[index] as RenderFrame).containsTitle){
+                    // If frame contains title, then skip it for 
+                    // the width calculation
+                    return accum;
+                }
+
+                const { width } = getBoundsSize(item);
+                return accum + width + 
+                    ((index + 1 < frameSizes.length) ? frame.gap: 0);
+            }, 0);
+        } else {
+            widthForTitle = maxWidth;
+        }
+
+        // Use the default value
         const offsetX = frame.padding;
         const offsetY = frame.padding;
 
@@ -292,11 +317,27 @@ export class LayoutEngine {
             const { width: frameWidth, height: frameHeight }
                 = getBoundsSize(innerFrame.bounds);
 
-            // Align to the center, but also to the nearest grid size.
-            innerFrame.x = offsetX + Math.floor((maxWidth / 2 - frameWidth / 2) / gridSize) * gridSize;
-            innerFrame.y = offsetY + accumY;
+            if (innerFrame.containsTitle) {
+                innerFrame.x = offsetX + accumX + toNearestGrid(widthForTitle / 2 - frameWidth / 2, gridSize);
+                innerFrame.y = offsetY + accumY;
+                accumY += (frameHeight + frame.gap);
 
-            accumY += (frameHeight + frame.gap);
+            } else {
+                if (frame.direction === FramePlotDirection.Column) {
+                    // Align to the center, but also to the nearest grid size.
+                    innerFrame.x = offsetX + accumX; // + toNearestGrid(maxWidth / 2 - frameWidth / 2, gridSize);
+                    innerFrame.y = offsetY + accumY;
+
+                    accumY += (frameHeight + frame.gap);
+
+                } else if (frame.direction === FramePlotDirection.Row) {
+                    // Align to the top?
+                    innerFrame.x = offsetX + accumX;
+                    innerFrame.y = offsetY + accumY; //+ toNearestGrid(maxHeight / 2 - frameHeight / 2, gridSize);
+
+                    accumX += (frameWidth + frame.gap);
+                }
+            }
 
             boundPoints.push(
                 [innerFrame.x, innerFrame.y],
@@ -402,6 +443,11 @@ export class LayoutEngine {
                 // Add the element frame containing the text item
                 const tmpFrame = new RenderFrame(new Frame(-2),
                     RenderFrameType.Elements);
+
+                // Mark this render frame as containing only the title element,
+                // this is used later during inner item placement of the frame.
+                tmpFrame.containsTitle = true;
+
                 tmpFrame.subgraphId = title.replace(/\s/g, "_");
 
                 const textObject = new RenderText(title);
@@ -429,7 +475,7 @@ export class LayoutEngine {
 
                 textObjects.push(textObject);
 
-                // Add the start
+                // Add frame to the start
                 elementFrames.splice(0, 0, tmpFrame);
             }
         }
@@ -598,6 +644,7 @@ export class LayoutEngine {
                 const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
                 previousNode = getWireName(wireId);
                 previousPin = 1;
+
             } else if (action === SequenceAction.Frame){
                 const [, frameObject, frameAction] = sequence[i];
 
@@ -605,6 +652,22 @@ export class LayoutEngine {
                     const prevFrame = frameStack[frameStack.length-1];
 
                     const newFrame = new RenderFrame(frameObject);
+
+                    if (frameObject.parameters.has(FrameParamKeys.Direction)){
+                        newFrame.direction = 
+                            frameObject.parameters.get(FrameParamKeys.Direction);
+                    }
+
+                    if (frameObject.parameters.has(FrameParamKeys.Padding)){
+                        newFrame.padding = 
+                            frameObject.parameters.get(FrameParamKeys.Padding);
+                    }
+
+                    if (frameObject.parameters.has(FrameParamKeys.Border)){
+                        newFrame.borderWidth = 
+                            frameObject.parameters.get(FrameParamKeys.Border);
+                    }
+
                     containerFrames.push(newFrame);
                     frameStack.push(newFrame);
 
@@ -1569,9 +1632,15 @@ export class RenderFrame extends RenderObject {
 
     gap = 20;     // Spacing between inner frames
 
+    direction = FramePlotDirection.Column;
+
+    borderWidth = 1;
+
     subgraphId = "";
 
     type: RenderFrameType;
+
+    containsTitle = false;
 
     constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
         super();

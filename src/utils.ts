@@ -52,6 +52,10 @@ export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
     }
 }
 
+export function toNearestGrid(value: number, gridSize: number): number {
+    return Math.floor(value / gridSize) * gridSize;
+}
+
 export function getBoundsSize(bounds: BoundBox): {width: number, height: number} {
     return {
         width: bounds.xmax - bounds.xmin,
