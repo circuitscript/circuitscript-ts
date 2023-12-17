@@ -6,7 +6,7 @@ def net(net_name):
         params:
             __is_net: 1
             net_name: net_name
-            priority: 5
+            priority: 10
 
 def label(value):
     return create component:
@@ -14,7 +14,10 @@ def label(value):
         display: "label"
         type: "label"
         params:
+            __is_net: 1
+            net_name: value
             value: value
+            priority: 5
 
 def res(value):
     return create component:
