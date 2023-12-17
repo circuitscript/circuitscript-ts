@@ -1,14 +1,19 @@
 export class Net {
-    // Name may be transformed based on the namespace
-    name: string;
 
-    // Name that is specified when the net was defined.
+    name: string;
+    
+    // Name that is specified when the net was defined. 
     baseName: string;
+
+    // Defines where the net was created. This is important for determining
+    // the 'location' of global nets.
+    namespace: string;
 
     priority: number;
     type: any;
 
-    constructor(name: string, priority = 0, type: any = null) {
+    constructor(namespace: string, name: string, priority = 0, type: any = null) {
+        this.namespace = namespace;
         this.name = name;
         this.priority = priority;
         this.type = type;

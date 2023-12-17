@@ -95,7 +95,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         super();
         this.logger = new Logger();
 
-        this.startingContext = new ExecutionContext('__base__', 0, 0, silent, 
+        this.startingContext = new ExecutionContext(
+            '__base__',
+            '',
+            0, 0, silent, 
             this.logger);
             
         this.executionStack = [this.startingContext];
@@ -440,12 +443,13 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 if (foundVariable.found) {
                     value = foundVariable.value;
 
-                    if (foundVariable.type === 'instance') {
-                        // Add nets on the pins into the scope
-                        const { nets = [] } = foundVariable;
-                        nets.forEach(([component, pin, net]) => {
-                            executor.scope.setNet(component, pin, net);
-                        });
+                    if (foundVariable.type === 'instance'){
+                        const tmpComponent = value as ClassComponent;
+
+                        // Copy the nets into the local net
+                        for(const [pinId, net] of tmpComponent.pinNets){
+                            scope.setNet(tmpComponent, pinId, net);
+                        }
                     }
                 } else {
                     variableNotFound = true;
@@ -582,22 +586,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                         type: 'value',
                     };
                 } else if (context.scope.instances.has(variableName)){
-
-                    // Find nets that are associated with the instance
-                    const instance = context.scope.instances.get(variableName);
-                    const nets = [];
-
-                    for (const [pinNumber, pinDef] of instance.pins) {
-                        const tmpNet = context.scope.getNet(instance, pinNumber);
-                        if (tmpNet) {
-                            nets.push([instance, pinNumber, tmpNet]);
-                        }
-                    }
-
                     return {
                         found: true,
-                        value: instance,
-                        nets, 
+                        value: context.scope.instances.get(variableName),
                         type: 'instance',
                     }
                 }
@@ -612,19 +603,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             executionContext: ExecutionContext, 
             result: ComplexType | null] => {
             
-                // Create a new execution context, so that the commands are executed only
+            // Create a new execution context, so that the commands are executed only
             // within this context. Components and nets will be local to this context for now.
-
-            const executionContextName =
-                functionName + '_' + functionCounter['counter'];
-            functionCounter['counter'] += 1;
-
             const currentExecutionContext =
                 executionStack[executionStack.length - 1];
             const executionLevel = currentExecutionContext.executionLevel;
 
+            const executionContextName =
+                functionName + '_' + functionCounter['counter'];
+            const executionContextNamespace = currentExecutionContext.namespace
+                + executionContextName + ".";
+
+            functionCounter['counter'] += 1;
+
             const newExecutor = new ExecutionContext(
                 executionContextName,
+                executionContextNamespace,
                 executionLevel + 1,
                 this.getExecutor().scope.indentLevel + 1,
                 currentExecutionContext.silent,
@@ -1167,7 +1161,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             if (scope.hasNet(instance, pinId)) {
                 const netObject = scope.getNet(instance, pinId);
-                netName = netObject.name;
+                netName = netObject.namespace + netObject.name;
                 netBaseName = netObject.baseName;
             }
 

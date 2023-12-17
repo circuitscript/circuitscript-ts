@@ -88,6 +88,8 @@ export class ExecutionScope {
         } else {
             this.nets[result][2] = net;
         }
+
+        component.pinNets.set(pin, net);
     }
 
     removeNet(component: ClassComponent, pin: number): void {
@@ -97,6 +99,8 @@ export class ExecutionScope {
         if (result !== -1) {
             this.nets.splice(result, 1);
         }
+
+        component.pinNets.delete(pin);
     }
 
     getNets(): ComponentPinNetPair[] {

@@ -12,7 +12,9 @@ import { Frame } from './objects/Frame';
 export class ExecutionContext {
     // Contains the current running state of the circuit web
 
-    name: string;
+    name: string;      // Local name of the execution context.
+    namespace: string; // Namespace of current execution context.
+
     executionLevel: number;
 
     scope: ExecutionScope;
@@ -20,7 +22,8 @@ export class ExecutionContext {
     resolveFunction: ((functionName:string) => any) | null = null;
 
     // Resolves both variables and instances in upper contexts
-    resolveVariable: (variableName: string) => ({found: boolean, value?: any}) = null;
+    resolveVariable: (variableName: string) => 
+        ({found: boolean, value?: any, type?:string}) = null;
 
     // If true, then do no evaluate further expressions.
     // Used for function state control
@@ -39,12 +42,15 @@ export class ExecutionContext {
 
     constructor(
         name: string,
+        namespace: string,
         executionLevel = 0,
         indentLevel = 0,
         silent = false,
         logger: Logger,
     ) {
         this.name = name;
+        this.namespace = namespace;
+
         this.executionLevel = executionLevel;
         this.logger = logger;
 
@@ -107,20 +113,22 @@ export class ExecutionContext {
 
         const params = componentGnd.parameters;
 
-        const defaultPriority = 100;
+        const defaultGndPriority = 100;
 
         // Setup the parameters of the gnd
         params.set(ParamKeys.__is_net, 1);
-        params.set(ParamKeys.priority, defaultPriority);
+        params.set(ParamKeys.priority, defaultGndPriority);
         params.set(ParamKeys.net_name, GlobalNames.gnd);
 
         this.scope.instances.set(GlobalNames.gnd, componentGnd);
 
-        const net_gnd = new Net(GlobalNames.gnd, defaultPriority, 'gnd');
-        this.scope.setNet(componentGnd, 1, net_gnd);
+        const gndNet = new Net(this.namespace, GlobalNames.gnd, 
+            defaultGndPriority, 'gnd');
+
+        this.scope.setNet(componentGnd, 1, gndNet);
 
         this.scope.componentGnd = componentGnd;
-        this.scope.netGnd = net_gnd;
+        this.scope.netGnd = gndNet;
     }
 
     instanceExists(instanceName: string): boolean {
@@ -183,7 +191,7 @@ export class ExecutionContext {
         if (net1 === null && net2 === null) {
             // Both nets do not exist yet, so create a new one
             // that both will use.
-            const tmpNet = new Net(this.getUniqueNetName());
+            const tmpNet = new Net(this.namespace, this.getUniqueNetName());
 
             this.scope.setNet(component1, component1Pin, tmpNet);
             this.scope.setNet(component2, component2Pin, tmpNet);
@@ -274,8 +282,8 @@ export class ExecutionContext {
             const netName = paramsMap.get(ParamKeys.net_name);
             const priority = paramsMap.get(ParamKeys.priority);
 
-            const tmpNet = new Net(netName, priority);
-            this.print('added net instance', tmpNet.toString());
+            const tmpNet = new Net(this.namespace, netName, priority);
+            this.print('added net instance', tmpNet, netName);
 
             // Assume net is on 1 pin for now
             this.scope.setNet(component, 1, tmpNet);
@@ -416,7 +424,7 @@ export class ExecutionContext {
             }
 
             this.scope.sequence.push([SequenceAction.To, component, 
-                pinId, linkedNet.name]);
+                pinId, linkedNet]);
         }
 
         this.printPoint();
@@ -724,15 +732,6 @@ export class ExecutionContext {
             }
         }
 
-        // Update all net names in the child scope with the namespace
-        const uniqueNets = [];
-        tmpNets.forEach(([, , net]) => {
-            if (uniqueNets.indexOf(net) === -1) {
-                net.name = namespace + '.' + net.name;
-                uniqueNets.push(net);
-            }
-        });
-
         // Merge all nets into parent scope
         tmpNets.forEach(([component, pin, net]) => {
             this.scope.setNet(component, pin, net);
@@ -759,9 +758,10 @@ export class ExecutionContext {
 
                 if (currentNet === null){
                     // Current net does not exist yet, so create it
-                    const tmpNet = new Net(this.getUniqueNetName());
-
-                    this.scope.setNet(currentComponent, currentPin, tmpNet);
+                    const tmpNet = new Net(
+                            this.namespace, this.getUniqueNetName());
+                    this.scope.setNet(
+                        currentComponent, currentPin, netConnectedToRoot);
                     currentNet = tmpNet
                 }
 

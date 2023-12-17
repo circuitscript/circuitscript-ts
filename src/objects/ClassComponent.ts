@@ -1,3 +1,4 @@
+import { Net } from './Net';
 import { PinDefinition, PinIdType } from './PinDefinition';
 import { PinTypes } from './PinTypes';
 
@@ -14,6 +15,9 @@ export class ClassComponent {
 
     // Maps pin indexes to the pin definition
     pins: Map<number, PinDefinition> = new Map();
+
+    // Maps pin indexes to the nets.
+    pinNets: Map<number, Net> = new Map();
 
     // The cached values are used for easier comparison/equality check.
     _cachedPins: string;
