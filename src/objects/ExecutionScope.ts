@@ -109,12 +109,15 @@ export class ExecutionScope {
 
     dumpNets(): ComponentPinNet[] {
         const sortedNet = [...this.nets].sort((a, b) => {
-            const netA = a[2].name;
-            const netB = b[2].name;
+            const netA = a[2];
+            const netB = b[2];
 
-            if (netA > netB) {
+            const netAId = netA.namespace + netA.name;
+            const netBId = netB.namespace + b[2].name;
+
+            if (netAId > netBId) {
                 return 1;
-            } else if (netA < netB) {
+            } else if (netAId < netBId) {
                 return -1;
             } else {
                 return 0;
@@ -122,7 +125,7 @@ export class ExecutionScope {
         });
 
         return sortedNet.map(([component, pin, net]) => {
-            return [net.name, component.instanceName, pin];
+            return [net.namespace + net.name, component.instanceName, pin];
         });
     }
 

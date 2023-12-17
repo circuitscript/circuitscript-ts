@@ -235,11 +235,11 @@ const expected7: ComponentPinNet[] = [
     ['gnd', 'tmp1_0.res_0.COMP_1_10k', 2],
     ['gnd', 'tmp1_1.gnd:0', 1],
     ['gnd', 'tmp1_1.res_1.COMP_1_10k', 2],
-    ['tmp1_0.NET_1', 'tmp1_0.v5v:0', 1],
-    ['tmp1_0.NET_1', 'tmp1_0.res_0.COMP_1_10k', 1],
-    ['tmp1_1.NET_1', 'v5v', 1],
-    ['tmp1_1.NET_1', 'tmp1_1.v5v:0', 1],
-    ['tmp1_1.NET_1', 'tmp1_1.res_1.COMP_1_10k', 1]
+    ['net_0.5V', 'v5v', 1],
+    ['net_0.5V', 'tmp1_0.v5v:0', 1],
+    ['net_0.5V', 'tmp1_0.res_0.COMP_1_10k', 1],
+    ['net_0.5V', 'tmp1_1.v5v:0', 1],
+    ['net_0.5V', 'tmp1_1.res_1.COMP_1_10k', 1]
 ];
 
 // Store in an array, so that it is accessible

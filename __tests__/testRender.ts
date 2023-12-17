@@ -13,7 +13,7 @@ describe('Render tests', () => {
         ['simple function', 'script2.cst'],
         ['simple frame', 'script3.cst'],
         
-    ])('render - %s', async (title, scriptPath) => {
+    ])('render - %s (%s)', async (title, scriptPath) => {
 
         const script = fs.readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
         const {hasError, visitor} = await runScript(script);
