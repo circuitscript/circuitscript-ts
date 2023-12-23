@@ -599,6 +599,26 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             } 
         }
 
+        const resolveNet = (netName: string) => {
+            this.print('find net', netName);
+            const reversed = [...executionStack].reverse();
+
+            for (let i = 0; i < reversed.length; i++) {
+                const context = reversed[i];
+                const net = context.scope.getNetWithName(netName);
+                if (net !== null) {
+                    return {
+                        found: true,
+                        net,
+                    }
+                }
+            }
+
+            return {
+                found: false
+            }
+        }
+
         const __runFunc = (passedInParameters:CallableParameter[]): [
             executionContext: ExecutionContext, 
             result: ComplexType | null] => {
@@ -627,6 +647,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             newExecutor.resolveFunction = resolveFunction;
             newExecutor.resolveVariable = resolveVariable;
+            newExecutor.resolveNet = resolveNet;
 
             // Add the execution context to the end of the execution stack
             executionStack.push(newExecutor);

@@ -66,6 +66,14 @@ export class ExecutionScope {
         });
     }
 
+    getNetWithName(name: string): Net {
+        const found = this.nets.find(([,, net]) => {
+            return net.name === name;
+        });
+        
+        return found ? found[2]: null;
+    }
+
     hasNet(component: ClassComponent, pin: number): boolean {
         return this.findNet(component, pin) !== undefined;
     }

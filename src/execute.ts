@@ -25,6 +25,10 @@ export class ExecutionContext {
     resolveVariable: (variableName: string) => 
         ({found: boolean, value?: any, type?:string}) = null;
 
+    resolveNet: (name: string) => ({
+        found: boolean, net?: Net
+    }) = null;
+
     // If true, then do no evaluate further expressions.
     // Used for function state control
     stopFurtherExpressions = false;
@@ -282,8 +286,17 @@ export class ExecutionContext {
             const netName = paramsMap.get(ParamKeys.net_name);
             const priority = paramsMap.get(ParamKeys.priority);
 
-            const tmpNet = new Net(this.namespace, netName, priority);
-            this.print('added net instance', tmpNet, netName);
+            // Check if the net exists
+            const result = this.resolveNet(netName);
+            let tmpNet: Net;
+
+            if (result.found) {
+                tmpNet = result.net;
+
+            } else {
+                tmpNet = new Net(this.namespace, netName, priority);
+                this.print('added net instance', tmpNet, netName);
+            }
 
             // Assume net is on 1 pin for now
             this.scope.setNet(component, 1, tmpNet);
