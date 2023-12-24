@@ -10,6 +10,7 @@ describe('test parsing', () => {
         [2, "nested branching, add with pin selected"],
         [3, "'at' and 'to' commands will clone net components"],
         [4, "resolve instances in upper contexts"],
+        [5, "components in function parameters"]
     ])('parse script - %d: %s', async (index, description) => {
         // Test only parsing, does not check the correctness of the 
         // parsed result!
@@ -92,7 +93,7 @@ at U1 pin 10
 wire right 180 up 60
 `;
 
-const expected1: ComponentPinNet[] = [
+const script1Expected: ComponentPinNet[] = [
     ["NET_1", "U1", 2],
     ["NET_1", "U2", 1],
     ["NET_2", "U2", 3],
@@ -124,7 +125,7 @@ wire down 20
 to gnd
 `;
 
-const expected2: ComponentPinNet[] = [
+const script2Expected: ComponentPinNet[] = [
     ["gnd", "gnd", 1],
     ["gnd", "J1", 1],
     ["gnd", "J1", 3],
@@ -161,7 +162,7 @@ branch:
 wire right 40 
 add diode()
 `;
-const expected3: ComponentPinNet[] = [
+const script3Expected: ComponentPinNet[] = [
     ["NET_1", "label_0.COMP_1_hello", 1],
     ["NET_1", "diode_0.COMP_1", 1],
     ["NET_1", "diode_1.COMP_1", 2],
@@ -196,7 +197,7 @@ wire down 20 right 40 up 20
 to midpt
 `;
 
-const expected6: ComponentPinNet[] = [
+const script6Expected: ComponentPinNet[] = [
     [ 'gnd', 'gnd', 1 ],
     [ 'gnd', 'gnd:0', 1 ],
     [ 'gnd', 'res_1.COMP_1_20k', 2 ],
@@ -229,7 +230,7 @@ tmp1()
 
 tmp1()`
 
-const expected7: ComponentPinNet[] = [
+const script7Expected: ComponentPinNet[] = [
     ['gnd', 'gnd', 1],
     ['gnd', 'tmp1_0.gnd:0', 1],
     ['gnd', 'tmp1_0.res_0.COMP_1_10k', 2],
@@ -241,17 +242,6 @@ const expected7: ComponentPinNet[] = [
     ['net_0.5V', 'tmp1_1.v5v:0', 1],
     ['net_0.5V', 'tmp1_1.res_1.COMP_1_10k', 1]
 ];
-
-// Store in an array, so that it is accessible
-// during the test itself.
-const allScripts: [string, ComponentPinNet[]][] = [
-    [script1, expected1],
-    [script2, expected2],
-    [script3, expected3],
-    [script6, expected6],
-    [script7, expected7],
-];
-
 
 const script4 = `
 import lib
@@ -299,3 +289,49 @@ wire down 20
 to gnd
 `;
 
+const script8 = `
+import lib
+
+v5v = power("5v")
+
+def divider(power_net, r1, r2, output_net):
+    at power_net
+    wire down 20
+    add res(r1) down
+    wire down 20
+
+    branch:
+        wire right 20
+        add output_net
+        wire right 20
+
+    wire down 20
+    add res(r2) down
+    wire down 20
+    to gnd
+
+divider(v5v, 10k, 20k, label("hello"))
+`
+
+const script8Expected = [
+    ['gnd', 'gnd', 1],
+    ['gnd', 'divider_0.gnd:0', 1],
+    ['gnd', 'divider_0.res_1.COMP_1_20k', 2],
+    ['label_0.hello', 'label_0.COMP_1_1', 1],
+    ['label_0.hello', 'divider_0.res_0.COMP_1_10k', 2],
+    ['label_0.hello', 'divider_0.res_1.COMP_1_20k', 1],
+    ['power_0.5v', 'v5v', 1],
+    ['power_0.5v', 'divider_0.v5v:0', 1],
+    ['power_0.5v', 'divider_0.res_0.COMP_1_10k', 1]
+];
+
+// Store in an array, so that it is accessible
+// during the test itself.
+const allScripts: [string, ComponentPinNet[]][] = [
+    [script1, script1Expected],
+    [script2, script2Expected],
+    [script3, script3Expected],
+    [script6, script6Expected],
+    [script7, script7Expected],
+    [script8, script8Expected],
+];
