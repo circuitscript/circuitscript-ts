@@ -707,6 +707,15 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                         variableName,
                         tmpPassedInArgs[2],
                     );
+
+                    if (tmpPassedInArgs[2] instanceof ClassComponent) {
+                        const component  = tmpPassedInArgs[2];
+
+                        // Add the component nets into the local scope
+                        for(const [pinNumber, net] of component.pinNets){
+                            executor.scope.setNet(component, pinNumber, net);
+                        }
+                    }
                 }
             } else if (tmpFuncArg.length === 2) {
                 // Value was not provided to function, but a default 

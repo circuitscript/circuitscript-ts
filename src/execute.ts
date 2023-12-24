@@ -190,6 +190,9 @@ export class ExecutionContext {
             ? this.scope.getNet(component2, component2Pin)
             : null;
 
+        this.print('link nets', component1, component1Pin, net1,
+            'to', component2, component2Pin, net2);
+
         let returnNet: Net;
 
         if (net1 === null && net2 === null) {
@@ -300,6 +303,7 @@ export class ExecutionContext {
 
             // Assume net is on 1 pin for now
             this.scope.setNet(component, 1, tmpNet);
+            this.print('set net', netName, 'component', component);
         }
 
         const {arrange = null} = props;
@@ -882,6 +886,19 @@ export class ExecutionContext {
 
         this.scope.currentComponent = currentComponent;
         this.scope.currentPin = currentPin;
+
+        this.print('-- nets --');
+
+        // dump the list of nets in the current scope
+        const currentNets = this.scope.getNets();
+
+        currentNets.reduce((accum, [,,net]) => {
+            if (accum.indexOf(net) === -1){
+                accum.push(net);
+                this.print(`${net.namespace}${net.name} ${net.priority}`);
+            }
+            return accum;
+        }, []);
 
         this.print('-- done merging scope --');
     }
