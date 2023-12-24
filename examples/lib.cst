@@ -8,6 +8,16 @@ def net(net_name):
             net_name: net_name
             priority: 10
 
+def power(net_name):
+    return create component:
+        pins: 1
+        display: "net"
+        type: "net"
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 20
+
 def label(value):
     return create component:
         pins: 1
