@@ -25,7 +25,7 @@ export class ExecutionContext {
     resolveVariable: (variableName: string) => 
         ({found: boolean, value?: any, type?:string}) = null;
 
-    resolveNet: (name: string) => ({
+    resolveNet: (name: string, namespace:string) => ({
         found: boolean, net?: Net
     }) = null;
 
@@ -73,6 +73,7 @@ export class ExecutionContext {
 
         this.print(
             'create new execution context',
+            this.namespace,
             this.name,
             this.scope.indentLevel,
         );
@@ -290,15 +291,17 @@ export class ExecutionContext {
             const priority = paramsMap.get(ParamKeys.priority);
 
             // Check if the net exists
-            const result = this.resolveNet(netName);
+            const result = this.resolveNet(netName, this.namespace);
             let tmpNet: Net;
 
             if (result.found) {
                 tmpNet = result.net;
+                this.print('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
                 tmpNet = new Net(this.namespace, netName, priority);
-                this.print('added net instance', tmpNet, netName);
+                this.print('net not found, added net instance', 
+                    tmpNet.namespace, tmpNet.name);
             }
 
             // Assume net is on 1 pin for now
