@@ -10,7 +10,9 @@ describe('test parsing', () => {
         [2, "nested branching, add with pin selected"],
         [3, "'at' and 'to' commands will clone net components"],
         [4, "resolve instances in upper contexts"],
-        [5, "components in function parameters"]
+        [5, "components in function parameters"],
+        [6, "resolve nets in local and upper contexts"]
+        
     ])('parse script - %d: %s', async (index, description) => {
         // Test only parsing, does not check the correctness of the 
         // parsed result!
@@ -325,6 +327,101 @@ const script8Expected: ComponentPinNet[] = [
     ['__base__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1]
 ];
 
+const script9 = `
+import lib
+
+v5v = power("5v")
+net("global_name")
+
+def divider(power_net, r1, r2, net_name):
+    frame:
+        ..border = 0
+        
+        at power_net
+        wire down 20
+        add res(r1) down
+        wire down 20
+
+        branch:
+            wire right 20
+            add label("inner_name")
+            wire right 60
+            add res(100k) right
+            wire right 20
+            add label("global_name")
+            wire right 40
+
+        wire down 20
+        add res(r2) down
+        wire down 20
+        to gnd
+
+frame:
+    ..border = 0
+    ..direction = "row"
+
+    divider(v5v, 10k, 20k, "hello2")
+    divider(v5v, 10k, 20k, "hello1")
+`;
+
+const script9Expected: ComponentPinNet[] = [
+    [
+        '__base__.divider_0.label_0.inner_name',
+        'divider_0.label_0.COMP_1_1',
+        1
+    ],
+    [
+        '__base__.divider_0.label_0.inner_name',
+        'divider_0.res_0.COMP_1_10k',
+        2
+    ],
+    [
+        '__base__.divider_0.label_0.inner_name',
+        'divider_0.res_1.COMP_1_100k',
+        1
+    ],
+    [
+        '__base__.divider_0.label_0.inner_name',
+        'divider_0.res_2.COMP_1_20k',
+        1
+    ],
+    [
+        '__base__.divider_1.label_2.inner_name',
+        'divider_1.label_2.COMP_1_1',
+        1
+    ],
+    [
+        '__base__.divider_1.label_2.inner_name',
+        'divider_1.res_3.COMP_1_10k',
+        2
+    ],
+    [
+        '__base__.divider_1.label_2.inner_name',
+        'divider_1.res_4.COMP_1_100k',
+        1
+    ],
+    [
+        '__base__.divider_1.label_2.inner_name',
+        'divider_1.res_5.COMP_1_20k',
+        1
+    ],
+    ['__base__.gnd', 'gnd', 1],
+    ['__base__.gnd', 'divider_0.gnd:0', 1],
+    ['__base__.gnd', 'divider_0.res_2.COMP_1_20k', 2],
+    ['__base__.gnd', 'divider_1.gnd:0', 1],
+    ['__base__.gnd', 'divider_1.res_5.COMP_1_20k', 2],
+    ['__base__.net_0.global_name', 'net_0.COMP_1_1', 1],
+    ['__base__.net_0.global_name', 'divider_0.label_1.COMP_1_1', 1],
+    ['__base__.net_0.global_name', 'divider_0.res_1.COMP_1_100k', 2],
+    ['__base__.net_0.global_name', 'divider_1.label_3.COMP_1_1', 1],
+    ['__base__.net_0.global_name', 'divider_1.res_4.COMP_1_100k', 2],
+    ['__base__.power_0.5v', 'v5v', 1],
+    ['__base__.power_0.5v', 'divider_0.v5v:0', 1],
+    ['__base__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1],
+    ['__base__.power_0.5v', 'divider_1.v5v:0', 1],
+    ['__base__.power_0.5v', 'divider_1.res_3.COMP_1_10k', 1]
+];
+
 // Store in an array, so that it is accessible
 // during the test itself.
 const allScripts: [string, ComponentPinNet[]][] = [
@@ -334,4 +431,5 @@ const allScripts: [string, ComponentPinNet[]][] = [
     [script6, script6Expected],
     [script7, script7Expected],
     [script8, script8Expected],
+    [script9, script9Expected],
 ];
