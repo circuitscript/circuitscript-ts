@@ -97,8 +97,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.logger = new Logger();
 
         this.startingContext = new ExecutionContext(
-            '__base__',
-            '__base__.',
+            '__',
+            '__.',
             0, 0, silent, 
             this.logger);
             

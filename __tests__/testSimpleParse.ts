@@ -96,12 +96,12 @@ wire right 180 up 60
 `;
 
 const script1Expected: ComponentPinNet[] = [
-    ['__base__.NET_1', 'U1', 2],
-    ['__base__.NET_1', 'U2', 1],
-    ['__base__.NET_2', 'U2', 3],
-    ['__base__.NET_2', 'U1', 10],
-    ['__base__.NET_2', 'U2', 5],
-    ['__base__.gnd', 'gnd', 1]
+    ['__.NET_1', 'U1', 2],
+    ['__.NET_1', 'U2', 1],
+    ['__.NET_2', 'U2', 3],
+    ['__.NET_2', 'U1', 10],
+    ['__.NET_2', 'U2', 5],
+    ['__.gnd', 'gnd', 1]
 ];
 
 const script2 = `
@@ -128,10 +128,10 @@ to gnd
 `;
 
 const script2Expected: ComponentPinNet[] = [
-    [ '__base__.gnd', 'gnd', 1 ],
-    [ '__base__.gnd', 'J1', 1 ],
-    [ '__base__.gnd', 'J1', 3 ],
-    [ '__base__.gnd', 'gnd:0', 1 ]
+    [ '__.gnd', 'gnd', 1 ],
+    [ '__.gnd', 'J1', 1 ],
+    [ '__.gnd', 'J1', 3 ],
+    [ '__.gnd', 'gnd:0', 1 ]
   ];
 
 const script3 = `
@@ -165,13 +165,13 @@ wire right 40
 add diode()
 `;
 const script3Expected: ComponentPinNet[] = [
-    [ '__base__.NET_1', 'label_0.COMP_1_hello', 1 ],
-    [ '__base__.NET_1', 'diode_0.COMP_1', 1 ],
-    [ '__base__.NET_1', 'diode_1.COMP_1', 2 ],
-    [ '__base__.NET_1', 'diode_3.COMP_1', 1 ],
-    [ '__base__.NET_2', 'diode_1.COMP_1', 1 ],
-    [ '__base__.NET_2', 'diode_2.COMP_1', 1 ],
-    [ '__base__.gnd', 'gnd', 1 ]
+    [ '__.NET_1', 'label_0.COMP_1_hello', 1 ],
+    [ '__.NET_1', 'diode_0.COMP_1', 1 ],
+    [ '__.NET_1', 'diode_1.COMP_1', 2 ],
+    [ '__.NET_1', 'diode_3.COMP_1', 1 ],
+    [ '__.NET_2', 'diode_1.COMP_1', 1 ],
+    [ '__.NET_2', 'diode_2.COMP_1', 1 ],
+    [ '__.gnd', 'gnd', 1 ]
   ];
 
 const script6 = `
@@ -200,20 +200,20 @@ to midpt
 `;
 
 const script6Expected: ComponentPinNet[] = [
-    [ '__base__.gnd', 'gnd', 1 ],
-    [ '__base__.gnd', 'gnd:0', 1 ],
-    [ '__base__.gnd', 'res_1.COMP_1_20k', 2 ],
-    [ '__base__.net_0.3v3', 'vcc', 1 ],
-    [ '__base__.net_0.3v3', 'vcc:0', 1 ],
-    [ '__base__.net_0.3v3', 'res_0.COMP_1_20k', 1 ],
-    [ '__base__.net_0.3v3', 'vcc:1', 1 ],
-    [ '__base__.net_0.3v3', 'res_2.COMP_1_10k', 1 ],
-    [ '__base__.net_1.out', 'midpt', 1 ],
-    [ '__base__.net_1.out', 'res_0.COMP_1_20k', 2 ],
-    [ '__base__.net_1.out', 'res_1.COMP_1_20k', 1 ],
-    [ '__base__.net_1.out', 'midpt:0', 1 ],
-    [ '__base__.net_1.out', 'midpt:1', 1 ],
-    [ '__base__.net_1.out', 'res_2.COMP_1_10k', 2 ]
+    [ '__.gnd', 'gnd', 1 ],
+    [ '__.gnd', 'gnd:0', 1 ],
+    [ '__.gnd', 'res_1.COMP_1_20k', 2 ],
+    [ '__.net_0.3v3', 'vcc', 1 ],
+    [ '__.net_0.3v3', 'vcc:0', 1 ],
+    [ '__.net_0.3v3', 'res_0.COMP_1_20k', 1 ],
+    [ '__.net_0.3v3', 'vcc:1', 1 ],
+    [ '__.net_0.3v3', 'res_2.COMP_1_10k', 1 ],
+    [ '__.net_1.out', 'midpt', 1 ],
+    [ '__.net_1.out', 'res_0.COMP_1_20k', 2 ],
+    [ '__.net_1.out', 'res_1.COMP_1_20k', 1 ],
+    [ '__.net_1.out', 'midpt:0', 1 ],
+    [ '__.net_1.out', 'midpt:1', 1 ],
+    [ '__.net_1.out', 'res_2.COMP_1_10k', 2 ]
   ];
 
 const script7 = `
@@ -233,16 +233,16 @@ tmp1()
 tmp1()`
 
 const script7Expected: ComponentPinNet[] = [
-    ['__base__.gnd', 'gnd', 1],
-    ['__base__.gnd', 'tmp1_0.gnd:0', 1],
-    ['__base__.gnd', 'tmp1_0.res_0.COMP_1_10k', 2],
-    ['__base__.gnd', 'tmp1_1.gnd:0', 1],
-    ['__base__.gnd', 'tmp1_1.res_1.COMP_1_10k', 2],
-    ['__base__.net_0.5V', 'v5v', 1],
-    ['__base__.net_0.5V', 'tmp1_0.v5v:0', 1],
-    ['__base__.net_0.5V', 'tmp1_0.res_0.COMP_1_10k', 1],
-    ['__base__.net_0.5V', 'tmp1_1.v5v:0', 1],
-    ['__base__.net_0.5V', 'tmp1_1.res_1.COMP_1_10k', 1]
+    ['__.gnd', 'gnd', 1],
+    ['__.gnd', 'tmp1_0.gnd:0', 1],
+    ['__.gnd', 'tmp1_0.res_0.COMP_1_10k', 2],
+    ['__.gnd', 'tmp1_1.gnd:0', 1],
+    ['__.gnd', 'tmp1_1.res_1.COMP_1_10k', 2],
+    ['__.net_0.5V', 'v5v', 1],
+    ['__.net_0.5V', 'tmp1_0.v5v:0', 1],
+    ['__.net_0.5V', 'tmp1_0.res_0.COMP_1_10k', 1],
+    ['__.net_0.5V', 'tmp1_1.v5v:0', 1],
+    ['__.net_0.5V', 'tmp1_1.res_1.COMP_1_10k', 1]
 ];
 
 const script4 = `
@@ -316,15 +316,15 @@ divider(v5v, 10k, 20k, label("hello"))
 `
 
 const script8Expected: ComponentPinNet[] = [
-    ['__base__.gnd', 'gnd', 1],
-    ['__base__.gnd', 'divider_0.gnd:0', 1],
-    ['__base__.gnd', 'divider_0.res_1.COMP_1_20k', 2],
-    ['__base__.label_0.hello', 'label_0.COMP_1_1', 1],
-    ['__base__.label_0.hello', 'divider_0.res_0.COMP_1_10k', 2],
-    ['__base__.label_0.hello', 'divider_0.res_1.COMP_1_20k', 1],
-    ['__base__.power_0.5v', 'v5v', 1],
-    ['__base__.power_0.5v', 'divider_0.v5v:0', 1],
-    ['__base__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1]
+    ['__.gnd', 'gnd', 1],
+    ['__.gnd', 'divider_0.gnd:0', 1],
+    ['__.gnd', 'divider_0.res_1.COMP_1_20k', 2],
+    ['__.label_0.hello', 'label_0.COMP_1_1', 1],
+    ['__.label_0.hello', 'divider_0.res_0.COMP_1_10k', 2],
+    ['__.label_0.hello', 'divider_0.res_1.COMP_1_20k', 1],
+    ['__.power_0.5v', 'v5v', 1],
+    ['__.power_0.5v', 'divider_0.v5v:0', 1],
+    ['__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1]
 ];
 
 const script9 = `
@@ -366,60 +366,60 @@ frame:
 
 const script9Expected: ComponentPinNet[] = [
     [
-        '__base__.divider_0.label_0.inner_name',
+        '__.divider_0.label_0.inner_name',
         'divider_0.label_0.COMP_1_1',
         1
     ],
     [
-        '__base__.divider_0.label_0.inner_name',
+        '__.divider_0.label_0.inner_name',
         'divider_0.res_0.COMP_1_10k',
         2
     ],
     [
-        '__base__.divider_0.label_0.inner_name',
+        '__.divider_0.label_0.inner_name',
         'divider_0.res_1.COMP_1_100k',
         1
     ],
     [
-        '__base__.divider_0.label_0.inner_name',
+        '__.divider_0.label_0.inner_name',
         'divider_0.res_2.COMP_1_20k',
         1
     ],
     [
-        '__base__.divider_1.label_2.inner_name',
+        '__.divider_1.label_2.inner_name',
         'divider_1.label_2.COMP_1_1',
         1
     ],
     [
-        '__base__.divider_1.label_2.inner_name',
+        '__.divider_1.label_2.inner_name',
         'divider_1.res_3.COMP_1_10k',
         2
     ],
     [
-        '__base__.divider_1.label_2.inner_name',
+        '__.divider_1.label_2.inner_name',
         'divider_1.res_4.COMP_1_100k',
         1
     ],
     [
-        '__base__.divider_1.label_2.inner_name',
+        '__.divider_1.label_2.inner_name',
         'divider_1.res_5.COMP_1_20k',
         1
     ],
-    ['__base__.gnd', 'gnd', 1],
-    ['__base__.gnd', 'divider_0.gnd:0', 1],
-    ['__base__.gnd', 'divider_0.res_2.COMP_1_20k', 2],
-    ['__base__.gnd', 'divider_1.gnd:0', 1],
-    ['__base__.gnd', 'divider_1.res_5.COMP_1_20k', 2],
-    ['__base__.net_0.global_name', 'net_0.COMP_1_1', 1],
-    ['__base__.net_0.global_name', 'divider_0.label_1.COMP_1_1', 1],
-    ['__base__.net_0.global_name', 'divider_0.res_1.COMP_1_100k', 2],
-    ['__base__.net_0.global_name', 'divider_1.label_3.COMP_1_1', 1],
-    ['__base__.net_0.global_name', 'divider_1.res_4.COMP_1_100k', 2],
-    ['__base__.power_0.5v', 'v5v', 1],
-    ['__base__.power_0.5v', 'divider_0.v5v:0', 1],
-    ['__base__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1],
-    ['__base__.power_0.5v', 'divider_1.v5v:0', 1],
-    ['__base__.power_0.5v', 'divider_1.res_3.COMP_1_10k', 1]
+    ['__.gnd', 'gnd', 1],
+    ['__.gnd', 'divider_0.gnd:0', 1],
+    ['__.gnd', 'divider_0.res_2.COMP_1_20k', 2],
+    ['__.gnd', 'divider_1.gnd:0', 1],
+    ['__.gnd', 'divider_1.res_5.COMP_1_20k', 2],
+    ['__.net_0.global_name', 'net_0.COMP_1_1', 1],
+    ['__.net_0.global_name', 'divider_0.label_1.COMP_1_1', 1],
+    ['__.net_0.global_name', 'divider_0.res_1.COMP_1_100k', 2],
+    ['__.net_0.global_name', 'divider_1.label_3.COMP_1_1', 1],
+    ['__.net_0.global_name', 'divider_1.res_4.COMP_1_100k', 2],
+    ['__.power_0.5v', 'v5v', 1],
+    ['__.power_0.5v', 'divider_0.v5v:0', 1],
+    ['__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1],
+    ['__.power_0.5v', 'divider_1.v5v:0', 1],
+    ['__.power_0.5v', 'divider_1.res_3.COMP_1_10k', 1]
 ];
 
 // Store in an array, so that it is accessible
