@@ -399,7 +399,18 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitSub_expr(ctx: Sub_exprContext): [id: string, parameters] {
-        const commandName = ctx.ID().getText();
+        let commandName: string = null;
+        if (ctx.ID()){
+            commandName = ctx.ID().getText();
+        } else {
+            // Should be pin
+            commandName = ctx.getText().split(":")[0];
+            if (commandName !== 'pin'){
+                // Hardcode for now
+                throw "Invalid command!";
+            } 
+        }
+
         const parameters = this.visit(ctx.parameters());
         return [commandName, parameters];
     }
@@ -541,6 +552,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 return !value;
             } else {
                 throw "Failed to do Not operator";
+            }
+        } else if(unaryOperator.Minus()) {
+            if (typeof value === 'number'){
+                return -value;
+            } else {
+                throw "Failed to do Negation operator";
             }
         }
     }

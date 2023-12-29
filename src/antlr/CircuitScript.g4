@@ -105,23 +105,22 @@ double_dot_property_set_expr: '..' ID '=' data_expr;
 
 data_expr: data_expr (Multiply | Divide) data_expr      #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
-    // | Minus data_expr                                   #NegateExpr
     | ID                                                #DataExpr
     | atom_expr                                         #DataExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
     | assignment_expr                                   #DataExpr
+    | value_expr                                        #DataExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
     | unary_operator data_expr                          #UnaryOperatorExpr
     | '(' data_expr ')'                                 #RoundedBracketsExpr
-    | value_expr                                        #DataExpr
     ;           
 
 binary_operator: Equals 
     | NotEquals
     ;
 
-unary_operator: Not;
+unary_operator: Not | Minus;
 
 value_expr: signed_value_expr
     | STRING_VALUE 
@@ -145,8 +144,6 @@ function_args_expr:
     | ID '=' value_expr (',' ID '=' value_expr)*
     ;
 
-function_call_expr: ID '(' parameters? ')';
-
 atom_expr: ID trailer_expr*;
 trailer_expr: '(' parameters? ')'
         | '.' ID;
@@ -155,10 +152,9 @@ function_return_expr: Return data_expr ;
 
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
 create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | sub_expr)+ DEDENT;
+sub_expr: (ID | Pin) ':' parameters;
 
 property_expr: property_key_expr ':' property_value_expr;
-sub_expr: ID ':' parameters;
-
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;
 property_value_expr: NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT     # nested_properties
                     | data_expr (',' data_expr)*                          # single_line_property
@@ -202,11 +198,6 @@ NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [kmMunp]?;
 STRING_VALUE: '"' (.)*? '"';
 PERCENTAGE_VALUE: [1-9]+[0-9]* '%';
 ALPHA_NUMERIC: [a-zA-Z0-9]+;
-
-OPERATOR: '-'
-        | '+'
-        | '*'
-        | '/';
 
 WS: [ \t]+ -> skip;
 

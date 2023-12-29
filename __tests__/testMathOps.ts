@@ -1,8 +1,11 @@
 import { runScript } from "./helpers";
 
+const script1 = `
+b = 10
+a = -b
+`
+
 describe('Simple math tests', () => {
-
-
     test.each([
         ["a = -1 + 2", 1],
         ["a = 1 + 2", 3],
@@ -14,7 +17,8 @@ describe('Simple math tests', () => {
         ["a = 1+20-2", 19],
         ["a = -1+2", 1],
         ["a = -123", -123],
-        ["a = 0-123", -123]
+        ["a = 0-123", -123],
+        [script1, -10]
     ])('math test - %s', async (script, expectedResult) => {
         const {visitor, hasError} = await runScript(script);
 
@@ -22,7 +26,5 @@ describe('Simple math tests', () => {
 
         const variables = visitor.dumpVariables();
         expect(variables.get('a')).toBe(expectedResult);
-
     });
-
 })
