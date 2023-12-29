@@ -48,3 +48,10 @@ export enum ComponentTypes {
     label = 'label',
     point = 'point'
 }
+
+export enum ReferenceTypes {
+    function = 'function',
+    value = 'value',
+    variable = 'variable',
+    instance = 'instance',
+}

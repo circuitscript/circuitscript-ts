@@ -38,17 +38,17 @@ expression: add_component_expr
         | at_to_multiple_expr
 		| to_component_expr
         | at_component_expr
+        | assignment_expr
         | property_set_expr
         | property_set_expr2
         | double_dot_property_set_expr
         | break_keyword
         | function_def_expr
-        | function_call_expr
-        | assignment_expr
         | wire_expr
         | point_expr
         | import_expr
         | frame_expr
+        | atom_expr
         
         | at_block
         | branch_blocks
@@ -61,7 +61,7 @@ branch_block_inner:
 	Branch ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:
-	INSTANCE_NAME_WITH_PROPERTY ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
+	atom_expr ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
 add_component_expr: Add data_expr pin_select_expr? ID?;
@@ -93,19 +93,19 @@ at_block_pin_expression_complex: NEWLINE INDENT ( NEWLINE | expression)+ DEDENT;
 
 break_keyword: Break;
 
-assignment_expr: ID '=' data_expr;
+assignment_expr: atom_expr '=' data_expr;
 keyword_assignment_expr: ID '=' data_expr;
 
 parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
             | (keyword_assignment_expr (',' keyword_assignment_expr)*);
 
-property_set_expr: INSTANCE_NAME_WITH_PROPERTY '=' data_expr;
+property_set_expr: atom_expr '=' data_expr;
 double_dot_property_set_expr: '..' ID '=' data_expr;
 
 data_expr: data_expr (Multiply | Divide) data_expr      #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
     | ID                                                #DataExpr
-    | function_call_expr                                #DataExpr
+    | atom_expr                                         #DataExpr
     | create_component_expr                             #DataExpr
     | assignment_expr                                   #DataExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
@@ -139,6 +139,11 @@ function_args_expr:
     ;
 
 function_call_expr: ID '(' parameters? ')';
+
+atom_expr: ID trailer_expr*;
+trailer_expr: '(' parameters? ')'
+        | '.' ID;
+
 function_return_expr: Return data_expr ;
 
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
@@ -161,6 +166,7 @@ import_expr: Import ID;
 
 frame_expr: 'frame' ':' NEWLINE INDENT (NEWLINE | expression+)+ DEDENT;
 
+
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};
 
@@ -170,7 +176,6 @@ NOT_CONNECTED: 'nc' | 'NC';
 BOOLEAN_VALUE:  'true' | 'false';
 
 ID: [_a-zA-Z][_a-zA-Z0-9]*;
-INSTANCE_NAME_WITH_PROPERTY: ID '.' [a-zA-Z][a-zA-Z0-9_]+;
 
 // This value takes a number with an alphabet at the end to indicate 
 // the multipler to the number

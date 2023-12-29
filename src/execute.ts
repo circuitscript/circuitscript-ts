@@ -1,10 +1,10 @@
-import { ComponentTypes, GlobalNames, ParamKeys } from './globals';
+import { ComponentTypes, GlobalNames, ParamKeys, ReferenceTypes } from './globals';
 import { ClassComponent } from './objects/ClassComponent';
 import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope';
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition, PortSide } from './objects/PinDefinition';
-import { CFunction, CFunctionResult, CallableParameter, ComponentPin } from './objects/types';
+import { CFunction, CFunctionResult, CallableParameter, ComplexType, ComponentPin } from './objects/types';
 import { Wire, WireSegment } from './objects/Wire';
 import { Logger } from './logger';
 import { Frame } from './objects/Frame';
@@ -18,12 +18,6 @@ export class ExecutionContext {
     executionLevel: number;
 
     scope: ExecutionScope;
-
-    resolveFunction: ((functionName:string) => any) | null = null;
-
-    // Resolves both variables and instances in upper contexts
-    resolveVariable: (variableName: string) => 
-        ({found: boolean, value?: any, type?:string}) = null;
 
     resolveNet: (name: string, namespace:string) => ({
         found: boolean, net?: Net
@@ -681,9 +675,49 @@ export class ExecutionContext {
         return this.scope.functions.get(functionName);
     }
 
+    resolveVariable(executionStack: ExecutionContext[], idName: string):
+        {found: boolean, name?: string, value?: any, type?: string} {
+        this.print('resolve variable', idName);
+        const reversed = [...executionStack].reverse();
+
+        for (let i = 0; i < reversed.length; i++) {
+            const context = reversed[i];
+            if (context.hasFunction(idName)) {
+                return {
+                    found: true,
+                    value: context.getFunction(idName),
+                    type: ReferenceTypes.function,
+                    name: idName,
+                }
+
+            } else if (context.scope.variables.has(idName)) {
+                return {
+                    found: true,
+                    value: context.scope.variables.get(idName),
+                    type: ReferenceTypes.variable,
+                    name: idName,
+                };
+
+            } else if (context.scope.instances.has(idName)) {
+                return {
+                    found: true,
+                    value: context.scope.instances.get(idName),
+                    type: ReferenceTypes.instance,
+                    name: idName,
+                }
+            }
+        }
+
+        return {
+            found: false,
+            name: idName,
+        }
+    }
+
     callFunction(
         functionName: string,
         functionParams: CallableParameter[],
+        executionStack: ExecutionContext[],
     ): CFunctionResult {
         let __runFunc: CFunction | null = null;
 
@@ -695,9 +729,17 @@ export class ExecutionContext {
     
             // If the function does not exist in the current execution context,
             // then try to search in the upper execution context
-            if (__runFunc === null && this.resolveFunction !== null) {
+            if (__runFunc === null) {
                 this.print(`searching for function ${functionName} in upper context`)
-                __runFunc = this.resolveFunction(functionName);
+                
+                const tmpResolveResult = 
+                    this.resolveVariable(executionStack, functionName);
+                
+                if (tmpResolveResult.found) {
+                    __runFunc = tmpResolveResult.value;
+                } else {
+                    throw `Invalid function ${functionName}`;
+                }
             }
             this.print('save function to cache:', functionName);
             this.__functionCache[functionName] = __runFunc;

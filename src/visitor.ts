@@ -8,6 +8,7 @@ import {
     At_block_pin_expression_complexContext,
     At_block_pin_expression_simpleContext,
     At_component_exprContext,
+    Atom_exprContext,
     BinaryOperatorExprContext,
     Blank_exprContext,
     Branch_blocksContext,
@@ -18,7 +19,6 @@ import {
     ExpressionContext,
     Frame_exprContext,
     Function_args_exprContext,
-    Function_call_exprContext,
     Function_def_exprContext,
     Function_exprContext,
     Function_return_exprContext,
@@ -137,16 +137,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitAssignment_expr(ctx: Assignment_exprContext): ComplexType {
-        const variableName = ctx.ID().getText();
-
+        const reference = this.visit(ctx.atom_expr());
         const value = this.visit(ctx.data_expr()) as ComplexType;
-        if (this.getExecutor().hasFunction(variableName)) {
-            throw (
-                "Cannot have variable or instance named as function name '" +
-                variableName +
-                "'"
-            );
-        }
 
         if (value instanceof ClassComponent) {
             // If value is a class component, then update the instance name
@@ -156,17 +148,17 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             const oldName = tmpComponent.instanceName;
 
             // Rename to new name
-            tmpComponent.instanceName = variableName;
+            tmpComponent.instanceName = reference.name;
 
             instances.delete(oldName);
-            instances.set(variableName, tmpComponent);
+            instances.set(reference.name, tmpComponent);
 
             this.getExecutor().print(
-                `assigned '${variableName}' to ClassComponent`,
+                `assigned '${reference.name}' to ClassComponent`,
             );
         } else {
             // Otherwise, assign variable name to value
-            this.getExecutor().scope.variables.set(variableName, value);
+            this.getExecutor().scope.variables.set(reference.name, value);
         }
 
         return value;
@@ -439,7 +431,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 
             } else if (executor.resolveVariable !== null) {
                 // Try to find the variable in the upper contexts
-                const foundVariable = executor.resolveVariable(idName);
+                const foundVariable = 
+                    executor.resolveVariable(this.executionStack, idName);
 
                 if (foundVariable.found) {
                     value = foundVariable.value;
@@ -461,12 +454,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 throw "Could not find variable '" + idName + "'";
             }
 
-        } else if (ctx.function_call_expr()) {
-            const functionCallReturn: [functionName: string, result: CFunctionResult] =
-                this.visit(ctx.function_call_expr());
+        } else if (ctx.atom_expr()) {
+            const reference = this.visit(ctx.atom_expr());
 
             // This is the returned component from the function call
-            value = functionCallReturn[1][1] as ComplexType
+            value = reference.value
 
         } else if (ctx.assignment_expr()) {
             value = this.visit(ctx.assignment_expr()) as ComplexType;
@@ -557,48 +549,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
 
         const executionStack = this.executionStack;
-
         const functionCounter = { counter: 0 };
-
-        const resolveFunction = (functionName: string) => {
-            // search through the execution stack in reverse to find if the func_name exists
-            this.print('find function', functionName);
-            const reversed = [...executionStack].reverse();
-
-            for (let i = 0; i < reversed.length; i++) {
-                const context = reversed[i];
-                if (context.hasFunction(functionName)) {
-                    return context.getFunction(functionName);
-                }
-            }
-            return null;
-        };
-
-        const resolveVariable = (variableName: string) => {
-            this.print('find variable', variableName);
-            const reversed = [...executionStack].reverse();
-
-            for (let i = 0; i < reversed.length; i++) {
-                const context = reversed[i];
-                if (context.scope.variables.has(variableName)) {
-                    return {
-                        found: true,
-                        value: context.scope.variables.get(variableName),
-                        type: 'value',
-                    };
-                } else if (context.scope.instances.has(variableName)){
-                    return {
-                        found: true,
-                        value: context.scope.instances.get(variableName),
-                        type: 'instance',
-                    }
-                }
-            }
-
-            return {
-                found: false
-            } 
-        }
 
         const resolveNet = (netName: string, namespace: string) => {
             // namespace is the current namespace where the net name is 
@@ -655,8 +606,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 currentExecutionContext.logger,
             );
 
-            newExecutor.resolveFunction = resolveFunction;
-            newExecutor.resolveVariable = resolveVariable;
             newExecutor.resolveNet = resolveNet;
 
             // Add the execution context to the end of the execution stack
@@ -756,23 +705,54 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return returnValue;
     }
 
-    visitFunction_call_expr(ctx: Function_call_exprContext):
-        [functionName: string, result: CFunctionResult] {
+    visitAtom_expr(ctx: Atom_exprContext): ComplexType {
+        const executor = this.getExecutor();
 
-        this.getExecutor().printPoint();
+        const firstId = ctx.ID().getText();
 
-        let parameters: CallableParameter[] = [];
-        if (ctx.parameters()) {
-            parameters = this.visit(ctx.parameters());
+        let currentReference = executor.resolveVariable(
+            this.executionStack, firstId);
+
+        if (ctx.trailer_expr_list().length > 0) {
+            // Resolve all elements in the trailer expression list
+
+            if (!currentReference.found){
+                throw "Could not find reference! " + firstId;
+            }
+
+            ctx.trailer_expr_list().forEach(item => {
+                const itemValue = item.getText();
+                if (itemValue.startsWith("(") && itemValue.endsWith(")")) {
+                    let parameters: CallableParameter[] = [];
+                    if (item.parameters()) {
+                        parameters = this.visit(item.parameters());
+                    }
+
+                    const [, functionResult] =
+                        this.getExecutor().callFunction(currentReference.name,
+                            parameters, this.executionStack);
+
+                    if (functionResult instanceof ClassComponent){
+                        currentReference = {
+                            found: true,
+                            type: 'instance',
+                            value: functionResult,
+                        };
+                    } else {
+                        currentReference = {
+                            found: true,
+                            type: 'value',
+                            value: functionResult
+                        }
+                    }
+
+                } else {
+                    currentReference.value = currentReference.value[itemValue];
+                }
+            });
         }
 
-        const functionName = ctx.ID().getText();
-        const executionResult =
-            this.getExecutor().callFunction(functionName, parameters);
-
-        this.getExecutor().printPoint();
-
-        return [functionName, executionResult];
+        return currentReference;
     }
 
     visitPin_select_expr2(ctx: Pin_select_expr2Context): string | number {
@@ -933,8 +913,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitProperty_set_expr(ctx: Property_set_exprContext): void {
         const result = this.visit(ctx.data_expr());
-        const instanceNameWithProp = ctx.INSTANCE_NAME_WITH_PROPERTY().toString();
-        this.getExecutor().setProperty(instanceNameWithProp, result);
+
+        // To check if this works
+        const resolvedProperty = this.visit(ctx.atom_expr());
+
+        // TODO: check if this works correctly
+        this.getExecutor().setProperty(resolvedProperty, result);
     }
     
     visitDouble_dot_property_set_expr(ctx: Double_dot_property_set_exprContext) {
