@@ -43,6 +43,8 @@ import { Function_def_exprContext } from "./CircuitScriptParser";
 import { Function_exprContext } from "./CircuitScriptParser";
 import { Function_args_exprContext } from "./CircuitScriptParser";
 import { Function_call_exprContext } from "./CircuitScriptParser";
+import { Atom_exprContext } from "./CircuitScriptParser";
+import { Trailer_exprContext } from "./CircuitScriptParser";
 import { Function_return_exprContext } from "./CircuitScriptParser";
 import { Create_component_exprContext } from "./CircuitScriptParser";
 import { Property_exprContext } from "./CircuitScriptParser";
@@ -312,6 +314,18 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitFunction_call_expr?: (ctx: Function_call_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.atom_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAtom_expr?: (ctx: Atom_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.trailer_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTrailer_expr?: (ctx: Trailer_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.function_return_expr`.
 	 * @param ctx the parse tree
