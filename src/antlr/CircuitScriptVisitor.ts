@@ -38,6 +38,7 @@ import { RoundedBracketsExprContext } from "./CircuitScriptParser";
 import { Binary_operatorContext } from "./CircuitScriptParser";
 import { Unary_operatorContext } from "./CircuitScriptParser";
 import { Value_exprContext } from "./CircuitScriptParser";
+import { Signed_value_exprContext } from "./CircuitScriptParser";
 import { Print_exprContext } from "./CircuitScriptParser";
 import { Function_def_exprContext } from "./CircuitScriptParser";
 import { Function_exprContext } from "./CircuitScriptParser";
@@ -47,7 +48,9 @@ import { Atom_exprContext } from "./CircuitScriptParser";
 import { Trailer_exprContext } from "./CircuitScriptParser";
 import { Function_return_exprContext } from "./CircuitScriptParser";
 import { Create_component_exprContext } from "./CircuitScriptParser";
+import { Create_graphic_exprContext } from "./CircuitScriptParser";
 import { Property_exprContext } from "./CircuitScriptParser";
+import { Sub_exprContext } from "./CircuitScriptParser";
 import { Property_key_exprContext } from "./CircuitScriptParser";
 import { Nested_propertiesContext } from "./CircuitScriptParser";
 import { Single_line_propertyContext } from "./CircuitScriptParser";
@@ -285,6 +288,12 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 */
 	visitValue_expr?: (ctx: Value_exprContext) => Result;
 	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.signed_value_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSigned_value_expr?: (ctx: Signed_value_exprContext) => Result;
+	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.print_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -339,11 +348,23 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 */
 	visitCreate_component_expr?: (ctx: Create_component_exprContext) => Result;
 	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.create_graphic_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitCreate_graphic_expr?: (ctx: Create_graphic_exprContext) => Result;
+	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.property_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitProperty_expr?: (ctx: Property_exprContext) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.sub_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSub_expr?: (ctx: Sub_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.property_key_expr`.
 	 * @param ctx the parse tree

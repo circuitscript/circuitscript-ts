@@ -4,12 +4,17 @@ describe('Simple math tests', () => {
 
 
     test.each([
+        ["a = -1 + 2", 1],
         ["a = 1 + 2", 3],
         ["a = 1 + 2 * 3", 7],
         ["a = 5 - 1", 4],
         ["a = 5 - 1 * 2", 3],
         ["a = 10 / 2", 5],
-        ["a = 1 + 9 / 3", 4]
+        ["a = 1 + 9 / 3", 4],
+        ["a = 1+20-2", 19],
+        ["a = -1+2", 1],
+        ["a = -123", -123],
+        ["a = 0-123", -123]
     ])('math test - %s', async (script, expectedResult) => {
         const {visitor, hasError} = await runScript(script);
 
