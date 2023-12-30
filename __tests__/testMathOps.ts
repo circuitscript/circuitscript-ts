@@ -5,6 +5,11 @@ b = 10
 a = -b
 `
 
+const script2 = `
+b = 10
+a = -b / 2 - 1
+`
+
 describe('Simple math tests', () => {
     test.each([
         ["a = -1 + 2", 1],
@@ -18,7 +23,8 @@ describe('Simple math tests', () => {
         ["a = -1+2", 1],
         ["a = -123", -123],
         ["a = 0-123", -123],
-        [script1, -10]
+        [script1, -10],
+        [script2, -6]
     ])('math test - %s', async (script, expectedResult) => {
         const {visitor, hasError} = await runScript(script);
 
