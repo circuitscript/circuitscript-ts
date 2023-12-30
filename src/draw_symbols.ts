@@ -148,7 +148,7 @@ export abstract class SymbolGraphic {
                 anchor = HorizontalAlign.Left, 
                 vanchor = VerticalAlign.Bottom,
                 fontWeight = 'regular',
-            } = tmpLabel.style;
+            } = tmpLabel.style ?? {};
 
             let anchorStyle = 'start';
             let dominantBaseline = 'auto';
@@ -238,15 +238,8 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
     switch (name) {
         case 'gnd':
             return new SymbolGnd();
-        case 'net':
-            return new SymbolPower();
         case 'label':
             return new SymbolLabel();
-        case 'res':
-            return new SymbolRes();
-        case 'cap':
-            return new SymbolCap();
-
         case 'point':
             return new SymbolPointHidden();
 
@@ -460,6 +453,61 @@ export class SymbolText extends SymbolGraphic {
     }
 }
 
+export class SymbolPlaceholder extends SymbolGraphic {
+    // This is used if the drawing object is defined within
+    // circuitscript code itself.
+    generateDrawing(): void {
+
+        const drawing = this.drawing as SymbolDrawingCommands;
+        drawing.angle = this._angle;
+
+        const commands = drawing.getCommands();
+
+        commands.forEach(([commandName, positionParams, keywordParams]) => {
+            if (commandName === 'rect') {
+                drawing.addRect(...positionParams);
+
+            } else if (commandName === 'pin') {
+                drawing.addPin2(...positionParams);
+
+            } else if (commandName === 'hline') {
+                drawing.addHLine(...positionParams);
+
+            } else if (commandName === 'vline') {
+                drawing.addVLine(...positionParams);
+
+            } else if (commandName === 'line') {
+                drawing.addLine(...positionParams);
+
+            } else if (commandName === 'label') {
+                const keywords = ['fontSize', 'anchor', 'vanchor'];
+
+                // Create the style object
+                const style = {};
+                keywords.forEach(item => {
+                    if (keywordParams.has(item)){
+                        style[item] = keywordParams.get(item);
+                    }
+                });
+
+                positionParams.push(style);
+
+                const labelId = positionParams[0];
+
+                const tmpPositionParams = [...positionParams];
+                tmpPositionParams[3] = this.getLabelValue(labelId);
+
+                drawing.addLabelId(...tmpPositionParams);
+            }
+        });
+    }
+
+    constructor(drawing: SymbolDrawing) {
+        super();
+        this.drawing = drawing;
+    }
+}
+
 export class SymbolCustom extends SymbolGraphic {
 
 
@@ -580,7 +628,7 @@ export class SymbolCustom extends SymbolGraphic {
 }
 
 
-class SymbolDrawing {
+export class SymbolDrawing {
 
     items: Feature[] = [];
 
@@ -600,6 +648,12 @@ class SymbolDrawing {
     }
 
     addPin(startX: number, startY: number, endX: number, endY: number, pinId: number): SymbolDrawing {
+        return this.addPin2(pinId, startX, startY, endX, endY);
+    }
+
+    addPin2(pinId: number, startX: number, startY: number, 
+        endX: number, endY: number): SymbolDrawing {
+
         // Determine the pin angle based on the start and end values.
 
         let angle = 0;
@@ -674,7 +728,15 @@ class SymbolDrawing {
 
     addLabel(x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
         this.items.push(
-            Geometry.label(x, y, textValue, style)
+            Geometry.label(null, x, y, textValue, style)
+        )
+
+        return this;
+    }
+
+    addLabelId(id: string, x: number, y: number, textValue: string, style: LabelStyle,): SymbolDrawing {
+        this.items.push(
+            Geometry.label(id, x, y, textValue, style)
         )
 
         return this;
@@ -750,7 +812,24 @@ class SymbolDrawing {
             }
         }
     }
+}
 
+export type SubExpressionCommand = [commandName: string,
+    positionParams: any[],
+    keywordParams: Map<string, any>];
+
+export class SymbolDrawingCommands extends SymbolDrawing {
+
+    private commands: SubExpressionCommand[];
+
+    constructor(commands: SubExpressionCommand[]){
+        super();
+        this.commands = commands;
+    }
+
+    getCommands(): SubExpressionCommand[] {
+        return this.commands;
+    }
 }
 
 type SimplePoint = [x: number, y: number];

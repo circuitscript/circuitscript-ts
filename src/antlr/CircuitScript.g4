@@ -103,16 +103,16 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
 property_set_expr: atom_expr '=' data_expr;
 double_dot_property_set_expr: '..' ID '=' data_expr;
 
-data_expr: data_expr (Multiply | Divide) data_expr      #MultiplyExpr
+data_expr: unary_operator data_expr                     #UnaryOperatorExpr
+    | data_expr (Multiply | Divide) data_expr           #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
     | ID                                                #DataExpr
     | atom_expr                                         #DataExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
-    | assignment_expr                                   #DataExpr
+    // | assignment_expr                                   #DataExpr
     | value_expr                                        #DataExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
-    | unary_operator data_expr                          #UnaryOperatorExpr
     | '(' data_expr ')'                                 #RoundedBracketsExpr
     ;           
 

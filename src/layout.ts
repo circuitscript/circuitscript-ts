@@ -1,6 +1,6 @@
 import graphlib from '@dagrejs/graphlib';
 
-import { SymbolCustom, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolText } from "./draw_symbols";
+import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPlaceholder, SymbolText } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope";
 import { GlobalNames, ParamKeys } from './globals';
@@ -539,22 +539,31 @@ export class LayoutEngine {
                 const tmpInstanceName = component.instanceName;
     
                 if (!graph.hasNode(tmpInstanceName)) {
-                    let { displayProp = null, widthProp = null } = component;
+                    let { displayProp = null, widthProp = null, 
+                        typeProp = null } = component;
+                    
                     let tmpSymbol: SymbolGraphic;
     
                     // If it is a gnd net, then use the gnd symbol
-                    if (displayProp === null && component.parameters.get(ParamKeys.net_name) === GlobalNames.gnd) {
+                    if (displayProp === null && 
+                        component.parameters.get(ParamKeys.net_name) === GlobalNames.gnd) {
+                        
                         displayProp = 'gnd';
                     }
     
                     if (displayProp !== null) {
-                        tmpSymbol = SymbolFactory(displayProp);
+                        if (displayProp instanceof SymbolDrawing){
+                            tmpSymbol = new SymbolPlaceholder(displayProp);
+                            
+                        } else if (typeof displayProp === "string"){
+                            tmpSymbol = SymbolFactory(displayProp);
+                        }
                     } else {
                         const symbolPinDefinitions = generateLayoutPinDefinition(component);
                         tmpSymbol = new SymbolCustom(symbolPinDefinitions);
                     }
     
-                    applyComponentParamsToSymbol(displayProp, component, tmpSymbol);
+                    applyComponentParamsToSymbol(typeProp, component, tmpSymbol);
     
                     // Set rotation of object
                     let didSetAngle = false;
@@ -1267,8 +1276,10 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
     return symbolPinDefinitions;
 }
 
-function applyComponentParamsToSymbol(displayProp: string, component: ClassComponent, symbol: SymbolGraphic): void {
-    if (displayProp === 'net') {
+function applyComponentParamsToSymbol(typeProp: string, 
+    component: ClassComponent, symbol: SymbolGraphic): void {
+    
+    if (typeProp === 'net') {
         symbol.setLabelValue("net_name", component.parameters.get(ParamKeys.net_name) as string);
     }
 

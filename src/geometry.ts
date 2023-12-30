@@ -19,6 +19,8 @@ export type LabelStyle = {
 
 export class Label extends Flatten.Polygon {
 
+    id: string;
+
     text: string;
 
     anchorPoint: [number, number] = [0, 0];
@@ -36,9 +38,12 @@ export class Label extends Flatten.Polygon {
         return this.polygon.box;
     }
 
-    constructor(text: string, anchorPoint: [number, number], 
+    constructor(id: string, text: string, anchorPoint: [number, number], 
         polygon: Flatten.Polygon, style: LabelStyle, bounds: Box) {
+
         super(polygon.vertices);
+
+        this.id = id;
 
         this.text = text;
         this.anchorPoint = anchorPoint;
@@ -51,13 +56,14 @@ export class Label extends Flatten.Polygon {
         this.textMeasurementBounds = bounds;
     }
 
-    static fromPoint(x: number, y: number, text: string, style: LabelStyle): Label {
+    static fromPoint(id: string, x: number, y: number, 
+        text: string, style: LabelStyle): Label {
 
         const { fontSize = 10,
             anchor = HorizontalAlign.Left,
             vanchor = VerticalAlign.Bottom,
             fontWeight = 'regular',
-         } = style;
+         } = style ?? {};
 
         // Determine the size of the text
         const { width, height, box } =
@@ -78,12 +84,12 @@ export class Label extends Flatten.Polygon {
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(text, [x, y], polygon, style, box);
+        return new Label(id, text, [x, y], polygon, style, box);
     }
 
     rotate(angle: number, origin: Flatten.Point): Label {
         const polygonRotate = super.rotate(angle, origin);
-        return new Label(this.text, this.anchorPoint, polygonRotate, 
+        return new Label(this.id, this.text, this.anchorPoint, polygonRotate, 
             this.style, this.textMeasurementBounds);
     }
 
@@ -100,8 +106,8 @@ export class Geometry {
         return new Flatten.Point(x, y);
     }
 
-    static label(x: number, y: number, text: string, style: LabelStyle): Label {
-        return Label.fromPoint(x, y, text, style);
+    static label(id: string, x: number, y: number, text: string, style: LabelStyle): Label {
+        return Label.fromPoint(id, x, y, text, style);
     }
 
     static segment(start: [number, number], end: [number, number]): Segment {
