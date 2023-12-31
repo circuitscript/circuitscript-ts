@@ -1,7 +1,10 @@
 def net(net_name):
     return create component:
         pins: 1
-        display: "net"
+        display: create graphic:
+            hline: -15, 0, 30
+            pin: 1, 0, 0, 0, 10
+            label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
             __is_net: 1
@@ -11,7 +14,11 @@ def net(net_name):
 def power(net_name):
     return create component:
         pins: 1
-        display: "net"
+        display: create graphic:
+            hline: -15, 0, 30
+            pin: 1, 0, 0, 0, 10
+            label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
+
         type: "net"
         params:
             __is_net: 1
@@ -21,7 +28,9 @@ def power(net_name):
 def label(value):
     return create component:
         pins: 1
-        display: "label"
+        display: create graphic:
+            label: "value", 0, -2, fontSize=10, anchor="left"
+            pin: 1, 0, 0, 0, 0
         type: "label"
         params:
             __is_net: 1
@@ -30,9 +39,18 @@ def label(value):
             priority: 5
 
 def res(value):
+    width = 40
+    height = 20
+ 
     return create component:
         pins: 2
-        display: "res"
+        display: create graphic:
+            rect: 0, 0, width, height
+            pin: 1, -width / 2, 0, -width/2 - 20, 0
+            pin: 2, width/2, 0, width/2 + 20, 0
+            label: ("value", 0, 0, value, fontSize=10, anchor="middle", vanchor="middle")
+            label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
+
         type: "res"
         params:
             value: value
@@ -40,9 +58,18 @@ def res(value):
             footprint: "Resistor_SMD:R_0402_1005Metric"
 
 def cap(value):
+    width = 20
+    height = 40
+
     return create component:
         pins: 2
-        display: "cap"
+        display: create graphic:
+            hline: -width/2, -3, width
+            hline: -width/2, 3, width
+            pin: 1, 0, -3, 0, -height/2
+            pin: 2, 0, 3, 0, height/2
+            label: "refdes", width/2+2, 0, "?", fontSize = 10, anchor="left"
+            label: "value", width/2+2, 12, value, fontSize = 10, anchor = "left", vanchor="top"
         type: "cap"
         params:
             value: value
