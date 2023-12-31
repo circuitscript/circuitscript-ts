@@ -2,6 +2,7 @@ import { G } from "@svgdotjs/svg.js";
 
 import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
 import { Feature, Geometry, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry";
+import { Logger } from "./logger";
 
 
 /**
@@ -238,35 +239,9 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
     switch (name) {
         case 'gnd':
             return new SymbolGnd();
-        case 'label':
-            return new SymbolLabel();
         case 'point':
             return new SymbolPointHidden();
-
-        case 'diode':
-            return new SymbolDiode();
-        case 'led':
-            return new SymbolLED();
     }
-}
-
-
-export class SymbolPower extends SymbolGraphic {
-
-    generateDrawing(): void {
-        const drawing = new SymbolDrawing();
-        drawing.angle = this._angle;
-
-        const netName = this.getLabelValue("net_name");
-
-        drawing.addHLine(-15, 0, 30)
-            .addPin(0, 0, 0, 10, 1)
-            .addLabel(0, -5, netName,
-                { fontSize: 10, anchor: HorizontalAlign.Middle });
-
-        this.drawing = drawing;
-    }
-
 }
 
 export class SymbolGnd extends SymbolGraphic {
@@ -278,144 +253,6 @@ export class SymbolGnd extends SymbolGraphic {
             .addHLine(-10, 5, 20)
             .addHLine(-5, 10, 10)
             .addPin(0, 0, 0, -10, 1);
-
-        this.drawing = drawing;
-    }
-}
-
-export class SymbolLabel extends SymbolGraphic {
-
-    generateDrawing(): void {
-
-        const value = this.getLabelValue("value");
-
-        const drawing = new SymbolDrawing();
-        drawing.addLabel(0, -2, value, {
-            fontSize: 10,
-            anchor: HorizontalAlign.Left
-        })
-            .addPin(0, 0, 0, 0, 1);
-
-        this.drawing = drawing;
-    }
-
-}
-
-export class SymbolRes extends SymbolGraphic {
-
-    generateDrawing(): void {
-        const width = 40;
-        const height = 20;
-
-        const drawing = new SymbolDrawing();
-        drawing.angle = this._angle;
-
-        const value = this.getLabelValue("value");
-        const refdes = this.getLabelValue("refdes");
-
-        drawing.addRect(0, 0, width, height)
-            .addPin(-width / 2, 0, -width / 2 - 20, 0, 1)
-            .addPin(width / 2, 0, width / 2 + 20, 0, 2)
-            .addLabel(0, 0, value, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Middle,
-                vanchor: VerticalAlign.Middle,
-            })
-            .addLabel(-width / 2, -height / 2 - 5, refdes, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Left,
-            })
-            ;
-
-        this.drawing = drawing;
-    }
-}
-
-export class SymbolCap extends SymbolGraphic {
-
-    generateDrawing(): void {
-        const width = 20;
-        const height = 40;
-
-        const drawing = new SymbolDrawing();
-        drawing.angle = this._angle;
-
-        const refdes = this.getLabelValue("refdes");
-        const value = this.getLabelValue("value");
-
-        drawing.addHLine(-width / 2, -3, width)
-            .addHLine(-width / 2, 3, width)
-            .addPin(0, -3, 0, -height / 2, 1)
-            .addPin(0, 3, 0, height / 2, 2)
-            .addLabel(width / 2 + 2, 0, refdes, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Left,
-            })
-            .addLabel(width / 2 + 2, 12, value, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Top,
-            })
-            ;
-
-        this.drawing = drawing;
-    }
-}
-
-export class SymbolDiode extends SymbolGraphic {
-    
-    generateDrawing(): void {
-        const width = 20;
-        const height = 20;
-
-        const drawing = new SymbolDrawing();
-        drawing.angle = this._angle;
-        const refdes = this.getLabelValue("refdes");
-
-        // Diode is drawn horizontally
-        //  -|>|-
-        drawing.addVLine(width/2, -height/2, height)
-            .addVLine(-width/2, -height/2, height)
-            .addLine(-width/2, -height/2, width/2, 0)
-            .addLine(-width/2, height/2, width/2, 0)
-            .addPin(width/2, 0, width/2 + 20, 0, 2)     // Cathode
-            .addPin(-width/2, 0, -width/2 -20, 0, 1)    // Anode
-
-            .addLabel(width / 2 + 5, 5, refdes, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Top,
-            });
-
-        this.drawing = drawing;
-    }
-}
-
-export class SymbolLED extends SymbolGraphic {
-    
-    generateDrawing(): void {
-        const width = 20;
-        const height = 20;
-
-        const drawing = new SymbolDrawing();
-        drawing.angle = this._angle;
-
-        const refdes = this.getLabelValue("refdes");
-    
-        drawing.addVLine(width/2, -height/2, height)
-            .addVLine(-width/2, -height/2, height)
-            .addLine(-width/2, -height/2, width/2, 0)
-            .addLine(-width/2, height/2, width/2, 0)
-            .addLine(0, 8, 5, 18)
-            .addLine(3, 8, 8, 18)
-            .addPin(width/2, 0, width/2 + 20, 0, 1)
-            .addPin(-width/2, 0, -width/2 -20, 0, 2)
-
-            .addLabel(width / 2 + 5, 5, refdes, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Top,
-            });
 
         this.drawing = drawing;
     }
@@ -457,26 +294,35 @@ export class SymbolPlaceholder extends SymbolGraphic {
     // This is used if the drawing object is defined within
     // circuitscript code itself.
     generateDrawing(): void {
-
         const drawing = this.drawing as SymbolDrawingCommands;
-        drawing.angle = this._angle;
 
+        drawing.log("=== start generate drawing ===");
+        
+        drawing.clear();
+        drawing.angle = this._angle;
         const commands = drawing.getCommands();
+
+        drawing.log(drawing.id, 'angle: ', this._angle, "commands:", commands.length);
 
         commands.forEach(([commandName, positionParams, keywordParams]) => {
             if (commandName === 'rect') {
+                drawing.log('add rect', ...positionParams);
                 drawing.addRect(...positionParams);
 
             } else if (commandName === 'pin') {
+                drawing.log('add pin', ...positionParams);
                 drawing.addPin2(...positionParams);
 
             } else if (commandName === 'hline') {
+                drawing.log('add hline', ...positionParams);
                 drawing.addHLine(...positionParams);
 
             } else if (commandName === 'vline') {
+                drawing.log('add vline', ...positionParams);
                 drawing.addVLine(...positionParams);
 
             } else if (commandName === 'line') {
+                drawing.log('add line', ...positionParams);
                 drawing.addLine(...positionParams);
 
             } else if (commandName === 'label') {
@@ -490,6 +336,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     }
                 });
 
+                positionParams = [...positionParams];
                 positionParams.push(style);
 
                 const labelId = positionParams[0];
@@ -497,9 +344,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 const tmpPositionParams = [...positionParams];
                 tmpPositionParams[3] = this.getLabelValue(labelId);
 
+                drawing.log('add label', JSON.stringify(tmpPositionParams));
                 drawing.addLabelId(...tmpPositionParams);
             }
         });
+
+        drawing.log("=== end generate drawing ===");
     }
 
     constructor(drawing: SymbolDrawing) {
@@ -638,6 +488,17 @@ export class SymbolDrawing {
     angle = 0;
 
     mainOrigin:[number, number] = [0, 0];
+
+    logger: Logger = null;
+
+    clear(): void {
+        this.items = [];
+        this.pins = [];
+    }
+
+    log(...params: any[]): void {
+        this.logger && this.logger.add(params.join(' '));
+    }
 
     addLine(startX: number, startY: number, endX: number, endY: number): SymbolDrawing {
         this.items.push(
@@ -820,15 +681,38 @@ export type SubExpressionCommand = [commandName: string,
 
 export class SymbolDrawingCommands extends SymbolDrawing {
 
+    id = "";
     private commands: SubExpressionCommand[];
 
     constructor(commands: SubExpressionCommand[]){
         super();
         this.commands = commands;
+        this.id = Math.random().toString().slice(2);
     }
 
     getCommands(): SubExpressionCommand[] {
         return this.commands;
+    }
+
+    clone(): SymbolDrawingCommands {
+        // Force a deep clone
+        const tmpCommands: SubExpressionCommand[] = this.commands.map(item => {
+            if (item[0] === "label") {
+                const commandName = item[0];
+                const positionParams = item[1];
+                const keywordParams = item[2];
+
+                const newMap = new Map<string, any>();
+                for (const [key, value] of keywordParams) {
+                    newMap.set(key, value);
+                }
+
+                return [commandName, positionParams, newMap];
+            } else {
+                return [...item];
+            }
+        });
+        return new SymbolDrawingCommands(tmpCommands);
     }
 }
 

@@ -539,6 +539,8 @@ export class LayoutEngine {
                 const tmpInstanceName = component.instanceName;
     
                 if (!graph.hasNode(tmpInstanceName)) {
+                    this.print('create instance', tmpInstanceName);
+
                     let { displayProp = null, widthProp = null, 
                         typeProp = null } = component;
                     
@@ -554,6 +556,7 @@ export class LayoutEngine {
                     if (displayProp !== null) {
                         if (displayProp instanceof SymbolDrawing){
                             tmpSymbol = new SymbolPlaceholder(displayProp);
+                            tmpSymbol.drawing.logger = this.logger;
                             
                         } else if (typeof displayProp === "string"){
                             tmpSymbol = SymbolFactory(displayProp);

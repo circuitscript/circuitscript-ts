@@ -1,3 +1,4 @@
+import { SymbolDrawingCommands } from '../draw_symbols';
 import { Net } from './Net';
 import { PinDefinition, PinIdType } from './PinDefinition';
 import { PinTypes } from './PinTypes';
@@ -34,7 +35,7 @@ export class ClassComponent {
     arrangeProps: Map<string, number[]> | null = null;
 
     // Used to identify what graphic to draw for this symbol
-    displayProp: string | null = null;
+    displayProp: string | SymbolDrawingCommands | null = null;
 
     widthProp: number | null = null;
 
@@ -186,9 +187,20 @@ export class ClassComponent {
 
         component._copyID = this._copyID;
         component.arrangeProps = this.arrangeProps;
-        component.displayProp = this.displayProp;
         component.widthProp = this.widthProp;
         component.typeProp = this.typeProp;
+
+
+        if (this.displayProp) {
+            if (typeof this.displayProp === "string") {
+                component.displayProp = this.displayProp;
+            } else if (this.displayProp instanceof SymbolDrawingCommands) {
+                // Do a proper clone, otherwise, cloned objects will share the 
+                // same drawing object.
+                component.displayProp =
+                    (this.displayProp as SymbolDrawingCommands).clone();
+            }
+        }
 
         for (const [key, value] of this.parameters) {
             component.parameters.set(key, value);

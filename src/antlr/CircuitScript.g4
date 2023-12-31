@@ -112,7 +112,6 @@ data_expr: unary_operator data_expr                     #UnaryOperatorExpr
     | atom_expr                                         #DataExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
-    // | assignment_expr                                   #DataExpr
     | value_expr                                        #DataExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
     | '(' data_expr ')'                                 #RoundedBracketsExpr
