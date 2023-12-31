@@ -16,6 +16,7 @@ import {
     Create_component_exprContext,
     Create_graphic_exprContext,
     DataExprContext,
+    Data_expr_with_assignmentContext,
     Double_dot_property_set_exprContext,
     ExpressionContext,
     Frame_exprContext,
@@ -232,16 +233,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitAdd_component_expr(ctx: Add_component_exprContext): ComponentPin {
         // The component is always the last item
-        const component: ClassComponent = 
-            this.visit(ctx.data_expr());
-
-        let pinValue: number | null = null;
-        // If a pin is specified, then add it at pin
-        if (ctx.pin_select_expr()) {
-            pinValue = this.visit(ctx.pin_select_expr());
-        } else {
-            pinValue = component.getDefaultPin();
-        }
+        const [component, pinValue] = 
+            this.visit(ctx.data_expr_with_assignment());
 
         if (ctx.ID()){
             this.setComponentOrientation(
@@ -291,8 +284,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         let component: ClassComponent | null = null;
         let pinId: number | string | null = null;
 
-        if (ctx.data_expr()) {
-            component = this.visit(ctx.data_expr());
+        if (ctx.data_expr_with_assignment()) {
+            const result = this.visit(ctx.data_expr_with_assignment());
+            component = result[0];
+            pinId = result[1];
         } else {
             component = this.getExecutor().scope.currentComponent;
         }
@@ -465,6 +460,26 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         } else if (ctx.STRING_VALUE()) {
             return this.prepareStringValue(ctx.STRING_VALUE().getText());
         }
+    }
+
+    visitData_expr_with_assignment(ctx: Data_expr_with_assignmentContext):
+        [component: ComplexType, pin: string | number | null] {
+
+        let component: ComplexType;
+        if (ctx.data_expr()) {
+            component = this.visit(ctx.data_expr());
+        } else if (ctx.assignment_expr()) {
+            component = this.visit(ctx.assignment_expr())
+        }
+
+        let pinValue: number | string = null;
+        if (ctx.pin_select_expr()) {
+            pinValue = this.visit(ctx.pin_select_expr());
+        } else {
+            pinValue = (component as ClassComponent).getDefaultPin();
+        }
+
+        return [component, pinValue];
     }
 
     visitDataExpr(ctx: DataExprContext): ComplexType {

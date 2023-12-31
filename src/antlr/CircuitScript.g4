@@ -65,9 +65,11 @@ property_set_expr2:
 	atom_expr ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
-add_component_expr: Add data_expr pin_select_expr? ID?;
+data_expr_with_assignment: (data_expr | assignment_expr) pin_select_expr?;
 
-component_select_expr: (data_expr pin_select_expr?) | pin_select_expr;
+add_component_expr: Add data_expr_with_assignment ID?;
+
+component_select_expr: data_expr_with_assignment | pin_select_expr;
 pin_select_expr:        Pin (INTEGER_VALUE | STRING_VALUE);
 // This does not have the 'pin' word
 pin_select_expr2: INTEGER_VALUE | STRING_VALUE;
@@ -152,7 +154,7 @@ function_return_expr: Return data_expr ;
 
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
 create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | sub_expr)+ DEDENT;
-sub_expr: (ID | Pin) ':' parameters;
+sub_expr: (ID | Pin) ':' (parameters | '(' parameters ')');
 
 property_expr: property_key_expr ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;

@@ -11,7 +11,8 @@ describe('test parsing', () => {
         [3, "'at' and 'to' commands will clone net components"],
         [4, "resolve instances in upper contexts"],
         [5, "components in function parameters"],
-        [6, "resolve nets in local and upper contexts"]
+        [6, "resolve nets in local and upper contexts"],
+        [7, "assignment in at/to/add statement"]
         
     ])('parse script - %d: %s', async (index, description) => {
         // Test only parsing, does not check the correctness of the 
@@ -422,6 +423,34 @@ const script9Expected: ComponentPinNet[] = [
     ['__.power_0.5v', 'divider_1.res_3.COMP_1_10k', 1]
 ];
 
+const script10 = `
+import lib
+at v5v = power("5V")
+wire down 20
+add R1 = res(10k) down
+wire down 20
+add R2 = res(10k) down
+wire down 20
+to C1 = cap(10n) down
+
+at C1 pin 2
+wire down 20
+to gnd
+`
+
+const script10Expected: ComponentPinNet[] =[
+    [ '__.NET_1', 'R1', 2 ],
+    [ '__.NET_1', 'R2', 1 ],
+    [ '__.NET_2', 'R2', 2 ],
+    [ '__.NET_2', 'C1', 1 ],
+    [ '__.gnd', 'gnd', 1 ],
+    [ '__.gnd', 'gnd:0', 1 ],
+    [ '__.gnd', 'C1', 2 ],
+    [ '__.power_0.5V', 'v5v', 1 ],
+    [ '__.power_0.5V', 'v5v:0', 1 ],
+    [ '__.power_0.5V', 'R1', 1 ]
+  ]
+
 // Store in an array, so that it is accessible
 // during the test itself.
 const allScripts: [string, ComponentPinNet[]][] = [
@@ -432,4 +461,5 @@ const allScripts: [string, ComponentPinNet[]][] = [
     [script7, script7Expected],
     [script8, script8Expected],
     [script9, script9Expected],
+    [script10, script10Expected],
 ];

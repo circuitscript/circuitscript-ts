@@ -9,6 +9,7 @@ import { Branch_blocksContext } from "./CircuitScriptParser";
 import { Branch_block_innerContext } from "./CircuitScriptParser";
 import { Property_set_expr2Context } from "./CircuitScriptParser";
 import { Assignment_expr2Context } from "./CircuitScriptParser";
+import { Data_expr_with_assignmentContext } from "./CircuitScriptParser";
 import { Add_component_exprContext } from "./CircuitScriptParser";
 import { Component_select_exprContext } from "./CircuitScriptParser";
 import { Pin_select_exprContext } from "./CircuitScriptParser";
@@ -106,6 +107,12 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitAssignment_expr2?: (ctx: Assignment_expr2Context) => Result;
+	/**
+	 * Visit a parse tree produced by `CircuitScriptParser.data_expr_with_assignment`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitData_expr_with_assignment?: (ctx: Data_expr_with_assignmentContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.add_component_expr`.
 	 * @param ctx the parse tree
