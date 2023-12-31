@@ -1,9 +1,9 @@
 import lib
 
 # define global nets
-v12v = net("12V")
-v3v3 = net("3V3")
-v5v = net("5V")
+v12v = power("12V")
+v3v3 = power("3V3")
+v5v = power("5V")
 
 def decoupling_cap(value):
     wire down 20
@@ -68,7 +68,7 @@ def power_conn():
     return conn1
 
 def tmp_label(name):
-    wire left 60
+    wire left 100
     add label(name)
 
 def tmp_label_right(name):
@@ -189,9 +189,8 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
                 wire right 60
                 branch:
                     decoupling_cap(22u)
-                wire right 40
-                add label(output_label)
-                wire right 40
+                wire right 40 up 20
+                to power(output_label)
 
             8:
                 wire right 20
@@ -248,8 +247,8 @@ def main():
 
         at J104:
             1:
-                wire left 20
-                to label("5V#")
+                wire left 20 up 20
+                to power("5V#")
             2:
                 wire left 20
                 branch:
@@ -261,81 +260,92 @@ def main():
                 wire left 20 down 20    
                 to gnd
 
-    block1 = tps54227_block(3.3u, 73.2k, 22.1k, "EN_3V3", "+3V3", "GardenRelay:NR6020T3R3N")
-    block2 = tps54227_block(4.7u, 124k, 22.1k, "EN_5V", "5V#", "GardenRelay:NRS8030T4R7MJGJ")
+    block1 = tps54227_block(3.3u, 73.2k, 22.1k, 
+        "EN_3V3", "3V3", "GardenRelay:NR6020T3R3N")
+    
+    block2 = tps54227_block(4.7u, 124k, 22.1k, 
+        "EN_5V", "5V#", "GardenRelay:NRS8030T4R7MJGJ")
 
     frame:
         ..title = "ESP32 board connector"
-        ..direction = "row"
-        
-        J103 = conn1x2()
+        ..direction = "column"
 
-        at J103:
-            1:
-                wire left 40 up 40
-                add v3v3
-            2:
-                wire left 40
-                add label("EN")
+        frame:
+            ..direction = "row"
+            ..border = 0
 
-        J105 = conn1x11()
+            at conn1x2():
+                1:
+                    wire left 40 up 40
+                    add v3v3
+                2:
+                    wire left 40
+                    add label("EN")
 
-        at J105:
-            1: tmp_label("ADC1")
-            2: tmp_label("ADC2")
-            3: tmp_label("GPIO1")
-            4: tmp_label("GPIO2")
-            5: tmp_label("ADC3")
-            6: tmp_label("GPIO3")
-            7: tmp_label("ADC4")
-            8: tmp_label("GPIO4")
-            9: tmp_label("ADC8")
-            10:
-                wire left 80 down 20
-                to gnd
-            11: tmp_label("ADC7") 
+            J105 = conn1x11()
 
-        J106 = conn1x2()
+            at J105:
+                1: tmp_label("ADC1")
+                2: tmp_label("ADC2")
+                3: tmp_label("GPIO1")
+                4: tmp_label("GPIO2")
+                5: tmp_label("ADC3")
+                6: tmp_label("GPIO3")
+                7: tmp_label("ADC4")
+                8: tmp_label("GPIO4")
+                9: tmp_label("ADC8")
+                10:
+                    wire left 100 
+                    to gnd left
+                11: tmp_label("ADC7") 
 
-        at J106:
-            1: 
-                wire left 80 down 20 to gnd
-            2: tmp_label("GPIO13")
+            J106 = conn1x2()
 
-        J107 = conn1x11()
+            at J106:
+                1: 
+                    wire left 100 
+                    to gnd left
+                2: tmp_label("GPIO13")
 
-        at J107:
-            1: tmp_label("GPIO5")
-            2: 
-                wire left 100 down 20
-                to gnd
-            3: tmp_label("GPIO6")
-            4: tmp_label("GPIO7")
-            5: tmp_label("GPIO8")
-            6: tmp_label("GPIO9")
-            7: tmp_label("GPIO10")
-            8: tmp_label("ADC5")
-            9: tmp_label("ADC6")
-            10: tmp_label("GPIO11")
-            11: tmp_label("GPIO12")
+            J107 = conn1x11()
 
-        J109 = conn1x4()
-        at J109:
-            1: tmp_label("GPIO11")
-            2: tmp_label("GPIO12")
-            3: tmp_label("GPIO13")
-            4: 
-                wire left 60 
-                add label("+5V")
+            at J107:
+                1: tmp_label("GPIO5")
+                2: 
+                    wire left 100 
+                    to gnd left
+                3: tmp_label("GPIO6")
+                4: tmp_label("GPIO7")
+                5: tmp_label("GPIO8")
+                6: tmp_label("GPIO9")
+                7: tmp_label("GPIO10")
+                8: tmp_label("ADC5")
+                9: tmp_label("ADC6")
+                10: tmp_label("GPIO11")
+                11: tmp_label("GPIO12")
 
-        J110 = conn1x4()
-        at J110:
-            1: tmp_label("GPIO10")
-            2: tmp_label("GPIO9")
-            3: tmp_label("+3V3")
-            4: 
-                wire left 20 down 20
-                to gnd
+        frame:
+            ..border = 0
+            
+            J109 = conn1x4()
+            at J109:
+                1: tmp_label("GPIO11")
+                2: tmp_label("GPIO12")
+                3: tmp_label("GPIO13")
+                4: 
+                    wire left 40 
+                    to v5v left
+
+            J110 = conn1x4()
+            at J110:
+                1: tmp_label("GPIO10")
+                2: tmp_label("GPIO9")
+                3:
+                    wire left 40 
+                    to v3v3 left
+                4: 
+                    wire left 20 down 20
+                    to gnd
 
 def mosfet():
     return create component:
@@ -355,17 +365,7 @@ def decoupling_cap(value, place=true):
         wire down 20
         to gnd
 
-def diode2():
-    return create component:
-        pins: 2
-        type: "diode"
-        display: "diode"
-        params:
-            footprint: "GardenRelay:S1A"
-
-
 def pump_block(enable_name, sense_out):
-
     relay = create component:
         pins: 5
         type: "relay"
@@ -404,9 +404,85 @@ def pump_block(enable_name, sense_out):
                     wire left 20 up 20
                     to v12v
                 2: tmp_label("LOAD_SUPPLY")
-                3: tmp_label("+5V")
+                3: 
+                    wire left 40
+                    to v5v left
                 4: tmp_label("CONN+")
                 5: tmp_label("CONN-")
+
+        frame:
+            ..title = "Relay control for " + enable_name
+            ..border = 0
+            ..padding = 0
+
+            at label(enable_name)
+            wire right 40 
+            branch:
+                wire down 20
+                add led("RED") down
+                wire down 20
+                add res(130) down
+                wire down 20 to gnd
+            wire right 40
+            branch:
+                wire down 20
+                add res(1k) down
+                wire down 20
+                to gnd
+
+            wire right 20
+            add Q1 = mosfet()
+            at Q1 pin 2 
+            wire right 20 down 20
+            to gnd
+
+            at v12v
+            wire down 20
+            branch:
+                wire right 80
+                add relay pin 2
+            wire down 20
+            add diode() pin 2 down
+            wire down 20
+            branch:
+                wire right 40
+                wire auto
+                to relay pin 5
+            wire left 40 up 80 left 60
+            to Q1 pin 3
+
+            at relay:
+                4:
+                    wire right 20
+                    branch:
+                        wire up 100 right 140
+                        add label("SENSE+")
+                        wire right 60
+                    wire right 20
+                    add res(0.05)
+                    wire right 20
+                    branch:
+                        wire up 80 right 20
+                        add label("SENSE-")
+                        wire right 60
+                    wire right 20
+                    add label("LOAD_SUPPLY")
+                    wire right 80
+                1:
+                    wire right 20
+                    branch:
+                        wire right 40
+                        add label("CONN+")
+                        wire right 40
+                    wire down 20
+                    add diode() pin 2 down
+                    wire down 20
+                    branch:
+                        wire right 40
+                        add label("CONN-")
+                        wire right 40
+                    wire down 20
+                    to gnd  
 
         frame:
             ..title = "Current sense for "+ sense_out
@@ -455,87 +531,12 @@ def pump_block(enable_name, sense_out):
 
             wire down 20
             add res(20k) down
-            wire down 20 left 40
-            add label("VCC")
-
-        frame:
-            ..title = "Relay control for " + enable_name
-            ..border = 0
-            ..padding = 0
-
-            at label(enable_name)
-            wire right 40 
-            branch:
-                wire down 20
-                add led("RED") pin 2 down
-                wire down 20
-                add res(130) down
-                wire down 20 to gnd
-            wire right 40
-            branch:
-                wire down 20
-                add res(1k) down
-                wire down 20
-                to gnd
-
-            wire right 20
-            add Q1 = mosfet()
-            at Q1 pin 2 
-            wire right 20 down 20
-            to gnd
-
-            at v12v
-            wire down 20
-            branch:
-                wire right 80
-                add relay pin 2
-            wire down 20
-            add diode2() pin 2 down
-            wire down 20
-            branch:
-                wire right 40
-                wire auto
-                to relay pin 5
-            wire left 40 up 80 left 60
-            to Q1 pin 3
-
-            at relay:
-                4:
-                    wire right 20
-                    branch:
-                        wire up 100 right 140
-                        add label("SENSE+")
-                        wire right 60
-                    wire right 20
-                    add res(0.05)
-                    wire right 20
-                    branch:
-                        wire up 80 right 20
-                        add label("SENSE-")
-                        wire right 60
-                    wire right 20
-                    add label("LOAD_SUPPLY")
-                    wire right 80
-                1:
-                    wire right 20
-                    branch:
-                        wire right 40
-                        add label("CONN+")
-                        wire right 40
-                    wire down 20
-                    add diode2() pin 2 down
-                    wire down 20
-                    branch:
-                        wire right 40
-                        add label("CONN-")
-                        wire right 40
-                    wire down 20
-                    to gnd  
+            wire down 20 left 20
+            to power("Vbias") left
 
 main()
 
-i = 1
-pump_block("GPIO" + i, "ADC" + i)
+pump_block("GPIO1", "ADC1")
 pump_block("GPIO2", "ADC2")
 pump_block("GPIO3", "ADC3")
 pump_block("GPIO4", "ADC4")
