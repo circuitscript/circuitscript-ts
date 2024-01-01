@@ -399,15 +399,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitSub_expr(ctx: Sub_exprContext): [id: string, parameters] {
         let commandName: string = null;
-        if (ctx.ID()){
+        if (ctx.ID()) {
             commandName = ctx.ID().getText();
+        } else if (ctx.Pin()) {
+            commandName = ctx.Pin().getText();
         } else {
-            // Should be pin
-            commandName = ctx.getText().split(":")[0];
-            if (commandName !== 'pin'){
-                // Hardcode for now
-                throw "Invalid command!";
-            } 
+            throw "Invalid command!";
         }
 
         const parameters = this.visit(ctx.parameters());
@@ -488,53 +485,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         if (ctx.value_expr()) {
             value = this.visit(ctx.value_expr()) as ValueType;
 
-        } else if (ctx.ID()) {
-            const executor = this.getExecutor();
-            const idName = ctx.ID().getText();
-            const scope = executor.scope;
-
-            let variableNotFound = false;
-
-            if (scope.instances.has(idName)) {
-                value = scope.instances.get(idName) as ClassComponent;
-                
-            } else if (scope.variables.has(idName)) {
-                value = scope.variables.get(idName) as ComplexType;
-
-            } else if (this.pinTypesList.indexOf(idName) !== -1) {
-                // Not sure if just returning the string is enough...
-                value = idName;
-                
-            } else if (executor.resolveVariable !== null) {
-                // Try to find the variable in the upper contexts
-                const foundVariable = 
-                    executor.resolveVariable(this.executionStack, idName);
-
-                if (foundVariable.found) {
-                    value = foundVariable.value;
-
-                    if (foundVariable.type === 'instance'){
-                        const tmpComponent = value as ClassComponent;
-
-                        // Copy the nets into the local net
-                        for(const [pinId, net] of tmpComponent.pinNets){
-                            scope.setNet(tmpComponent, pinId, net);
-                        }
-                    }
-                } else {
-                    variableNotFound = true;
-                }
-            }
-
-            if (variableNotFound){
-                throw "Could not find variable '" + idName + "'";
-            }
-
         } else if (ctx.atom_expr()) {
             const reference = this.visit(ctx.atom_expr());
 
             // This is the returned component from the function call
-            value = reference.value
+            value = reference.value;
 
         } else if (ctx.create_component_expr()) {
             value = this.visit(ctx.create_component_expr()) as ClassComponent;
@@ -770,7 +725,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                     variableName, defaultValue,
                 );
             } else {
-                throw `Invalid arguments for function '${functionName}'`;
+                throw `Invalid arguments for function '${functionName}', got: ` 
+                    + passedInParameters;
             }
         }
     }
@@ -790,14 +746,33 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const executor = this.getExecutor();
 
         const firstId = ctx.ID().getText();
+        let currentReference;
 
-        let currentReference = executor.resolveVariable(
-            this.executionStack, firstId);
+        // Check if it is hardcoded values, like the pin types.
+        if (this.pinTypesList.indexOf(firstId) !== -1) {
+            // Not sure if just returning the string is enough...
+            currentReference = {
+                found: true,
+                value: firstId
+            }
+        } else {
+            currentReference = executor.resolveVariable(
+                this.executionStack, firstId);
+        }
+
+        if (currentReference.found && currentReference.type === 'instance') {
+            const tmpComponent = currentReference.value as ClassComponent;
+
+            // Copy the nets into the local net
+            for (const [pinId, net] of tmpComponent.pinNets) {
+                executor.scope.setNet(tmpComponent, pinId, net);
+            }
+        }
 
         if (ctx.trailer_expr_list().length > 0) {
             // Resolve all elements in the trailer expression list
 
-            if (!currentReference.found){
+            if (!currentReference.found) {
                 throw "Could not find reference! " + firstId;
             }
 
