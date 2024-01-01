@@ -120,17 +120,14 @@ binary_operator: Equals
 
 unary_operator: Not | Minus;
 
-value_expr: signed_value_expr
+value_expr: '-'? 
+    NUMERIC_VALUE
+    | DECIMAL_VALUE
+    | INTEGER_VALUE
     | STRING_VALUE 
     | PERCENTAGE_VALUE
     | BOOLEAN_VALUE 
     | blank_expr;
-
-signed_value_expr: '-'? (
-    NUMERIC_VALUE
-    | DECIMAL_VALUE
-    | INTEGER_VALUE
-);
 
 function_def_expr: Define ID '(' function_args_expr? ')' ':' NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
 function_expr: expression | function_return_expr;

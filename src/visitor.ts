@@ -37,7 +37,6 @@ import {
     Property_set_exprContext,
     RoundedBracketsExprContext,
     ScriptContext,
-    Signed_value_exprContext,
     Single_line_propertyContext,
     Sub_exprContext,
     To_component_exprContext,
@@ -177,6 +176,26 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitValue_expr(ctx: Value_exprContext): ValueType {
+        const sign = ctx.Minus() ? -1 : 1;
+
+        if (ctx.INTEGER_VALUE() || ctx.DECIMAL_VALUE() || ctx.NUMERIC_VALUE()) {
+            if (ctx.INTEGER_VALUE()) {
+                return sign * Number(ctx.INTEGER_VALUE().getText());
+
+            } else if (ctx.DECIMAL_VALUE()) {
+                return sign * Number(ctx.DECIMAL_VALUE().getText());
+
+            } else if (ctx.NUMERIC_VALUE()) {
+                const textExtra = ctx.Minus() ? '-' : '';
+                return new NumericValue(textExtra + ctx.NUMERIC_VALUE().getText());
+
+            }
+        } else {
+            if (sign === -1) {
+                throw "Invalid value!";
+            }
+        }
+
         if (ctx.BOOLEAN_VALUE()) {
             const stringValue = ctx.BOOLEAN_VALUE().getText();
             if (stringValue === 'true') {
@@ -184,9 +203,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             } else if (stringValue === 'false') {
                 return false;
             }
-
-        } else if (ctx.signed_value_expr()) {
-            return this.visit(ctx.signed_value_expr());
 
         } else if (ctx.STRING_VALUE()) {
             return this.prepareStringValue(ctx.STRING_VALUE().getText());
@@ -196,22 +212,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
         } else if (ctx.blank_expr()) {
             return this.visit(ctx.blank_expr());
-        }
-    }
-
-    visitSigned_value_expr(ctx: Signed_value_exprContext): ValueType {
-        const sign = ctx.Minus() ? -1 : 1;
-
-        if (ctx.INTEGER_VALUE()) {
-            return sign * Number(ctx.INTEGER_VALUE().getText());
-
-        } else if (ctx.DECIMAL_VALUE()) {
-            return sign * Number(ctx.DECIMAL_VALUE().getText());
-
-        } else if (ctx.NUMERIC_VALUE()) {
-            const textExtra = ctx.Minus() ? '-' : '';
-            return new NumericValue(textExtra + ctx.NUMERIC_VALUE().getText());
-
         }
     }
 

@@ -39,7 +39,6 @@ import { RoundedBracketsExprContext } from "./CircuitScriptParser";
 import { Binary_operatorContext } from "./CircuitScriptParser";
 import { Unary_operatorContext } from "./CircuitScriptParser";
 import { Value_exprContext } from "./CircuitScriptParser";
-import { Signed_value_exprContext } from "./CircuitScriptParser";
 import { Function_def_exprContext } from "./CircuitScriptParser";
 import { Function_exprContext } from "./CircuitScriptParser";
 import { Function_args_exprContext } from "./CircuitScriptParser";
@@ -290,12 +289,6 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitValue_expr?: (ctx: Value_exprContext) => Result;
-	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.signed_value_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitSigned_value_expr?: (ctx: Signed_value_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.function_def_expr`.
 	 * @param ctx the parse tree
