@@ -295,7 +295,7 @@ to gnd
 const script8 = `
 import lib
 
-v5v = power("5v")
+v5v = supply("5v")
 
 def divider(power_net, r1, r2, output_net):
     at power_net
@@ -323,15 +323,15 @@ const script8Expected: ComponentPinNet[] = [
     ['__.label_0.hello', 'label_0.COMP_1_1', 1],
     ['__.label_0.hello', 'divider_0.res_0.COMP_1_10k', 2],
     ['__.label_0.hello', 'divider_0.res_1.COMP_1_20k', 1],
-    ['__.power_0.5v', 'v5v', 1],
-    ['__.power_0.5v', 'divider_0.v5v:0', 1],
-    ['__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1]
+    ['__.supply_0.5v', 'v5v', 1],
+    ['__.supply_0.5v', 'divider_0.v5v:0', 1],
+    ['__.supply_0.5v', 'divider_0.res_0.COMP_1_10k', 1]
 ];
 
 const script9 = `
 import lib
 
-v5v = power("5v")
+v5v = supply("5v")
 net("global_name")
 
 def divider(power_net, r1, r2, net_name):
@@ -416,16 +416,16 @@ const script9Expected: ComponentPinNet[] = [
     ['__.net_0.global_name', 'divider_0.res_1.COMP_1_100k', 2],
     ['__.net_0.global_name', 'divider_1.label_3.COMP_1_1', 1],
     ['__.net_0.global_name', 'divider_1.res_4.COMP_1_100k', 2],
-    ['__.power_0.5v', 'v5v', 1],
-    ['__.power_0.5v', 'divider_0.v5v:0', 1],
-    ['__.power_0.5v', 'divider_0.res_0.COMP_1_10k', 1],
-    ['__.power_0.5v', 'divider_1.v5v:0', 1],
-    ['__.power_0.5v', 'divider_1.res_3.COMP_1_10k', 1]
+    ['__.supply_0.5v', 'v5v', 1],
+    ['__.supply_0.5v', 'divider_0.v5v:0', 1],
+    ['__.supply_0.5v', 'divider_0.res_0.COMP_1_10k', 1],
+    ['__.supply_0.5v', 'divider_1.v5v:0', 1],
+    ['__.supply_0.5v', 'divider_1.res_3.COMP_1_10k', 1]
 ];
 
 const script10 = `
 import lib
-at v5v = power("5V")
+at v5v = supply("5V")
 wire down 20
 add R1 = res(10k) down
 wire down 20
@@ -446,9 +446,9 @@ const script10Expected: ComponentPinNet[] =[
     [ '__.gnd', 'gnd', 1 ],
     [ '__.gnd', 'gnd:0', 1 ],
     [ '__.gnd', 'C1', 2 ],
-    [ '__.power_0.5V', 'v5v', 1 ],
-    [ '__.power_0.5V', 'v5v:0', 1 ],
-    [ '__.power_0.5V', 'R1', 1 ]
+    [ '__.supply_0.5V', 'v5v', 1 ],
+    [ '__.supply_0.5V', 'v5v:0', 1 ],
+    [ '__.supply_0.5V', 'R1', 1 ]
   ]
 
 // Store in an array, so that it is accessible

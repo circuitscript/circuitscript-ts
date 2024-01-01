@@ -1,34 +1,6 @@
 # Schematic for Arduino UNO
 
-def net(net_name):
-    return create component:
-        pins: 1
-        display: "net"
-        params:
-            __is_net: 1
-            net_name: net_name
-            priority: 5
-
-def label(value):
-    return create component:
-        pins: 1
-        display: "label"
-        params:
-            value: value
-
-def res(value):
-    return create component:
-        pins: 2
-        display: "res"
-        params:
-            value: value
-
-def cap(value):
-    return create component:
-        pins: 2
-        display: "cap"
-        params:
-            value: value
+import lib
 
 def fuse(value):
     return create component:
@@ -53,15 +25,6 @@ def gnd_connect():
 def diode():
     return create component:
         pins: 2
-
-def led(color):
-    return create component:
-        pins:
-            1: "cathode"
-            2: "anode"
-        display: "led"
-        params:
-            color: color
 
 def xtal(frequency):
     return create component:
@@ -198,6 +161,7 @@ usb_conn = create component:
         4: 4
         5: "SHIELD1"
         6: "SHIELD2"
+    type: "conn"
     arrange:
         right: 1,2,3,4
         left: 5,6
@@ -210,11 +174,13 @@ iol_conn = create component:
 
 ad_conn = create component:
     pins: 6
+    type: "conn"
     arrange:
         left: 6,5,4,3,2,1
 
 ioh_conn = create component:
     pins: 8
+    type: "conn"
     arrange:
         left: 8,7,6,5,4,3,2,1
 
@@ -263,7 +229,7 @@ at atmega:
             point tmp4
 
         wire up 20
-        add res(10k) [angle=-90]
+        add res(10k) ..angle=-90
         wire auto_
         to tmp4
     
@@ -300,7 +266,7 @@ at atmega:
             to osc1 pin 1
 
         wire up 40 left 240 wire down 20
-        add res(1M) [angle=90]
+        add res(1M) ..angle=90
         point tmp5
 
         at osc1 pin 3
@@ -344,7 +310,7 @@ at atmega:
             to usb_conn pin 2
             
         wire down 100
-        add diode() [angle=90]
+        add diode() ..angle=90
         wire down 20 left 80
         point tmp3
 
@@ -363,7 +329,7 @@ at atmega:
             wire auto
             to usb_conn pin 3
         wire down 80
-        add diode() [angle=90]
+        add diode() ..angle=90
         wire auto
         to tmp3
 
@@ -384,18 +350,18 @@ at usb_conn:
             to usb_conn pin 6
 
         wire down 100
-        add label("USHIELD") [angle=90]
+        add label("USHIELD") ..angle=90
         wire auto_
         to tmp3
 
         wire down 20
-        add ind(1u) [angle=90]
+        add ind(1u) ..angle=90
         wire down 20
         point tmp2
 
     4:
         wire right 20 down 40
-        add label("UGND") [angle=90]
+        add label("UGND") ..angle=90
         wire auto_
         to tmp2
         wire auto_
@@ -427,7 +393,7 @@ at atmega:
         wire right 40
         add label("RXLED")
         wire right 100 down 100 right 60
-        add led("yellow") pin 1 [angle=180]
+        add led("yellow") pin 1 ..angle=180
         wire right 20
         add res(1k)
         wire right 20 up 80 
@@ -439,7 +405,7 @@ at atmega:
         wire right 40
         add label("TXLED")
         wire right 120 down 40 right 40
-        add led("yellow") pin 1 [angle=180]
+        add led("yellow") pin 1 ..angle=180
         wire right 20
         add res(1k)
         wire auto 
@@ -478,7 +444,7 @@ at atmega8:
         wire left 160 
         branch:
             wire up 20
-            add res(10k) pin 2 [angle=90]
+            add res(10k) pin 2 ..angle=90
             wire up 20
             to net("5V")
         branch:
@@ -532,7 +498,7 @@ at atmega8:
         wire left 20 up 60 left 60
         branch:
             wire down 20
-            add res(1M) [angle=90]
+            add res(1M) ..angle=90
             wire down 20
             branch:
                 wire right 60 auto
@@ -628,16 +594,16 @@ at ioh_conn:
 
         branch:
             wire up 20
-            add res(1k) pin 2 [angle=90]
+            add res(1k) pin 2 ..angle=90
             wire up 20
             point tmp8
             wire up 20
-            add diode() [angle=-90]
+            add diode() ..angle=-90
             wire up 40 right 40 down 20
             to gnd
 
         wire right 60 up 20
-        add res(1k) pin 2 [angle=90]
+        add res(1k) pin 2 ..angle=90
         wire up 20 auto
         to tmp8
 
@@ -760,11 +726,11 @@ fet = create component:
 
 at label("VIN")
 wire right 40 down 20
-add res(10k) [angle=90]
+add res(10k) ..angle=90
 wire down 20
 branch:
     wire down 20
-    add res(10k) [angle=90]
+    add res(10k) ..angle=90
     to gnd
 wire right 80
 add label("CMP")
@@ -829,11 +795,12 @@ at power_conn:
         wire right 40
         add diode()
         wire right 40
-        point tmp10
         branch:
             wire down 20
             add cap(47u)
             to gnd
+        wire right 20
+        point tmp10
 
 at dcdc_5V:
     1:
@@ -848,12 +815,10 @@ at dcdc_5V:
             wire right 20
             add label("VIN")
             wire right 40
-        wire up 100 right 60
+        wire up 100 right 80
         to dcdc_5V_2 pin 3
     2:
-        wire right 20
-        point tmp11
-        wire right 80
+        wire right 40
         point tmp11
         branch:
             wire down 20
@@ -866,6 +831,7 @@ at dcdc_5V:
             to gnd
         wire right 20 up 20
         to net("5V")
+
 
 at dcdc_5V_2:
     1:

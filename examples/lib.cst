@@ -11,7 +11,7 @@ def net(net_name):
             net_name: net_name
             priority: 10
 
-def power(net_name):
+def supply(net_name):
     return create component:
         pins: 1
         display: create graphic:

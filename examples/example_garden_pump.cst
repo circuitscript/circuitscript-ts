@@ -1,10 +1,5 @@
 import lib
 
-# define global nets
-v12v = power("12V")
-v3v3 = power("3V3")
-v5v = power("5V")
-
 def decoupling_cap(value):
     wire down 20
     add cap(value)
@@ -49,7 +44,8 @@ def conn1x5():
             footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
 
 def power_conn():
-    at conn1 = conn1x4():
+    conn1 = conn1x4()
+    at conn1:
         1: 
             wire left 20 up 20
             to v12v
@@ -190,7 +186,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
                 branch:
                     decoupling_cap(22u)
                 wire right 40 up 20
-                to power(output_label)
+                to supply(output_label)
 
             8:
                 wire right 20
@@ -248,7 +244,7 @@ def main():
         at J104:
             1:
                 wire left 20 up 20
-                to power("5V#")
+                to supply("5V#")
             2:
                 wire left 20
                 branch:
@@ -532,7 +528,12 @@ def pump_block(enable_name, sense_out):
             wire down 20
             add res(20k) down
             wire down 20 left 20
-            to power("Vbias") left
+            to supply("Vbias") left
+
+# define global nets
+v12v = supply("12V")
+v3v3 = supply("3V3")
+v5v = supply("5V")
 
 main()
 
