@@ -33,7 +33,6 @@ import { Double_dot_property_set_exprContext } from "./CircuitScriptParser";
 import { AdditionExprContext } from "./CircuitScriptParser";
 import { MultiplyExprContext } from "./CircuitScriptParser";
 import { DataExprContext } from "./CircuitScriptParser";
-import { UnaryOperatorExprContext } from "./CircuitScriptParser";
 import { BinaryOperatorExprContext } from "./CircuitScriptParser";
 import { RoundedBracketsExprContext } from "./CircuitScriptParser";
 import { Binary_operatorContext } from "./CircuitScriptParser";
@@ -250,13 +249,6 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitDataExpr?: (ctx: DataExprContext) => Result;
-	/**
-	 * Visit a parse tree produced by the `UnaryOperatorExpr`
-	 * labeled alternative in `CircuitScriptParser.data_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUnaryOperatorExpr?: (ctx: UnaryOperatorExprContext) => Result;
 	/**
 	 * Visit a parse tree produced by the `BinaryOperatorExpr`
 	 * labeled alternative in `CircuitScriptParser.data_expr`.

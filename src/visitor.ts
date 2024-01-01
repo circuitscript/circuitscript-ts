@@ -40,7 +40,6 @@ import {
     Single_line_propertyContext,
     Sub_exprContext,
     To_component_exprContext,
-    UnaryOperatorExprContext,
     Value_exprContext,
     Wire_exprContext,
 } from './antlr/CircuitScriptParser';
@@ -487,8 +486,25 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             // This is the returned component from the function call
             value = reference.value;
+        }
 
-        } else if (ctx.create_component_expr()) {
+        if (ctx.unary_operator()){
+            if(ctx.unary_operator().Not()){
+                if(typeof value === "boolean"){
+                    value = !value;
+                } else {
+                    throw "Failed to do Not operator";
+                }
+            } else if (ctx.unary_operator().Minus()){
+                if (typeof value === 'number'){
+                    return -value;
+                } else {
+                    throw "Failed to do Negation operator";
+                }
+            }
+        }
+        
+        if (ctx.create_component_expr()) {
             value = this.visit(ctx.create_component_expr()) as ClassComponent;
 
         } else if (ctx.create_graphic_expr()){
@@ -508,25 +524,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return value1 == value2; // Boolean result
         } else if (binaryOperatorType.NotEquals()) {
             return value1 != value2;
-        }
-    }
-    
-    visitUnaryOperatorExpr(ctx: UnaryOperatorExprContext): boolean | number {
-        const value = this.visit(ctx.data_expr());
-        const unaryOperator = ctx.unary_operator();
-
-        if (unaryOperator.Not()) {
-            if (typeof value === 'boolean') {
-                return !value;
-            } else {
-                throw "Failed to do Not operator";
-            }
-        } else if(unaryOperator.Minus()) {
-            if (typeof value === 'number'){
-                return -value;
-            } else {
-                throw "Failed to do Negation operator";
-            }
         }
     }
 
@@ -777,7 +774,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             ctx.trailer_expr_list().forEach(item => {
                 const itemValue = item.getText();
-                if (itemValue.startsWith("(") && itemValue.endsWith(")")) {
+                if (item.OPEN_PAREN() && item.CLOSE_PAREN()) {
                     let parameters: CallableParameter[] = [];
                     if (item.parameters()) {
                         parameters = this.visit(item.parameters());
@@ -787,18 +784,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                         this.getExecutor().callFunction(currentReference.name,
                             parameters, this.executionStack);
 
-                    if (functionResult instanceof ClassComponent){
-                        currentReference = {
-                            found: true,
-                            type: 'instance',
-                            value: functionResult,
-                        };
-                    } else {
-                        currentReference = {
-                            found: true,
-                            type: 'value',
-                            value: functionResult
-                        }
+                    currentReference = {
+                        found: true,
+                        value: functionResult,
+                        type: (functionResult instanceof ClassComponent) ? 
+                            'instance' : 'value',
                     }
 
                 } else {

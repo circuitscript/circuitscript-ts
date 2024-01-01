@@ -32,11 +32,11 @@ Minus:      '-';
 Divide:     '/';
 Multiply:   '*';
 
+
 script: (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
 expression: add_component_expr
-        // | at_to_multiple_expr
 		| to_component_expr
         | at_component_expr
         | assignment_expr
@@ -103,15 +103,14 @@ parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
 property_set_expr: atom_expr '=' data_expr;
 double_dot_property_set_expr: '..' ID '=' data_expr;
 
-data_expr: unary_operator data_expr                     #UnaryOperatorExpr
+data_expr: 
+    (unary_operator? (value_expr | atom_expr))          #DataExpr
+    | '(' data_expr ')'                                 #RoundedBracketsExpr
     | data_expr (Multiply | Divide) data_expr           #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
-    | atom_expr                                         #DataExpr
+    | data_expr binary_operator data_expr               #BinaryOperatorExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
-    | value_expr                                        #DataExpr
-    | data_expr binary_operator data_expr               #BinaryOperatorExpr
-    | '(' data_expr ')'                                 #RoundedBracketsExpr
     ;           
 
 binary_operator: Equals 
@@ -120,13 +119,13 @@ binary_operator: Equals
 
 unary_operator: Not | Minus;
 
-value_expr: '-'? 
-    NUMERIC_VALUE
+value_expr: ('-'? 
+    (NUMERIC_VALUE
     | DECIMAL_VALUE
     | INTEGER_VALUE
     | STRING_VALUE 
     | PERCENTAGE_VALUE
-    | BOOLEAN_VALUE 
+    | BOOLEAN_VALUE)) 
     | blank_expr;
 
 function_def_expr: Define ID '(' function_args_expr? ')' ':' NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
@@ -145,6 +144,7 @@ function_return_expr: Return data_expr ;
 
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
 create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | sub_expr)+ DEDENT;
+
 sub_expr: (ID | Pin) ':' (parameters | '(' parameters ')');
 
 property_expr: property_key_expr ':' property_value_expr;
@@ -157,7 +157,6 @@ blank_expr: '[' INTEGER_VALUE ']';
 
 wire_expr: Wire ID (INTEGER_VALUE | ID)*;
 point_expr: Point ID;
-
 import_expr: Import ID;
 
 frame_expr: 'frame' ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
