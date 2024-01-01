@@ -33,7 +33,9 @@
         "test-coverage": "jest --coverage",
         "prettier": "prettier --config .prettierrc --write .",
         "test:watch": "jest --watch",
-        "antlr": "antlr4 -Dlanguage=TypeScript ./src/antlr/CircuitScript.g4 -no-listener -visitor"
+        "antlr": "antlr4 -Dlanguage=TypeScript ./src/antlr/CircuitScript.g4 -no-listener -visitor",
+        "profile": "node --prof build/src/main.js examples/example_garden_pump.cst",
+        "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer"
     },
     "jest": {
         "preset": "ts-jest",
