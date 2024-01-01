@@ -44,7 +44,7 @@ export class ExecutionContext {
         executionLevel = 0,
         indentLevel = 0,
         silent = false,
-        logger: Logger,
+        logger: Logger
     ) {
         this.name = name;
         this.namespace = namespace;
@@ -54,11 +54,6 @@ export class ExecutionContext {
 
         this.scope = ExecutionScope.create();
         this.scope.indentLevel = indentLevel;
-
-        // setup the print function
-        this.scope.functions.set('print', (value) => {
-            console.log(value);
-        });
 
         this.setupRoot();
         this.setupGnd();

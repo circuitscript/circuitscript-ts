@@ -32,16 +32,13 @@ import {
     Pin_select_expr2Context,
     Pin_select_exprContext,
     Point_exprContext,
-    Print_exprContext,
     Property_exprContext,
     Property_key_exprContext,
     Property_set_exprContext,
     RoundedBracketsExprContext,
-    Rounded_brackets_exprContext,
     ScriptContext,
     Signed_value_exprContext,
     Single_line_propertyContext,
-    Style_exprContext,
     Sub_exprContext,
     To_component_exprContext,
     UnaryOperatorExprContext,
@@ -107,6 +104,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             '__.',
             0, 0, silent, 
             this.logger);
+        
+        this.setupPrintFunction(this.startingContext);
             
         this.executionStack = [this.startingContext];
         this.silent = silent;
@@ -190,10 +189,10 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return this.visit(ctx.signed_value_expr());
 
         } else if (ctx.STRING_VALUE()) {
-            return this.prepareStringValue(ctx.STRING_VALUE().toString());
+            return this.prepareStringValue(ctx.STRING_VALUE().getText());
 
         } else if (ctx.PERCENTAGE_VALUE()) {
-            return new PercentageValue(ctx.PERCENTAGE_VALUE().toString());
+            return new PercentageValue(ctx.PERCENTAGE_VALUE().getText());
 
         } else if (ctx.blank_expr()) {
             return this.visit(ctx.blank_expr());
@@ -201,7 +200,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitSigned_value_expr(ctx: Signed_value_exprContext): ValueType {
-        const sign = ctx.getText().startsWith('-') ? -1 : 1;
+        const sign = ctx.Minus() ? -1 : 1;
+
         if (ctx.INTEGER_VALUE()) {
             return sign * Number(ctx.INTEGER_VALUE().getText());
 
@@ -209,7 +209,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             return sign * Number(ctx.DECIMAL_VALUE().getText());
 
         } else if (ctx.NUMERIC_VALUE()) {
-            const textExtra = sign === 1 ? '' : '-';
+            const textExtra = ctx.Minus() ? '-' : '';
             return new NumericValue(textExtra + ctx.NUMERIC_VALUE().getText());
 
         }
@@ -281,22 +281,17 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitComponent_select_expr(ctx: Component_select_exprContext): ComponentPin {
-        let component: ClassComponent | null = null;
-        let pinId: number | string | null = null;
-
         if (ctx.data_expr_with_assignment()) {
-            const result = this.visit(ctx.data_expr_with_assignment());
-            component = result[0];
-            pinId = result[1];
+            return this.visit(ctx.data_expr_with_assignment());
         } else {
-            component = this.getExecutor().scope.currentComponent;
-        }
+            const component = this.getExecutor().scope.currentComponent;
+            let pinId: number | string | null = null;
 
-        if (ctx.pin_select_expr()) {
-            pinId = this.visit(ctx.pin_select_expr());
+            if (ctx.pin_select_expr()) {
+                pinId = this.visit(ctx.pin_select_expr());
+            }
+            return [component, pinId];
         }
-
-        return [component, pinId];
     }
 
     visitBranch_blocks(ctx: Branch_blocksContext): ComponentPin {
@@ -376,19 +371,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             pins, params, props);
     }
 
-    visitCreate_graphic_expr(ctx: Create_graphic_exprContext): SymbolDrawingCommands {
+    visitCreate_graphic_expr(ctx: Create_graphic_exprContext): 
+        SymbolDrawingCommands {
+        
         const commands = ctx.sub_expr_list().reduce((accum, item) => {
             const [commandName, parameters] = this.visit(item);
 
             const keywordParams = new Map<string, any>();
-            const positionParams = parameters.reduce((accum, [argType, name, value]) => {
-                if (argType === 'position') {
-                    accum.push(value);
-                } else {
-                    keywordParams.set(name, value);
-                }
-                return accum;
-            }, [] as any[]);
+            const positionParams = parameters.reduce(
+                (accum, [argType, name, value]) => {
+                    if (argType === 'position') {
+                        accum.push(value);
+                    } else {
+                        keywordParams.set(name, value);
+                    }
+                    return accum;
+                }, [] as any[]);
 
             accum.push([commandName, positionParams, keywordParams]);
             return accum;
@@ -397,7 +395,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return new SymbolDrawingCommands(commands);
     }
 
-    visitSub_expr(ctx: Sub_exprContext): [id: string, parameters] {
+    visitSub_expr(ctx: Sub_exprContext):
+        [id: string, parameters: CallableParameter[]] {
         let commandName: string = null;
         if (ctx.ID()) {
             commandName = ctx.ID().getText();
@@ -407,7 +406,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             throw "Invalid command!";
         }
 
-        const parameters = this.visit(ctx.parameters());
+        const parameters: CallableParameter[] = this.visit(ctx.parameters());
         return [commandName, parameters];
     }
 
@@ -421,17 +420,15 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return map;
     }
 
-    visitSingle_line_property(ctx: Single_line_propertyContext) {
+    visitSingle_line_property(ctx: Single_line_propertyContext): any | any[] {
         let value;
         if (ctx.data_expr_list().length === 1) {
             value = this.visit(ctx.data_expr(0));
         } else {
-            value = [];
-            ctx.data_expr_list().forEach((item) => {
-                value.push(this.visit(item));
+            value = ctx.data_expr_list().map(item => {
+                return this.visit(item);
             });
         }
-
         return value;
     }
 
@@ -641,6 +638,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 currentExecutionContext.silent,
                 currentExecutionContext.logger,
             );
+
+            this.setupPrintFunction(newExecutor);
 
             newExecutor.resolveNet = resolveNet;
 
@@ -935,20 +934,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.getExecutor().addWire(segments);
     }
 
-    visitStyle_expr(ctx: Style_exprContext): void {
-        const IDs = ctx.ID_list();
-        const values = ctx.value_expr_list();
-
-        const styles = {};
-
-        IDs.forEach((item, index) => {
-            const ID = item.getText();
-            styles[ID] = this.visit(values[index]);
-        });
-
-        this.getExecutor().setCurrentComponentStyle(styles);
-    }
-
     visitPoint_expr(ctx: Point_exprContext): ComponentPin {
         const ID = ctx.ID();
         return this.getExecutor().addPoint(ID.getText());
@@ -982,26 +967,6 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const propertyName = ctx.ID().getText();
         this.getExecutor().setProperty('..' + propertyName, result);
     }
-    
-
-    visitPrint_expr(ctx: Print_exprContext): void {
-        const value = this.visit(ctx.data_expr());
-        if (this.printToConsole) {
-            console.log("::", value);
-        }
-        this.printStream.push(value);
-    }
-
-    visitRounded_brackets_expr(ctx:Rounded_brackets_exprContext) {
-        if (ctx.expression()){
-            return this.visit(ctx.expression());
-
-        } else if (ctx.data_expr()){
-            const result = this.visit(ctx.data_expr());
-            console.log(result);
-        }
-    }
-
     visitRoundedBracketsExpr(ctx: RoundedBracketsExprContext){
         return this.visit(ctx.data_expr());
     }
@@ -1347,6 +1312,22 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     private getNamespaceParts(namespace: string): string[] {
         return namespace.split(".").slice(0, -2);
+    }
+
+    private setupPrintFunction(context: ExecutionContext): void {
+        context.createFunction('print', (params) => {
+            // Only accept position params
+            const items = params.map(([, , value]) => {
+                return value
+            });
+
+            if (this.printToConsole) {
+                console.log('::', ...items);
+            }
+            this.printStream.push(...items);
+
+            return [this, null];
+        });
     }
 }
 

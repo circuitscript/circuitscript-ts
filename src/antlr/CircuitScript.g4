@@ -36,7 +36,7 @@ script: (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
 expression: add_component_expr
-        | at_to_multiple_expr
+        // | at_to_multiple_expr
 		| to_component_expr
         | at_component_expr
         | assignment_expr
@@ -53,8 +53,6 @@ expression: add_component_expr
         
         | at_block
         | branch_blocks
-        | style_expr
-        | print_expr
         ;
 
 branch_blocks: branch_block_inner+;
@@ -134,8 +132,6 @@ signed_value_expr: '-'? (
     | INTEGER_VALUE
 );
 
-print_expr: 'print' '(' data_expr ')';
-
 function_def_expr: Define ID '(' function_args_expr? ')' ':' NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
 function_expr: expression | function_return_expr;
 
@@ -160,9 +156,6 @@ property_value_expr: NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT     # nest
                     | data_expr (',' data_expr)*                          # single_line_property
                     ;
 
-rounded_brackets_expr: '(' ( expression | data_expr ) ')';
-
-style_expr: '[' ID '=' value_expr (',' ID '=' value_expr)* ']';
 blank_expr: '[' INTEGER_VALUE ']';
 
 wire_expr: Wire ID (INTEGER_VALUE | ID)*;
@@ -170,7 +163,7 @@ point_expr: Point ID;
 
 import_expr: Import ID;
 
-frame_expr: 'frame' ':' NEWLINE INDENT (NEWLINE | expression+)+ DEDENT;
+frame_expr: 'frame' ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 
 OPEN_PAREN : '(' {this.openBrace();};

@@ -40,7 +40,6 @@ import { Binary_operatorContext } from "./CircuitScriptParser";
 import { Unary_operatorContext } from "./CircuitScriptParser";
 import { Value_exprContext } from "./CircuitScriptParser";
 import { Signed_value_exprContext } from "./CircuitScriptParser";
-import { Print_exprContext } from "./CircuitScriptParser";
 import { Function_def_exprContext } from "./CircuitScriptParser";
 import { Function_exprContext } from "./CircuitScriptParser";
 import { Function_args_exprContext } from "./CircuitScriptParser";
@@ -54,8 +53,6 @@ import { Property_exprContext } from "./CircuitScriptParser";
 import { Property_key_exprContext } from "./CircuitScriptParser";
 import { Nested_propertiesContext } from "./CircuitScriptParser";
 import { Single_line_propertyContext } from "./CircuitScriptParser";
-import { Rounded_brackets_exprContext } from "./CircuitScriptParser";
-import { Style_exprContext } from "./CircuitScriptParser";
 import { Blank_exprContext } from "./CircuitScriptParser";
 import { Wire_exprContext } from "./CircuitScriptParser";
 import { Point_exprContext } from "./CircuitScriptParser";
@@ -300,12 +297,6 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 */
 	visitSigned_value_expr?: (ctx: Signed_value_exprContext) => Result;
 	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.print_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPrint_expr?: (ctx: Print_exprContext) => Result;
-	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.function_def_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -385,18 +376,6 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 * @return the visitor result
 	 */
 	visitSingle_line_property?: (ctx: Single_line_propertyContext) => Result;
-	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.rounded_brackets_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitRounded_brackets_expr?: (ctx: Rounded_brackets_exprContext) => Result;
-	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.style_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitStyle_expr?: (ctx: Style_exprContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.blank_expr`.
 	 * @param ctx the parse tree
