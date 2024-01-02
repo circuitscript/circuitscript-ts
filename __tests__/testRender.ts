@@ -12,6 +12,7 @@ describe('Render tests', () => {
         ['variant and branch rendering', 'script1.cst'],
         ['simple function', 'script2.cst'],
         ['simple frame', 'script3.cst'],
+        ['drawing functions for graphics', 'script4.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
 
