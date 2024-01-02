@@ -1,6 +1,7 @@
 import lib
 
 v5v = net("5V")
+gnd = dgnd()
 
 def tmp1():
 

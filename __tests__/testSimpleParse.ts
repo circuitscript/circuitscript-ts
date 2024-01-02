@@ -102,10 +102,12 @@ const script1Expected: ComponentPinNet[] = [
     ['__.NET_2', 'U2', 3],
     ['__.NET_2', 'U1', 10],
     ['__.NET_2', 'U2', 5],
-    ['__.gnd', 'gnd', 1]
 ];
 
 const script2 = `
+import lib
+gnd = dgnd()
+
 # Test functions
 def power_input():
     return create component:
@@ -129,11 +131,11 @@ to gnd
 `;
 
 const script2Expected: ComponentPinNet[] = [
-    [ '__.gnd', 'gnd', 1 ],
-    [ '__.gnd', 'J1', 1 ],
-    [ '__.gnd', 'J1', 3 ],
-    [ '__.gnd', 'gnd:0', 1 ]
-  ];
+    ['__.dgnd_0.GND', 'gnd', 1],
+    ['__.dgnd_0.GND', 'J1', 1],
+    ['__.dgnd_0.GND', 'J1', 3],
+    ['__.dgnd_0.GND', 'gnd:0', 1]
+];
 
 const script3 = `
 def diode():
@@ -172,7 +174,6 @@ const script3Expected: ComponentPinNet[] = [
     [ '__.NET_1', 'diode_3.COMP_1', 1 ],
     [ '__.NET_2', 'diode_1.COMP_1', 1 ],
     [ '__.NET_2', 'diode_2.COMP_1', 1 ],
-    [ '__.gnd', 'gnd', 1 ]
   ];
 
 const script6 = `
@@ -180,6 +181,7 @@ import lib
 
 vcc = net("3v3")
 midpt = net("out")
+gnd = dgnd()
 
 at vcc
 wire down 20
@@ -201,26 +203,27 @@ to midpt
 `;
 
 const script6Expected: ComponentPinNet[] = [
-    [ '__.gnd', 'gnd', 1 ],
-    [ '__.gnd', 'gnd:0', 1 ],
-    [ '__.gnd', 'res_1.COMP_1_20k', 2 ],
-    [ '__.net_0.3v3', 'vcc', 1 ],
-    [ '__.net_0.3v3', 'vcc:0', 1 ],
-    [ '__.net_0.3v3', 'res_0.COMP_1_20k', 1 ],
-    [ '__.net_0.3v3', 'vcc:1', 1 ],
-    [ '__.net_0.3v3', 'res_2.COMP_1_10k', 1 ],
-    [ '__.net_1.out', 'midpt', 1 ],
-    [ '__.net_1.out', 'res_0.COMP_1_20k', 2 ],
-    [ '__.net_1.out', 'res_1.COMP_1_20k', 1 ],
-    [ '__.net_1.out', 'midpt:0', 1 ],
-    [ '__.net_1.out', 'midpt:1', 1 ],
-    [ '__.net_1.out', 'res_2.COMP_1_10k', 2 ]
-  ];
+    ['__.dgnd_0.GND', 'gnd', 1],
+    ['__.dgnd_0.GND', 'gnd:0', 1],
+    ['__.dgnd_0.GND', 'res_1.COMP_1_20k', 2],
+    ['__.net_0.3v3', 'vcc', 1],
+    ['__.net_0.3v3', 'vcc:0', 1],
+    ['__.net_0.3v3', 'res_0.COMP_1_20k', 1],
+    ['__.net_0.3v3', 'vcc:1', 1],
+    ['__.net_0.3v3', 'res_2.COMP_1_10k', 1],
+    ['__.net_1.out', 'midpt', 1],
+    ['__.net_1.out', 'res_0.COMP_1_20k', 2],
+    ['__.net_1.out', 'res_1.COMP_1_20k', 1],
+    ['__.net_1.out', 'midpt:0', 1],
+    ['__.net_1.out', 'midpt:1', 1],
+    ['__.net_1.out', 'res_2.COMP_1_10k', 2]
+];
 
 const script7 = `
 import lib
 
 v5v = net("5V")
+gnd = dgnd()
 
 def tmp1():
     at v5v
@@ -234,11 +237,11 @@ tmp1()
 tmp1()`
 
 const script7Expected: ComponentPinNet[] = [
-    ['__.gnd', 'gnd', 1],
-    ['__.gnd', 'tmp1_0.gnd:0', 1],
-    ['__.gnd', 'tmp1_0.res_0.COMP_1_10k', 2],
-    ['__.gnd', 'tmp1_1.gnd:0', 1],
-    ['__.gnd', 'tmp1_1.res_1.COMP_1_10k', 2],
+    ['__.dgnd_0.GND', 'gnd', 1],
+    ['__.dgnd_0.GND', 'tmp1_0.gnd:0', 1],
+    ['__.dgnd_0.GND', 'tmp1_0.res_0.COMP_1_10k', 2],
+    ['__.dgnd_0.GND', 'tmp1_1.gnd:0', 1],
+    ['__.dgnd_0.GND', 'tmp1_1.res_1.COMP_1_10k', 2],
     ['__.net_0.5V', 'v5v', 1],
     ['__.net_0.5V', 'tmp1_0.v5v:0', 1],
     ['__.net_0.5V', 'tmp1_0.res_0.COMP_1_10k', 1],
@@ -250,6 +253,7 @@ const script4 = `
 import lib
 
 variant = "MainVariantX"
+gnd = dgnd()
 
 at net("5V")
 wire down 20
@@ -278,6 +282,8 @@ branch:
 
 const script5 = `
 import lib
+gnd = dgnd()
+
 at net("5V")
 wire down 20
 
@@ -296,6 +302,7 @@ const script8 = `
 import lib
 
 v5v = supply("5v")
+gnd = dgnd()
 
 def divider(power_net, r1, r2, output_net):
     at power_net
@@ -317,9 +324,9 @@ divider(v5v, 10k, 20k, label("hello"))
 `
 
 const script8Expected: ComponentPinNet[] = [
-    ['__.gnd', 'gnd', 1],
-    ['__.gnd', 'divider_0.gnd:0', 1],
-    ['__.gnd', 'divider_0.res_1.COMP_1_20k', 2],
+    ['__.dgnd_0.GND', 'gnd', 1],
+    ['__.dgnd_0.GND', 'divider_0.gnd:0', 1],
+    ['__.dgnd_0.GND', 'divider_0.res_1.COMP_1_20k', 2],
     ['__.label_0.hello', 'label_0.COMP_1_1', 1],
     ['__.label_0.hello', 'divider_0.res_0.COMP_1_10k', 2],
     ['__.label_0.hello', 'divider_0.res_1.COMP_1_20k', 1],
@@ -332,6 +339,8 @@ const script9 = `
 import lib
 
 v5v = supply("5v")
+gnd = dgnd()
+
 net("global_name")
 
 def divider(power_net, r1, r2, net_name):
@@ -366,6 +375,11 @@ frame:
 `;
 
 const script9Expected: ComponentPinNet[] = [
+    ['__.dgnd_0.GND', 'gnd', 1],
+    ['__.dgnd_0.GND', 'divider_0.gnd:0', 1],
+    ['__.dgnd_0.GND', 'divider_0.res_2.COMP_1_20k', 2],
+    ['__.dgnd_0.GND', 'divider_1.gnd:0', 1],
+    ['__.dgnd_0.GND', 'divider_1.res_5.COMP_1_20k', 2],
     [
         '__.divider_0.label_0.inner_name',
         'divider_0.label_0.COMP_1_1',
@@ -406,11 +420,6 @@ const script9Expected: ComponentPinNet[] = [
         'divider_1.res_5.COMP_1_20k',
         1
     ],
-    ['__.gnd', 'gnd', 1],
-    ['__.gnd', 'divider_0.gnd:0', 1],
-    ['__.gnd', 'divider_0.res_2.COMP_1_20k', 2],
-    ['__.gnd', 'divider_1.gnd:0', 1],
-    ['__.gnd', 'divider_1.res_5.COMP_1_20k', 2],
     ['__.net_0.global_name', 'net_0.COMP_1_1', 1],
     ['__.net_0.global_name', 'divider_0.label_1.COMP_1_1', 1],
     ['__.net_0.global_name', 'divider_0.res_1.COMP_1_100k', 2],
@@ -425,6 +434,8 @@ const script9Expected: ComponentPinNet[] = [
 
 const script10 = `
 import lib
+gnd = dgnd()
+
 at v5v = supply("5V")
 wire down 20
 add R1 = res(10k) down
@@ -443,9 +454,9 @@ const script10Expected: ComponentPinNet[] =[
     [ '__.NET_1', 'R2', 1 ],
     [ '__.NET_2', 'R2', 2 ],
     [ '__.NET_2', 'C1', 1 ],
-    [ '__.gnd', 'gnd', 1 ],
-    [ '__.gnd', 'gnd:0', 1 ],
-    [ '__.gnd', 'C1', 2 ],
+    [ '__.dgnd_0.GND', 'gnd', 1 ],
+    [ '__.dgnd_0.GND', 'gnd:0', 1 ],
+    [ '__.dgnd_0.GND', 'C1', 2 ],
     [ '__.supply_0.5V', 'v5v', 1 ],
     [ '__.supply_0.5V', 'v5v:0', 1 ],
     [ '__.supply_0.5V', 'R1', 1 ]

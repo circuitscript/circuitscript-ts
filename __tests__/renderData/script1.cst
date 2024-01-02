@@ -1,6 +1,7 @@
 import lib
 
 variant = "MainVariantX"
+gnd = dgnd()
 
 at net("5V")
 wire down 20

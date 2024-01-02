@@ -56,7 +56,6 @@ export class ExecutionContext {
         this.scope.indentLevel = indentLevel;
 
         this.setupRoot();
-        this.setupGnd();
 
         this.silent = silent;
 
@@ -101,29 +100,6 @@ export class ExecutionContext {
         this.scope.componentRoot = componentRoot;
     }
 
-    private setupGnd(): void {
-        const componentGnd = ClassComponent.simple(GlobalNames.gnd, 1, 'gnd');
-        componentGnd.typeProp = ComponentTypes.net;
-
-        const params = componentGnd.parameters;
-
-        const defaultGndPriority = 100;
-
-        // Setup the parameters of the gnd
-        params.set(ParamKeys.__is_net, 1);
-        params.set(ParamKeys.priority, defaultGndPriority);
-        params.set(ParamKeys.net_name, GlobalNames.gnd);
-
-        this.scope.instances.set(GlobalNames.gnd, componentGnd);
-
-        const gndNet = new Net(this.namespace, GlobalNames.gnd, 
-            defaultGndPriority, 'gnd');
-
-        this.scope.setNet(componentGnd, 1, gndNet);
-
-        this.scope.componentGnd = componentGnd;
-        this.scope.netGnd = gndNet;
-    }
 
     instanceExists(instanceName: string): boolean {
         return this.scope.instances.has(instanceName);
@@ -831,35 +807,11 @@ export class ExecutionContext {
             }
         }
 
-        // Link the GND nets together
-        // To ensure the root GND has precedence, increase the priority temporarily
-        this.scope.netGnd.priority += 1;
-
-        const childGnd = childScope.componentGnd;
-        this.atComponent(childGnd, 1);
-
-        this.toComponent(this.scope.componentGnd, 1);
-        this.scope.netGnd.priority -= 1;
-
-        // Remove the child scope gnd since it is absorbed 
-        // into parent scope.
-        this.scope.removeNet(childScope.componentGnd, 1);
-
         // Merge the sequences together, need to renumber the wire ids.
         const wireIdOffset = this.scope.wires.length;
 
         // Need to renumber the frame ids too.
         const frameIdOffset = this.scope.frames.length;
-
-        const componentGndName = this.scope.componentGnd.instanceName;
-
-        let gndCopyIdOffset = 0;
-        if (!this.scope.copyIDs.has(componentGndName)) {
-            this.scope.copyIDs.set(componentGndName, 0);
-        } else {
-            gndCopyIdOffset = this.scope.copyIDs.get(componentGndName);
-        }
-
 
         let incrementGndLinkId = 0;
 
@@ -920,10 +872,6 @@ export class ExecutionContext {
             }
         });
 
-        // Update the link ID counter for the gnd component
-        this.scope.copyIDs.set(componentGndName, 
-            gndCopyIdOffset + incrementGndLinkId);
-
         this.scope.currentComponent = currentComponent;
         this.scope.currentPin = currentPin;
 
@@ -942,23 +890,6 @@ export class ExecutionContext {
 
         this.print('-- done merging scope --');
     }
-
-    // private getPinLayoutDirection(component: ClassComponent, pinId: number): LayoutDirection {
-    //     // Returns the layout direction for a given pin
-    //     let layoutDirection = LayoutDirection.RIGHT;
-
-    //     if (component.pins.size > 1) {
-    //         const portSide = component.pins.get(pinId).side;
-
-    //         if (portSide === PortSide.EAST) {
-    //             layoutDirection = LayoutDirection.RIGHT;
-    //         } else if (portSide === PortSide.WEST) {
-    //             layoutDirection = LayoutDirection.LEFT;
-    //         }
-    //     }
-
-    //     return layoutDirection;
-    // }
 
     addWire(segments: [string, number?][]): void {
         const tmp = segments.map(item => {

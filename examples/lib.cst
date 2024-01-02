@@ -122,3 +122,39 @@ def led(color):
         params:
             size: "0603"
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
+
+
+def cgnd():
+    net_name = "gnd"
+    return create component:
+        pins: 1
+        display: create graphic:
+            hline: -15, 0, 30
+            hline: -10, 5, 20
+            hline: -5, 10, 10
+            pin: 1, 0, 0, 0, -10
+            label: "net_name", 0, 22, net_name, fontSize=10, anchor="middle"
+        type: "net"
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 100
+
+def dgnd():
+    height = 10
+    width = 20
+
+    net_name = "GND"
+    return create component:
+        pins: 1
+        display: create graphic:
+            hline: -width/2, 0, width
+            line: -width/2, 0, 0, height
+            line: width/2, 0, 0, height
+            pin: 1, 0, 0, 0, -10
+            label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
+        type: "net"
+        params:
+            __is_net: 1
+            net_name: net_name
+            priority: 100
