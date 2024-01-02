@@ -461,6 +461,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         let component: ComplexType;
         if (ctx.data_expr()) {
             component = this.visit(ctx.data_expr());
+
+            if (component === null || component === undefined) {
+                throw "Could not find component: " + ctx.data_expr().getText();
+            }
+
         } else if (ctx.assignment_expr()) {
             component = this.visit(ctx.assignment_expr())
         }
