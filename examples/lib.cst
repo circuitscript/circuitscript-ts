@@ -47,7 +47,7 @@ def res(value):
             rect: 0, 0, width, height
             pin: 1, -width / 2, 0, -width/2 - 20, 0
             pin: 2, width/2, 0, width/2 + 20, 0
-            label: ("value", 0, 0, value, fontSize=10, anchor="middle", vanchor="middle")
+            label: ("value", 0, 1, value, fontSize=10, anchor="middle", vanchor="middle")
             label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
 
         type: "res"
@@ -92,10 +92,9 @@ def diode():
         pins: 2
         type: "diode"
         display: create graphic:
-            vline: width/2, -height/2, height
-            vline: -width/2, -height/2, height
-            line: -width/2, -height/2, width/2, 0
-            line: -width/2, height/2, width/2, 0
+            path: ("M", width/2, -height/2, "L", width/2, height/2,
+                   "M", -width/2, -height/2, "L", -width/2, height/2,
+                   "L", width/2, 0, "L", -width/2, -height/2)
             pin: 2, width/2, 0, width/2 + 20, 0     # cathode
             pin: 1, -width/2, 0, -width/2-20, 0   # anode
             label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
@@ -110,15 +109,14 @@ def led(color):
             2: "anode"
         type: "diode"
         display: create graphic:
-            vline: width/2, -height/2, height
-            vline: -width/2, -height/2, height
-            line: -width/2, -height/2, width/2, 0
-            line: -width/2, height/2, width/2, 0
+            path: ("M", width/2, -height/2, "L", width/2, height/2,
+                   "M", -width/2, -height/2, "L", -width/2, height/2,
+                   "L", width/2, 0, "L", -width/2, -height/2)
+            path: ("M", 0, 8, "L", 5, 18, 
+                   "M", 3, 8, "L", 8, 18)
             pin: 2, width/2, 0, width/2 + 20, 0     # cathode
             pin: 1, -width/2, 0, -width/2-20, 0   # anode
             label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
-            line: 0, 8, 5, 18
-            line: 3, 8, 8, 18
         params:
             size: "0603"
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
@@ -148,9 +146,10 @@ def dgnd():
     return create component:
         pins: 1
         display: create graphic:
-            hline: -width/2, 0, width
-            line: -width/2, 0, 0, height
-            line: width/2, 0, 0, height
+            path: ("M", -width/2, 0, 
+                    "L", width/2, 0, 
+                    "L", 0, height,
+                    "L", -width/2, 0)
             pin: 1, 0, 0, 0, -10
             label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
         type: "net"
