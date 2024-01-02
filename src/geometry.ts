@@ -98,10 +98,17 @@ export class Label extends Flatten.Polygon {
     }
 }
 
+export class GeometryProp {
+    name: string;
+    value: string | number;
+    constructor(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+}
 
 export class Geometry {
-
-
+    
     static point(x: number, y: number): Flatten.Point {
         return new Flatten.Point(x, y);
     }
@@ -209,7 +216,7 @@ export class Geometry {
                 path.push(`${command} ${x} ${y}`);
             }
 
-            paths.push(path.join(' '));
+            paths.push(path.join(' ') + ' Z');
         });
 
         return paths.join(" ");

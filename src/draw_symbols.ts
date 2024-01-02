@@ -1,7 +1,7 @@
 import { G } from "@svgdotjs/svg.js";
 
-import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
-import { Feature, Geometry, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry";
+import { SymbolPinSide, defaultFont } from "./globals";
+import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry";
 import { Logger } from "./logger";
 
 
@@ -121,12 +121,17 @@ export abstract class SymbolGraphic {
 
     protected drawBody(group: G): void {
         // Draws the symbol body
-        group.path(this.drawing.getPath())
-            .stroke({
-                width: defaultSymbolLineWidth,
-                color: defaultSymbolLineColor
-            })
-            .fill(bodyColor);
+
+        const paths = this.drawing.getPaths();
+        paths.forEach(pathInfo => {
+            const {path, lineColor, fillColor, lineWidth} = pathInfo;
+            group.path(path)
+                .stroke({
+                    width: lineWidth,
+                    color: lineColor,
+                })
+                .fill(fillColor)
+        });
     }
 
     protected drawPins(group: G): void {
@@ -237,24 +242,8 @@ export abstract class SymbolGraphic {
 
 export function SymbolFactory(name: string): SymbolGraphic | null {
     switch (name) {
-        case 'gnd':
-            return new SymbolGnd();
         case 'point':
             return new SymbolPointHidden();
-    }
-}
-
-export class SymbolGnd extends SymbolGraphic {
-
-    generateDrawing(): void {
-        const drawing = new SymbolDrawing();
-        drawing.angle = this._angle;
-        drawing.addHLine(-15, 0, 30)
-            .addHLine(-10, 5, 20)
-            .addHLine(-5, 10, 10)
-            .addPin(0, 0, 0, -10, 1);
-
-        this.drawing = drawing;
     }
 }
 
@@ -346,6 +335,15 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                 drawing.log('add label', JSON.stringify(tmpPositionParams));
                 drawing.addLabelId(...tmpPositionParams);
+            
+            } else if (commandName === 'path') {
+                drawing.addPath(...positionParams);
+            } else if (commandName === 'lineWidth') {
+                drawing.addSetLineWidth(...positionParams);
+            } else if (commandName === 'fill') {
+                drawing.addSetFillColor(...positionParams);
+            } else if (commandName === 'lineColor') {
+                drawing.addSetLineColor(...positionParams);
             }
         });
 
@@ -480,7 +478,7 @@ export class SymbolCustom extends SymbolGraphic {
 
 export class SymbolDrawing {
 
-    items: Feature[] = [];
+    items: (Feature | GeometryProp)[] = [];
 
     // pinId, feature, angle
     pins: [number, Feature, number][] = [];
@@ -603,13 +601,105 @@ export class SymbolDrawing {
         return this;
     }
 
-    getPath(): string {
-        const nonLabels = this.items.filter(item => {
-            return !(item instanceof Label);
+    addPath(...pathParts:any): SymbolDrawing {
+        const parts = pathParts.reduce((accum, tmp) => {
+            if (typeof tmp === "string"){
+                accum = accum.concat(tmp.split(" "));
+            } else if (typeof tmp === "number"){
+                accum.push(tmp);
+            }
+            return accum;
+        }, [] as (number|string)[]);
+
+        const polygons = [];
+        let currentPoly = null;
+
+        for (let i = 0; i < parts.length; i++) {
+            const command = parts[i];
+            if (command === 'M') {
+                // Start a new polygon
+                if (currentPoly !== null) {
+                    polygons.push(currentPoly);
+                }
+
+                const x = Number(parts[i + 1]);
+                const y = Number(parts[i + 2]);
+
+                currentPoly = [[x, y]];
+
+                i += 2;
+
+            } else if (command === 'L') {
+                const x = Number(parts[i + 1]);
+                const y = Number(parts[i + 2]);
+                currentPoly.push([x, y]);
+            }
+        }
+
+        if (currentPoly !== null){
+            polygons.push(currentPoly);
+            currentPoly = null;
+        }
+
+        polygons.forEach(coords => {
+            this.items.push(Geometry.polygon(coords));
         })
 
-        const withAngle = Geometry.groupRotate(nonLabels, this.angle, this.mainOrigin);
-        return this.featuresToPath(withAngle);
+        return this;
+    }
+
+    addSetLineWidth(value: number): SymbolDrawing {
+        this.items.push(new GeometryProp('lineWidth', value));
+        return this;
+    }
+
+    addSetLineColor(value: string): SymbolDrawing {
+        this.items.push(new GeometryProp('lineColor', value));
+        return this;
+    }
+
+    addSetFillColor(value: string): SymbolDrawing {
+        this.items.push(new GeometryProp('fillColor', value));
+        return this;
+    }
+
+    getPaths(): {path: string, 
+        fillColor: string, 
+        lineColor: string, 
+        lineWidth: number}[] {
+        
+        let currentFill = "#fff";
+        let currentLineWidth = 1;
+        let currentLineColor = '#333';
+
+        const pathItems = [];
+
+        this.items.forEach(item => {
+            if (!(item instanceof Label)){
+                if (item instanceof GeometryProp){
+                    if (item.name === 'lineWidth'){
+                        currentLineWidth = item.value as number;
+                    } else if (item.name === 'lineColor'){
+                        currentLineColor = item.value as string;
+                    } else if (item.name === 'fillColor'){
+                        currentFill = item.value as string;
+                    }
+                } else {
+
+                    const rotatedPath = Geometry.groupRotate([item], this.angle, 
+                        this.mainOrigin);
+
+                    pathItems.push({
+                        path: this.featuresToPath(rotatedPath),
+                        fillColor: currentFill,
+                        lineWidth: currentLineWidth,
+                        lineColor: currentLineColor,
+                    })
+                }
+            }
+        });
+        
+        return pathItems;
     }
 
     getPinsPath(): string {
@@ -639,7 +729,9 @@ export class SymbolDrawing {
 
         const drawingFeatures = this.items.reduce((accum, item) => {
             if (!excludeLabels || (excludeLabels && !(item instanceof Label))){
-                accum.push(item);
+                if (!(item instanceof GeometryProp)){
+                    accum.push(item);
+                }
             }
 
             return accum;
