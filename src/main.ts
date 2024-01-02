@@ -51,13 +51,19 @@ async function renderScript(scriptPath: string): Promise<void> {
         visitor.print('importing path:', tmpFilePath);
 
         const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
+        visitor.print('done reading imported file data');
+
         const { hasError, hasParseError } =
             parseFileWithVisitor(visitor, fileData);
 
         return { hasError, hasParseError }
     }
 
+    visitor.print('reading file');
+    
     const scriptData = await readFile(scriptPath);
+
+    visitor.print('done reading file');
 
     const { tree, parser,
         hasParseError, hasError, 
@@ -66,10 +72,13 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     console.log('Lexing took:', lexerTimeTaken);
     console.log('Parsing took:', parserTimeTaken);
-
+    
     // console.log(visitor.dumpNets());
+    // console.log(visitor.dumpUniqueNets());
 
     await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
+
+    await writeFile('dump/raw-parser.txt', visitor.logger.dump());
     
     if (hasError || hasParseError) {
         console.log('Error while parsing');
@@ -83,9 +92,14 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
-    await writeFile('dump/raw-parser.txt', visitor.logger.dump());
-
     const { sequence, nets } = visitor.getGraph();
+
+    // const tmpInstances = visitor.getExecutor().scope.instances;
+    // for (const [instanceName, instance] of tmpInstances){
+    //     console.log(instanceName);
+    //     console.log(instance.pinNets);
+    // }
+
 
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
