@@ -1,6 +1,6 @@
 import { G } from "@svgdotjs/svg.js";
 
-import { SymbolPinSide, defaultFont } from "./globals";
+import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry";
 import { Logger } from "./logger";
 
@@ -403,6 +403,8 @@ export class SymbolCustom extends SymbolGraphic {
 
         const bodyWidth = this.bodyWidth;
         const bodyHeight = (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing;
+
+        drawing.addSetFillColor(bodyColor);
 
         drawing.addRect(0, 0, bodyWidth, bodyHeight);
 

@@ -68,7 +68,7 @@ def cap(value):
             pin: 1, 0, -3, 0, -height/2
             pin: 2, 0, 3, 0, height/2
             label: "refdes", width/2+2, 0, "?", fontSize = 10, anchor="left"
-            label: "value", width/2+2, 12, value, fontSize = 10, anchor = "left", vanchor="top"
+            label: "value", width/2+2, 5, value, fontSize = 10, anchor = "left", vanchor="top"
         type: "cap"
         params:
             value: value
