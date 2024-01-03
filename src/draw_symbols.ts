@@ -344,6 +344,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 drawing.addSetFillColor(...positionParams);
             } else if (commandName === 'lineColor') {
                 drawing.addSetLineColor(...positionParams);
+            } else if (commandName === 'arc'){
+                drawing.addArc(...positionParams);
             }
         });
 
@@ -357,7 +359,6 @@ export class SymbolPlaceholder extends SymbolGraphic {
 }
 
 export class SymbolCustom extends SymbolGraphic {
-
 
     pinDefinition: SymbolPinDefintion[] = [];
 
@@ -665,6 +666,19 @@ export class SymbolDrawing {
         return this;
     }
 
+    addArc(x: number, y: number, radius: number, 
+        startAngle: number, endAngle: number): SymbolDrawing {
+
+        // Angles in degrees, convert to radians
+        startAngle = startAngle * Math.PI / 180;
+        endAngle = endAngle * Math.PI / 180;
+        
+        this.items.push(
+            Geometry.arc([x, y], radius, startAngle, endAngle, true));
+
+        return this;
+    }
+
     getPaths(): {path: string, 
         fillColor: string, 
         lineColor: string, 
@@ -687,7 +701,6 @@ export class SymbolDrawing {
                         currentFill = item.value as string;
                     }
                 } else {
-
                     const rotatedPath = Geometry.groupRotate([item], this.angle, 
                         this.mainOrigin);
 

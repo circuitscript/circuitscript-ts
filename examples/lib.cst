@@ -76,9 +76,21 @@ def cap(value):
             footprint: "Capacitor_SMD:C_0402_1005Metric"
 
 def ind(value):
+    width = 40
+    height = 20
+
     return create component:
         pins: 2
         type: "ind"
+        display: create graphic:
+            arc: -15, 0, 5, 180, 360
+            arc: -5, 0, 5, 180, 360
+            arc: 5, 0, 5, 180, 360
+            arc: 15, 0, 5, 180, 360
+            pin: 1, -width / 2, 0, -width/2 - 20, 0
+            pin: 2, width/2, 0, width/2 + 20, 0
+            label: ("value", 0, 10, value, fontSize=10, anchor="middle", vanchor="middle")
+            label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
         params:
             value: value
 

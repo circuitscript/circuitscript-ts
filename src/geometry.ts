@@ -6,7 +6,9 @@ import { Box } from '@svgdotjs/svg.js';
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
 
-export type Feature = Segment | Polygon | Label;
+export type Arc = Flatten.Arc;
+
+export type Feature = Segment | Polygon | Label | Arc;
 
 export type LabelStyle = {
     font?: string,
@@ -128,6 +130,13 @@ export class Geometry {
         return new Flatten.Polygon(coords);
     }
 
+    static arc(center: [x: number, y: number], radius: number,
+        startAngle: number, endAngle: number, sweepDirection: boolean): Arc {
+        // Angle should be in radians for Flatten library.
+        return new Flatten.Arc(Geometry.point(center[0], center[1]),
+            radius, startAngle, endAngle, sweepDirection);
+    }
+
     static getCoords(item: Feature): [number, number][] {
         const points = item.vertices.map(vertex => {
             return [vertex.x, vertex.y];
@@ -208,15 +217,35 @@ export class Geometry {
                 return;
             }
 
-            const coords = Geometry.getCoords(item);
             const path = [];
-            for (let i = 0; i < coords.length; i++) {
-                const [x, y] = coords[i];
-                const command = (i === 0) ? 'M' : 'L';
-                path.push(`${command} ${x} ${y}`);
-            }
 
-            paths.push(path.join(' ') + ' Z');
+            if (item instanceof Flatten.Arc){
+                const x = item.center.x;
+                const y = item.center.y;
+                const radius = item.r as number;
+
+                // Assume angle is clockwise for now
+                const startPoint = getArcPointRadians(x, y, radius, 
+                    item.startAngle);
+                
+                const endPoint = getArcPointRadians(x, y, radius, 
+                    item.endAngle);
+                
+                paths.push('M ' + startPoint[0] + ' ' + startPoint[1]
+                    + 'A ' + radius + ' ' + radius + ' 0 1 1 ' 
+                    + endPoint[0] + ' ' + endPoint[1]);
+
+            } else {
+                const coords = Geometry.getCoords(item);
+                
+                for (let i = 0; i < coords.length; i++) {
+                    const [x, y] = coords[i];
+                    const command = (i === 0) ? 'M' : 'L';
+                    path.push(`${command} ${x} ${y}`);
+                }
+
+                paths.push(path.join(' ') + ' Z');
+            }
         });
 
         return paths.join(" ");
@@ -521,4 +550,23 @@ export enum VerticalAlign {
     Top = 'top',
     Middle = 'middle',
     Bottom = 'bottom',
+}
+
+function getArcPoint(centerX: number, centerY: number, radius: number,
+    angleDegrees: number): [x: number, y: number] {
+    const angleRads = angleDegrees * Math.PI / 180;
+    return getArcPointRadians(centerX, centerY, radius, angleRads);
+}
+
+function getArcPointRadians(centerX: number, centerY: number,
+    radius: number, angleRads: number): [x: number, y: number] {
+
+    // X-axis is 0 degree and rotation clockwise is positive.
+    const dx = Math.cos(angleRads);
+    const dy = Math.sin(angleRads);
+
+    return [
+        centerX + dx * radius,
+        centerY + dy * radius
+    ];
 }
