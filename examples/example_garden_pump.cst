@@ -96,13 +96,6 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
         params:
             footprint: "GardenRelay:VSON-10-1EP_3x3mm_P0.5mm_EP1.65x2.4mm_ThermalVias"
 
-    power_inductor = create component:
-        pins: 2
-        type: "ind"
-        params:
-            value: inductor_value
-            footprint: inductor_footprint
-
     frame:
         ..title = "12V to " + output_label + " DCDC converter"
 
@@ -156,7 +149,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
                     wire left 60
                     to tps54227 pin 7
                 wire right 40
-                add power_inductor
+                add ind(inductor_value)
                 wire right 20
                 branch:
                     wire down 20
@@ -534,6 +527,7 @@ def pump_block(enable_name, sense_out):
 v12v = supply("12V")
 v3v3 = supply("3V3")
 v5v = supply("5V")
+gnd = dgnd()
 
 main()
 
