@@ -835,6 +835,16 @@ export class LayoutEngine {
 
             return null;
         }
+ 
+        if (subgraphEdges.length === 0) {
+            // If there is only 1 component in the subgraph, then there
+            // will not be any edges. Align the component to the grid first
+            const [, node1]: [string, RenderItem] = graph.node(firstNodeId);
+
+            // By default align pin 1 to the grid
+            this.placeNodeAtPosition(0, 0, node1, 1);
+            return;
+        }
 
         subgraphEdges.forEach(edge => {
             const [nodeId1, pin1, nodeId2, pin2]:

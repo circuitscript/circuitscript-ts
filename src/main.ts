@@ -72,6 +72,7 @@ export function renderScript(scriptData: string, outputPath: string,
     currentDirectory:string = null, dumpNets = false): string {
 
     const visitor = new MainVisitor(true);
+    const dumpData = false;
 
     visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
         // Check if different files exist first
@@ -103,9 +104,8 @@ export function renderScript(scriptData: string, outputPath: string,
     }
     // console.log(visitor.dumpUniqueNets());
 
-    // await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
-
-    // await writeFile('dump/raw-parser.txt', visitor.logger.dump());
+    dumpData && fs.writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
+    dumpData && fs.writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
     
     if (hasError || hasParseError) {
         console.log('Error while parsing');
@@ -147,7 +147,7 @@ export function renderScript(scriptData: string, outputPath: string,
         return tmp.join(" | ");
     });
 
-    // await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
+    dumpData && fs.writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
     let svgOutput: string = null;
 
     try {
@@ -158,7 +158,7 @@ export function renderScript(scriptData: string, outputPath: string,
 
         console.log('Layout took:', layoutTimer.lap());
 
-        // await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
+        dumpData && fs.writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
         svgOutput = generateSVG2(graph);
