@@ -151,11 +151,6 @@ async function renderScript(scriptPath: string): Promise<void> {
     }
 }
 
-enum LayoutType {
-    ELKJS = 1,
-    Custom = 2
-}
-
 async function writeFile(outputPath: string, contents: string): Promise<void> {
     return new Promise(resolve => {
         fs.writeFile(outputPath, contents, err => {
