@@ -17,48 +17,63 @@ import { SimpleStopwatch } from './utils';
 
 export default async function main(): Promise<void> {
 
-    console.log(figlet.textSync('circuitscript', {
-        font: 'Small Slant'
-    }));
-
     program
         .argument('input', 'Input path')
-        .argument('output', 'Output path')
-        .option('-w, --watch', 'Watch for file changes');
+        .option('-o, --output <type>', 'Output path')
+        .option('-w, --watch', 'Watch for file changes')
+        .option('-n, --dump-nets', 'Dump out net information')
+        ;
+
+    program.addHelpText('before', figlet.textSync('circuitscript', {
+        font: 'Small Slant'
+    }));
 
     program.parse();
 
     const options = program.opts();
-    const [inputPath, outputPath] = program.args;
+    const [inputPath] = program.args;
 
     const watchFileChanges = options.watch;
+    const outputPath = options.output ?? null;
+    const dumpNets = options.dumpNets;
 
     if (watchFileChanges) {
         console.log('watching for file changes...');
     }
 
     await prepareSizing();
-    await renderScript(inputPath, outputPath);
+
+    const scriptData = fs.readFileSync(inputPath, {encoding: 'utf-8'});
+    const currentDirectory = path.dirname(inputPath);
+
+    const output = renderScript(scriptData, outputPath, 
+        currentDirectory, dumpNets);
+
+    if (outputPath === null){
+        console.log(output);
+    }
 
     if (watchFileChanges) {
         fs.watch(inputPath, (event, targetFile) => {
             if (event === 'change') {
-                renderScript(inputPath, outputPath).then(() => {
-                    console.log('Done');
-                });
+                const scriptData = fs.readFileSync(inputPath, 
+                    {encoding: 'utf-8'});
+
+                renderScript(scriptData, outputPath,
+                    currentDirectory, dumpNets);
+                console.log('done');
             }
         });
     }
 }
 
 
-async function renderScript(inputPath: string, outputPath:string): Promise<void> {
+export function renderScript(scriptData: string, outputPath: string, 
+    currentDirectory:string = null, dumpNets = false): string {
 
     const visitor = new MainVisitor(true);
 
     visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
-        const currentDirectory = path.dirname(inputPath);
-
         // Check if different files exist first
         const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
         visitor.print('importing path:', tmpFilePath);
@@ -73,9 +88,6 @@ async function renderScript(inputPath: string, outputPath:string): Promise<void>
     }
 
     visitor.print('reading file');
-    
-    const scriptData = await readFile(inputPath);
-
     visitor.print('done reading file');
 
     const { tree, parser,
@@ -86,12 +98,14 @@ async function renderScript(inputPath: string, outputPath:string): Promise<void>
     console.log('Lexing took:', lexerTimeTaken);
     console.log('Parsing took:', parserTimeTaken);
     
-    // console.log(visitor.dumpNets());
+    if (dumpNets){
+        console.log(visitor.dumpNets());
+    }
     // console.log(visitor.dumpUniqueNets());
 
-    await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
+    // await writeFile('dump/tree.lisp', tree.toStringTree(null, parser));
 
-    await writeFile('dump/raw-parser.txt', visitor.logger.dump());
+    // await writeFile('dump/raw-parser.txt', visitor.logger.dump());
     
     if (hasError || hasParseError) {
         console.log('Error while parsing');
@@ -101,9 +115,9 @@ async function renderScript(inputPath: string, outputPath:string): Promise<void>
     visitor.annotateComponents();
 
     const kicadNetList = generateKiCADNetList(visitor.getNetList());
-    await writeFile('dump/kicad.net', kicadNetList);
+    // await writeFile('dump/kicad.net', kicadNetList);
 
-    await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
+    // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
     const { sequence, nets } = visitor.getGraph();
 
@@ -133,7 +147,8 @@ async function renderScript(inputPath: string, outputPath:string): Promise<void>
         return tmp.join(" | ");
     });
 
-    await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
+    // await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
+    let svgOutput: string = null;
 
     try {
         const layoutEngine = new LayoutEngine();
@@ -143,46 +158,23 @@ async function renderScript(inputPath: string, outputPath:string): Promise<void>
 
         console.log('Layout took:', layoutTimer.lap());
 
-        await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
+        // await writeFile('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
-        const svgOutput = generateSVG2(graph);
+        svgOutput = generateSVG2(graph);
         console.log('Render took:', generateSvgTimer.lap());
 
-        fs.writeFile(outputPath, svgOutput, (err) => {
-            if (err) {
-                console.log('error writing to file: ', err);
-            } else {
-                console.log('saved to', outputPath);
-            }
-        });
+        if (outputPath){
+            fs.writeFileSync(outputPath, svgOutput);
+        } 
     } catch (err) {
         console.log('Failed to render:');
         console.log(err)
     }
+
+    return svgOutput;
 }
 
-async function writeFile(outputPath: string, contents: string): Promise<void> {
-    return new Promise(resolve => {
-        fs.writeFile(outputPath, contents, err => {
-            if (err) {
-                console.log('error writing file', err);
-            }
-
-            resolve();
-        });
-    });
+if (require.main === module){
+    main();
 }
-
-async function readFile(fileName: string): Promise<string> {
-    return new Promise((resolve) => {
-        fs.readFile(fileName, 'utf8', (err, data) => {
-            if (err) {
-                throw err;
-            }
-            resolve(data);
-        });
-    });
-}
-
-main();
