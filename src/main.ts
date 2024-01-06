@@ -1,4 +1,7 @@
-import 'source-map-support/register'
+#! /usr/bin/env node
+
+import { program } from 'commander';
+import figlet from 'figlet';
 
 import fs from 'fs';
 import path from 'path';
@@ -13,24 +16,34 @@ import { generateKiCADNetList } from './export';
 import { SimpleStopwatch } from './utils';
 
 export default async function main(): Promise<void> {
-    await prepareSizing();
 
-    const fileName = process.argv[2];
-    let watch = false;
-    if (process.argv.length > 2) {
-        if (process.argv[3] === "w") {
-            watch = true;
-            console.log('watching for file changes...');
-        }
+    console.log(figlet.textSync('circuitscript', {
+        font: 'Small Slant'
+    }));
+
+    program
+        .argument('input', 'Input path')
+        .argument('output', 'Output path')
+        .option('-w, --watch', 'Watch for file changes');
+
+    program.parse();
+
+    const options = program.opts();
+    const [inputPath, outputPath] = program.args;
+
+    const watchFileChanges = options.watch;
+
+    if (watchFileChanges) {
+        console.log('watching for file changes...');
     }
 
-    await renderScript(fileName);
+    await prepareSizing();
+    await renderScript(inputPath, outputPath);
 
-    if (watch) {
-        
-        fs.watch(fileName, (event, targetFile) => {
+    if (watchFileChanges) {
+        fs.watch(inputPath, (event, targetFile) => {
             if (event === 'change') {
-                renderScript(fileName).then(() => {
+                renderScript(inputPath, outputPath).then(() => {
                     console.log('Done');
                 });
             }
@@ -39,12 +52,12 @@ export default async function main(): Promise<void> {
 }
 
 
-async function renderScript(scriptPath: string): Promise<void> {
+async function renderScript(inputPath: string, outputPath:string): Promise<void> {
 
     const visitor = new MainVisitor(true);
 
     visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
-        const currentDirectory = path.dirname(scriptPath);
+        const currentDirectory = path.dirname(inputPath);
 
         // Check if different files exist first
         const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
@@ -61,7 +74,7 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     visitor.print('reading file');
     
-    const scriptData = await readFile(scriptPath);
+    const scriptData = await readFile(inputPath);
 
     visitor.print('done reading file');
 
@@ -122,8 +135,6 @@ async function renderScript(scriptPath: string): Promise<void> {
 
     await writeFile('dump/raw-sequence.txt', tmpSequence.join('\n'));
 
-    const outputSvgPath = 'output.svg';
-
     try {
         const layoutEngine = new LayoutEngine();
         const layoutTimer = new SimpleStopwatch();
@@ -138,11 +149,11 @@ async function renderScript(scriptPath: string): Promise<void> {
         const svgOutput = generateSVG2(graph);
         console.log('Render took:', generateSvgTimer.lap());
 
-        fs.writeFile(outputSvgPath, svgOutput, (err) => {
+        fs.writeFile(outputPath, svgOutput, (err) => {
             if (err) {
                 console.log('error writing to file: ', err);
             } else {
-                console.log('saved to', outputSvgPath);
+                console.log('saved to', outputPath);
             }
         });
     } catch (err) {
@@ -174,6 +185,4 @@ async function readFile(fileName: string): Promise<string> {
     });
 }
 
-if (require.main === module) {
-    main();
-}
+main();
