@@ -295,31 +295,54 @@ export class LayoutEngine {
             return width;
         }));
 
-        const maxHeight = Math.max(...frameSizes.map(item => {
-            const { height } = getBoundsSize(item);
-            return height;
-        }));
+        let accumRowWidth = 0;
+        let titleFrameWidth = null;
 
-        let widthForTitle = 0;
+        const inRowShouldCenterInnerFrames = true;
+
         if (frame.direction === FramePlotDirection.Row) {
-            widthForTitle = frameSizes.reduce((accum, item, index) => {
+
+            // When plot direction is row, then sum all inner frame widths. 
+            accumRowWidth = frameSizes.reduce((accum, item, index) => {
+                const { width } = getBoundsSize(item);
+
                 if ((frame.innerItems[index] as RenderFrame).containsTitle){
                     // If frame contains title, then skip it for 
                     // the width calculation
+                    titleFrameWidth = width;
                     return accum;
                 }
-
-                const { width } = getBoundsSize(item);
+                
                 return accum + width + 
                     ((index + 1 < frameSizes.length) ? frame.gap: 0);
             }, 0);
+
         } else {
-            widthForTitle = maxWidth;
+            accumRowWidth = maxWidth;
         }
 
-        // Use the default value
+        // Always start arranging inner frames (excluding frame with title)
+        // from the top left corner.
         const offsetX = frame.padding;
         const offsetY = frame.padding;
+
+        let centeredOffsetX = 0;
+
+        // This is used to determine position of the title in the frame.
+        let widthForTitle: number;
+
+        if (titleFrameWidth > accumRowWidth){
+            widthForTitle = titleFrameWidth;
+        } else {
+            widthForTitle = accumRowWidth;
+        }
+        
+        if (frame.direction === FramePlotDirection.Row && 
+            inRowShouldCenterInnerFrames &&
+            titleFrameWidth !== null && titleFrameWidth > accumRowWidth) {
+            
+            centeredOffsetX = toNearestGrid(titleFrameWidth / 2 - accumRowWidth / 2, gridSize);
+        }
 
         // Second pass arranges the items and sets the height
         innerFrames.forEach(innerFrame => {
@@ -335,14 +358,14 @@ export class LayoutEngine {
             } else {
                 if (frame.direction === FramePlotDirection.Column) {
                     // Align to the center, but also to the nearest grid size.
-                    innerFrame.x = offsetX + accumX; // + toNearestGrid(maxWidth / 2 - frameWidth / 2, gridSize);
+                    innerFrame.x = offsetX + accumX + toNearestGrid(maxWidth / 2 - frameWidth / 2, gridSize);
                     innerFrame.y = offsetY + accumY;
 
                     accumY += (frameHeight + frame.gap);
 
                 } else if (frame.direction === FramePlotDirection.Row) {
                     // Align to the top?
-                    innerFrame.x = offsetX + accumX;
+                    innerFrame.x = offsetX + centeredOffsetX + accumX;
                     innerFrame.y = offsetY + accumY; //+ toNearestGrid(maxHeight / 2 - frameHeight / 2, gridSize);
 
                     accumX += (frameWidth + frame.gap);
@@ -1674,6 +1697,7 @@ export class RenderFrame extends RenderObject {
 
     type: RenderFrameType;
 
+    // If true, then frame only contains text for frame title.
     containsTitle = false;
 
     constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
