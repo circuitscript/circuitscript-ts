@@ -47,4 +47,4 @@ server.on('upgrade', (request, socket, head) => {
     });
 });
 
-console.log('server started');
+console.log('server started at port 3000');

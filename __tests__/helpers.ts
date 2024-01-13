@@ -33,26 +33,15 @@ export async function runScript(script: string): Promise<{visitor: MainVisitor,
     const visitor = new MainVisitor(true);
     visitor.printToConsole = false; // do not clutter the console log
 
-    visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
-        const currentDirectory = path.dirname(scriptPath);
-
-        // Check if different files exist first
-        const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
-        visitor.print('importing path:', tmpFilePath);
-
-        const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
-        const { hasError, hasParseError, timeTaken } =
-            parseFileWithVisitor(visitor, fileData);
-
-        return { hasError, hasParseError };
-    }
+    const currentDirectory = path.dirname(scriptPath);
+    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory);
 
     let hasError = false;
     try {
         visitor.visit(tree);
     } catch (err) {
         hasError = true;
-        console.log('got error:', err);
+        console.log('Error:', err);
     }
 
     hasError = hasError || errorListener.hasParseErrors();
