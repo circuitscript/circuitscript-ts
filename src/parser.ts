@@ -33,7 +33,7 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
     try {
         visitor.visit(tree);
     } catch (err) {
-        console.log('got error:', err);
+        console.log('Error:', err);
         hasError = true;
     }
 

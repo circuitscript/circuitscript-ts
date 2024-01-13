@@ -647,7 +647,7 @@ export class ExecutionContext {
     }
 
     resolveVariable(executionStack: ExecutionContext[], idName: string):
-        {found: boolean, name?: string, value?: any, type?: string} {
+        ReferenceType {
         this.print('resolve variable', idName);
         const reversed = [...executionStack].reverse();
 
@@ -1094,3 +1094,12 @@ type PortSideItem = {
     order: number,
     position: number,
 };
+
+export type ReferenceType =
+    {
+        found: boolean,
+        name?: string,
+        trailers?: string[],
+        type?: string,
+        value?: any
+    };

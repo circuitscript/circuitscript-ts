@@ -20,8 +20,10 @@ export default async function main(): Promise<void> {
     program
         .argument('input', 'Input path')
         .option('-o, --output <type>', 'Output path')
+        .option('-c, --current-directory <type>', 'Set current directory')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
+        .option('-d, --dump-data', 'Dump data during parsing')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -36,6 +38,9 @@ export default async function main(): Promise<void> {
     const watchFileChanges = options.watch;
     const outputPath = options.output ?? null;
     const dumpNets = options.dumpNets;
+    const dumpData = options.dumpData;
+
+    let currentDirectory = options.currentDirectory ?? null;
 
     if (watchFileChanges) {
         console.log('watching for file changes...');
@@ -43,13 +48,16 @@ export default async function main(): Promise<void> {
 
     await prepareSizing();
 
-    const scriptData = fs.readFileSync(inputPath, {encoding: 'utf-8'});
-    const currentDirectory = path.dirname(inputPath);
+    const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
-    const output = renderScript(scriptData, outputPath, 
-        currentDirectory, dumpNets);
+    if (currentDirectory === null) {
+        currentDirectory = path.dirname(inputPath);
+    }
 
-    if (outputPath === null){
+    const output = renderScript(scriptData, outputPath,
+        currentDirectory, dumpNets, dumpData);
+
+    if (outputPath === null && output){
         console.log(output);
     }
 
@@ -69,24 +77,11 @@ export default async function main(): Promise<void> {
 
 
 export function renderScript(scriptData: string, outputPath: string, 
-    currentDirectory:string = null, dumpNets = false): string {
+    currentDirectory:string = null, dumpNets = false, dumpData = false): string {
 
     const visitor = new MainVisitor(true);
-    const dumpData = false;
 
-    visitor.onImportFile = (visitor: MainVisitor, importPath: string): { hasError: boolean, hasParseError: boolean } => {
-        // Check if different files exist first
-        const tmpFilePath = path.join(currentDirectory, importPath + ".cst");
-        visitor.print('importing path:', tmpFilePath);
-
-        const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
-        visitor.print('done reading imported file data');
-
-        const { hasError, hasParseError } =
-            parseFileWithVisitor(visitor, fileData);
-
-        return { hasError, hasParseError }
-    }
+    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory);
 
     visitor.print('reading file');
     visitor.print('done reading file');
