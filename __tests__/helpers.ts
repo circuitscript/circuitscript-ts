@@ -39,9 +39,10 @@ export async function runScript(script: string): Promise<{visitor: MainVisitor,
     let hasError = false;
     try {
         visitor.visit(tree);
-    } catch (err) {
+    } catch (err){
+        // Error should be internally handled in visitor
+        err.print(script);
         hasError = true;
-        console.log('Error:', err);
     }
 
     hasError = hasError || errorListener.hasParseErrors();

@@ -131,24 +131,23 @@ at U1:
         wire right 200 
         to U2 pin 1
 
-at U2 pin 3
-wire left 20
-to U1 pin 10
-
-at U2 pin 5
-wire left 20
-to U1 pin 10
-
 at U1 pin 10
-wire right 180 up 60
+wire right 180 up 40
+
+branch:
+    wire auto
+    to U2 pin 5
+
+wire auto
+to U2 pin 3
 `;
 
 const script1Expected: ComponentPinNet[] = [
     ['__.NET_1', 'U1', 2],
     ['__.NET_1', 'U2', 1],
-    ['__.NET_2', 'U2', 3],
     ['__.NET_2', 'U1', 10],
     ['__.NET_2', 'U2', 5],
+    ['__.NET_2', 'U2', 3]
 ];
 
 const script2 = `
