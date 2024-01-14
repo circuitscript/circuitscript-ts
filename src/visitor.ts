@@ -1,4 +1,4 @@
-import { ParseTreeVisitor } from 'antlr4';
+import { ParseTreeVisitor, ParserRuleContext } from 'antlr4';
 
 import fs from 'fs';
 import path from 'path';
@@ -116,6 +116,32 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     getExecutor(): ExecutionContext {
         return this.executionStack[this.executionStack.length - 1];
+    }
+
+    visit(ctx: ParserRuleContext): any {
+        if (Array.isArray(ctx)) {
+            return ctx.map(function (child) {
+                try {
+                    return child.accept(this);
+                } catch (err) {
+                    this.handleError(child, err);
+                }
+            }, this);
+        } else {
+            try {
+                return ctx.accept(this);
+            } catch (err) {
+                this.handleError(ctx, err);
+            }
+        }
+    }
+
+    handleError(ctx: ParserRuleContext, err: string | VisitorExecutionException): void {
+        if (!(err instanceof VisitorExecutionException)) {
+            throw new VisitorExecutionException(ctx, err);
+        } else {
+            throw err;
+        }
     }
 
     visitScript(ctx: ScriptContext): any {
@@ -1426,4 +1452,25 @@ export type NetListItem = {
     instanceName: string,
     instance: ClassComponent,
     pins: { [key: string | number]: string },
+}
+
+export class VisitorExecutionException {
+    
+    errorMessage: string;
+    context: ParserRuleContext;
+    
+    constructor(context: ParserRuleContext, errorMessage: string){
+        this.errorMessage = errorMessage;
+        this.context = context;
+    }
+
+    print(scriptData: string): void {
+        const startPoint = this.context.start.start;
+        const endPoint = this.context.stop.stop + 1;
+
+        console.log('Error at line ' + 
+            this.context.start.line + "," + this.context.start.column + ": " 
+            + scriptData.slice(startPoint, endPoint) + " - " + this.errorMessage);
+
+    }
 }
