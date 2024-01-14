@@ -2,6 +2,7 @@ import { SymbolDrawingCommands } from '../draw_symbols';
 import { Net } from './Net';
 import { PinDefinition, PinIdType } from './PinDefinition';
 import { PinTypes } from './PinTypes';
+import { WireSegment } from './Wire';
 
 export class ClassComponent {
 
@@ -19,6 +20,8 @@ export class ClassComponent {
 
     // Maps pin indexes to the nets.
     pinNets: Map<number, Net> = new Map();
+
+    pinWires: Map<number, WireSegment[]> = new Map();
 
     // The cached values are used for easier comparison/equality check.
     _cachedPins: string;

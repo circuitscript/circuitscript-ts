@@ -4,7 +4,7 @@ import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './obj
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition, PortSide } from './objects/PinDefinition';
-import { CFunction, CFunctionResult, CallableParameter, ComplexType, ComponentPin } from './objects/types';
+import { CFunction, CFunctionResult, CallableParameter, ComponentPin } from './objects/types';
 import { Wire, WireSegment } from './objects/Wire';
 import { Logger } from './logger';
 import { Frame } from './objects/Frame';
@@ -397,15 +397,25 @@ export class ExecutionContext {
 
         if (addSequence) {
             if (this.scope.sequence.length > 0) {
-                // Check if the previous entry is a wire
-                const [entryType, , segments]: [SequenceAction, number, WireSegment[]] = 
-                    this.scope.sequence[this.scope.sequence.length - 1];
                 
+                // Prevent component pin from being connected to multiple
+                // wires at the same time. This happens if the user tries
+                // to add the same (non-net) component at multiple places.
+                if (component.pinWires.has(pinId) && component.typeProp !== ComponentTypes.point) {
+                    throw "Component pin already connected to wire"
+                }
+
+                // Check if the previous entry is a wire
+                const [entryType, , segments]: [SequenceAction, number, WireSegment[]] =
+                    this.scope.sequence[this.scope.sequence.length - 1];
+
                 if (entryType === SequenceAction.Wire && isWireSegmentsEndAuto(segments)) {
                     segments[segments.length - 1].until = [
                         component, pinId
                     ];
                 }
+
+                component.pinWires.set(pinId, segments);
             }
 
             this.scope.sequence.push([SequenceAction.To, component, 
@@ -648,7 +658,7 @@ export class ExecutionContext {
 
     resolveVariable(executionStack: ExecutionContext[], idName: string):
         ReferenceType {
-        this.print('resolve variable', idName);
+        // this.print('resolve variable', idName);
         const reversed = [...executionStack].reverse();
 
         for (let i = 0; i < reversed.length; i++) {
@@ -914,6 +924,10 @@ export class ExecutionContext {
 
         this.scope.setActive(ActiveObject.Wire, wireId);
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
+
+        this.scope.currentComponent.pinWires.set(
+            this.scope.currentPin, tmp
+        )
     }
 
     addPoint(pointId: string): ComponentPin {

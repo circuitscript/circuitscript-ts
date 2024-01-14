@@ -18,9 +18,10 @@ import { SimpleStopwatch } from './utils';
 export default async function main(): Promise<void> {
 
     program
+        .description('generate graphical output from circuitscript files')
         .argument('input', 'Input path')
-        .option('-o, --output <type>', 'Output path')
-        .option('-c, --current-directory <type>', 'Set current directory')
+        .option('-o, --output <path>', 'Output path')
+        .option('-c, --current-directory <path>', 'Set current directory')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
@@ -30,7 +31,11 @@ export default async function main(): Promise<void> {
         font: 'Small Slant'
     }));
 
-    program.parse();
+    if (process.argv.length < 3){
+        program.help();
+    }
+    
+    program.parse();    
 
     const options = program.opts();
     const [inputPath] = program.args;

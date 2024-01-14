@@ -32,8 +32,9 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
 
     try {
         visitor.visit(tree);
-    } catch (err) {
-        console.log('Error:', err);
+    } catch (err){
+        // Error should be internally handled in visitor
+        err.print(data);
         hasError = true;
     }
 
