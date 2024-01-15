@@ -208,7 +208,7 @@ function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: 
     const gridEndY = (Math.ceil(y2 / gridSize) + 1) * gridSize;
 
     const numCols = Math.ceil((gridEndX - gridStartX) / gridSize);
-    const numRows = Math.ceil((gridEndY - gridStartY) / gridSize);
+    // const numRows = Math.ceil((gridEndY - gridStartY) / gridSize);
 
     // Draws (0, 0) point
     // group.circle(5)
@@ -220,24 +220,20 @@ function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: 
 
     for (let i = 0; i <= numCols; i++) {
         const startX = gridStartX + i * gridSize;
-        const startY = gridStartY;
+        const startY = gridStartY-0.5;
         const endY = gridEndY;
         lines.push(`M ${startX} ${startY} L ${startX} ${endY}`);
     }
 
-    for (let i = 0; i <= numRows; i++) {
-        const startX = gridStartX;
-        const startY = gridStartY + i * gridSize;
-        const endX = gridEndX;
-        lines.push(`M ${startX} ${startY} L ${endX} ${startY}`);
-    }
-
     group.path(lines.join(" "))
         .fill('none')
+        .attr({
+            'stroke-dasharray': '1,' + (gridSize-1),
+        })
         .stroke({
             width: 1,
-            color: '#eee'
-        });
+            color: '#aaa'
+        })
 }
 
 function calculateBoundingBox(components: RenderComponent[]): { width: number, height: number } {
