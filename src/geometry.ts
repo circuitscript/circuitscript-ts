@@ -5,10 +5,11 @@ import { Box } from '@svgdotjs/svg.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
+export type Multiline = Flatten.Multiline;
 
 export type Arc = Flatten.Arc;
 
-export type Feature = Segment | Polygon | Label | Arc;
+export type Feature = Segment | Polygon | Label | Arc | Multiline;
 
 export type LabelStyle = {
     font?: string,
@@ -130,6 +131,20 @@ export class Geometry {
         return new Flatten.Polygon(coords);
     }
 
+    static multiline(coords: [number, number][]): Multiline {
+        const segments: Flatten.Segment[] = [];
+
+        // Create the segments
+        for (let i = 0; i < coords.length - 1; i++) {
+            segments.push(new Flatten.Segment(
+                Geometry.point(coords[i][0], coords[i][1]),
+                Geometry.point(coords[i + 1][0], coords[i + 1][1])
+            ))
+        }
+
+        return new Flatten.Multiline(segments);
+    }
+
     static arc(center: [x: number, y: number], radius: number,
         startAngle: number, endAngle: number, sweepDirection: boolean): Arc {
         // Angle should be in radians for Flatten library.
@@ -140,12 +155,7 @@ export class Geometry {
     static getCoords(item: Feature): [number, number][] {
         const points = item.vertices.map(vertex => {
             return [vertex.x, vertex.y];
-        });
-
-        // If is polygon, then add an additional point to "close" the polygon... (might not always be needed)..
-        if (item instanceof Flatten.Polygon){
-            return [...points, points[0]];
-        }
+        }) as [number, number][];
         
         return points;
     }
@@ -208,12 +218,15 @@ export class Geometry {
         console.log('unknown type', feature);
     }
 
-    static featuresToPath(items: Feature[]): string {
+    static featuresToPath(items: Feature[]): 
+        { path: string, isClosedPolygon: boolean } {
+
         const paths = [];
+        let isClosedPolygon = false;
 
         items.forEach(item => {
             // Do not draw labels here
-            if (item instanceof Label){
+            if (item instanceof Label) {
                 return;
             }
 
@@ -237,18 +250,29 @@ export class Geometry {
 
             } else {
                 const coords = Geometry.getCoords(item);
-                
+
+                if (item instanceof Flatten.Polygon) {
+                    isClosedPolygon = true;
+                }
+
                 for (let i = 0; i < coords.length; i++) {
                     const [x, y] = coords[i];
                     const command = (i === 0) ? 'M' : 'L';
                     path.push(`${command} ${x} ${y}`);
                 }
 
-                paths.push(path.join(' ') + ' Z');
+                if (isClosedPolygon){
+                    path.push('Z');
+                }
+
+                paths.push(path.join(' '));
             }
         });
 
-        return paths.join(" ");
+        return {
+            path: paths.join(" "),
+            isClosedPolygon,
+        }
     }
 
     static angle(dx: number, dy: number): number {

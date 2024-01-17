@@ -614,38 +614,53 @@ export class SymbolDrawing {
             return accum;
         }, [] as (number|string)[]);
 
-        const polygons = [];
-        let currentPoly = null;
+        const geomObjects = [];
+        let currentObj: [x: number, y: number][] = null;
 
         for (let i = 0; i < parts.length; i++) {
             const command = parts[i];
             if (command === 'M') {
-                // Start a new polygon
-                if (currentPoly !== null) {
-                    polygons.push(currentPoly);
+                // Start a new object
+                if (currentObj !== null) {
+                    geomObjects.push(currentObj);
                 }
 
                 const x = Number(parts[i + 1]);
                 const y = Number(parts[i + 2]);
 
-                currentPoly = [[x, y]];
+                currentObj = [[x, y]];
 
                 i += 2;
 
             } else if (command === 'L') {
                 const x = Number(parts[i + 1]);
                 const y = Number(parts[i + 2]);
-                currentPoly.push([x, y]);
+                currentObj.push([x, y]);
+
+                i += 2;
+
+            } else if (command === 'Z'){
+                // Return back to first point in path
+                const firstPoint = currentObj[0];
+                currentObj.push(firstPoint);
             }
         }
 
-        if (currentPoly !== null){
-            polygons.push(currentPoly);
-            currentPoly = null;
+        if (currentObj !== null){
+            geomObjects.push(currentObj);
+            currentObj = null;
         }
 
-        polygons.forEach(coords => {
-            this.items.push(Geometry.polygon(coords));
+        geomObjects.forEach(coords => {
+            const [first] = coords;
+            const last = coords[coords.length - 1];
+
+            if (first[0] === last[0] && first[1] === last[1]){
+                // If both are the same, then this is a polygon
+                this.items.push(Geometry.polygon(coords));
+            } else {
+                this.items.push(Geometry.multiline(coords));
+            }
         })
 
         return this;
@@ -704,12 +719,15 @@ export class SymbolDrawing {
                     const rotatedPath = Geometry.groupRotate([item], this.angle, 
                         this.mainOrigin);
 
+                    const {path, isClosedPolygon} = 
+                        this.featuresToPath(rotatedPath);
+                
                     pathItems.push({
-                        path: this.featuresToPath(rotatedPath),
-                        fillColor: currentFill,
+                        path: path,
                         lineWidth: currentLineWidth,
                         lineColor: currentLineColor,
-                    })
+                        fillColor: isClosedPolygon ? currentFill : 'none',
+                    });
                 }
             }
         });
@@ -720,14 +738,16 @@ export class SymbolDrawing {
     getPinsPath(): string {
         const features = this.pins.map(item => item[1]);
         const withAngle = Geometry.groupRotate(features, this.angle, this.mainOrigin);
-        return this.featuresToPath(withAngle);
+        const { path } = this.featuresToPath(withAngle);
+        return path;
     }
 
     getLabels(): Label[] {
         return this.items.filter(item => item instanceof Label) as Label[];
     }
 
-    private featuresToPath(items: Feature[]): string {
+    private featuresToPath(items: Feature[]): 
+        {path: string, isClosedPolygon: boolean} {
         return Geometry.featuresToPath(items);
     }
 
