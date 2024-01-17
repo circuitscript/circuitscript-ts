@@ -39,6 +39,44 @@ describe('test parsing', () => {
         expect(findItem(instances, 'cap', 'C1', 'numeric:100n')).not.toBeNull();
     });
 
+
+    test('component annotation with defined refdes', async () => {
+
+        const script = `
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+at v5v
+wire down 10 
+add res(10k)
+..refdes = "R2"
+
+wire down 10
+add res(20k)
+
+wire down 10
+add res(30k)
+
+wire down 10
+add res(40k)
+..refdes = "R100"
+`
+        const {hasError, visitor} = await runScript(script);
+        expect(hasError).toBe(false);
+
+        visitor.annotateComponents();
+
+        const instances = visitor.dumpInstances();
+
+        expect(findItem(instances, 'res', 'R2', 'numeric:10k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R1', 'numeric:20k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R3', 'numeric:30k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R100', 
+            'numeric:40k')).not.toBeNull();
+    });
+
     test('indents in function definition', async() => {
         // Check that indents within parantheses/brackets are ignored.
         const script = `
@@ -502,3 +540,25 @@ const allScripts: [string, ComponentPinNet[]][] = [
     [script9, script9Expected],
     [script10, script10Expected],
 ];
+
+// This tests that an error is generated at the right position for 
+// overlapping connections
+`
+import lib
+import { async } from '../src/sizing';
+v5v = supply("5v")
+gnd = dgnd()
+
+c1 = cap(100n)
+
+at v5v
+wire down 20
+branch:
+    wire down 20
+    add c1
+    wire down 20
+    to gnd
+
+wire down 40    # error should be here
+to c1 pin 1
+`
