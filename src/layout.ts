@@ -18,6 +18,8 @@ export class LayoutEngine {
 
     placeSubgraphVersion = 2;
 
+    layoutWarnings: string[] = [];
+
     constructor() {
         this.logger = new Logger();
     }
@@ -940,6 +942,20 @@ export class LayoutEngine {
                         originNode1, originNode2, originNodes,
                         originNodeGroups,
                     );
+                } else {
+                    // If have same node, then compare their position
+                    const [x1, y1] = getNodePositionAtPin(node1, pin1);
+                    const [x2, y2] = getNodePositionAtPin(node2, pin2);
+                    if (x1 !== x2 && y1 !== y2) {
+
+                        if (node1 instanceof RenderWire &&
+                            node2 instanceof RenderComponent) {
+
+                            this.layoutWarnings.push('component ' +
+                                node2.component.instanceName +
+                                ' may not be placed correctly');
+                        }
+                    }
                 }
             }
 
@@ -1202,6 +1218,12 @@ export class LayoutEngine {
             this.print(this.padLevel(depth), 'no nodes floating relative to', item);
         }
     }
+
+    printWarnings(): void {
+        this.layoutWarnings.forEach(message => {
+            console.log('Warning: ' + message);
+        });
+    }
 }
 
 
@@ -1339,12 +1361,11 @@ function applyComponentParamsToSymbol(typeProp: string,
     }
 }
 
-function calculateSymbolAngle(symbol: SymbolGraphic, 
-    pin: number, direction:string): number {
-    let useAngle = 0;
+function calculateSymbolAngle(symbol: SymbolGraphic,
+    pin: number, direction: string): number {
 
     let directionVector = 0;
-    switch(direction){
+    switch (direction) {
         case 'right':
             directionVector = 0;
             break;
@@ -1359,12 +1380,8 @@ function calculateSymbolAngle(symbol: SymbolGraphic,
             break;
     }
 
-    const {angle: pinVector} = symbol.pinPosition(pin);
-
-    // Reverse the vector to point the other way
-    const pinVectorReversed = (pinVector + 180) % 360;
-
-    useAngle = directionVector - pinVectorReversed;
+    const { angle: pinVector } = symbol.pinPosition(pin);
+    const useAngle = directionVector - (pinVector % 360);
 
     return useAngle;
 }

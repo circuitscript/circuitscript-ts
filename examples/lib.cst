@@ -3,7 +3,7 @@ def net(net_name):
         pins: 1
         display: create graphic:
             hline: -15, 0, 30
-            pin: 1, 0, 0, 0, 10
+            pin: 1, 0, 10, 0, 0
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -16,7 +16,7 @@ def supply(net_name):
         pins: 1
         display: create graphic:
             hline: -15, 0, 30
-            pin: 1, 0, 0, 0, 10
+            pin: 1, 0, 10, 0, 0
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -45,8 +45,8 @@ def res(value):
         pins: 2
         display: create graphic:
             rect: 0, 0, width, height
-            pin: 1, -width / 2, 0, -width/2 - 20, 0
-            pin: 2, width/2, 0, width/2 + 20, 0
+            pin: 1, -width/2 - 20, 0, -width / 2, 0
+            pin: 2, width/2 + 20, 0, width/2, 0
             label: ("value", 0, 1, value, fontSize=10, anchor="middle", vanchor="middle")
             label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
 
@@ -65,8 +65,8 @@ def cap(value):
         display: create graphic:
             hline: -width/2, -3, width
             hline: -width/2, 3, width
-            pin: 1, 0, -3, 0, -height/2
-            pin: 2, 0, 3, 0, height/2
+            pin: 1, 0, -height/2, 0, -3
+            pin: 2, 0, height/2, 0, 3
             label: "refdes", width/2+2, 0, "?", fontSize = 10, anchor="left"
             label: "value", width/2+2, 5, value, fontSize = 10, anchor = "left", vanchor="top"
         type: "cap"
@@ -87,8 +87,8 @@ def ind(value):
             arc: -5, 0, 5, 180, 360
             arc: 5, 0, 5, 180, 360
             arc: 15, 0, 5, 180, 360
-            pin: 1, -width / 2, 0, -width/2 - 20, 0
-            pin: 2, width/2, 0, width/2 + 20, 0
+            pin: 1, -width/2 - 20, 0, -width / 2, 0
+            pin: 2, width/2 + 20, 0, width/2, 0
             label: ("value", 0, 10, value, fontSize=10, anchor="middle", vanchor="middle")
             label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
         params:
@@ -107,8 +107,8 @@ def diode():
             path: ("M", width/2, -height/2, "L", width/2, height/2,
                    "M", -width/2, -height/2, "L", -width/2, height/2,
                    "L", width/2, 0, "L", -width/2, -height/2)
-            pin: 2, width/2, 0, width/2 + 20, 0     # cathode
-            pin: 1, -width/2, 0, -width/2-20, 0   # anode
+            pin: 1, -width/2-20, 0, -width/2, 0     # anode
+            pin: 2, width/2 + 20, 0, width/2, 0     # cathode
             label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
 
 def led(color):
@@ -126,8 +126,8 @@ def led(color):
                    "L", width/2, 0, "L", -width/2, -height/2)
             path: ("M", 0, 8, "L", 5, 18, 
                    "M", 3, 8, "L", 8, 18)
-            pin: 2, width/2, 0, width/2 + 20, 0     # cathode
-            pin: 1, -width/2, 0, -width/2-20, 0   # anode
+            pin: 1, -width/2-20, 0, -width/2, 0     # anode
+            pin: 2, width/2 + 20, 0, width/2, 0     # cathode
             label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
         params:
             size: "0603"
@@ -142,7 +142,7 @@ def cgnd():
             hline: -15, 0, 30
             hline: -10, 5, 20
             hline: -5, 10, 10
-            pin: 1, 0, 0, 0, -10
+            pin: 1, 0, -10, 0, 0 
             label: "net_name", 0, 22, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -162,7 +162,7 @@ def dgnd():
                     "L", width/2, 0, 
                     "L", 0, height, 
                     "Z")
-            pin: 1, 0, 0, 0, -10
+            pin: 1, 0, -10, 0, 0
             label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -184,5 +184,5 @@ def arrow_point():
         pins: 1
         display: create graphic:
             path: ("M", 15, -5, "L", 20, 0, "L", 15, 5)
-            pin: 1, 20, 0, 0, 0
+            pin: 1, 0, 0, 20, 0
         type: "net"

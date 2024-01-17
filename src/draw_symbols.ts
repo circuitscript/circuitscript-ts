@@ -95,8 +95,8 @@ export abstract class SymbolGraphic {
 
         if (pin) {
             return {
-                x: pin.end[0],
-                y: pin.end[1],
+                x: pin.start[0],
+                y: pin.start[1],
                 angle: pin.angle,
             }
         }
