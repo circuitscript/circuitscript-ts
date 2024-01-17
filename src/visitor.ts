@@ -1255,6 +1255,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const annotater = new ComponentAnnotater();
         const instances = this.getExecutor().scope.instances;
 
+        const toAnnotate:ClassComponent[] = [];
+
         for (const [, instance] of instances) {
             if (instance.assignedRefDes === null) {
                 if (instance.typeProp === ComponentTypes.label ||
@@ -1268,16 +1270,32 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                     continue;
                 }
 
-                const newRefDes = annotater.getAnnotation(instance.typeProp);
+                if (instance.parameters.has('refdes')) {
+                    const refdes = instance.parameters.get('refdes') as string;
 
-                if (newRefDes !== null) {
-                    instance.assignedRefDes = newRefDes;
-                    this.print(newRefDes, '-', instance.instanceName);
-                } else {
-                    this.print('Failed to annotate:', instance.instanceName);
+                    if (refdes) {
+                        instance.assignedRefDes = refdes;
+                        annotater.trackRefDes(refdes);
+                        this.print(refdes, '-', instance.instanceName);
+                        continue;
+                    }
                 }
+
+                toAnnotate.push(instance);
             }
         }
+
+        toAnnotate.forEach(instance => {
+            const newRefDes = annotater.getAnnotation(instance.typeProp);
+
+            if (newRefDes !== null) {
+                instance.assignedRefDes = newRefDes;
+                this.print(newRefDes, '-', instance.instanceName);
+            } else {
+                this.print('Failed to annotate:', instance.instanceName);
+            }
+        });
+
         this.print('===== annotate done =====');
         this.print('');
     }
@@ -1429,6 +1447,8 @@ class ComponentAnnotater {
 
     counter = {};
 
+    existingRefDes: string[] = [];
+
     constructor(){
         for(const key in ComponentRefDesPrefixes){
             this.counter[key] = 1;
@@ -1442,9 +1462,28 @@ class ComponentAnnotater {
             return null;
         }
 
-        const currentCount = this.counter[type];
-        this.counter[type]++;
-        return ComponentRefDesPrefixes[type] + currentCount;
+        let attempts = 100;
+        let proposedName: string;
+
+        while (attempts >= 0) {
+            proposedName = ComponentRefDesPrefixes[type] + this.counter[type];
+            this.counter[type]++;
+
+            if (this.existingRefDes.indexOf(proposedName) === -1) {
+                break;
+            }
+            attempts--;
+        }
+
+        if (attempts === 0) {
+            throw "Annotation failed!";
+        }
+
+        return proposedName;
+    }
+
+    trackRefDes(name: string): void {
+        this.existingRefDes.push(name);
     }
 }
 
