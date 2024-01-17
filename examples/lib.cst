@@ -160,8 +160,8 @@ def dgnd():
         display: create graphic:
             path: ("M", -width/2, 0, 
                     "L", width/2, 0, 
-                    "L", 0, height,
-                    "L", -width/2, 0)
+                    "L", 0, height, 
+                    "Z")
             pin: 1, 0, 0, 0, -10
             label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
         type: "net"
@@ -169,3 +169,20 @@ def dgnd():
             __is_net: 1
             net_name: net_name
             priority: 100
+
+def marker_point():
+    return create component:
+        pins: 1
+        display: create graphic:
+            hline: -5, 0, 10
+            vline: 0, -5, 10
+            pin: 1, 0, 0, 0, 0
+        type: "net"
+
+def arrow_point():
+    return create component:
+        pins: 1
+        display: create graphic:
+            path: ("M", 15, -5, "L", 20, 0, "L", 15, 5)
+            pin: 1, 20, 0, 0, 0
+        type: "net"
