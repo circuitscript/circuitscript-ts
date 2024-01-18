@@ -5,6 +5,8 @@ import { NetListItem } from "./visitor";
 export function generateKiCADNetList(netlist: NetListItem[]): string {
 
     const componentsList = [];
+
+    // Dictionary storing net name to the list of nodes/pins
     const nets = {};
 
     netlist.forEach(entry => {
@@ -35,13 +37,17 @@ export function generateKiCADNetList(netlist: NetListItem[]): string {
 
             for(const key in pins){
                 const netInfo = pins[key];
-                const netBaseName = netInfo.netBaseName;
+                const netName = netInfo.netName;
 
-                if (nets[netBaseName] === undefined){
-                    nets[netBaseName] = [];
+                if (netName === 'NO_NET'){
+                    continue;
                 }
 
-                nets[netBaseName].push([
+                if (nets[netName] === undefined){
+                    nets[netName] = [];
+                }
+
+                nets[netName].push([
                     Id('node'), 
                     [Id('ref'), instance.assignedRefDes],
                     [Id('pin'), key],
