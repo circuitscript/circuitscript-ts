@@ -250,7 +250,7 @@ export function SymbolFactory(name: string): SymbolGraphic | null {
 export class SymbolPointHidden extends SymbolGraphic {
     generateDrawing(): void {
         const drawing = new SymbolDrawing();
-        drawing.addPin(0, 0, 0, 0, 1);
+        drawing.addPin(1, 0, 0, 0, 0);
 
         this.drawing = drawing;
     }
@@ -300,7 +300,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
             } else if (commandName === 'pin') {
                 drawing.log('add pin', ...positionParams);
-                drawing.addPin2(...positionParams);
+                drawing.addPin(...positionParams);
 
             } else if (commandName === 'hline') {
                 drawing.log('add hline', ...positionParams);
@@ -417,7 +417,8 @@ export class SymbolCustom extends SymbolGraphic {
         leftPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPin(leftPinStart, pinY, leftPinStart - this.pinLength, pinY, pin.pinId);
+            drawing.addPin(pin.pinId, leftPinStart - this.pinLength, pinY, leftPinStart, pinY);
+
             drawing.addLabel(leftPinStart + 4, pinY, pin.text, {
                 fontSize: 10,
                 anchor: HorizontalAlign.Left,
@@ -435,7 +436,8 @@ export class SymbolCustom extends SymbolGraphic {
         rightPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPin(rightPinStart, pinY, rightPinStart + this.pinLength, pinY, pin.pinId);
+            drawing.addPin(pin.pinId, rightPinStart + this.pinLength, pinY, rightPinStart, pinY);
+
             drawing.addLabel(rightPinStart - 4, pinY, pin.text, {
                 fontSize: 10,
                 anchor: HorizontalAlign.Right,
@@ -509,11 +511,7 @@ export class SymbolDrawing {
         return this;
     }
 
-    addPin(startX: number, startY: number, endX: number, endY: number, pinId: number): SymbolDrawing {
-        return this.addPin2(pinId, startX, startY, endX, endY);
-    }
-
-    addPin2(pinId: number, startX: number, startY: number, 
+    addPin(pinId: number, startX: number, startY: number, 
         endX: number, endY: number): SymbolDrawing {
 
         // Determine the pin angle based on the start and end values.
