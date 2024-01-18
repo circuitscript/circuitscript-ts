@@ -34,7 +34,9 @@ export function generateSVG2(graph: {
     const widthAndMargin = width + margin * 2;
     const heightAndMargin = height + margin * 2;
 
-    canvas.size(widthAndMargin, heightAndMargin);
+    const scale = 1;
+
+    canvas.size(widthAndMargin * scale, heightAndMargin * scale);
     canvas.viewbox(x - margin, y - margin, widthAndMargin, heightAndMargin);
 
     return canvas.svg();

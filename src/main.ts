@@ -156,6 +156,8 @@ export function renderScript(scriptData: string, outputPath: string,
 
         const graph = layoutEngine.runLayout(sequence, nets);
 
+        layoutEngine.printWarnings();
+
         console.log('Layout took:', layoutTimer.lap());
 
         dumpData && fs.writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());

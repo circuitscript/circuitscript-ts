@@ -402,7 +402,7 @@ export class ExecutionContext {
                 // wires at the same time. This happens if the user tries
                 // to add the same (non-net) component at multiple places.
                 if (component.pinWires.has(pinId) && component.typeProp !== ComponentTypes.point) {
-                    throw "Component pin already connected to wire"
+                    // throw "Component pin already connected to wire"
                 }
 
                 // Check if the previous entry is a wire
@@ -924,6 +924,10 @@ export class ExecutionContext {
 
         this.scope.setActive(ActiveObject.Wire, wireId);
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
+
+        // if (this.scope.currentComponent.pinWires.has(this.scope.currentPin)) {
+        //     throw "Component pin already connected to wire"
+        // }
 
         this.scope.currentComponent.pinWires.set(
             this.scope.currentPin, tmp
