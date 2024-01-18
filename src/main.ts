@@ -22,6 +22,7 @@ export default async function main(): Promise<void> {
         .argument('input', 'Input path')
         .option('-o, --output <path>', 'Output path')
         .option('-c, --current-directory <path>', 'Set current directory')
+        .option('-k, --kicad-netlist <filename>', 'Create KiCad netlist')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
@@ -44,6 +45,7 @@ export default async function main(): Promise<void> {
     const outputPath = options.output ?? null;
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
+    const kicadNetlist = options.kicadNetlist;
 
     let currentDirectory = options.currentDirectory ?? null;
 
@@ -59,8 +61,15 @@ export default async function main(): Promise<void> {
         currentDirectory = path.dirname(inputPath);
     }
 
+    const renderOptions = {
+        currentDirectory,
+        dumpNets, 
+        dumpData,
+        kicadNetlistPath: kicadNetlist,
+    }
+
     const output = renderScript(scriptData, outputPath,
-        currentDirectory, dumpNets, dumpData);
+        renderOptions);
 
     if (outputPath === null && output){
         console.log(output);
@@ -72,8 +81,7 @@ export default async function main(): Promise<void> {
                 const scriptData = fs.readFileSync(inputPath, 
                     {encoding: 'utf-8'});
 
-                renderScript(scriptData, outputPath,
-                    currentDirectory, dumpNets);
+                renderScript(scriptData, outputPath, renderOptions);
                 console.log('done');
             }
         });
@@ -81,8 +89,13 @@ export default async function main(): Promise<void> {
 }
 
 
-export function renderScript(scriptData: string, outputPath: string, 
-    currentDirectory:string = null, dumpNets = false, dumpData = false): string {
+export function renderScript(scriptData: string, outputPath: string, options): string {
+
+    const {
+        currentDirectory = null, 
+        dumpNets = false,
+        dumpData = false,
+        kicadNetlistPath = null } = options;
 
     const visitor = new MainVisitor(true);
 
@@ -114,8 +127,12 @@ export function renderScript(scriptData: string, outputPath: string,
 
     visitor.annotateComponents();
 
-    const kicadNetList = generateKiCADNetList(visitor.getNetList());
-    // await writeFile('dump/kicad.net', kicadNetList);
+    if(kicadNetlistPath){
+        const kicadNetList = generateKiCADNetList(visitor.getNetList());
+        fs.writeFileSync(kicadNetlistPath, kicadNetList);
+        console.log('Generated KiCad netlist file');
+    }
+    
 
     // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 

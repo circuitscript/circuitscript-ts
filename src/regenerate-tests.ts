@@ -17,9 +17,9 @@ const useCurrentDir = './examples/';
 cstFiles.forEach(file => {
     const inputPath = mainDir + file;
     const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
-    
+
     const outputPath = inputPath + '.svg';
-    renderScript(scriptData, outputPath, useCurrentDir, false, false);
+    renderScript(scriptData, outputPath, { currentDirectory: useCurrentDir });
 
     console.log('generated ', inputPath);
 });
