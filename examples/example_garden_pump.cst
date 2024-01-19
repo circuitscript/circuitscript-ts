@@ -63,6 +63,26 @@ def power_conn():
 
     return conn1
 
+def s1a_diode():
+    width = 20
+    height = 20
+
+    # Diode is drawn horizontally
+    #  -|>|-
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic:
+            path: ("M", width/2, -height/2, "L", width/2, height/2,
+                   "M", -width/2, -height/2, "L", -width/2, height/2,
+                   "L", width/2, 0, "L", -width/2, -height/2)
+            pin: 1, -width/2-20, 0, -width/2, 0     # anode
+            pin: 2, width/2 + 20, 0, width/2, 0     # cathode
+            label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
+        params:
+            footprint: "GardenRelay:S1A"
+
+
 def tmp_label(name):
     wire left 100
     add label(name)
@@ -72,7 +92,7 @@ def tmp_label_right(name):
     add label(name)
     wire right 40
 
-def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor, 
+def tps54227_block(inductor_component, upper_fb_resistor, lower_fb_resistor, 
     enable_label, output_label, inductor_footprint, place=true):
 
     # the 3v3 supply
@@ -149,7 +169,7 @@ def tps54227_block(inductor_value, upper_fb_resistor, lower_fb_resistor,
                     wire left 60
                     to tps54227 pin 7
                 wire right 40
-                add ind(inductor_value)
+                add inductor_component
                 wire right 20
                 branch:
                     wire down 20
@@ -249,10 +269,16 @@ def main():
                 wire left 20 down 20    
                 to gnd
 
-    block1 = tps54227_block(3.3u, 73.2k, 22.1k, 
+    ind_3u3 = ind(3.3u)
+    ind_3u3.footprint = "GardenRelay:NR6020T3R3N"
+
+    ind_4u7 = ind(4.7u)
+    ind_4u7.footprint = "GardenRelay:NRS8030T4R7MJGJ"
+
+    block1 = tps54227_block(ind_3u3, 73.2k, 22.1k, 
         "EN_3V3", "3V3", "GardenRelay:NR6020T3R3N")
     
-    block2 = tps54227_block(4.7u, 124k, 22.1k, 
+    block2 = tps54227_block(ind_4u7, 124k, 22.1k, 
         "EN_5V", "5V#", "GardenRelay:NRS8030T4R7MJGJ")
 
     frame:
@@ -431,7 +457,7 @@ def pump_block(enable_name, sense_out):
                 wire right 80
                 add relay pin 2
             wire down 20
-            add diode() pin 2 down
+            add s1a_diode() pin 2 down
             wire down 20
             branch:
                 wire right 40
@@ -464,7 +490,7 @@ def pump_block(enable_name, sense_out):
                         add label("CONN+")
                         wire right 40
                     wire down 20
-                    add diode() pin 2 down
+                    add s1a_diode() pin 2 down
                     wire down 20
                     branch:
                         wire right 40
@@ -531,11 +557,11 @@ gnd = dgnd()
 
 main()
 
-pump_block("GPIO1", "ADC1")
-pump_block("GPIO2", "ADC2")
-pump_block("GPIO3", "ADC3")
-pump_block("GPIO4", "ADC4")
-pump_block("GPIO5", "ADC5")
-pump_block("GPIO6", "ADC6")
-pump_block("GPIO7", "ADC7")
-pump_block("GPIO8", "ADC8")
+/pump1 pump_block("GPIO1", "ADC1")
+/pump2 pump_block("GPIO2", "ADC2") 
+/pump3 pump_block("GPIO3", "ADC3")
+/pump4 pump_block("GPIO4", "ADC4")
+/pump5 pump_block("GPIO5", "ADC5")
+/pump6 pump_block("GPIO6", "ADC6")
+/pump7 pump_block("GPIO7", "ADC7")
+/pump8 pump_block("GPIO8", "ADC8")
