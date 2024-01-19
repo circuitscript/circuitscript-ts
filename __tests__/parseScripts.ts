@@ -372,3 +372,16 @@ branch:
     ['/scope2/label_1', 'tmp1_1.res_4.COMP_1_0', 2],
     ['/scope2/label_1', 'tmp1_1.res_5.COMP_1_0', 1]
 ]);
+
+export const script12 = new ScriptTest(`
+my_net = create component:
+    pins: 1
+    params:
+        __is_net: 1
+        net_name: "hello"
+
+at my_net
+`, [
+    ['/hello', 'my_net', 1],
+    ['/hello', 'my_net:0', 1
+    ]]);

@@ -113,6 +113,9 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.setupPrintFunction(this.startingContext);
             
         this.executionStack = [this.startingContext];
+        this.startingContext.resolveNet = 
+            this.createNetResolver(this.executionStack);
+
         this.silent = silent;
     }
 
@@ -634,18 +637,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         });
     }
 
-    visitFunction_def_expr(ctx: Function_def_exprContext): void {
-        const functionName = ctx.ID().getText();
-
-        // These are the defined arguments for the function
-        let funcDefinedParameters: FunctionDefinedParameter[] = [];
-        if (ctx.function_args_expr()) {
-            funcDefinedParameters = this.visit(ctx.function_args_expr());
-        }
-
-        const executionStack = this.executionStack;
-        const functionCounter = { counter: 0 };
-
+    createNetResolver(executionStack: ExecutionContext[]): 
+        (netName: string, netNamespace: string) => {found: boolean, net?: Net} {
         const resolveNet = (netName: string, netNamespace: string): 
             {found: boolean, net?: Net} => {
             // netNamespace is the current netNamespace where the net name is 
@@ -670,6 +663,23 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 found: false
             }
         }
+
+        return resolveNet;
+    }
+
+    visitFunction_def_expr(ctx: Function_def_exprContext): void {
+        const functionName = ctx.ID().getText();
+
+        // These are the defined arguments for the function
+        let funcDefinedParameters: FunctionDefinedParameter[] = [];
+        if (ctx.function_args_expr()) {
+            funcDefinedParameters = this.visit(ctx.function_args_expr());
+        }
+
+        const executionStack = this.executionStack;
+        const functionCounter = { counter: 0 };
+
+        const resolveNet = this.createNetResolver(this.executionStack);
 
         const __runFunc = (passedInParameters:CallableParameter[], 
             options: CFunctionOptions): [
