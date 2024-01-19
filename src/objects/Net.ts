@@ -13,8 +13,17 @@ export class Net {
     type: any;
 
     constructor(namespace: string, name: string, priority = 0, type: any = null) {
+        if (namespace.indexOf(' ') !== -1){
+            throw "Invalid net namespace provided";
+        }
+
+        if (name.indexOf(' ') !== -1) {
+            throw "Invalid net name provided!";
+        }
+
         this.namespace = namespace;
         this.name = name;
+        
         this.priority = priority;
         this.type = type;
 

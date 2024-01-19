@@ -808,7 +808,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
         const atomId = ctx.ID().getText();
 
-        let passedNetNamespace = ""; // Assumed empty by default
+        let passedNetNamespace = null; // Assumed empty by default
 
         if (ctx.net_namespace_expr()){
             passedNetNamespace = this.visit(ctx.net_namespace_expr());
@@ -1050,15 +1050,29 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitNet_namespace_expr(ctx: Net_namespace_exprContext): string {
-        const dataValue = this.visit(ctx.data_expr()) as ComplexType;
+        let dataValue: ComplexType = null;
 
-        if (dataValue instanceof UndeclaredReference) {
-            return dataValue.reference.name;
-        } else if (typeof dataValue === "string") {
-            return dataValue;
+        let netNamespace = null;
+        const hasPlus = ctx.Addition();
+
+        if (ctx.data_expr()) {
+            dataValue = this.visit(ctx.data_expr()) as ComplexType;
+
+            if (dataValue instanceof UndeclaredReference) {
+                netNamespace = "/" + dataValue.reference.name;
+            } else if (typeof dataValue === "string") {
+                netNamespace = "/" + dataValue;
+            } else {
+                throw "Failed to resolve net namespace value";
+            }
+
         } else {
-            throw "Failed to resolve net namespace value";
+            // If no net namespace specified, then the global namespace
+            // is assumed.
+            netNamespace = "/";
         }
+
+        return (hasPlus ? "+" : "") + netNamespace;
     }
 
     pinTypes = [
@@ -1461,18 +1475,31 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     private getNetNamespace(executorNetNamespace: string,
-        passedNetNamespace): string {
+        passedNetNamespace: string | null): string {
 
         let result = executorNetNamespace;
 
-        if (passedNetNamespace.length > 0) {
-            result = `${result}${passedNetNamespace}/`;
+        if (passedNetNamespace !== null && passedNetNamespace.length > 0) {
+            // Either user specified '/' or '/_' to indicate the global
+            // net namespace
+            if (passedNetNamespace === '/' || passedNetNamespace === '_') {
+                result = '';
+            } else if (passedNetNamespace[0] === '+') {
+                if (executorNetNamespace === '/') {
+                    result = passedNetNamespace.slice(1)
+                } else {
+                    result = executorNetNamespace + passedNetNamespace.slice(2);
+                }
+            } else {
+                result = passedNetNamespace;
+            }
+
+            result = result + '/';
         }
 
         return result;
     }
 }
-
 
 
 const ComponentRefDesPrefixes = {
