@@ -3,7 +3,12 @@ import { ClassComponent } from './ClassComponent';
 import { Net } from './Net';
 import { NumericValue, PercentageValue, PinBlankValue } from './ParamDefinition';
 
-export type CFunction = (args: CallableParameter[]) => CFunctionResult;
+export type CFunction = (args: CallableParameter[],
+    options?: CFunctionOptions) => CFunctionResult;
+
+export type CFunctionOptions = {
+    netNamespace?: string
+}
 
 export type CFunctionResult = [
     executionContext: ExecutionContext, 
@@ -27,7 +32,10 @@ export type ComponentPin = [
     pinId: number|string
 ];
 
-export type ComplexType = ValueType | ClassComponent | null;
+export type ComplexType = ValueType 
+                        | ClassComponent 
+                        | UndeclaredReference 
+                        | null;
 
 export type ValueType = boolean | number | string | 
     NumericValue | PercentageValue | PinBlankValue;
@@ -38,3 +46,21 @@ export type CallableParameter =
 
 export type FunctionDefinedParameter = [name: string, defaultValue: ValueType] 
     | [name: string];
+
+
+export class UndeclaredReference {
+    reference: ReferenceType;
+
+    constructor(reference: ReferenceType) {
+        this.reference = reference;
+    }
+}
+
+export type ReferenceType =
+    {
+        found: boolean,
+        name?: string,
+        trailers?: string[],
+        type?: string,
+        value?: any
+    };

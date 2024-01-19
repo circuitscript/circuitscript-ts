@@ -32,6 +32,7 @@ import {
     Keyword_assignment_exprContext,
     MultiplyExprContext,
     Nested_propertiesContext,
+    Net_namespace_exprContext,
     ParametersContext,
     Pin_select_expr2Context,
     Pin_select_exprContext,
@@ -47,7 +48,7 @@ import {
     Value_exprContext,
     Wire_exprContext,
 } from './antlr/CircuitScriptParser';
-import { ExecutionContext, ReferenceType } from './execute';
+import { ExecutionContext } from './execute';
 import { ClassComponent } from './objects/ClassComponent';
 import {
     NumericValue,
@@ -58,8 +59,8 @@ import {
 import { PinDefinition, PinIdType } from './objects/PinDefinition';
 import { PinTypes } from './objects/PinTypes';
 import { ExecutionScope } from './objects/ExecutionScope';
-import { CallableParameter, ComplexType, ComponentPin, 
-    ComponentPinNet, FunctionDefinedParameter, ValueType } from './objects/types';
+import { CFunction, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
+    ComponentPinNet, FunctionDefinedParameter, ReferenceType, UndeclaredReference, ValueType } from './objects/types';
 import { Logger } from './logger';
 import { ComponentTypes } from './globals';
 import { Net } from './objects/Net';
@@ -105,6 +106,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         this.startingContext = new ExecutionContext(
             '__',
             '__.',
+            '/',
             0, 0, silent, 
             this.logger);
         
@@ -543,8 +545,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         } else if (ctx.atom_expr()) {
             const reference = this.visit(ctx.atom_expr());
 
-            // This is the returned component from the function call
-            value = reference.value;
+            if (!reference.found){
+                value = new UndeclaredReference(reference);
+            } else {
+                // This is the returned component from the function call
+                value = reference.value;
+            }
         }
 
         if (ctx.unary_operator()){
@@ -640,23 +646,19 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const executionStack = this.executionStack;
         const functionCounter = { counter: 0 };
 
-        const resolveNet = (netName: string, namespace: string) => {
-            // namespace is the current namespace where the net name is 
+        const resolveNet = (netName: string, netNamespace: string): 
+            {found: boolean, net?: Net} => {
+            // netNamespace is the current netNamespace where the net name is 
             // searching from.
 
-            this.print('find net', namespace, netName);
+            this.print('find net', netNamespace, netName);
             const reversed = [...executionStack].reverse();
-
-            const targetNamespaceParts = this.getNamespaceParts(namespace);
 
             for (let i = 0; i < reversed.length; i++) {
                 const context = reversed[i];
                 const net = context.scope.getNetWithName(netName);
 
-                if (net !== null && 
-                    this.checkNetNamespaceIncludes(netName, 
-                        targetNamespaceParts, net)) {
-                    
+                if (net !== null && net.namespace === netNamespace) {
                     return {
                         found: true,
                         net,
@@ -669,9 +671,12 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             }
         }
 
-        const __runFunc = (passedInParameters:CallableParameter[]): [
+        const __runFunc = (passedInParameters:CallableParameter[], 
+            options: CFunctionOptions): [
             executionContext: ExecutionContext, 
             result: ComplexType | null] => {
+
+            const {netNamespace = ""} = options;
             
             // Create a new execution context, so that the commands are executed only
             // within this context. Components and nets will be local to this context for now.
@@ -689,6 +694,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             const newExecutor = new ExecutionContext(
                 executionContextName,
                 executionContextNamespace,
+                netNamespace,
                 executionLevel + 1,
                 this.getExecutor().scope.indentLevel + 1,
                 currentExecutionContext.silent,
@@ -800,19 +806,26 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     visitAtom_expr(ctx: Atom_exprContext): ReferenceType {
         const executor = this.getExecutor();
 
-        const firstId = ctx.ID().getText();
+        const atomId = ctx.ID().getText();
+
+        let passedNetNamespace = ""; // Assumed empty by default
+
+        if (ctx.net_namespace_expr()){
+            passedNetNamespace = this.visit(ctx.net_namespace_expr());
+        }
+
         let currentReference: ReferenceType;
 
         // Check if it is hardcoded values, like the pin types.
-        if (this.pinTypesList.indexOf(firstId) !== -1) {
+        if (this.pinTypesList.indexOf(atomId) !== -1) {
             // Not sure if just returning the string is enough...
             currentReference = {
                 found: true,
-                value: firstId
+                value: atomId
             }
         } else {
             currentReference = executor.resolveVariable(
-                this.executionStack, firstId);
+                this.executionStack, atomId);
         }
 
         if (currentReference.found && currentReference.type === 'instance') {
@@ -828,7 +841,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             // Resolve all elements in the trailer expression list
 
             if (!currentReference.found) {
-                throw "Could not find reference! " + firstId;
+                throw "Could not find reference! " + atomId;
             }
 
             currentReference.trailers = [];
@@ -841,9 +854,17 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                         parameters = this.visit(item.parameters());
                     }
 
+                    const useNetNamespace = this.getNetNamespace(
+                        executor.netNamespace,
+                        passedNetNamespace,
+                    )
+
                     const [, functionResult] =
-                        this.getExecutor().callFunction(currentReference.name,
-                            parameters, this.executionStack);
+                        executor.callFunction(
+                            currentReference.name,
+                            parameters,
+                            this.executionStack,
+                            useNetNamespace);
 
                     currentReference = {
                         found: true,
@@ -1026,6 +1047,18 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const frameId = this.getExecutor().enterFrame();
         this.runExpressions(this.getExecutor(), ctx.expression_list());
         this.getExecutor().exitFrame(frameId);
+    }
+
+    visitNet_namespace_expr(ctx: Net_namespace_exprContext): string {
+        const dataValue = this.visit(ctx.data_expr()) as ComplexType;
+
+        if (dataValue instanceof UndeclaredReference) {
+            return dataValue.reference.name;
+        } else if (typeof dataValue === "string") {
+            return dataValue;
+        } else {
+            throw "Failed to resolve net namespace value";
+        }
     }
 
     pinTypes = [
@@ -1425,6 +1458,18 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             return [this, null];
         });
+    }
+
+    private getNetNamespace(executorNetNamespace: string,
+        passedNetNamespace): string {
+
+        let result = executorNetNamespace;
+
+        if (passedNetNamespace.length > 0) {
+            result = `${result}${passedNetNamespace}/`;
+        }
+
+        return result;
     }
 }
 

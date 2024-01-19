@@ -136,9 +136,11 @@ function_args_expr:
     | ID '=' value_expr (',' ID '=' value_expr)*
     ;
 
-atom_expr: ID trailer_expr*;
+atom_expr: net_namespace_expr? ID trailer_expr*;
 trailer_expr: '(' parameters? ')'
         | '.' ID;
+
+net_namespace_expr: '/' data_expr;
 
 function_return_expr: Return data_expr ;
 

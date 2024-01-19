@@ -24,32 +24,32 @@ export default class CircuitScriptParser extends Parser {
 	public static readonly T__3 = 4;
 	public static readonly T__4 = 5;
 	public static readonly T__5 = 6;
-	public static readonly Break = 7;
-	public static readonly Branch = 8;
-	public static readonly Create = 9;
-	public static readonly Component = 10;
-	public static readonly Graphic = 11;
-	public static readonly Wire = 12;
-	public static readonly Pin = 13;
-	public static readonly Add = 14;
-	public static readonly At = 15;
-	public static readonly To = 16;
-	public static readonly Point = 17;
-	public static readonly Return = 18;
-	public static readonly Define = 19;
-	public static readonly Import = 20;
-	public static readonly If = 21;
-	public static readonly Not = 22;
-	public static readonly Equals = 23;
-	public static readonly NotEquals = 24;
-	public static readonly Addition = 25;
-	public static readonly Minus = 26;
-	public static readonly Divide = 27;
-	public static readonly Multiply = 28;
-	public static readonly OPEN_PAREN = 29;
-	public static readonly CLOSE_PAREN = 30;
-	public static readonly OPEN_SQ_BRACKETS = 31;
-	public static readonly CLOSE_SQ_BRACKETS = 32;
+	public static readonly T__6 = 7;
+	public static readonly T__7 = 8;
+	public static readonly Break = 9;
+	public static readonly Branch = 10;
+	public static readonly Create = 11;
+	public static readonly Component = 12;
+	public static readonly Graphic = 13;
+	public static readonly Wire = 14;
+	public static readonly Pin = 15;
+	public static readonly Add = 16;
+	public static readonly At = 17;
+	public static readonly To = 18;
+	public static readonly Point = 19;
+	public static readonly Return = 20;
+	public static readonly Define = 21;
+	public static readonly Import = 22;
+	public static readonly If = 23;
+	public static readonly Not = 24;
+	public static readonly Equals = 25;
+	public static readonly NotEquals = 26;
+	public static readonly Addition = 27;
+	public static readonly Minus = 28;
+	public static readonly Divide = 29;
+	public static readonly Multiply = 30;
+	public static readonly OPEN_PAREN = 31;
+	public static readonly CLOSE_PAREN = 32;
 	public static readonly NOT_CONNECTED = 33;
 	public static readonly BOOLEAN_VALUE = 34;
 	public static readonly ID = 35;
@@ -101,21 +101,23 @@ export default class CircuitScriptParser extends Parser {
 	public static readonly RULE_function_args_expr = 33;
 	public static readonly RULE_atom_expr = 34;
 	public static readonly RULE_trailer_expr = 35;
-	public static readonly RULE_function_return_expr = 36;
-	public static readonly RULE_create_component_expr = 37;
-	public static readonly RULE_create_graphic_expr = 38;
-	public static readonly RULE_sub_expr = 39;
-	public static readonly RULE_property_expr = 40;
-	public static readonly RULE_property_key_expr = 41;
-	public static readonly RULE_property_value_expr = 42;
-	public static readonly RULE_blank_expr = 43;
-	public static readonly RULE_wire_expr = 44;
-	public static readonly RULE_point_expr = 45;
-	public static readonly RULE_import_expr = 46;
-	public static readonly RULE_frame_expr = 47;
+	public static readonly RULE_net_namespace_expr = 36;
+	public static readonly RULE_function_return_expr = 37;
+	public static readonly RULE_create_component_expr = 38;
+	public static readonly RULE_create_graphic_expr = 39;
+	public static readonly RULE_sub_expr = 40;
+	public static readonly RULE_property_expr = 41;
+	public static readonly RULE_property_key_expr = 42;
+	public static readonly RULE_property_value_expr = 43;
+	public static readonly RULE_blank_expr = 44;
+	public static readonly RULE_wire_expr = 45;
+	public static readonly RULE_point_expr = 46;
+	public static readonly RULE_import_expr = 47;
+	public static readonly RULE_frame_expr = 48;
 	public static readonly literalNames: (string | null)[] = [ null, "':'", 
                                                             "','", "'='", 
                                                             "'..'", "'.'", 
+                                                            "'['", "']'", 
                                                             "'frame'", "'break'", 
                                                             "'branch'", 
                                                             "'create'", 
@@ -130,9 +132,9 @@ export default class CircuitScriptParser extends Parser {
                                                             "'=='", "'!='", 
                                                             "'+'", "'-'", 
                                                             "'/'", "'*'", 
-                                                            "'('", "')'", 
-                                                            "'['", "']'" ];
+                                                            "'('", "')'" ];
 	public static readonly symbolicNames: (string | null)[] = [ null, null, 
+                                                             null, null, 
                                                              null, null, 
                                                              null, null, 
                                                              null, "Break", 
@@ -151,8 +153,6 @@ export default class CircuitScriptParser extends Parser {
                                                              "Multiply", 
                                                              "OPEN_PAREN", 
                                                              "CLOSE_PAREN", 
-                                                             "OPEN_SQ_BRACKETS", 
-                                                             "CLOSE_SQ_BRACKETS", 
                                                              "NOT_CONNECTED", 
                                                              "BOOLEAN_VALUE", 
                                                              "ID", "INTEGER_VALUE", 
@@ -175,10 +175,10 @@ export default class CircuitScriptParser extends Parser {
 		"break_keyword", "assignment_expr", "keyword_assignment_expr", "parameters", 
 		"property_set_expr", "double_dot_property_set_expr", "data_expr", "binary_operator", 
 		"unary_operator", "value_expr", "function_def_expr", "function_expr", 
-		"function_args_expr", "atom_expr", "trailer_expr", "function_return_expr", 
-		"create_component_expr", "create_graphic_expr", "sub_expr", "property_expr", 
-		"property_key_expr", "property_value_expr", "blank_expr", "wire_expr", 
-		"point_expr", "import_expr", "frame_expr",
+		"function_args_expr", "atom_expr", "trailer_expr", "net_namespace_expr", 
+		"function_return_expr", "create_component_expr", "create_graphic_expr", 
+		"sub_expr", "property_expr", "property_key_expr", "property_value_expr", 
+		"blank_expr", "wire_expr", "point_expr", "import_expr", "frame_expr",
 	];
 	public get grammarFileName(): string { return "CircuitScript.g4"; }
 	public get literalNames(): (string | null)[] { return CircuitScriptParser.literalNames; }
@@ -202,34 +202,35 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 98;
+			this.state = 100;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 98;
+				this.state = 100;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 4:
-				case 6:
-				case 7:
 				case 8:
-				case 12:
+				case 9:
+				case 10:
 				case 14:
-				case 15:
 				case 16:
 				case 17:
+				case 18:
 				case 19:
-				case 20:
+				case 21:
+				case 22:
+				case 29:
 				case 35:
 					{
-					this.state = 96;
+					this.state = 98;
 					this.expression();
 					}
 					break;
 				case 43:
 					{
-					this.state = 97;
+					this.state = 99;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
@@ -237,11 +238,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 100;
+				this.state = 102;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1823184) !== 0) || _la===35 || _la===43);
-			this.state = 102;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 544163600) !== 0) || _la===35 || _la===43);
+			this.state = 104;
 			this.match(CircuitScriptParser.EOF);
 			}
 		}
@@ -264,118 +265,118 @@ export default class CircuitScriptParser extends Parser {
 		let localctx: ExpressionContext = new ExpressionContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 2, CircuitScriptParser.RULE_expression);
 		try {
-			this.state = 120;
+			this.state = 122;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 2, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 104;
+				this.state = 106;
 				this.add_component_expr();
 				}
 				break;
 			case 2:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 105;
+				this.state = 107;
 				this.to_component_expr();
 				}
 				break;
 			case 3:
 				this.enterOuterAlt(localctx, 3);
 				{
-				this.state = 106;
+				this.state = 108;
 				this.at_component_expr();
 				}
 				break;
 			case 4:
 				this.enterOuterAlt(localctx, 4);
 				{
-				this.state = 107;
+				this.state = 109;
 				this.assignment_expr();
 				}
 				break;
 			case 5:
 				this.enterOuterAlt(localctx, 5);
 				{
-				this.state = 108;
+				this.state = 110;
 				this.property_set_expr();
 				}
 				break;
 			case 6:
 				this.enterOuterAlt(localctx, 6);
 				{
-				this.state = 109;
+				this.state = 111;
 				this.property_set_expr2();
 				}
 				break;
 			case 7:
 				this.enterOuterAlt(localctx, 7);
 				{
-				this.state = 110;
+				this.state = 112;
 				this.double_dot_property_set_expr();
 				}
 				break;
 			case 8:
 				this.enterOuterAlt(localctx, 8);
 				{
-				this.state = 111;
+				this.state = 113;
 				this.break_keyword();
 				}
 				break;
 			case 9:
 				this.enterOuterAlt(localctx, 9);
 				{
-				this.state = 112;
+				this.state = 114;
 				this.function_def_expr();
 				}
 				break;
 			case 10:
 				this.enterOuterAlt(localctx, 10);
 				{
-				this.state = 113;
+				this.state = 115;
 				this.wire_expr();
 				}
 				break;
 			case 11:
 				this.enterOuterAlt(localctx, 11);
 				{
-				this.state = 114;
+				this.state = 116;
 				this.point_expr();
 				}
 				break;
 			case 12:
 				this.enterOuterAlt(localctx, 12);
 				{
-				this.state = 115;
+				this.state = 117;
 				this.import_expr();
 				}
 				break;
 			case 13:
 				this.enterOuterAlt(localctx, 13);
 				{
-				this.state = 116;
+				this.state = 118;
 				this.frame_expr();
 				}
 				break;
 			case 14:
 				this.enterOuterAlt(localctx, 14);
 				{
-				this.state = 117;
+				this.state = 119;
 				this.atom_expr();
 				}
 				break;
 			case 15:
 				this.enterOuterAlt(localctx, 15);
 				{
-				this.state = 118;
+				this.state = 120;
 				this.at_block();
 				}
 				break;
 			case 16:
 				this.enterOuterAlt(localctx, 16);
 				{
-				this.state = 119;
+				this.state = 121;
 				this.branch_blocks();
 				}
 				break;
@@ -403,7 +404,7 @@ export default class CircuitScriptParser extends Parser {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 123;
+			this.state = 125;
 			this._errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -411,7 +412,7 @@ export default class CircuitScriptParser extends Parser {
 				case 1:
 					{
 					{
-					this.state = 122;
+					this.state = 124;
 					this.branch_block_inner();
 					}
 					}
@@ -419,7 +420,7 @@ export default class CircuitScriptParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				this.state = 125;
+				this.state = 127;
 				this._errHandler.sync(this);
 				_alt = this._interp.adaptivePredict(this._input, 3, this._ctx);
 			} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
@@ -447,42 +448,43 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 127;
-			this.match(CircuitScriptParser.Branch);
-			this.state = 128;
-			this.match(CircuitScriptParser.T__0);
 			this.state = 129;
-			this.match(CircuitScriptParser.NEWLINE);
+			this.match(CircuitScriptParser.Branch);
 			this.state = 130;
+			this.match(CircuitScriptParser.T__0);
+			this.state = 131;
+			this.match(CircuitScriptParser.NEWLINE);
+			this.state = 132;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 133;
+			this.state = 135;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 133;
+				this.state = 135;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 131;
+					this.state = 133;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 4:
-				case 6:
-				case 7:
 				case 8:
-				case 12:
+				case 9:
+				case 10:
 				case 14:
-				case 15:
 				case 16:
 				case 17:
+				case 18:
 				case 19:
-				case 20:
+				case 21:
+				case 22:
+				case 29:
 				case 35:
 					{
-					this.state = 132;
+					this.state = 134;
 					this.expression();
 					}
 					break;
@@ -490,11 +492,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 135;
+				this.state = 137;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1823184) !== 0) || _la===35 || _la===43);
-			this.state = 137;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 544163600) !== 0) || _la===35 || _la===43);
+			this.state = 139;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -520,32 +522,32 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 139;
-			this.atom_expr();
-			this.state = 140;
-			this.match(CircuitScriptParser.T__0);
 			this.state = 141;
-			this.match(CircuitScriptParser.NEWLINE);
+			this.atom_expr();
 			this.state = 142;
+			this.match(CircuitScriptParser.T__0);
+			this.state = 143;
+			this.match(CircuitScriptParser.NEWLINE);
+			this.state = 144;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 145;
+			this.state = 147;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 145;
+				this.state = 147;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 143;
+					this.state = 145;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 35:
 				case 36:
 					{
-					this.state = 144;
+					this.state = 146;
 					this.assignment_expr2();
 					}
 					break;
@@ -553,11 +555,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 147;
+				this.state = 149;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			} while (((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 259) !== 0));
-			this.state = 149;
+			this.state = 151;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -583,7 +585,7 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 151;
+			this.state = 153;
 			_la = this._input.LA(1);
 			if(!(_la===35 || _la===36)) {
 			this._errHandler.recoverInline(this);
@@ -592,9 +594,9 @@ export default class CircuitScriptParser extends Parser {
 				this._errHandler.reportMatch(this);
 			    this.consume();
 			}
-			this.state = 152;
+			this.state = 154;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 153;
+			this.state = 155;
 			this.value_expr();
 			}
 		}
@@ -620,28 +622,28 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 157;
+			this.state = 159;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 8, this._ctx) ) {
 			case 1:
 				{
-				this.state = 155;
+				this.state = 157;
 				this.data_expr(0);
 				}
 				break;
 			case 2:
 				{
-				this.state = 156;
+				this.state = 158;
 				this.assignment_expr();
 				}
 				break;
 			}
-			this.state = 160;
+			this.state = 162;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			if (_la===13) {
+			if (_la===15) {
 				{
-				this.state = 159;
+				this.state = 161;
 				this.pin_select_expr();
 				}
 			}
@@ -669,16 +671,16 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 162;
+			this.state = 164;
 			this.match(CircuitScriptParser.Add);
-			this.state = 163;
-			this.data_expr_with_assignment();
 			this.state = 165;
+			this.data_expr_with_assignment();
+			this.state = 167;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 10, this._ctx) ) {
 			case 1:
 				{
-				this.state = 164;
+				this.state = 166;
 				this.match(CircuitScriptParser.ID);
 				}
 				break;
@@ -704,12 +706,13 @@ export default class CircuitScriptParser extends Parser {
 		let localctx: Component_select_exprContext = new Component_select_exprContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 16, CircuitScriptParser.RULE_component_select_expr);
 		try {
-			this.state = 169;
+			this.state = 171;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 9:
-			case 22:
-			case 26:
+			case 6:
+			case 11:
+			case 24:
+			case 28:
 			case 29:
 			case 31:
 			case 34:
@@ -721,14 +724,14 @@ export default class CircuitScriptParser extends Parser {
 			case 40:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 167;
+				this.state = 169;
 				this.data_expr_with_assignment();
 				}
 				break;
-			case 13:
+			case 15:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 168;
+				this.state = 170;
 				this.pin_select_expr();
 				}
 				break;
@@ -758,9 +761,9 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 171;
+			this.state = 173;
 			this.match(CircuitScriptParser.Pin);
-			this.state = 172;
+			this.state = 174;
 			_la = this._input.LA(1);
 			if(!(_la===36 || _la===39)) {
 			this._errHandler.recoverInline(this);
@@ -793,7 +796,7 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 174;
+			this.state = 176;
 			_la = this._input.LA(1);
 			if(!(_la===36 || _la===39)) {
 			this._errHandler.recoverInline(this);
@@ -825,16 +828,16 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 176;
+			this.state = 178;
 			this.match(CircuitScriptParser.At);
-			this.state = 177;
-			this.component_select_expr();
 			this.state = 179;
+			this.component_select_expr();
+			this.state = 181;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 12, this._ctx) ) {
 			case 1:
 				{
-				this.state = 178;
+				this.state = 180;
 				this.match(CircuitScriptParser.ID);
 				}
 				break;
@@ -863,32 +866,32 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 181;
+			this.state = 183;
 			this.match(CircuitScriptParser.To);
-			this.state = 182;
+			this.state = 184;
 			this.component_select_expr();
-			this.state = 187;
+			this.state = 189;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===2) {
 				{
 				{
-				this.state = 183;
+				this.state = 185;
 				this.match(CircuitScriptParser.T__1);
-				this.state = 184;
+				this.state = 186;
 				this.component_select_expr();
 				}
 				}
-				this.state = 189;
+				this.state = 191;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 191;
+			this.state = 193;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 14, this._ctx) ) {
 			case 1:
 				{
-				this.state = 190;
+				this.state = 192;
 				this.match(CircuitScriptParser.ID);
 				}
 				break;
@@ -917,54 +920,54 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 193;
-			this.match(CircuitScriptParser.At);
-			this.state = 194;
-			this.component_select_expr();
 			this.state = 195;
-			this.match(CircuitScriptParser.To);
+			this.match(CircuitScriptParser.At);
 			this.state = 196;
 			this.component_select_expr();
-			this.state = 201;
+			this.state = 197;
+			this.match(CircuitScriptParser.To);
+			this.state = 198;
+			this.component_select_expr();
+			this.state = 203;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===2) {
 				{
 				{
-				this.state = 197;
+				this.state = 199;
 				this.match(CircuitScriptParser.T__1);
-				this.state = 198;
+				this.state = 200;
 				this.component_select_expr();
 				}
 				}
-				this.state = 203;
+				this.state = 205;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 204;
-			this.match(CircuitScriptParser.T__0);
-			this.state = 205;
-			this.match(CircuitScriptParser.NEWLINE);
 			this.state = 206;
+			this.match(CircuitScriptParser.T__0);
+			this.state = 207;
+			this.match(CircuitScriptParser.NEWLINE);
+			this.state = 208;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 209;
+			this.state = 211;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 209;
+				this.state = 211;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 207;
+					this.state = 209;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 36:
 				case 39:
 					{
-					this.state = 208;
+					this.state = 210;
 					this.at_to_multiple_line_expr();
 					}
 					break;
@@ -972,11 +975,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 211;
+				this.state = 213;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			} while (((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 137) !== 0));
-			this.state = 213;
+			this.state = 215;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -1002,25 +1005,25 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 215;
-			this.pin_select_expr2();
-			this.state = 216;
-			this.match(CircuitScriptParser.T__0);
 			this.state = 217;
+			this.pin_select_expr2();
+			this.state = 218;
+			this.match(CircuitScriptParser.T__0);
+			this.state = 219;
 			this.at_to_multiple_line_expr_to_pin();
-			this.state = 222;
+			this.state = 224;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===2) {
 				{
 				{
-				this.state = 218;
+				this.state = 220;
 				this.match(CircuitScriptParser.T__1);
-				this.state = 219;
+				this.state = 221;
 				this.at_to_multiple_line_expr_to_pin();
 				}
 				}
-				this.state = 224;
+				this.state = 226;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
@@ -1048,7 +1051,7 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 225;
+			this.state = 227;
 			_la = this._input.LA(1);
 			if(!(_la===33 || _la===36)) {
 			this._errHandler.recoverInline(this);
@@ -1081,44 +1084,45 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 227;
-			this.at_component_expr();
-			this.state = 228;
-			this.match(CircuitScriptParser.T__0);
 			this.state = 229;
-			this.match(CircuitScriptParser.NEWLINE);
+			this.at_component_expr();
 			this.state = 230;
+			this.match(CircuitScriptParser.T__0);
+			this.state = 231;
+			this.match(CircuitScriptParser.NEWLINE);
+			this.state = 232;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 233;
+			this.state = 235;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 233;
+				this.state = 235;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 231;
+					this.state = 233;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 4:
-				case 6:
-				case 7:
 				case 8:
-				case 12:
+				case 9:
+				case 10:
 				case 14:
-				case 15:
 				case 16:
 				case 17:
+				case 18:
 				case 19:
-				case 20:
+				case 21:
+				case 22:
+				case 29:
 				case 35:
 				case 36:
 				case 39:
 					{
-					this.state = 232;
+					this.state = 234;
 					this.at_block_expressions();
 					}
 					break;
@@ -1126,11 +1130,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 235;
+				this.state = 237;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1823184) !== 0) || ((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
-			this.state = 237;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 544163600) !== 0) || ((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
+			this.state = 239;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -1153,24 +1157,25 @@ export default class CircuitScriptParser extends Parser {
 		let localctx: At_block_expressionsContext = new At_block_expressionsContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 34, CircuitScriptParser.RULE_at_block_expressions);
 		try {
-			this.state = 241;
+			this.state = 243;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 4:
-			case 6:
-			case 7:
 			case 8:
-			case 12:
+			case 9:
+			case 10:
 			case 14:
-			case 15:
 			case 16:
 			case 17:
+			case 18:
 			case 19:
-			case 20:
+			case 21:
+			case 22:
+			case 29:
 			case 35:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 239;
+				this.state = 241;
 				this.expression();
 				}
 				break;
@@ -1178,7 +1183,7 @@ export default class CircuitScriptParser extends Parser {
 			case 39:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 240;
+				this.state = 242;
 				this.at_block_pin_expr();
 				}
 				break;
@@ -1207,34 +1212,35 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 243;
+			this.state = 245;
 			this.pin_select_expr2();
-			this.state = 244;
+			this.state = 246;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 247;
+			this.state = 249;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 4:
-			case 6:
-			case 7:
 			case 8:
-			case 12:
+			case 9:
+			case 10:
 			case 14:
-			case 15:
 			case 16:
 			case 17:
+			case 18:
 			case 19:
-			case 20:
+			case 21:
+			case 22:
+			case 29:
 			case 33:
 			case 35:
 				{
-				this.state = 245;
+				this.state = 247;
 				this.at_block_pin_expression_simple();
 				}
 				break;
 			case 43:
 				{
-				this.state = 246;
+				this.state = 248;
 				this.at_block_pin_expression_complex();
 				}
 				break;
@@ -1264,29 +1270,30 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 251;
+			this.state = 253;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 4:
-			case 6:
-			case 7:
 			case 8:
-			case 12:
+			case 9:
+			case 10:
 			case 14:
-			case 15:
 			case 16:
 			case 17:
+			case 18:
 			case 19:
-			case 20:
+			case 21:
+			case 22:
+			case 29:
 			case 35:
 				{
-				this.state = 249;
+				this.state = 251;
 				this.expression();
 				}
 				break;
 			case 33:
 				{
-				this.state = 250;
+				this.state = 252;
 				this.match(CircuitScriptParser.NOT_CONNECTED);
 				}
 				break;
@@ -1317,38 +1324,39 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 253;
+			this.state = 255;
 			this.match(CircuitScriptParser.NEWLINE);
-			this.state = 254;
+			this.state = 256;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 257;
+			this.state = 259;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 257;
+				this.state = 259;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 255;
+					this.state = 257;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 4:
-				case 6:
-				case 7:
 				case 8:
-				case 12:
+				case 9:
+				case 10:
 				case 14:
-				case 15:
 				case 16:
 				case 17:
+				case 18:
 				case 19:
-				case 20:
+				case 21:
+				case 22:
+				case 29:
 				case 35:
 					{
-					this.state = 256;
+					this.state = 258;
 					this.expression();
 					}
 					break;
@@ -1356,11 +1364,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 259;
+				this.state = 261;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1823184) !== 0) || _la===35 || _la===43);
-			this.state = 261;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 544163600) !== 0) || _la===35 || _la===43);
+			this.state = 263;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -1385,7 +1393,7 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 263;
+			this.state = 265;
 			this.match(CircuitScriptParser.Break);
 			}
 		}
@@ -1410,11 +1418,11 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 265;
-			this.atom_expr();
-			this.state = 266;
-			this.match(CircuitScriptParser.T__2);
 			this.state = 267;
+			this.atom_expr();
+			this.state = 268;
+			this.match(CircuitScriptParser.T__2);
+			this.state = 269;
 			this.data_expr(0);
 			}
 		}
@@ -1439,11 +1447,11 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 269;
-			this.match(CircuitScriptParser.ID);
-			this.state = 270;
-			this.match(CircuitScriptParser.T__2);
 			this.state = 271;
+			this.match(CircuitScriptParser.ID);
+			this.state = 272;
+			this.match(CircuitScriptParser.T__2);
+			this.state = 273;
 			this.data_expr(0);
 			}
 		}
@@ -1468,46 +1476,46 @@ export default class CircuitScriptParser extends Parser {
 		let _la: number;
 		try {
 			let _alt: number;
-			this.state = 296;
+			this.state = 298;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 29, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(localctx, 1);
 				{
 				{
-				this.state = 273;
+				this.state = 275;
 				this.data_expr(0);
-				this.state = 278;
+				this.state = 280;
 				this._errHandler.sync(this);
 				_alt = this._interp.adaptivePredict(this._input, 26, this._ctx);
 				while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 					if (_alt === 1) {
 						{
 						{
-						this.state = 274;
+						this.state = 276;
 						this.match(CircuitScriptParser.T__1);
-						this.state = 275;
+						this.state = 277;
 						this.data_expr(0);
 						}
 						}
 					}
-					this.state = 280;
+					this.state = 282;
 					this._errHandler.sync(this);
 					_alt = this._interp.adaptivePredict(this._input, 26, this._ctx);
 				}
-				this.state = 285;
+				this.state = 287;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la===2) {
 					{
 					{
-					this.state = 281;
+					this.state = 283;
 					this.match(CircuitScriptParser.T__1);
-					this.state = 282;
+					this.state = 284;
 					this.keyword_assignment_expr();
 					}
 					}
-					this.state = 287;
+					this.state = 289;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
@@ -1518,21 +1526,21 @@ export default class CircuitScriptParser extends Parser {
 				this.enterOuterAlt(localctx, 2);
 				{
 				{
-				this.state = 288;
+				this.state = 290;
 				this.keyword_assignment_expr();
-				this.state = 293;
+				this.state = 295;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la===2) {
 					{
 					{
-					this.state = 289;
+					this.state = 291;
 					this.match(CircuitScriptParser.T__1);
-					this.state = 290;
+					this.state = 292;
 					this.keyword_assignment_expr();
 					}
 					}
-					this.state = 295;
+					this.state = 297;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
@@ -1562,11 +1570,11 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 298;
-			this.atom_expr();
-			this.state = 299;
-			this.match(CircuitScriptParser.T__2);
 			this.state = 300;
+			this.atom_expr();
+			this.state = 301;
+			this.match(CircuitScriptParser.T__2);
+			this.state = 302;
 			this.data_expr(0);
 			}
 		}
@@ -1591,13 +1599,13 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 302;
-			this.match(CircuitScriptParser.T__3);
-			this.state = 303;
-			this.match(CircuitScriptParser.ID);
 			this.state = 304;
-			this.match(CircuitScriptParser.T__2);
+			this.match(CircuitScriptParser.T__3);
 			this.state = 305;
+			this.match(CircuitScriptParser.ID);
+			this.state = 306;
+			this.match(CircuitScriptParser.T__2);
+			this.state = 307;
 			this.data_expr(0);
 			}
 		}
@@ -1635,7 +1643,7 @@ export default class CircuitScriptParser extends Parser {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 321;
+			this.state = 323;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 32, this._ctx) ) {
 			case 1:
@@ -1645,21 +1653,21 @@ export default class CircuitScriptParser extends Parser {
 				_prevctx = localctx;
 
 				{
-				this.state = 309;
+				this.state = 311;
 				this._errHandler.sync(this);
 				switch ( this._interp.adaptivePredict(this._input, 30, this._ctx) ) {
 				case 1:
 					{
-					this.state = 308;
+					this.state = 310;
 					this.unary_operator();
 					}
 					break;
 				}
-				this.state = 313;
+				this.state = 315;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 26:
-				case 31:
+				case 6:
+				case 28:
 				case 34:
 				case 36:
 				case 37:
@@ -1667,13 +1675,14 @@ export default class CircuitScriptParser extends Parser {
 				case 39:
 				case 40:
 					{
-					this.state = 311;
+					this.state = 313;
 					this.value_expr();
 					}
 					break;
+				case 29:
 				case 35:
 					{
-					this.state = 312;
+					this.state = 314;
 					this.atom_expr();
 					}
 					break;
@@ -1688,11 +1697,11 @@ export default class CircuitScriptParser extends Parser {
 				localctx = new RoundedBracketsExprContext(this, localctx);
 				this._ctx = localctx;
 				_prevctx = localctx;
-				this.state = 315;
-				this.match(CircuitScriptParser.OPEN_PAREN);
-				this.state = 316;
-				this.data_expr(0);
 				this.state = 317;
+				this.match(CircuitScriptParser.OPEN_PAREN);
+				this.state = 318;
+				this.data_expr(0);
+				this.state = 319;
 				this.match(CircuitScriptParser.CLOSE_PAREN);
 				}
 				break;
@@ -1701,7 +1710,7 @@ export default class CircuitScriptParser extends Parser {
 				localctx = new DataExprContext(this, localctx);
 				this._ctx = localctx;
 				_prevctx = localctx;
-				this.state = 319;
+				this.state = 321;
 				this.create_component_expr();
 				}
 				break;
@@ -1710,13 +1719,13 @@ export default class CircuitScriptParser extends Parser {
 				localctx = new DataExprContext(this, localctx);
 				this._ctx = localctx;
 				_prevctx = localctx;
-				this.state = 320;
+				this.state = 322;
 				this.create_graphic_expr();
 				}
 				break;
 			}
 			this._ctx.stop = this._input.LT(-1);
-			this.state = 335;
+			this.state = 337;
 			this._errHandler.sync(this);
 			_alt = this._interp.adaptivePredict(this._input, 34, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
@@ -1726,18 +1735,39 @@ export default class CircuitScriptParser extends Parser {
 					}
 					_prevctx = localctx;
 					{
-					this.state = 333;
+					this.state = 335;
 					this._errHandler.sync(this);
 					switch ( this._interp.adaptivePredict(this._input, 33, this._ctx) ) {
 					case 1:
 						{
 						localctx = new MultiplyExprContext(this, new Data_exprContext(this, _parentctx, _parentState));
 						this.pushNewRecursionContext(localctx, _startState, CircuitScriptParser.RULE_data_expr);
-						this.state = 323;
+						this.state = 325;
 						if (!(this.precpred(this._ctx, 5))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 5)");
 						}
-						this.state = 324;
+						this.state = 326;
+						_la = this._input.LA(1);
+						if(!(_la===29 || _la===30)) {
+						this._errHandler.recoverInline(this);
+						}
+						else {
+							this._errHandler.reportMatch(this);
+						    this.consume();
+						}
+						this.state = 327;
+						this.data_expr(6);
+						}
+						break;
+					case 2:
+						{
+						localctx = new AdditionExprContext(this, new Data_exprContext(this, _parentctx, _parentState));
+						this.pushNewRecursionContext(localctx, _startState, CircuitScriptParser.RULE_data_expr);
+						this.state = 328;
+						if (!(this.precpred(this._ctx, 4))) {
+							throw this.createFailedPredicateException("this.precpred(this._ctx, 4)");
+						}
+						this.state = 329;
 						_la = this._input.LA(1);
 						if(!(_la===27 || _la===28)) {
 						this._errHandler.recoverInline(this);
@@ -1746,28 +1776,7 @@ export default class CircuitScriptParser extends Parser {
 							this._errHandler.reportMatch(this);
 						    this.consume();
 						}
-						this.state = 325;
-						this.data_expr(6);
-						}
-						break;
-					case 2:
-						{
-						localctx = new AdditionExprContext(this, new Data_exprContext(this, _parentctx, _parentState));
-						this.pushNewRecursionContext(localctx, _startState, CircuitScriptParser.RULE_data_expr);
-						this.state = 326;
-						if (!(this.precpred(this._ctx, 4))) {
-							throw this.createFailedPredicateException("this.precpred(this._ctx, 4)");
-						}
-						this.state = 327;
-						_la = this._input.LA(1);
-						if(!(_la===25 || _la===26)) {
-						this._errHandler.recoverInline(this);
-						}
-						else {
-							this._errHandler.reportMatch(this);
-						    this.consume();
-						}
-						this.state = 328;
+						this.state = 330;
 						this.data_expr(5);
 						}
 						break;
@@ -1775,20 +1784,20 @@ export default class CircuitScriptParser extends Parser {
 						{
 						localctx = new BinaryOperatorExprContext(this, new Data_exprContext(this, _parentctx, _parentState));
 						this.pushNewRecursionContext(localctx, _startState, CircuitScriptParser.RULE_data_expr);
-						this.state = 329;
+						this.state = 331;
 						if (!(this.precpred(this._ctx, 3))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 3)");
 						}
-						this.state = 330;
+						this.state = 332;
 						this.binary_operator();
-						this.state = 331;
+						this.state = 333;
 						this.data_expr(4);
 						}
 						break;
 					}
 					}
 				}
-				this.state = 337;
+				this.state = 339;
 				this._errHandler.sync(this);
 				_alt = this._interp.adaptivePredict(this._input, 34, this._ctx);
 			}
@@ -1816,9 +1825,9 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 338;
+			this.state = 340;
 			_la = this._input.LA(1);
-			if(!(_la===23 || _la===24)) {
+			if(!(_la===25 || _la===26)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -1849,9 +1858,9 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 340;
+			this.state = 342;
 			_la = this._input.LA(1);
-			if(!(_la===22 || _la===26)) {
+			if(!(_la===24 || _la===28)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -1880,10 +1889,10 @@ export default class CircuitScriptParser extends Parser {
 		this.enterRule(localctx, 60, CircuitScriptParser.RULE_value_expr);
 		let _la: number;
 		try {
-			this.state = 347;
+			this.state = 349;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 26:
+			case 28:
 			case 34:
 			case 36:
 			case 37:
@@ -1893,17 +1902,17 @@ export default class CircuitScriptParser extends Parser {
 				this.enterOuterAlt(localctx, 1);
 				{
 				{
-				this.state = 343;
+				this.state = 345;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la===26) {
+				if (_la===28) {
 					{
-					this.state = 342;
+					this.state = 344;
 					this.match(CircuitScriptParser.Minus);
 					}
 				}
 
-				this.state = 345;
+				this.state = 347;
 				_la = this._input.LA(1);
 				if(!(((((_la - 34)) & ~0x1F) === 0 && ((1 << (_la - 34)) & 125) !== 0))) {
 				this._errHandler.recoverInline(this);
@@ -1915,10 +1924,10 @@ export default class CircuitScriptParser extends Parser {
 				}
 				}
 				break;
-			case 31:
+			case 6:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 346;
+				this.state = 348;
 				this.blank_expr();
 				}
 				break;
@@ -1948,59 +1957,60 @@ export default class CircuitScriptParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 349;
-			this.match(CircuitScriptParser.Define);
-			this.state = 350;
-			this.match(CircuitScriptParser.ID);
 			this.state = 351;
-			this.match(CircuitScriptParser.OPEN_PAREN);
+			this.match(CircuitScriptParser.Define);
+			this.state = 352;
+			this.match(CircuitScriptParser.ID);
 			this.state = 353;
+			this.match(CircuitScriptParser.OPEN_PAREN);
+			this.state = 355;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===35) {
 				{
-				this.state = 352;
+				this.state = 354;
 				this.function_args_expr();
 				}
 			}
 
-			this.state = 355;
-			this.match(CircuitScriptParser.CLOSE_PAREN);
-			this.state = 356;
-			this.match(CircuitScriptParser.T__0);
 			this.state = 357;
-			this.match(CircuitScriptParser.NEWLINE);
+			this.match(CircuitScriptParser.CLOSE_PAREN);
 			this.state = 358;
+			this.match(CircuitScriptParser.T__0);
+			this.state = 359;
+			this.match(CircuitScriptParser.NEWLINE);
+			this.state = 360;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 361;
+			this.state = 363;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 361;
+				this.state = 363;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 359;
+					this.state = 361;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 4:
-				case 6:
-				case 7:
 				case 8:
-				case 12:
+				case 9:
+				case 10:
 				case 14:
-				case 15:
 				case 16:
 				case 17:
 				case 18:
 				case 19:
 				case 20:
+				case 21:
+				case 22:
+				case 29:
 				case 35:
 					{
-					this.state = 360;
+					this.state = 362;
 					this.function_expr();
 					}
 					break;
@@ -2008,11 +2018,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 363;
+				this.state = 365;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2085328) !== 0) || _la===35 || _la===43);
-			this.state = 365;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 545212176) !== 0) || _la===35 || _la===43);
+			this.state = 367;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -2035,31 +2045,32 @@ export default class CircuitScriptParser extends Parser {
 		let localctx: Function_exprContext = new Function_exprContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 64, CircuitScriptParser.RULE_function_expr);
 		try {
-			this.state = 369;
+			this.state = 371;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 4:
-			case 6:
-			case 7:
 			case 8:
-			case 12:
+			case 9:
+			case 10:
 			case 14:
-			case 15:
 			case 16:
 			case 17:
+			case 18:
 			case 19:
-			case 20:
+			case 21:
+			case 22:
+			case 29:
 			case 35:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 367;
+				this.state = 369;
 				this.expression();
 				}
 				break;
-			case 18:
+			case 20:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 368;
+				this.state = 370;
 				this.function_return_expr();
 				}
 				break;
@@ -2088,49 +2099,49 @@ export default class CircuitScriptParser extends Parser {
 		let _la: number;
 		try {
 			let _alt: number;
-			this.state = 400;
+			this.state = 402;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 44, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 371;
+				this.state = 373;
 				this.match(CircuitScriptParser.ID);
-				this.state = 376;
+				this.state = 378;
 				this._errHandler.sync(this);
 				_alt = this._interp.adaptivePredict(this._input, 41, this._ctx);
 				while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 					if (_alt === 1) {
 						{
 						{
-						this.state = 372;
+						this.state = 374;
 						this.match(CircuitScriptParser.T__1);
-						this.state = 373;
+						this.state = 375;
 						this.match(CircuitScriptParser.ID);
 						}
 						}
 					}
-					this.state = 378;
+					this.state = 380;
 					this._errHandler.sync(this);
 					_alt = this._interp.adaptivePredict(this._input, 41, this._ctx);
 				}
-				this.state = 385;
+				this.state = 387;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la===2) {
 					{
 					{
-					this.state = 379;
-					this.match(CircuitScriptParser.T__1);
-					this.state = 380;
-					this.match(CircuitScriptParser.ID);
 					this.state = 381;
-					this.match(CircuitScriptParser.T__2);
+					this.match(CircuitScriptParser.T__1);
 					this.state = 382;
+					this.match(CircuitScriptParser.ID);
+					this.state = 383;
+					this.match(CircuitScriptParser.T__2);
+					this.state = 384;
 					this.value_expr();
 					}
 					}
-					this.state = 387;
+					this.state = 389;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
@@ -2139,29 +2150,29 @@ export default class CircuitScriptParser extends Parser {
 			case 2:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 388;
-				this.match(CircuitScriptParser.ID);
-				this.state = 389;
-				this.match(CircuitScriptParser.T__2);
 				this.state = 390;
+				this.match(CircuitScriptParser.ID);
+				this.state = 391;
+				this.match(CircuitScriptParser.T__2);
+				this.state = 392;
 				this.value_expr();
-				this.state = 397;
+				this.state = 399;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la===2) {
 					{
 					{
-					this.state = 391;
-					this.match(CircuitScriptParser.T__1);
-					this.state = 392;
-					this.match(CircuitScriptParser.ID);
 					this.state = 393;
-					this.match(CircuitScriptParser.T__2);
+					this.match(CircuitScriptParser.T__1);
 					this.state = 394;
+					this.match(CircuitScriptParser.ID);
+					this.state = 395;
+					this.match(CircuitScriptParser.T__2);
+					this.state = 396;
 					this.value_expr();
 					}
 					}
-					this.state = 399;
+					this.state = 401;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
@@ -2187,27 +2198,38 @@ export default class CircuitScriptParser extends Parser {
 	public atom_expr(): Atom_exprContext {
 		let localctx: Atom_exprContext = new Atom_exprContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 68, CircuitScriptParser.RULE_atom_expr);
+		let _la: number;
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 402;
-			this.match(CircuitScriptParser.ID);
-			this.state = 406;
+			this.state = 405;
 			this._errHandler.sync(this);
-			_alt = this._interp.adaptivePredict(this._input, 45, this._ctx);
+			_la = this._input.LA(1);
+			if (_la===29) {
+				{
+				this.state = 404;
+				this.net_namespace_expr();
+				}
+			}
+
+			this.state = 407;
+			this.match(CircuitScriptParser.ID);
+			this.state = 411;
+			this._errHandler.sync(this);
+			_alt = this._interp.adaptivePredict(this._input, 46, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
-					this.state = 403;
+					this.state = 408;
 					this.trailer_expr();
 					}
 					}
 				}
-				this.state = 408;
+				this.state = 413;
 				this._errHandler.sync(this);
-				_alt = this._interp.adaptivePredict(this._input, 45, this._ctx);
+				_alt = this._interp.adaptivePredict(this._input, 46, this._ctx);
 			}
 			}
 		}
@@ -2231,34 +2253,34 @@ export default class CircuitScriptParser extends Parser {
 		this.enterRule(localctx, 70, CircuitScriptParser.RULE_trailer_expr);
 		let _la: number;
 		try {
-			this.state = 416;
+			this.state = 421;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 29:
+			case 31:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 409;
+				this.state = 414;
 				this.match(CircuitScriptParser.OPEN_PAREN);
-				this.state = 411;
+				this.state = 416;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (((((_la - 9)) & ~0x1F) === 0 && ((1 << (_la - 9)) & 4266795009) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2969569344) !== 0) || ((((_la - 34)) & ~0x1F) === 0 && ((1 << (_la - 34)) & 127) !== 0)) {
 					{
-					this.state = 410;
+					this.state = 415;
 					this.parameters();
 					}
 				}
 
-				this.state = 413;
+				this.state = 418;
 				this.match(CircuitScriptParser.CLOSE_PAREN);
 				}
 				break;
 			case 5:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 414;
+				this.state = 419;
 				this.match(CircuitScriptParser.T__4);
-				this.state = 415;
+				this.state = 420;
 				this.match(CircuitScriptParser.ID);
 				}
 				break;
@@ -2281,15 +2303,42 @@ export default class CircuitScriptParser extends Parser {
 		return localctx;
 	}
 	// @RuleVersion(0)
-	public function_return_expr(): Function_return_exprContext {
-		let localctx: Function_return_exprContext = new Function_return_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 72, CircuitScriptParser.RULE_function_return_expr);
+	public net_namespace_expr(): Net_namespace_exprContext {
+		let localctx: Net_namespace_exprContext = new Net_namespace_exprContext(this, this._ctx, this.state);
+		this.enterRule(localctx, 72, CircuitScriptParser.RULE_net_namespace_expr);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 418;
+			this.state = 423;
+			this.match(CircuitScriptParser.Divide);
+			this.state = 424;
+			this.data_expr(0);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return localctx;
+	}
+	// @RuleVersion(0)
+	public function_return_expr(): Function_return_exprContext {
+		let localctx: Function_return_exprContext = new Function_return_exprContext(this, this._ctx, this.state);
+		this.enterRule(localctx, 74, CircuitScriptParser.RULE_function_return_expr);
+		try {
+			this.enterOuterAlt(localctx, 1);
+			{
+			this.state = 426;
 			this.match(CircuitScriptParser.Return);
-			this.state = 419;
+			this.state = 427;
 			this.data_expr(0);
 			}
 		}
@@ -2310,32 +2359,32 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public create_component_expr(): Create_component_exprContext {
 		let localctx: Create_component_exprContext = new Create_component_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 74, CircuitScriptParser.RULE_create_component_expr);
+		this.enterRule(localctx, 76, CircuitScriptParser.RULE_create_component_expr);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 421;
+			this.state = 429;
 			this.match(CircuitScriptParser.Create);
-			this.state = 422;
+			this.state = 430;
 			this.match(CircuitScriptParser.Component);
-			this.state = 423;
+			this.state = 431;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 424;
+			this.state = 432;
 			this.match(CircuitScriptParser.NEWLINE);
-			this.state = 425;
+			this.state = 433;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 428;
+			this.state = 436;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 428;
+				this.state = 436;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 426;
+					this.state = 434;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
@@ -2343,7 +2392,7 @@ export default class CircuitScriptParser extends Parser {
 				case 36:
 				case 39:
 					{
-					this.state = 427;
+					this.state = 435;
 					this.property_expr();
 					}
 					break;
@@ -2351,11 +2400,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 430;
+				this.state = 438;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			} while (((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
-			this.state = 432;
+			this.state = 440;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -2376,39 +2425,39 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public create_graphic_expr(): Create_graphic_exprContext {
 		let localctx: Create_graphic_exprContext = new Create_graphic_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 76, CircuitScriptParser.RULE_create_graphic_expr);
+		this.enterRule(localctx, 78, CircuitScriptParser.RULE_create_graphic_expr);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 434;
+			this.state = 442;
 			this.match(CircuitScriptParser.Create);
-			this.state = 435;
+			this.state = 443;
 			this.match(CircuitScriptParser.Graphic);
-			this.state = 436;
+			this.state = 444;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 437;
+			this.state = 445;
 			this.match(CircuitScriptParser.NEWLINE);
-			this.state = 438;
+			this.state = 446;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 441;
+			this.state = 449;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 441;
+				this.state = 449;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 439;
+					this.state = 447;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
-				case 13:
+				case 15:
 				case 35:
 					{
-					this.state = 440;
+					this.state = 448;
 					this.sub_expr();
 					}
 					break;
@@ -2416,11 +2465,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 443;
+				this.state = 451;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while (((((_la - 13)) & ~0x1F) === 0 && ((1 << (_la - 13)) & 1077936129) !== 0));
-			this.state = 445;
+			} while (((((_la - 15)) & ~0x1F) === 0 && ((1 << (_la - 15)) & 269484033) !== 0));
+			this.state = 453;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -2441,38 +2490,38 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public sub_expr(): Sub_exprContext {
 		let localctx: Sub_exprContext = new Sub_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 78, CircuitScriptParser.RULE_sub_expr);
+		this.enterRule(localctx, 80, CircuitScriptParser.RULE_sub_expr);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 447;
+			this.state = 455;
 			_la = this._input.LA(1);
-			if(!(_la===13 || _la===35)) {
+			if(!(_la===15 || _la===35)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
 				this._errHandler.reportMatch(this);
 			    this.consume();
 			}
-			this.state = 448;
+			this.state = 456;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 454;
+			this.state = 462;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 52, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 53, this._ctx) ) {
 			case 1:
 				{
-				this.state = 449;
+				this.state = 457;
 				this.parameters();
 				}
 				break;
 			case 2:
 				{
-				this.state = 450;
+				this.state = 458;
 				this.match(CircuitScriptParser.OPEN_PAREN);
-				this.state = 451;
+				this.state = 459;
 				this.parameters();
-				this.state = 452;
+				this.state = 460;
 				this.match(CircuitScriptParser.CLOSE_PAREN);
 				}
 				break;
@@ -2496,15 +2545,15 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public property_expr(): Property_exprContext {
 		let localctx: Property_exprContext = new Property_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 80, CircuitScriptParser.RULE_property_expr);
+		this.enterRule(localctx, 82, CircuitScriptParser.RULE_property_expr);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 456;
+			this.state = 464;
 			this.property_key_expr();
-			this.state = 457;
+			this.state = 465;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 458;
+			this.state = 466;
 			this.property_value_expr();
 			}
 		}
@@ -2525,12 +2574,12 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public property_key_expr(): Property_key_exprContext {
 		let localctx: Property_key_exprContext = new Property_key_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 82, CircuitScriptParser.RULE_property_key_expr);
+		this.enterRule(localctx, 84, CircuitScriptParser.RULE_property_key_expr);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 460;
+			this.state = 468;
 			_la = this._input.LA(1);
 			if(!(((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 19) !== 0))) {
 			this._errHandler.recoverInline(this);
@@ -2558,31 +2607,31 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public property_value_expr(): Property_value_exprContext {
 		let localctx: Property_value_exprContext = new Property_value_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 84, CircuitScriptParser.RULE_property_value_expr);
+		this.enterRule(localctx, 86, CircuitScriptParser.RULE_property_value_expr);
 		let _la: number;
 		try {
-			this.state = 479;
+			this.state = 487;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 43:
 				localctx = new Nested_propertiesContext(this, localctx);
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 462;
+				this.state = 470;
 				this.match(CircuitScriptParser.NEWLINE);
-				this.state = 463;
+				this.state = 471;
 				this.match(CircuitScriptParser.INDENT);
-				this.state = 466;
+				this.state = 474;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				do {
 					{
-					this.state = 466;
+					this.state = 474;
 					this._errHandler.sync(this);
 					switch (this._input.LA(1)) {
 					case 43:
 						{
-						this.state = 464;
+						this.state = 472;
 						this.match(CircuitScriptParser.NEWLINE);
 						}
 						break;
@@ -2590,7 +2639,7 @@ export default class CircuitScriptParser extends Parser {
 					case 36:
 					case 39:
 						{
-						this.state = 465;
+						this.state = 473;
 						this.property_expr();
 						}
 						break;
@@ -2598,17 +2647,18 @@ export default class CircuitScriptParser extends Parser {
 						throw new NoViableAltException(this);
 					}
 					}
-					this.state = 468;
+					this.state = 476;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				} while (((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
-				this.state = 470;
+				this.state = 478;
 				this.match(CircuitScriptParser.DEDENT);
 				}
 				break;
-			case 9:
-			case 22:
-			case 26:
+			case 6:
+			case 11:
+			case 24:
+			case 28:
 			case 29:
 			case 31:
 			case 34:
@@ -2621,21 +2671,21 @@ export default class CircuitScriptParser extends Parser {
 				localctx = new Single_line_propertyContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 471;
+				this.state = 479;
 				this.data_expr(0);
-				this.state = 476;
+				this.state = 484;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la===2) {
 					{
 					{
-					this.state = 472;
+					this.state = 480;
 					this.match(CircuitScriptParser.T__1);
-					this.state = 473;
+					this.state = 481;
 					this.data_expr(0);
 					}
 					}
-					this.state = 478;
+					this.state = 486;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
@@ -2662,16 +2712,16 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public blank_expr(): Blank_exprContext {
 		let localctx: Blank_exprContext = new Blank_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 86, CircuitScriptParser.RULE_blank_expr);
+		this.enterRule(localctx, 88, CircuitScriptParser.RULE_blank_expr);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 481;
-			this.match(CircuitScriptParser.OPEN_SQ_BRACKETS);
-			this.state = 482;
+			this.state = 489;
+			this.match(CircuitScriptParser.T__5);
+			this.state = 490;
 			this.match(CircuitScriptParser.INTEGER_VALUE);
-			this.state = 483;
-			this.match(CircuitScriptParser.CLOSE_SQ_BRACKETS);
+			this.state = 491;
+			this.match(CircuitScriptParser.T__6);
 			}
 		}
 		catch (re) {
@@ -2691,24 +2741,24 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public wire_expr(): Wire_exprContext {
 		let localctx: Wire_exprContext = new Wire_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 88, CircuitScriptParser.RULE_wire_expr);
+		this.enterRule(localctx, 90, CircuitScriptParser.RULE_wire_expr);
 		let _la: number;
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 485;
+			this.state = 493;
 			this.match(CircuitScriptParser.Wire);
-			this.state = 486;
+			this.state = 494;
 			this.match(CircuitScriptParser.ID);
-			this.state = 490;
+			this.state = 498;
 			this._errHandler.sync(this);
-			_alt = this._interp.adaptivePredict(this._input, 57, this._ctx);
+			_alt = this._interp.adaptivePredict(this._input, 58, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
-					this.state = 487;
+					this.state = 495;
 					_la = this._input.LA(1);
 					if(!(_la===35 || _la===36)) {
 					this._errHandler.recoverInline(this);
@@ -2720,9 +2770,9 @@ export default class CircuitScriptParser extends Parser {
 					}
 					}
 				}
-				this.state = 492;
+				this.state = 500;
 				this._errHandler.sync(this);
-				_alt = this._interp.adaptivePredict(this._input, 57, this._ctx);
+				_alt = this._interp.adaptivePredict(this._input, 58, this._ctx);
 			}
 			}
 		}
@@ -2743,13 +2793,13 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public point_expr(): Point_exprContext {
 		let localctx: Point_exprContext = new Point_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 90, CircuitScriptParser.RULE_point_expr);
+		this.enterRule(localctx, 92, CircuitScriptParser.RULE_point_expr);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 493;
+			this.state = 501;
 			this.match(CircuitScriptParser.Point);
-			this.state = 494;
+			this.state = 502;
 			this.match(CircuitScriptParser.ID);
 			}
 		}
@@ -2770,13 +2820,13 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public import_expr(): Import_exprContext {
 		let localctx: Import_exprContext = new Import_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 92, CircuitScriptParser.RULE_import_expr);
+		this.enterRule(localctx, 94, CircuitScriptParser.RULE_import_expr);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 496;
+			this.state = 504;
 			this.match(CircuitScriptParser.Import);
-			this.state = 497;
+			this.state = 505;
 			this.match(CircuitScriptParser.ID);
 			}
 		}
@@ -2797,47 +2847,48 @@ export default class CircuitScriptParser extends Parser {
 	// @RuleVersion(0)
 	public frame_expr(): Frame_exprContext {
 		let localctx: Frame_exprContext = new Frame_exprContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 94, CircuitScriptParser.RULE_frame_expr);
+		this.enterRule(localctx, 96, CircuitScriptParser.RULE_frame_expr);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 499;
-			this.match(CircuitScriptParser.T__5);
-			this.state = 500;
+			this.state = 507;
+			this.match(CircuitScriptParser.T__7);
+			this.state = 508;
 			this.match(CircuitScriptParser.T__0);
-			this.state = 501;
+			this.state = 509;
 			this.match(CircuitScriptParser.NEWLINE);
-			this.state = 502;
+			this.state = 510;
 			this.match(CircuitScriptParser.INDENT);
-			this.state = 505;
+			this.state = 513;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
-				this.state = 505;
+				this.state = 513;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 43:
 					{
-					this.state = 503;
+					this.state = 511;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 4:
-				case 6:
-				case 7:
 				case 8:
-				case 12:
+				case 9:
+				case 10:
 				case 14:
-				case 15:
 				case 16:
 				case 17:
+				case 18:
 				case 19:
-				case 20:
+				case 21:
+				case 22:
+				case 29:
 				case 35:
 					{
-					this.state = 504;
+					this.state = 512;
 					this.expression();
 					}
 					break;
@@ -2845,11 +2896,11 @@ export default class CircuitScriptParser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				this.state = 507;
+				this.state = 515;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1823184) !== 0) || _la===35 || _la===43);
-			this.state = 509;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 544163600) !== 0) || _la===35 || _la===43);
+			this.state = 517;
 			this.match(CircuitScriptParser.DEDENT);
 			}
 		}
@@ -2887,175 +2938,178 @@ export default class CircuitScriptParser extends Parser {
 		return true;
 	}
 
-	public static readonly _serializedATN: number[] = [4,1,46,512,2,0,7,0,2,
+	public static readonly _serializedATN: number[] = [4,1,46,520,2,0,7,0,2,
 	1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,7,7,7,2,8,7,8,2,9,7,9,2,
 	10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,14,2,15,7,15,2,16,7,16,2,17,
 	7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,
 	24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,28,2,29,7,29,2,30,7,30,2,31,7,31,
 	2,32,7,32,2,33,7,33,2,34,7,34,2,35,7,35,2,36,7,36,2,37,7,37,2,38,7,38,2,
 	39,7,39,2,40,7,40,2,41,7,41,2,42,7,42,2,43,7,43,2,44,7,44,2,45,7,45,2,46,
-	7,46,2,47,7,47,1,0,1,0,4,0,99,8,0,11,0,12,0,100,1,0,1,0,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,121,8,1,1,2,4,2,124,
-	8,2,11,2,12,2,125,1,3,1,3,1,3,1,3,1,3,1,3,4,3,134,8,3,11,3,12,3,135,1,3,
-	1,3,1,4,1,4,1,4,1,4,1,4,1,4,4,4,146,8,4,11,4,12,4,147,1,4,1,4,1,5,1,5,1,
-	5,1,5,1,6,1,6,3,6,158,8,6,1,6,3,6,161,8,6,1,7,1,7,1,7,3,7,166,8,7,1,8,1,
-	8,3,8,170,8,8,1,9,1,9,1,9,1,10,1,10,1,11,1,11,1,11,3,11,180,8,11,1,12,1,
-	12,1,12,1,12,5,12,186,8,12,10,12,12,12,189,9,12,1,12,3,12,192,8,12,1,13,
-	1,13,1,13,1,13,1,13,1,13,5,13,200,8,13,10,13,12,13,203,9,13,1,13,1,13,1,
-	13,1,13,1,13,4,13,210,8,13,11,13,12,13,211,1,13,1,13,1,14,1,14,1,14,1,14,
-	1,14,5,14,221,8,14,10,14,12,14,224,9,14,1,15,1,15,1,16,1,16,1,16,1,16,1,
-	16,1,16,4,16,234,8,16,11,16,12,16,235,1,16,1,16,1,17,1,17,3,17,242,8,17,
-	1,18,1,18,1,18,1,18,3,18,248,8,18,1,19,1,19,3,19,252,8,19,1,20,1,20,1,20,
-	1,20,4,20,258,8,20,11,20,12,20,259,1,20,1,20,1,21,1,21,1,22,1,22,1,22,1,
-	22,1,23,1,23,1,23,1,23,1,24,1,24,1,24,5,24,277,8,24,10,24,12,24,280,9,24,
-	1,24,1,24,5,24,284,8,24,10,24,12,24,287,9,24,1,24,1,24,1,24,5,24,292,8,
-	24,10,24,12,24,295,9,24,3,24,297,8,24,1,25,1,25,1,25,1,25,1,26,1,26,1,26,
-	1,26,1,26,1,27,1,27,3,27,310,8,27,1,27,1,27,3,27,314,8,27,1,27,1,27,1,27,
-	1,27,1,27,1,27,3,27,322,8,27,1,27,1,27,1,27,1,27,1,27,1,27,1,27,1,27,1,
-	27,1,27,5,27,334,8,27,10,27,12,27,337,9,27,1,28,1,28,1,29,1,29,1,30,3,30,
-	344,8,30,1,30,1,30,3,30,348,8,30,1,31,1,31,1,31,1,31,3,31,354,8,31,1,31,
-	1,31,1,31,1,31,1,31,1,31,4,31,362,8,31,11,31,12,31,363,1,31,1,31,1,32,1,
-	32,3,32,370,8,32,1,33,1,33,1,33,5,33,375,8,33,10,33,12,33,378,9,33,1,33,
-	1,33,1,33,1,33,5,33,384,8,33,10,33,12,33,387,9,33,1,33,1,33,1,33,1,33,1,
-	33,1,33,1,33,5,33,396,8,33,10,33,12,33,399,9,33,3,33,401,8,33,1,34,1,34,
-	5,34,405,8,34,10,34,12,34,408,9,34,1,35,1,35,3,35,412,8,35,1,35,1,35,1,
-	35,3,35,417,8,35,1,36,1,36,1,36,1,37,1,37,1,37,1,37,1,37,1,37,1,37,4,37,
-	429,8,37,11,37,12,37,430,1,37,1,37,1,38,1,38,1,38,1,38,1,38,1,38,1,38,4,
-	38,442,8,38,11,38,12,38,443,1,38,1,38,1,39,1,39,1,39,1,39,1,39,1,39,1,39,
-	3,39,455,8,39,1,40,1,40,1,40,1,40,1,41,1,41,1,42,1,42,1,42,1,42,4,42,467,
-	8,42,11,42,12,42,468,1,42,1,42,1,42,1,42,5,42,475,8,42,10,42,12,42,478,
-	9,42,3,42,480,8,42,1,43,1,43,1,43,1,43,1,44,1,44,1,44,5,44,489,8,44,10,
-	44,12,44,492,9,44,1,45,1,45,1,45,1,46,1,46,1,46,1,47,1,47,1,47,1,47,1,47,
-	1,47,4,47,506,8,47,11,47,12,47,507,1,47,1,47,1,47,0,1,54,48,0,2,4,6,8,10,
-	12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,
-	60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,0,10,1,0,35,36,2,
-	0,36,36,39,39,2,0,33,33,36,36,1,0,27,28,1,0,25,26,1,0,23,24,2,0,22,22,26,
-	26,2,0,34,34,36,40,2,0,13,13,35,35,2,0,35,36,39,39,540,0,98,1,0,0,0,2,120,
-	1,0,0,0,4,123,1,0,0,0,6,127,1,0,0,0,8,139,1,0,0,0,10,151,1,0,0,0,12,157,
-	1,0,0,0,14,162,1,0,0,0,16,169,1,0,0,0,18,171,1,0,0,0,20,174,1,0,0,0,22,
-	176,1,0,0,0,24,181,1,0,0,0,26,193,1,0,0,0,28,215,1,0,0,0,30,225,1,0,0,0,
-	32,227,1,0,0,0,34,241,1,0,0,0,36,243,1,0,0,0,38,251,1,0,0,0,40,253,1,0,
-	0,0,42,263,1,0,0,0,44,265,1,0,0,0,46,269,1,0,0,0,48,296,1,0,0,0,50,298,
-	1,0,0,0,52,302,1,0,0,0,54,321,1,0,0,0,56,338,1,0,0,0,58,340,1,0,0,0,60,
-	347,1,0,0,0,62,349,1,0,0,0,64,369,1,0,0,0,66,400,1,0,0,0,68,402,1,0,0,0,
-	70,416,1,0,0,0,72,418,1,0,0,0,74,421,1,0,0,0,76,434,1,0,0,0,78,447,1,0,
-	0,0,80,456,1,0,0,0,82,460,1,0,0,0,84,479,1,0,0,0,86,481,1,0,0,0,88,485,
-	1,0,0,0,90,493,1,0,0,0,92,496,1,0,0,0,94,499,1,0,0,0,96,99,3,2,1,0,97,99,
-	5,43,0,0,98,96,1,0,0,0,98,97,1,0,0,0,99,100,1,0,0,0,100,98,1,0,0,0,100,
-	101,1,0,0,0,101,102,1,0,0,0,102,103,5,0,0,1,103,1,1,0,0,0,104,121,3,14,
-	7,0,105,121,3,24,12,0,106,121,3,22,11,0,107,121,3,44,22,0,108,121,3,50,
-	25,0,109,121,3,8,4,0,110,121,3,52,26,0,111,121,3,42,21,0,112,121,3,62,31,
-	0,113,121,3,88,44,0,114,121,3,90,45,0,115,121,3,92,46,0,116,121,3,94,47,
-	0,117,121,3,68,34,0,118,121,3,32,16,0,119,121,3,4,2,0,120,104,1,0,0,0,120,
-	105,1,0,0,0,120,106,1,0,0,0,120,107,1,0,0,0,120,108,1,0,0,0,120,109,1,0,
-	0,0,120,110,1,0,0,0,120,111,1,0,0,0,120,112,1,0,0,0,120,113,1,0,0,0,120,
-	114,1,0,0,0,120,115,1,0,0,0,120,116,1,0,0,0,120,117,1,0,0,0,120,118,1,0,
-	0,0,120,119,1,0,0,0,121,3,1,0,0,0,122,124,3,6,3,0,123,122,1,0,0,0,124,125,
-	1,0,0,0,125,123,1,0,0,0,125,126,1,0,0,0,126,5,1,0,0,0,127,128,5,8,0,0,128,
-	129,5,1,0,0,129,130,5,43,0,0,130,133,5,45,0,0,131,134,5,43,0,0,132,134,
-	3,2,1,0,133,131,1,0,0,0,133,132,1,0,0,0,134,135,1,0,0,0,135,133,1,0,0,0,
-	135,136,1,0,0,0,136,137,1,0,0,0,137,138,5,46,0,0,138,7,1,0,0,0,139,140,
-	3,68,34,0,140,141,5,1,0,0,141,142,5,43,0,0,142,145,5,45,0,0,143,146,5,43,
-	0,0,144,146,3,10,5,0,145,143,1,0,0,0,145,144,1,0,0,0,146,147,1,0,0,0,147,
-	145,1,0,0,0,147,148,1,0,0,0,148,149,1,0,0,0,149,150,5,46,0,0,150,9,1,0,
-	0,0,151,152,7,0,0,0,152,153,5,1,0,0,153,154,3,60,30,0,154,11,1,0,0,0,155,
-	158,3,54,27,0,156,158,3,44,22,0,157,155,1,0,0,0,157,156,1,0,0,0,158,160,
-	1,0,0,0,159,161,3,18,9,0,160,159,1,0,0,0,160,161,1,0,0,0,161,13,1,0,0,0,
-	162,163,5,14,0,0,163,165,3,12,6,0,164,166,5,35,0,0,165,164,1,0,0,0,165,
-	166,1,0,0,0,166,15,1,0,0,0,167,170,3,12,6,0,168,170,3,18,9,0,169,167,1,
-	0,0,0,169,168,1,0,0,0,170,17,1,0,0,0,171,172,5,13,0,0,172,173,7,1,0,0,173,
-	19,1,0,0,0,174,175,7,1,0,0,175,21,1,0,0,0,176,177,5,15,0,0,177,179,3,16,
-	8,0,178,180,5,35,0,0,179,178,1,0,0,0,179,180,1,0,0,0,180,23,1,0,0,0,181,
-	182,5,16,0,0,182,187,3,16,8,0,183,184,5,2,0,0,184,186,3,16,8,0,185,183,
-	1,0,0,0,186,189,1,0,0,0,187,185,1,0,0,0,187,188,1,0,0,0,188,191,1,0,0,0,
-	189,187,1,0,0,0,190,192,5,35,0,0,191,190,1,0,0,0,191,192,1,0,0,0,192,25,
-	1,0,0,0,193,194,5,15,0,0,194,195,3,16,8,0,195,196,5,16,0,0,196,201,3,16,
-	8,0,197,198,5,2,0,0,198,200,3,16,8,0,199,197,1,0,0,0,200,203,1,0,0,0,201,
-	199,1,0,0,0,201,202,1,0,0,0,202,204,1,0,0,0,203,201,1,0,0,0,204,205,5,1,
-	0,0,205,206,5,43,0,0,206,209,5,45,0,0,207,210,5,43,0,0,208,210,3,28,14,
-	0,209,207,1,0,0,0,209,208,1,0,0,0,210,211,1,0,0,0,211,209,1,0,0,0,211,212,
-	1,0,0,0,212,213,1,0,0,0,213,214,5,46,0,0,214,27,1,0,0,0,215,216,3,20,10,
-	0,216,217,5,1,0,0,217,222,3,30,15,0,218,219,5,2,0,0,219,221,3,30,15,0,220,
-	218,1,0,0,0,221,224,1,0,0,0,222,220,1,0,0,0,222,223,1,0,0,0,223,29,1,0,
-	0,0,224,222,1,0,0,0,225,226,7,2,0,0,226,31,1,0,0,0,227,228,3,22,11,0,228,
-	229,5,1,0,0,229,230,5,43,0,0,230,233,5,45,0,0,231,234,5,43,0,0,232,234,
-	3,34,17,0,233,231,1,0,0,0,233,232,1,0,0,0,234,235,1,0,0,0,235,233,1,0,0,
-	0,235,236,1,0,0,0,236,237,1,0,0,0,237,238,5,46,0,0,238,33,1,0,0,0,239,242,
-	3,2,1,0,240,242,3,36,18,0,241,239,1,0,0,0,241,240,1,0,0,0,242,35,1,0,0,
-	0,243,244,3,20,10,0,244,247,5,1,0,0,245,248,3,38,19,0,246,248,3,40,20,0,
-	247,245,1,0,0,0,247,246,1,0,0,0,248,37,1,0,0,0,249,252,3,2,1,0,250,252,
-	5,33,0,0,251,249,1,0,0,0,251,250,1,0,0,0,252,39,1,0,0,0,253,254,5,43,0,
-	0,254,257,5,45,0,0,255,258,5,43,0,0,256,258,3,2,1,0,257,255,1,0,0,0,257,
-	256,1,0,0,0,258,259,1,0,0,0,259,257,1,0,0,0,259,260,1,0,0,0,260,261,1,0,
-	0,0,261,262,5,46,0,0,262,41,1,0,0,0,263,264,5,7,0,0,264,43,1,0,0,0,265,
-	266,3,68,34,0,266,267,5,3,0,0,267,268,3,54,27,0,268,45,1,0,0,0,269,270,
-	5,35,0,0,270,271,5,3,0,0,271,272,3,54,27,0,272,47,1,0,0,0,273,278,3,54,
-	27,0,274,275,5,2,0,0,275,277,3,54,27,0,276,274,1,0,0,0,277,280,1,0,0,0,
-	278,276,1,0,0,0,278,279,1,0,0,0,279,285,1,0,0,0,280,278,1,0,0,0,281,282,
-	5,2,0,0,282,284,3,46,23,0,283,281,1,0,0,0,284,287,1,0,0,0,285,283,1,0,0,
-	0,285,286,1,0,0,0,286,297,1,0,0,0,287,285,1,0,0,0,288,293,3,46,23,0,289,
-	290,5,2,0,0,290,292,3,46,23,0,291,289,1,0,0,0,292,295,1,0,0,0,293,291,1,
-	0,0,0,293,294,1,0,0,0,294,297,1,0,0,0,295,293,1,0,0,0,296,273,1,0,0,0,296,
-	288,1,0,0,0,297,49,1,0,0,0,298,299,3,68,34,0,299,300,5,3,0,0,300,301,3,
-	54,27,0,301,51,1,0,0,0,302,303,5,4,0,0,303,304,5,35,0,0,304,305,5,3,0,0,
-	305,306,3,54,27,0,306,53,1,0,0,0,307,309,6,27,-1,0,308,310,3,58,29,0,309,
-	308,1,0,0,0,309,310,1,0,0,0,310,313,1,0,0,0,311,314,3,60,30,0,312,314,3,
-	68,34,0,313,311,1,0,0,0,313,312,1,0,0,0,314,322,1,0,0,0,315,316,5,29,0,
-	0,316,317,3,54,27,0,317,318,5,30,0,0,318,322,1,0,0,0,319,322,3,74,37,0,
-	320,322,3,76,38,0,321,307,1,0,0,0,321,315,1,0,0,0,321,319,1,0,0,0,321,320,
-	1,0,0,0,322,335,1,0,0,0,323,324,10,5,0,0,324,325,7,3,0,0,325,334,3,54,27,
-	6,326,327,10,4,0,0,327,328,7,4,0,0,328,334,3,54,27,5,329,330,10,3,0,0,330,
-	331,3,56,28,0,331,332,3,54,27,4,332,334,1,0,0,0,333,323,1,0,0,0,333,326,
-	1,0,0,0,333,329,1,0,0,0,334,337,1,0,0,0,335,333,1,0,0,0,335,336,1,0,0,0,
-	336,55,1,0,0,0,337,335,1,0,0,0,338,339,7,5,0,0,339,57,1,0,0,0,340,341,7,
-	6,0,0,341,59,1,0,0,0,342,344,5,26,0,0,343,342,1,0,0,0,343,344,1,0,0,0,344,
-	345,1,0,0,0,345,348,7,7,0,0,346,348,3,86,43,0,347,343,1,0,0,0,347,346,1,
-	0,0,0,348,61,1,0,0,0,349,350,5,19,0,0,350,351,5,35,0,0,351,353,5,29,0,0,
-	352,354,3,66,33,0,353,352,1,0,0,0,353,354,1,0,0,0,354,355,1,0,0,0,355,356,
-	5,30,0,0,356,357,5,1,0,0,357,358,5,43,0,0,358,361,5,45,0,0,359,362,5,43,
-	0,0,360,362,3,64,32,0,361,359,1,0,0,0,361,360,1,0,0,0,362,363,1,0,0,0,363,
-	361,1,0,0,0,363,364,1,0,0,0,364,365,1,0,0,0,365,366,5,46,0,0,366,63,1,0,
-	0,0,367,370,3,2,1,0,368,370,3,72,36,0,369,367,1,0,0,0,369,368,1,0,0,0,370,
-	65,1,0,0,0,371,376,5,35,0,0,372,373,5,2,0,0,373,375,5,35,0,0,374,372,1,
-	0,0,0,375,378,1,0,0,0,376,374,1,0,0,0,376,377,1,0,0,0,377,385,1,0,0,0,378,
-	376,1,0,0,0,379,380,5,2,0,0,380,381,5,35,0,0,381,382,5,3,0,0,382,384,3,
-	60,30,0,383,379,1,0,0,0,384,387,1,0,0,0,385,383,1,0,0,0,385,386,1,0,0,0,
-	386,401,1,0,0,0,387,385,1,0,0,0,388,389,5,35,0,0,389,390,5,3,0,0,390,397,
-	3,60,30,0,391,392,5,2,0,0,392,393,5,35,0,0,393,394,5,3,0,0,394,396,3,60,
-	30,0,395,391,1,0,0,0,396,399,1,0,0,0,397,395,1,0,0,0,397,398,1,0,0,0,398,
-	401,1,0,0,0,399,397,1,0,0,0,400,371,1,0,0,0,400,388,1,0,0,0,401,67,1,0,
-	0,0,402,406,5,35,0,0,403,405,3,70,35,0,404,403,1,0,0,0,405,408,1,0,0,0,
-	406,404,1,0,0,0,406,407,1,0,0,0,407,69,1,0,0,0,408,406,1,0,0,0,409,411,
-	5,29,0,0,410,412,3,48,24,0,411,410,1,0,0,0,411,412,1,0,0,0,412,413,1,0,
-	0,0,413,417,5,30,0,0,414,415,5,5,0,0,415,417,5,35,0,0,416,409,1,0,0,0,416,
-	414,1,0,0,0,417,71,1,0,0,0,418,419,5,18,0,0,419,420,3,54,27,0,420,73,1,
-	0,0,0,421,422,5,9,0,0,422,423,5,10,0,0,423,424,5,1,0,0,424,425,5,43,0,0,
-	425,428,5,45,0,0,426,429,5,43,0,0,427,429,3,80,40,0,428,426,1,0,0,0,428,
-	427,1,0,0,0,429,430,1,0,0,0,430,428,1,0,0,0,430,431,1,0,0,0,431,432,1,0,
-	0,0,432,433,5,46,0,0,433,75,1,0,0,0,434,435,5,9,0,0,435,436,5,11,0,0,436,
-	437,5,1,0,0,437,438,5,43,0,0,438,441,5,45,0,0,439,442,5,43,0,0,440,442,
-	3,78,39,0,441,439,1,0,0,0,441,440,1,0,0,0,442,443,1,0,0,0,443,441,1,0,0,
-	0,443,444,1,0,0,0,444,445,1,0,0,0,445,446,5,46,0,0,446,77,1,0,0,0,447,448,
-	7,8,0,0,448,454,5,1,0,0,449,455,3,48,24,0,450,451,5,29,0,0,451,452,3,48,
-	24,0,452,453,5,30,0,0,453,455,1,0,0,0,454,449,1,0,0,0,454,450,1,0,0,0,455,
-	79,1,0,0,0,456,457,3,82,41,0,457,458,5,1,0,0,458,459,3,84,42,0,459,81,1,
-	0,0,0,460,461,7,9,0,0,461,83,1,0,0,0,462,463,5,43,0,0,463,466,5,45,0,0,
-	464,467,5,43,0,0,465,467,3,80,40,0,466,464,1,0,0,0,466,465,1,0,0,0,467,
-	468,1,0,0,0,468,466,1,0,0,0,468,469,1,0,0,0,469,470,1,0,0,0,470,480,5,46,
-	0,0,471,476,3,54,27,0,472,473,5,2,0,0,473,475,3,54,27,0,474,472,1,0,0,0,
-	475,478,1,0,0,0,476,474,1,0,0,0,476,477,1,0,0,0,477,480,1,0,0,0,478,476,
-	1,0,0,0,479,462,1,0,0,0,479,471,1,0,0,0,480,85,1,0,0,0,481,482,5,31,0,0,
-	482,483,5,36,0,0,483,484,5,32,0,0,484,87,1,0,0,0,485,486,5,12,0,0,486,490,
-	5,35,0,0,487,489,7,0,0,0,488,487,1,0,0,0,489,492,1,0,0,0,490,488,1,0,0,
-	0,490,491,1,0,0,0,491,89,1,0,0,0,492,490,1,0,0,0,493,494,5,17,0,0,494,495,
-	5,35,0,0,495,91,1,0,0,0,496,497,5,20,0,0,497,498,5,35,0,0,498,93,1,0,0,
-	0,499,500,5,6,0,0,500,501,5,1,0,0,501,502,5,43,0,0,502,505,5,45,0,0,503,
-	506,5,43,0,0,504,506,3,2,1,0,505,503,1,0,0,0,505,504,1,0,0,0,506,507,1,
-	0,0,0,507,505,1,0,0,0,507,508,1,0,0,0,508,509,1,0,0,0,509,510,5,46,0,0,
-	510,95,1,0,0,0,60,98,100,120,125,133,135,145,147,157,160,165,169,179,187,
-	191,201,209,211,222,233,235,241,247,251,257,259,278,285,293,296,309,313,
-	321,333,335,343,347,353,361,363,369,376,385,397,400,406,411,416,428,430,
-	441,443,454,466,468,476,479,490,505,507];
+	7,46,2,47,7,47,2,48,7,48,1,0,1,0,4,0,101,8,0,11,0,12,0,102,1,0,1,0,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,123,8,1,
+	1,2,4,2,126,8,2,11,2,12,2,127,1,3,1,3,1,3,1,3,1,3,1,3,4,3,136,8,3,11,3,
+	12,3,137,1,3,1,3,1,4,1,4,1,4,1,4,1,4,1,4,4,4,148,8,4,11,4,12,4,149,1,4,
+	1,4,1,5,1,5,1,5,1,5,1,6,1,6,3,6,160,8,6,1,6,3,6,163,8,6,1,7,1,7,1,7,3,7,
+	168,8,7,1,8,1,8,3,8,172,8,8,1,9,1,9,1,9,1,10,1,10,1,11,1,11,1,11,3,11,182,
+	8,11,1,12,1,12,1,12,1,12,5,12,188,8,12,10,12,12,12,191,9,12,1,12,3,12,194,
+	8,12,1,13,1,13,1,13,1,13,1,13,1,13,5,13,202,8,13,10,13,12,13,205,9,13,1,
+	13,1,13,1,13,1,13,1,13,4,13,212,8,13,11,13,12,13,213,1,13,1,13,1,14,1,14,
+	1,14,1,14,1,14,5,14,223,8,14,10,14,12,14,226,9,14,1,15,1,15,1,16,1,16,1,
+	16,1,16,1,16,1,16,4,16,236,8,16,11,16,12,16,237,1,16,1,16,1,17,1,17,3,17,
+	244,8,17,1,18,1,18,1,18,1,18,3,18,250,8,18,1,19,1,19,3,19,254,8,19,1,20,
+	1,20,1,20,1,20,4,20,260,8,20,11,20,12,20,261,1,20,1,20,1,21,1,21,1,22,1,
+	22,1,22,1,22,1,23,1,23,1,23,1,23,1,24,1,24,1,24,5,24,279,8,24,10,24,12,
+	24,282,9,24,1,24,1,24,5,24,286,8,24,10,24,12,24,289,9,24,1,24,1,24,1,24,
+	5,24,294,8,24,10,24,12,24,297,9,24,3,24,299,8,24,1,25,1,25,1,25,1,25,1,
+	26,1,26,1,26,1,26,1,26,1,27,1,27,3,27,312,8,27,1,27,1,27,3,27,316,8,27,
+	1,27,1,27,1,27,1,27,1,27,1,27,3,27,324,8,27,1,27,1,27,1,27,1,27,1,27,1,
+	27,1,27,1,27,1,27,1,27,5,27,336,8,27,10,27,12,27,339,9,27,1,28,1,28,1,29,
+	1,29,1,30,3,30,346,8,30,1,30,1,30,3,30,350,8,30,1,31,1,31,1,31,1,31,3,31,
+	356,8,31,1,31,1,31,1,31,1,31,1,31,1,31,4,31,364,8,31,11,31,12,31,365,1,
+	31,1,31,1,32,1,32,3,32,372,8,32,1,33,1,33,1,33,5,33,377,8,33,10,33,12,33,
+	380,9,33,1,33,1,33,1,33,1,33,5,33,386,8,33,10,33,12,33,389,9,33,1,33,1,
+	33,1,33,1,33,1,33,1,33,1,33,5,33,398,8,33,10,33,12,33,401,9,33,3,33,403,
+	8,33,1,34,3,34,406,8,34,1,34,1,34,5,34,410,8,34,10,34,12,34,413,9,34,1,
+	35,1,35,3,35,417,8,35,1,35,1,35,1,35,3,35,422,8,35,1,36,1,36,1,36,1,37,
+	1,37,1,37,1,38,1,38,1,38,1,38,1,38,1,38,1,38,4,38,437,8,38,11,38,12,38,
+	438,1,38,1,38,1,39,1,39,1,39,1,39,1,39,1,39,1,39,4,39,450,8,39,11,39,12,
+	39,451,1,39,1,39,1,40,1,40,1,40,1,40,1,40,1,40,1,40,3,40,463,8,40,1,41,
+	1,41,1,41,1,41,1,42,1,42,1,43,1,43,1,43,1,43,4,43,475,8,43,11,43,12,43,
+	476,1,43,1,43,1,43,1,43,5,43,483,8,43,10,43,12,43,486,9,43,3,43,488,8,43,
+	1,44,1,44,1,44,1,44,1,45,1,45,1,45,5,45,497,8,45,10,45,12,45,500,9,45,1,
+	46,1,46,1,46,1,47,1,47,1,47,1,48,1,48,1,48,1,48,1,48,1,48,4,48,514,8,48,
+	11,48,12,48,515,1,48,1,48,1,48,0,1,54,49,0,2,4,6,8,10,12,14,16,18,20,22,
+	24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,
+	72,74,76,78,80,82,84,86,88,90,92,94,96,0,10,1,0,35,36,2,0,36,36,39,39,2,
+	0,33,33,36,36,1,0,29,30,1,0,27,28,1,0,25,26,2,0,24,24,28,28,2,0,34,34,36,
+	40,2,0,15,15,35,35,2,0,35,36,39,39,548,0,100,1,0,0,0,2,122,1,0,0,0,4,125,
+	1,0,0,0,6,129,1,0,0,0,8,141,1,0,0,0,10,153,1,0,0,0,12,159,1,0,0,0,14,164,
+	1,0,0,0,16,171,1,0,0,0,18,173,1,0,0,0,20,176,1,0,0,0,22,178,1,0,0,0,24,
+	183,1,0,0,0,26,195,1,0,0,0,28,217,1,0,0,0,30,227,1,0,0,0,32,229,1,0,0,0,
+	34,243,1,0,0,0,36,245,1,0,0,0,38,253,1,0,0,0,40,255,1,0,0,0,42,265,1,0,
+	0,0,44,267,1,0,0,0,46,271,1,0,0,0,48,298,1,0,0,0,50,300,1,0,0,0,52,304,
+	1,0,0,0,54,323,1,0,0,0,56,340,1,0,0,0,58,342,1,0,0,0,60,349,1,0,0,0,62,
+	351,1,0,0,0,64,371,1,0,0,0,66,402,1,0,0,0,68,405,1,0,0,0,70,421,1,0,0,0,
+	72,423,1,0,0,0,74,426,1,0,0,0,76,429,1,0,0,0,78,442,1,0,0,0,80,455,1,0,
+	0,0,82,464,1,0,0,0,84,468,1,0,0,0,86,487,1,0,0,0,88,489,1,0,0,0,90,493,
+	1,0,0,0,92,501,1,0,0,0,94,504,1,0,0,0,96,507,1,0,0,0,98,101,3,2,1,0,99,
+	101,5,43,0,0,100,98,1,0,0,0,100,99,1,0,0,0,101,102,1,0,0,0,102,100,1,0,
+	0,0,102,103,1,0,0,0,103,104,1,0,0,0,104,105,5,0,0,1,105,1,1,0,0,0,106,123,
+	3,14,7,0,107,123,3,24,12,0,108,123,3,22,11,0,109,123,3,44,22,0,110,123,
+	3,50,25,0,111,123,3,8,4,0,112,123,3,52,26,0,113,123,3,42,21,0,114,123,3,
+	62,31,0,115,123,3,90,45,0,116,123,3,92,46,0,117,123,3,94,47,0,118,123,3,
+	96,48,0,119,123,3,68,34,0,120,123,3,32,16,0,121,123,3,4,2,0,122,106,1,0,
+	0,0,122,107,1,0,0,0,122,108,1,0,0,0,122,109,1,0,0,0,122,110,1,0,0,0,122,
+	111,1,0,0,0,122,112,1,0,0,0,122,113,1,0,0,0,122,114,1,0,0,0,122,115,1,0,
+	0,0,122,116,1,0,0,0,122,117,1,0,0,0,122,118,1,0,0,0,122,119,1,0,0,0,122,
+	120,1,0,0,0,122,121,1,0,0,0,123,3,1,0,0,0,124,126,3,6,3,0,125,124,1,0,0,
+	0,126,127,1,0,0,0,127,125,1,0,0,0,127,128,1,0,0,0,128,5,1,0,0,0,129,130,
+	5,10,0,0,130,131,5,1,0,0,131,132,5,43,0,0,132,135,5,45,0,0,133,136,5,43,
+	0,0,134,136,3,2,1,0,135,133,1,0,0,0,135,134,1,0,0,0,136,137,1,0,0,0,137,
+	135,1,0,0,0,137,138,1,0,0,0,138,139,1,0,0,0,139,140,5,46,0,0,140,7,1,0,
+	0,0,141,142,3,68,34,0,142,143,5,1,0,0,143,144,5,43,0,0,144,147,5,45,0,0,
+	145,148,5,43,0,0,146,148,3,10,5,0,147,145,1,0,0,0,147,146,1,0,0,0,148,149,
+	1,0,0,0,149,147,1,0,0,0,149,150,1,0,0,0,150,151,1,0,0,0,151,152,5,46,0,
+	0,152,9,1,0,0,0,153,154,7,0,0,0,154,155,5,1,0,0,155,156,3,60,30,0,156,11,
+	1,0,0,0,157,160,3,54,27,0,158,160,3,44,22,0,159,157,1,0,0,0,159,158,1,0,
+	0,0,160,162,1,0,0,0,161,163,3,18,9,0,162,161,1,0,0,0,162,163,1,0,0,0,163,
+	13,1,0,0,0,164,165,5,16,0,0,165,167,3,12,6,0,166,168,5,35,0,0,167,166,1,
+	0,0,0,167,168,1,0,0,0,168,15,1,0,0,0,169,172,3,12,6,0,170,172,3,18,9,0,
+	171,169,1,0,0,0,171,170,1,0,0,0,172,17,1,0,0,0,173,174,5,15,0,0,174,175,
+	7,1,0,0,175,19,1,0,0,0,176,177,7,1,0,0,177,21,1,0,0,0,178,179,5,17,0,0,
+	179,181,3,16,8,0,180,182,5,35,0,0,181,180,1,0,0,0,181,182,1,0,0,0,182,23,
+	1,0,0,0,183,184,5,18,0,0,184,189,3,16,8,0,185,186,5,2,0,0,186,188,3,16,
+	8,0,187,185,1,0,0,0,188,191,1,0,0,0,189,187,1,0,0,0,189,190,1,0,0,0,190,
+	193,1,0,0,0,191,189,1,0,0,0,192,194,5,35,0,0,193,192,1,0,0,0,193,194,1,
+	0,0,0,194,25,1,0,0,0,195,196,5,17,0,0,196,197,3,16,8,0,197,198,5,18,0,0,
+	198,203,3,16,8,0,199,200,5,2,0,0,200,202,3,16,8,0,201,199,1,0,0,0,202,205,
+	1,0,0,0,203,201,1,0,0,0,203,204,1,0,0,0,204,206,1,0,0,0,205,203,1,0,0,0,
+	206,207,5,1,0,0,207,208,5,43,0,0,208,211,5,45,0,0,209,212,5,43,0,0,210,
+	212,3,28,14,0,211,209,1,0,0,0,211,210,1,0,0,0,212,213,1,0,0,0,213,211,1,
+	0,0,0,213,214,1,0,0,0,214,215,1,0,0,0,215,216,5,46,0,0,216,27,1,0,0,0,217,
+	218,3,20,10,0,218,219,5,1,0,0,219,224,3,30,15,0,220,221,5,2,0,0,221,223,
+	3,30,15,0,222,220,1,0,0,0,223,226,1,0,0,0,224,222,1,0,0,0,224,225,1,0,0,
+	0,225,29,1,0,0,0,226,224,1,0,0,0,227,228,7,2,0,0,228,31,1,0,0,0,229,230,
+	3,22,11,0,230,231,5,1,0,0,231,232,5,43,0,0,232,235,5,45,0,0,233,236,5,43,
+	0,0,234,236,3,34,17,0,235,233,1,0,0,0,235,234,1,0,0,0,236,237,1,0,0,0,237,
+	235,1,0,0,0,237,238,1,0,0,0,238,239,1,0,0,0,239,240,5,46,0,0,240,33,1,0,
+	0,0,241,244,3,2,1,0,242,244,3,36,18,0,243,241,1,0,0,0,243,242,1,0,0,0,244,
+	35,1,0,0,0,245,246,3,20,10,0,246,249,5,1,0,0,247,250,3,38,19,0,248,250,
+	3,40,20,0,249,247,1,0,0,0,249,248,1,0,0,0,250,37,1,0,0,0,251,254,3,2,1,
+	0,252,254,5,33,0,0,253,251,1,0,0,0,253,252,1,0,0,0,254,39,1,0,0,0,255,256,
+	5,43,0,0,256,259,5,45,0,0,257,260,5,43,0,0,258,260,3,2,1,0,259,257,1,0,
+	0,0,259,258,1,0,0,0,260,261,1,0,0,0,261,259,1,0,0,0,261,262,1,0,0,0,262,
+	263,1,0,0,0,263,264,5,46,0,0,264,41,1,0,0,0,265,266,5,9,0,0,266,43,1,0,
+	0,0,267,268,3,68,34,0,268,269,5,3,0,0,269,270,3,54,27,0,270,45,1,0,0,0,
+	271,272,5,35,0,0,272,273,5,3,0,0,273,274,3,54,27,0,274,47,1,0,0,0,275,280,
+	3,54,27,0,276,277,5,2,0,0,277,279,3,54,27,0,278,276,1,0,0,0,279,282,1,0,
+	0,0,280,278,1,0,0,0,280,281,1,0,0,0,281,287,1,0,0,0,282,280,1,0,0,0,283,
+	284,5,2,0,0,284,286,3,46,23,0,285,283,1,0,0,0,286,289,1,0,0,0,287,285,1,
+	0,0,0,287,288,1,0,0,0,288,299,1,0,0,0,289,287,1,0,0,0,290,295,3,46,23,0,
+	291,292,5,2,0,0,292,294,3,46,23,0,293,291,1,0,0,0,294,297,1,0,0,0,295,293,
+	1,0,0,0,295,296,1,0,0,0,296,299,1,0,0,0,297,295,1,0,0,0,298,275,1,0,0,0,
+	298,290,1,0,0,0,299,49,1,0,0,0,300,301,3,68,34,0,301,302,5,3,0,0,302,303,
+	3,54,27,0,303,51,1,0,0,0,304,305,5,4,0,0,305,306,5,35,0,0,306,307,5,3,0,
+	0,307,308,3,54,27,0,308,53,1,0,0,0,309,311,6,27,-1,0,310,312,3,58,29,0,
+	311,310,1,0,0,0,311,312,1,0,0,0,312,315,1,0,0,0,313,316,3,60,30,0,314,316,
+	3,68,34,0,315,313,1,0,0,0,315,314,1,0,0,0,316,324,1,0,0,0,317,318,5,31,
+	0,0,318,319,3,54,27,0,319,320,5,32,0,0,320,324,1,0,0,0,321,324,3,76,38,
+	0,322,324,3,78,39,0,323,309,1,0,0,0,323,317,1,0,0,0,323,321,1,0,0,0,323,
+	322,1,0,0,0,324,337,1,0,0,0,325,326,10,5,0,0,326,327,7,3,0,0,327,336,3,
+	54,27,6,328,329,10,4,0,0,329,330,7,4,0,0,330,336,3,54,27,5,331,332,10,3,
+	0,0,332,333,3,56,28,0,333,334,3,54,27,4,334,336,1,0,0,0,335,325,1,0,0,0,
+	335,328,1,0,0,0,335,331,1,0,0,0,336,339,1,0,0,0,337,335,1,0,0,0,337,338,
+	1,0,0,0,338,55,1,0,0,0,339,337,1,0,0,0,340,341,7,5,0,0,341,57,1,0,0,0,342,
+	343,7,6,0,0,343,59,1,0,0,0,344,346,5,28,0,0,345,344,1,0,0,0,345,346,1,0,
+	0,0,346,347,1,0,0,0,347,350,7,7,0,0,348,350,3,88,44,0,349,345,1,0,0,0,349,
+	348,1,0,0,0,350,61,1,0,0,0,351,352,5,21,0,0,352,353,5,35,0,0,353,355,5,
+	31,0,0,354,356,3,66,33,0,355,354,1,0,0,0,355,356,1,0,0,0,356,357,1,0,0,
+	0,357,358,5,32,0,0,358,359,5,1,0,0,359,360,5,43,0,0,360,363,5,45,0,0,361,
+	364,5,43,0,0,362,364,3,64,32,0,363,361,1,0,0,0,363,362,1,0,0,0,364,365,
+	1,0,0,0,365,363,1,0,0,0,365,366,1,0,0,0,366,367,1,0,0,0,367,368,5,46,0,
+	0,368,63,1,0,0,0,369,372,3,2,1,0,370,372,3,74,37,0,371,369,1,0,0,0,371,
+	370,1,0,0,0,372,65,1,0,0,0,373,378,5,35,0,0,374,375,5,2,0,0,375,377,5,35,
+	0,0,376,374,1,0,0,0,377,380,1,0,0,0,378,376,1,0,0,0,378,379,1,0,0,0,379,
+	387,1,0,0,0,380,378,1,0,0,0,381,382,5,2,0,0,382,383,5,35,0,0,383,384,5,
+	3,0,0,384,386,3,60,30,0,385,381,1,0,0,0,386,389,1,0,0,0,387,385,1,0,0,0,
+	387,388,1,0,0,0,388,403,1,0,0,0,389,387,1,0,0,0,390,391,5,35,0,0,391,392,
+	5,3,0,0,392,399,3,60,30,0,393,394,5,2,0,0,394,395,5,35,0,0,395,396,5,3,
+	0,0,396,398,3,60,30,0,397,393,1,0,0,0,398,401,1,0,0,0,399,397,1,0,0,0,399,
+	400,1,0,0,0,400,403,1,0,0,0,401,399,1,0,0,0,402,373,1,0,0,0,402,390,1,0,
+	0,0,403,67,1,0,0,0,404,406,3,72,36,0,405,404,1,0,0,0,405,406,1,0,0,0,406,
+	407,1,0,0,0,407,411,5,35,0,0,408,410,3,70,35,0,409,408,1,0,0,0,410,413,
+	1,0,0,0,411,409,1,0,0,0,411,412,1,0,0,0,412,69,1,0,0,0,413,411,1,0,0,0,
+	414,416,5,31,0,0,415,417,3,48,24,0,416,415,1,0,0,0,416,417,1,0,0,0,417,
+	418,1,0,0,0,418,422,5,32,0,0,419,420,5,5,0,0,420,422,5,35,0,0,421,414,1,
+	0,0,0,421,419,1,0,0,0,422,71,1,0,0,0,423,424,5,29,0,0,424,425,3,54,27,0,
+	425,73,1,0,0,0,426,427,5,20,0,0,427,428,3,54,27,0,428,75,1,0,0,0,429,430,
+	5,11,0,0,430,431,5,12,0,0,431,432,5,1,0,0,432,433,5,43,0,0,433,436,5,45,
+	0,0,434,437,5,43,0,0,435,437,3,82,41,0,436,434,1,0,0,0,436,435,1,0,0,0,
+	437,438,1,0,0,0,438,436,1,0,0,0,438,439,1,0,0,0,439,440,1,0,0,0,440,441,
+	5,46,0,0,441,77,1,0,0,0,442,443,5,11,0,0,443,444,5,13,0,0,444,445,5,1,0,
+	0,445,446,5,43,0,0,446,449,5,45,0,0,447,450,5,43,0,0,448,450,3,80,40,0,
+	449,447,1,0,0,0,449,448,1,0,0,0,450,451,1,0,0,0,451,449,1,0,0,0,451,452,
+	1,0,0,0,452,453,1,0,0,0,453,454,5,46,0,0,454,79,1,0,0,0,455,456,7,8,0,0,
+	456,462,5,1,0,0,457,463,3,48,24,0,458,459,5,31,0,0,459,460,3,48,24,0,460,
+	461,5,32,0,0,461,463,1,0,0,0,462,457,1,0,0,0,462,458,1,0,0,0,463,81,1,0,
+	0,0,464,465,3,84,42,0,465,466,5,1,0,0,466,467,3,86,43,0,467,83,1,0,0,0,
+	468,469,7,9,0,0,469,85,1,0,0,0,470,471,5,43,0,0,471,474,5,45,0,0,472,475,
+	5,43,0,0,473,475,3,82,41,0,474,472,1,0,0,0,474,473,1,0,0,0,475,476,1,0,
+	0,0,476,474,1,0,0,0,476,477,1,0,0,0,477,478,1,0,0,0,478,488,5,46,0,0,479,
+	484,3,54,27,0,480,481,5,2,0,0,481,483,3,54,27,0,482,480,1,0,0,0,483,486,
+	1,0,0,0,484,482,1,0,0,0,484,485,1,0,0,0,485,488,1,0,0,0,486,484,1,0,0,0,
+	487,470,1,0,0,0,487,479,1,0,0,0,488,87,1,0,0,0,489,490,5,6,0,0,490,491,
+	5,36,0,0,491,492,5,7,0,0,492,89,1,0,0,0,493,494,5,14,0,0,494,498,5,35,0,
+	0,495,497,7,0,0,0,496,495,1,0,0,0,497,500,1,0,0,0,498,496,1,0,0,0,498,499,
+	1,0,0,0,499,91,1,0,0,0,500,498,1,0,0,0,501,502,5,19,0,0,502,503,5,35,0,
+	0,503,93,1,0,0,0,504,505,5,22,0,0,505,506,5,35,0,0,506,95,1,0,0,0,507,508,
+	5,8,0,0,508,509,5,1,0,0,509,510,5,43,0,0,510,513,5,45,0,0,511,514,5,43,
+	0,0,512,514,3,2,1,0,513,511,1,0,0,0,513,512,1,0,0,0,514,515,1,0,0,0,515,
+	513,1,0,0,0,515,516,1,0,0,0,516,517,1,0,0,0,517,518,5,46,0,0,518,97,1,0,
+	0,0,61,100,102,122,127,135,137,147,149,159,162,167,171,181,189,193,203,
+	211,213,224,235,237,243,249,253,259,261,280,287,295,298,311,315,323,335,
+	337,345,349,355,363,365,371,378,387,399,402,405,411,416,421,436,438,449,
+	451,462,474,476,484,487,498,513,515];
 
 	private static __ATN: ATN;
 	public static get _ATN(): ATN {
@@ -4258,6 +4312,9 @@ export class Atom_exprContext extends ParserRuleContext {
 	public ID(): TerminalNode {
 		return this.getToken(CircuitScriptParser.ID, 0);
 	}
+	public net_namespace_expr(): Net_namespace_exprContext {
+		return this.getTypedRuleContext(Net_namespace_exprContext, 0) as Net_namespace_exprContext;
+	}
 	public trailer_expr_list(): Trailer_exprContext[] {
 		return this.getTypedRuleContexts(Trailer_exprContext) as Trailer_exprContext[];
 	}
@@ -4302,6 +4359,31 @@ export class Trailer_exprContext extends ParserRuleContext {
 	public accept<Result>(visitor: CircuitScriptVisitor<Result>): Result {
 		if (visitor.visitTrailer_expr) {
 			return visitor.visitTrailer_expr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
+export class Net_namespace_exprContext extends ParserRuleContext {
+	constructor(parser?: CircuitScriptParser, parent?: ParserRuleContext, invokingState?: number) {
+		super(parent, invokingState);
+    	this.parser = parser;
+	}
+	public Divide(): TerminalNode {
+		return this.getToken(CircuitScriptParser.Divide, 0);
+	}
+	public data_expr(): Data_exprContext {
+		return this.getTypedRuleContext(Data_exprContext, 0) as Data_exprContext;
+	}
+    public get ruleIndex(): number {
+    	return CircuitScriptParser.RULE_net_namespace_expr;
+	}
+	// @Override
+	public accept<Result>(visitor: CircuitScriptVisitor<Result>): Result {
+		if (visitor.visitNet_namespace_expr) {
+			return visitor.visitNet_namespace_expr(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -4578,14 +4660,8 @@ export class Blank_exprContext extends ParserRuleContext {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public OPEN_SQ_BRACKETS(): TerminalNode {
-		return this.getToken(CircuitScriptParser.OPEN_SQ_BRACKETS, 0);
-	}
 	public INTEGER_VALUE(): TerminalNode {
 		return this.getToken(CircuitScriptParser.INTEGER_VALUE, 0);
-	}
-	public CLOSE_SQ_BRACKETS(): TerminalNode {
-		return this.getToken(CircuitScriptParser.CLOSE_SQ_BRACKETS, 0);
 	}
     public get ruleIndex(): number {
     	return CircuitScriptParser.RULE_blank_expr;

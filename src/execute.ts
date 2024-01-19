@@ -4,7 +4,7 @@ import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './obj
 import { Net } from './objects/Net';
 import { ParamDefinition } from './objects/ParamDefinition';
 import { PinDefinition, PortSide } from './objects/PinDefinition';
-import { CFunction, CFunctionResult, CallableParameter, ComponentPin } from './objects/types';
+import { CFunction, CFunctionResult, CallableParameter, ComponentPin, ReferenceType } from './objects/types';
 import { Wire, WireSegment } from './objects/Wire';
 import { Logger } from './logger';
 import { Frame } from './objects/Frame';
@@ -13,13 +13,20 @@ export class ExecutionContext {
     // Contains the current running state of the circuit web
 
     name: string;      // Local name of the execution context.
-    namespace: string; // Namespace of current execution context.
+    
+    // Namespace of current execution context, used for 
+    // building the specific name of instances
+    namespace: string; 
+
+    // Namespace for building nets, split away from instance namespace so 
+    // that the net names generated are cleaner.
+    netNamespace: string;
 
     executionLevel: number;
 
     scope: ExecutionScope;
 
-    resolveNet: (name: string, namespace:string) => ({
+    resolveNet: (name: string, netNamespace:string) => ({
         found: boolean, net?: Net
     }) = null;
 
@@ -41,6 +48,7 @@ export class ExecutionContext {
     constructor(
         name: string,
         namespace: string,
+        netNamespace: string,
         executionLevel = 0,
         indentLevel = 0,
         silent = false,
@@ -48,6 +56,7 @@ export class ExecutionContext {
     ) {
         this.name = name;
         this.namespace = namespace;
+        this.netNamespace = netNamespace;
 
         this.executionLevel = executionLevel;
         this.logger = logger;
@@ -164,7 +173,7 @@ export class ExecutionContext {
         if (net1 === null && net2 === null) {
             // Both nets do not exist yet, so create a new one
             // that both will use.
-            const tmpNet = new Net(this.namespace, this.getUniqueNetName());
+            const tmpNet = new Net(this.netNamespace, this.getUniqueNetName());
 
             this.scope.setNet(component1, component1Pin, tmpNet);
             this.scope.setNet(component2, component2Pin, tmpNet);
@@ -256,7 +265,7 @@ export class ExecutionContext {
             const priority = paramsMap.get(ParamKeys.priority);
 
             // Check if the net exists
-            const result = this.resolveNet(netName, this.namespace);
+            const result = this.resolveNet(netName, this.netNamespace);
             let tmpNet: Net;
 
             if (result.found) {
@@ -264,7 +273,7 @@ export class ExecutionContext {
                 this.print('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
-                tmpNet = new Net(this.namespace, netName, priority);
+                tmpNet = new Net(this.netNamespace, netName, priority);
                 this.print('net not found, added net instance', 
                     tmpNet.namespace, tmpNet.name);
             }
@@ -699,6 +708,7 @@ export class ExecutionContext {
         functionName: string,
         functionParams: CallableParameter[],
         executionStack: ExecutionContext[],
+        netNamespace: string,
     ): CFunctionResult {
         let __runFunc: CFunction | null = null;
 
@@ -733,7 +743,9 @@ export class ExecutionContext {
         if (__runFunc !== null) {
             this.print(`call function '${functionName}'`);
 
-            const functionResult = __runFunc(functionParams);
+            const functionResult = __runFunc(
+                functionParams,
+                { netNamespace });
 
             this.print(`done call function '${functionName}'`);
 
@@ -801,8 +813,9 @@ export class ExecutionContext {
 
                 if (currentNet === null){
                     // Current net does not exist yet, so create it
-                    const tmpNet = new Net(
-                            this.namespace, this.getUniqueNetName());
+                    const tmpNet = new Net(this.netNamespace, 
+                        this.getUniqueNetName());
+                    
                     this.scope.setNet(
                         currentComponent, currentPin, netConnectedToRoot);
                     currentNet = tmpNet
@@ -1113,11 +1126,3 @@ type PortSideItem = {
     position: number,
 };
 
-export type ReferenceType =
-    {
-        found: boolean,
-        name?: string,
-        trailers?: string[],
-        type?: string,
-        value?: any
-    };
