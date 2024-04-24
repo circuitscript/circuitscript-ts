@@ -1,16 +1,16 @@
 import graphlib from '@dagrejs/graphlib';
 
-import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPlaceholder, SymbolText } from "./draw_symbols";
-import { ClassComponent } from "./objects/ClassComponent";
-import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope";
-import { GlobalNames, ParamKeys } from './globals';
-import { WireSegment } from './objects/Wire';
-import { NumericValue } from './objects/ParamDefinition';
-import { Geometry } from './geometry';
-import { Net } from './objects/Net';
-import { Logger } from './logger';
-import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame';
-import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils';
+import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPlaceholder, SymbolText } from "./draw_symbols.js";
+import { ClassComponent } from "./objects/ClassComponent.js";
+import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
+import { GlobalNames, ParamKeys } from './globals.js';
+import { WireSegment } from './objects/Wire.js';
+import { NumericValue } from './objects/ParamDefinition.js';
+import { Geometry } from './geometry.js';
+import { Net } from './objects/Net.js';
+import { Logger } from './logger.js';
+import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
+import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils.js';
 
 export class LayoutEngine {
 

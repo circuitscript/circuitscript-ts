@@ -1,6 +1,6 @@
 import { Box, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { config, createSVGWindow } from 'svgdom';
-import { HorizontalAlign, VerticalAlign } from './geometry';
+import { HorizontalAlign, VerticalAlign } from './geometry.js';
 
 let MainCanvas = null;
 

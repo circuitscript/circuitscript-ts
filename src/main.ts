@@ -6,19 +6,20 @@ import figlet from 'figlet';
 import fs from 'fs';
 import path from 'path';
 
-import { MainVisitor } from './visitor';
-import { prepareSizing } from './sizing';
-import { LayoutEngine } from './layout';
-import { generateSVG2 } from './render';
-import { SequenceAction } from './objects/ExecutionScope';
-import { parseFileWithVisitor } from './parser';
-import { generateKiCADNetList } from './export';
-import { SimpleStopwatch } from './utils';
+import { MainVisitor } from './visitor.js';
+import { prepareSizing } from './sizing.js';
+import { LayoutEngine } from './layout.js';
+import { generateSVG2 } from './render.js';
+import { SequenceAction } from './objects/ExecutionScope.js';
+import { parseFileWithVisitor } from './parser.js';
+import { generateKiCADNetList } from './export.js';
+import { SimpleStopwatch } from './utils.js';
 
 export default async function main(): Promise<void> {
 
     program
         .description('generate graphical output from circuitscript files')
+        .version('0.0.6')
         .option('-i, --input text <input text>', 'Input text directly')
         .option('-f, --input-file <path>', 'Input file')
         .option('-o, --output <path>', 'Output path')
@@ -205,6 +206,4 @@ export function renderScript(scriptData: string, outputPath: string, options): s
     return svgOutput;
 }
 
-if (require.main === module){
-    main();
-}
+main();

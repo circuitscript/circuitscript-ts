@@ -2,11 +2,11 @@ import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
-    RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout";
-import { applyFontsToSVG } from './sizing';
-import { ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals';
-import { NumericValue } from './objects/ParamDefinition';
-import { getBoundsSize } from './utils';
+    RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
+import { applyFontsToSVG } from './sizing.js';
+import { ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals.js';
+import { NumericValue } from './objects/ParamDefinition.js';
+import { getBoundsSize } from './utils.js';
 
 export function generateSVG2(graph: {
     components: RenderComponent[],

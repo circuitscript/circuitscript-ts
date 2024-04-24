@@ -1,4 +1,4 @@
-import { ClassComponent } from "./ClassComponent";
+import { ClassComponent } from "./ClassComponent.js";
 
 export class Wire {
 

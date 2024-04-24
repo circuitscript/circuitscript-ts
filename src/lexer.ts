@@ -4,8 +4,8 @@
  */
 
 import { CommonToken, CharStream, Token } from "antlr4";
-import CircuitScriptParser from "./antlr/CircuitScriptParser";
-import CircuitScriptLexer from "./antlr/CircuitScriptLexer";
+import CircuitScriptParser from "./antlr/CircuitScriptParser.js";
+import CircuitScriptLexer from "./antlr/CircuitScriptLexer.js";
 
 export class MainLexer extends CircuitScriptLexer {
 

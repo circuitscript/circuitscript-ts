@@ -1,6 +1,6 @@
 import Flatten from '@flatten-js/core'
-import { measureTextSize2 } from './sizing';
-import { defaultFont } from './globals';
+import { measureTextSize2 } from './sizing.js';
+import { defaultFont } from './globals.js';
 import { Box } from '@svgdotjs/svg.js';
 
 export type Segment = Flatten.Segment;

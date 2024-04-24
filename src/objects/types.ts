@@ -1,7 +1,7 @@
-import { ExecutionContext } from '../execute';
-import { ClassComponent } from './ClassComponent';
-import { Net } from './Net';
-import { NumericValue, PercentageValue, PinBlankValue } from './ParamDefinition';
+import { ExecutionContext } from '../execute.js';
+import { ClassComponent } from './ClassComponent.js';
+import { Net } from './Net.js';
+import { NumericValue, PercentageValue, PinBlankValue } from './ParamDefinition.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;

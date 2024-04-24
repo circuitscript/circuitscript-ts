@@ -1,8 +1,8 @@
 import { G } from "@svgdotjs/svg.js";
 
-import { SymbolPinSide, bodyColor, defaultFont } from "./globals";
-import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry";
-import { Logger } from "./logger";
+import { SymbolPinSide, bodyColor, defaultFont } from "./globals.js";
+import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry.js";
+import { Logger } from "./logger.js";
 
 
 /**

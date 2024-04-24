@@ -1,6 +1,6 @@
-import { ComponentTypes } from "./globals";
-import { NumericValue } from "./objects/ParamDefinition";
-import { NetListItem } from "./visitor";
+import { ComponentTypes } from "./globals.js";
+import { NumericValue } from "./objects/ParamDefinition.js";
+import { NetListItem } from "./visitor.js";
 
 export function generateKiCADNetList(netlist: NetListItem[]): string {
 

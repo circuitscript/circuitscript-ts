@@ -1,11 +1,11 @@
 import { CharStream, CommonTokenStream, ErrorListener, Token } from 'antlr4';
 
-import CircuitScriptLexer from './antlr/CircuitScriptLexer';
-import CircuitScriptParser from './antlr/CircuitScriptParser';
+import CircuitScriptLexer from './antlr/CircuitScriptLexer.js';
+import CircuitScriptParser from './antlr/CircuitScriptParser.js';
 
-import { MainVisitor } from './visitor';
-import { MainLexer } from './lexer';
-import { SimpleStopwatch } from './utils';
+import { MainVisitor } from './visitor.js';
+import { MainLexer } from './lexer.js';
+import { SimpleStopwatch } from './utils.js';
 
 export function parseFileWithVisitor(visitor: MainVisitor, data: string) {
     const chars = new CharStream(data);

@@ -1,17 +1,20 @@
 {
     "name": "circuitscript",
-    "version": "0.0.1",
+    "version": "0.0.7",
     "description": "Interpreter for the circuitscript language",
     "engines": {
         "node": ">=16.0"
     },
-    "main": "build/src/main.js",
+    "type": "module",
+    "main": "./build/src/main.js",
     "bin": {
         "circuitscript": "./build/src/main.js"
     },
     "devDependencies": {
+        "@types/figlet": "^1.5.8",
         "@types/jest": "~29.5",
         "@types/node": "~18",
+        "@types/svgdom": "^0.1.2",
         "@typescript-eslint/eslint-plugin": "~5.59",
         "@typescript-eslint/parser": "~5.59",
         "eslint": "~8.38",
@@ -23,7 +26,7 @@
         "source-map-support": "^0.5.21",
         "ts-api-utils": "~0.0.44",
         "ts-jest": "~29.1",
-        "typescript": "~5.0"
+        "typescript": "^5.4.5"
     },
     "scripts": {
         "start": "node build/src/main.js",
@@ -64,7 +67,7 @@
         ]
     },
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
-    "license": "Apache-2.0",
+    "license": "MIT",
     "dependencies": {
         "@dagrejs/graphlib": "^2.1.13",
         "@flatten-js/core": "^1.4.3",

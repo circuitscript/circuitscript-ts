@@ -1,9 +1,9 @@
-import { ClassComponent } from './ClassComponent';
-import { Net } from './Net';
-import { CFunction, ComponentPinNet, ComponentPinNetPair, ValueType } from './types';
-import { LayoutDirection } from '../globals';
-import { Wire, WireSegment } from './Wire';
-import { Frame } from './Frame';
+import { ClassComponent } from './ClassComponent.js';
+import { Net } from './Net.js';
+import { CFunction, ComponentPinNet, ComponentPinNetPair, ValueType } from './types.js';
+import { LayoutDirection } from '../globals.js';
+import { Wire, WireSegment } from './Wire.js';
+import { Frame } from './Frame.js';
 
 export class ExecutionScope {
     scopeId: number;

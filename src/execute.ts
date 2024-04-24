@@ -1,13 +1,13 @@
-import { ComponentTypes, GlobalNames, ParamKeys, ReferenceTypes } from './globals';
-import { ClassComponent } from './objects/ClassComponent';
-import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope';
-import { Net } from './objects/Net';
-import { ParamDefinition } from './objects/ParamDefinition';
-import { PinDefinition, PortSide } from './objects/PinDefinition';
-import { CFunction, CFunctionResult, CallableParameter, ComponentPin, ReferenceType } from './objects/types';
-import { Wire, WireSegment } from './objects/Wire';
-import { Logger } from './logger';
-import { Frame } from './objects/Frame';
+import { ComponentTypes, GlobalNames, ParamKeys, ReferenceTypes } from './globals.js';
+import { ClassComponent } from './objects/ClassComponent.js';
+import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope.js';
+import { Net } from './objects/Net.js';
+import { ParamDefinition } from './objects/ParamDefinition.js';
+import { PinDefinition, PortSide } from './objects/PinDefinition.js';
+import { CFunction, CFunctionResult, CallableParameter, ComponentPin, ReferenceType } from './objects/types.js';
+import { Wire, WireSegment } from './objects/Wire.js';
+import { Logger } from './logger.js';
+import { Frame } from './objects/Frame.js';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web

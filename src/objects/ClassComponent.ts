@@ -1,8 +1,8 @@
-import { SymbolDrawingCommands } from '../draw_symbols';
-import { Net } from './Net';
-import { PinDefinition, PinIdType } from './PinDefinition';
-import { PinTypes } from './PinTypes';
-import { WireSegment } from './Wire';
+import { SymbolDrawingCommands } from '../draw_symbols.js';
+import { Net } from './Net.js';
+import { PinDefinition, PinIdType } from './PinDefinition.js';
+import { PinTypes } from './PinTypes.js';
+import { WireSegment } from './Wire.js';
 
 export class ClassComponent {
 
