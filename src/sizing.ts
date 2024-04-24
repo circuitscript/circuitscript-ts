@@ -5,7 +5,7 @@ import { HorizontalAlign, VerticalAlign } from './geometry';
 let MainCanvas = null;
 
 const supportedFonts = { 
-    'Roboto': 'Roboto-Regular.ttf',
+    // 'Roboto': 'Roboto-Regular.ttf',
     'Inter': 'Inter-Regular.ttf', 
     'Inter-Bold': 'Inter-Bold.ttf',
 }

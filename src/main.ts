@@ -19,13 +19,15 @@ export default async function main(): Promise<void> {
 
     program
         .description('generate graphical output from circuitscript files')
-        .argument('input', 'Input path')
+        .option('-i, --input text <input text>', 'Input text directly')
+        .option('-f, --input-file <path>', 'Input file')
         .option('-o, --output <path>', 'Output path')
         .option('-c, --current-directory <path>', 'Set current directory')
         .option('-k, --kicad-netlist <filename>', 'Create KiCad netlist')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
+        .option('-s, --stats', 'Show stats during generation')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -39,7 +41,6 @@ export default async function main(): Promise<void> {
     program.parse();    
 
     const options = program.opts();
-    const [inputPath] = program.args;
 
     const watchFileChanges = options.watch;
     const outputPath = options.output ?? null;
@@ -55,17 +56,26 @@ export default async function main(): Promise<void> {
 
     await prepareSizing();
 
-    const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
+    let inputFilePath: string = null;
 
-    if (currentDirectory === null) {
-        currentDirectory = path.dirname(inputPath);
-    }
+    let scriptData: string;
+    if (options.input) {
+        scriptData = options.input;
+    } else {
+        inputFilePath = options.inputFile; // this should be provided
+        scriptData = fs.readFileSync(inputFilePath, { encoding: 'utf-8' });
+
+        if (currentDirectory === null) {
+            currentDirectory = path.dirname(inputFilePath);
+        }
+    }    
 
     const renderOptions = {
         currentDirectory,
         dumpNets, 
         dumpData,
         kicadNetlistPath: kicadNetlist,
+        showStats: options.stats,
     }
 
     const output = renderScript(scriptData, outputPath,
@@ -76,9 +86,9 @@ export default async function main(): Promise<void> {
     }
 
     if (watchFileChanges) {
-        fs.watch(inputPath, (event, targetFile) => {
+        fs.watch(inputFilePath, (event, targetFile) => {
             if (event === 'change') {
-                const scriptData = fs.readFileSync(inputPath, 
+                const scriptData = fs.readFileSync(inputFilePath, 
                     {encoding: 'utf-8'});
 
                 renderScript(scriptData, outputPath, renderOptions);
@@ -95,7 +105,8 @@ export function renderScript(scriptData: string, outputPath: string, options): s
         currentDirectory = null, 
         dumpNets = false,
         dumpData = false,
-        kicadNetlistPath = null } = options;
+        kicadNetlistPath = null,
+        showStats = false} = options;
 
     const visitor = new MainVisitor(true);
 
@@ -109,8 +120,8 @@ export function renderScript(scriptData: string, outputPath: string, options): s
         parserTimeTaken, 
         lexerTimeTaken } = parseFileWithVisitor(visitor, scriptData);
 
-    console.log('Lexing took:', lexerTimeTaken);
-    console.log('Parsing took:', parserTimeTaken);
+    showStats && console.log('Lexing took:', lexerTimeTaken);
+    showStats && console.log('Parsing took:', parserTimeTaken);
     
     if (dumpNets){
         console.log(visitor.dumpNets());
@@ -175,13 +186,13 @@ export function renderScript(scriptData: string, outputPath: string, options): s
 
         layoutEngine.printWarnings();
 
-        console.log('Layout took:', layoutTimer.lap());
+        showStats && console.log('Layout took:', layoutTimer.lap());
 
         dumpData && fs.writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
         svgOutput = generateSVG2(graph);
-        console.log('Render took:', generateSvgTimer.lap());
+        showStats && console.log('Render took:', generateSvgTimer.lap());
 
         if (outputPath){
             fs.writeFileSync(outputPath, svgOutput);
