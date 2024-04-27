@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 // Generated from ./src/antlr/CircuitScript.g4 by ANTLR 4.13.1
 
 import {ParseTreeVisitor} from 'antlr4';
