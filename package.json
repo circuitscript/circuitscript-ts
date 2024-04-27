@@ -1,6 +1,6 @@
 {
     "name": "circuitscript",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "Interpreter for the circuitscript language",
     "engines": {
         "node": ">=16.0"

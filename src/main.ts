@@ -1,11 +1,13 @@
 #! /usr/bin/env node
 
 import { program } from 'commander';
-import figlet from 'figlet';
+import { textSync } from 'figlet';
 
-import fs from 'fs';
-import path from 'path';
+import { readFileSync, watch, writeFileSync } from 'fs';
+import { dirname } from 'path';
 
+
+import { version } from "../package.json";
 import { MainVisitor } from './visitor.js';
 import { prepareSizing } from './sizing.js';
 import { LayoutEngine } from './layout.js';
@@ -19,7 +21,7 @@ export default async function main(): Promise<void> {
 
     program
         .description('generate graphical output from circuitscript files')
-        .version('0.0.6')
+        .version(version)
         .option('-i, --input text <input text>', 'Input text directly')
         .option('-f, --input-file <path>', 'Input file')
         .option('-o, --output <path>', 'Output path')
@@ -31,7 +33,7 @@ export default async function main(): Promise<void> {
         .option('-s, --stats', 'Show stats during generation')
         ;
 
-    program.addHelpText('before', figlet.textSync('circuitscript', {
+    program.addHelpText('before', textSync('circuitscript', {
         font: 'Small Slant'
     }));
 
@@ -64,10 +66,10 @@ export default async function main(): Promise<void> {
         scriptData = options.input;
     } else {
         inputFilePath = options.inputFile; // this should be provided
-        scriptData = fs.readFileSync(inputFilePath, { encoding: 'utf-8' });
+        scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
 
         if (currentDirectory === null) {
-            currentDirectory = path.dirname(inputFilePath);
+            currentDirectory = dirname(inputFilePath);
         }
     }    
 
@@ -87,9 +89,9 @@ export default async function main(): Promise<void> {
     }
 
     if (watchFileChanges) {
-        fs.watch(inputFilePath, (event, targetFile) => {
+        watch(inputFilePath, (event, targetFile) => {
             if (event === 'change') {
-                const scriptData = fs.readFileSync(inputFilePath, 
+                const scriptData = readFileSync(inputFilePath, 
                     {encoding: 'utf-8'});
 
                 renderScript(scriptData, outputPath, renderOptions);
@@ -129,8 +131,8 @@ export function renderScript(scriptData: string, outputPath: string, options): s
     }
     // console.log(visitor.dumpUniqueNets());
 
-    dumpData && fs.writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
-    dumpData && fs.writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
+    dumpData && writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
+    dumpData && writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
     
     if (hasError || hasParseError) {
         console.log('Error while parsing');
@@ -141,7 +143,7 @@ export function renderScript(scriptData: string, outputPath: string, options): s
 
     if(kicadNetlistPath){
         const kicadNetList = generateKiCADNetList(visitor.getNetList());
-        fs.writeFileSync(kicadNetlistPath, kicadNetList);
+        writeFileSync(kicadNetlistPath, kicadNetList);
         console.log('Generated KiCad netlist file');
     }
     
@@ -176,7 +178,7 @@ export function renderScript(scriptData: string, outputPath: string, options): s
         return tmp.join(" | ");
     });
 
-    dumpData && fs.writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
+    dumpData && writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
     let svgOutput: string = null;
 
     try {
@@ -189,14 +191,14 @@ export function renderScript(scriptData: string, outputPath: string, options): s
 
         showStats && console.log('Layout took:', layoutTimer.lap());
 
-        dumpData && fs.writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
+        dumpData && writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
         svgOutput = generateSVG2(graph);
         showStats && console.log('Render took:', generateSvgTimer.lap());
 
         if (outputPath){
-            fs.writeFileSync(outputPath, svgOutput);
+            writeFileSync(outputPath, svgOutput);
         } 
     } catch (err) {
         console.log('Failed to render:');
