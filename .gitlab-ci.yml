@@ -48,16 +48,16 @@ test:
     # - main
 
 # Publishes the package to npm.
-publish:
-  stage: publish
-  interruptible: false
-  dependencies:
-    - install
-  script:
-    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
-    - npm run build:release || true
-    - npm publish --verbose
-  resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
+# publish:
+#   stage: publish
+#   interruptible: false
+#   dependencies:
+#     - install
+#   script:
+#     - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
+#     - npm run build:release || true
+#     - npm publish --verbose
+#   resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
   # rules:
   #   - if: '$CI_DEPLOY_FREEZE != null'
   #     when: never
