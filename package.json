@@ -45,27 +45,6 @@
         "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer",
         "server": "node server.js"
     },
-    "jest": {
-        "preset": "ts-jest",
-        "verbose": true,
-        "testMatch": [
-            "**/__tests__/test**.ts"
-        ],
-        "transform": {
-            "^.+\\.tsx?$": [
-                "ts-jest",
-                {
-                    "diagnostics": false
-                }
-            ]
-        },
-        "collectCoverageFrom": [
-            "src/**/*.ts"
-        ],
-        "coveragePathIgnorePatterns": [
-            "src/antlr"
-        ]
-    },
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "MIT",
     "dependencies": {

@@ -1,7 +1,7 @@
 import { ParseTreeVisitor, ParserRuleContext } from 'antlr4';
 
-import fs from 'fs';
-import path from 'path';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 import {
     Add_component_exprContext,
@@ -1098,11 +1098,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             { hasError: boolean, hasParseError: boolean }) {
         return (visitor: MainVisitor, importPath: string) => {
             // Check if different files exist first
-            const tmpFilePath = path.join(directory, importPath + ".cst");
+            const tmpFilePath = join(directory, importPath + ".cst");
             visitor.print('importing path:', tmpFilePath);
 
             try {
-                const fileData = fs.readFileSync(tmpFilePath, { encoding: 'utf8' });
+                const fileData = readFileSync(tmpFilePath, { encoding: 'utf8' });
                 visitor.print('done reading imported file data');
 
                 const { hasError, hasParseError } =

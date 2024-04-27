@@ -1,20 +1,21 @@
-import path from 'path';
-import fs from 'fs';
+import { dirname } from 'path';
 
-import CircuitScriptParser from '../src/antlr/CircuitScriptParser';
+import CircuitScriptParser from '../src/antlr/CircuitScriptParser.js';
 
 import { CharStream, CommonTokenStream } from 'antlr4';
-import { MainVisitor } from '../src/visitor';
-import { ComponentPinNet } from '../src/objects/types';
-import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser';
-import { ClassComponent } from '../src/objects/ClassComponent';
-import { MainLexer } from '../src/lexer';
+import { MainVisitor } from '../src/visitor.js';
+import { ComponentPinNet } from '../src/objects/types.js';
+import { CircuitscriptParserErrorListener } from '../src/parser.js';
+import { ClassComponent } from '../src/objects/ClassComponent.js';
+import { MainLexer } from '../src/lexer.js';
 
 
-export async function runScript(script: string): Promise<{visitor: MainVisitor, 
-    hasError: boolean, 
-    componentPinNets:ComponentPinNet[]}> {
-    
+export async function runScript(script: string): Promise<{
+    visitor: MainVisitor,
+    hasError: boolean,
+    componentPinNets: ComponentPinNet[]
+}> {
+
     const chars = new CharStream(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -25,7 +26,7 @@ export async function runScript(script: string): Promise<{visitor: MainVisitor,
 
     const errorListener = new CircuitscriptParserErrorListener();
     parser.addErrorListener(errorListener);
-    
+
     const tree = parser.script();
 
     const scriptPath = "./examples/helpers.ts";
@@ -33,13 +34,13 @@ export async function runScript(script: string): Promise<{visitor: MainVisitor,
     const visitor = new MainVisitor(true);
     visitor.printToConsole = false; // do not clutter the console log
 
-    const currentDirectory = path.dirname(scriptPath);
+    const currentDirectory = dirname(scriptPath);
     visitor.onImportFile = visitor.createImportFileHandler(currentDirectory);
 
     let hasError = false;
     try {
         visitor.visit(tree);
-    } catch (err){
+    } catch (err) {
         // Error should be internally handled in visitor
         err.print(script);
         hasError = true;

@@ -1,4 +1,4 @@
-import { runScript } from "./helpers";
+import { runScript } from "./helpers.js";
 
 const script1 = `
 b = 10

@@ -1,8 +1,8 @@
-import fs from 'fs';
+import { readFileSync } from 'fs';
 
-import { LayoutEngine } from "../src/layout";
-import { generateSVG2 } from "../src/render";
-import { runScript } from "./helpers";
+import { LayoutEngine } from "../src/layout.js";
+import { generateSVG2 } from "../src/render.js";
+import { runScript } from "./helpers.js";
 
 const mainPath = '__tests__/renderData/';
 
@@ -13,11 +13,11 @@ describe('Render tests', () => {
         ['simple function', 'script2.cst'],
         ['simple frame', 'script3.cst'],
         ['drawing functions for graphics', 'script4.cst']
-        
+
     ])('render - %s (%s)', async (title, scriptPath) => {
 
-        const script = fs.readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
-        const {hasError, visitor} = await runScript(script);
+        const script = readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
+        const { hasError, visitor } = await runScript(script);
         expect(hasError).toBe(false);
         visitor.annotateComponents();
 
@@ -28,7 +28,7 @@ describe('Render tests', () => {
 
         const svgOutput = generateSVG2(graph);
 
-        const expectedSvgOutput = fs.readFileSync(mainPath + scriptPath + ".svg", { encoding: 'utf8' });
+        const expectedSvgOutput = readFileSync(mainPath + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toBe(expectedSvgOutput);
     });
 });

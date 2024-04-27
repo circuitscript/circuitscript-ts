@@ -10,8 +10,8 @@ variables:
 
 stages:
   - prepare
-  # - verify
-  - publish
+  - verify
+  # - publish
 
 # Installs all dependencies.
 install:
@@ -34,19 +34,18 @@ install:
   #   - develop
   #   - main
 
-# Lints the codebase.
-# lint:
-#   stage: verify
-#   interruptible: true
-#   retry: 1
-#   dependencies:
-#     - install
-#   script:
-#     - npm run lint
-#   # only:
-  #   - merge_requests
-  #   - develop
-  #   - main
+test:
+  stage: verify
+  interruptible: true
+  retry: 1
+  dependencies:
+    - install
+  script:
+    - npm run test
+  # only:
+    # - merge_requests
+    # - develop
+    # - main
 
 # Publishes the package to npm.
 publish:
@@ -57,7 +56,6 @@ publish:
   script:
     - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
     - npm run build:release || true
-    - ls build/src
     - npm publish --verbose
   resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
   # rules:
