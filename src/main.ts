@@ -1,13 +1,11 @@
 #! /usr/bin/env node
 
 import { program } from 'commander';
-import { textSync } from 'figlet';
+import figlet from 'figlet';
 
 import { readFileSync, watch, writeFileSync } from 'fs';
 import { dirname } from 'path';
 
-
-import { version } from "../package.json";
 import { MainVisitor } from './visitor.js';
 import { prepareSizing } from './sizing.js';
 import { LayoutEngine } from './layout.js';
@@ -18,6 +16,8 @@ import { generateKiCADNetList } from './export.js';
 import { SimpleStopwatch } from './utils.js';
 
 export default async function main(): Promise<void> {
+    const packageJson = JSON.parse(readFileSync('package.json').toString());;
+    const {version} = packageJson;
 
     program
         .description('generate graphical output from circuitscript files')
@@ -33,7 +33,7 @@ export default async function main(): Promise<void> {
         .option('-s, --stats', 'Show stats during generation')
         ;
 
-    program.addHelpText('before', textSync('circuitscript', {
+    program.addHelpText('before', figlet.textSync('circuitscript', {
         font: 'Small Slant'
     }));
 

@@ -11,7 +11,7 @@ export default {
         '^(\\.{1,2}/.*)\\.(m)?js$': '$1',
     },
     testMatch: [
-        "**/__tests__/test**.(js|ts|tsx)",
+        "<rootDir>/__tests__/test**.(ts|tsx)",
     ],
     coverageDirectory: 'coverage',
     collectCoverageFrom: [
