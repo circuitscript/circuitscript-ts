@@ -10,7 +10,8 @@ variables:
 
 stages:
   - prepare
-  - test
+  - test_jest
+  - test_build
   - publish
 
 # Installs all dependencies.
@@ -26,22 +27,32 @@ install:
     when: on_success
     expire_in: 12h
   script:
-    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
     - npm install --no-progress --no-audit --no-fund --verbose
-    - npm run build:release || true
   # only:
   #   - merge_requests
   #   - develop
   #   - main
 
-test:
-  stage: test
+test_jest:
+  stage: test_jest
   interruptible: true
   retry: 1
   dependencies:
     - install
   script:
     - npm run test
+
+test_build:
+  stage: test_build
+  interruptible: true
+  retry: 1
+  dependencies:
+    - install
+  script:
+    - npm run build:release || true
+    - ls
+    - ls build
+    - node build/src/main.js
 
 # Publishes the package to npm.
 publish:
