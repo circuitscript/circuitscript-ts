@@ -16,7 +16,10 @@ import { generateKiCADNetList } from './export.js';
 import { SimpleStopwatch } from './utils.js';
 
 export default async function main(): Promise<void> {
-    const packageJson = JSON.parse(readFileSync('package.json').toString());;
+    const toolSrcPath = fileURLToPath(import.meta.url);
+    const toolDirectory = path.dirname(toolSrcPath) + '/../../';
+    
+    const packageJson = JSON.parse(readFileSync(toolDirectory + 'package.json').toString());;
     const {version} = packageJson;
 
     program
@@ -53,10 +56,9 @@ export default async function main(): Promise<void> {
 
     let currentDirectory = options.currentDirectory ?? null;
 
-    const toolPath = fileURLToPath(import.meta.url);
-    const toolDirectory = path.dirname(toolPath);
-    const fontsPath = toolDirectory + '/../../fonts';
-    const defaultLibsPath = toolDirectory + '/../../libs'; 
+    
+    const fontsPath = toolDirectory + '/fonts';
+    const defaultLibsPath = toolDirectory + '/libs'; 
 
     if (watchFileChanges) {
         console.log('watching for file changes...');
