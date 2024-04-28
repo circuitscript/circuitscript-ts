@@ -1093,31 +1093,60 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         PinTypes.Power,
     ];
 
-    createImportFileHandler(directory: string):
+    createImportFileHandler(directory: string, defaultLibsPath: string):
         ((visitor: MainVisitor, importPath: string) =>
-            { hasError: boolean, hasParseError: boolean }) {
+            { hasError: boolean, hasParseError: boolean, pathExists: boolean }) {
+
         return (visitor: MainVisitor, importPath: string) => {
             // Check if different files exist first
-            const tmpFilePath = join(directory, importPath + ".cst");
-            visitor.print('importing path:', tmpFilePath);
+            let importResult: {
+                hasError: boolean,
+                hasParseError: boolean,
+                pathExists: boolean,
+            };
 
-            try {
-                const fileData = readFileSync(tmpFilePath, { encoding: 'utf8' });
+            importResult = this.importLib(visitor, directory, importPath);
+
+            if (!importResult.pathExists && importPath == 'lib') {
+                // Load default path
+                importResult = this.importLib(visitor, defaultLibsPath, importPath);
+            }
+
+            return importResult;
+        }
+    }
+
+    private importLib(visitor: MainVisitor, directory: string, filename: string): {hasError: boolean, hasParseError: boolean, pathExists: boolean} {
+        const tmpFilePath = join(directory, filename + ".cst");
+        visitor.print('importing path:', tmpFilePath);
+        let pathExists = false;
+
+        let fileData: string = null;
+
+        try {
+            fileData = readFileSync(tmpFilePath, { encoding: 'utf8' });
+            pathExists = true;
+        } catch (err) {
+            pathExists = false;
+        }
+
+        try {
+            if (pathExists){
                 visitor.print('done reading imported file data');
 
                 const { hasError, hasParseError } =
                     parseFileWithVisitor(visitor, fileData);
 
-                return { hasError, hasParseError }
-
-            } catch (err) {
-                console.log('Failed to import file: ', err.message);
+                return { hasError, hasParseError, pathExists }
             }
+        } catch (err) {
+            visitor.print('Failed to import file: ', err.message);
+        }
 
-            return {
-                hasError: true,
-                hasParseError: true
-            }
+        return {
+            hasError: true,
+            hasParseError: true,
+            pathExists,
         }
     }
 

@@ -10,8 +10,8 @@ const supportedFonts = {
     'Inter-Bold': 'Inter-Bold.ttf',
 }
 
-export async function prepareSizing(): Promise<void> {
-    await config.setFontDir('./fonts')
+export async function prepareSizing(fontsPath): Promise<void> {
+    await config.setFontDir(fontsPath)
         .setFontFamilyMappings(supportedFonts)
         .preloadFonts()
 }

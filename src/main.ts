@@ -2,9 +2,9 @@
 
 import { program } from 'commander';
 import figlet from 'figlet';
-
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { readFileSync, watch, writeFileSync } from 'fs';
-import { dirname } from 'path';
 
 import { MainVisitor } from './visitor.js';
 import { prepareSizing } from './sizing.js';
@@ -53,11 +53,16 @@ export default async function main(): Promise<void> {
 
     let currentDirectory = options.currentDirectory ?? null;
 
+    const toolPath = fileURLToPath(import.meta.url);
+    const toolDirectory = path.dirname(toolPath);
+    const fontsPath = toolDirectory + '/../../fonts';
+    const defaultLibsPath = toolDirectory + '/../../libs'; 
+
     if (watchFileChanges) {
         console.log('watching for file changes...');
     }
 
-    await prepareSizing();
+    await prepareSizing(fontsPath);
 
     let inputFilePath: string = null;
 
@@ -69,12 +74,13 @@ export default async function main(): Promise<void> {
         scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
 
         if (currentDirectory === null) {
-            currentDirectory = dirname(inputFilePath);
+            currentDirectory = path.dirname(inputFilePath);
         }
     }    
 
     const renderOptions = {
         currentDirectory,
+        defaultLibsPath,
         dumpNets, 
         dumpData,
         kicadNetlistPath: kicadNetlist,
@@ -106,6 +112,7 @@ export function renderScript(scriptData: string, outputPath: string, options): s
 
     const {
         currentDirectory = null, 
+        defaultLibsPath,
         dumpNets = false,
         dumpData = false,
         kicadNetlistPath = null,
@@ -113,7 +120,7 @@ export function renderScript(scriptData: string, outputPath: string, options): s
 
     const visitor = new MainVisitor(true);
 
-    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory);
+    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
 
     visitor.print('reading file');
     visitor.print('done reading file');

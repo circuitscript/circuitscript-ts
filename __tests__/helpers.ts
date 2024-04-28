@@ -30,12 +30,13 @@ export async function runScript(script: string): Promise<{
     const tree = parser.script();
 
     const scriptPath = "./examples/helpers.ts";
+    const defaultLibsPath = "./libs";
 
     const visitor = new MainVisitor(true);
     visitor.printToConsole = false; // do not clutter the console log
 
     const currentDirectory = dirname(scriptPath);
-    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory);
+    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
 
     let hasError = false;
     try {
