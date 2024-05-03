@@ -40,6 +40,7 @@ test_jest:
   dependencies:
     - install
   script:
+    - npm run build:release || true
     - npm run test
 
 test_build:
