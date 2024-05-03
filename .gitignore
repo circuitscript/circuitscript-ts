@@ -36,3 +36,5 @@ src/antlr/.antlr
 dump/*
 
 !__tests__/**/*.svg
+__tests__/tmp
+*.tgz
