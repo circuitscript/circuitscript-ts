@@ -17,7 +17,10 @@ import { SimpleStopwatch } from './utils.js';
 
 export default async function main(): Promise<void> {
     const toolSrcPath = fileURLToPath(import.meta.url);
+
     const toolDirectory = path.dirname(toolSrcPath) + '/../../';
+    const fontsPath = toolDirectory + '/fonts';
+    const defaultLibsPath = toolDirectory + '/libs'; 
     
     const packageJson = JSON.parse(readFileSync(toolDirectory + 'package.json').toString());;
     const {version} = packageJson;
@@ -56,10 +59,6 @@ export default async function main(): Promise<void> {
 
     let currentDirectory = options.currentDirectory ?? null;
 
-    
-    const fontsPath = toolDirectory + '/fonts';
-    const defaultLibsPath = toolDirectory + '/libs'; 
-
     if (watchFileChanges) {
         console.log('watching for file changes...');
     }
@@ -97,7 +96,7 @@ export default async function main(): Promise<void> {
     }
 
     if (watchFileChanges) {
-        watch(inputFilePath, (event, targetFile) => {
+        watch(inputFilePath, event => {
             if (event === 'change') {
                 const scriptData = readFileSync(inputFilePath, 
                     {encoding: 'utf-8'});
@@ -134,23 +133,19 @@ export function renderScript(scriptData: string, outputPath: string, options): s
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);
-    
-    if (dumpNets){
-        console.log(visitor.dumpNets());
-    }
-    // console.log(visitor.dumpUniqueNets());
+    dumpNets && console.log(visitor.dumpNets());
 
     dumpData && writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
     dumpData && writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
     
     if (hasError || hasParseError) {
         console.log('Error while parsing');
-        return;
+        return null;
     }
 
     visitor.annotateComponents();
 
-    if(kicadNetlistPath){
+    if (kicadNetlistPath) {
         const kicadNetList = generateKiCADNetList(visitor.getNetList());
         writeFileSync(kicadNetlistPath, kicadNetList);
         console.log('Generated KiCad netlist file');

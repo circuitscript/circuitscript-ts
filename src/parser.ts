@@ -91,14 +91,14 @@ export class CircuitscriptParserErrorListener extends ErrorListener {
         this.syntaxErrorCounter++;
     }
 
-    reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs) {
-    }
+    // reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs) {
+    // }
 
-    reportAttemptingFullContext(recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs) {
-    }
+    // reportAttemptingFullContext(recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs) {
+    // }
 
-    reportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs) {
-    }
+    // reportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs) {
+    // }
 
     hasParseErrors(): boolean {
         return (this.syntaxErrorCounter > 0);
