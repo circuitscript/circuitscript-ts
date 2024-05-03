@@ -160,7 +160,9 @@ export abstract class SymbolGraphic {
             let dominantBaseline = 'auto';
 
             let useAnchor = anchor;
-            if (this.angle === 180){
+            const isRotation180 = Math.abs(this.angle) === 180;
+
+            if (isRotation180){
                 // Special case to flip the text instead of rotating
                 useAnchor = this.flipTextAnchor(anchor);
             }
@@ -194,7 +196,7 @@ export abstract class SymbolGraphic {
             }
 
             const position = tmpLabel.getLabelPosition();
-            
+
             let useFont = defaultFont;
             if (fontWeight === 'bold'){
                 useFont = 'Inter-Bold';
@@ -210,7 +212,7 @@ export abstract class SymbolGraphic {
                     // weight: fontWeight,
                 });
 
-            if (this.angle === 180){
+            if (isRotation180){
                 text.translate(-position[0], position[1]);
             } else {
                 text.translate(position[0], position[1])
