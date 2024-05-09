@@ -1,13 +1,14 @@
 import { Box, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { config, createSVGWindow } from 'svgdom';
 import { HorizontalAlign, VerticalAlign } from './geometry.js';
+import { defaultFont } from './globals.js';
 
 let MainCanvas = null;
 
 const supportedFonts = { 
     // 'Roboto': 'Roboto-Regular.ttf',
-    'Inter': 'Inter-Regular.ttf', 
-    'Inter-Bold': 'Inter-Bold.ttf',
+    // 'Inter': 'Inter-Regular.ttf', 
+    // 'Inter-Bold': 'Inter-Bold.ttf',
 }
 
 export async function prepareSizing(fontsPath): Promise<void> {
@@ -68,18 +69,14 @@ export function measureTextSize2(text: string, fontFamily: string,
                 break;
         }
 
-        if (fontWeight === 'bold'){
-            fontFamily = 'Inter-Bold';
-        } else {
-            fontFamily = 'Inter-Regular';
-        }
+        fontFamily = defaultFont;
         
         const tmpTextElement = MainCanvas.text(text).font({
             family: fontFamily,
             size: fontSize,
             anchor: anchor,
             'dominant-baseline': dominantBaseline,
-            // weight: fontWeight,
+            weight: fontWeight,
         }).fill('#333');
 
         const textbox = tmpTextElement.bbox();
