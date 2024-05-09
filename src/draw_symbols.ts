@@ -1,6 +1,6 @@
 import { G } from "@svgdotjs/svg.js";
 
-import { SymbolPinSide, bodyColor, defaultFont } from "./globals.js";
+import { SymbolPinSide, bodyColor, defaultFontBold, defaultFont } from "./globals.js";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
 
@@ -196,11 +196,7 @@ export abstract class SymbolGraphic {
             }
 
             const position = tmpLabel.getLabelPosition();
-
-            let useFont = defaultFont;
-            if (fontWeight === 'bold'){
-                useFont = 'Inter-Bold';
-            }
+            const useFont = defaultFont;
 
             const text = group.text(tmpLabel.text)
                 .fill('#333')
@@ -209,7 +205,7 @@ export abstract class SymbolGraphic {
                     size: fontSize,
                     anchor: anchorStyle,
                     'dominant-baseline': dominantBaseline,
-                    // weight: fontWeight,
+                    weight: fontWeight,
                 });
 
             if (isRotation180){

@@ -68,7 +68,8 @@ export class Label extends Flatten.Polygon {
             fontWeight = 'regular',
          } = style ?? {};
 
-        // Determine the size of the text
+        // Determine the size of the text, this is needed to determine the 
+        // bounding box of the text for layout purposes.
         const { width, height, box } =
             measureTextSize2(text, defaultFont, fontSize, fontWeight, 
                 anchor, vanchor);

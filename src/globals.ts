@@ -33,7 +33,9 @@ export enum SymbolPinSide {
 export const portWidth = 20;
 export const portHeight = 2;
 
-export const defaultFont = 'Inter';
+export const defaultFont = 'Open Sans-Regular, Arial';
+export const defaultFontBold = 'Open Sans-Bold, Arial-Bold, Arial';
+
 export const defaultFontSize = 10;
 
 export const bodyColor = '#FFFEAF';

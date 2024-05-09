@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { renderScript } from './main.js';
+import { renderScript } from './helpers.js';
 
 const mainDir = './__tests__/renderData/';
 
