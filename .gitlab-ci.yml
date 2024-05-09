@@ -53,7 +53,7 @@ test_build:
     - npm run build:release || true
     - ls
     - ls build
-    - node build/src/cli.js
+    - node build/src/main.js
 
 # Publishes the package to npm.
 publish:
