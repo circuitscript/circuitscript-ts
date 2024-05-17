@@ -329,7 +329,11 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 const labelId = positionParams[0];
 
                 const tmpPositionParams = [...positionParams];
-                tmpPositionParams[3] = this.getLabelValue(labelId);
+
+                const tmpLabelValue = this.getLabelValue(labelId);
+                if (tmpLabelValue !== undefined) {
+                    tmpPositionParams[3] = tmpLabelValue;
+                }
 
                 drawing.log('add label', JSON.stringify(tmpPositionParams));
                 drawing.addLabelId(...tmpPositionParams);
