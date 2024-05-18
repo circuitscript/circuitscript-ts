@@ -11,8 +11,8 @@ def res_2(value):
             hline: 0, -20, 20
             vline: 0, 20, 20
             line: 0, 0, 20, 20
-            pin: 1, -width / 2, 0, -width/2 - 20, 0
-            pin: 2, width/2, 0, width/2 + 20, 0
+            pin: 1, -width / 2 - 20, 0, -width/2, 0
+            pin: 2, width/2 + 20, 0, width/2, 0
             label: ("value", 0, 0, value, fontSize=10, anchor="middle", vanchor="middle")
             label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
 

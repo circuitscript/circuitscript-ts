@@ -6,6 +6,7 @@ import { Box } from '@svgdotjs/svg.js';
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
 export type Multiline = Flatten.Multiline;
+export type Line = Flatten.Line;
 
 export type Arc = Flatten.Arc;
 
@@ -115,6 +116,13 @@ export class Geometry {
     
     static point(x: number, y: number): Flatten.Point {
         return new Flatten.Point(x, y);
+    }
+
+    static line(x1: number, y1: number, x2: number, y2: number): Flatten.Line {
+        return new Flatten.Line(
+            Geometry.point(x1, y1),
+            Geometry.point(x2, y2)
+        )
     }
 
     static label(id: string, x: number, y: number, text: string, style: LabelStyle): Label {
