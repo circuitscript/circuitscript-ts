@@ -188,7 +188,14 @@ export class Geometry {
 
         features.forEach(feature => {
             const box = feature.box;
-            if (box.xmin === undefined){
+
+            if (feature instanceof Label
+                && typeof feature.text === 'string'
+                && feature.text.trim().length === 0) {
+                return;
+            }
+
+            if (box.xmin === undefined) {
                 throw "Invalid box!";
             }
 

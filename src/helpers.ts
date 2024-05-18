@@ -41,7 +41,11 @@ export function renderScript(scriptData: string, outputPath: string, options): s
         return null;
     }
 
-    visitor.annotateComponents();
+    try {
+        visitor.annotateComponents();
+    } catch (err) {
+        console.log('Error during annotation: ', err);
+    }
 
     if (kicadNetlistPath) {
         const kicadNetList = generateKiCADNetList(visitor.getNetList());
@@ -99,12 +103,11 @@ export function renderScript(scriptData: string, outputPath: string, options): s
         svgOutput = generateSVG2(graph);
         showStats && console.log('Render took:', generateSvgTimer.lap());
 
-        if (outputPath){
+        if (outputPath) {
             writeFileSync(outputPath, svgOutput);
-        } 
+        }
     } catch (err) {
-        console.log('Failed to render:');
-        console.log(err)
+        console.log('Error during render: ', err);
     }
 
     return svgOutput;

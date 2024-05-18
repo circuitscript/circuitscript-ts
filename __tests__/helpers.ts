@@ -57,12 +57,24 @@ export async function runScript(script: string): Promise<{
 
 export function findItem(instances: Map<string, ClassComponent>, typeProp: string,
     refdes: string, value: string): ClassComponent | null {
+    // Find matching item by refdes and by value parameter
 
     for (const [, instance] of instances) {
         if (instance.typeProp === typeProp && instance.assignedRefDes === refdes) {
             if (instance.parameters.get('value').toString() === value) {
                 return instance;
             }
+        }
+    }
+
+    return null;
+}
+
+export function findItemByRefDes(instances: Map<string, ClassComponent>, typeProp: string,
+    refdes: string): ClassComponent | null {
+    for (const [, instance] of instances) {
+        if (instance.typeProp === typeProp && instance.assignedRefDes === refdes) {
+            return instance;
         }
     }
 

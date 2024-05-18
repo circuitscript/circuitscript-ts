@@ -1352,8 +1352,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 }
 
                 if (instance.typeProp === null){
-                    this.print('Instance has no type:', instance.instanceName);
-                    continue;
+                    this.print('Instance has no type:', instance.instanceName, ' assuming connector');
+                    instance.typeProp = 'conn';
                 }
 
                 if (instance.parameters.has('refdes')) {
@@ -1569,8 +1569,20 @@ class ComponentAnnotater {
     }
 
     getAnnotation(type: string): string | null {
-        if (this.counter[type] === undefined) {
-            return null;
+
+        // If type is unknown, then allow it to define a new range
+        if (this.counter[type] === undefined && type.length <= 2) {
+            for (const [, value] of Object.entries(ComponentRefDesPrefixes)) {
+                if (value === type) {
+                    throw "Refdes prefix is already in use!";
+                }
+            }
+
+            if (ComponentRefDesPrefixes[type] === undefined) {
+                // Define new type and start counting
+                ComponentRefDesPrefixes[type] = type;
+                this.counter[type] = 1;
+            }
         }
 
         let attempts = 100;
