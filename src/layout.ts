@@ -604,10 +604,6 @@ export class LayoutEngine {
                     if (tmpSymbol instanceof SymbolCustom && widthProp){
                         tmpSymbol.bodyWidth = widthProp;
                     }
-
-                    if (component.assignedRefDes !== null){
-                        tmpSymbol.setLabelValue("refdes", component.assignedRefDes);
-                    }
     
                     if (!didSetAngle && component.parameters.has('_addDirection')){
                         // If there is an _addDirection specified, then the angle
@@ -683,8 +679,31 @@ export class LayoutEngine {
     
                 previousNode = wireName;
                 previousPin = 1;
-   
-                this.print(SequenceAction.Wire, wireId, JSON.stringify(wireSegments));
+                
+                const wireSegmentsInfo = wireSegments.map(item => {
+                    const tmp: {
+                        direction: string,
+                        value: number,
+                        valueXY?: [x: number, y: number],
+                        until?: [instanceName: string, pin: number]
+                    } = {
+                        direction: item.direction,
+                        value: item.value,
+                    };
+
+                    if (item.valueXY) {
+                        tmp.valueXY = item.valueXY;
+                    }
+
+                    if (item.until) {
+                        tmp.until = [item.until[0].toString(), item.until[1]];
+                    }
+
+                    return tmp;
+                });
+
+                this.print(SequenceAction.Wire, wireId, 
+                    JSON.stringify(wireSegmentsInfo));
                 
             } else if (action === SequenceAction.WireJump) {
                 this.print(...sequence[i]);
@@ -1338,26 +1357,28 @@ function applyComponentParamsToSymbol(typeProp: string,
     component: ClassComponent, symbol: SymbolGraphic): void {
     
     if (typeProp === 'net') {
-        symbol.setLabelValue("net_name", component.parameters.get(ParamKeys.net_name) as string);
+        symbol.setLabelValue("net_name", 
+            component.parameters.get(ParamKeys.net_name) as string);
     }
 
-    if (component.parameters.has('value')) {
+    if (component.assignedRefDes !== null){
+        symbol.setLabelValue("refdes", component.assignedRefDes);
+    }
 
-        let displayString = "";
-        const tmpValue = component.parameters.get('value');
-        if (typeof tmpValue == 'object' && (tmpValue instanceof NumericValue)) {
-            displayString = (tmpValue as NumericValue).toDisplayString();
-        } else {
-            displayString = tmpValue;
+    for (const [key, value] of component.parameters) {
+        if (key !== 'refdes' && key !== 'net_name') {
+            let useValue: string;
+
+            if (typeof value == 'object' && (value instanceof NumericValue)) {
+                useValue = (value as NumericValue).toDisplayString();
+            } else if (typeof value === 'number') {
+                useValue = value.toString();
+            } else if (typeof value === 'string'){
+                useValue = value;
+            }
+
+            symbol.setLabelValue(key, useValue);
         }
-
-        symbol.setLabelValue('value', displayString);
-    }
-
-    symbol.setLabelValue('refdes', component.instanceName);
-
-    if (component.parameters.has('MPN')) {
-        symbol.setLabelValue('MPN', component.parameters.get('MPN') as string);
     }
 }
 

@@ -21,5 +21,5 @@ cstFiles.forEach(file => {
     const outputPath = inputPath + '.svg';
     renderScript(scriptData, outputPath, { currentDirectory: useCurrentDir });
 
-    console.log('generated ', inputPath);
+    console.log('generated ', outputPath);
 });

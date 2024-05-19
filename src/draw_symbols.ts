@@ -154,6 +154,7 @@ export abstract class SymbolGraphic {
                 anchor = HorizontalAlign.Left, 
                 vanchor = VerticalAlign.Bottom,
                 fontWeight = 'regular',
+                angle: labelAngle = 0,
             } = tmpLabel.style ?? {};
 
             let anchorStyle = 'start';
@@ -198,7 +199,8 @@ export abstract class SymbolGraphic {
             const position = tmpLabel.getLabelPosition();
             const useFont = defaultFont;
 
-            const text = group.text(tmpLabel.text)
+            const textContainer = group.group();
+            const text = textContainer.text(tmpLabel.text)
                 .fill('#333')
                 .font({
                     family: useFont,
@@ -208,12 +210,25 @@ export abstract class SymbolGraphic {
                     weight: fontWeight,
                 });
 
+            let translateX: number, translateY: number;
+            let useRotateAngle = 0;
+
             if (isRotation180){
-                text.translate(-position[0], position[1]);
+                translateX = -position[0];
+                translateY = position[1];
+                useRotateAngle = 0;
             } else {
-                text.translate(position[0], position[1])
-                    .rotate(this.angle, -position[0], -position[1]);
+                translateX = position[0];
+                translateY = position[1];
+                useRotateAngle = this.angle;
             }
+
+            text.rotate(labelAngle);
+            textContainer.translate(translateX, translateY)
+                        .rotate(useRotateAngle, -translateX, -translateY);
+            
+            // For debug, show the origin of the text container
+            // textContainer.circle(2).fill('red');
         });
     }
 
@@ -335,7 +350,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                 case PlaceHolderCommands.circle:
                     // circle params: center x, center y, radius
-                    drawing.addArc(...positionParams, 0, 359.999);
+                    drawing.addArc(...positionParams, 0, 360);
                     break;
 
                 case PlaceHolderCommands.triangle:
@@ -425,7 +440,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 }
 
                 case PlaceHolderCommands.label: {
-                    const keywords = ['fontSize', 'anchor', 'vanchor'];
+                    const keywords = ['fontSize', 'anchor', 'vanchor', 'angle'];
 
                     // Create the style object
                     const style = {};
@@ -574,18 +589,23 @@ export class SymbolCustom extends SymbolGraphic {
         });
 
         const instanceName = this.getLabelValue("refdes");
-        const MPN = this.getLabelValue("MPN");
-
         instanceName && drawing.addLabel(-bodyWidth/2, -bodyHeight/2 - 4, instanceName, {
             fontSize: 10,
             anchor: HorizontalAlign.Left,
         });
 
-        MPN && drawing.addLabel(-bodyWidth/2, bodyHeight/2 + 4, MPN, {
-                fontSize: 10,
-                anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Top,
-            });
+        const acceptedMPNKeys = ['MPN', 'mpn', 'manufacturer_pn'];
+
+        acceptedMPNKeys.some(key => {
+            const labelValue = this.getLabelValue(key);
+            if (labelValue !== undefined){
+                drawing.addLabel(-bodyWidth/2, bodyHeight/2 + 4, labelValue, {
+                    fontSize: 10,
+                    anchor: HorizontalAlign.Left,
+                    vanchor: VerticalAlign.Top,
+                });
+            }
+        });
 
         this.drawing = drawing;
         this._cacheLeftPins = leftPins;
@@ -635,11 +655,11 @@ export class SymbolDrawing {
     addPin(pinId: number, startX: number, startY: number, 
         endX: number, endY: number): SymbolDrawing {
 
-        // Determine the pin angle based on the start and end values.
-        // The angle is relative to the x-axis and rotates ANTI-CLOCKWISE 
-        //           90 
-        //     180 --+--> 0
-        //          270
+        // Determine the pin angle based on vector with start point 
+        // going to end point. The angle is relative to the x-axis. 
+        //             270 
+        //     180 -- start --> 0
+        //             90
 
         let angle = 0;
         if (startX === endX) {

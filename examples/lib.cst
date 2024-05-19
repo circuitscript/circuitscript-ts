@@ -1,9 +1,11 @@
+// Circuitscript default lib
+
 def net(net_name):
     return create component:
         pins: 1
         display: create graphic:
             hline: -15, 0, 30
-            pin: 1, 0, 10, 0, 0
+            pin: 1, 0, 10, 0, 0, display_pin_id=0
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -16,7 +18,7 @@ def supply(net_name):
         pins: 1
         display: create graphic:
             hline: -15, 0, 30
-            pin: 1, 0, 10, 0, 0
+            pin: 1, 0, 10, 0, 0, display_pin_id=0
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -28,8 +30,8 @@ def label(value):
     return create component:
         pins: 1
         display: create graphic:
-            label: "value", 0, -2, fontSize=10, anchor="left"
-            pin: 1, 0, 0, 0, 0
+            label: "value", 0, -2, "?", fontSize=10, anchor="left"
+            pin: 1, 0, 0, 0, 0, display_pin_id=0
         type: "label"
         params:
             __is_net: 1
@@ -104,9 +106,8 @@ def diode():
         pins: 2
         type: "diode"
         display: create graphic:
-            path: ("M", width/2, -height/2, "L", width/2, height/2,
-                   "M", -width/2, -height/2, "L", -width/2, height/2,
-                   "L", width/2, 0, "L", -width/2, -height/2)
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
             pin: 1, -width/2-20, 0, -width/2, 0     # anode
             pin: 2, width/2 + 20, 0, width/2, 0     # cathode
             label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
@@ -121,14 +122,14 @@ def led(color):
             2: "anode"
         type: "diode"
         display: create graphic:
-            path: ("M", width/2, -height/2, "L", width/2, height/2,
-                   "M", -width/2, -height/2, "L", -width/2, height/2,
-                   "L", width/2, 0, "L", -width/2, -height/2)
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
             path: ("M", 0, 8, "L", 5, 18, 
                    "M", 3, 8, "L", 8, 18)
             pin: 1, -width/2-20, 0, -width/2, 0     # anode
             pin: 2, width/2 + 20, 0, width/2, 0     # cathode
             label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
+            label: "color", width/2 + 5, 25, color
         params:
             size: "0603"
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
@@ -158,11 +159,8 @@ def dgnd():
     return create component:
         pins: 1
         display: create graphic:
-            path: ("M", -width/2, 0, 
-                    "L", width/2, 0, 
-                    "L", 0, height, 
-                    "Z")
-            pin: 1, 0, -10, 0, 0
+            triangle: 0, 0, 0, height, width
+            pin: 1, 0, -10, 0, 0, display_pin_id=0
             label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:

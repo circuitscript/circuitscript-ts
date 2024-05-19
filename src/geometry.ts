@@ -2,6 +2,7 @@ import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing.js';
 import { defaultFont } from './globals.js';
 import { Box } from '@svgdotjs/svg.js';
+import { NumericValue } from './objects/ParamDefinition.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -16,6 +17,7 @@ export type LabelStyle = {
     font?: string,
     fontSize?: number,
     fontWeight?: string,
+    angle?: number,
     
     anchor?: HorizontalAlign.Left | HorizontalAlign.Middle | HorizontalAlign.Right, // Horizontal anchor
     vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
@@ -63,6 +65,18 @@ export class Label extends Flatten.Polygon {
     static fromPoint(id: string, x: number, y: number, 
         text: string, style: LabelStyle): Label {
 
+        let useText: string;
+        if (typeof text === 'number'){
+            useText = (text as number).toString();
+        } else if (typeof text === 'object' 
+            && text instanceof NumericValue) {
+            useText = (text as NumericValue).toDisplayString();
+        } else if (typeof text === 'string'){
+            useText = text;
+        } else {
+            throw 'Invalid string passed into label';
+        }
+
         const { fontSize = 10,
             anchor = HorizontalAlign.Left,
             vanchor = VerticalAlign.Bottom,
@@ -72,7 +86,7 @@ export class Label extends Flatten.Polygon {
         // Determine the size of the text, this is needed to determine the 
         // bounding box of the text for layout purposes.
         const { width, height, box } =
-            measureTextSize2(text, defaultFont, fontSize, fontWeight, 
+            measureTextSize2(useText, defaultFont, fontSize, fontWeight, 
                 anchor, vanchor);
 
         // const polygonCoords =
@@ -89,7 +103,7 @@ export class Label extends Flatten.Polygon {
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(id, text, [x, y], polygon, style, box);
+        return new Label(id, useText, [x, y], polygon, style, box);
     }
 
     rotate(angle: number, origin: Flatten.Point): Label {
@@ -234,6 +248,8 @@ export class Geometry {
         console.log('unknown type', feature);
     }
 
+    static FullCircleRadians = 2 * Math.PI;
+
     static featuresToPath(items: Feature[]): 
         { path: string, isClosedPolygon: boolean } {
 
@@ -253,16 +269,26 @@ export class Geometry {
                 const y = item.center.y;
                 const radius = item.r as number;
 
+                let useEndAngle = item.endAngle;
+                let extraEnd = '';
+                if (item.startAngle === 0 && item.endAngle === Geometry.FullCircleRadians){
+                    // detect as a circle and close the polygon
+                    useEndAngle = 359.9999 * Math.PI/ 180;
+                    isClosedPolygon = true;
+                    extraEnd = ' Z'; // close the circle
+                }
+
                 // Assume angle is clockwise for now
                 const startPoint = getArcPointRadians(x, y, radius, 
                     item.startAngle);
                 
                 const endPoint = getArcPointRadians(x, y, radius, 
-                    item.endAngle);
+                    useEndAngle);
                 
                 paths.push('M ' + startPoint[0] + ' ' + startPoint[1]
                     + 'A ' + radius + ' ' + radius + ' 0 1 1 ' 
-                    + endPoint[0] + ' ' + endPoint[1]);
+                    + endPoint[0] + ' ' + endPoint[1] + extraEnd);
+
 
             } else {
                 const coords = Geometry.getCoords(item);
