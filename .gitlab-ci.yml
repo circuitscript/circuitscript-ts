@@ -28,10 +28,8 @@ install:
     expire_in: 12h
   script:
     - npm install --no-progress --no-audit --no-fund --verbose
-  # only:
-  #   - merge_requests
-  #   - develop
-  #   - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG
 
 test_jest:
   stage: test_jest
@@ -42,6 +40,8 @@ test_jest:
   script:
     - npm run build:release || true
     - npm run test
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 test_build:
   stage: test_build
@@ -54,6 +54,8 @@ test_build:
     - ls
     - ls build
     - node build/src/main.js
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # Publishes the package to npm.
 publish:
@@ -66,11 +68,5 @@ publish:
     - npm run build:release || true
     - npm publish --verbose
   resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
-  # rules:
-  #   - if: '$CI_DEPLOY_FREEZE != null'
-  #     when: never
-  #   - if: '$CI_COMMIT_REF_NAME != "main" && $CI_COMMIT_REF_NAME != "develop"'
-  #     when: never
-  #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_COMMIT_REF_NAME == "develop"'
-  #     when: never
-  #   - when: on_success
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
