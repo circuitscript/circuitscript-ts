@@ -21,12 +21,34 @@ def res_2(value):
             value: value
             size: "0402"
             footprint: "Resistor_SMD:R_0402_1005Metric"
-    
+
+def componentA():
+    width = 40
+    height = 40
+
+    return create component:
+        pins: 3
+        display: create graphic:
+            rect: 0, 0, width, height
+            label: "refdes", -width/2, -height/2 -4, "?"
+
+            hpin: 1, -width/2 - 20, 0, 20
+            hpin: 2, width/2 + 20, 0, -20
+            vpin: 3, 0, height/2 + 20, -20
+
 v5v = supply("5v")
 gnd = dgnd()
 
 at v5v
 wire down 20
 add res_2(10k)
-wire down 20
-to gnd
+wire right 20
+
+to a = componentA()
+
+at a:
+    2:
+        wire right 20 down 20
+        to gnd
+    3:
+        wire down 20 to gnd

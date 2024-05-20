@@ -357,85 +357,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     drawing.addTriangle(...positionParams);
                     break;
 
-                case PlaceHolderCommands.pin: {
-                    drawing.log('add pin', ...positionParams);
-
-                    const keywordDisplayPinId = 'display_pin_id';
-                    let displayPinId = true;
-
-                    if (keywordParams.has(keywordDisplayPinId)) {
-                        if (keywordParams.get(keywordDisplayPinId) === 0) {
-                            displayPinId = false;
-                        }
-                    }
-
-                    let pinNameParam: string | null = null;
-                    if (typeof positionParams[1] === 'string') {
-                        // If the type of the second position is a string, then
-                        // use the string value as the pin name
-                        pinNameParam = positionParams[1];
-                        positionParams = [positionParams[0], ...positionParams.slice(2)];
-                    }
-
-                    drawing.addPin(...positionParams);
-
-                    // Add a label for the pinId and pinName
-                    const latestPin = this.drawing.pins[this.drawing.pins.length - 1];
-                    const [pinId, , angle] = latestPin;
-                    const [, , , endX, endY] = positionParams;
-
-                    let pinNameAlignment = HorizontalAlign.Left;
-                    let pinNameOffsetX = 4;
-
-                    let pinIdOffsetX = 0;
-                    let pinIdAlignment = HorizontalAlign.Left;
-
-                    let pinIdVAlignment = VerticalAlign.Bottom;
-                    let pinIdOffsetY = -2;
-
-                    switch (angle) {
-                        case 0:
-                            pinNameAlignment = HorizontalAlign.Left;
-                            pinNameOffsetX = 4;
-                            pinIdAlignment = HorizontalAlign.Right;
-                            pinIdOffsetX = -2;
-                            break;
-                        case 90:
-                        case 180:
-                            pinNameAlignment = HorizontalAlign.Right;
-                            pinNameOffsetX = -4;
-                            pinIdAlignment = HorizontalAlign.Left;
-                            pinIdOffsetX = 2;
-                            break;
-                        case 270:
-                            pinNameAlignment = HorizontalAlign.Left;
-                            pinNameOffsetX = 4;
-                            pinIdAlignment = HorizontalAlign.Left;
-                            pinIdOffsetX = 2;
-                            pinIdOffsetY = 2;
-                            pinIdVAlignment = VerticalAlign.Top;
-                            break;
-                    }
-
-                    if (angle === 0 || angle === 90 || angle === 180 || angle === 270) {
-                        const usePinName = pinNameParam ?? "";
-
-                        // Draw the pinName
-                        usePinName !== "" && drawing.addLabel(
-                            endX + pinNameOffsetX, endY, usePinName, {
-                            fontSize: 10,
-                            anchor: pinNameAlignment,
-                            vanchor: VerticalAlign.Middle,
-                        });
-
-                        // Draw pin Id
-                        displayPinId && drawing.addLabel(
-                            endX + pinIdOffsetX, endY + pinIdOffsetY, pinId.toString(), {
-                            fontSize: 8,
-                            anchor: pinIdAlignment,
-                            vanchor: pinIdVAlignment,
-                        });
-                    }
+                case PlaceHolderCommands.pin: 
+                case PlaceHolderCommands.hpin:
+                case PlaceHolderCommands.vpin:
+                {
+                    this.drawPinParams(drawing, commandName, 
+                        keywordParams, positionParams);
                     break;
                 }
 
@@ -472,6 +399,114 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.log("=== end generate drawing ===");
     }
 
+    drawPinParams(drawing: SymbolDrawingCommands,
+        commandName: string, keywordParams: Map<string, any>,
+        positionParams: any[]): void {
+
+        drawing.log('add pin', ...positionParams);
+
+        const keywordDisplayPinId = 'display_pin_id';
+        let displayPinId = true;
+
+        if (keywordParams.has(keywordDisplayPinId)) {
+            if (keywordParams.get(keywordDisplayPinId) === 0) {
+                displayPinId = false;
+            }
+        }
+
+        let pinNameParam: string | null = null;
+        if (typeof positionParams[1] === 'string') {
+            // If the type of the second position is a string, then
+            // use the string value as the pin name
+            pinNameParam = positionParams[1];
+            positionParams = [positionParams[0], ...positionParams.slice(2)];
+        }
+
+        // create the next point
+        const startX = positionParams[1];
+        const startY = positionParams[2];
+
+        if (commandName === PlaceHolderCommands.vpin) {
+            const magnitude = positionParams[3];
+            positionParams = [
+                positionParams[0],
+                startX,
+                startY,
+                startX,
+                startY + magnitude
+            ];
+        } else if (commandName === PlaceHolderCommands.hpin) {
+            const magnitude = positionParams[3];
+            positionParams = [
+                positionParams[0],
+                startX,
+                startY,
+                startX + magnitude,
+                startY
+            ];
+        }
+
+        drawing.addPin(...positionParams);
+
+        // Add a label for the pinId and pinName
+        const latestPin = this.drawing.pins[this.drawing.pins.length - 1];
+        const [pinId, , angle] = latestPin;
+        const [, , , endX, endY] = positionParams;
+
+        let pinNameAlignment = HorizontalAlign.Left;
+        let pinNameOffsetX = 4;
+
+        let pinIdOffsetX = 0;
+        let pinIdAlignment = HorizontalAlign.Left;
+
+        let pinIdVAlignment = VerticalAlign.Bottom;
+        let pinIdOffsetY = -2;
+
+        switch (angle) {
+            case 0:
+                pinNameAlignment = HorizontalAlign.Left;
+                pinNameOffsetX = 4;
+                pinIdAlignment = HorizontalAlign.Right;
+                pinIdOffsetX = -2;
+                break;
+            case 90:
+            case 180:
+                pinNameAlignment = HorizontalAlign.Right;
+                pinNameOffsetX = -4;
+                pinIdAlignment = HorizontalAlign.Left;
+                pinIdOffsetX = 2;
+                break;
+            case 270:
+                pinNameAlignment = HorizontalAlign.Left;
+                pinNameOffsetX = 4;
+                pinIdAlignment = HorizontalAlign.Left;
+                pinIdOffsetX = 2;
+                pinIdOffsetY = 2;
+                pinIdVAlignment = VerticalAlign.Top;
+                break;
+        }
+
+        if (angle === 0 || angle === 90 || angle === 180 || angle === 270) {
+            const usePinName = pinNameParam ?? "";
+
+            // Draw the pinName
+            usePinName !== "" && drawing.addLabel(
+                endX + pinNameOffsetX, endY, usePinName, {
+                fontSize: 10,
+                anchor: pinNameAlignment,
+                vanchor: VerticalAlign.Middle,
+            });
+
+            // Draw pin Id
+            displayPinId && drawing.addLabel(
+                endX + pinIdOffsetX, endY + pinIdOffsetY, pinId.toString(), {
+                fontSize: 8,
+                anchor: pinIdAlignment,
+                vanchor: pinIdVAlignment,
+            });
+        }
+    }
+
     constructor(drawing: SymbolDrawing) {
         super();
         this.drawing = drawing;
@@ -484,6 +519,8 @@ export enum PlaceHolderCommands {
     rect = 'rect',
     triangle = 'triangle',
     pin = 'pin',
+    hpin = 'hpin',
+    vpin = 'vpin',
     hline = 'hline',
     vline = 'vline',
     line = 'line',
