@@ -161,11 +161,13 @@ export abstract class SymbolGraphic {
             let dominantBaseline = 'auto';
 
             let useAnchor = anchor;
+            let useDominantBaseline = vanchor;
             const isRotation180 = Math.abs(this.angle) === 180;
 
-            if (isRotation180){
+            if (isRotation180) {
                 // Special case to flip the text instead of rotating
                 useAnchor = this.flipTextAnchor(anchor);
+                useDominantBaseline = this.flipDominantBaseline(vanchor);
             }
 
             switch(useAnchor){
@@ -182,7 +184,7 @@ export abstract class SymbolGraphic {
                     break;
             }
 
-            switch(vanchor){
+            switch(useDominantBaseline){
                 case VerticalAlign.Top:
                     dominantBaseline = 'hanging';
                     break;
@@ -215,7 +217,7 @@ export abstract class SymbolGraphic {
 
             if (isRotation180){
                 translateX = -position[0];
-                translateY = position[1];
+                translateY = -position[1];
                 useRotateAngle = 0;
             } else {
                 translateX = position[0];
@@ -239,6 +241,16 @@ export abstract class SymbolGraphic {
             return HorizontalAlign.Left;
         } else {
             return HorizontalAlign.Middle;
+        }
+    }
+
+    flipDominantBaseline(value: VerticalAlign): VerticalAlign {
+        if (value === VerticalAlign.Top) {
+            return VerticalAlign.Bottom;
+        } else if (value === VerticalAlign.Bottom) {
+            return VerticalAlign.Top;
+        } else {
+            return VerticalAlign.Middle;
         }
     }
 

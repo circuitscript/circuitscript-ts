@@ -173,7 +173,7 @@ def marker_point():
         display: create graphic:
             hline: -5, 0, 10
             vline: 0, -5, 10
-            pin: 1, 0, 0, 0, 0
+            pin: 1, 0, 0, 0, 0, display_pin_id=0
         type: "net"
 
 def arrow_point():
