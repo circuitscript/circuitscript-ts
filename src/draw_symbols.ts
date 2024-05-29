@@ -93,10 +93,15 @@ export abstract class SymbolGraphic {
     pinPosition(id: number): { x: number; y: number; angle: number; } {
         const pin = this.drawing.getPinPosition(id);
 
+        // Allow pin position values to be rounded to 4 d.p
+        const [x, y] = pin.start;
+        const useX = Math.round(x * 10000) / 10000;
+        const useY = Math.round(y * 10000 / 10000);
+
         if (pin) {
             return {
-                x: pin.start[0],
-                y: pin.start[1],
+                x: useX,
+                y: useY,
                 angle: pin.angle,
             }
         }
