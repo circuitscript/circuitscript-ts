@@ -165,12 +165,20 @@ export class ExecutionScope {
 }
 
 export enum SequenceAction {
+    // Link current insertion point to component pin
     To = 'to',
+
+    // Move insertion point at component pin
     At = 'at',
+
+    // Link current insertion point with wire of given segments
     Wire = 'wire',
 
+    // Jump to wire with target ID. Pin 0 of wire is the start of the 
+    // wire, pin 1 is the other end of the wire.
     WireJump = 'wire-jump',
 
+    // Creates a new frame group
     Frame = 'frame',
 }
 
@@ -187,7 +195,7 @@ export enum ActiveObject {
 
 export type SequenceItem =
     [SequenceAction.To | SequenceAction.At, ClassComponent, number, LayoutDirection?, string?]
-    | [SequenceAction.Wire, number, WireSegment[]]
-    | [SequenceAction.WireJump, number]
+    | [SequenceAction.Wire, wireId: number, WireSegment[]]
+    | [SequenceAction.WireJump, wireId: number, pinId: number]
     | [SequenceAction.Frame, Frame, "enter" | "exit"]
     ;

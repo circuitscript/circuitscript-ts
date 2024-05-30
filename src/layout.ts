@@ -121,33 +121,7 @@ export class LayoutEngine {
             wireGroups.get(netName).push(wire);
         });
     
-        const junctions: RenderJunction[] = [];
-    
-        const mergedWires:MergedWire[] = [];
-    
-        for (const [key, wires] of wireGroups) {
-    
-            // Create array of all wires with the same net name
-            const allLines = wires.map(wire => {
-                return wire.points.map(pt => {
-                    return {
-                        x: wire.x + pt.x,
-                        y: wire.y + pt.y,
-                    }
-                });
-            });
-    
-            const { intersectPoints, segments } = Geometry.mergeWires(allLines);
-            mergedWires.push({
-                netName: key,
-                segments,
-                intersectPoints,
-            });
-    
-            intersectPoints.forEach(([x, y]) => {
-                junctions.push(new RenderJunction(x, y));
-            });
-        }
+        const { junctions, mergedWires } = this.findJunctions(wireGroups);
 
         return {
             components: placedComponents,
@@ -158,6 +132,44 @@ export class LayoutEngine {
             frameObjects,
             textObjects,
         };
+    }
+
+    findJunctions(wireGroups: Map<string, RenderWire[]>): {
+        junctions: RenderJunction[],
+        mergedWires: MergedWire[],
+    } {
+        const junctions: RenderJunction[] = [];
+
+        const mergedWires: MergedWire[] = [];
+
+        for (const [key, wires] of wireGroups) {
+
+            // Create array of all wires with the same net name
+            const allLines = wires.map(wire => {
+                return wire.points.map(pt => {
+                    return {
+                        x: wire.x + pt.x,
+                        y: wire.y + pt.y,
+                    }
+                });
+            });
+
+            const { intersectPoints, segments } = Geometry.mergeWires(allLines);
+            mergedWires.push({
+                netName: key,
+                segments,
+                intersectPoints,
+            });
+
+            intersectPoints.forEach(([x, y]) => {
+                junctions.push(new RenderJunction(x, y));
+            });
+        }
+
+        return {
+            junctions,
+            mergedWires
+        }
     }
 
     placeFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[],
@@ -635,7 +647,7 @@ export class LayoutEngine {
                 }
     
                 if (action === SequenceAction.To) {
-                    graph.setEdge(previousNode, tmpInstanceName,
+                    this.setGraphEdge(graph, previousNode, tmpInstanceName,
                         makeEdgeValue(previousNode, previousPin, tmpInstanceName, pin, i));
                 }
     
@@ -649,9 +661,8 @@ export class LayoutEngine {
 
                 const wire = new RenderWire(0, 0, wireSegments);
                 wire.id = wireId;
-    
                 let useNetName = null;
-    
+
                 if (previousNode !== null) {
                     const [prevNodeType, prevNodeItem] = graph.node(previousNode);
                     if (prevNodeType === RenderItemType.Component) {
@@ -674,9 +685,9 @@ export class LayoutEngine {
                 graph.setNode(wireName, [RenderItemType.Wire, wire, i]);
     
                 // Connect previous node to pin:0 of the wire
-                graph.setEdge(previousNode, wireName, 
+                this.setGraphEdge(graph, previousNode, wireName, 
                     makeEdgeValue(previousNode, previousPin, wireName, 0, i));
-    
+
                 previousNode = wireName;
                 previousPin = 1;
                 
@@ -707,10 +718,17 @@ export class LayoutEngine {
                 
             } else if (action === SequenceAction.WireJump) {
                 this.print(...sequence[i]);
-                const [, wireId] = sequence[i] as [SequenceAction.WireJump, number];
-                previousNode = getWireName(wireId);
-                previousPin = 1;
+                const wireId = sequence[i][1] as number;
+                const wireName = getWireName(wireId);
 
+                let wirePin = 1;
+
+                if (sequence[i].length === 3) {
+                    wirePin = sequence[i][2] as number;
+                }
+
+                previousNode = wireName;
+                previousPin = wirePin;              
             } else if (action === SequenceAction.Frame){
                 const [, frameObject, frameAction] = sequence[i];
 
@@ -752,6 +770,11 @@ export class LayoutEngine {
             graph,
             containerFrames,
         }
+    }
+
+    setGraphEdge(graph: graphlib.Graph, node1: string, node2: string,
+        edgeValue: EdgeValue): void {
+        graph.setEdge(node1, node2, edgeValue);
     }
 
     sizeSubGraphs(graph: graphlib.Graph): SubGraphInfo[] {
@@ -966,13 +989,11 @@ export class LayoutEngine {
                     const [x1, y1] = getNodePositionAtPin(node1, pin1);
                     const [x2, y2] = getNodePositionAtPin(node2, pin2);
                     if (x1 !== x2 && y1 !== y2) {
-
                         if (node1 instanceof RenderWire &&
                             node2 instanceof RenderComponent) {
 
-                            this.layoutWarnings.push('component ' +
-                                node2.component.instanceName +
-                                ' may not be placed correctly');
+                            const refdes = node2.component.assignedRefDes;
+                            this.layoutWarnings.push(`component ${refdes} may not be placed correctly`);
                         }
                     }
                 }
@@ -1189,10 +1210,10 @@ export class LayoutEngine {
             item.y = fromY - pinPosition.y; 
 
         } else if (item instanceof RenderWire){
-            if (pin === 0){
+            if (pin === 0) { // Start of the wire
                 item.x = fromX;
                 item.y = fromY;
-            } else {
+            } else { // End of wire
                 const wireEnd = item.getWireEnd();
                 item.x = fromX - wireEnd.x;
                 item.y = fromY - wireEnd.y;
@@ -1281,8 +1302,12 @@ function getNeighbours(graph: graphlib.Graph, nodeIds: string[]): [from: string,
     }, [] as [from: string, to: string][]);
 }
 
-function makeEdgeValue(instanceName1: string, instancePin1: number, instanceName2: string, instancePin2: number, priority: number): 
-    [instance1: string, instancePin1: number, instance2: string, instancePin2: number, priority: number] {
+type EdgeValue = [instance1: string, instancePin1: number, 
+    instance2: string, instancePin2: number, priority: number];
+
+function makeEdgeValue(instanceName1: string, instancePin1: number, 
+        instanceName2: string, instancePin2: number, priority: number)
+    : EdgeValue {
     return [instanceName1, instancePin1, instanceName2, instancePin2, priority];
     // return `${instanceName1}:pin:${instancePin1} -- ${instanceName2}:pin:${instancePin2}`;
 }

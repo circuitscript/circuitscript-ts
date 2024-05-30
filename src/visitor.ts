@@ -62,7 +62,7 @@ import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunction, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, FunctionDefinedParameter, ReferenceType, UndeclaredReference, ValueType } from './objects/types.js';
 import { Logger } from './logger.js';
-import { ComponentTypes } from './globals.js';
+import { BranchType, ComponentTypes } from './globals.js';
 import { Net } from './objects/Net.js';
 import { SubExpressionCommand, SymbolDrawingCommands } from './draw_symbols.js';
 import { parseFileWithVisitor } from './parser.js';
@@ -353,9 +353,20 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitBranch_blocks(ctx: Branch_blocksContext): ComponentPin {
-        this.getExecutor().enterBranches();
-
         const branches = ctx.branch_block_inner_list();
+        let branchType = BranchType.Branch;
+
+        if (branches.length > 0){
+            const firstBranch = branches[0];
+            if (firstBranch.Branch()){
+                branchType = BranchType.Branch
+            } else if (firstBranch.Join()){
+                branchType = BranchType.Join;
+            }
+        }
+
+        this.getExecutor().enterBranches(branchType);
+
         branches.forEach((branch, index) => {
             this.getExecutor().enterBranch(index);
 

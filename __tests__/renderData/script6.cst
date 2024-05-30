@@ -1,0 +1,28 @@
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+# example with join keyword
+join:
+    at v5v
+    wire down 20
+    add res(10k) down
+    wire down 20
+
+join:
+    at v5v
+    wire down 20
+    add res(10k) down
+    wire down 20 left 60
+
+join:
+    at v5v
+    wire down 20
+    add res(10k) down
+    wire down 20
+    add res(10k) down
+    wire down 20 left 120
+
+wire down 20
+to gnd

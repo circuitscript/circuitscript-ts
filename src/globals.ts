@@ -57,3 +57,8 @@ export enum ReferenceTypes {
     variable = 'variable',
     instance = 'instance',
 }
+
+export enum BranchType {
+    Branch = 1,
+    Join = 2,
+}

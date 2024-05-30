@@ -42,30 +42,31 @@ export default class CircuitScriptParser extends Parser {
 	public static readonly Return = 20;
 	public static readonly Define = 21;
 	public static readonly Import = 22;
-	public static readonly If = 23;
-	public static readonly Not = 24;
-	public static readonly Equals = 25;
-	public static readonly NotEquals = 26;
-	public static readonly Addition = 27;
-	public static readonly Minus = 28;
-	public static readonly Divide = 29;
-	public static readonly Multiply = 30;
-	public static readonly OPEN_PAREN = 31;
-	public static readonly CLOSE_PAREN = 32;
-	public static readonly NOT_CONNECTED = 33;
-	public static readonly BOOLEAN_VALUE = 34;
-	public static readonly ID = 35;
-	public static readonly INTEGER_VALUE = 36;
-	public static readonly DECIMAL_VALUE = 37;
-	public static readonly NUMERIC_VALUE = 38;
-	public static readonly STRING_VALUE = 39;
-	public static readonly PERCENTAGE_VALUE = 40;
-	public static readonly ALPHA_NUMERIC = 41;
-	public static readonly WS = 42;
-	public static readonly NEWLINE = 43;
-	public static readonly SKIP_ = 44;
-	public static readonly INDENT = 45;
-	public static readonly DEDENT = 46;
+	public static readonly Join = 23;
+	public static readonly If = 24;
+	public static readonly Not = 25;
+	public static readonly Equals = 26;
+	public static readonly NotEquals = 27;
+	public static readonly Addition = 28;
+	public static readonly Minus = 29;
+	public static readonly Divide = 30;
+	public static readonly Multiply = 31;
+	public static readonly OPEN_PAREN = 32;
+	public static readonly CLOSE_PAREN = 33;
+	public static readonly NOT_CONNECTED = 34;
+	public static readonly BOOLEAN_VALUE = 35;
+	public static readonly ID = 36;
+	public static readonly INTEGER_VALUE = 37;
+	public static readonly DECIMAL_VALUE = 38;
+	public static readonly NUMERIC_VALUE = 39;
+	public static readonly STRING_VALUE = 40;
+	public static readonly PERCENTAGE_VALUE = 41;
+	public static readonly ALPHA_NUMERIC = 42;
+	public static readonly WS = 43;
+	public static readonly NEWLINE = 44;
+	public static readonly SKIP_ = 45;
+	public static readonly INDENT = 46;
+	public static readonly DEDENT = 47;
 	public static readonly EOF = Token.EOF;
 	public static readonly RULE_script = 0;
 	public static readonly RULE_expression = 1;
@@ -130,11 +131,12 @@ export default class CircuitScriptParser extends Parser {
                                                             "'to'", "'point'", 
                                                             "'return'", 
                                                             "'def'", "'import'", 
-                                                            "'if'", "'!'", 
-                                                            "'=='", "'!='", 
-                                                            "'+'", "'-'", 
-                                                            "'/'", "'*'", 
-                                                            "'('", "')'" ];
+                                                            "'join'", "'if'", 
+                                                            "'!'", "'=='", 
+                                                            "'!='", "'+'", 
+                                                            "'-'", "'/'", 
+                                                            "'*'", "'('", 
+                                                            "')'" ];
 	public static readonly symbolicNames: (string | null)[] = [ null, null, 
                                                              null, null, 
                                                              null, null, 
@@ -147,9 +149,9 @@ export default class CircuitScriptParser extends Parser {
                                                              "Add", "At", 
                                                              "To", "Point", 
                                                              "Return", "Define", 
-                                                             "Import", "If", 
-                                                             "Not", "Equals", 
-                                                             "NotEquals", 
+                                                             "Import", "Join", 
+                                                             "If", "Not", 
+                                                             "Equals", "NotEquals", 
                                                              "Addition", 
                                                              "Minus", "Divide", 
                                                              "Multiply", 
@@ -223,15 +225,16 @@ export default class CircuitScriptParser extends Parser {
 				case 19:
 				case 21:
 				case 22:
-				case 27:
-				case 29:
-				case 35:
+				case 23:
+				case 28:
+				case 30:
+				case 36:
 					{
 					this.state = 98;
 					this.expression();
 					}
 					break;
-				case 43:
+				case 44:
 					{
 					this.state = 99;
 					this.match(CircuitScriptParser.NEWLINE);
@@ -244,7 +247,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 102;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 678381328) !== 0) || _la===35 || _la===43);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1357858576) !== 0) || _la===36 || _la===44);
 			this.state = 104;
 			this.match(CircuitScriptParser.EOF);
 			}
@@ -452,7 +455,14 @@ export default class CircuitScriptParser extends Parser {
 			this.enterOuterAlt(localctx, 1);
 			{
 			this.state = 129;
-			this.match(CircuitScriptParser.Branch);
+			_la = this._input.LA(1);
+			if(!(_la===10 || _la===23)) {
+			this._errHandler.recoverInline(this);
+			}
+			else {
+				this._errHandler.reportMatch(this);
+			    this.consume();
+			}
 			this.state = 130;
 			this.match(CircuitScriptParser.T__0);
 			this.state = 131;
@@ -467,7 +477,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 135;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 133;
 					this.match(CircuitScriptParser.NEWLINE);
@@ -484,9 +494,10 @@ export default class CircuitScriptParser extends Parser {
 				case 19:
 				case 21:
 				case 22:
-				case 27:
-				case 29:
-				case 35:
+				case 23:
+				case 28:
+				case 30:
+				case 36:
 					{
 					this.state = 134;
 					this.expression();
@@ -499,7 +510,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 137;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 678381328) !== 0) || _la===35 || _la===43);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1357858576) !== 0) || _la===36 || _la===44);
 			this.state = 139;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -542,14 +553,14 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 147;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 145;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
-				case 35:
 				case 36:
+				case 37:
 					{
 					this.state = 146;
 					this.assignment_expr2();
@@ -562,7 +573,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 149;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while (((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 259) !== 0));
+			} while (((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 259) !== 0));
 			this.state = 151;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -591,7 +602,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 153;
 			_la = this._input.LA(1);
-			if(!(_la===35 || _la===36)) {
+			if(!(_la===36 || _la===37)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -715,18 +726,18 @@ export default class CircuitScriptParser extends Parser {
 			switch (this._input.LA(1)) {
 			case 6:
 			case 11:
-			case 24:
-			case 27:
+			case 25:
 			case 28:
 			case 29:
-			case 31:
-			case 34:
+			case 30:
+			case 32:
 			case 35:
 			case 36:
 			case 37:
 			case 38:
 			case 39:
 			case 40:
+			case 41:
 				this.enterOuterAlt(localctx, 1);
 				{
 				this.state = 169;
@@ -770,7 +781,7 @@ export default class CircuitScriptParser extends Parser {
 			this.match(CircuitScriptParser.Pin);
 			this.state = 174;
 			_la = this._input.LA(1);
-			if(!(_la===36 || _la===39)) {
+			if(!(_la===37 || _la===40)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -803,7 +814,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 176;
 			_la = this._input.LA(1);
-			if(!(_la===36 || _la===39)) {
+			if(!(_la===37 || _la===40)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -963,14 +974,14 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 211;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 209;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
-				case 36:
-				case 39:
+				case 37:
+				case 40:
 					{
 					this.state = 210;
 					this.at_to_multiple_line_expr();
@@ -983,7 +994,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 213;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while (((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 137) !== 0));
+			} while (((((_la - 37)) & ~0x1F) === 0 && ((1 << (_la - 37)) & 137) !== 0));
 			this.state = 215;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -1058,7 +1069,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 227;
 			_la = this._input.LA(1);
-			if(!(_la===33 || _la===36)) {
+			if(!(_la===34 || _la===37)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -1105,7 +1116,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 235;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 233;
 					this.match(CircuitScriptParser.NEWLINE);
@@ -1122,11 +1133,12 @@ export default class CircuitScriptParser extends Parser {
 				case 19:
 				case 21:
 				case 22:
-				case 27:
-				case 29:
-				case 35:
+				case 23:
+				case 28:
+				case 30:
 				case 36:
-				case 39:
+				case 37:
+				case 40:
 					{
 					this.state = 234;
 					this.at_block_expressions();
@@ -1139,7 +1151,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 237;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 678381328) !== 0) || ((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1357858576) !== 0) || ((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 275) !== 0));
 			this.state = 239;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -1177,17 +1189,18 @@ export default class CircuitScriptParser extends Parser {
 			case 19:
 			case 21:
 			case 22:
-			case 27:
-			case 29:
-			case 35:
+			case 23:
+			case 28:
+			case 30:
+			case 36:
 				this.enterOuterAlt(localctx, 1);
 				{
 				this.state = 241;
 				this.expression();
 				}
 				break;
-			case 36:
-			case 39:
+			case 37:
+			case 40:
 				this.enterOuterAlt(localctx, 2);
 				{
 				this.state = 242;
@@ -1237,16 +1250,17 @@ export default class CircuitScriptParser extends Parser {
 			case 19:
 			case 21:
 			case 22:
-			case 27:
-			case 29:
-			case 33:
-			case 35:
+			case 23:
+			case 28:
+			case 30:
+			case 34:
+			case 36:
 				{
 				this.state = 247;
 				this.at_block_pin_expression_simple();
 				}
 				break;
-			case 43:
+			case 44:
 				{
 				this.state = 248;
 				this.at_block_pin_expression_complex();
@@ -1292,15 +1306,16 @@ export default class CircuitScriptParser extends Parser {
 			case 19:
 			case 21:
 			case 22:
-			case 27:
-			case 29:
-			case 35:
+			case 23:
+			case 28:
+			case 30:
+			case 36:
 				{
 				this.state = 251;
 				this.expression();
 				}
 				break;
-			case 33:
+			case 34:
 				{
 				this.state = 252;
 				this.match(CircuitScriptParser.NOT_CONNECTED);
@@ -1345,7 +1360,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 259;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 257;
 					this.match(CircuitScriptParser.NEWLINE);
@@ -1362,9 +1377,10 @@ export default class CircuitScriptParser extends Parser {
 				case 19:
 				case 21:
 				case 22:
-				case 27:
-				case 29:
-				case 35:
+				case 23:
+				case 28:
+				case 30:
+				case 36:
 					{
 					this.state = 258;
 					this.expression();
@@ -1377,7 +1393,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 261;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 678381328) !== 0) || _la===35 || _la===43);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1357858576) !== 0) || _la===36 || _la===44);
 			this.state = 263;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -1677,21 +1693,21 @@ export default class CircuitScriptParser extends Parser {
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 6:
-				case 28:
-				case 34:
-				case 36:
+				case 29:
+				case 35:
 				case 37:
 				case 38:
 				case 39:
 				case 40:
+				case 41:
 					{
 					this.state = 313;
 					this.value_expr();
 					}
 					break;
-				case 27:
-				case 29:
-				case 35:
+				case 28:
+				case 30:
+				case 36:
 					{
 					this.state = 314;
 					this.atom_expr();
@@ -1759,7 +1775,7 @@ export default class CircuitScriptParser extends Parser {
 						}
 						this.state = 326;
 						_la = this._input.LA(1);
-						if(!(_la===29 || _la===30)) {
+						if(!(_la===30 || _la===31)) {
 						this._errHandler.recoverInline(this);
 						}
 						else {
@@ -1780,7 +1796,7 @@ export default class CircuitScriptParser extends Parser {
 						}
 						this.state = 329;
 						_la = this._input.LA(1);
-						if(!(_la===27 || _la===28)) {
+						if(!(_la===28 || _la===29)) {
 						this._errHandler.recoverInline(this);
 						}
 						else {
@@ -1838,7 +1854,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 340;
 			_la = this._input.LA(1);
-			if(!(_la===25 || _la===26)) {
+			if(!(_la===26 || _la===27)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -1871,7 +1887,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 342;
 			_la = this._input.LA(1);
-			if(!(_la===24 || _la===28)) {
+			if(!(_la===25 || _la===29)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -1903,20 +1919,20 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 349;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 28:
-			case 34:
-			case 36:
+			case 29:
+			case 35:
 			case 37:
 			case 38:
 			case 39:
 			case 40:
+			case 41:
 				this.enterOuterAlt(localctx, 1);
 				{
 				{
 				this.state = 345;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la===28) {
+				if (_la===29) {
 					{
 					this.state = 344;
 					this.match(CircuitScriptParser.Minus);
@@ -1925,7 +1941,7 @@ export default class CircuitScriptParser extends Parser {
 
 				this.state = 347;
 				_la = this._input.LA(1);
-				if(!(((((_la - 34)) & ~0x1F) === 0 && ((1 << (_la - 34)) & 125) !== 0))) {
+				if(!(((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 125) !== 0))) {
 				this._errHandler.recoverInline(this);
 				}
 				else {
@@ -1977,7 +1993,7 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 355;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			if (_la===35) {
+			if (_la===36) {
 				{
 				this.state = 354;
 				this.function_args_expr();
@@ -2000,7 +2016,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 363;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 361;
 					this.match(CircuitScriptParser.NEWLINE);
@@ -2018,9 +2034,10 @@ export default class CircuitScriptParser extends Parser {
 				case 20:
 				case 21:
 				case 22:
-				case 27:
-				case 29:
-				case 35:
+				case 23:
+				case 28:
+				case 30:
+				case 36:
 					{
 					this.state = 362;
 					this.function_expr();
@@ -2033,7 +2050,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 365;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 679429904) !== 0) || _la===35 || _la===43);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1358907152) !== 0) || _la===36 || _la===44);
 			this.state = 367;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -2071,9 +2088,10 @@ export default class CircuitScriptParser extends Parser {
 			case 19:
 			case 21:
 			case 22:
-			case 27:
-			case 29:
-			case 35:
+			case 23:
+			case 28:
+			case 30:
+			case 36:
 				this.enterOuterAlt(localctx, 1);
 				{
 				this.state = 369;
@@ -2219,7 +2237,7 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 405;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			if (_la===27 || _la===29) {
+			if (_la===28 || _la===30) {
 				{
 				this.state = 404;
 				this.net_namespace_expr();
@@ -2269,7 +2287,7 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 421;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 31:
+			case 32:
 				this.enterOuterAlt(localctx, 1);
 				{
 				this.state = 414;
@@ -2277,7 +2295,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 416;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 3103787072) !== 0) || ((((_la - 34)) & ~0x1F) === 0 && ((1 << (_la - 34)) & 127) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1912604736) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & 1017) !== 0)) {
 					{
 					this.state = 415;
 					this.parameters();
@@ -2326,7 +2344,7 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 424;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			if (_la===27) {
+			if (_la===28) {
 				{
 				this.state = 423;
 				this.match(CircuitScriptParser.Addition);
@@ -2414,15 +2432,15 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 440;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 438;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
-				case 35:
 				case 36:
-				case 39:
+				case 37:
+				case 40:
 					{
 					this.state = 439;
 					this.property_expr();
@@ -2435,7 +2453,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 442;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while (((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
+			} while (((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 275) !== 0));
 			this.state = 444;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -2480,14 +2498,14 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 453;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 451;
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
 				case 15:
-				case 35:
+				case 36:
 					{
 					this.state = 452;
 					this.sub_expr();
@@ -2500,7 +2518,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 455;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while (((((_la - 15)) & ~0x1F) === 0 && ((1 << (_la - 15)) & 269484033) !== 0));
+			} while (((((_la - 15)) & ~0x1F) === 0 && ((1 << (_la - 15)) & 538968065) !== 0));
 			this.state = 457;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -2529,7 +2547,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 459;
 			_la = this._input.LA(1);
-			if(!(_la===15 || _la===35)) {
+			if(!(_la===15 || _la===36)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -2613,7 +2631,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 472;
 			_la = this._input.LA(1);
-			if(!(((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 19) !== 0))) {
+			if(!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 19) !== 0))) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -2645,7 +2663,7 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 491;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 43:
+			case 44:
 				localctx = new Nested_propertiesContext(this, localctx);
 				this.enterOuterAlt(localctx, 1);
 				{
@@ -2661,15 +2679,15 @@ export default class CircuitScriptParser extends Parser {
 					this.state = 478;
 					this._errHandler.sync(this);
 					switch (this._input.LA(1)) {
-					case 43:
+					case 44:
 						{
 						this.state = 476;
 						this.match(CircuitScriptParser.NEWLINE);
 						}
 						break;
-					case 35:
 					case 36:
-					case 39:
+					case 37:
+					case 40:
 						{
 						this.state = 477;
 						this.property_expr();
@@ -2682,25 +2700,25 @@ export default class CircuitScriptParser extends Parser {
 					this.state = 480;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
-				} while (((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & 275) !== 0));
+				} while (((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & 275) !== 0));
 				this.state = 482;
 				this.match(CircuitScriptParser.DEDENT);
 				}
 				break;
 			case 6:
 			case 11:
-			case 24:
-			case 27:
+			case 25:
 			case 28:
 			case 29:
-			case 31:
-			case 34:
+			case 30:
+			case 32:
 			case 35:
 			case 36:
 			case 37:
 			case 38:
 			case 39:
 			case 40:
+			case 41:
 				localctx = new Single_line_propertyContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
@@ -2793,7 +2811,7 @@ export default class CircuitScriptParser extends Parser {
 					{
 					this.state = 499;
 					_la = this._input.LA(1);
-					if(!(_la===35 || _la===36)) {
+					if(!(_la===36 || _la===37)) {
 					this._errHandler.recoverInline(this);
 					}
 					else {
@@ -2901,7 +2919,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 517;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case 43:
+				case 44:
 					{
 					this.state = 515;
 					this.match(CircuitScriptParser.NEWLINE);
@@ -2918,9 +2936,10 @@ export default class CircuitScriptParser extends Parser {
 				case 19:
 				case 21:
 				case 22:
-				case 27:
-				case 29:
-				case 35:
+				case 23:
+				case 28:
+				case 30:
+				case 36:
 					{
 					this.state = 516;
 					this.expression();
@@ -2933,7 +2952,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 519;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 678381328) !== 0) || _la===35 || _la===43);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1357858576) !== 0) || _la===36 || _la===44);
 			this.state = 521;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -2972,7 +2991,7 @@ export default class CircuitScriptParser extends Parser {
 		return true;
 	}
 
-	public static readonly _serializedATN: number[] = [4,1,46,524,2,0,7,0,2,
+	public static readonly _serializedATN: number[] = [4,1,47,524,2,0,7,0,2,
 	1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,7,7,7,2,8,7,8,2,9,7,9,2,
 	10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,14,2,15,7,15,2,16,7,16,2,17,
 	7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,
@@ -3014,138 +3033,138 @@ export default class CircuitScriptParser extends Parser {
 	45,10,45,12,45,504,9,45,1,46,1,46,1,46,1,47,1,47,1,47,1,48,1,48,1,48,1,
 	48,1,48,1,48,4,48,518,8,48,11,48,12,48,519,1,48,1,48,1,48,0,1,54,49,0,2,
 	4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,
-	54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,0,10,
-	1,0,35,36,2,0,36,36,39,39,2,0,33,33,36,36,1,0,29,30,1,0,27,28,1,0,25,26,
-	2,0,24,24,28,28,2,0,34,34,36,40,2,0,15,15,35,35,2,0,35,36,39,39,554,0,100,
-	1,0,0,0,2,122,1,0,0,0,4,125,1,0,0,0,6,129,1,0,0,0,8,141,1,0,0,0,10,153,
-	1,0,0,0,12,159,1,0,0,0,14,164,1,0,0,0,16,171,1,0,0,0,18,173,1,0,0,0,20,
-	176,1,0,0,0,22,178,1,0,0,0,24,183,1,0,0,0,26,195,1,0,0,0,28,217,1,0,0,0,
-	30,227,1,0,0,0,32,229,1,0,0,0,34,243,1,0,0,0,36,245,1,0,0,0,38,253,1,0,
-	0,0,40,255,1,0,0,0,42,265,1,0,0,0,44,267,1,0,0,0,46,271,1,0,0,0,48,298,
-	1,0,0,0,50,300,1,0,0,0,52,304,1,0,0,0,54,323,1,0,0,0,56,340,1,0,0,0,58,
-	342,1,0,0,0,60,349,1,0,0,0,62,351,1,0,0,0,64,371,1,0,0,0,66,402,1,0,0,0,
-	68,405,1,0,0,0,70,421,1,0,0,0,72,424,1,0,0,0,74,430,1,0,0,0,76,433,1,0,
-	0,0,78,446,1,0,0,0,80,459,1,0,0,0,82,468,1,0,0,0,84,472,1,0,0,0,86,491,
-	1,0,0,0,88,493,1,0,0,0,90,497,1,0,0,0,92,505,1,0,0,0,94,508,1,0,0,0,96,
-	511,1,0,0,0,98,101,3,2,1,0,99,101,5,43,0,0,100,98,1,0,0,0,100,99,1,0,0,
-	0,101,102,1,0,0,0,102,100,1,0,0,0,102,103,1,0,0,0,103,104,1,0,0,0,104,105,
-	5,0,0,1,105,1,1,0,0,0,106,123,3,14,7,0,107,123,3,24,12,0,108,123,3,22,11,
-	0,109,123,3,44,22,0,110,123,3,50,25,0,111,123,3,8,4,0,112,123,3,52,26,0,
-	113,123,3,42,21,0,114,123,3,62,31,0,115,123,3,90,45,0,116,123,3,92,46,0,
-	117,123,3,94,47,0,118,123,3,96,48,0,119,123,3,68,34,0,120,123,3,32,16,0,
-	121,123,3,4,2,0,122,106,1,0,0,0,122,107,1,0,0,0,122,108,1,0,0,0,122,109,
-	1,0,0,0,122,110,1,0,0,0,122,111,1,0,0,0,122,112,1,0,0,0,122,113,1,0,0,0,
-	122,114,1,0,0,0,122,115,1,0,0,0,122,116,1,0,0,0,122,117,1,0,0,0,122,118,
-	1,0,0,0,122,119,1,0,0,0,122,120,1,0,0,0,122,121,1,0,0,0,123,3,1,0,0,0,124,
-	126,3,6,3,0,125,124,1,0,0,0,126,127,1,0,0,0,127,125,1,0,0,0,127,128,1,0,
-	0,0,128,5,1,0,0,0,129,130,5,10,0,0,130,131,5,1,0,0,131,132,5,43,0,0,132,
-	135,5,45,0,0,133,136,5,43,0,0,134,136,3,2,1,0,135,133,1,0,0,0,135,134,1,
-	0,0,0,136,137,1,0,0,0,137,135,1,0,0,0,137,138,1,0,0,0,138,139,1,0,0,0,139,
-	140,5,46,0,0,140,7,1,0,0,0,141,142,3,68,34,0,142,143,5,1,0,0,143,144,5,
-	43,0,0,144,147,5,45,0,0,145,148,5,43,0,0,146,148,3,10,5,0,147,145,1,0,0,
-	0,147,146,1,0,0,0,148,149,1,0,0,0,149,147,1,0,0,0,149,150,1,0,0,0,150,151,
-	1,0,0,0,151,152,5,46,0,0,152,9,1,0,0,0,153,154,7,0,0,0,154,155,5,1,0,0,
-	155,156,3,60,30,0,156,11,1,0,0,0,157,160,3,54,27,0,158,160,3,44,22,0,159,
-	157,1,0,0,0,159,158,1,0,0,0,160,162,1,0,0,0,161,163,3,18,9,0,162,161,1,
-	0,0,0,162,163,1,0,0,0,163,13,1,0,0,0,164,165,5,16,0,0,165,167,3,12,6,0,
-	166,168,5,35,0,0,167,166,1,0,0,0,167,168,1,0,0,0,168,15,1,0,0,0,169,172,
-	3,12,6,0,170,172,3,18,9,0,171,169,1,0,0,0,171,170,1,0,0,0,172,17,1,0,0,
-	0,173,174,5,15,0,0,174,175,7,1,0,0,175,19,1,0,0,0,176,177,7,1,0,0,177,21,
-	1,0,0,0,178,179,5,17,0,0,179,181,3,16,8,0,180,182,5,35,0,0,181,180,1,0,
-	0,0,181,182,1,0,0,0,182,23,1,0,0,0,183,184,5,18,0,0,184,189,3,16,8,0,185,
-	186,5,2,0,0,186,188,3,16,8,0,187,185,1,0,0,0,188,191,1,0,0,0,189,187,1,
-	0,0,0,189,190,1,0,0,0,190,193,1,0,0,0,191,189,1,0,0,0,192,194,5,35,0,0,
-	193,192,1,0,0,0,193,194,1,0,0,0,194,25,1,0,0,0,195,196,5,17,0,0,196,197,
-	3,16,8,0,197,198,5,18,0,0,198,203,3,16,8,0,199,200,5,2,0,0,200,202,3,16,
-	8,0,201,199,1,0,0,0,202,205,1,0,0,0,203,201,1,0,0,0,203,204,1,0,0,0,204,
-	206,1,0,0,0,205,203,1,0,0,0,206,207,5,1,0,0,207,208,5,43,0,0,208,211,5,
-	45,0,0,209,212,5,43,0,0,210,212,3,28,14,0,211,209,1,0,0,0,211,210,1,0,0,
-	0,212,213,1,0,0,0,213,211,1,0,0,0,213,214,1,0,0,0,214,215,1,0,0,0,215,216,
-	5,46,0,0,216,27,1,0,0,0,217,218,3,20,10,0,218,219,5,1,0,0,219,224,3,30,
-	15,0,220,221,5,2,0,0,221,223,3,30,15,0,222,220,1,0,0,0,223,226,1,0,0,0,
-	224,222,1,0,0,0,224,225,1,0,0,0,225,29,1,0,0,0,226,224,1,0,0,0,227,228,
-	7,2,0,0,228,31,1,0,0,0,229,230,3,22,11,0,230,231,5,1,0,0,231,232,5,43,0,
-	0,232,235,5,45,0,0,233,236,5,43,0,0,234,236,3,34,17,0,235,233,1,0,0,0,235,
-	234,1,0,0,0,236,237,1,0,0,0,237,235,1,0,0,0,237,238,1,0,0,0,238,239,1,0,
-	0,0,239,240,5,46,0,0,240,33,1,0,0,0,241,244,3,2,1,0,242,244,3,36,18,0,243,
-	241,1,0,0,0,243,242,1,0,0,0,244,35,1,0,0,0,245,246,3,20,10,0,246,249,5,
-	1,0,0,247,250,3,38,19,0,248,250,3,40,20,0,249,247,1,0,0,0,249,248,1,0,0,
-	0,250,37,1,0,0,0,251,254,3,2,1,0,252,254,5,33,0,0,253,251,1,0,0,0,253,252,
-	1,0,0,0,254,39,1,0,0,0,255,256,5,43,0,0,256,259,5,45,0,0,257,260,5,43,0,
-	0,258,260,3,2,1,0,259,257,1,0,0,0,259,258,1,0,0,0,260,261,1,0,0,0,261,259,
-	1,0,0,0,261,262,1,0,0,0,262,263,1,0,0,0,263,264,5,46,0,0,264,41,1,0,0,0,
-	265,266,5,9,0,0,266,43,1,0,0,0,267,268,3,68,34,0,268,269,5,3,0,0,269,270,
-	3,54,27,0,270,45,1,0,0,0,271,272,5,35,0,0,272,273,5,3,0,0,273,274,3,54,
-	27,0,274,47,1,0,0,0,275,280,3,54,27,0,276,277,5,2,0,0,277,279,3,54,27,0,
-	278,276,1,0,0,0,279,282,1,0,0,0,280,278,1,0,0,0,280,281,1,0,0,0,281,287,
-	1,0,0,0,282,280,1,0,0,0,283,284,5,2,0,0,284,286,3,46,23,0,285,283,1,0,0,
-	0,286,289,1,0,0,0,287,285,1,0,0,0,287,288,1,0,0,0,288,299,1,0,0,0,289,287,
-	1,0,0,0,290,295,3,46,23,0,291,292,5,2,0,0,292,294,3,46,23,0,293,291,1,0,
-	0,0,294,297,1,0,0,0,295,293,1,0,0,0,295,296,1,0,0,0,296,299,1,0,0,0,297,
-	295,1,0,0,0,298,275,1,0,0,0,298,290,1,0,0,0,299,49,1,0,0,0,300,301,3,68,
-	34,0,301,302,5,3,0,0,302,303,3,54,27,0,303,51,1,0,0,0,304,305,5,4,0,0,305,
-	306,5,35,0,0,306,307,5,3,0,0,307,308,3,54,27,0,308,53,1,0,0,0,309,311,6,
-	27,-1,0,310,312,3,58,29,0,311,310,1,0,0,0,311,312,1,0,0,0,312,315,1,0,0,
-	0,313,316,3,60,30,0,314,316,3,68,34,0,315,313,1,0,0,0,315,314,1,0,0,0,316,
-	324,1,0,0,0,317,318,5,31,0,0,318,319,3,54,27,0,319,320,5,32,0,0,320,324,
-	1,0,0,0,321,324,3,76,38,0,322,324,3,78,39,0,323,309,1,0,0,0,323,317,1,0,
-	0,0,323,321,1,0,0,0,323,322,1,0,0,0,324,337,1,0,0,0,325,326,10,5,0,0,326,
-	327,7,3,0,0,327,336,3,54,27,6,328,329,10,4,0,0,329,330,7,4,0,0,330,336,
-	3,54,27,5,331,332,10,3,0,0,332,333,3,56,28,0,333,334,3,54,27,4,334,336,
-	1,0,0,0,335,325,1,0,0,0,335,328,1,0,0,0,335,331,1,0,0,0,336,339,1,0,0,0,
-	337,335,1,0,0,0,337,338,1,0,0,0,338,55,1,0,0,0,339,337,1,0,0,0,340,341,
-	7,5,0,0,341,57,1,0,0,0,342,343,7,6,0,0,343,59,1,0,0,0,344,346,5,28,0,0,
-	345,344,1,0,0,0,345,346,1,0,0,0,346,347,1,0,0,0,347,350,7,7,0,0,348,350,
-	3,88,44,0,349,345,1,0,0,0,349,348,1,0,0,0,350,61,1,0,0,0,351,352,5,21,0,
-	0,352,353,5,35,0,0,353,355,5,31,0,0,354,356,3,66,33,0,355,354,1,0,0,0,355,
-	356,1,0,0,0,356,357,1,0,0,0,357,358,5,32,0,0,358,359,5,1,0,0,359,360,5,
-	43,0,0,360,363,5,45,0,0,361,364,5,43,0,0,362,364,3,64,32,0,363,361,1,0,
-	0,0,363,362,1,0,0,0,364,365,1,0,0,0,365,363,1,0,0,0,365,366,1,0,0,0,366,
-	367,1,0,0,0,367,368,5,46,0,0,368,63,1,0,0,0,369,372,3,2,1,0,370,372,3,74,
-	37,0,371,369,1,0,0,0,371,370,1,0,0,0,372,65,1,0,0,0,373,378,5,35,0,0,374,
-	375,5,2,0,0,375,377,5,35,0,0,376,374,1,0,0,0,377,380,1,0,0,0,378,376,1,
-	0,0,0,378,379,1,0,0,0,379,387,1,0,0,0,380,378,1,0,0,0,381,382,5,2,0,0,382,
-	383,5,35,0,0,383,384,5,3,0,0,384,386,3,60,30,0,385,381,1,0,0,0,386,389,
-	1,0,0,0,387,385,1,0,0,0,387,388,1,0,0,0,388,403,1,0,0,0,389,387,1,0,0,0,
-	390,391,5,35,0,0,391,392,5,3,0,0,392,399,3,60,30,0,393,394,5,2,0,0,394,
-	395,5,35,0,0,395,396,5,3,0,0,396,398,3,60,30,0,397,393,1,0,0,0,398,401,
-	1,0,0,0,399,397,1,0,0,0,399,400,1,0,0,0,400,403,1,0,0,0,401,399,1,0,0,0,
-	402,373,1,0,0,0,402,390,1,0,0,0,403,67,1,0,0,0,404,406,3,72,36,0,405,404,
-	1,0,0,0,405,406,1,0,0,0,406,407,1,0,0,0,407,411,5,35,0,0,408,410,3,70,35,
-	0,409,408,1,0,0,0,410,413,1,0,0,0,411,409,1,0,0,0,411,412,1,0,0,0,412,69,
-	1,0,0,0,413,411,1,0,0,0,414,416,5,31,0,0,415,417,3,48,24,0,416,415,1,0,
-	0,0,416,417,1,0,0,0,417,418,1,0,0,0,418,422,5,32,0,0,419,420,5,5,0,0,420,
-	422,5,35,0,0,421,414,1,0,0,0,421,419,1,0,0,0,422,71,1,0,0,0,423,425,5,27,
-	0,0,424,423,1,0,0,0,424,425,1,0,0,0,425,426,1,0,0,0,426,428,5,29,0,0,427,
-	429,3,54,27,0,428,427,1,0,0,0,428,429,1,0,0,0,429,73,1,0,0,0,430,431,5,
-	20,0,0,431,432,3,54,27,0,432,75,1,0,0,0,433,434,5,11,0,0,434,435,5,12,0,
-	0,435,436,5,1,0,0,436,437,5,43,0,0,437,440,5,45,0,0,438,441,5,43,0,0,439,
-	441,3,82,41,0,440,438,1,0,0,0,440,439,1,0,0,0,441,442,1,0,0,0,442,440,1,
-	0,0,0,442,443,1,0,0,0,443,444,1,0,0,0,444,445,5,46,0,0,445,77,1,0,0,0,446,
-	447,5,11,0,0,447,448,5,13,0,0,448,449,5,1,0,0,449,450,5,43,0,0,450,453,
-	5,45,0,0,451,454,5,43,0,0,452,454,3,80,40,0,453,451,1,0,0,0,453,452,1,0,
-	0,0,454,455,1,0,0,0,455,453,1,0,0,0,455,456,1,0,0,0,456,457,1,0,0,0,457,
-	458,5,46,0,0,458,79,1,0,0,0,459,460,7,8,0,0,460,466,5,1,0,0,461,467,3,48,
-	24,0,462,463,5,31,0,0,463,464,3,48,24,0,464,465,5,32,0,0,465,467,1,0,0,
-	0,466,461,1,0,0,0,466,462,1,0,0,0,467,81,1,0,0,0,468,469,3,84,42,0,469,
-	470,5,1,0,0,470,471,3,86,43,0,471,83,1,0,0,0,472,473,7,9,0,0,473,85,1,0,
-	0,0,474,475,5,43,0,0,475,478,5,45,0,0,476,479,5,43,0,0,477,479,3,82,41,
-	0,478,476,1,0,0,0,478,477,1,0,0,0,479,480,1,0,0,0,480,478,1,0,0,0,480,481,
-	1,0,0,0,481,482,1,0,0,0,482,492,5,46,0,0,483,488,3,54,27,0,484,485,5,2,
-	0,0,485,487,3,54,27,0,486,484,1,0,0,0,487,490,1,0,0,0,488,486,1,0,0,0,488,
-	489,1,0,0,0,489,492,1,0,0,0,490,488,1,0,0,0,491,474,1,0,0,0,491,483,1,0,
-	0,0,492,87,1,0,0,0,493,494,5,6,0,0,494,495,5,36,0,0,495,496,5,7,0,0,496,
-	89,1,0,0,0,497,498,5,14,0,0,498,502,5,35,0,0,499,501,7,0,0,0,500,499,1,
-	0,0,0,501,504,1,0,0,0,502,500,1,0,0,0,502,503,1,0,0,0,503,91,1,0,0,0,504,
-	502,1,0,0,0,505,506,5,19,0,0,506,507,5,35,0,0,507,93,1,0,0,0,508,509,5,
-	22,0,0,509,510,5,35,0,0,510,95,1,0,0,0,511,512,5,8,0,0,512,513,5,1,0,0,
-	513,514,5,43,0,0,514,517,5,45,0,0,515,518,5,43,0,0,516,518,3,2,1,0,517,
-	515,1,0,0,0,517,516,1,0,0,0,518,519,1,0,0,0,519,517,1,0,0,0,519,520,1,0,
-	0,0,520,521,1,0,0,0,521,522,5,46,0,0,522,97,1,0,0,0,63,100,102,122,127,
-	135,137,147,149,159,162,167,171,181,189,193,203,211,213,224,235,237,243,
-	249,253,259,261,280,287,295,298,311,315,323,335,337,345,349,355,363,365,
-	371,378,387,399,402,405,411,416,421,424,428,440,442,453,455,466,478,480,
-	488,491,502,517,519];
+	54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,0,11,
+	2,0,10,10,23,23,1,0,36,37,2,0,37,37,40,40,2,0,34,34,37,37,1,0,30,31,1,0,
+	28,29,1,0,26,27,2,0,25,25,29,29,2,0,35,35,37,41,2,0,15,15,36,36,2,0,36,
+	37,40,40,554,0,100,1,0,0,0,2,122,1,0,0,0,4,125,1,0,0,0,6,129,1,0,0,0,8,
+	141,1,0,0,0,10,153,1,0,0,0,12,159,1,0,0,0,14,164,1,0,0,0,16,171,1,0,0,0,
+	18,173,1,0,0,0,20,176,1,0,0,0,22,178,1,0,0,0,24,183,1,0,0,0,26,195,1,0,
+	0,0,28,217,1,0,0,0,30,227,1,0,0,0,32,229,1,0,0,0,34,243,1,0,0,0,36,245,
+	1,0,0,0,38,253,1,0,0,0,40,255,1,0,0,0,42,265,1,0,0,0,44,267,1,0,0,0,46,
+	271,1,0,0,0,48,298,1,0,0,0,50,300,1,0,0,0,52,304,1,0,0,0,54,323,1,0,0,0,
+	56,340,1,0,0,0,58,342,1,0,0,0,60,349,1,0,0,0,62,351,1,0,0,0,64,371,1,0,
+	0,0,66,402,1,0,0,0,68,405,1,0,0,0,70,421,1,0,0,0,72,424,1,0,0,0,74,430,
+	1,0,0,0,76,433,1,0,0,0,78,446,1,0,0,0,80,459,1,0,0,0,82,468,1,0,0,0,84,
+	472,1,0,0,0,86,491,1,0,0,0,88,493,1,0,0,0,90,497,1,0,0,0,92,505,1,0,0,0,
+	94,508,1,0,0,0,96,511,1,0,0,0,98,101,3,2,1,0,99,101,5,44,0,0,100,98,1,0,
+	0,0,100,99,1,0,0,0,101,102,1,0,0,0,102,100,1,0,0,0,102,103,1,0,0,0,103,
+	104,1,0,0,0,104,105,5,0,0,1,105,1,1,0,0,0,106,123,3,14,7,0,107,123,3,24,
+	12,0,108,123,3,22,11,0,109,123,3,44,22,0,110,123,3,50,25,0,111,123,3,8,
+	4,0,112,123,3,52,26,0,113,123,3,42,21,0,114,123,3,62,31,0,115,123,3,90,
+	45,0,116,123,3,92,46,0,117,123,3,94,47,0,118,123,3,96,48,0,119,123,3,68,
+	34,0,120,123,3,32,16,0,121,123,3,4,2,0,122,106,1,0,0,0,122,107,1,0,0,0,
+	122,108,1,0,0,0,122,109,1,0,0,0,122,110,1,0,0,0,122,111,1,0,0,0,122,112,
+	1,0,0,0,122,113,1,0,0,0,122,114,1,0,0,0,122,115,1,0,0,0,122,116,1,0,0,0,
+	122,117,1,0,0,0,122,118,1,0,0,0,122,119,1,0,0,0,122,120,1,0,0,0,122,121,
+	1,0,0,0,123,3,1,0,0,0,124,126,3,6,3,0,125,124,1,0,0,0,126,127,1,0,0,0,127,
+	125,1,0,0,0,127,128,1,0,0,0,128,5,1,0,0,0,129,130,7,0,0,0,130,131,5,1,0,
+	0,131,132,5,44,0,0,132,135,5,46,0,0,133,136,5,44,0,0,134,136,3,2,1,0,135,
+	133,1,0,0,0,135,134,1,0,0,0,136,137,1,0,0,0,137,135,1,0,0,0,137,138,1,0,
+	0,0,138,139,1,0,0,0,139,140,5,47,0,0,140,7,1,0,0,0,141,142,3,68,34,0,142,
+	143,5,1,0,0,143,144,5,44,0,0,144,147,5,46,0,0,145,148,5,44,0,0,146,148,
+	3,10,5,0,147,145,1,0,0,0,147,146,1,0,0,0,148,149,1,0,0,0,149,147,1,0,0,
+	0,149,150,1,0,0,0,150,151,1,0,0,0,151,152,5,47,0,0,152,9,1,0,0,0,153,154,
+	7,1,0,0,154,155,5,1,0,0,155,156,3,60,30,0,156,11,1,0,0,0,157,160,3,54,27,
+	0,158,160,3,44,22,0,159,157,1,0,0,0,159,158,1,0,0,0,160,162,1,0,0,0,161,
+	163,3,18,9,0,162,161,1,0,0,0,162,163,1,0,0,0,163,13,1,0,0,0,164,165,5,16,
+	0,0,165,167,3,12,6,0,166,168,5,36,0,0,167,166,1,0,0,0,167,168,1,0,0,0,168,
+	15,1,0,0,0,169,172,3,12,6,0,170,172,3,18,9,0,171,169,1,0,0,0,171,170,1,
+	0,0,0,172,17,1,0,0,0,173,174,5,15,0,0,174,175,7,2,0,0,175,19,1,0,0,0,176,
+	177,7,2,0,0,177,21,1,0,0,0,178,179,5,17,0,0,179,181,3,16,8,0,180,182,5,
+	36,0,0,181,180,1,0,0,0,181,182,1,0,0,0,182,23,1,0,0,0,183,184,5,18,0,0,
+	184,189,3,16,8,0,185,186,5,2,0,0,186,188,3,16,8,0,187,185,1,0,0,0,188,191,
+	1,0,0,0,189,187,1,0,0,0,189,190,1,0,0,0,190,193,1,0,0,0,191,189,1,0,0,0,
+	192,194,5,36,0,0,193,192,1,0,0,0,193,194,1,0,0,0,194,25,1,0,0,0,195,196,
+	5,17,0,0,196,197,3,16,8,0,197,198,5,18,0,0,198,203,3,16,8,0,199,200,5,2,
+	0,0,200,202,3,16,8,0,201,199,1,0,0,0,202,205,1,0,0,0,203,201,1,0,0,0,203,
+	204,1,0,0,0,204,206,1,0,0,0,205,203,1,0,0,0,206,207,5,1,0,0,207,208,5,44,
+	0,0,208,211,5,46,0,0,209,212,5,44,0,0,210,212,3,28,14,0,211,209,1,0,0,0,
+	211,210,1,0,0,0,212,213,1,0,0,0,213,211,1,0,0,0,213,214,1,0,0,0,214,215,
+	1,0,0,0,215,216,5,47,0,0,216,27,1,0,0,0,217,218,3,20,10,0,218,219,5,1,0,
+	0,219,224,3,30,15,0,220,221,5,2,0,0,221,223,3,30,15,0,222,220,1,0,0,0,223,
+	226,1,0,0,0,224,222,1,0,0,0,224,225,1,0,0,0,225,29,1,0,0,0,226,224,1,0,
+	0,0,227,228,7,3,0,0,228,31,1,0,0,0,229,230,3,22,11,0,230,231,5,1,0,0,231,
+	232,5,44,0,0,232,235,5,46,0,0,233,236,5,44,0,0,234,236,3,34,17,0,235,233,
+	1,0,0,0,235,234,1,0,0,0,236,237,1,0,0,0,237,235,1,0,0,0,237,238,1,0,0,0,
+	238,239,1,0,0,0,239,240,5,47,0,0,240,33,1,0,0,0,241,244,3,2,1,0,242,244,
+	3,36,18,0,243,241,1,0,0,0,243,242,1,0,0,0,244,35,1,0,0,0,245,246,3,20,10,
+	0,246,249,5,1,0,0,247,250,3,38,19,0,248,250,3,40,20,0,249,247,1,0,0,0,249,
+	248,1,0,0,0,250,37,1,0,0,0,251,254,3,2,1,0,252,254,5,34,0,0,253,251,1,0,
+	0,0,253,252,1,0,0,0,254,39,1,0,0,0,255,256,5,44,0,0,256,259,5,46,0,0,257,
+	260,5,44,0,0,258,260,3,2,1,0,259,257,1,0,0,0,259,258,1,0,0,0,260,261,1,
+	0,0,0,261,259,1,0,0,0,261,262,1,0,0,0,262,263,1,0,0,0,263,264,5,47,0,0,
+	264,41,1,0,0,0,265,266,5,9,0,0,266,43,1,0,0,0,267,268,3,68,34,0,268,269,
+	5,3,0,0,269,270,3,54,27,0,270,45,1,0,0,0,271,272,5,36,0,0,272,273,5,3,0,
+	0,273,274,3,54,27,0,274,47,1,0,0,0,275,280,3,54,27,0,276,277,5,2,0,0,277,
+	279,3,54,27,0,278,276,1,0,0,0,279,282,1,0,0,0,280,278,1,0,0,0,280,281,1,
+	0,0,0,281,287,1,0,0,0,282,280,1,0,0,0,283,284,5,2,0,0,284,286,3,46,23,0,
+	285,283,1,0,0,0,286,289,1,0,0,0,287,285,1,0,0,0,287,288,1,0,0,0,288,299,
+	1,0,0,0,289,287,1,0,0,0,290,295,3,46,23,0,291,292,5,2,0,0,292,294,3,46,
+	23,0,293,291,1,0,0,0,294,297,1,0,0,0,295,293,1,0,0,0,295,296,1,0,0,0,296,
+	299,1,0,0,0,297,295,1,0,0,0,298,275,1,0,0,0,298,290,1,0,0,0,299,49,1,0,
+	0,0,300,301,3,68,34,0,301,302,5,3,0,0,302,303,3,54,27,0,303,51,1,0,0,0,
+	304,305,5,4,0,0,305,306,5,36,0,0,306,307,5,3,0,0,307,308,3,54,27,0,308,
+	53,1,0,0,0,309,311,6,27,-1,0,310,312,3,58,29,0,311,310,1,0,0,0,311,312,
+	1,0,0,0,312,315,1,0,0,0,313,316,3,60,30,0,314,316,3,68,34,0,315,313,1,0,
+	0,0,315,314,1,0,0,0,316,324,1,0,0,0,317,318,5,32,0,0,318,319,3,54,27,0,
+	319,320,5,33,0,0,320,324,1,0,0,0,321,324,3,76,38,0,322,324,3,78,39,0,323,
+	309,1,0,0,0,323,317,1,0,0,0,323,321,1,0,0,0,323,322,1,0,0,0,324,337,1,0,
+	0,0,325,326,10,5,0,0,326,327,7,4,0,0,327,336,3,54,27,6,328,329,10,4,0,0,
+	329,330,7,5,0,0,330,336,3,54,27,5,331,332,10,3,0,0,332,333,3,56,28,0,333,
+	334,3,54,27,4,334,336,1,0,0,0,335,325,1,0,0,0,335,328,1,0,0,0,335,331,1,
+	0,0,0,336,339,1,0,0,0,337,335,1,0,0,0,337,338,1,0,0,0,338,55,1,0,0,0,339,
+	337,1,0,0,0,340,341,7,6,0,0,341,57,1,0,0,0,342,343,7,7,0,0,343,59,1,0,0,
+	0,344,346,5,29,0,0,345,344,1,0,0,0,345,346,1,0,0,0,346,347,1,0,0,0,347,
+	350,7,8,0,0,348,350,3,88,44,0,349,345,1,0,0,0,349,348,1,0,0,0,350,61,1,
+	0,0,0,351,352,5,21,0,0,352,353,5,36,0,0,353,355,5,32,0,0,354,356,3,66,33,
+	0,355,354,1,0,0,0,355,356,1,0,0,0,356,357,1,0,0,0,357,358,5,33,0,0,358,
+	359,5,1,0,0,359,360,5,44,0,0,360,363,5,46,0,0,361,364,5,44,0,0,362,364,
+	3,64,32,0,363,361,1,0,0,0,363,362,1,0,0,0,364,365,1,0,0,0,365,363,1,0,0,
+	0,365,366,1,0,0,0,366,367,1,0,0,0,367,368,5,47,0,0,368,63,1,0,0,0,369,372,
+	3,2,1,0,370,372,3,74,37,0,371,369,1,0,0,0,371,370,1,0,0,0,372,65,1,0,0,
+	0,373,378,5,36,0,0,374,375,5,2,0,0,375,377,5,36,0,0,376,374,1,0,0,0,377,
+	380,1,0,0,0,378,376,1,0,0,0,378,379,1,0,0,0,379,387,1,0,0,0,380,378,1,0,
+	0,0,381,382,5,2,0,0,382,383,5,36,0,0,383,384,5,3,0,0,384,386,3,60,30,0,
+	385,381,1,0,0,0,386,389,1,0,0,0,387,385,1,0,0,0,387,388,1,0,0,0,388,403,
+	1,0,0,0,389,387,1,0,0,0,390,391,5,36,0,0,391,392,5,3,0,0,392,399,3,60,30,
+	0,393,394,5,2,0,0,394,395,5,36,0,0,395,396,5,3,0,0,396,398,3,60,30,0,397,
+	393,1,0,0,0,398,401,1,0,0,0,399,397,1,0,0,0,399,400,1,0,0,0,400,403,1,0,
+	0,0,401,399,1,0,0,0,402,373,1,0,0,0,402,390,1,0,0,0,403,67,1,0,0,0,404,
+	406,3,72,36,0,405,404,1,0,0,0,405,406,1,0,0,0,406,407,1,0,0,0,407,411,5,
+	36,0,0,408,410,3,70,35,0,409,408,1,0,0,0,410,413,1,0,0,0,411,409,1,0,0,
+	0,411,412,1,0,0,0,412,69,1,0,0,0,413,411,1,0,0,0,414,416,5,32,0,0,415,417,
+	3,48,24,0,416,415,1,0,0,0,416,417,1,0,0,0,417,418,1,0,0,0,418,422,5,33,
+	0,0,419,420,5,5,0,0,420,422,5,36,0,0,421,414,1,0,0,0,421,419,1,0,0,0,422,
+	71,1,0,0,0,423,425,5,28,0,0,424,423,1,0,0,0,424,425,1,0,0,0,425,426,1,0,
+	0,0,426,428,5,30,0,0,427,429,3,54,27,0,428,427,1,0,0,0,428,429,1,0,0,0,
+	429,73,1,0,0,0,430,431,5,20,0,0,431,432,3,54,27,0,432,75,1,0,0,0,433,434,
+	5,11,0,0,434,435,5,12,0,0,435,436,5,1,0,0,436,437,5,44,0,0,437,440,5,46,
+	0,0,438,441,5,44,0,0,439,441,3,82,41,0,440,438,1,0,0,0,440,439,1,0,0,0,
+	441,442,1,0,0,0,442,440,1,0,0,0,442,443,1,0,0,0,443,444,1,0,0,0,444,445,
+	5,47,0,0,445,77,1,0,0,0,446,447,5,11,0,0,447,448,5,13,0,0,448,449,5,1,0,
+	0,449,450,5,44,0,0,450,453,5,46,0,0,451,454,5,44,0,0,452,454,3,80,40,0,
+	453,451,1,0,0,0,453,452,1,0,0,0,454,455,1,0,0,0,455,453,1,0,0,0,455,456,
+	1,0,0,0,456,457,1,0,0,0,457,458,5,47,0,0,458,79,1,0,0,0,459,460,7,9,0,0,
+	460,466,5,1,0,0,461,467,3,48,24,0,462,463,5,32,0,0,463,464,3,48,24,0,464,
+	465,5,33,0,0,465,467,1,0,0,0,466,461,1,0,0,0,466,462,1,0,0,0,467,81,1,0,
+	0,0,468,469,3,84,42,0,469,470,5,1,0,0,470,471,3,86,43,0,471,83,1,0,0,0,
+	472,473,7,10,0,0,473,85,1,0,0,0,474,475,5,44,0,0,475,478,5,46,0,0,476,479,
+	5,44,0,0,477,479,3,82,41,0,478,476,1,0,0,0,478,477,1,0,0,0,479,480,1,0,
+	0,0,480,478,1,0,0,0,480,481,1,0,0,0,481,482,1,0,0,0,482,492,5,47,0,0,483,
+	488,3,54,27,0,484,485,5,2,0,0,485,487,3,54,27,0,486,484,1,0,0,0,487,490,
+	1,0,0,0,488,486,1,0,0,0,488,489,1,0,0,0,489,492,1,0,0,0,490,488,1,0,0,0,
+	491,474,1,0,0,0,491,483,1,0,0,0,492,87,1,0,0,0,493,494,5,6,0,0,494,495,
+	5,37,0,0,495,496,5,7,0,0,496,89,1,0,0,0,497,498,5,14,0,0,498,502,5,36,0,
+	0,499,501,7,1,0,0,500,499,1,0,0,0,501,504,1,0,0,0,502,500,1,0,0,0,502,503,
+	1,0,0,0,503,91,1,0,0,0,504,502,1,0,0,0,505,506,5,19,0,0,506,507,5,36,0,
+	0,507,93,1,0,0,0,508,509,5,22,0,0,509,510,5,36,0,0,510,95,1,0,0,0,511,512,
+	5,8,0,0,512,513,5,1,0,0,513,514,5,44,0,0,514,517,5,46,0,0,515,518,5,44,
+	0,0,516,518,3,2,1,0,517,515,1,0,0,0,517,516,1,0,0,0,518,519,1,0,0,0,519,
+	517,1,0,0,0,519,520,1,0,0,0,520,521,1,0,0,0,521,522,5,47,0,0,522,97,1,0,
+	0,0,63,100,102,122,127,135,137,147,149,159,162,167,171,181,189,193,203,
+	211,213,224,235,237,243,249,253,259,261,280,287,295,298,311,315,323,335,
+	337,345,349,355,363,365,371,378,387,399,402,405,411,416,421,424,428,440,
+	442,453,455,466,478,480,488,491,502,517,519];
 
 	private static __ATN: ATN;
 	public static get _ATN(): ATN {
@@ -3292,9 +3311,6 @@ export class Branch_block_innerContext extends ParserRuleContext {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public Branch(): TerminalNode {
-		return this.getToken(CircuitScriptParser.Branch, 0);
-	}
 	public NEWLINE_list(): TerminalNode[] {
 	    	return this.getTokens(CircuitScriptParser.NEWLINE);
 	}
@@ -3306,6 +3322,12 @@ export class Branch_block_innerContext extends ParserRuleContext {
 	}
 	public DEDENT(): TerminalNode {
 		return this.getToken(CircuitScriptParser.DEDENT, 0);
+	}
+	public Branch(): TerminalNode {
+		return this.getToken(CircuitScriptParser.Branch, 0);
+	}
+	public Join(): TerminalNode {
+		return this.getToken(CircuitScriptParser.Join, 0);
 	}
 	public expression_list(): ExpressionContext[] {
 		return this.getTypedRuleContexts(ExpressionContext) as ExpressionContext[];

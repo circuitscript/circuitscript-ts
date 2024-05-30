@@ -1,4 +1,4 @@
-import { ComponentTypes, GlobalNames, ParamKeys, ReferenceTypes } from './globals.js';
+import { BranchType, ComponentTypes, GlobalNames, ParamKeys, ReferenceTypes } from './globals.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
@@ -25,6 +25,8 @@ export class ExecutionContext {
     executionLevel: number;
 
     scope: ExecutionScope;
+
+    joinPointId = 0;
 
     resolveNet: (name: string, netNamespace:string) => ({
         found: boolean, net?: Net
@@ -524,73 +526,47 @@ export class ExecutionContext {
         return clonedComponent;
     }
 
-    enterBranches(): void {
+    enterBranches(branchType: BranchType): void {
+        // Create object to track all the inner branches of 
+        // the branch group
+
         this.scope.branchStack.set(this.scope.indentLevel, {
             // Tracks the position when the branch is entered
-            entered_at: [this.scope.currentComponent, this.scope.currentPin, this.scope.currentWireId],
+            entered_at: [
+                this.scope.currentComponent,
+                this.scope.currentPin,
+                this.scope.currentWireId],
             inner_branches: new Map<number, any>(),
             current_index: null,
+            type: branchType,
         });
 
         this.print('enter branches');
     }
 
     exitBranches(): void {
-        false && this.joinBranches();
-        
-        this.print('exit branches');
-    }
-
-    joinBranches(): void {
-        // When exiting/leaving a group of branches
-        const innerBranches = this.scope.branchStack.get(
+        const stackRef = this.scope.branchStack.get(
             this.scope.indentLevel,
-        )['inner_branches'];
+        );
 
-        const lastNets: [number, [ClassComponent, number, Net]][] = [];
+        const { type: branchType } = stackRef;
+        if (branchType === BranchType.Join) {
+            // Move to the end location of the first branch
+            const { join_final_point: finalPoint } = stackRef;
+            const [component, pin, wireId] = finalPoint;
 
-        // Gather all the last nets that should be joined together
-        for (const [key, value] of innerBranches) {
-            if (value['ignore_last_net'] === false) {
-                const [component, pin] = value['last_net'];
+            this.scope.currentComponent = component;
+            this.scope.currentPin = pin;
+            this.scope.currentWireId = wireId;
 
-                let netPriority = 0;
-                if (this.scope.hasNet(component, pin)) {
-                    netPriority = this.scope.getNet(component, pin).priority;
-                }
-
-                lastNets.push([netPriority, value['last_net']]);
+            if (wireId !== -1) {
+                this.scope.sequence.push([
+                    SequenceAction.WireJump, wireId, 1
+                ]);
             }
         }
 
-        if (lastNets.length > 0) {
-            // Items in the lastNets list might not have an actual net created/defined yet
-
-            // Sort the nets so that the net with the highest priority is first
-            const sortedNets = lastNets.sort((a, b) => {
-                if (a[0] > b[0]) {
-                    return -1;
-                } else if (a[0] < b[0]) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            });
-
-            // Not always a good idea to always use the first item for combining...
-            const [comp1, pin1] = sortedNets[0][1];
-
-            const tmpList = sortedNets.slice(1);
-            tmpList.forEach((item) => {
-                const [, [comp2, pin2]] = item;
-
-                this.atComponent(comp1, pin1, {addSequence: true});
-                this.toComponent(comp2, pin2, {addSequence: true});
-            });
-
-            this.scope.currentComponent = comp1;
-            this.scope.currentPin = pin1;
-        }
+        this.print('exit branches');
     }
 
     enterBranch(branchIndex: number): void {
@@ -598,8 +574,9 @@ export class ExecutionContext {
 
         // Current net before any branching is already stored in enterBranches()
         const stackRef = this.scope.branchStack.get(this.scope.indentLevel);
-
         stackRef['branch_index'] = branchIndex;
+
+        const { type: branchType } = stackRef;
 
         // Setup the state for the inner branch at the given index
         stackRef['inner_branches'].set(branchIndex, {
@@ -607,33 +584,66 @@ export class ExecutionContext {
             ignore_last_net: false,
         });
 
+        if (branchType === BranchType.Join) {
+            // Clear current component, pin, wire before entering the branch
+            this.scope.currentComponent = null;
+            this.scope.currentPin = null;
+            this.scope.currentWireId = -1;
+        }
+
         this.scope.indentLevel += 1;
     }
 
     exitBranch(branchIndex: number): void {
         const stackRef = this.scope.branchStack.get(this.scope.indentLevel - 1);
-
+        const { type: branchType } = stackRef;
         // Save the last net reference
         const branchIndexRef = stackRef['inner_branches'].get(branchIndex);
         branchIndexRef['last_net'] = [
             this.scope.currentComponent,
             this.scope.currentPin,
+            this.scope.currentWireId
         ];
 
         stackRef['branch_index'] = null;
 
         // Restore the latest entry in the branch stack
-        const [preBranchComponent, preBranchPin, preBranchWireId] = stackRef['entered_at'];
+        const [preBranchComponent, preBranchPin, preBranchWireId] =
+            stackRef['entered_at'];
 
         this.scope.indentLevel -= 1;
 
         this.print('exit inner branch <<<');
 
-        // Do not duplicate any net symbol since this is a branch
-        this.atComponent(preBranchComponent, preBranchPin, {addSequence: true});
+        if (branchType === BranchType.Branch) {
+            // Do not duplicate any net symbol since this is a branch
+            this.atComponent(preBranchComponent, preBranchPin, { addSequence: true });
 
-        if (preBranchWireId !== -1){
-            this.scope.sequence.push([SequenceAction.WireJump, preBranchWireId]);
+            if (preBranchWireId !== -1) {
+                // If previous node is a wire, then jump to END of wire
+                this.scope.sequence.push([SequenceAction.WireJump, preBranchWireId, 1]);
+            }
+        } else if (branchType === BranchType.Join) {
+            if (branchIndex === 0) {
+                // First join branch will determine the final join location
+
+                // Add point to current location
+                this.addPoint('_join.point.' + this.joinPointId, false);
+                this.joinPointId += 1;
+
+                stackRef['join_final_point'] = [
+                    this.scope.currentComponent,
+                    this.scope.currentPin,
+                    this.scope.currentWireId
+                ];
+
+            } else {
+                const { join_final_point: finalPoint } = stackRef;
+                const [joinComponent, joinPin, joinWireId] = finalPoint;
+
+                // Link the current component to the join component and join pin
+                this.toComponent(joinComponent, joinPin, { addSequence: true });
+            }
         }
     }
 
@@ -855,7 +865,7 @@ export class ExecutionContext {
                 // Wire IDs in wire jumps need to be updated.
                 const jumpWireId = wireIdOffset + sequenceAction[1];
                 this.scope.sequence.push(
-                    [SequenceAction.WireJump, jumpWireId]
+                    [SequenceAction.WireJump, jumpWireId, 1]
                 );
             } else if (action === SequenceAction.At || action === SequenceAction.To) {
                 const tmpComponent: ClassComponent = sequenceAction[1];
@@ -947,17 +957,18 @@ export class ExecutionContext {
         )
     }
 
-    addPoint(pointId: string): ComponentPin {
+    addPoint(pointId: string, userDefined = true): ComponentPin {
         if (this.scope.instances.has(pointId)) {
             this.print('Warning: ' + pointId + ' is being redefined');
         }
 
-        const componentPoint = ClassComponent.simple("point." + pointId, 1, "point");
+        const useName = userDefined ? 'point.' + pointId : pointId;
+        const componentPoint = ClassComponent.simple(useName, 1, "point");
         componentPoint.displayProp = "point";
         componentPoint.typeProp = ComponentTypes.point;
 
         this.scope.instances.set(pointId, componentPoint);
-        this.toComponent(componentPoint, 1, {addSequence: true});
+        this.toComponent(componentPoint, 1, { addSequence: true });
 
         return this.getCurrentPoint();
     }

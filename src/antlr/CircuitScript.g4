@@ -21,6 +21,7 @@ Point:      'point';
 Return:     'return';
 Define:     'def';
 Import:     'import';
+Join:       'join';
 
 If:         'if';
 Not:        '!';
@@ -57,7 +58,7 @@ expression: add_component_expr
 
 branch_blocks: branch_block_inner+;
 branch_block_inner:
-	Branch ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+	(Branch|Join) ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:
 	atom_expr ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;

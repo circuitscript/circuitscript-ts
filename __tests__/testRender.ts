@@ -13,7 +13,8 @@ describe('Render tests', () => {
         ['simple function', 'script2.cst'],
         ['simple frame', 'script3.cst'],
         ['drawing functions for graphics', 'script4.cst'],
-        ['drawing 180 deg flipped components', 'script5.cst']
+        ['drawing 180 deg flipped components', 'script5.cst'],
+        ['join command', 'script6.cst']
 
     ])('render - %s (%s)', async (title, scriptPath) => {
 
