@@ -1,4 +1,4 @@
-import { BranchType, ComponentTypes, GlobalNames, ParamKeys, ReferenceTypes } from './globals.js';
+import { BranchType, ComponentTypes, GlobalNames, NoNetText, ParamKeys, ReferenceTypes } from './globals.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
@@ -318,12 +318,22 @@ export class ExecutionContext {
         return component;
     }
 
-    printPoint(): void {
+    printPoint(extra = ''): void {
+        let netName = NoNetText;
+        if (this.scope.hasNet(
+            this.scope.currentComponent,
+            this.scope.currentPin
+        )) {
+            netName = this.scope
+                .getNet(this.scope.currentComponent, this.scope.currentPin)
+                .toString();
+        }
+
         this.print(
-            'point: ' +
-                this.scope.currentComponent.instanceName +
-                ' ' +
-                this.scope.currentPin,
+            (extra !== '' ? (extra + ' ') : '') + 'point: ' +
+            this.scope.currentComponent.instanceName +
+            ' ' +
+            this.scope.currentPin + ' ' + netName
         );
     }
 
@@ -570,8 +580,6 @@ export class ExecutionContext {
     }
 
     enterBranch(branchIndex: number): void {
-        this.print('enter inner branch >>>');
-
         // Current net before any branching is already stored in enterBranches()
         const stackRef = this.scope.branchStack.get(this.scope.indentLevel);
         stackRef['branch_index'] = branchIndex;
@@ -590,6 +598,8 @@ export class ExecutionContext {
             this.scope.currentPin = null;
             this.scope.currentWireId = -1;
         }
+
+        this.print(`enter inner branch of type (${branchType}) >>>`);
 
         this.scope.indentLevel += 1;
     }
@@ -628,7 +638,8 @@ export class ExecutionContext {
                 // First join branch will determine the final join location
 
                 // Add point to current location
-                this.addPoint('_join.point.' + this.joinPointId, false);
+                this.addPoint(`_join.${this.name}.${this.joinPointId}`, false);
+                
                 this.joinPointId += 1;
 
                 stackRef['join_final_point'] = [
@@ -758,7 +769,7 @@ export class ExecutionContext {
                 { netNamespace });
 
             this.print(`done call function '${functionName}'`);
-
+            
             return functionResult;
         } else {
             throw `Invalid function '${functionName}'`;
@@ -905,9 +916,24 @@ export class ExecutionContext {
             }
         });
 
-        this.scope.currentComponent = currentComponent;
-        this.scope.currentPin = currentPin;
+        if (childScope.currentComponent === childScope.componentRoot) {
+            // If child scope is current at the root node, then use the 
+            // location in the parent scope as the current component 
+            // since that would be equivalent
+            this.scope.currentComponent = currentComponent;
+            this.scope.currentPin = currentPin;
+            this.scope.currentWireId = currentWireId;
 
+        } else {
+            // Otherwise move the current scope to the current node within 
+            // the child scope
+            this.scope.currentComponent = childScope.currentComponent;
+            this.scope.currentPin = childScope.currentPin;
+            this.scope.currentWireId = childScope.currentWireId + wireIdOffset;
+        }
+
+        this.printPoint('resume at');
+        
         this.print('-- nets --');
 
         // dump the list of nets in the current scope

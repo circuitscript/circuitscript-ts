@@ -385,3 +385,57 @@ at my_net
     ['/hello', 'my_net', 1],
     ['/hello', 'my_net:0', 1
     ]]);
+
+
+/*
+After a function call, the correct graph position should be resumed from.
+This test also checks the join keyword
+*/
+export const script13 = new ScriptTest(`import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+def led_with_res():
+    add led("yellow") pin 2 right
+    wire right 20
+    add res(1k)
+    wire right 20
+
+join:
+    at gnd left
+    wire right 20
+    add label("TXLED")
+    wire right 60
+    led_with_res()
+
+join:
+    at gnd left
+    wire right 20
+    add label("RXLED")
+    wire right 60
+    led_with_res()
+    wire up 100
+
+wire up 20
+to v5v`,
+[
+    [ '/5V', 'v5v', 1 ],
+    [ '/5V', 'led_with_res_0.res_0.COMP_1_1k', 2 ],
+    [ '/5V', '_join.__.0', 1 ],
+    [ '/5V', 'led_with_res_1.res_1.COMP_1_1k', 2 ],
+    [ '/5V', 'v5v:0', 1 ],
+    [ '/GND', 'gnd', 1 ],
+    [ '/GND', 'gnd:0', 1 ],
+    [ '/GND', 'label_0.COMP_1_1', 1 ],
+    [ '/GND', 'led_with_res_0.__root', 1 ],
+    [ '/GND', 'led_with_res_0.led_0.COMP_1_0603', 2 ],
+    [ '/GND', 'gnd:1', 1 ],
+    [ '/GND', 'label_1.COMP_1_1', 1 ],
+    [ '/GND', 'led_with_res_1.__root', 1 ],
+    [ '/GND', 'led_with_res_1.led_1.COMP_1_0603', 2 ],
+    [ '/NET_2', 'led_with_res_0.led_0.COMP_1_0603', 1 ],
+    [ '/NET_2', 'led_with_res_0.res_0.COMP_1_1k', 1 ],
+    [ '/NET_2', 'led_with_res_1.led_1.COMP_1_0603', 1 ],
+    [ '/NET_2', 'led_with_res_1.res_1.COMP_1_1k', 1 ]
+  ]);

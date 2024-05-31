@@ -9,6 +9,7 @@ export enum GlobalNames {
     symbol = 'symbol',
 }
 
+export const NoNetText = 'NO_NET';
 
 export enum ParamKeys {
 

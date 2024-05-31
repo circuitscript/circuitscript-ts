@@ -1,6 +1,6 @@
 
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
-import { script1, script10, script11, script12, script2, script3, script6, script7, script8, script9 } from './parseScripts.js';
+import { script1, script10, script11, script12, script13, script2, script3, script6, script7, script8, script9 } from './parseScripts.js';
 
 describe('test parsing', () => {
 
@@ -14,7 +14,8 @@ describe('test parsing', () => {
         ["resolve nets in local and upper contexts", script9],
         ["assignment in at/to/add statement", script10],
         ["net namespace local and global", script11],
-        ["create component with __is_net", script12]
+        ["create component with __is_net", script12],
+        ["corret nets after function call", script13],
         
     ])('parse script - %s', async (description, scriptTest) => {
         // Test only parsing, does not check the correctness of the 

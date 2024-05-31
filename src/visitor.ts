@@ -62,7 +62,7 @@ import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunction, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, FunctionDefinedParameter, ReferenceType, UndeclaredReference, ValueType } from './objects/types.js';
 import { Logger } from './logger.js';
-import { BranchType, ComponentTypes } from './globals.js';
+import { BranchType, ComponentTypes, NoNetText } from './globals.js';
 import { Net } from './objects/Net.js';
 import { SubExpressionCommand, SymbolDrawingCommands } from './draw_symbols.js';
 import { parseFileWithVisitor } from './parser.js';
@@ -744,7 +744,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
             // Function execution is completed, get the last executor
             const lastExecution = executionStack.pop();
-            
+
             // Merge what ever was created in the scope with the outer scope
             const nextLastExecution = executionStack[executionStack.length - 1];
             nextLastExecution.mergeScope(
@@ -1407,8 +1407,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const result = [];
 
         for (const [pinId, pin] of instance.pins) {
-            let netName = 'NO_NET';
-            let netBaseName = 'NO_NET';
+            let netName = NoNetText;
+            let netBaseName = NoNetText;
 
             if (scope.hasNet(instance, pinId)) {
                 const netObject = scope.getNet(instance, pinId);

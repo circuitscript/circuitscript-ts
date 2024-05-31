@@ -1,4 +1,4 @@
-import { ComponentTypes } from "./globals.js";
+import { ComponentTypes, NoNetText } from "./globals.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
 import { NetListItem } from "./visitor.js";
 
@@ -39,7 +39,7 @@ export function generateKiCADNetList(netlist: NetListItem[]): string {
                 const netInfo = pins[key];
                 const netName = netInfo.netName;
 
-                if (netName === 'NO_NET'){
+                if (netName === NoNetText){
                     continue;
                 }
 
