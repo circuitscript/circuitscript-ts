@@ -26,7 +26,7 @@ export class ExecutionContext {
 
     scope: ExecutionScope;
 
-    joinPointId = 0;
+    tmpPointId = 0;     // Counter for points created within the context
 
     resolveNet: (name: string, netNamespace:string) => ({
         found: boolean, net?: Net
@@ -540,6 +540,11 @@ export class ExecutionContext {
         // Create object to track all the inner branches of 
         // the branch group
 
+        if (branchType === BranchType.Point) {
+            this.addPoint(`_point.${this.name}.${this.tmpPointId}`, false);
+            this.tmpPointId += 1;
+        }
+
         this.scope.branchStack.set(this.scope.indentLevel, {
             // Tracks the position when the branch is entered
             entered_at: [
@@ -560,6 +565,7 @@ export class ExecutionContext {
         );
 
         const { type: branchType } = stackRef;
+
         if (branchType === BranchType.Join) {
             // Move to the end location of the first branch
             const { join_final_point: finalPoint } = stackRef;
@@ -574,6 +580,12 @@ export class ExecutionContext {
                     SequenceAction.WireJump, wireId, 1
                 ]);
             }
+        } else if (branchType === BranchType.Point) {
+            const { entered_at: [preBranchComponent, preBranchPin,] } =
+                stackRef;
+
+            // Prebranch location should be a created point without any wires
+            this.atComponent(preBranchComponent, preBranchPin, { addSequence: true });
         }
 
         this.print('exit branches');
@@ -592,7 +604,7 @@ export class ExecutionContext {
             ignore_last_net: false,
         });
 
-        if (branchType === BranchType.Join) {
+        if (branchType === BranchType.Join || branchType === BranchType.Point) {
             // Clear current component, pin, wire before entering the branch
             this.scope.currentComponent = null;
             this.scope.currentPin = null;
@@ -618,8 +630,8 @@ export class ExecutionContext {
         stackRef['branch_index'] = null;
 
         // Restore the latest entry in the branch stack
-        const [preBranchComponent, preBranchPin, preBranchWireId] =
-            stackRef['entered_at'];
+        const { entered_at: [preBranchComponent, preBranchPin, preBranchWireId] } =
+            stackRef;
 
         this.scope.indentLevel -= 1;
 
@@ -637,10 +649,10 @@ export class ExecutionContext {
             if (branchIndex === 0) {
                 // First join branch will determine the final join location
 
-                // Add point to current location
-                this.addPoint(`_join.${this.name}.${this.joinPointId}`, false);
-                
-                this.joinPointId += 1;
+                // Add point to current location, start with _join keyword to
+                // indicate that this is a point for join keyword
+                this.addPoint(`_join.${this.name}.${this.tmpPointId}`, false);
+                this.tmpPointId += 1;
 
                 stackRef['join_final_point'] = [
                     this.scope.currentComponent,
@@ -650,12 +662,47 @@ export class ExecutionContext {
 
             } else {
                 const { join_final_point: finalPoint } = stackRef;
-                const [joinComponent, joinPin, joinWireId] = finalPoint;
+                const [joinComponent, joinPin, ] = finalPoint;
 
                 // Link the current component to the join component and join pin
                 this.toComponent(joinComponent, joinPin, { addSequence: true });
             }
         }
+    }
+
+    atBranchPoint(): void {
+        const [component, pin,] = this.getBranchPoint();
+        this.atComponent(component, pin, {
+            addSequence: true
+        });
+    }
+
+    toBranchPoint(): void {
+        // Branch point has been specifically created, wireId should be -1
+        const [component, pin,] = this.getBranchPoint();
+        this.toComponent(component, pin, {
+            addSequence: true
+        });
+    }
+
+    getBranchPoint(): [component: ClassComponent, pin: number, wireId: number] {
+        // Returns the position at the nearest `point:` block, searches within
+        // previous branch stacks
+        this.print('get branch point');
+
+        for (let i = 0; i < this.scope.indentLevel; i++) {
+            const stackRef = this.scope.branchStack.get(this.scope.indentLevel - 1 - i);
+            const { entered_at } = stackRef;
+            const component: ClassComponent = entered_at[0];
+
+            if (component.instanceName.startsWith('_point.')) {
+                return entered_at;
+            }
+        }
+
+        this.print('did not find branch point');
+
+        return null;
     }
 
     breakBranch(): void {

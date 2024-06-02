@@ -439,3 +439,64 @@ to v5v`,
     [ '/NET_2', 'led_with_res_1.led_1.COMP_1_0603', 1 ],
     [ '/NET_2', 'led_with_res_1.res_1.COMP_1_1k', 1 ]
   ]);
+
+
+
+/**
+Tests the `point` branching keyword
+ */
+export const script14 = new ScriptTest(`
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+at v5v
+wire down 20
+add res(360) down
+wire down 20
+
+point:
+    at v5v
+    wire down 20
+    add res(360) down
+    wire down 20 
+
+    branch:
+        wire left 100
+        to point
+
+    wire down 20
+    add res(360) down
+    wire down 20
+    to gnd
+
+    at point
+    wire right 200 down 20
+    add res(360) down
+    wire down 20
+    to gnd
+
+wire down 20
+add led("red") down
+wire down 40
+to gnd`, [
+    [ '/5V', 'v5v', 1 ],
+    [ '/5V', 'v5v:0', 1 ],
+    [ '/5V', 'res_0.COMP_1_360', 1 ],
+    [ '/5V', 'v5v:1', 1 ],
+    [ '/5V', 'res_1.COMP_1_360', 1 ],
+    [ '/GND', 'gnd', 1 ],
+    [ '/GND', 'gnd:0', 1 ],
+    [ '/GND', 'res_2.COMP_1_360', 2 ],
+    [ '/GND', 'gnd:1', 1 ],
+    [ '/GND', 'res_3.COMP_1_360', 2 ],
+    [ '/GND', 'gnd:2', 1 ],
+    [ '/GND', 'led_0.COMP_1_0603', 2 ],
+    [ '/NET_1', 'res_0.COMP_1_360', 2 ],
+    [ '/NET_1', '_point.__.0', 1 ],
+    [ '/NET_1', 'res_1.COMP_1_360', 2 ],
+    [ '/NET_1', 'res_2.COMP_1_360', 1 ],
+    [ '/NET_1', 'res_3.COMP_1_360', 1 ],
+    [ '/NET_1', 'led_0.COMP_1_0603', 1 ]
+]);

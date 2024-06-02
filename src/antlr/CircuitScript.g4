@@ -17,11 +17,12 @@ Add:        'add';
 At:         'at';
 To:         'to';
 Point:      'point';
+Join:       'join';
+Parallel:   'parallel';
 
 Return:     'return';
 Define:     'def';
 Import:     'import';
-Join:       'join';
 
 If:         'if';
 Not:        '!';
@@ -47,18 +48,18 @@ expression: add_component_expr
         | break_keyword
         | function_def_expr
         | wire_expr
-        | point_expr
         | import_expr
         | frame_expr
         | atom_expr
         
         | at_block
         | branch_blocks
+        | point_expr
         ;
 
 branch_blocks: branch_block_inner+;
 branch_block_inner:
-	(Branch|Join) ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+	(Branch | Join | Parallel | Point) ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:
 	atom_expr ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
@@ -73,10 +74,10 @@ pin_select_expr:        Pin (INTEGER_VALUE | STRING_VALUE);
 // This does not have the 'pin' word
 pin_select_expr2: INTEGER_VALUE | STRING_VALUE;
 
-at_component_expr:      At component_select_expr ID?;
+at_component_expr:      At ((component_select_expr ID?) | Point);                           // ID? is for orientation
 // at_component_expr_next:   'at' component_select_expr (',' component_select_expr)*;
 
-to_component_expr: To component_select_expr (',' component_select_expr)* ID?;
+to_component_expr: To ((component_select_expr (',' component_select_expr)* ID?) | Point);   // ID? is for orientation
 // pin_select_expr_next:   'pin' INTEGER_VALUE (',' INTEGER_VALUE)?;
 
 at_to_multiple_expr: At component_select_expr To component_select_expr (',' component_select_expr)* ':' NEWLINE INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;

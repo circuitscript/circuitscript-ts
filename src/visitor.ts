@@ -303,36 +303,48 @@ export class MainVisitor extends ParseTreeVisitor<any> {
     }
 
     visitAt_component_expr(ctx: At_component_exprContext): ComponentPin {
-        const [component, pin] = this.visit(ctx.component_select_expr());
+        if (ctx.Point()) {
+            this.getExecutor().atBranchPoint();
 
-        const currentPoint = this.getExecutor().atComponent(component, pin, {
-            addSequence: true,
-            cloneNetComponent: true
-        });
-        
-        if (ctx.ID()){
-            // If there is ID specified, then it can only be for the 
-            // component orientation.
-            this.setComponentOrientation(currentPoint[0], 
-                currentPoint[1], ctx.ID().getText())
+        } else {
+            const [component, pin] = this.visit(ctx.component_select_expr());
+
+            const currentPoint = this.getExecutor().atComponent(component, pin, {
+                addSequence: true,
+                cloneNetComponent: true
+            });
+
+            if (ctx.ID()) {
+                // If there is ID specified, then it can only be for the 
+                // component orientation.
+                this.setComponentOrientation(currentPoint[0],
+                    currentPoint[1], ctx.ID().getText())
+            }
         }
-        
-        return currentPoint;
+
+        return this.getExecutor().getCurrentPoint();
     }
 
-    visitTo_component_expr(ctx: To_component_exprContext): ComponentPin  {
+    visitTo_component_expr(ctx: To_component_exprContext): ComponentPin {
         let currentPoint: ComponentPin;
-        ctx.component_select_expr_list().forEach((item) => {
-            const [component, pin] = this.visit(item);
-            currentPoint = this.getExecutor().toComponent(component, pin, {
-                addSequence: true, cloneNetComponent: true});
-        });
 
-        if (ctx.ID()){
-            // If there is ID specified, then it can only be for the 
-            // component orientation.
-            this.setComponentOrientation(currentPoint[0], 
-                currentPoint[1], ctx.ID().getText())
+        if (ctx.Point()) {
+            this.getExecutor().toBranchPoint();
+
+        } else {
+            ctx.component_select_expr_list().forEach((item) => {
+                const [component, pin] = this.visit(item);
+                currentPoint = this.getExecutor().toComponent(component, pin, {
+                    addSequence: true, cloneNetComponent: true
+                });
+            });
+
+            if (ctx.ID()) {
+                // If there is ID specified, then it can only be for the 
+                // component orientation.
+                this.setComponentOrientation(currentPoint[0],
+                    currentPoint[1], ctx.ID().getText())
+            }
         }
 
         return this.getExecutor().getCurrentPoint();
@@ -362,6 +374,11 @@ export class MainVisitor extends ParseTreeVisitor<any> {
                 branchType = BranchType.Branch
             } else if (firstBranch.Join()){
                 branchType = BranchType.Join;
+            } else if (firstBranch.Parallel()){
+                branchType = BranchType.Parallel;
+                throw "parallel: Not implemented yet!";
+            } else if (firstBranch.Point()){
+                branchType = BranchType.Point;
             }
         }
 
