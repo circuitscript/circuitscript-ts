@@ -53,12 +53,12 @@ expression: add_component_expr
         | atom_expr
         
         | at_block
-        | branch_blocks
+        | path_blocks
         | point_expr
         ;
 
-branch_blocks: branch_block_inner+;
-branch_block_inner:
+path_blocks: path_block_inner+;
+path_block_inner:
 	(Branch | Join | Parallel | Point) ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 property_set_expr2:

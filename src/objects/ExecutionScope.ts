@@ -15,7 +15,7 @@ export class ExecutionScope {
 
     variables: Map<string, ValueType | ClassComponent> = new Map();
 
-    branchStack: Map<number, any> = new Map();
+    blockStack: Map<number, any> = new Map();
 
     wires: Wire[] = [];
     frames: Frame[] = [];

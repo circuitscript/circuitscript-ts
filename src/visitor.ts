@@ -15,7 +15,7 @@ import {
     Atom_exprContext,
     BinaryOperatorExprContext,
     Blank_exprContext,
-    Branch_blocksContext,
+    Path_blocksContext,
     Component_select_exprContext,
     Create_component_exprContext,
     Create_graphic_exprContext,
@@ -59,10 +59,10 @@ import {
 import { PinDefinition, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
-import { CFunction, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
+import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, FunctionDefinedParameter, ReferenceType, UndeclaredReference, ValueType } from './objects/types.js';
 import { Logger } from './logger.js';
-import { BranchType, ComponentTypes, NoNetText } from './globals.js';
+import { BlockTypes, ComponentTypes, NoNetText } from './globals.js';
 import { Net } from './objects/Net.js';
 import { SubExpressionCommand, SymbolDrawingCommands } from './draw_symbols.js';
 import { parseFileWithVisitor } from './parser.js';
@@ -304,7 +304,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitAt_component_expr(ctx: At_component_exprContext): ComponentPin {
         if (ctx.Point()) {
-            this.getExecutor().atBranchPoint();
+            this.getExecutor().atPointBlock();
 
         } else {
             const [component, pin] = this.visit(ctx.component_select_expr());
@@ -329,7 +329,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         let currentPoint: ComponentPin;
 
         if (ctx.Point()) {
-            this.getExecutor().toBranchPoint();
+            this.getExecutor().toPointBlock();
 
         } else {
             ctx.component_select_expr_list().forEach((item) => {
@@ -364,35 +364,34 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         }
     }
 
-    visitBranch_blocks(ctx: Branch_blocksContext): ComponentPin {
-        const branches = ctx.branch_block_inner_list();
-        let branchType = BranchType.Branch;
+    visitPath_blocks(ctx: Path_blocksContext): ComponentPin {
+        const blocks = ctx.path_block_inner_list();
+        let blockType = BlockTypes.Branch;
 
-        if (branches.length > 0){
-            const firstBranch = branches[0];
-            if (firstBranch.Branch()){
-                branchType = BranchType.Branch
-            } else if (firstBranch.Join()){
-                branchType = BranchType.Join;
-            } else if (firstBranch.Parallel()){
-                branchType = BranchType.Parallel;
-                throw "parallel: Not implemented yet!";
-            } else if (firstBranch.Point()){
-                branchType = BranchType.Point;
+        if (blocks.length > 0){
+            const firstBlock = blocks[0];
+            if (firstBlock.Branch()){
+                blockType = BlockTypes.Branch
+            } else if (firstBlock.Join()){
+                blockType = BlockTypes.Join;
+            } else if (firstBlock.Parallel()){
+                blockType = BlockTypes.Parallel;
+            } else if (firstBlock.Point()){
+                blockType = BlockTypes.Point;
             }
         }
 
-        this.getExecutor().enterBranches(branchType);
+        this.getExecutor().enterBlocks(blockType);
 
-        branches.forEach((branch, index) => {
-            this.getExecutor().enterBranch(index);
+        blocks.forEach((branch, index) => {
+            this.getExecutor().enterBlock(index);
 
             this.visit(branch);
 
-            this.getExecutor().exitBranch(index);
+            this.getExecutor().exitBlock(index);
         });
 
-        this.getExecutor().exitBranches();
+        this.getExecutor().exitBlocks();
         return this.getExecutor().getCurrentPoint();
     }
 

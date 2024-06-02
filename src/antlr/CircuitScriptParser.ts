@@ -71,8 +71,8 @@ export default class CircuitScriptParser extends Parser {
 	public static readonly EOF = Token.EOF;
 	public static readonly RULE_script = 0;
 	public static readonly RULE_expression = 1;
-	public static readonly RULE_branch_blocks = 2;
-	public static readonly RULE_branch_block_inner = 3;
+	public static readonly RULE_path_blocks = 2;
+	public static readonly RULE_path_block_inner = 3;
 	public static readonly RULE_property_set_expr2 = 4;
 	public static readonly RULE_assignment_expr2 = 5;
 	public static readonly RULE_data_expr_with_assignment = 6;
@@ -172,7 +172,7 @@ export default class CircuitScriptParser extends Parser {
                                                              "DEDENT" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"script", "expression", "branch_blocks", "branch_block_inner", "property_set_expr2", 
+		"script", "expression", "path_blocks", "path_block_inner", "property_set_expr2", 
 		"assignment_expr2", "data_expr_with_assignment", "add_component_expr", 
 		"component_select_expr", "pin_select_expr", "pin_select_expr2", "at_component_expr", 
 		"to_component_expr", "at_to_multiple_expr", "at_to_multiple_line_expr", 
@@ -379,7 +379,7 @@ export default class CircuitScriptParser extends Parser {
 				this.enterOuterAlt(localctx, 15);
 				{
 				this.state = 120;
-				this.branch_blocks();
+				this.path_blocks();
 				}
 				break;
 			case 16:
@@ -406,9 +406,9 @@ export default class CircuitScriptParser extends Parser {
 		return localctx;
 	}
 	// @RuleVersion(0)
-	public branch_blocks(): Branch_blocksContext {
-		let localctx: Branch_blocksContext = new Branch_blocksContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 4, CircuitScriptParser.RULE_branch_blocks);
+	public path_blocks(): Path_blocksContext {
+		let localctx: Path_blocksContext = new Path_blocksContext(this, this._ctx, this.state);
+		this.enterRule(localctx, 4, CircuitScriptParser.RULE_path_blocks);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
@@ -422,7 +422,7 @@ export default class CircuitScriptParser extends Parser {
 					{
 					{
 					this.state = 124;
-					this.branch_block_inner();
+					this.path_block_inner();
 					}
 					}
 					break;
@@ -450,9 +450,9 @@ export default class CircuitScriptParser extends Parser {
 		return localctx;
 	}
 	// @RuleVersion(0)
-	public branch_block_inner(): Branch_block_innerContext {
-		let localctx: Branch_block_innerContext = new Branch_block_innerContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 6, CircuitScriptParser.RULE_branch_block_inner);
+	public path_block_inner(): Path_block_innerContext {
+		let localctx: Path_block_innerContext = new Path_block_innerContext(this, this._ctx, this.state);
+		this.enterRule(localctx, 6, CircuitScriptParser.RULE_path_block_inner);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
@@ -3339,8 +3339,8 @@ export class ExpressionContext extends ParserRuleContext {
 	public at_block(): At_blockContext {
 		return this.getTypedRuleContext(At_blockContext, 0) as At_blockContext;
 	}
-	public branch_blocks(): Branch_blocksContext {
-		return this.getTypedRuleContext(Branch_blocksContext, 0) as Branch_blocksContext;
+	public path_blocks(): Path_blocksContext {
+		return this.getTypedRuleContext(Path_blocksContext, 0) as Path_blocksContext;
 	}
 	public point_expr(): Point_exprContext {
 		return this.getTypedRuleContext(Point_exprContext, 0) as Point_exprContext;
@@ -3359,24 +3359,24 @@ export class ExpressionContext extends ParserRuleContext {
 }
 
 
-export class Branch_blocksContext extends ParserRuleContext {
+export class Path_blocksContext extends ParserRuleContext {
 	constructor(parser?: CircuitScriptParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public branch_block_inner_list(): Branch_block_innerContext[] {
-		return this.getTypedRuleContexts(Branch_block_innerContext) as Branch_block_innerContext[];
+	public path_block_inner_list(): Path_block_innerContext[] {
+		return this.getTypedRuleContexts(Path_block_innerContext) as Path_block_innerContext[];
 	}
-	public branch_block_inner(i: number): Branch_block_innerContext {
-		return this.getTypedRuleContext(Branch_block_innerContext, i) as Branch_block_innerContext;
+	public path_block_inner(i: number): Path_block_innerContext {
+		return this.getTypedRuleContext(Path_block_innerContext, i) as Path_block_innerContext;
 	}
     public get ruleIndex(): number {
-    	return CircuitScriptParser.RULE_branch_blocks;
+    	return CircuitScriptParser.RULE_path_blocks;
 	}
 	// @Override
 	public accept<Result>(visitor: CircuitScriptVisitor<Result>): Result {
-		if (visitor.visitBranch_blocks) {
-			return visitor.visitBranch_blocks(this);
+		if (visitor.visitPath_blocks) {
+			return visitor.visitPath_blocks(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -3384,7 +3384,7 @@ export class Branch_blocksContext extends ParserRuleContext {
 }
 
 
-export class Branch_block_innerContext extends ParserRuleContext {
+export class Path_block_innerContext extends ParserRuleContext {
 	constructor(parser?: CircuitScriptParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
@@ -3420,12 +3420,12 @@ export class Branch_block_innerContext extends ParserRuleContext {
 		return this.getTypedRuleContext(ExpressionContext, i) as ExpressionContext;
 	}
     public get ruleIndex(): number {
-    	return CircuitScriptParser.RULE_branch_block_inner;
+    	return CircuitScriptParser.RULE_path_block_inner;
 	}
 	// @Override
 	public accept<Result>(visitor: CircuitScriptVisitor<Result>): Result {
-		if (visitor.visitBranch_block_inner) {
-			return visitor.visitBranch_block_inner(this);
+		if (visitor.visitPath_block_inner) {
+			return visitor.visitPath_block_inner(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

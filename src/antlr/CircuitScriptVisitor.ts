@@ -7,8 +7,8 @@ import {ParseTreeVisitor} from 'antlr4';
 
 import { ScriptContext } from "./CircuitScriptParser";
 import { ExpressionContext } from "./CircuitScriptParser";
-import { Branch_blocksContext } from "./CircuitScriptParser";
-import { Branch_block_innerContext } from "./CircuitScriptParser";
+import { Path_blocksContext } from "./CircuitScriptParser";
+import { Path_block_innerContext } from "./CircuitScriptParser";
 import { Property_set_expr2Context } from "./CircuitScriptParser";
 import { Assignment_expr2Context } from "./CircuitScriptParser";
 import { Data_expr_with_assignmentContext } from "./CircuitScriptParser";
@@ -82,17 +82,17 @@ export default class CircuitScriptVisitor<Result> extends ParseTreeVisitor<Resul
 	 */
 	visitExpression?: (ctx: ExpressionContext) => Result;
 	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.branch_blocks`.
+	 * Visit a parse tree produced by `CircuitScriptParser.path_blocks`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitBranch_blocks?: (ctx: Branch_blocksContext) => Result;
+	visitPath_blocks?: (ctx: Path_blocksContext) => Result;
 	/**
-	 * Visit a parse tree produced by `CircuitScriptParser.branch_block_inner`.
+	 * Visit a parse tree produced by `CircuitScriptParser.path_block_inner`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitBranch_block_inner?: (ctx: Branch_block_innerContext) => Result;
+	visitPath_block_inner?: (ctx: Path_block_innerContext) => Result;
 	/**
 	 * Visit a parse tree produced by `CircuitScriptParser.property_set_expr2`.
 	 * @param ctx the parse tree
