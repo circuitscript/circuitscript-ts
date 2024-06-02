@@ -500,3 +500,47 @@ to gnd`, [
     [ '/NET_1', 'res_3.COMP_1_360', 1 ],
     [ '/NET_1', 'led_0.COMP_1_0603', 1 ]
 ]);
+
+/*
+Test with `paralell` keyword
+*/
+export const script15 = new ScriptTest(`
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+at v5v
+wire down 20
+
+parallel:
+    wire down 20
+    add res(1k) down
+    wire down 20
+
+parallel:
+    wire right 60 down 20
+    add res(1k) down
+    wire auto
+
+parallel:
+    wire right 120 down 20
+    add res(1k) down
+    wire auto
+
+wire down 20
+to gnd
+`, [
+    ['/5V', 'v5v', 1],
+    ['/5V', 'v5v:0', 1],
+    ['/5V', '_parallel.__.0', 1],
+    ['/5V', 'res_0.COMP_1_1k', 1],
+    ['/5V', 'res_1.COMP_1_1k', 1],
+    ['/5V', 'res_2.COMP_1_1k', 1],
+    ['/GND', 'gnd', 1],
+    ['/GND', 'res_0.COMP_1_1k', 2],
+    ['/GND', '_parallel.__.1', 1],
+    ['/GND', 'res_1.COMP_1_1k', 2],
+    ['/GND', 'res_2.COMP_1_1k', 2],
+    ['/GND', 'gnd:0', 1]
+]);
