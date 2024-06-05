@@ -108,6 +108,52 @@ def solder_bridge():
             pin: 2, width/2+20, 0, width/2+5, 0
             label: "refdes", 0, -width/2 - 5, "?", anchor="middle"
 
+def reset_button_block():
+    btn = reset_btn()
+
+    wire up 20
+    branch:
+        wire up 20 
+        to btn pin 1
+    wire right 20 up 20
+    to btn pin 2
+
+    at btn pin 4
+    wire up 20
+    branch:
+        wire auto_
+        to btn pin 3
+    wire up 20 right 40 down 20
+    to gnd
+
+
+def reset_btn():
+    return create component:
+        pins: 5
+        display: create graphic:
+
+            hline: 0, 0, 20
+            hline: 0, -40, 20
+            vline: 20, -30, 20
+            path: "M", 20, -20, "L", 40, -20, "L", 40, 0
+            path: "M", -15, -30, "L", -20, -30, "L", -20, -10, "L", -15, -10
+            hline: -20, -20, 3
+            hline: -15, -20, 3
+            hline: -10, -20, 3
+            hline: -5, -20, 2
+            path: "M", 0, 0, "L", -5, -30
+
+            fill: "#333"
+            circle: 0, 0, 2
+            fill: "none"
+
+            pin: 1, 0, 20, 0, 0
+            pin: 2, 20, 20, 20, 0
+            pin: 5, 40, 20, 40, 0
+            pin: 3, 0, -60, 0, -40
+            pin: 4, 20, -60, 20, -40
+
+
 gnd = dgnd()
 v3v3 = supply("3V3")
 v5v = supply("5V")
@@ -236,10 +282,6 @@ def conn3x2():
             circle: 10,  0,  8 
             circle: 10,  20, 8 
 
-# ICSP connector
-icsp_conn2 = conn3x2()
-icsp_conn = conn3x2()
-
 def usb_conn_():
     width = 40
     height = 100
@@ -345,6 +387,19 @@ ad_conn.mpn = "AD"
 # USB connector
 usb_conn = usb_conn_()
 
+# ICSP connector
+icsp_conn2 = conn3x2()
+icsp_conn = conn3x2()
+
+at icsp_conn:
+    6:
+        wire right 20 down 20
+        to gnd
+    2:
+        wire right 20 up 20
+        to v5v
+
+
 at atmega:
     32:
         wire left 40 
@@ -361,24 +416,8 @@ at atmega:
         to gnd
 
     3:
-        wire left 20 down 260
-        branch:
-            wire auto
-            to atmega pin 100
-        branch:
-            wire down 40
-            to gnd
-        wire left 20
-        
-        add solder_bridge() pin 2
-        ..refdes = "GROUND"
-
-        wire left 20
-        branch:
-            wire auto
-            to atmega pin 28
-        wire left 60
-        point tmp
+        wire left 20 down 20
+        to gnd
 
     24:
         wire left 40
@@ -387,19 +426,17 @@ at atmega:
             to icsp_conn2 pin 5
 
         branch:
-            at v5v
-            wire down 20 left 40
-            to icsp_conn2 pin 2
-            point tmp4
+            wire up 20
+            add res(10k) up
 
-        wire up 20
-        add res(10k) ..angle=-90
-        wire auto_
-        to tmp4
-    
-    28:
-        wire left 100
-        add label("UGND")
+            point:
+                at v5v
+                branch:
+                    wire down 20 left 40
+                    to icsp_conn2 pin 2
+
+                wire auto 
+                to point
 
     17:
         wire right 20
@@ -423,32 +460,6 @@ at atmega:
         wire right 20 down 20
         to gnd
 
-    2:
-        wire left 120
-        branch:
-            wire left 20
-            to osc1 pin 1
-
-        wire up 40 left 160 wire down 20
-        add res(1M) ..angle=90
-        point tmp5
-
-        at osc1 pin 3
-        wire left 20 down 20
-        to gnd
-    
-    1:
-        wire left 20
-        add res(27) pin 2
-        wire left 20
-
-        branch:
-            wire auto_
-            to osc1 pin 2
-
-        wire down 20 auto 
-        to tmp5
-
     31:
         wire left 100
         add label("USBVCC")
@@ -459,78 +470,119 @@ at atmega:
         add label("XUSB")
         wire left 80
         to usb_conn pin 1
+        
+    100: 
+        wire left 20 down 20
+        to gnd
+
+join:
+    at atmega pin 30
+    wire left 100
+    add label("RD-")
+
+    wire left 180 up 180 left 40
+    add res(22) pin 2
+    wire left 20
+    add label("D-")
+    wire left 60
+    branch:
+        wire auto
+        to usb_conn pin 2
+        
+    wire down 100
+    add esd() ..angle=90
+    wire down 20 left 80
+
+join:
+    at atmega pin 29
+    wire left 100 
+    add label("RD+")
+
+    wire left 200 up 140 left 20
+    add res(22) pin 2
+    wire left 20
+    add label("D+")
+
+    wire left 20 up 40 
+    wire left 120
+    branch:
+        wire auto
+        to usb_conn pin 3
+    wire down 80
+    add esd() ..angle=90
+    wire auto
+
+point:
+    at usb_conn pin 5
+    wire down 20
+    branch:
+        wire auto_ 
+        to usb_conn pin 6
+
+    wire down 20
+    add label("USHIELD") down
+    wire auto_
+    to point
+
+wire down 20
+add ind(1u) down
+wire down 20
+
+point:
+    at usb_conn pin 4
+    wire right 20 down 40
+    add label("UGND") down
+    wire auto_
+    to point
+
+point:
+    at atmega pin 27
+    wire left 100
+    add label("VUCAP")
+    wire left 100 down 100
+    add cap(1u)
+    wire down 40
+
+    point:
+        at atmega pin 28
+        wire left 100
+        add label("UGND")
+        wire auto
+        to point
+        wire down 20
+        add solder_bridge() down
+        ..refdes = "GROUND"
+        wire down 20
+        to gnd
     
-    30:
-        wire left 100
-        add label("RD-")
+    wire left 360
+    to point
 
-        wire left 180 up 180 left 40
-        add res(22) pin 2
+join:
+    at atmega pin 2
+    wire left 120
+    branch:
         wire left 20
-        add label("D-")
-        wire left 60
-        branch:
-            wire auto
-            to usb_conn pin 2
-            
-        wire down 100
-        add esd() ..angle=90
-        wire down 20 left 80
-        point tmp3
+        to osc1 pin 1
 
-    29:
-        wire left 100 
-        add label("RD+")
+    wire up 40 left 160 wire down 20
+    add res(1M) down
 
-        wire left 200 up 140 left 20
-        add res(22) pin 2
-        wire left 20
-        add label("D+")
+join:
+    at atmega pin 1
+    wire left 20
+    add res(27) pin 2
+    wire left 20
 
-        wire left 20 up 40 
-        wire left 120
-        branch:
-            wire auto
-            to usb_conn pin 3
-        wire down 80
-        add esd() ..angle=90
-        wire auto
-        to tmp3
-
-    27:
-        wire left 100
-        add label("VUCAP")
-        wire left 80 down 80
-        add cap(1u)
-        wire down 20
-        wire auto
-        to tmp
-
-at usb_conn:
-    5:
-        wire down 20
-        branch:
-            wire auto_ 
-            to usb_conn pin 6
-
-        wire down 20
-        add label("USHIELD") ..angle=90
+    branch:
         wire auto_
-        to tmp3
+        to osc1 pin 2
 
-        wire down 20
-        add ind(1u) ..angle=90
-        wire down 20
-        point tmp2
+    wire down 20 auto 
 
-    4:
-        wire right 20 down 40
-        add label("UGND") ..angle=90
-        wire auto_
-        to tmp2
-        wire auto_
-        to tmp
-
+at osc1 pin 3
+wire left 20 down 20
+to gnd
 
 at atmega:
     8:
@@ -561,27 +613,29 @@ at atmega:
         wire auto
         to iol_conn pin 1
 
-    10:
-        wire right 40
-        add label("RXLED")
-        wire right 100 down 40 right 60
-        add led("yellow") pin 2 right
-        wire right 20
-        add res(1k)
-        wire right 20 up 60 
-        point tmp6
-        wire up 20 
-        to v5v
+def led_with_res():
+    add led("yellow") pin 2 right
+    wire right 20
+    add res(1k)
+    wire right 20
 
-    11:
-        wire right 40
-        add label("TXLED")
-        wire right 120 right 40
-        add led("yellow") pin 2 right
-        wire right 20
-        add res(1k)
-        wire auto 
-        to tmp6
+join:
+    at atmega pin 11
+    wire right 40
+    add label("TXLED")
+    wire right 140
+    led_with_res()
+
+join:
+    at atmega pin 10
+    wire right 40
+    add label("RXLED")
+    wire right 100 down 40 right 40
+    led_with_res()
+    wire up 60
+
+wire up 20
+to v5v
 
 #power_conn2 = create component:
 #    pins: 6
@@ -613,46 +667,6 @@ at power_conn2:
 
 
 at atmega8:
-
-    1:
-        wire left 20
-        point atmega8_1
-        wire left 120
-        branch:
-            wire up 20
-            add res(10k) pin 2 ..angle=90
-            wire up 20
-            to v5v
-        branch:
-            wire left 40 up 460 right 120
-            to power_conn2 pin 1
-
-            wire left 40
-            add label("RESET")
-        
-        wire left 60
-        branch:
-            wire left 20
-            add solder_bridge() pin 2
-            ..refdes = "RESET-EN"
-            point tmp7
-        wire down 40 left 180
-        branch:
-            wire auto
-            to tmp7
-
-        wire down 20
-        add cap(100n)
-        wire down 200
-        branch:
-            wire right 20
-            add solder_bridge()
-            ..refdes = "UBOOT"
-            wire right 20 down 20 to gnd
-
-        wire auto 
-        to atmega pin 13
-
     7:
         wire left 40
         branch:
@@ -750,6 +764,52 @@ at atmega8:
         wire up 60 left 160 auto
         to icsp_conn pin 3
 
+    1:
+        wire left 20
+
+        point:
+            at icsp_conn pin 5
+            wire left 140
+            branch:
+                reset_button_block()
+            wire auto_
+            to point
+
+        wire left 120
+        branch:
+            wire up 20
+            add res(10k) up
+            wire up 20
+            to v5v
+        branch:
+            wire left 40 up 460 right 120
+            to power_conn2 pin 1
+
+            wire left 40
+            add label("RESET")
+        
+        wire left 60
+
+        parallel:
+            wire left 60
+            add solder_bridge() left
+            ..refdes = "RESET-EN"
+            wire left 60 down 40
+        parallel:
+            wire auto
+
+        wire down 20
+        add cap(100n)
+        wire down 200
+        branch:
+            wire right 20
+            add solder_bridge()
+            ..refdes = "UBOOT"
+            wire right 20 down 20 to gnd
+
+        wire auto 
+        to atmega pin 13
+
 at ioh_conn:
     7:
         wire left 80
@@ -770,20 +830,19 @@ at ioh_conn:
         add label("SCK")
         wire left 20 up 200
 
-        branch:
+        parallel:
             wire up 20
-            add res(1k) pin 2 ..angle=90
+            add res(1k) up
             wire up 20
-            point tmp8
-            wire up 20
-            add led("yellow") ..angle=-90
-            wire up 40 right 40 down 20
-            to gnd
+        parallel:
+            wire right 60 up 20
+            add res(1k) up
+            wire auto_
 
-        wire right 60 up 20
-        add res(1k) pin 2 ..angle=90
-        wire up 20 auto
-        to tmp8
+        wire up 20
+        add led("yellow") up
+        wire up 40 right 60 down 20
+        to gnd
 
     5:
         wire left 80
@@ -792,63 +851,7 @@ at ioh_conn:
         wire left 80
         add label("MOSI")
 
-def reset_btn():
-    return create component:
-        pins: 5
-        display: create graphic:
 
-            hline: 0, 0, 20
-            hline: 0, -40, 20
-            vline: 20, -30, 20
-            path: "M", 20, -20, "L", 40, -20, "L", 40, 0
-            path: "M", -15, -30, "L", -20, -30, "L", -20, -10, "L", -15, -10
-            hline: -20, -20, 3
-            hline: -15, -20, 3
-            hline: -10, -20, 3
-            hline: -5, -20, 2
-            path: "M", 0, 0, "L", -5, -30
-
-            fill: "#333"
-            circle: 0, 0, 2
-            fill: "none"
-
-            pin: 1, 0, 20, 0, 0
-            pin: 2, 20, 20, 20, 0
-            pin: 5, 40, 20, 40, 0
-            pin: 3, 0, -60, 0, -40
-            pin: 4, 20, -60, 20, -40
-
-reset_button = reset_btn()
-
-at icsp_conn:
-    6:
-        wire right 20 down 20
-        to gnd
-    2:
-        wire right 20 up 20
-        to v5v
-
-    5:
-        wire left 140
-        branch:
-            wire auto_
-            to atmega8_1
-        wire left 60 up 20
-        branch:
-            wire up 20
-            to reset_button pin 1
-        wire auto_
-        to reset_button pin 2
-
-        at reset_button pin 4
-        wire up 20
-
-        branch:
-            wire auto_
-            to reset_button pin 3
-
-        wire up 20 right 40 down 20
-        to gnd
 
 
 # 3V3 output converter
@@ -1040,28 +1043,39 @@ frame:
                 branch:
                     wire down 20
                     add cap(47u)
+                    wire down 20
                     to gnd
                 wire right 20
-                point tmp10
+                point:
+                    at dcdc_5V pin 3
+                    wire left 80
+                    to point
+
+                    wire up 20
+                    branch:
+                        wire right 20
+                        add label("VIN")
+                        wire right 40
+                    wire up 100 right 80
+                    to dcdc_5V_2 pin 3
 
         at dcdc_5V:
             1:
                 wire left 20 down 20
                 to gnd
-            3:
-                wire left 80
-                to tmp10
-
-                wire up 20
-                branch:
-                    wire right 20
-                    add label("VIN")
-                    wire right 40
-                wire up 100 right 80
-                to dcdc_5V_2 pin 3
             2:
-                wire right 40
-                point tmp11
+                wire right 20
+                point:
+                    at dcdc_5V_2 pin 4
+                    wire right 20 down 20
+                    branch:
+                        wire auto 
+                        to dcdc_5V_2 pin 2
+                    wire auto
+                    to point
+
+                wire right 20
+
                 branch:
                     wire down 20
                     add cap(47u)
@@ -1071,21 +1085,13 @@ frame:
                     wire down 20
                     add cap(100n)
                     to gnd
-                wire right 20 up 20
+                wire up 20
                 to v5v
 
 
-        at dcdc_5V_2:
-            1:
-                wire left 20 down 20
-                to gnd
-            4:
-                wire right 20 down 20
-                branch:
-                    wire auto 
-                    to dcdc_5V_2 pin 2
-                wire auto
-                to tmp11
+        at dcdc_5V_2 pin 1
+        wire left 20 down 20
+        to gnd      
 
         frame:
             ..title = "5V indication"
@@ -1094,40 +1100,43 @@ frame:
             # Block for 5V leds
             at v5v
             wire down 20
-            branch:
+
+            parallel:
                 wire right 20
                 add res(1k)
                 wire right 20
-                point tmp9
-                wire right 20
+            parallel:
+                wire down 40 right 20
+                add res(1k)
+                wire auto_
 
-                add led("green")
-                wire right 20 down 20
-                to gnd
+            wire right 20
 
-            wire down 40 right 20
-            add res(1k)
-            wire auto_
-            to tmp9
+            add led("green")
+            wire right 20 down 20
+            to gnd
 
 def osc_block(frequency, net1, net2):
-    at xtal_2(frequency):
-        1:
-            wire left 40
-            add label(net1)
-            wire left 20 down 20
-            add cap(22p)
-            wire down 20
-            point tmp
-            wire down 20
-            to gnd
-        2: 
-            wire right 20
-            add label(net2) 
-            wire right 20 down 20
-            add cap(22p)
-            wire auto
-            to tmp
+    xtal = xtal_2(frequency)
+
+    join:
+        at xtal pin 1
+        wire left 40
+        add label(net1)
+        wire left 20 down 20
+        add cap(22p)
+        wire down 20
+    
+    join:
+        at xtal pin 2 
+        wire right 20
+        add label(net2) 
+        wire right 20 down 20
+        add cap(22p)
+        wire auto
+
+    wire down 20
+    to gnd
 
 frame:
     ..title = "Alternative XTALs"
