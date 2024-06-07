@@ -1,6 +1,6 @@
 
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
-import { script1, script10, script11, script12, script13, script14, script15, script2, 
+import { script1, script10, script11, script12, script13, script14, script15, script16, script2, 
     script3, script6, script7, script8, script9 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -19,6 +19,7 @@ describe('test parsing', () => {
         ["corret nets after function call and also `join` keyword", script13],
         ["path with 'point' keyword", script14],
         ["path with 'parallel' keyword", script15],
+        ["consecutive blocks with 'join' then 'point'", script16]
         
     ])('parse script - %s', async (description, scriptTest) => {
         // Test only parsing, does not check the correctness of the 

@@ -366,29 +366,39 @@ export class MainVisitor extends ParseTreeVisitor<any> {
 
     visitPath_blocks(ctx: Path_blocksContext): ComponentPin {
         const blocks = ctx.path_block_inner_list();
-        let blockType = BlockTypes.Branch;
 
-        if (blocks.length > 0){
-            const firstBlock = blocks[0];
-            if (firstBlock.Branch()){
+        let blockIndex = 0; // Tracks the index of the block with the given type
+        let blockType = BlockTypes.Branch;
+        let prevBlockType = null;
+
+        blocks.forEach((block, index) => {
+            if (block.Branch()) {
                 blockType = BlockTypes.Branch
-            } else if (firstBlock.Join()){
+            } else if (block.Join()) {
                 blockType = BlockTypes.Join;
-            } else if (firstBlock.Parallel()){
+            } else if (block.Parallel()) {
                 blockType = BlockTypes.Parallel;
-            } else if (firstBlock.Point()){
+            } else if (block.Point()) {
                 blockType = BlockTypes.Point;
             }
-        }
 
-        this.getExecutor().enterBlocks(blockType);
+            if (prevBlockType !== blockType) {
+                if (index > 0) { 
+                    // If not the first block, then exit the 
+                    // group of blocks.
+                    this.getExecutor().exitBlocks();
+                }
 
-        blocks.forEach((branch, index) => {
-            this.getExecutor().enterBlock(index);
+                this.getExecutor().enterBlocks(blockType);
+                blockIndex = 0; // Reset counter.
+            }
 
-            this.visit(branch);
+            this.getExecutor().enterBlock(blockIndex);
+            this.visit(block);
+            this.getExecutor().exitBlock(blockIndex);
+            blockIndex += 1;
 
-            this.getExecutor().exitBlock(index);
+            prevBlockType = blockType;
         });
 
         this.getExecutor().exitBlocks();

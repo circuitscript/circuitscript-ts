@@ -544,3 +544,50 @@ to gnd
     ['/GND', 'res_2.COMP_1_1k', 2],
     ['/GND', 'gnd:0', 1]
 ]);
+
+/*
+Test that consecutive blocks with different block type
+are parsed correctly.
+*/
+export const script16 = new ScriptTest(`
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+join:
+    at v5v
+    wire down 20
+    add res(1k) down 
+    wire down 20
+
+join:
+    at v5v
+    wire down 20
+    add res(1k) down
+    wire left 100
+
+point:
+    at v5v
+    wire right 20
+    add res(1k) right
+    wire right 20
+    to point
+
+    wire down 20
+    to gnd`, [
+        [ '/5V', 'v5v', 1 ],
+        [ '/5V', 'v5v:0', 1 ],
+        [ '/5V', 'res_0.COMP_1_1k', 1 ],
+        [ '/5V', 'v5v:1', 1 ],
+        [ '/5V', 'res_1.COMP_1_1k', 1 ],
+        [ '/5V', 'v5v:2', 1 ],
+        [ '/5V', 'res_2.COMP_1_1k', 1 ],
+        [ '/GND', 'gnd', 1 ],
+        [ '/GND', 'res_0.COMP_1_1k', 2 ],
+        [ '/GND', '_join.__.0', 1 ],
+        [ '/GND', 'res_1.COMP_1_1k', 2 ],
+        [ '/GND', '_point.__.1', 1 ],
+        [ '/GND', 'res_2.COMP_1_1k', 2 ],
+        [ '/GND', 'gnd:0', 1 ]
+      ]);

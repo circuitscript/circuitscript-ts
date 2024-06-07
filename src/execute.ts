@@ -1008,6 +1008,11 @@ export class ExecutionContext {
     }
 
     addWire(segments: [string, number?][]): void {
+
+        if (this.scope.currentComponent === null) {
+            throw "No current component";
+        }
+
         const tmp = segments.map(item => {
             const [direction, value=null] = item;
             return {
