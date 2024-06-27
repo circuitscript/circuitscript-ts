@@ -106,8 +106,9 @@ property_set_expr: atom_expr '=' data_expr;
 double_dot_property_set_expr: '..' ID '=' data_expr;
 
 data_expr: 
-    (unary_operator? (value_expr | atom_expr))          #DataExpr
-    | '(' data_expr ')'                                 #RoundedBracketsExpr
+    '(' data_expr ')'                                   #RoundedBracketsExpr
+    | (value_expr | atom_expr)                          #ValueAtomExpr
+    | unary_operator data_expr                          #UnaryOperatorExpr
     | data_expr (Multiply | Divide) data_expr           #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr

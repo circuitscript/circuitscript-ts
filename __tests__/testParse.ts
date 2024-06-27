@@ -223,6 +223,21 @@ R1.mpn = "res-12345"
         expect(item1.parameters.get('place')).toBe(false);
         expect(item1.parameters.get('mpn')).toBe('res-12345');
     });
+
+    test('unary minus operator', async () => {
+        const script = `
+b = 20
+print(b)
+print(-b)
+print(--b)
+print(---b)
+`;
+
+        const { hasError, visitor } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        expect(visitor.printStream).toStrictEqual([20, -20, 20, -20]);
+    });
 });
 
 // This tests that an error is generated at the right position for 

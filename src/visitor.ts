@@ -47,6 +47,8 @@ import {
     To_component_exprContext,
     Value_exprContext,
     Wire_exprContext,
+    ValueAtomExprContext,
+    UnaryOperatorExprContext,
 } from './antlr/CircuitScriptParser.js';
 import { ExecutionContext } from './execute.js';
 import { ClassComponent } from './objects/ClassComponent.js';
@@ -576,8 +578,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return [component, pinValue];
     }
 
-    visitDataExpr(ctx: DataExprContext): ComplexType {
-        let value : ComplexType;
+    visitValueAtomExpr(ctx: ValueAtomExprContext): ComplexType {
+        let value: ComplexType;
 
         if (ctx.value_expr()) {
             value = this.visit(ctx.value_expr()) as ValueType;
@@ -585,7 +587,7 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         } else if (ctx.atom_expr()) {
             const reference = this.visit(ctx.atom_expr());
 
-            if (!reference.found){
+            if (!reference.found) {
                 value = new UndeclaredReference(reference);
             } else {
                 // This is the returned component from the function call
@@ -593,26 +595,39 @@ export class MainVisitor extends ParseTreeVisitor<any> {
             }
         }
 
-        if (ctx.unary_operator()){
-            if(ctx.unary_operator().Not()){
-                if(typeof value === "boolean"){
+        return value;
+    }
+
+    visitUnaryOperatorExpr(ctx: UnaryOperatorExprContext): ComplexType {
+        const value = this.visit(ctx.data_expr());
+
+        const unaryOp = ctx.unary_operator();
+        if (unaryOp) {
+            if (unaryOp.Not()) {
+                if (typeof value === "boolean") {
                     value = !value;
                 } else {
                     throw "Failed to do Not operator";
                 }
-            } else if (ctx.unary_operator().Minus()){
-                if (typeof value === 'number'){
+            } else if (unaryOp.Minus()) {
+                if (typeof value === 'number') {
                     return -value;
                 } else {
                     throw "Failed to do Negation operator";
                 }
             }
         }
-        
+
+        return value;
+    }
+
+    visitDataExpr(ctx: DataExprContext): ComplexType {
+        let value: ComplexType;
+
         if (ctx.create_component_expr()) {
             value = this.visit(ctx.create_component_expr()) as ClassComponent;
 
-        } else if (ctx.create_graphic_expr()){
+        } else if (ctx.create_graphic_expr()) {
             value = this.visit(ctx.create_graphic_expr()) as ClassComponent;
         }
 
@@ -1086,7 +1101,8 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         const propertyName = ctx.ID().getText();
         this.getExecutor().setProperty('..' + propertyName, result);
     }
-    visitRoundedBracketsExpr(ctx: RoundedBracketsExprContext){
+
+    visitRoundedBracketsExpr(ctx: RoundedBracketsExprContext) {
         return this.visit(ctx.data_expr());
     }
 
