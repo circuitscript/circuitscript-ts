@@ -6,7 +6,7 @@ describe('test cli program', () => {
 
     const tmpFolder = '__tests__/tmp';
 
-    const baseCommand = 'node build/src/main.js';
+    const baseCommand = 'node dist/esm/main.mjs';
 
     test('start program and display help', () => {
         const result = execSync(baseCommand).toString();

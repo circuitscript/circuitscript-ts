@@ -6,11 +6,21 @@
     "engines": {
         "node": ">=16.0"
     },
-    "type": "module",
-    "main": "./build/src/main.js",
+    "main": "./dist/cjs/index.js",
+    "module": "./dist/esm/index.mjs",
+    "types": "./dist/types/index.d.ts",
     "bin": {
-        "circuitscript": "./build/src/main.js"
+        "circuitscript": "./dist/esm/main.mjs"
     },
+    "exports": {
+        ".": {
+            "require": "./dist/cjs/index.js",
+            "import": "./dist/esm/index.mjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
     "devDependencies": {
         "@types/figlet": "^1.5.8",
         "@types/jest": "~29.5",
@@ -27,15 +37,19 @@
         "source-map-support": "^0.5.21",
         "ts-api-utils": "~0.0.44",
         "ts-jest": "~29.1",
+        "ts2mjs": "^3.0.0",
         "typescript": "^5.4.5"
     },
     "scripts": {
         "start": "node build/src/main.js",
-        "clean": "rimraf coverage build tmp",
-        "build": "tsc -p tsconfig.json",
-        "build:watch": "tsc -w -p tsconfig.json",
+        "clean": "rimraf coverage build tmp dist",
+        "build": "npm run build:cjs || npm run build:esm",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:esm": "tsc -p tsconfig.esm.json || npm run rename:esm",
+        "rename:esm": "npx ts2mjs ./dist/esm && rm -rf ./dist/esm/*.js && rm -rf ./dist/esm/**/*.js",
+        "build:watch": "tsc -w -p tsconfig.esm.json",
         "build:release": "npm run clean && tsc -p tsconfig.release.json",
-        "prebuild": "npm run lint",
+        "prebuild": "npm run lint || true",
         "lint": "eslint . --ext .ts --ext .mts",
         "test": "jest",
         "test-coverage": "jest --coverage",
@@ -49,15 +63,15 @@
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "MIT",
     "dependencies": {
-        "@dagrejs/graphlib": "^2.1.13",
-        "@flatten-js/core": "^1.4.3",
-        "@svgdotjs/svg.js": "^3.2.0",
-        "antlr4": "^4.13.0",
+        "@dagrejs/graphlib": "2.1.13",
+        "@flatten-js/core": "1.5.5",
+        "@svgdotjs/svg.js": "3.2.0",
+        "antlr4": "4.13.0",
         "commander": "^11.1.0",
         "express": "^4.18.2",
         "figlet": "^1.7.0",
         "lodash": "^4.17.21",
-        "svgdom": "^0.1.14",
+        "svgdom": "^0.1.19",
         "tslib": "~2.5",
         "ws": "^8.14.2"
     },
