@@ -1,6 +1,6 @@
 import { SymbolDrawingCommands } from '../draw_symbols.js';
 import { Net } from './Net.js';
-import { PinDefinition, PinIdType } from './PinDefinition.js';
+import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
 import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
 
@@ -95,7 +95,7 @@ export class ClassComponent {
         return false;
     }
 
-    getPin(pinId: number | string): number {
+    getPin(pinId: number | string): PinId {
         // Given a pinId, which is either a number of string,
         // this returns the pin index in the component.
         // If the pinId does not match, then a -1 is returned.

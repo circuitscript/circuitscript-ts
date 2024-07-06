@@ -1,4 +1,4 @@
-import { ComponentPinNet } from "../src/objects/types";
+import { ComponentPinNet } from "../src/objects/types.js";
 
 
 export class ScriptTest {

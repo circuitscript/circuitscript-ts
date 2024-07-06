@@ -618,11 +618,11 @@ export enum VerticalAlign {
     Bottom = 'bottom',
 }
 
-function getArcPoint(centerX: number, centerY: number, radius: number,
-    angleDegrees: number): [x: number, y: number] {
-    const angleRads = angleDegrees * Math.PI / 180;
-    return getArcPointRadians(centerX, centerY, radius, angleRads);
-}
+// function getArcPoint(centerX: number, centerY: number, radius: number,
+//     angleDegrees: number): [x: number, y: number] {
+//     const angleRads = angleDegrees * Math.PI / 180;
+//     return getArcPointRadians(centerX, centerY, radius, angleRads);
+// }
 
 function getArcPointRadians(centerX: number, centerY: number,
     radius: number, angleRads: number): [x: number, y: number] {

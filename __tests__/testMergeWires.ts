@@ -1,4 +1,4 @@
-import { Geometry } from "../src/geometry";
+import { Geometry } from "../src/geometry.js";
 
 describe('geometry merge wires test', () => {
 

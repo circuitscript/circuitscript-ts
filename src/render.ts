@@ -11,7 +11,7 @@ import { getBoundsSize } from './utils.js';
 export function generateSVG2(graph: {
     components: RenderComponent[],
     wires: RenderWire[], junctions: RenderJunction[],
-    mergedWires: MergedWire[], debugRects: BoundBox[],
+    mergedWires: MergedWire[], debugRects?: BoundBox[],
     frameObjects: RenderFrame[],
     textObjects: RenderText[],
     }): string {
@@ -69,24 +69,25 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         const { symbol = null } = item;
 
         if (symbol !== null && symbol) {
-            let extra = {};
+            const extra: SymbolExtras = {};
+
             if (item.component.parameters.has('__is_net')) {
-                extra.net_name = item.component.parameters.get(ParamKeys.net_name);
+                extra.net_name = item.component.parameters.get(ParamKeys.net_name) as string;
 
             } else if (item.component.parameters.has('value')) {
-                let tmpValue = item.component.parameters.get('value');
+                let tmpValue = item.component.parameters.get('value') as unknown;
                 if (tmpValue instanceof NumericValue){
                     // Prepare value for display
                     tmpValue = (tmpValue as NumericValue).value;
                 }
                 
-                extra.value = tmpValue;
+                extra.value = tmpValue as (string | number);
             }
 
             extra.instance_name = item.component.instanceName;
             
             if (item.component.parameters.has('place')){
-                extra.place = item.component.parameters.get('place');
+                extra.place = (item.component.parameters.get('place') as unknown) as boolean;
             } else {
                 extra.place = true; // Default is to place the item
             }
@@ -238,23 +239,30 @@ function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: 
         })
 }
 
-function calculateBoundingBox(components: RenderComponent[]): { width: number, height: number } {
-    let maxX = Number.NEGATIVE_INFINITY;
-    let minX = Number.POSITIVE_INFINITY;
+// function calculateBoundingBox(components: RenderComponent[]): { width: number, height: number } {
+//     let maxX = Number.NEGATIVE_INFINITY;
+//     let minX = Number.POSITIVE_INFINITY;
 
-    let maxY = Number.NEGATIVE_INFINITY;
-    let minY = Number.POSITIVE_INFINITY;
+//     let maxY = Number.NEGATIVE_INFINITY;
+//     let minY = Number.POSITIVE_INFINITY;
 
-    components.forEach(item => {
-        minX = Math.min(item.x, minX);
-        maxX = Math.max(item.x + item.width, maxX);
+//     components.forEach(item => {
+//         minX = Math.min(item.x, minX);
+//         maxX = Math.max(item.x + item.width, maxX);
 
-        minY = Math.min(item.y, minY);
-        maxY = Math.max(item.y + item.height, maxY);
-    });
+//         minY = Math.min(item.y, minY);
+//         maxY = Math.max(item.y + item.height, maxY);
+//     });
 
-    return {
-        width: (maxX - minX),
-        height: (maxY - minY)
-    }
+//     return {
+//         width: (maxX - minX),
+//         height: (maxY - minY)
+//     }
+// }
+
+interface SymbolExtras {
+    net_name?: string;
+    value?: string | number;
+    instance_name?: string;
+    place?: boolean;
 }

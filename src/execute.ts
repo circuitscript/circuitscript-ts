@@ -207,7 +207,7 @@ export class ExecutionContext {
     private mergeNets(net1: Net, net2: Net): Net {
         // By default merge net2 into net1, net2 will no longer be used.
         if (net1 === net2) {
-            return;
+            return net1;
         }
 
         let tmpNet: Net;
@@ -841,6 +841,8 @@ export class ExecutionContext {
         const currentComponent = this.scope.currentComponent;
         const currentPin = this.scope.currentPin;
         const currentWireId = this.scope.currentWireId;
+
+        const gndCopyIdOffset = 0;
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;

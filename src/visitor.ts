@@ -1517,38 +1517,38 @@ export class MainVisitor extends ParseTreeVisitor<any> {
         return returnValue;
     }
 
-    private checkNetNamespaceIncludes(
-        targetNetName: string, targetNamespaceParts: string[], net: Net): boolean {
+    // private checkNetNamespaceIncludes(
+    //     targetNetName: string, targetNamespaceParts: string[], net: Net): boolean {
 
-        // Returns true if the namespace of <net> is a fit for 
-        // the target namespace supplied
+    //     // Returns true if the namespace of <net> is a fit for 
+    //     // the target namespace supplied
 
-        if (net.name === targetNetName) {
-            // split the net namespace into parts for comparison.
-            // For true to be returned, all parts in net must also be in
-            // targetNamespaceParts.
-            const netNamespaceParts = this.getNamespaceParts(net.namespace);
-            this.print('check namespace', targetNetName,
-                targetNamespaceParts, netNamespaceParts);
+    //     if (net.name === targetNetName) {
+    //         // split the net namespace into parts for comparison.
+    //         // For true to be returned, all parts in net must also be in
+    //         // targetNamespaceParts.
+    //         const netNamespaceParts = this.getNamespaceParts(net.namespace);
+    //         this.print('check namespace', targetNetName,
+    //             targetNamespaceParts, netNamespaceParts);
 
-            let matches = 0;
-            for (let i = 0; i < netNamespaceParts.length; i++) {
-                if (netNamespaceParts[i] === targetNamespaceParts[i]) {
-                    matches++;
-                }
-            }
+    //         let matches = 0;
+    //         for (let i = 0; i < netNamespaceParts.length; i++) {
+    //             if (netNamespaceParts[i] === targetNamespaceParts[i]) {
+    //                 matches++;
+    //             }
+    //         }
 
-            if (matches === netNamespaceParts.length) {
-                return true;
-            }
-        }
+    //         if (matches === netNamespaceParts.length) {
+    //             return true;
+    //         }
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    private getNamespaceParts(namespace: string): string[] {
-        return namespace.split(".").slice(0, -2);
-    }
+    // private getNamespaceParts(namespace: string): string[] {
+    //     return namespace.split(".").slice(0, -2);
+    // }
 
     private setupPrintFunction(context: ExecutionContext): void {
         context.createFunction('print', (params) => {

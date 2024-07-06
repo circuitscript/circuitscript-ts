@@ -1,6 +1,6 @@
 import { G } from "@svgdotjs/svg.js";
 
-import { SymbolPinSide, bodyColor, defaultFontBold, defaultFont } from "./globals.js";
+import { SymbolPinSide, defaultFont } from "./globals.js";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
 
@@ -9,7 +9,7 @@ import { Logger } from "./logger.js";
  * Symbols should also define where their ports
  */
 
-const defaultSymbolLineColor = '#333';
+// const defaultSymbolLineColor = '#333';
 const defaultSymbolLineWidth = 2;
 
 export abstract class SymbolGraphic {
@@ -57,7 +57,7 @@ export abstract class SymbolGraphic {
         }
     }
 
-    draw(group: G, extra?: {}): void {
+    draw(group: G, extra?: unknown): void {
         // Assume that the symbol is vertical
         const innerGroup = group.group();
 
@@ -98,13 +98,11 @@ export abstract class SymbolGraphic {
         const useX = Math.round(x * 10000) / 10000;
         const useY = Math.round(y * 10000 / 10000);
 
-        if (pin) {
-            return {
-                x: useX,
-                y: useY,
-                angle: pin.angle,
-            }
-        }
+        return {
+            x: useX,
+            y: useY,
+            angle: pin.angle,
+        } 
     }
 
     protected drawBounds(group: G): void {
@@ -267,14 +265,18 @@ export abstract class SymbolGraphic {
         if (this.labelTexts.has(labelId)) {
             return this.labelTexts.get(labelId);
         }
+
+        return undefined;
     }
 }
 
-export function SymbolFactory(name: string): SymbolGraphic | null {
+export function SymbolFactory(name: string): SymbolGraphic {
     switch (name) {
         case 'point':
             return new SymbolPointHidden();
     }
+
+    return null;
 }
 
 export class SymbolPointHidden extends SymbolGraphic {
@@ -327,50 +329,61 @@ export class SymbolPlaceholder extends SymbolGraphic {
             switch (commandName) {
                 case PlaceHolderCommands.rect:
                     drawing.log('add rect', ...positionParams);
+                    // @ts-ignore
                     drawing.addRect(...positionParams);
                     break;
 
                 case PlaceHolderCommands.hline:
                     drawing.log('add hline', ...positionParams);
+                    // @ts-ignore
                     drawing.addHLine(...positionParams);
                     break;
 
                 case PlaceHolderCommands.vline:
                     drawing.log('add vline', ...positionParams);
+                    // @ts-ignore
                     drawing.addVLine(...positionParams);
                     break;
 
                 case PlaceHolderCommands.line:
                     drawing.log('add line', ...positionParams);
+                    // @ts-ignore
                     drawing.addLine(...positionParams);
                     break;
 
                 case PlaceHolderCommands.path:
+                    // @ts-ignore
                     drawing.addPath(...positionParams);
                     break;
 
                 case PlaceHolderCommands.lineWidth:
+                    // @ts-ignore
                     drawing.addSetLineWidth(...positionParams);
                     break;
 
                 case PlaceHolderCommands.fill:
+                    // @ts-ignore
                     drawing.addSetFillColor(...positionParams);
                     break;
 
                 case PlaceHolderCommands.lineColor:
+                    // @ts-ignore
                     drawing.addSetLineColor(...positionParams);
                     break;
 
                 case PlaceHolderCommands.arc:
+                    // @ts-ignore
                     drawing.addArc(...positionParams);
                     break;
 
                 case PlaceHolderCommands.circle:
                     // circle params: center x, center y, radius
+                    // @ts-ignore
                     drawing.addArc(...positionParams, 0, 360);
                     break;
 
                 case PlaceHolderCommands.triangle:
+                    // @ts-ignore
                     drawing.addTriangle(...positionParams);
                     break;
 
@@ -407,6 +420,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     }
 
                     drawing.log('add label', JSON.stringify(tmpPositionParams));
+                    // @ts-ignore
                     drawing.addLabelId(...tmpPositionParams);
                     break;
                 }
@@ -463,6 +477,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             ];
         }
 
+        // @ts-ignore
         drawing.addPin(...positionParams);
 
         // Add a label for the pinId and pinName
@@ -1005,7 +1020,7 @@ export class SymbolDrawing {
         });
 
         if (pin) {
-            const [pinId, feature, angle] = pin;
+            const [, feature, angle] = pin;
 
             // Apply angle to feature
 
@@ -1018,6 +1033,8 @@ export class SymbolDrawing {
                 angle,
             }
         }
+
+        return null;
     }
 }
 
