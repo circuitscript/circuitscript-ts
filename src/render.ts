@@ -1,9 +1,8 @@
-import { createSVGWindow } from 'svgdom';
 import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
-import { applyFontsToSVG } from './sizing.js';
+import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
 import { ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
@@ -16,7 +15,7 @@ export function generateSVG2(graph: {
     textObjects: RenderText[],
     }): string {
 
-    const window = createSVGWindow();
+    const window = getCreateSVGWindow()();
     const document = window.document;
 
     registerWindow(window, document);

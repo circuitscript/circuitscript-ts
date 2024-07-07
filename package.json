@@ -48,6 +48,7 @@
         "build:esm": "tsc -p tsconfig.esm.json || npm run rename:esm",
         "rename:esm": "npx ts2mjs ./dist/esm && rm -rf ./dist/esm/*.js && rm -rf ./dist/esm/**/*.js",
         "build:watch": "tsc -w -p tsconfig.esm.json",
+        "build:watch:cjs": "tsc -w -p tsconfig.cjs.json",
         "build:release": "npm run clean && tsc -p tsconfig.release.json",
         "prebuild": "npm run lint || true",
         "lint": "eslint . --ext .ts --ext .mts",
@@ -71,7 +72,8 @@
         "express": "^4.18.2",
         "figlet": "^1.7.0",
         "lodash": "^4.17.21",
-        "svgdom": "^0.1.19",
+        "svgdom": "^0.1.14",
+        "this-file": "^2.0.3",
         "tslib": "~2.5",
         "ws": "^8.14.2"
     },

@@ -1,4 +1,5 @@
 import { writeFileSync } from "fs";
+
 import { generateKiCADNetList } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
@@ -6,6 +7,12 @@ import { parseFileWithVisitor } from "./parser.js";
 import { generateSVG2 } from "./render.js";
 import { SimpleStopwatch } from "./utils.js";
 import { MainVisitor } from "./visitor.js";
+import { createContext } from "this-file";
+
+export enum JSModuleType {
+    CommonJs = 'cjs',
+    ESM = 'mjs',
+}
 
 export function renderScript(scriptData: string, outputPath: string, options): string {
 
@@ -111,4 +118,21 @@ export function renderScript(scriptData: string, outputPath: string, options): s
     }
 
     return svgOutput;
+}
+
+export function detectJSModuleType(): JSModuleType {
+    if (typeof __filename === 'undefined' && 
+            typeof __dirname === 'undefined'
+    ){
+        return JSModuleType.ESM;
+    } else {
+        return JSModuleType.CommonJs;
+    }
+}
+
+const context = createContext();
+
+export function getCurrentPath(): { filePath: string } {
+    const filename = context.filename;
+    return { filePath: filename };
 }

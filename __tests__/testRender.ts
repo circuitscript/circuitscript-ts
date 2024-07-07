@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { LayoutEngine } from "../src/layout.js";
 import { generateSVG2 } from "../src/render.js";
 import { runScript } from "./helpers.js";
+import { prepareSVGEnvironment } from '../src/sizing.js';
 
 const mainPath = '__tests__/renderData/';
 
@@ -19,6 +20,8 @@ describe('Render tests', () => {
         ['point block command', 'script8.cst']
 
     ])('render - %s (%s)', async (title, scriptPath) => {
+        
+        await prepareSVGEnvironment(null);
 
         const script = readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
         const { hasError, visitor } = await runScript(script);

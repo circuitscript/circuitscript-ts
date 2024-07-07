@@ -1,23 +1,24 @@
 import { execSync } from 'child_process';
-import figlet from 'figlet';
+import { textSync } from 'figlet';
 import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 
 describe('test cli program', () => {
 
     const tmpFolder = '__tests__/tmp';
 
-    const baseCommand = 'node dist/esm/main.mjs';
+    const baseCommand = 'node dist/cjs/main.js';
 
     test('start program and display help', () => {
         const result = execSync(baseCommand).toString();
-        const circuitscriptText = figlet.textSync('circuitscript', {
+
+        const circuitscriptText = textSync('circuitscript', {
             font: 'Small Slant'
         });
 
         expect(result.includes(circuitscriptText)).toBe(true);
 
-        const options = 
-`Options:
+        const options =
+            `Options:
   -V, --version                   output the version number
   -i, --input text <input text>   Input text directly
   -f, --input-file <path>         Input file

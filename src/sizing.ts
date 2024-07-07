@@ -1,7 +1,12 @@
 import { Box, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
-import { config, createSVGWindow } from 'svgdom';
+
+import { createSVGWindow } from 'svgdom';
+
+
 import { HorizontalAlign, VerticalAlign } from './geometry.js';
 import { defaultFont } from './globals.js';
+import { SVGWindow } from 'svgdom';
+import { JSModuleType, detectJSModuleType } from './helpers.js';
 
 let MainCanvas = null;
 
@@ -11,10 +16,32 @@ const supportedFonts = {
     // 'Inter-Bold': 'Inter-Bold.ttf',
 }
 
-export async function prepareSizing(fontsPath): Promise<void> {
-    await config.setFontDir(fontsPath)
-        .setFontFamilyMappings(supportedFonts)
-        .preloadFonts()
+// let globalCreateSVGWindow: () => SVGWindow;
+// globalCreateSVGWindow = createSVGWindow;
+
+export async function prepareSVGEnvironment(fontsPath: string | null): Promise<void> {    
+    const moduleType = detectJSModuleType();
+    if (moduleType === JSModuleType.CommonJs){
+        // const { config, createSVGWindow } = await import('svgdom');
+
+        // globalCreateSVGWindow = createSVGWindow;
+        // console.log('prep 1');
+
+        // console.log('prep 1');
+
+        // if (fontsPath !== null) {
+        //     await config.setFontDir(fontsPath)
+        //         .setFontFamilyMappings(supportedFonts)
+        //         .preloadFonts();
+        // }
+    }
+}
+
+export function getCreateSVGWindow(): () => SVGWindow {
+    // if (globalCreateSVGWindow === undefined) {
+    //     throw "SVG environment is not set up yet";
+    // }
+    return createSVGWindow;
 }
 
 export function applyFontsToSVG(canvas: SVGTypeMapping): void {

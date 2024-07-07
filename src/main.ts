@@ -3,14 +3,16 @@
 import { program } from 'commander';
 import figlet from 'figlet';
 import path from 'path';
-import { fileURLToPath } from 'url';
+
 import { readFileSync, watch } from 'fs';
 
-import { prepareSizing } from './sizing.js';
-import { renderScript } from './helpers.js';
+import { prepareSVGEnvironment } from './sizing.js';
+import { getCurrentPath, renderScript } from './helpers.js';
+
 
 export default async function main(): Promise<void> {
-    const toolSrcPath = fileURLToPath(import.meta.url);
+    const { filePath } = getCurrentPath();
+    const toolSrcPath = filePath;
 
     const toolDirectory = path.dirname(toolSrcPath) + '/../../';
     const fontsPath = toolDirectory + '/fonts';
@@ -57,7 +59,7 @@ export default async function main(): Promise<void> {
         console.log('watching for file changes...');
     }
 
-    await prepareSizing(fontsPath);
+    await prepareSVGEnvironment(fontsPath);
 
     let inputFilePath: string = null;
 

@@ -1,4 +1,4 @@
-import graphlib from '@dagrejs/graphlib';
+import {Graph, Edge, alg} from '@dagrejs/graphlib';
 
 import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPlaceholder, SymbolText } from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
@@ -172,7 +172,7 @@ export class LayoutEngine {
         }
     }
 
-    placeFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[],
+    placeFrames(graph: Graph, subgraphInfo: SubGraphInfo[],
         frameObjects: RenderFrame[]): {
             elementFrames: RenderFrame[],
             textObjects: RenderText[],
@@ -423,7 +423,7 @@ export class LayoutEngine {
         });
     }
 
-    prepareFrames(graph: graphlib.Graph, subgraphInfo: SubGraphInfo[], 
+    prepareFrames(graph: Graph, subgraphInfo: SubGraphInfo[], 
         frame: RenderFrame, level = 0): {
             elementFrames: RenderFrame[],
             textObjects: RenderText[] 
@@ -535,7 +535,7 @@ export class LayoutEngine {
 
     generateLayoutGraph(sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]): {
-            graph: graphlib.Graph,
+            graph: Graph,
             containerFrames: RenderFrame[],
          } {
         // Based on the sequence of actions, generate a graph that links
@@ -544,7 +544,7 @@ export class LayoutEngine {
         let previousNode: string | null = null;
         let previousPin: number | null = null;
 
-        const graph = new graphlib.Graph({
+        const graph = new Graph({
             directed: false,
             compound: true,
         });
@@ -772,17 +772,17 @@ export class LayoutEngine {
         }
     }
 
-    setGraphEdge(graph: graphlib.Graph, node1: string, node2: string,
+    setGraphEdge(graph: Graph, node1: string, node2: string,
         edgeValue: EdgeValue): void {
         graph.setEdge(node1, node2, edgeValue);
     }
 
-    sizeSubGraphs(graph: graphlib.Graph): SubGraphInfo[] {
+    sizeSubGraphs(graph: Graph): SubGraphInfo[] {
         
         // Layouts out all nodes within a subgraph and determines the size
         // of the subgraph.
 
-        const subGraphs = graphlib.alg.components(graph);
+        const subGraphs = alg.components(graph);
         const subGraphsStarts = [];
 
         this.print('===== placing subgraphs =====');
@@ -848,7 +848,7 @@ export class LayoutEngine {
     }
 
 
-    walkAndPlaceGraph(graph: graphlib.Graph, firstNodeId: string, 
+    walkAndPlaceGraph(graph: Graph, firstNodeId: string, 
         subgraphNodes: string[]): void {
         // Go through all edges in the main graph and for each edge that contains
         // nodes within the subgraph, then try and place the nodes in the subgraph.
@@ -863,7 +863,7 @@ export class LayoutEngine {
                 accum.push(edge);
             }
             return accum;
-        }, [] as graphlib.Edge[]);
+        }, [] as Edge[]);
 
         if (this.placeSubgraphVersion === 1){
             this.placeSubgraph(graph, firstNodeId, subgraphEdges);
@@ -872,8 +872,8 @@ export class LayoutEngine {
         }
     }
 
-    placeSubgraphV2(graph:graphlib.Graph, firstNodeId: string,
-        subgraphEdges: graphlib.Edge[]): void {
+    placeSubgraphV2(graph:Graph, firstNodeId: string,
+        subgraphEdges: Edge[]): void {
         
         let firstNodePlaced = false;
 
@@ -1122,8 +1122,8 @@ export class LayoutEngine {
     }
 
 
-    placeSubgraph(graph: graphlib.Graph, firstNodeId: string,
-        subgraphEdges: graphlib.Edge[]): void {
+    placeSubgraph(graph: Graph, firstNodeId: string,
+        subgraphEdges: Edge[]): void {
 
         let firstNodePlaced = false;
 
@@ -1223,7 +1223,7 @@ export class LayoutEngine {
         this.print(this.padLevel(depth), 'place', item, 'pin', pin, 'at', item.x, item.y);
     }
 
-    placeFloatingItems(graph: graphlib.Graph, item: RenderItem, depth = 0): void {
+    placeFloatingItems(graph: Graph, item: RenderItem, depth = 0): void {
         // Assume that item already has a fixed position
     
         if (depth > 100) {
@@ -1289,7 +1289,7 @@ function getNodePositionAtPin(item:RenderItem, pin: number):[x: number, y: numbe
 }
 
 
-function getNeighbours(graph: graphlib.Graph, nodeIds: string[]): [from: string, to: string][] {
+function getNeighbours(graph: Graph, nodeIds: string[]): [from: string, to: string][] {
     
     return nodeIds.reduce((accum, nodeId) => {
         const tmp = graph.neighbors(nodeId);
