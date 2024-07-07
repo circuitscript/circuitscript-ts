@@ -204,6 +204,6 @@ NEWLINE
  ;
 
 // Follow python's comment symbol for now
-fragment COMMENT: '#' ~[\r\n\f]*;
+fragment COMMENT_FRAGMENT: '#' ~[\r\n\f]*;
 
-SKIP_: (WS | COMMENT) -> skip;
+COMMENT: (WS | COMMENT_FRAGMENT) -> channel(2);

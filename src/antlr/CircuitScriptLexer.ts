@@ -59,7 +59,7 @@ export default class CircuitScriptLexer extends Lexer {
 	public static readonly ALPHA_NUMERIC = 43;
 	public static readonly WS = 44;
 	public static readonly NEWLINE = 45;
-	public static readonly SKIP_ = 46;
+	public static readonly COMMENT = 46;
 	public static readonly EOF = Token.EOF;
 
 	public static readonly channelNames: string[] = [ "DEFAULT_TOKEN_CHANNEL", "HIDDEN" ];
@@ -113,7 +113,7 @@ export default class CircuitScriptLexer extends Lexer {
                                                              "PERCENTAGE_VALUE", 
                                                              "ALPHA_NUMERIC", 
                                                              "WS", "NEWLINE", 
-                                                             "SKIP_" ];
+                                                             "COMMENT" ];
 	public static readonly modeNames: string[] = [ "DEFAULT_MODE", ];
 
 	public static readonly ruleNames: string[] = [
@@ -123,7 +123,7 @@ export default class CircuitScriptLexer extends Lexer {
 		"Not", "Equals", "NotEquals", "Addition", "Minus", "Divide", "Multiply", 
 		"OPEN_PAREN", "CLOSE_PAREN", "NOT_CONNECTED", "BOOLEAN_VALUE", "ID", "DecimalIntegerLiteral", 
 		"INTEGER_VALUE", "DECIMAL_VALUE", "NUMERIC_VALUE", "STRING_VALUE", "PERCENTAGE_VALUE", 
-		"ALPHA_NUMERIC", "WS", "NEWLINE", "SPACES", "COMMENT", "SKIP_",
+		"ALPHA_NUMERIC", "WS", "NEWLINE", "SPACES", "COMMENT_FRAGMENT", "COMMENT",
 	];
 
 
@@ -299,9 +299,9 @@ export default class CircuitScriptLexer extends Lexer {
 	353,1,0,0,0,353,351,1,0,0,0,353,354,1,0,0,0,354,94,1,0,0,0,355,359,5,35,
 	0,0,356,358,8,9,0,0,357,356,1,0,0,0,358,361,1,0,0,0,359,357,1,0,0,0,359,
 	360,1,0,0,0,360,96,1,0,0,0,361,359,1,0,0,0,362,365,3,89,44,0,363,365,3,
-	95,47,0,364,362,1,0,0,0,364,363,1,0,0,0,365,366,1,0,0,0,366,367,6,48,2,
+	95,47,0,364,362,1,0,0,0,364,363,1,0,0,0,365,366,1,0,0,0,366,367,6,48,4,
 	0,367,98,1,0,0,0,23,0,244,255,261,269,272,277,282,286,294,299,302,308,316,
-	321,329,334,339,343,346,353,359,364,4,1,32,0,1,33,1,6,0,0,1,45,2];
+	321,329,334,339,343,346,353,359,364,5,1,32,0,1,33,1,6,0,0,1,45,2,0,2,0];
 
 	private static __ATN: ATN;
 	public static get _ATN(): ATN {

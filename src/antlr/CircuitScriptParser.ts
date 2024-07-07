@@ -65,7 +65,7 @@ export default class CircuitScriptParser extends Parser {
 	public static readonly ALPHA_NUMERIC = 43;
 	public static readonly WS = 44;
 	public static readonly NEWLINE = 45;
-	public static readonly SKIP_ = 46;
+	public static readonly COMMENT = 46;
 	public static readonly INDENT = 47;
 	public static readonly DEDENT = 48;
 	public static readonly EOF = Token.EOF;
@@ -168,8 +168,8 @@ export default class CircuitScriptParser extends Parser {
                                                              "PERCENTAGE_VALUE", 
                                                              "ALPHA_NUMERIC", 
                                                              "WS", "NEWLINE", 
-                                                             "SKIP_", "INDENT", 
-                                                             "DEDENT" ];
+                                                             "COMMENT", 
+                                                             "INDENT", "DEDENT" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
 		"script", "expression", "path_blocks", "path_block_inner", "property_set_expr2", 

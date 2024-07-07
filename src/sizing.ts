@@ -1,14 +1,11 @@
-import { Box, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
-
-import { createSVGWindow } from 'svgdom';
-
+import { Box, Dom, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
 import { HorizontalAlign, VerticalAlign } from './geometry.js';
 import { defaultFont } from './globals.js';
 import { SVGWindow } from 'svgdom';
 import { JSModuleType, detectJSModuleType } from './helpers.js';
 
-let MainCanvas = null;
+let MainCanvas: Dom | null = null;
 
 const supportedFonts = { 
     // 'Roboto': 'Roboto-Regular.ttf',
@@ -16,32 +13,27 @@ const supportedFonts = {
     // 'Inter-Bold': 'Inter-Bold.ttf',
 }
 
-// let globalCreateSVGWindow: () => SVGWindow;
-// globalCreateSVGWindow = createSVGWindow;
+let globalCreateSVGWindow: () => SVGWindow;
 
 export async function prepareSVGEnvironment(fontsPath: string | null): Promise<void> {    
     const moduleType = detectJSModuleType();
     if (moduleType === JSModuleType.CommonJs){
-        // const { config, createSVGWindow } = await import('svgdom');
+        const { config, createSVGWindow } = await import('svgdom');
 
-        // globalCreateSVGWindow = createSVGWindow;
-        // console.log('prep 1');
-
-        // console.log('prep 1');
-
-        // if (fontsPath !== null) {
-        //     await config.setFontDir(fontsPath)
-        //         .setFontFamilyMappings(supportedFonts)
-        //         .preloadFonts();
-        // }
+        globalCreateSVGWindow = createSVGWindow;
+        if (fontsPath !== null) {
+            await config.setFontDir(fontsPath)
+                .setFontFamilyMappings(supportedFonts)
+                .preloadFonts();
+        }
     }
 }
 
 export function getCreateSVGWindow(): () => SVGWindow {
-    // if (globalCreateSVGWindow === undefined) {
-    //     throw "SVG environment is not set up yet";
-    // }
-    return createSVGWindow;
+    if (globalCreateSVGWindow === undefined) {
+        throw "SVG environment is not set up yet";
+    }
+    return globalCreateSVGWindow;
 }
 
 export function applyFontsToSVG(canvas: SVGTypeMapping): void {
@@ -71,7 +63,7 @@ export function measureTextSize2(text: string, fontFamily: string,
 
     // Reuse the canvas, so no need to keep creating
     if (MainCanvas === null) {
-        const window = createSVGWindow();
+        const window = getCreateSVGWindow()();
         const { document } = window;
         registerWindow(window, document);
         MainCanvas = SVG(document.documentElement);
