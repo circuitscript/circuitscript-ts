@@ -1,7 +1,9 @@
-import { CharStream, CommonTokenStream, ErrorListener, Token } from 'antlr4';
+import { CharStream, CommonTokenStream, ErrorListener, ParseTreeVisitor, 
+    ParserRuleContext, TerminalNode, Token } from 'antlr4';
 
 import CircuitScriptLexer from './antlr/CircuitScriptLexer.js';
-import CircuitScriptParser, { ScriptContext } from './antlr/CircuitScriptParser.js';
+import CircuitScriptParser, { Atom_exprContext, Create_component_exprContext, 
+    Function_def_exprContext, Property_key_exprContext, ScriptContext } from './antlr/CircuitScriptParser.js';
 
 import { MainVisitor } from './visitor.js';
 import { MainLexer } from './lexer.js';
@@ -45,18 +47,150 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
         err.print(data);
         hasError = true;
     }
-
-    const parserTimeTaken = parserTimer.lap();
-    const parsedTokens = prepareTokens(tokens.tokens, lexer, data);
     
+    const parserTimeTaken = parserTimer.lap();
+
+    // Get all semantic tokens
+    const semanticTokenVisitor = new SemanticTokensVisitor(lexer, data);
+    semanticTokenVisitor.visit(tree);
+    const semanticTokens = semanticTokenVisitor.semanticTokens;
+
+    // Get all tokens
+    const parsedTokens = prepareTokens(tokens.tokens, lexer, data);
+
+    const finalParsedTokens:IParsedToken[] = [];
+    parsedTokens.forEach(token => {
+        const location = `${token.line}_${token.column}`;
+        if (semanticTokens.has(location)){
+            finalParsedTokens.push(
+                semanticTokens.get(location)!!);
+        } else{
+            finalParsedTokens.push(token);
+        }
+    });
+
+    console.log('tokens', finalParsedTokens);
+
     return {
         tree, parser,
         hasParseError: errorListener.hasParseErrors(),
         hasError,
         parserTimeTaken,
         lexerTimeTaken,
-        tokens: parsedTokens,
+        tokens: finalParsedTokens,
     };
+}
+
+
+
+
+export class SemanticTokensVisitor extends ParseTreeVisitor<any> {
+
+    parsedTokens: IParsedToken[] = [];
+    lexer: CircuitScriptLexer;
+    script: string;
+
+    semanticTokens: Map<string, IParsedToken> = new Map();
+
+    constructor(lexer: CircuitScriptLexer,
+        script: string) {
+        super();
+        this.lexer = lexer;
+        this.script = script;
+
+    }
+
+    visit(ctx: ParserRuleContext): any {
+        const here = this;
+        if (Array.isArray(ctx)) {
+            return ctx.map(function (child) {
+                try {
+                    here.checkContext(child);
+                    return child.accept(this);
+                } catch (err) {
+                    this.handleError(child, err);
+                }
+            }, this);
+        } else {
+            try {
+                this.checkContext(ctx);
+                return ctx.accept(this);
+            } catch (err) {
+                this.handleError(ctx, err);
+            }
+        }
+    }
+
+    handleError(ctx: ParserRuleContext, err: Error){
+        console.log('error!', err);
+    }
+
+    checkContext(ctx: ParserRuleContext): void {
+        if (ctx instanceof Function_def_exprContext) {
+            this.addSemanticToken(
+                this.parseToken(ctx.ID(), ['declaration'], 'function'));
+        } else if (ctx instanceof Create_component_exprContext) {
+            this.addSemanticToken(
+                this.parseToken(ctx.Create(), ['modification'], 'keyword'));
+        } else if (ctx instanceof Atom_exprContext) {
+            if (ctx.ID() && ctx.trailer_expr_list()){
+                this.addSemanticToken(
+                    this.parseToken(
+                        ctx.ID(), ['declaration'], 'function'
+                    )
+                )
+            }
+        } else if (ctx instanceof Property_key_exprContext) {
+            let useToken: TerminalNode | null = null;
+
+            if (ctx.ID()){
+                useToken = ctx.ID();
+            } else if (ctx.INTEGER_VALUE()){
+                useToken = ctx.INTEGER_VALUE();
+            } else if (ctx.STRING_VALUE()){
+                useToken = ctx.STRING_VALUE();
+            }
+
+            useToken && this.addSemanticToken(
+                this.parseToken(
+                    useToken, ['declaration'], 'property',
+                ));
+        }
+    }
+
+    addSemanticToken(parsedToken: IParsedToken): void {
+        this.semanticTokens.set(parsedToken.line + "_" + parsedToken.column, parsedToken);
+    }
+
+    parseToken(node: TerminalNode, modifiers: string[], tokenType: string | null = null): IParsedToken {
+        const token = node.symbol;
+        let stringValue = "";
+        let textPart = "";
+
+        if (this.lexer.symbolicNames[token.type] !== null && this.lexer.symbolicNames[token.type] !== undefined) {
+            stringValue = this.lexer.symbolicNames[token.type];
+            if (stringValue !== "NEWLINE") {
+                textPart = this.script.substring(token.start, token.stop + 1);
+            } else {
+                textPart = token.text.length-1;
+            }
+        } else if (this.lexer.literalNames[token.type] !== null && this.lexer.literalNames[token.type] !== undefined) {
+            stringValue = this.lexer.literalNames[token.type];
+            textPart = this.script.substring(token.start, token.stop + 1);
+        } else {
+            stringValue = token._text;
+        }
+
+        return {
+            line: token.line,
+            column: token.column,
+            length: token.stop - token.start + 1,
+            tokenType: tokenType !== null ? tokenType : stringValue,
+            tokenModifiers: modifiers,
+            textValue: textPart,
+        }
+    }
+
 }
 
 export interface IParsedToken {
@@ -85,7 +219,7 @@ function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
                 if (stringValue !== "NEWLINE") {
                     textPart = script.substring(item.start, item.stop + 1);
                 } else {
-                    textPart = item.text.length-1;
+                    textPart = item.text.length - 1;
                 }
             } else if (lexer.literalNames[item.type] !== null && lexer.literalNames[item.type] !== undefined) {
                 stringValue = lexer.literalNames[item.type];
@@ -94,22 +228,53 @@ function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
                 stringValue = item._text;
             }
 
-            // console.log(item);
-
-            parsedTokens.push({
-                line: item.line,
-                column: item.column,
-                length: item.stop - item.start + 1,
-                tokenType: stringValue,
-                tokenModifiers: [''],
-                textValue: textPart,
-            })
+            if (textPart !== 0 && textPart !== '') {
+                parsedTokens.push({
+                    line: item.line,
+                    column: item.column,
+                    length: item.stop - item.start + 1,
+                    tokenType: resolveTokenType(stringValue),
+                    tokenModifiers: [],
+                    textValue: textPart,
+                });
+            }
 
             // console.log('line', item.line + ':' + item.column, `\t${stringValue} (${item.type})`.padEnd(30), textPart);
         }
     });
 
     return parsedTokens;
+}
+
+const languageKeywords = [
+    'break', 'branch', 'create', 'component',
+    'graphic', 'wire', 'pin', 'add', 'at', 'to',
+    'point', 'join', 'parallel', 'return', 'def', 'import',
+    'true', 'false', 'nc', 'frame',
+];
+
+function resolveTokenType(tokenType: string): string {
+    if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
+        return 'keyword';
+    } else {
+        switch (tokenType) {
+            case 'INTEGER_VALUE':
+            case 'NUMERIC_VALUE':
+            case 'DECIMAL_VALUE':
+            case 'PERCENTAGE_VALUE':
+                return 'number';
+            case 'STRING_VALUE':
+                return 'string';
+            case 'ID':
+                return 'variable';
+            case 'Define':
+                return 'keyword';
+            case 'COMMENT':
+                return 'comment';
+        }
+
+        return null;
+    }
 }
 
 function dumpTokens(tokens:Token[], lexer: CircuitScriptLexer, scriptData: string): void {
