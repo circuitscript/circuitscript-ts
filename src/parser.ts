@@ -3,7 +3,9 @@ import { CharStream, CommonTokenStream, ErrorListener, ParseTreeVisitor,
 
 import CircuitScriptLexer from './antlr/CircuitScriptLexer.js';
 import CircuitScriptParser, { Atom_exprContext, Create_component_exprContext, 
-    Function_def_exprContext, Property_key_exprContext, ScriptContext } from './antlr/CircuitScriptParser.js';
+    Create_graphic_exprContext, 
+    Function_def_exprContext, Property_key_exprContext, ScriptContext, 
+    Sub_exprContext} from './antlr/CircuitScriptParser.js';
 
 import { MainVisitor } from './visitor.js';
 import { MainLexer } from './lexer.js';
@@ -69,8 +71,6 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
         }
     });
 
-    console.log('tokens', finalParsedTokens);
-
     return {
         tree, parser,
         hasParseError: errorListener.hasParseErrors(),
@@ -129,16 +129,24 @@ export class SemanticTokensVisitor extends ParseTreeVisitor<any> {
         if (ctx instanceof Function_def_exprContext) {
             this.addSemanticToken(
                 this.parseToken(ctx.ID(), ['declaration'], 'function'));
-        } else if (ctx instanceof Create_component_exprContext) {
+        } else if (ctx instanceof Create_component_exprContext 
+                    || ctx instanceof Create_graphic_exprContext) {
+            
             this.addSemanticToken(
-                this.parseToken(ctx.Create(), ['modification'], 'keyword'));
+                this.parseToken(ctx.Create(), ['defaultLibrary'], 'function'));
+
         } else if (ctx instanceof Atom_exprContext) {
-            if (ctx.ID() && ctx.trailer_expr_list()){
-                this.addSemanticToken(
-                    this.parseToken(
-                        ctx.ID(), ['declaration'], 'function'
-                    )
-                )
+            if (ctx.ID()) {
+                if (ctx.trailer_expr_list().length > 0) {
+                    this.addSemanticToken(
+                        this.parseToken(
+                            ctx.ID(), ['declaration'], 'function'));
+                } else {
+                    // trailer length is 0
+                    this.addSemanticToken(
+                        this.parseToken(ctx.ID(), ['declaration'], 'variable')
+                    );
+                }
             }
         } else if (ctx instanceof Property_key_exprContext) {
             let useToken: TerminalNode | null = null;
@@ -155,6 +163,18 @@ export class SemanticTokensVisitor extends ParseTreeVisitor<any> {
                 this.parseToken(
                     useToken, ['declaration'], 'property',
                 ));
+        } else if (ctx instanceof Sub_exprContext) {
+            let useToken: TerminalNode | null = null;
+
+            if (ctx.ID()){
+                useToken = ctx.ID();
+            } else if (ctx.Pin()){
+                useToken = ctx.Pin();
+            }
+
+            useToken && this.addSemanticToken(
+                this.parseToken(useToken, ['defaultLibrary'], 'function')
+            )
         }
     }
 
@@ -234,7 +254,7 @@ function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
                     column: item.column,
                     length: item.stop - item.start + 1,
                     tokenType: resolveTokenType(stringValue),
-                    tokenModifiers: [],
+                    tokenModifiers: resolveTokenModifiers(stringValue),
                     textValue: textPart,
                 });
             }
@@ -253,8 +273,15 @@ const languageKeywords = [
     'true', 'false', 'nc', 'frame',
 ];
 
+const operatorKeywords = [
+    'at', 'to', 'wire', 'add', 'frame', 'join', 'parallel', 'point'
+]
+
 function resolveTokenType(tokenType: string): string {
-    if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
+    if (operatorKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
+        return 'graphKeyword';
+
+    } else if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
         return 'keyword';
     } else {
         switch (tokenType) {
@@ -277,7 +304,11 @@ function resolveTokenType(tokenType: string): string {
     }
 }
 
-function dumpTokens(tokens:Token[], lexer: CircuitScriptLexer, scriptData: string): void {
+function resolveTokenModifiers(tokenType: string): string[] {
+    return [];
+}
+
+function dumpTokens(tokens: Token[], lexer: CircuitScriptLexer, scriptData: string): void {
     tokens.forEach(item => {
         if (item.type !== -1) {
             let stringValue = "";
