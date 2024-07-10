@@ -27,25 +27,25 @@ export default class CircuitScriptParser extends Parser {
 	public static readonly T__4 = 5;
 	public static readonly T__5 = 6;
 	public static readonly T__6 = 7;
-	public static readonly T__7 = 8;
-	public static readonly Break = 9;
-	public static readonly Branch = 10;
-	public static readonly Create = 11;
-	public static readonly Component = 12;
-	public static readonly Graphic = 13;
-	public static readonly Wire = 14;
-	public static readonly Pin = 15;
-	public static readonly Add = 16;
-	public static readonly At = 17;
-	public static readonly To = 18;
-	public static readonly Point = 19;
-	public static readonly Join = 20;
-	public static readonly Parallel = 21;
-	public static readonly Return = 22;
-	public static readonly Define = 23;
-	public static readonly Import = 24;
-	public static readonly If = 25;
-	public static readonly Not = 26;
+	public static readonly Break = 8;
+	public static readonly Branch = 9;
+	public static readonly Create = 10;
+	public static readonly Component = 11;
+	public static readonly Graphic = 12;
+	public static readonly Wire = 13;
+	public static readonly Pin = 14;
+	public static readonly Add = 15;
+	public static readonly At = 16;
+	public static readonly To = 17;
+	public static readonly Point = 18;
+	public static readonly Join = 19;
+	public static readonly Parallel = 20;
+	public static readonly Return = 21;
+	public static readonly Define = 22;
+	public static readonly Import = 23;
+	public static readonly If = 24;
+	public static readonly Not = 25;
+	public static readonly Frame = 26;
 	public static readonly Equals = 27;
 	public static readonly NotEquals = 28;
 	public static readonly Addition = 29;
@@ -122,8 +122,7 @@ export default class CircuitScriptParser extends Parser {
                                                             "','", "'='", 
                                                             "'..'", "'.'", 
                                                             "'['", "']'", 
-                                                            "'frame'", "'break'", 
-                                                            "'branch'", 
+                                                            "'break'", "'branch'", 
                                                             "'create'", 
                                                             "'component'", 
                                                             "'graphic'", 
@@ -134,17 +133,17 @@ export default class CircuitScriptParser extends Parser {
                                                             "'return'", 
                                                             "'def'", "'import'", 
                                                             "'if'", "'!'", 
-                                                            "'=='", "'!='", 
-                                                            "'+'", "'-'", 
-                                                            "'/'", "'*'", 
-                                                            "'('", "')'" ];
+                                                            "'frame'", "'=='", 
+                                                            "'!='", "'+'", 
+                                                            "'-'", "'/'", 
+                                                            "'*'", "'('", 
+                                                            "')'" ];
 	public static readonly symbolicNames: (string | null)[] = [ null, null, 
                                                              null, null, 
                                                              null, null, 
                                                              null, null, 
-                                                             null, "Break", 
-                                                             "Branch", "Create", 
-                                                             "Component", 
+                                                             "Break", "Branch", 
+                                                             "Create", "Component", 
                                                              "Graphic", 
                                                              "Wire", "Pin", 
                                                              "Add", "At", 
@@ -152,8 +151,8 @@ export default class CircuitScriptParser extends Parser {
                                                              "Join", "Parallel", 
                                                              "Return", "Define", 
                                                              "Import", "If", 
-                                                             "Not", "Equals", 
-                                                             "NotEquals", 
+                                                             "Not", "Frame", 
+                                                             "Equals", "NotEquals", 
                                                              "Addition", 
                                                              "Minus", "Divide", 
                                                              "Multiply", 
@@ -219,16 +218,16 @@ export default class CircuitScriptParser extends Parser {
 				case 4:
 				case 8:
 				case 9:
-				case 10:
-				case 14:
+				case 13:
+				case 15:
 				case 16:
 				case 17:
 				case 18:
 				case 19:
 				case 20:
-				case 21:
+				case 22:
 				case 23:
-				case 24:
+				case 26:
 				case 29:
 				case 31:
 				case 37:
@@ -250,7 +249,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 102;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2713667344) !== 0) || _la===37 || _la===45);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2766119696) !== 0) || _la===37 || _la===45);
 			this.state = 104;
 			this.match(CircuitScriptParser.EOF);
 			}
@@ -459,7 +458,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 129;
 			_la = this._input.LA(1);
-			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 3671040) !== 0))) {
+			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 1835520) !== 0))) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -489,16 +488,16 @@ export default class CircuitScriptParser extends Parser {
 				case 4:
 				case 8:
 				case 9:
-				case 10:
-				case 14:
+				case 13:
+				case 15:
 				case 16:
 				case 17:
 				case 18:
 				case 19:
 				case 20:
-				case 21:
+				case 22:
 				case 23:
-				case 24:
+				case 26:
 				case 29:
 				case 31:
 				case 37:
@@ -514,7 +513,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 137;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2713667344) !== 0) || _la===37 || _la===45);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2766119696) !== 0) || _la===37 || _la===45);
 			this.state = 139;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -660,7 +659,7 @@ export default class CircuitScriptParser extends Parser {
 			this.state = 162;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			if (_la===15) {
+			if (_la===14) {
 				{
 				this.state = 161;
 				this.pin_select_expr();
@@ -729,8 +728,8 @@ export default class CircuitScriptParser extends Parser {
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 6:
-			case 11:
-			case 26:
+			case 10:
+			case 25:
 			case 29:
 			case 30:
 			case 31:
@@ -748,7 +747,7 @@ export default class CircuitScriptParser extends Parser {
 				this.data_expr_with_assignment();
 				}
 				break;
-			case 15:
+			case 14:
 				this.enterOuterAlt(localctx, 2);
 				{
 				this.state = 170;
@@ -854,9 +853,9 @@ export default class CircuitScriptParser extends Parser {
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 6:
-			case 11:
-			case 15:
-			case 26:
+			case 10:
+			case 14:
+			case 25:
 			case 29:
 			case 30:
 			case 31:
@@ -885,7 +884,7 @@ export default class CircuitScriptParser extends Parser {
 				}
 				}
 				break;
-			case 19:
+			case 18:
 				{
 				this.state = 183;
 				this.match(CircuitScriptParser.Point);
@@ -924,9 +923,9 @@ export default class CircuitScriptParser extends Parser {
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 6:
-			case 11:
-			case 15:
-			case 26:
+			case 10:
+			case 14:
+			case 25:
 			case 29:
 			case 30:
 			case 31:
@@ -971,7 +970,7 @@ export default class CircuitScriptParser extends Parser {
 				}
 				}
 				break;
-			case 19:
+			case 18:
 				{
 				this.state = 198;
 				this.match(CircuitScriptParser.Point);
@@ -1193,16 +1192,16 @@ export default class CircuitScriptParser extends Parser {
 				case 4:
 				case 8:
 				case 9:
-				case 10:
-				case 14:
+				case 13:
+				case 15:
 				case 16:
 				case 17:
 				case 18:
 				case 19:
 				case 20:
-				case 21:
+				case 22:
 				case 23:
-				case 24:
+				case 26:
 				case 29:
 				case 31:
 				case 37:
@@ -1220,7 +1219,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 243;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2713667344) !== 0) || ((((_la - 37)) & ~0x1F) === 0 && ((1 << (_la - 37)) & 275) !== 0));
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2766119696) !== 0) || ((((_la - 37)) & ~0x1F) === 0 && ((1 << (_la - 37)) & 275) !== 0));
 			this.state = 245;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -1250,16 +1249,16 @@ export default class CircuitScriptParser extends Parser {
 			case 4:
 			case 8:
 			case 9:
-			case 10:
-			case 14:
+			case 13:
+			case 15:
 			case 16:
 			case 17:
 			case 18:
 			case 19:
 			case 20:
-			case 21:
+			case 22:
 			case 23:
-			case 24:
+			case 26:
 			case 29:
 			case 31:
 			case 37:
@@ -1312,16 +1311,16 @@ export default class CircuitScriptParser extends Parser {
 			case 4:
 			case 8:
 			case 9:
-			case 10:
-			case 14:
+			case 13:
+			case 15:
 			case 16:
 			case 17:
 			case 18:
 			case 19:
 			case 20:
-			case 21:
+			case 22:
 			case 23:
-			case 24:
+			case 26:
 			case 29:
 			case 31:
 			case 35:
@@ -1369,16 +1368,16 @@ export default class CircuitScriptParser extends Parser {
 			case 4:
 			case 8:
 			case 9:
-			case 10:
-			case 14:
+			case 13:
+			case 15:
 			case 16:
 			case 17:
 			case 18:
 			case 19:
 			case 20:
-			case 21:
+			case 22:
 			case 23:
-			case 24:
+			case 26:
 			case 29:
 			case 31:
 			case 37:
@@ -1441,16 +1440,16 @@ export default class CircuitScriptParser extends Parser {
 				case 4:
 				case 8:
 				case 9:
-				case 10:
-				case 14:
+				case 13:
+				case 15:
 				case 16:
 				case 17:
 				case 18:
 				case 19:
 				case 20:
-				case 21:
+				case 22:
 				case 23:
-				case 24:
+				case 26:
 				case 29:
 				case 31:
 				case 37:
@@ -1466,7 +1465,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 267;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2713667344) !== 0) || _la===37 || _la===45);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2766119696) !== 0) || _la===37 || _la===45);
 			this.state = 269;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -1959,7 +1958,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 348;
 			_la = this._input.LA(1);
-			if(!(_la===26 || _la===30)) {
+			if(!(_la===25 || _la===30)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -2097,8 +2096,8 @@ export default class CircuitScriptParser extends Parser {
 				case 4:
 				case 8:
 				case 9:
-				case 10:
-				case 14:
+				case 13:
+				case 15:
 				case 16:
 				case 17:
 				case 18:
@@ -2107,7 +2106,7 @@ export default class CircuitScriptParser extends Parser {
 				case 21:
 				case 22:
 				case 23:
-				case 24:
+				case 26:
 				case 29:
 				case 31:
 				case 37:
@@ -2123,7 +2122,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 371;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2717861648) !== 0) || _la===37 || _la===45);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2768216848) !== 0) || _la===37 || _la===45);
 			this.state = 373;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -2153,16 +2152,16 @@ export default class CircuitScriptParser extends Parser {
 			case 4:
 			case 8:
 			case 9:
-			case 10:
-			case 14:
+			case 13:
+			case 15:
 			case 16:
 			case 17:
 			case 18:
 			case 19:
 			case 20:
-			case 21:
+			case 22:
 			case 23:
-			case 24:
+			case 26:
 			case 29:
 			case 31:
 			case 37:
@@ -2172,7 +2171,7 @@ export default class CircuitScriptParser extends Parser {
 				this.expression();
 				}
 				break;
-			case 22:
+			case 21:
 				this.enterOuterAlt(localctx, 2);
 				{
 				this.state = 376;
@@ -2369,7 +2368,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 422;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 3825207360) !== 0) || ((((_la - 33)) & ~0x1F) === 0 && ((1 << (_la - 33)) & 1017) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 3791651904) !== 0) || ((((_la - 33)) & ~0x1F) === 0 && ((1 << (_la - 33)) & 1017) !== 0)) {
 					{
 					this.state = 421;
 					this.parameters();
@@ -2578,7 +2577,7 @@ export default class CircuitScriptParser extends Parser {
 					this.match(CircuitScriptParser.NEWLINE);
 					}
 					break;
-				case 15:
+				case 14:
 				case 37:
 					{
 					this.state = 458;
@@ -2592,7 +2591,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 461;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while (((((_la - 15)) & ~0x1F) === 0 && ((1 << (_la - 15)) & 1077936129) !== 0));
+			} while (((((_la - 14)) & ~0x1F) === 0 && ((1 << (_la - 14)) & 2155872257) !== 0));
 			this.state = 463;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -2621,7 +2620,7 @@ export default class CircuitScriptParser extends Parser {
 			{
 			this.state = 465;
 			_la = this._input.LA(1);
-			if(!(_la===15 || _la===37)) {
+			if(!(_la===14 || _la===37)) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -2780,8 +2779,8 @@ export default class CircuitScriptParser extends Parser {
 				}
 				break;
 			case 6:
-			case 11:
-			case 26:
+			case 10:
+			case 25:
 			case 29:
 			case 30:
 			case 31:
@@ -2978,7 +2977,7 @@ export default class CircuitScriptParser extends Parser {
 			this.enterOuterAlt(localctx, 1);
 			{
 			this.state = 517;
-			this.match(CircuitScriptParser.T__7);
+			this.match(CircuitScriptParser.Frame);
 			this.state = 518;
 			this.match(CircuitScriptParser.T__0);
 			this.state = 519;
@@ -3002,16 +3001,16 @@ export default class CircuitScriptParser extends Parser {
 				case 4:
 				case 8:
 				case 9:
-				case 10:
-				case 14:
+				case 13:
+				case 15:
 				case 16:
 				case 17:
 				case 18:
 				case 19:
 				case 20:
-				case 21:
+				case 22:
 				case 23:
-				case 24:
+				case 26:
 				case 29:
 				case 31:
 				case 37:
@@ -3027,7 +3026,7 @@ export default class CircuitScriptParser extends Parser {
 				this.state = 525;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2713667344) !== 0) || _la===37 || _la===45);
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2766119696) !== 0) || _la===37 || _la===45);
 			this.state = 527;
 			this.match(CircuitScriptParser.DEDENT);
 			}
@@ -3109,26 +3108,26 @@ export default class CircuitScriptParser extends Parser {
 	47,1,47,1,47,1,48,1,48,1,48,1,48,1,48,1,48,4,48,524,8,48,11,48,12,48,525,
 	1,48,1,48,1,48,0,1,54,49,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,
 	34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,
-	82,84,86,88,90,92,94,96,0,11,2,0,10,10,19,21,1,0,37,38,2,0,38,38,41,41,
-	2,0,35,35,38,38,1,0,31,32,1,0,29,30,1,0,27,28,2,0,26,26,30,30,2,0,36,36,
-	38,42,2,0,15,15,37,37,2,0,37,38,41,41,562,0,100,1,0,0,0,2,122,1,0,0,0,4,
-	125,1,0,0,0,6,129,1,0,0,0,8,141,1,0,0,0,10,153,1,0,0,0,12,159,1,0,0,0,14,
-	164,1,0,0,0,16,171,1,0,0,0,18,173,1,0,0,0,20,176,1,0,0,0,22,178,1,0,0,0,
-	24,186,1,0,0,0,26,201,1,0,0,0,28,223,1,0,0,0,30,233,1,0,0,0,32,235,1,0,
-	0,0,34,249,1,0,0,0,36,251,1,0,0,0,38,259,1,0,0,0,40,261,1,0,0,0,42,271,
-	1,0,0,0,44,273,1,0,0,0,46,277,1,0,0,0,48,304,1,0,0,0,50,306,1,0,0,0,52,
-	310,1,0,0,0,54,329,1,0,0,0,56,346,1,0,0,0,58,348,1,0,0,0,60,355,1,0,0,0,
-	62,357,1,0,0,0,64,377,1,0,0,0,66,408,1,0,0,0,68,411,1,0,0,0,70,427,1,0,
-	0,0,72,430,1,0,0,0,74,436,1,0,0,0,76,439,1,0,0,0,78,452,1,0,0,0,80,465,
-	1,0,0,0,82,474,1,0,0,0,84,478,1,0,0,0,86,497,1,0,0,0,88,499,1,0,0,0,90,
-	503,1,0,0,0,92,511,1,0,0,0,94,514,1,0,0,0,96,517,1,0,0,0,98,101,3,2,1,0,
-	99,101,5,45,0,0,100,98,1,0,0,0,100,99,1,0,0,0,101,102,1,0,0,0,102,100,1,
-	0,0,0,102,103,1,0,0,0,103,104,1,0,0,0,104,105,5,0,0,1,105,1,1,0,0,0,106,
-	123,3,14,7,0,107,123,3,24,12,0,108,123,3,22,11,0,109,123,3,44,22,0,110,
-	123,3,50,25,0,111,123,3,8,4,0,112,123,3,52,26,0,113,123,3,42,21,0,114,123,
-	3,62,31,0,115,123,3,90,45,0,116,123,3,94,47,0,117,123,3,96,48,0,118,123,
-	3,68,34,0,119,123,3,32,16,0,120,123,3,4,2,0,121,123,3,92,46,0,122,106,1,
-	0,0,0,122,107,1,0,0,0,122,108,1,0,0,0,122,109,1,0,0,0,122,110,1,0,0,0,122,
+	82,84,86,88,90,92,94,96,0,11,2,0,9,9,18,20,1,0,37,38,2,0,38,38,41,41,2,
+	0,35,35,38,38,1,0,31,32,1,0,29,30,1,0,27,28,2,0,25,25,30,30,2,0,36,36,38,
+	42,2,0,14,14,37,37,2,0,37,38,41,41,562,0,100,1,0,0,0,2,122,1,0,0,0,4,125,
+	1,0,0,0,6,129,1,0,0,0,8,141,1,0,0,0,10,153,1,0,0,0,12,159,1,0,0,0,14,164,
+	1,0,0,0,16,171,1,0,0,0,18,173,1,0,0,0,20,176,1,0,0,0,22,178,1,0,0,0,24,
+	186,1,0,0,0,26,201,1,0,0,0,28,223,1,0,0,0,30,233,1,0,0,0,32,235,1,0,0,0,
+	34,249,1,0,0,0,36,251,1,0,0,0,38,259,1,0,0,0,40,261,1,0,0,0,42,271,1,0,
+	0,0,44,273,1,0,0,0,46,277,1,0,0,0,48,304,1,0,0,0,50,306,1,0,0,0,52,310,
+	1,0,0,0,54,329,1,0,0,0,56,346,1,0,0,0,58,348,1,0,0,0,60,355,1,0,0,0,62,
+	357,1,0,0,0,64,377,1,0,0,0,66,408,1,0,0,0,68,411,1,0,0,0,70,427,1,0,0,0,
+	72,430,1,0,0,0,74,436,1,0,0,0,76,439,1,0,0,0,78,452,1,0,0,0,80,465,1,0,
+	0,0,82,474,1,0,0,0,84,478,1,0,0,0,86,497,1,0,0,0,88,499,1,0,0,0,90,503,
+	1,0,0,0,92,511,1,0,0,0,94,514,1,0,0,0,96,517,1,0,0,0,98,101,3,2,1,0,99,
+	101,5,45,0,0,100,98,1,0,0,0,100,99,1,0,0,0,101,102,1,0,0,0,102,100,1,0,
+	0,0,102,103,1,0,0,0,103,104,1,0,0,0,104,105,5,0,0,1,105,1,1,0,0,0,106,123,
+	3,14,7,0,107,123,3,24,12,0,108,123,3,22,11,0,109,123,3,44,22,0,110,123,
+	3,50,25,0,111,123,3,8,4,0,112,123,3,52,26,0,113,123,3,42,21,0,114,123,3,
+	62,31,0,115,123,3,90,45,0,116,123,3,94,47,0,117,123,3,96,48,0,118,123,3,
+	68,34,0,119,123,3,32,16,0,120,123,3,4,2,0,121,123,3,92,46,0,122,106,1,0,
+	0,0,122,107,1,0,0,0,122,108,1,0,0,0,122,109,1,0,0,0,122,110,1,0,0,0,122,
 	111,1,0,0,0,122,112,1,0,0,0,122,113,1,0,0,0,122,114,1,0,0,0,122,115,1,0,
 	0,0,122,116,1,0,0,0,122,117,1,0,0,0,122,118,1,0,0,0,122,119,1,0,0,0,122,
 	120,1,0,0,0,122,121,1,0,0,0,123,3,1,0,0,0,124,126,3,6,3,0,125,124,1,0,0,
@@ -3142,17 +3141,17 @@ export default class CircuitScriptParser extends Parser {
 	0,152,9,1,0,0,0,153,154,7,1,0,0,154,155,5,1,0,0,155,156,3,60,30,0,156,11,
 	1,0,0,0,157,160,3,54,27,0,158,160,3,44,22,0,159,157,1,0,0,0,159,158,1,0,
 	0,0,160,162,1,0,0,0,161,163,3,18,9,0,162,161,1,0,0,0,162,163,1,0,0,0,163,
-	13,1,0,0,0,164,165,5,16,0,0,165,167,3,12,6,0,166,168,5,37,0,0,167,166,1,
+	13,1,0,0,0,164,165,5,15,0,0,165,167,3,12,6,0,166,168,5,37,0,0,167,166,1,
 	0,0,0,167,168,1,0,0,0,168,15,1,0,0,0,169,172,3,12,6,0,170,172,3,18,9,0,
-	171,169,1,0,0,0,171,170,1,0,0,0,172,17,1,0,0,0,173,174,5,15,0,0,174,175,
-	7,2,0,0,175,19,1,0,0,0,176,177,7,2,0,0,177,21,1,0,0,0,178,184,5,17,0,0,
+	171,169,1,0,0,0,171,170,1,0,0,0,172,17,1,0,0,0,173,174,5,14,0,0,174,175,
+	7,2,0,0,175,19,1,0,0,0,176,177,7,2,0,0,177,21,1,0,0,0,178,184,5,16,0,0,
 	179,181,3,16,8,0,180,182,5,37,0,0,181,180,1,0,0,0,181,182,1,0,0,0,182,185,
-	1,0,0,0,183,185,5,19,0,0,184,179,1,0,0,0,184,183,1,0,0,0,185,23,1,0,0,0,
-	186,199,5,18,0,0,187,192,3,16,8,0,188,189,5,2,0,0,189,191,3,16,8,0,190,
+	1,0,0,0,183,185,5,18,0,0,184,179,1,0,0,0,184,183,1,0,0,0,185,23,1,0,0,0,
+	186,199,5,17,0,0,187,192,3,16,8,0,188,189,5,2,0,0,189,191,3,16,8,0,190,
 	188,1,0,0,0,191,194,1,0,0,0,192,190,1,0,0,0,192,193,1,0,0,0,193,196,1,0,
 	0,0,194,192,1,0,0,0,195,197,5,37,0,0,196,195,1,0,0,0,196,197,1,0,0,0,197,
-	200,1,0,0,0,198,200,5,19,0,0,199,187,1,0,0,0,199,198,1,0,0,0,200,25,1,0,
-	0,0,201,202,5,17,0,0,202,203,3,16,8,0,203,204,5,18,0,0,204,209,3,16,8,0,
+	200,1,0,0,0,198,200,5,18,0,0,199,187,1,0,0,0,199,198,1,0,0,0,200,25,1,0,
+	0,0,201,202,5,16,0,0,202,203,3,16,8,0,203,204,5,17,0,0,204,209,3,16,8,0,
 	205,206,5,2,0,0,206,208,3,16,8,0,207,205,1,0,0,0,208,211,1,0,0,0,209,207,
 	1,0,0,0,209,210,1,0,0,0,210,212,1,0,0,0,211,209,1,0,0,0,212,213,5,1,0,0,
 	213,214,5,45,0,0,214,217,5,47,0,0,215,218,5,45,0,0,216,218,3,28,14,0,217,
@@ -3170,7 +3169,7 @@ export default class CircuitScriptParser extends Parser {
 	259,257,1,0,0,0,259,258,1,0,0,0,260,39,1,0,0,0,261,262,5,45,0,0,262,265,
 	5,47,0,0,263,266,5,45,0,0,264,266,3,2,1,0,265,263,1,0,0,0,265,264,1,0,0,
 	0,266,267,1,0,0,0,267,265,1,0,0,0,267,268,1,0,0,0,268,269,1,0,0,0,269,270,
-	5,48,0,0,270,41,1,0,0,0,271,272,5,9,0,0,272,43,1,0,0,0,273,274,3,68,34,
+	5,48,0,0,270,41,1,0,0,0,271,272,5,8,0,0,272,43,1,0,0,0,273,274,3,68,34,
 	0,274,275,5,3,0,0,275,276,3,54,27,0,276,45,1,0,0,0,277,278,5,37,0,0,278,
 	279,5,3,0,0,279,280,3,54,27,0,280,47,1,0,0,0,281,286,3,54,27,0,282,283,
 	5,2,0,0,283,285,3,54,27,0,284,282,1,0,0,0,285,288,1,0,0,0,286,284,1,0,0,
@@ -3193,7 +3192,7 @@ export default class CircuitScriptParser extends Parser {
 	0,0,345,343,1,0,0,0,346,347,7,6,0,0,347,57,1,0,0,0,348,349,7,7,0,0,349,
 	59,1,0,0,0,350,352,5,30,0,0,351,350,1,0,0,0,351,352,1,0,0,0,352,353,1,0,
 	0,0,353,356,7,8,0,0,354,356,3,88,44,0,355,351,1,0,0,0,355,354,1,0,0,0,356,
-	61,1,0,0,0,357,358,5,23,0,0,358,359,5,37,0,0,359,361,5,33,0,0,360,362,3,
+	61,1,0,0,0,357,358,5,22,0,0,358,359,5,37,0,0,359,361,5,33,0,0,360,362,3,
 	66,33,0,361,360,1,0,0,0,361,362,1,0,0,0,362,363,1,0,0,0,363,364,5,34,0,
 	0,364,365,5,1,0,0,365,366,5,45,0,0,366,369,5,47,0,0,367,370,5,45,0,0,368,
 	370,3,64,32,0,369,367,1,0,0,0,369,368,1,0,0,0,370,371,1,0,0,0,371,369,1,
@@ -3214,11 +3213,11 @@ export default class CircuitScriptParser extends Parser {
 	0,0,425,426,5,5,0,0,426,428,5,37,0,0,427,420,1,0,0,0,427,425,1,0,0,0,428,
 	71,1,0,0,0,429,431,5,29,0,0,430,429,1,0,0,0,430,431,1,0,0,0,431,432,1,0,
 	0,0,432,434,5,31,0,0,433,435,3,54,27,0,434,433,1,0,0,0,434,435,1,0,0,0,
-	435,73,1,0,0,0,436,437,5,22,0,0,437,438,3,54,27,0,438,75,1,0,0,0,439,440,
-	5,11,0,0,440,441,5,12,0,0,441,442,5,1,0,0,442,443,5,45,0,0,443,446,5,47,
+	435,73,1,0,0,0,436,437,5,21,0,0,437,438,3,54,27,0,438,75,1,0,0,0,439,440,
+	5,10,0,0,440,441,5,11,0,0,441,442,5,1,0,0,442,443,5,45,0,0,443,446,5,47,
 	0,0,444,447,5,45,0,0,445,447,3,82,41,0,446,444,1,0,0,0,446,445,1,0,0,0,
 	447,448,1,0,0,0,448,446,1,0,0,0,448,449,1,0,0,0,449,450,1,0,0,0,450,451,
-	5,48,0,0,451,77,1,0,0,0,452,453,5,11,0,0,453,454,5,13,0,0,454,455,5,1,0,
+	5,48,0,0,451,77,1,0,0,0,452,453,5,10,0,0,453,454,5,12,0,0,454,455,5,1,0,
 	0,455,456,5,45,0,0,456,459,5,47,0,0,457,460,5,45,0,0,458,460,3,80,40,0,
 	459,457,1,0,0,0,459,458,1,0,0,0,460,461,1,0,0,0,461,459,1,0,0,0,461,462,
 	1,0,0,0,462,463,1,0,0,0,463,464,5,48,0,0,464,79,1,0,0,0,465,466,7,9,0,0,
@@ -3231,11 +3230,11 @@ export default class CircuitScriptParser extends Parser {
 	494,3,54,27,0,490,491,5,2,0,0,491,493,3,54,27,0,492,490,1,0,0,0,493,496,
 	1,0,0,0,494,492,1,0,0,0,494,495,1,0,0,0,495,498,1,0,0,0,496,494,1,0,0,0,
 	497,480,1,0,0,0,497,489,1,0,0,0,498,87,1,0,0,0,499,500,5,6,0,0,500,501,
-	5,38,0,0,501,502,5,7,0,0,502,89,1,0,0,0,503,504,5,14,0,0,504,508,5,37,0,
+	5,38,0,0,501,502,5,7,0,0,502,89,1,0,0,0,503,504,5,13,0,0,504,508,5,37,0,
 	0,505,507,7,1,0,0,506,505,1,0,0,0,507,510,1,0,0,0,508,506,1,0,0,0,508,509,
-	1,0,0,0,509,91,1,0,0,0,510,508,1,0,0,0,511,512,5,19,0,0,512,513,5,37,0,
-	0,513,93,1,0,0,0,514,515,5,24,0,0,515,516,5,37,0,0,516,95,1,0,0,0,517,518,
-	5,8,0,0,518,519,5,1,0,0,519,520,5,45,0,0,520,523,5,47,0,0,521,524,5,45,
+	1,0,0,0,509,91,1,0,0,0,510,508,1,0,0,0,511,512,5,18,0,0,512,513,5,37,0,
+	0,513,93,1,0,0,0,514,515,5,23,0,0,515,516,5,37,0,0,516,95,1,0,0,0,517,518,
+	5,26,0,0,518,519,5,1,0,0,519,520,5,45,0,0,520,523,5,47,0,0,521,524,5,45,
 	0,0,522,524,3,2,1,0,523,521,1,0,0,0,523,522,1,0,0,0,524,525,1,0,0,0,525,
 	523,1,0,0,0,525,526,1,0,0,0,526,527,1,0,0,0,527,528,5,48,0,0,528,97,1,0,
 	0,0,64,100,102,122,127,135,137,147,149,159,162,167,171,181,184,192,196,
@@ -4946,6 +4945,9 @@ export class Frame_exprContext extends ParserRuleContext {
 	constructor(parser?: CircuitScriptParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
+	}
+	public Frame(): TerminalNode {
+		return this.getToken(CircuitScriptParser.Frame, 0);
 	}
 	public NEWLINE_list(): TerminalNode[] {
 	    	return this.getTokens(CircuitScriptParser.NEWLINE);
