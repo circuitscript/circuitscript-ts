@@ -1,13 +1,13 @@
 import { dirname } from 'path';
 
-import CircuitScriptParser from '../src/antlr/CircuitScriptParser.js';
+import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 
-import { CharStream, CommonTokenStream } from 'antlr4';
 import { MainVisitor } from '../src/visitor.js';
 import { ComponentPinNet } from '../src/objects/types.js';
 import { CircuitscriptParserErrorListener } from '../src/parser.js';
 import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { MainLexer } from '../src/lexer.js';
+import { CharStream, CommonTokenStream } from 'antlr4ng';
 
 
 export async function runScript(script: string): Promise<{
@@ -16,7 +16,7 @@ export async function runScript(script: string): Promise<{
     componentPinNets: ComponentPinNet[]
 }> {
 
-    const chars = new CharStream(script);
+    const chars = CharStream.fromString(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 

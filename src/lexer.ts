@@ -3,9 +3,9 @@
  *  https://github.com/antlr/grammars-v4/blob/master/python/python3/TypeScript/Python3LexerBase.ts
  */
 
-import { CommonToken, CharStream, Token } from "antlr4";
-import CircuitScriptParser from "./antlr/CircuitScriptParser.js";
-import CircuitScriptLexer from "./antlr/CircuitScriptLexer.js";
+import { CharStream, Token, CommonToken } from "antlr4ng";
+import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
+import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 
 export class MainLexer extends CircuitScriptLexer {
 
@@ -40,7 +40,7 @@ export class MainLexer extends CircuitScriptLexer {
 
     nextToken(): Token {
         // Check if the end-of-file is ahead and there are still some DEDENTS expected.
-        if (this._input.LA(1) === CircuitScriptParser.EOF && this.indents.length) {
+        if (this.inputStream.LA(1) === CircuitScriptParser.EOF && this.indents.length) {
             // Remove any trailing EOF tokens from our buffer.
             this.tokens = this.tokens.filter(function (val) {
                 return val.type !== CircuitScriptParser.EOF;
@@ -64,22 +64,25 @@ export class MainLexer extends CircuitScriptLexer {
     }
 
     getCharIndex(): number {
-        return this._input.index;
+        return this.inputStream.index;
     }
 
     commonToken(type: number, text: string): Token {
         const stop = this.getCharIndex() - 1;
         const start = text.length ? stop - text.length + 1 : stop;
-        const token = new CommonToken([this, this._input], type, 0, start, stop);
+        const token = 
+            CommonToken.fromSource(
+                [this, this.inputStream], type, 0, start, stop);
 
-        let tokenTypeString: string;
+        let tokenTypeString: string | null = null;
+
         if (type === CircuitScriptParser.INDENT) {
             tokenTypeString = "indent";
         } else if (type === CircuitScriptParser.DEDENT) {
             tokenTypeString = "dedent";
         }
 
-        if (tokenTypeString) {
+        if (tokenTypeString !== null) {
             token.text = tokenTypeString;
         }
 
@@ -116,8 +119,8 @@ export class MainLexer extends CircuitScriptLexer {
 
         // Strip newlines inside open clauses except if we are near EOF. We keep NEWLINEs near EOF to
         // satisfy the final newline needed by the single_put rule used by the REPL.
-        const next = this._input.LA(1);
-        const nextnext = this._input.LA(2);
+        const next = this.inputStream.LA(1);
+        const nextnext = this.inputStream.LA(2);
 
         if (this.opened > 0 || (nextnext != -1 /* EOF */ &&
             (next === 13 /* '\r' */ || next === 10 /* '\n' */ || next === 35 /* '#' */))) {
