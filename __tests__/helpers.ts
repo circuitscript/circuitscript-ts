@@ -20,20 +20,23 @@ export async function runScript(script: string): Promise<{
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 
+    const visitor = new MainVisitor(true);
+    visitor.printToConsole = false; // do not clutter the console log
+
     const parser = new CircuitScriptParser(tokens);
     // Clear any existing error listeners and use the custom one only
     parser.removeErrorListeners();
 
-    const errorListener = new CircuitscriptParserErrorListener();
+    const errorListener = new CircuitscriptParserErrorListener(
+        visitor.onErrorCallbackHandler
+    );
+
     parser.addErrorListener(errorListener);
 
     const tree = parser.script();
 
     const scriptPath = "./examples/helpers.ts";
     const defaultLibsPath = "./libs";
-
-    const visitor = new MainVisitor(true);
-    visitor.printToConsole = false; // do not clutter the console log
 
     const currentDirectory = dirname(scriptPath);
     visitor.onImportFile = visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
@@ -47,7 +50,7 @@ export async function runScript(script: string): Promise<{
         hasError = true;
     }
 
-    hasError = hasError || errorListener.hasParseErrors();
+    hasError = hasError || errorListener.hasSyntaxErrors();
 
     return {
         visitor, hasError,

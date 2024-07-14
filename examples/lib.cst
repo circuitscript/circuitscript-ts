@@ -1,4 +1,4 @@
-// Circuitscript default lib
+# Circuitscript default lib
 
 def net(net_name):
     return create component:

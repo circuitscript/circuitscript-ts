@@ -13,10 +13,10 @@ import { SimpleStopwatch } from './utils.js';
 
 export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
     tree: ScriptContext,
-    parser: CircuitScriptParser, 
+    parser: CircuitScriptParser,
     hasError: boolean, hasParseError: boolean,
     parserTimeTaken: number, lexerTimeTaken: number,
-    tokens: IParsedToken[],
+    tokens: IParsedToken[]
 } {
     const chars = new CharStream(data);
     const lexer = new MainLexer(chars);
@@ -30,12 +30,16 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
 
     const parserTimer = new SimpleStopwatch();
     const parser = new CircuitScriptParser(tokens);
+
+
     // Clear any existing error listeners and use the custom one only
     // @ts-ignore
     parser.removeErrorListeners();
 
-    const errorListener = new CircuitscriptParserErrorListener();
-    // @ts-ignore
+    const errorListener = new CircuitscriptParserErrorListener(
+        visitor.onErrorCallbackHandler);
+    
+    // // @ts-ignore
     parser.addErrorListener(errorListener);
 
     const tree = parser.script();
@@ -46,7 +50,7 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
         visitor.visit(tree);
     } catch (err){
         // Error should be internally handled in visitor
-        err.print(data);
+        // err.print(data);
         hasError = true;
     }
     
@@ -73,15 +77,13 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
 
     return {
         tree, parser,
-        hasParseError: errorListener.hasParseErrors(),
+        hasParseError: errorListener.hasSyntaxErrors(),
         hasError,
         parserTimeTaken,
         lexerTimeTaken,
         tokens: finalParsedTokens,
     };
 }
-
-
 
 
 export class SemanticTokensVisitor extends ParseTreeVisitor<any> {
@@ -333,13 +335,27 @@ function dumpTokens(tokens: Token[], lexer: CircuitScriptLexer, scriptData: stri
     });
 }
 
+export type OnErrorCallback = (line: number, column: number, 
+    message: string, e: any | undefined) => void;
+
 export class CircuitscriptParserErrorListener extends ErrorListener {
 
     syntaxErrorCounter = 0;
+    onErrorHandler: OnErrorCallback | null = null;
+
+    constructor(onErrorHandler: OnErrorCallback | null = null) {
+        super();
+        this.onErrorHandler = onErrorHandler;
+    }
 
     syntaxError(recognizer: any, offendingSymbol: any,
-        line: number, column: number, msg: string, e: any | undefined) {
-        console.log("Syntax error at line", line, ':', column, ' - ', msg);
+        line: number, column: number, message: string, e: any | undefined) {
+
+        if (this.onErrorHandler) {
+            this.onErrorHandler(line, column, message, e);
+        } else {
+            console.log("Syntax error at line", line, ':', column, ' - ', message);
+        }
 
         this.syntaxErrorCounter++;
     }
@@ -353,7 +369,7 @@ export class CircuitscriptParserErrorListener extends ErrorListener {
     // reportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs) {
     // }
 
-    hasParseErrors(): boolean {
+    hasSyntaxErrors(): boolean {
         return (this.syntaxErrorCounter > 0);
     }
 }

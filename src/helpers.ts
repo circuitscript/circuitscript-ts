@@ -3,10 +3,10 @@ import { writeFileSync } from "fs";
 import { generateKiCADNetList } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
-import { parseFileWithVisitor } from "./parser.js";
+import { OnErrorCallback, parseFileWithVisitor } from "./parser.js";
 import { generateSVG2 } from "./render.js";
 import { SimpleStopwatch } from "./utils.js";
-import { MainVisitor } from "./visitor.js";
+import { MainVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
 
 export enum JSModuleType {
@@ -24,9 +24,17 @@ export function renderScript(scriptData: string, outputPath: string, options): s
         kicadNetlistPath = null,
         showStats = false} = options;
 
-    const visitor = new MainVisitor(true);
+    const onErrorHandler: OnErrorCallback =
+        (line: number, column: number, message: string, error: any) => {
+            if (error instanceof VisitorExecutionException) {
+                console.log('Error', line, column, message, error.errorMessage);
+            }
+        };
 
-    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
+    const visitor = new MainVisitor(true, onErrorHandler);
+
+    visitor.onImportFile = 
+        visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
 
     visitor.print('reading file');
     visitor.print('done reading file');
