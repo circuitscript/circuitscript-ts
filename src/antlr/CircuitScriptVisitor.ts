@@ -55,6 +55,8 @@ import { Property_key_exprContext } from "./CircuitScriptParser.js";
 import { Nested_propertiesContext } from "./CircuitScriptParser.js";
 import { Single_line_propertyContext } from "./CircuitScriptParser.js";
 import { Blank_exprContext } from "./CircuitScriptParser.js";
+import { Wire_expr_direction_valueContext } from "./CircuitScriptParser.js";
+import { Wire_expr_direction_onlyContext } from "./CircuitScriptParser.js";
 import { Wire_exprContext } from "./CircuitScriptParser.js";
 import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_exprContext } from "./CircuitScriptParser.js";
@@ -390,6 +392,20 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitBlank_expr?: (ctx: Blank_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `wire_expr_direction_value`
+     * labeled alternative in `CircuitScriptParser.wire_atom_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitWire_expr_direction_value?: (ctx: Wire_expr_direction_valueContext) => Result;
+    /**
+     * Visit a parse tree produced by the `wire_expr_direction_only`
+     * labeled alternative in `CircuitScriptParser.wire_atom_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitWire_expr_direction_only?: (ctx: Wire_expr_direction_onlyContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.wire_expr`.
      * @param ctx the parse tree

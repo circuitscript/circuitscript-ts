@@ -64,3 +64,10 @@ export type ReferenceType =
         type?: string,
         value?: any
     };
+
+export enum ParseSymbolType {
+    Variable = 'variable',
+    Function = 'function',
+
+    Undefined = 'undefined',
+}

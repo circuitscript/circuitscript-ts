@@ -46,6 +46,7 @@ export class ExecutionContext {
 
     __functionCache = {};
 
+    parentContext: ExecutionContext;
 
     constructor(
         name: string,
@@ -54,7 +55,9 @@ export class ExecutionContext {
         executionLevel = 0,
         indentLevel = 0,
         silent = false,
-        logger: Logger
+        logger: Logger,
+
+        parent: ExecutionContext
     ) {
         this.name = name;
         this.namespace = namespace;
@@ -76,6 +79,8 @@ export class ExecutionContext {
             this.name,
             this.scope.indentLevel,
         );
+
+        this.parentContext = parent;
     }
 
     print(...params: any[]): void {

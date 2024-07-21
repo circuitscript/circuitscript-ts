@@ -6,13 +6,17 @@ import {
     Sub_exprContext
 } from './antlr/CircuitScriptParser.js';
 
-import { MainVisitor } from './visitor.js';
 import { MainLexer } from './lexer.js';
 import { SimpleStopwatch } from './utils.js';
-import { ANTLRErrorListener, ATNConfigSet, ATNSimulator, BitSet, CharStream, CommonTokenStream, DFA, Parser, RecognitionException, Recognizer, Token } from 'antlr4ng';
+import {
+    ANTLRErrorListener, ATNConfigSet, ATNSimulator,
+    BitSet, CharStream, CommonTokenStream, DefaultErrorStrategy, DFA, Parser,
+    RecognitionException, Recognizer, Token
+} from 'antlr4ng';
 import { CircuitScriptVisitor } from './antlr/CircuitScriptVisitor.js';
+import { BaseVisitor, OnErrorCallback } from './BaseVisitor.js';
 
-export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
+export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
     tree: ScriptContext,
     parser: CircuitScriptParser,
     hasError: boolean, hasParseError: boolean,
@@ -31,17 +35,17 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
 
     const parserTimer = new SimpleStopwatch();
     const parser = new CircuitScriptParser(tokens);
+    // parser.errorHandler = new TempErrorStrategy();
 
-
-    // Clear any existing error listeners and use the custom one only
-    // @ts-ignore
-    parser.removeErrorListeners();
-
-    const errorListener = new CircuitscriptParserErrorListener(
-        visitor.onErrorCallbackHandler);
-    
+    // // Clear any existing error listeners and use the custom one only
     // // @ts-ignore
-    parser.addErrorListener(errorListener);
+    // parser.removeErrorListeners();
+
+    // const errorListener = new CircuitscriptParserErrorListener(
+    //     visitor.onErrorCallbackHandler);
+    
+    // // // @ts-ignore
+    // parser.addErrorListener(errorListener);
 
     const tree = parser.script();
 
@@ -51,7 +55,7 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
         visitor.visit(tree);
     } catch (err){
         // Error should be internally handled in visitor
-        // err.print(data);
+        console.log(err);
         hasError = true;
     }
     
@@ -78,12 +82,33 @@ export function parseFileWithVisitor(visitor: MainVisitor, data: string): {
 
     return {
         tree, parser,
-        hasParseError: errorListener.hasSyntaxErrors(),
+        hasParseError: false, //errorListener.hasSyntaxErrors(),
         hasError,
         parserTimeTaken,
         lexerTimeTaken,
         tokens: finalParsedTokens,
     };
+}
+
+export class TempErrorStrategy extends DefaultErrorStrategy {
+    // reset(recognizer: Parser): void {
+    //     throw new Error('Method not implemented.');
+    // }
+    // recoverInline(recognizer: Parser): Token {
+    //     throw new Error('Method not implemented.');
+    // }
+    recover(recognizer: Parser, e: RecognitionException): void {
+        throw new Error('Method not implemented.');
+    }
+    // sync(recognizer: Parser): void {
+    //     throw new Error('Method not implemented.');
+    // }
+    // reportMatch(recognizer: Parser): void {
+    //     throw new Error('Method not implemented.');
+    // }
+    reportError(recognizer: Parser, e: RecognitionException): void {
+        throw new Error('Method not implemented.');
+    }
 }
 
 
@@ -336,8 +361,7 @@ function dumpTokens(tokens: Token[], lexer: CircuitScriptLexer, scriptData: stri
     });
 }
 
-export type OnErrorCallback = (line: number, column: number, 
-    message: string, e: any | undefined) => void;
+
 
 export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
 
@@ -347,7 +371,11 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
     constructor(onErrorHandler: OnErrorCallback | null = null) {
         this.onErrorHandler = onErrorHandler;
     }
-    syntaxError<S extends Token, T extends ATNSimulator>(recognizer: Recognizer<T>, offendingSymbol: S | null, line: number, charPositionInLine: number, msg: string, e: RecognitionException | null): void {
+    syntaxError<S extends Token, T extends ATNSimulator>(
+        recognizer: Recognizer<T>, offendingSymbol: S | null, 
+        line: number, charPositionInLine: number, msg: string, 
+        e: RecognitionException | null): void {
+        
         if (this.onErrorHandler) {
             this.onErrorHandler(line, charPositionInLine, msg, e);
         } else {
@@ -357,27 +385,21 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
         this.syntaxErrorCounter++;
     }
 
-    reportAmbiguity(recognizer: Parser, dfa: DFA, startIndex: number, stopIndex: number, exact: boolean, ambigAlts: BitSet | undefined, configs: ATNConfigSet): void {
+    reportAmbiguity(recognizer: Parser, dfa: DFA, startIndex: number,
+        stopIndex: number, exact: boolean, ambigAlts: BitSet | undefined,
+        configs: ATNConfigSet): void {
         // throw new Error('Method not implemented.');
     }
-    reportAttemptingFullContext(recognizer: Parser, dfa: DFA, startIndex: number, stopIndex: number, conflictingAlts: BitSet | undefined, configs: ATNConfigSet): void {
+    reportAttemptingFullContext(recognizer: Parser, dfa: DFA,
+        startIndex: number, stopIndex: number,
+        conflictingAlts: BitSet | undefined, configs: ATNConfigSet): void {
         // throw new Error('Method not implemented.');
     }
-    reportContextSensitivity(recognizer: Parser, dfa: DFA, startIndex: number, stopIndex: number, prediction: number, configs: ATNConfigSet): void {
+    reportContextSensitivity(recognizer: Parser, dfa: DFA,
+        startIndex: number, stopIndex: number, prediction: number,
+        configs: ATNConfigSet): void {
         // throw new Error('Method not implemented.');
     }
-
-    // syntaxError(recognizer: any, offendingSymbol: any,
-    //     line: number, column: number, message: string, e: any | undefined) {
-
-    //     if (this.onErrorHandler) {
-    //         this.onErrorHandler(line, column, message, e);
-    //     } else {
-    //         console.log("Syntax error at line", line, ':', column, ' - ', message);
-    //     }
-
-    //     this.syntaxErrorCounter++;
-    // }
 
     hasSyntaxErrors(): boolean {
         return (this.syntaxErrorCounter > 0);

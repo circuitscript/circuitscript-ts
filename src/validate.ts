@@ -4,13 +4,13 @@ import { program } from 'commander';
 import figlet from 'figlet';
 import path from 'path';
 
-import { readFileSync, watch } from 'fs';
+import { readFileSync } from 'fs';
 
 import { prepareSVGEnvironment } from './sizing.js';
-import { getCurrentPath, renderScript, validateScript } from './helpers.js';
+import { getCurrentPath, getScriptText, validateScript } from './helpers.js';
 
 
-export default async function main(): Promise<void> {
+export async function validate(): Promise<void> {
     const { filePath } = getCurrentPath();
     const toolSrcPath = filePath;
 
@@ -68,7 +68,13 @@ export default async function main(): Promise<void> {
         scriptData = options.input;
     } else {
         inputFilePath = options.inputFile; // this should be provided
-        scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
+        const tmpScriptData = getScriptText(inputFilePath);
+
+        if (tmpScriptData === null) {
+            throw "File does not exists";
+        }
+
+        scriptData = tmpScriptData;
 
         if (currentDirectory === null) {
             currentDirectory = path.dirname(inputFilePath);
@@ -84,24 +90,7 @@ export default async function main(): Promise<void> {
         showStats: options.stats,
     }
     
-    const output = renderScript(scriptData, outputPath,
-        scriptOptions);
-
-    if (outputPath === null && output){
-        console.log(output);
-    }
-
-    if (watchFileChanges) {
-        watch(inputFilePath, event => {
-            if (event === 'change') {
-                const scriptData = readFileSync(inputFilePath, 
-                    {encoding: 'utf-8'});
-
-                renderScript(scriptData, outputPath, scriptOptions);
-                console.log('done');
-            }
-        });
-    }
+    validateScript(scriptData, scriptOptions);
 }
 
-main();
+validate();

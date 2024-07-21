@@ -1,6 +1,6 @@
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
-import { CFunction, ComponentPinNet, ComponentPinNetPair, ValueType } from './types.js';
+import { CFunction, ComponentPinNet, ComponentPinNetPair, ParseSymbolType, ValueType } from './types.js';
 import { LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';
@@ -14,6 +14,8 @@ export class ExecutionScope {
     functions: Map<string, CFunction> = new Map();
 
     variables: Map<string, ValueType | ClassComponent> = new Map();
+
+    symbols: Map<string, { type: ParseSymbolType }> = new Map();
 
     blockStack: Map<number, any> = new Map();
 

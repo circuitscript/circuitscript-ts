@@ -162,7 +162,11 @@ property_value_expr: NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT     # nest
 
 blank_expr: '[' INTEGER_VALUE ']';
 
-wire_expr: Wire ID (INTEGER_VALUE | ID)*;
+wire_atom_expr: ID (INTEGER_VALUE | data_expr)     # wire_expr_direction_value
+                | ID                               # wire_expr_direction_only
+                ;    
+wire_expr: Wire wire_atom_expr*;
+
 point_expr: Point ID;
 import_expr: Import ID;
 

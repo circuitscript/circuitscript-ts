@@ -2,12 +2,13 @@ import { dirname } from 'path';
 
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 
-import { MainVisitor } from '../src/visitor.js';
+import { MainVisitor, VisitorExecutionException } from '../src/visitor.js';
 import { ComponentPinNet } from '../src/objects/types.js';
-import { CircuitscriptParserErrorListener } from '../src/parser.js';
+import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser.js';
 import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { MainLexer } from '../src/lexer.js';
 import { CharStream, CommonTokenStream } from 'antlr4ng';
+import { BaseVisitor, OnErrorCallback } from '../src/BaseVisitor.js';
 
 
 export async function runScript(script: string): Promise<{
@@ -20,7 +21,19 @@ export async function runScript(script: string): Promise<{
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 
-    const visitor = new MainVisitor(true);
+    const scriptPath = "./examples/helpers.ts";
+    const defaultLibsPath = "./libs";
+
+    const currentDirectory = dirname(scriptPath);
+
+    const onErrorHandler: OnErrorCallback =
+    (line: number, column: number, message: string, error: any) => {
+        if (error instanceof VisitorExecutionException) {
+            console.log('Error', line, column, message, error.errorMessage);
+        }
+    };
+
+    const visitor = new MainVisitor(true, onErrorHandler, currentDirectory, defaultLibsPath);
     visitor.printToConsole = false; // do not clutter the console log
 
     const parser = new CircuitScriptParser(tokens);
@@ -35,11 +48,12 @@ export async function runScript(script: string): Promise<{
 
     const tree = parser.script();
 
-    const scriptPath = "./examples/helpers.ts";
-    const defaultLibsPath = "./libs";
+    visitor.onImportFile = (visitor: BaseVisitor, fileData: string,
+        errorHandler: OnErrorCallback): { hasError: boolean, hasParseError: boolean } => {
+        const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
+        return { hasError, hasParseError };
+    }
 
-    const currentDirectory = dirname(scriptPath);
-    visitor.onImportFile = visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
 
     let hasError = false;
     try {

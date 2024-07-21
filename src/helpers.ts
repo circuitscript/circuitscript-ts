@@ -1,4 +1,4 @@
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 import { generateKiCADNetList } from "./export.js";
 import { LayoutEngine } from "./layout.js";
@@ -6,23 +6,115 @@ import { SequenceAction } from "./objects/ExecutionScope.js";
 import { OnErrorCallback, parseFileWithVisitor } from "./parser.js";
 import { generateSVG2 } from "./render.js";
 import { SimpleStopwatch } from "./utils.js";
-import { MainVisitor, VisitorExecutionException } from "./visitor.js";
+import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
+import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
+import { CharStream, CommonTokenStream } from "antlr4ng";
+import { MainLexer } from "./lexer.js";
+import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
+import { BaseVisitor } from "./BaseVisitor.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
     ESM = 'mjs',
 }
 
-export function renderScript(scriptData: string, outputPath: string, options): string {
+export type ScriptOptions = {
+    currentDirectory: string | null, 
+    defaultLibsPath: string,
+    dumpNets: boolean,
+    dumpData: boolean,
+    kicadNetlistPath: string| null, 
+    showStats: boolean,
+};
+
+export function prepareFile(textData: string): {
+    parser: CircuitScriptParser,
+    lexerTimeTaken: number
+} {
+    const chars = CharStream.fromString(textData);
+    const lexer = new MainLexer(chars);
+
+    const lexerTimer = new SimpleStopwatch();
+    const tokens = new CommonTokenStream(lexer);
+    tokens.fill();
+
+    const lexerTimeTaken = lexerTimer.lap();
+    const parser = new CircuitScriptParser(tokens);
+
+    return {
+        parser,
+        lexerTimeTaken
+    };
+}
+
+export function getScriptText(filePath: string): string | null {
+    try {
+        return readFileSync(filePath, { encoding: 'utf-8' });
+    } catch (err) {
+        // File does not exist
+        return null;
+    }
+}
+
+export function validateScript(scriptData: string,
+    options: ScriptOptions): string {
+
+    const { parser } = prepareFile(scriptData);
+    const tree = parser.script();
 
     const {
-        currentDirectory = null, 
+        currentDirectory = null,
+        defaultLibsPath,
+    } = options;
+
+    const visitor = new SymbolValidatorVisitor(true, null, currentDirectory, defaultLibsPath);
+
+    visitor.onImportFile = (visitor: BaseVisitor,
+        textData: string, errorHandler: OnErrorCallback)
+        : { hasError: boolean, hasParseError: boolean } => {
+
+        let hasError = false;
+        let hasParseError = false;
+
+        if (textData !== null) {
+            const { parser } = prepareFile(textData);
+            const tree = parser.script();
+
+            try {
+                visitor.visit(tree);
+            } catch (err) {
+                console.log('got an error while parsing tree');
+                hasParseError = true;
+                hasError = true;
+            }
+        } else {
+            console.log('file does not exist!');
+            hasError = true;
+        }
+
+        return {
+            hasError, hasParseError
+        }
+    }
+
+    visitor.visit(tree);
+
+    visitor.dumpSymbols();
+
+    return "";
+}
+
+export function renderScript(scriptData: string, outputPath: string,
+    options: ScriptOptions): string {
+
+    const {
+        currentDirectory = null,
         defaultLibsPath,
         dumpNets = false,
         dumpData = false,
         kicadNetlistPath = null,
-        showStats = false} = options;
+        showStats = false } = options;
 
     const onErrorHandler: OnErrorCallback =
         (line: number, column: number, message: string, error: any) => {
@@ -31,10 +123,14 @@ export function renderScript(scriptData: string, outputPath: string, options): s
             }
         };
 
-    const visitor = new MainVisitor(true, onErrorHandler);
+    const visitor = new ParserVisitor(
+        true, onErrorHandler, currentDirectory, defaultLibsPath);
 
-    visitor.onImportFile = 
-        visitor.createImportFileHandler(currentDirectory, defaultLibsPath);
+    visitor.onImportFile = (visitor: BaseVisitor, fileData: string,
+        errorHandler: OnErrorCallback): { hasError: boolean, hasParseError: boolean } => {
+        const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
+        return { hasError, hasParseError };
+    }
 
     visitor.print('reading file');
     visitor.print('done reading file');
