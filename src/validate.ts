@@ -90,7 +90,8 @@ export async function validate(): Promise<void> {
         showStats: options.stats,
     }
     
-    validateScript(scriptData, scriptOptions);
+    const visitor = validateScript(scriptData, scriptOptions);
+    visitor.dumpSymbols();
 }
 
 validate();

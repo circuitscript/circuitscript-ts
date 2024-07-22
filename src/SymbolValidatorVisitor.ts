@@ -169,9 +169,13 @@ type SymbolTableItemExtra = {
 
 export class SymbolTable {
 
-    symbols: Map<string, SymbolTableItem> = new Map();
+    protected symbols: Map<string, SymbolTableItem> = new Map();
 
     executionContexts: ExecutionContext[] = [];
+
+    getSymbols(): Map<string, SymbolTableItem> {
+        return this.symbols;
+    }
 
     addFunction(executionContext: ExecutionContext, id: string,
         funcDefinedParameters: FunctionDefinedParameter[]): SymbolTableItem {
@@ -232,7 +236,7 @@ export class SymbolTable {
 
     dumpSymbols(): void {
         for(const [key, value] of this.symbols){
-            console.log(key, value.type);
+            console.log(value.type.padEnd(10, " "), key);
         }
     }
 

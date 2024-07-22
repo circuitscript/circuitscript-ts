@@ -58,7 +58,7 @@ export function getScriptText(filePath: string): string | null {
 }
 
 export function validateScript(scriptData: string,
-    options: ScriptOptions): string {
+    options: ScriptOptions): SymbolValidatorVisitor {
 
     const { parser } = prepareFile(scriptData);
     const tree = parser.script();
@@ -99,10 +99,7 @@ export function validateScript(scriptData: string,
     }
 
     visitor.visit(tree);
-
-    visitor.dumpSymbols();
-
-    return "";
+    return visitor;
 }
 
 export function renderScript(scriptData: string, outputPath: string,

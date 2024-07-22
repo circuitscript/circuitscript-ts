@@ -2,17 +2,18 @@ import { dirname } from 'path';
 
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 
-import { MainVisitor, VisitorExecutionException } from '../src/visitor.js';
+import { ParserVisitor, VisitorExecutionException } from '../src/visitor.js';
 import { ComponentPinNet } from '../src/objects/types.js';
 import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser.js';
 import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { MainLexer } from '../src/lexer.js';
 import { CharStream, CommonTokenStream } from 'antlr4ng';
 import { BaseVisitor, OnErrorCallback } from '../src/BaseVisitor.js';
-
+import { validateScript } from '../src/helpers.js';
+import { SymbolValidatorVisitor } from '../src/SymbolValidatorVisitor.js';
 
 export async function runScript(script: string): Promise<{
-    visitor: MainVisitor,
+    visitor: ParserVisitor,
     hasError: boolean,
     componentPinNets: ComponentPinNet[]
 }> {
@@ -33,7 +34,7 @@ export async function runScript(script: string): Promise<{
         }
     };
 
-    const visitor = new MainVisitor(true, onErrorHandler, currentDirectory, defaultLibsPath);
+    const visitor = new ParserVisitor(true, onErrorHandler, currentDirectory, defaultLibsPath);
     visitor.printToConsole = false; // do not clutter the console log
 
     const parser = new CircuitScriptParser(tokens);
@@ -70,6 +71,20 @@ export async function runScript(script: string): Promise<{
         visitor, hasError,
         componentPinNets: visitor.dumpNets(),
     }
+}
+
+export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
+    const scriptPath = "./examples/";
+    const defaultLibsPath = "./libs";
+    const currentDirectory = dirname(scriptPath);
+
+    return validateScript(
+        scriptData,
+        {
+            currentDirectory,
+            defaultLibsPath
+        }
+    );
 }
 
 export function findItem(instances: Map<string, ClassComponent>, typeProp: string,
