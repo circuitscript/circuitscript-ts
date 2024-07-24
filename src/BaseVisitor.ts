@@ -112,7 +112,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             // netNamespace is the current netNamespace where the net name is 
             // searching from.
 
-            this.print('find net', netNamespace, netName);
+            this.log('find net', netNamespace, netName);
             const reversed = [...executionStack].reverse();
 
             for (let i = 0; i < reversed.length; i++) {
@@ -135,7 +135,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return resolveNet;
     }
 
-    print(...params: any[]): void {
+    log(...params: any[]): void {
         const indentOutput = ''.padStart(this.indentLevel * 4, '    ');
         const indentLevelText = this.indentLevel.toString().padStart(3, ' ');
 
@@ -143,15 +143,19 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         
         this.logger.add(args.join(' '));
 
-        if (!this.silent){
+        if (!this.silent) {
             console.log.apply(null, args);
         }
     }
 
+    log2(message: string): void {
+        this.getExecutor().log(message);
+    }
+
     visitScript = (ctx: ScriptContext): void => {
-        this.print('===', 'start', '===');
+        this.log('===', 'start', '===');
         const result = this.visitChildren(ctx);
-        this.print('===', 'end', '===');
+        this.log('===', 'end', '===');
         return result;
     }
 
@@ -179,7 +183,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             instances.delete(oldName);
             instances.set(reference.name, tmpComponent);
 
-            this.getExecutor().print(
+            this.getExecutor().log(
                 `assigned '${reference.name}' to ClassComponent`,
             );
         } else {
@@ -390,7 +394,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     visitImport_expr = (ctx: Import_exprContext): void => {
         const ID = ctx.ID().toString(); // filename
-        this.print('import', ID);
+        this.log('import', ID);
         const { hasError, hasParseError, pathExists } = this.handleImportFile(ID);
 
         if (hasError || hasParseError || !pathExists) {
@@ -402,12 +406,12 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         }
 
-        this.print('done import', ID);
+        this.log('done import', ID);
     }
 
     visitFunction_return_expr = (ctx: Function_return_exprContext): ComplexType => {
         const executor = this.getExecutor();
-        executor.print('return from function');
+        executor.log('return from function');
         const returnValue = this.visit(ctx.data_expr()) as ComplexType;
 
         executor.stopFurtherExpressions = true;
@@ -433,7 +437,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     } {
 
         const tmpFilePath = join(this.currentDirectory!, name + ".cst");
-        this.print('importing path:', tmpFilePath);
+        this.log('importing path:', tmpFilePath);
         let pathExists = false;
 
         let fileData: string | null = null;
@@ -459,7 +463,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         try {
             if (pathExists) {
-                this.print('done reading imported file data');
+                this.log('done reading imported file data');
 
                 const { hasError, hasParseError } =
                     this.onImportFile(this, fileData!,
@@ -468,7 +472,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 return { hasError, hasParseError, pathExists }
             }
         } catch (err) {
-            this.print('Failed to import file: ', err.message);
+            this.log('Failed to import file: ', err.message);
         }
 
         return {
@@ -498,7 +502,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                     // If value is passed in as function parameter, then
                     // use it in the scope.
                     const variableName = tmpFuncArg[0];
-                    executor.print(
+                    executor.log(
                         'set variable in scope, var name: ',
                         variableName,
                     );
@@ -521,7 +525,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 // value is provided.
                 const variableName = tmpFuncArg[0];
                 const defaultValue = tmpFuncArg[1];
-                executor.print(
+                executor.log(
                     'set variable in scope, var name: ',
                     variableName,
                 );
@@ -586,7 +590,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         const paramName = trailers[0].slice(1);
         object.setParam(paramName, value);
 
-        this.getExecutor().print(
+        this.getExecutor().log(
             `set instance ${object.instanceName} param ${paramName} to ${value}`);
     }
 

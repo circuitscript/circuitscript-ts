@@ -8,7 +8,7 @@ import { generateSVG2 } from "./render.js";
 import { SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
-import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
+import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
 import { CharStream, CommonTokenStream } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
@@ -84,7 +84,7 @@ export function validateScript(scriptData: string,
             try {
                 visitor.visit(tree);
             } catch (err) {
-                console.log('got an error while parsing tree');
+                console.log('got an error while parsing tree: ', err);
                 hasParseError = true;
                 hasError = true;
             }
@@ -98,7 +98,26 @@ export function validateScript(scriptData: string,
         }
     }
 
+    // First pass defines variables, functions
     visitor.visit(tree);
+    // writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
+
+    const symbolTable = visitor.getSymbols();
+    symbolTable.clearUndefined();
+
+    const visitorResolver = new SymbolValidatorResolveVisitor(
+        true, null, currentDirectory, defaultLibsPath);
+
+    // Use the existing symbol tree as the starting point
+    visitorResolver.setSymbols(visitor.getSymbols());
+    
+    visitorResolver.onImportFile = visitor.onImportFile;
+
+    // Second pass to resolve variables, functions
+    visitorResolver.visit(tree);
+
+    // writeFileSync('dump/raw-parser-2.txt', visitorResolver.logger.dump());
+
     return visitor;
 }
 
@@ -129,8 +148,8 @@ export function renderScript(scriptData: string, outputPath: string,
         return { hasError, hasParseError };
     }
 
-    visitor.print('reading file');
-    visitor.print('done reading file');
+    visitor.log('reading file');
+    visitor.log('done reading file');
 
     const { tree, parser,
         hasParseError, hasError, 

@@ -10,36 +10,65 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
     symbolTable: SymbolTable = new SymbolTable();
 
-    visitAssignment_expr = (ctx: Assignment_exprContext): ComplexType => {
-        const atomStr = ctx.atom_expr().getText();
-        const value = this.visit(ctx.data_expr()) as ComplexType;
-
+    protected addSymbolVariable(name: string, value: ComplexType,
+        executor: ExecutionContext | null = null): void {
+        const useExecutor = executor === null ? this.getExecutor() : executor;
         this.symbolTable.addVariable(
-            this.getExecutor(),            
-            atomStr,
+            useExecutor,
+            name,
             value);
 
-
-        return null;
+        this.log2('add symbol variable: ' + name);
     }
 
-    visitAtom_expr = (ctx: Atom_exprContext): ReferenceType => {
-        const atomId = ctx.ID().getText();
-        let tmpSymbol: SymbolTableItem;
+    protected addSymbolFunction(functionName: string,
+        funcDefinedParameters: FunctionDefinedParameter[]): void {
+        if (this.symbolTable.exists(this.getExecutor(), functionName)) {
+            throw "Function name already exists in scope";
+        } else {
+            this.symbolTable.addFunction(this.getExecutor(),
+                functionName,
+                funcDefinedParameters);
 
+            this.log2('add symbol function: ' + functionName);
+        }
+    }
+
+    protected handleAtomSymbol(atomId: string): SymbolTableItem {
         const executor = this.getExecutor();
 
+        let tmpSymbol: SymbolTableItem;
         if (this.symbolTable.exists(executor, atomId)) {
             tmpSymbol = this.symbolTable.get(executor, atomId);
         } else {
             const foundContext = this.symbolTable.searchParentContext(executor, atomId);
             if (foundContext === null) {
                 // Undefined symbol is found, save it too
-                tmpSymbol = this.symbolTable.addUndefined(executor, atomId)
+                tmpSymbol = this.symbolTable.addUndefined(executor, atomId);
+                this.log2('symbol not found: ' + atomId);
             } else {
                 tmpSymbol = this.symbolTable.get(foundContext, atomId);
             }
         }
+
+        return tmpSymbol;
+    }
+
+    setSymbols(symbolTable: SymbolTable): void {
+        this.symbolTable = symbolTable;
+    }
+
+    visitAssignment_expr = (ctx: Assignment_exprContext): ComplexType => {
+        const atomStr = ctx.atom_expr().getText();
+        const value = this.visit(ctx.data_expr()) as ComplexType;
+
+        this.addSymbolVariable(atomStr, value);
+        return null;
+    }
+
+    visitAtom_expr = (ctx: Atom_exprContext): ReferenceType => {
+        const atomId = ctx.ID().getText();
+        const tmpSymbol = this.handleAtomSymbol(atomId);
 
         // This is a function call, check if function 
         // parameter arguments exists
@@ -102,13 +131,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             funcDefinedParameters = this.visit(ctx.function_args_expr()!);
         }
 
-        if (this.symbolTable.exists(this.getExecutor(), functionName)) {
-            throw "Function name already exists in scope";
-        } else {
-            this.symbolTable.addFunction(this.getExecutor(),
-                functionName,
-                funcDefinedParameters);
-        }
+        this.addSymbolFunction(functionName, funcDefinedParameters);
 
         // create a new scope and evalutate the functions
         const executionContextName =
@@ -129,11 +152,11 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
         // For each funcDefinedParameters, create the variable in scope
         funcDefinedParameters.forEach(param => {
-            this.symbolTable.addVariable(
-                newExecutor, 
+            this.addSymbolVariable(
                 param[0],
-                null
-            )
+                null,
+                newExecutor
+            );
         });
 
         this.runExpressions(newExecutor,
@@ -149,6 +172,23 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
     dumpSymbols() {
         this.symbolTable.dumpSymbols();
+    }
+}
+
+export class SymbolValidatorResolveVisitor extends SymbolValidatorVisitor {
+    
+    protected addSymbolVariable(name: string, value: ComplexType): void {
+        // do nothing
+    }
+
+    protected addSymbolFunction(functionName: string,
+        funcDefinedParameters: FunctionDefinedParameter[]): void {
+        // Overwrite the function name in the symbol table if it exists
+        if (this.symbolTable.exists(this.getExecutor(), functionName)) {
+            this.symbolTable.addFunction(this.getExecutor(),
+                functionName,
+                funcDefinedParameters);
+        }
     }
 }
 
@@ -171,7 +211,7 @@ export class SymbolTable {
 
     protected symbols: Map<string, SymbolTableItem> = new Map();
 
-    executionContexts: ExecutionContext[] = [];
+    executonContextsNamespaces: string[] = [];
 
     getSymbols(): Map<string, SymbolTableItem> {
         return this.symbols;
@@ -214,8 +254,8 @@ export class SymbolTable {
         type: ParseSymbolType, extra: SymbolTableItemExtra): SymbolTableItem {
 
         // track execution contexts
-        if (this.executionContexts.indexOf(executionContext) === -1) {
-            this.executionContexts.push(executionContext);
+        if (this.executonContextsNamespaces.indexOf(executionContext.namespace) === -1) {
+            this.executonContextsNamespaces.push(executionContext.namespace);
         }
 
         const item: SymbolTableItem = {
@@ -258,27 +298,40 @@ export class SymbolTable {
         return this.symbols.get(name)!;
     }
 
-    getParentContexts(executionContext: ExecutionContext, contexts: ExecutionContext[]): ExecutionContext[] {
+    getParentContexts(executionContext: ExecutionContext, 
+        contextsNamespace: string[]): string[] {
         if (executionContext.parentContext !== null) {
-            contexts.push(executionContext.parentContext);
-            this.getParentContexts(executionContext.parentContext, contexts);
+            contextsNamespace.push(executionContext.parentContext.namespace);
+            this.getParentContexts(executionContext.parentContext, 
+                contextsNamespace);
         }
 
-        return contexts;
+        return contextsNamespace;
     }
 
-    searchParentContext(executionContext: ExecutionContext, id: string): ExecutionContext | null {
-        const parentContexts: ExecutionContext[] = this.getParentContexts(executionContext, []);
+    searchParentContext(executionContext: ExecutionContext, id: string)
+        : ExecutionContext | null {
+        const contextNames = this.getParentContexts(executionContext, []);
 
         for (const [key,] of this.symbols) {
             if (key.endsWith(`.${id}`)) {
-                const { context } = this.symbols.get(key)!;
-                if (parentContexts.indexOf(context) !== -1) {
+                const { context } = this.symbols.get(key)! as SymbolTableItem;
+
+                if (contextNames.indexOf(context.namespace) !== -1) {
                     return context
                 }
             }
         }
 
         return null;
+    }
+
+    clearUndefined(): void {
+        // Remove all undefined entries
+        for(const [key, value] of this.symbols){
+            if (value.type === ParseSymbolType.Undefined){
+                this.symbols.delete(key);
+            }
+        }
     }
 }

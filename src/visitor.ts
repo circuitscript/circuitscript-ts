@@ -514,7 +514,7 @@ export class ParserVisitor extends BaseVisitor {
             addSequence: true
         });
 
-        executor.print('at block pin expressions');
+        executor.log('at block pin expressions');
 
         if (ctx.at_block_pin_expression_simple()) {
             this.visit(ctx.at_block_pin_expression_simple());
@@ -522,7 +522,7 @@ export class ParserVisitor extends BaseVisitor {
             this.visit(ctx.at_block_pin_expression_complex());
         }
 
-        executor.print('end at block pin expressions');
+        executor.log('end at block pin expressions');
 
         // Go back to the original position
         return executor.atComponent(currentComponent, currentPin);
@@ -530,7 +530,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitAt_block = (ctx: At_blockContext): ComponentPin => {
         const executor = this.getExecutor();
-        executor.print('entering at block');
+        executor.log('entering at block');
 
         this.visit(ctx.at_component_expr());
 
@@ -549,7 +549,7 @@ export class ParserVisitor extends BaseVisitor {
         executor.scope.currentComponent = currentComponent;
         executor.scope.currentPin = currentPin;
 
-        executor.print('leaving at block');
+        executor.log('leaving at block');
 
         return executor.getCurrentPoint();
     }
@@ -852,7 +852,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     annotateComponents(): void {
-        this.print('===== annotate components =====');
+        this.log('===== annotate components =====');
 
         const annotater = new ComponentAnnotater();
         const instances = this.getExecutor().scope.instances;
@@ -868,7 +868,7 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
                 if (instance.typeProp === null){
-                    this.print('Instance has no type:', instance.instanceName, ' assuming connector');
+                    this.log('Instance has no type:', instance.instanceName, ' assuming connector');
                     instance.typeProp = 'conn';
                 }
 
@@ -878,7 +878,7 @@ export class ParserVisitor extends BaseVisitor {
                     if (refdes) {
                         instance.assignedRefDes = refdes;
                         annotater.trackRefDes(refdes);
-                        this.print(refdes, '-', instance.instanceName);
+                        this.log(refdes, '-', instance.instanceName);
                         continue;
                     }
                 }
@@ -892,14 +892,14 @@ export class ParserVisitor extends BaseVisitor {
 
             if (newRefDes !== null) {
                 instance.assignedRefDes = newRefDes;
-                this.print(newRefDes, '-', instance.instanceName);
+                this.log(newRefDes, '-', instance.instanceName);
             } else {
-                this.print('Failed to annotate:', instance.instanceName);
+                this.log('Failed to annotate:', instance.instanceName);
             }
         });
 
-        this.print('===== annotate done =====');
-        this.print('');
+        this.log('===== annotate done =====');
+        this.log('');
     }
 
     private resolveNets(

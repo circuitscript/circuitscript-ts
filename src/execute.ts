@@ -73,7 +73,7 @@ export class ExecutionContext {
 
         this.silent = silent;
 
-        this.print(
+        this.log(
             'create new execution context',
             this.namespace,
             this.name,
@@ -83,7 +83,7 @@ export class ExecutionContext {
         this.parentContext = parent;
     }
 
-    print(...params: any[]): void {
+    log(...params: any[]): void {
         const indentOutput = ''.padStart(this.scope.indentLevel * 4, '    ');
         const indentLevelText = this.scope.indentLevel
             .toString()
@@ -172,7 +172,7 @@ export class ExecutionContext {
             ? this.scope.getNet(component2, component2Pin)
             : null;
 
-        this.print('link nets', component1, component1Pin, net1,
+        this.log('link nets', component1, component1Pin, net1,
             'to', component2, component2Pin, net2);
 
         let returnNet: Net;
@@ -277,17 +277,17 @@ export class ExecutionContext {
 
             if (result.found) {
                 tmpNet = result.net;
-                this.print('net found', tmpNet.namespace, tmpNet.name);
+                this.log('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
                 tmpNet = new Net(this.netNamespace, netName, priority);
-                this.print('net not found, added net instance', 
+                this.log('net not found, added net instance', 
                     tmpNet.namespace, tmpNet.name);
             }
 
             // Assume net is on 1 pin for now
             this.scope.setNet(component, 1, tmpNet);
-            this.print('set net', netName, 'component', component);
+            this.log('set net', netName, 'component', component);
         }
 
         const {arrange = null} = props;
@@ -314,7 +314,7 @@ export class ExecutionContext {
             return pin.id + ':' + pin.name;
         });
 
-        this.print(
+        this.log(
             'add symbol',
             instanceName,
             '[' + pinsOutput.join(', ') + ']',
@@ -334,7 +334,7 @@ export class ExecutionContext {
                 .toString();
         }
 
-        this.print(
+        this.log(
             (extra !== '' ? (extra + ' ') : '') + 'point: ' +
             this.scope.currentComponent.instanceName +
             ' ' +
@@ -349,7 +349,7 @@ export class ExecutionContext {
         // Add to sequence
         this.toComponent(component, startPin, {addSequence: true});
 
-        this.print('move to next pin: ' + nextPin);
+        this.log('move to next pin: ' + nextPin);
         this.atComponent(component, nextPin, {
             addSequence: true
         });
@@ -366,7 +366,7 @@ export class ExecutionContext {
             addSequence?: boolean,
             cloneNetComponent?: boolean,
         }): ComponentPin {
-        this.print('to component');
+        this.log('to component');
 
         const { addSequence = false, cloneNetComponent = false } = options ?? {};
 
@@ -401,7 +401,7 @@ export class ExecutionContext {
                 this.scope.currentPin,
             )
         ) {
-            this.print(
+            this.log(
                 'net: ',
                 this.scope
                     .getNet(this.scope.currentComponent, this.scope.currentPin)
@@ -460,7 +460,7 @@ export class ExecutionContext {
             addSequence?: boolean,
             cloneNetComponent?: boolean,
         }): ComponentPin {
-        this.print('at component');
+        this.log('at component');
 
         const { addSequence = false, cloneNetComponent = false } = options ?? {};
 
@@ -536,7 +536,7 @@ export class ExecutionContext {
             clonedComponent, 1
         );
 
-        this.print('created clone of net component:', cloneInstanceName);
+        this.log('created clone of net component:', cloneInstanceName);
 
         return clonedComponent;
     }
@@ -564,7 +564,7 @@ export class ExecutionContext {
             type: blockType,
         });
 
-        this.print('enter blocks');
+        this.log('enter blocks');
     }
 
     exitBlocks(): void {
@@ -596,7 +596,7 @@ export class ExecutionContext {
             this.atComponent(component, pin, { addSequence: true });
         }
 
-        this.print('exit blocks');
+        this.log('exit blocks');
     }
 
     enterBlock(blockIndex: number): void {
@@ -623,7 +623,7 @@ export class ExecutionContext {
             this.atComponent(component, pin, { addSequence: true });
         }
 
-        this.print(`enter inner block of type (${blockType}) >>>`);
+        this.log(`enter inner block of type (${blockType}) >>>`);
 
         this.scope.indentLevel += 1;
     }
@@ -643,7 +643,7 @@ export class ExecutionContext {
         stackRef['block_index'] = null;
         this.scope.indentLevel -= 1;
 
-        this.print('exit inner block <<<');
+        this.log('exit inner block <<<');
 
         if (blockType === BlockTypes.Branch) {
 
@@ -703,7 +703,7 @@ export class ExecutionContext {
     getPointBlockLocation(): [component: ClassComponent, pin: number, wireId: number] {
         // Returns the position at the nearest `point:` block, searches within
         // previous block stacks
-        this.print('get block point');
+        this.log('get block point');
 
         for (let i = 0; i < this.scope.indentLevel; i++) {
             const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1 - i);
@@ -715,13 +715,13 @@ export class ExecutionContext {
             }
         }
 
-        this.print('did not find block point');
+        this.log('did not find block point');
 
         return null;
     }
 
     breakBranch(): void {
-        this.print('break branch');
+        this.log('break branch');
         // Mark that the branch stack at the current indent level
         // should be ignored
 
@@ -737,7 +737,7 @@ export class ExecutionContext {
     createFunction(functionName: string, __runFunc: CFunction): void {
         this.scope.functions.set(functionName, __runFunc);
         this.__functionCache[functionName] = __runFunc;
-        this.print(`defined new function '${functionName}'`);
+        this.log(`defined new function '${functionName}'`);
     }
 
     hasFunction(functionName: string): boolean {
@@ -804,7 +804,7 @@ export class ExecutionContext {
             // If the function does not exist in the current execution context,
             // then try to search in the upper execution context
             if (__runFunc === null) {
-                this.print(`searching for function ${functionName} in upper context`)
+                this.log(`searching for function ${functionName} in upper context`)
                 
                 const tmpResolveResult = 
                     this.resolveVariable(executionStack, functionName);
@@ -815,22 +815,22 @@ export class ExecutionContext {
                     throw `Invalid function ${functionName}`;
                 }
             }
-            this.print('save function to cache:', functionName);
+            this.log('save function to cache:', functionName);
             this.__functionCache[functionName] = __runFunc;
 
         } else {
-            this.print('found function in cache:', functionName);
+            this.log('found function in cache:', functionName);
             __runFunc = this.__functionCache[functionName];
         }        
 
         if (__runFunc !== null) {
-            this.print(`call function '${functionName}'`);
+            this.log(`call function '${functionName}'`);
 
             const functionResult = __runFunc(
                 functionParams,
                 { netNamespace });
 
-            this.print(`done call function '${functionName}'`);
+            this.log(`done call function '${functionName}'`);
             
             return functionResult;
         } else {
@@ -839,7 +839,7 @@ export class ExecutionContext {
     }
 
     mergeScope(childScope: ExecutionScope, namespace: string): void {
-        this.print('-- merging scope to parent --');
+        this.log('-- merging scope to parent --');
 
         // Save these position first, because this needs to be restored
         // after the merge operation
@@ -998,7 +998,7 @@ export class ExecutionContext {
 
         this.printPoint('resume at');
         
-        this.print('-- nets --');
+        this.log('-- nets --');
 
         // dump the list of nets in the current scope
         const currentNets = this.scope.getNets();
@@ -1006,12 +1006,12 @@ export class ExecutionContext {
         currentNets.reduce((accum, [,,net]) => {
             if (accum.indexOf(net) === -1){
                 accum.push(net);
-                this.print(`${net.namespace}${net.name} ${net.priority}`);
+                this.log(`${net.namespace}${net.name} ${net.priority}`);
             }
             return accum;
         }, []);
 
-        this.print('-- done merging scope --');
+        this.log('-- done merging scope --');
     }
 
     addWire(segments: [string, number?][]): void {
@@ -1038,7 +1038,7 @@ export class ExecutionContext {
             output.push(item.join(","));
         });
 
-        this.print('add wire: ', output.join("|"));
+        this.log('add wire: ', output.join("|"));
 
         this.scope.setActive(ActiveObject.Wire, wireId);
         this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
@@ -1054,7 +1054,7 @@ export class ExecutionContext {
 
     addPoint(pointId: string, userDefined = true): ComponentPin {
         if (this.scope.instances.has(pointId)) {
-            this.print('Warning: ' + pointId + ' is being redefined');
+            this.log('Warning: ' + pointId + ' is being redefined');
         }
 
         const useName = userDefined ? 'point.' + pointId : pointId;
@@ -1069,7 +1069,7 @@ export class ExecutionContext {
     }
 
     setProperty(nameWithProp: string, value: any): void {
-        this.print('set property', nameWithProp, 'value', value);
+        this.log('set property', nameWithProp, 'value', value);
 
         let idName: string;
         let paramName: string;

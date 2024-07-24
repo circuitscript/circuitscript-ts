@@ -22,8 +22,8 @@ e = f
     ['__.b', 'variable'],
     ['__.c', 'variable'],
     ['__.d', 'variable'],
-    ['__.f', 'undefined'],
-    ['__.e', 'variable']
+    ['__.e', 'variable'],
+    ['__.f', 'undefined']
 ]
 );
 
@@ -89,8 +89,8 @@ to gnd
     [ '__.arrow_point', 'function' ],
     [ '__.v5v', 'variable' ],
     [ '__.gnd', 'variable' ],
-    [ '__.tmp', 'undefined' ],
-    [ '__.D1', 'variable' ]
+    [ '__.D1', 'variable' ],
+    [ '__.tmp', 'undefined' ]
   ]
 );
 
