@@ -51,7 +51,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     onErrorCallbackHandler: OnErrorCallback | null = null;
 
-    onImportFile = (visitor: BaseVisitor, filePath:string, errorHandler: OnErrorCallback): 
+    onImportFile = (visitor: BaseVisitor, filePath:string): 
         {hasError:boolean, hasParseError: boolean} => {
         
         throw "Import file not implemented"

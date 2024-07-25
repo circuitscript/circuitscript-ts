@@ -116,15 +116,6 @@ export class ExecutionContext {
         this.scope.componentRoot = componentRoot;
     }
 
-
-    instanceExists(instanceName: string): boolean {
-        return this.scope.instances.has(instanceName);
-    }
-
-    getComponent(instanceName: string): ClassComponent {
-        return this.scope.instances.get(instanceName);
-    }
-
     getUniqueInstanceName(className: string): string {
         let extraPrefix = '';
 

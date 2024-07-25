@@ -1,3 +1,4 @@
+import { TerminalNode } from "antlr4ng";
 import { AdditionExprContext, Assignment_exprContext, Atom_exprContext, 
     BinaryOperatorExprContext, DataExprContext, Function_def_exprContext, 
     MultiplyExprContext, UnaryOperatorExprContext, 
@@ -34,7 +35,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         }
     }
 
-    protected handleAtomSymbol(atomId: string): SymbolTableItem {
+    protected handleAtomSymbol(atom: TerminalNode): SymbolTableItem {
+        const atomId = atom.getText();
         const executor = this.getExecutor();
 
         let tmpSymbol: SymbolTableItem;
@@ -44,7 +46,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             const foundContext = this.symbolTable.searchParentContext(executor, atomId);
             if (foundContext === null) {
                 // Undefined symbol is found, save it too
-                tmpSymbol = this.symbolTable.addUndefined(executor, atomId);
+                tmpSymbol = this.symbolTable.addUndefined(executor, atomId, atom);
                 this.log2('symbol not found: ' + atomId);
             } else {
                 tmpSymbol = this.symbolTable.get(foundContext, atomId);
@@ -67,8 +69,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     }
 
     visitAtom_expr = (ctx: Atom_exprContext): ReferenceType => {
-        const atomId = ctx.ID().getText();
-        const tmpSymbol = this.handleAtomSymbol(atomId);
+        const tmpSymbol = this.handleAtomSymbol(ctx.ID());
 
         // This is a function call, check if function 
         // parameter arguments exists
@@ -199,11 +200,13 @@ type SymbolTableItem = {
     extra: SymbolTableItemExtra
 } | {
     type: ParseSymbolType.Undefined
+    extra: SymbolTableItemExtra
 }
 
 type SymbolTableItemExtra = {
     funcDefinedParameters?: FunctionDefinedParameter[],
     variableValue?: SymbolTableItem | ValueType | null,
+    node?: TerminalNode
 }
 
 
@@ -241,12 +244,14 @@ export class SymbolTable {
         )
     }
 
-    addUndefined(executionContext: ExecutionContext, id: string): SymbolTableItem {
+    addUndefined(executionContext: ExecutionContext, id: string, node: TerminalNode): SymbolTableItem {
         return this.add(
             executionContext,
             id,
             ParseSymbolType.Undefined,
-            {}
+            {
+                node
+            }
         );
     }
 

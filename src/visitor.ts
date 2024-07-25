@@ -55,6 +55,7 @@ import { BlockTypes, ComponentTypes, NoNetText } from './globals.js';
 import { Net } from './objects/Net.js';
 import { SubExpressionCommand, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
+import { ParserRuleContext } from 'antlr4ng';
 
 
 export class ParserVisitor extends BaseVisitor {

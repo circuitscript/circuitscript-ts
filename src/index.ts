@@ -11,3 +11,4 @@ export * from './parser.js';
 export * from './render.js';
 export * from './utils.js';
 export * from './visitor.js';
+export * from './objects/types.js';

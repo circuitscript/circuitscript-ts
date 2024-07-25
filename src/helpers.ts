@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { generateKiCADNetList } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
-import { OnErrorCallback, parseFileWithVisitor } from "./parser.js";
+import { parseFileWithVisitor } from "./parser.js";
 import { generateSVG2 } from "./render.js";
 import { SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
@@ -12,7 +12,9 @@ import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolV
 import { CharStream, CommonTokenStream } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
-import { BaseVisitor } from "./BaseVisitor.js";
+import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
+import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
+import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -30,7 +32,9 @@ export type ScriptOptions = {
 
 export function prepareFile(textData: string): {
     parser: CircuitScriptParser,
-    lexerTimeTaken: number
+    lexer: CircuitScriptLexer,
+    lexerTimeTaken: number,
+    tokens: CommonTokenStream,
 } {
     const chars = CharStream.fromString(textData);
     const lexer = new MainLexer(chars);
@@ -44,7 +48,9 @@ export function prepareFile(textData: string): {
 
     return {
         parser,
-        lexerTimeTaken
+        lexer,
+        lexerTimeTaken,
+        tokens
     };
 }
 
@@ -55,6 +61,81 @@ export function getScriptText(filePath: string): string | null {
         // File does not exist
         return null;
     }
+}
+
+export function getSemanticTokens(scriptData: string, options: ScriptOptions)
+    : { visitor: SemanticTokensVisitor, parsedTokens: IParsedToken[] } {
+    
+    const { parser, lexer, tokens } = prepareFile(scriptData);
+    const tree = parser.script();
+
+    const {
+        currentDirectory = null,
+        defaultLibsPath,
+    } = options;
+
+    const visitor = new SemanticTokensVisitor(true, null,
+        currentDirectory, defaultLibsPath,
+        lexer, scriptData,
+    );
+
+    visitor.onImportFile = (visitor: BaseVisitor, textData: string)
+        : { hasError: boolean, hasParseError: boolean } => {
+
+        let hasError = false;
+        let hasParseError = false;
+
+        if (textData !== null) {
+            const { parser } = prepareFile(textData);
+            const tree = parser.script();
+
+            try {
+                visitor.visit(tree);
+            } catch (err) {
+                console.log('Error while parsing: ', err);
+                hasParseError = true;
+                hasError = true;
+            }
+        } else {
+            console.log('File does not exist');
+            hasError = true;
+        }
+
+        return {
+            hasError, hasParseError
+        }
+    }
+
+    visitor.visit(tree);
+
+    const semanticTokens = visitor.getTokens();
+
+    // Get all tokens
+    const parsedTokens = prepareTokens(tokens.getTokens(), lexer, scriptData);
+    const finalParsedTokens:IParsedToken[] = [];
+    parsedTokens.forEach(token => {
+        const location = `${token.line}_${token.column}`;
+        if (semanticTokens.has(location)){
+            finalParsedTokens.push(
+                semanticTokens.get(location)!);
+        } else{
+            finalParsedTokens.push(token);
+        }
+    });
+
+    // finalParsedTokens.forEach(item => {
+    //     console.log(item.line.toString().padEnd(5), 
+    //         item.column.toString().padEnd(5), 
+    //         item.textValue.padEnd(10), 
+    //         item.tokenType, item.tokenModifiers)
+    // });
+
+    // writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
+
+    return {
+        visitor,
+        parsedTokens: finalParsedTokens
+    };
 }
 
 export function validateScript(scriptData: string,
@@ -70,8 +151,7 @@ export function validateScript(scriptData: string,
 
     const visitor = new SymbolValidatorVisitor(true, null, currentDirectory, defaultLibsPath);
 
-    visitor.onImportFile = (visitor: BaseVisitor,
-        textData: string, errorHandler: OnErrorCallback)
+    visitor.onImportFile = (visitor: BaseVisitor, textData: string)
         : { hasError: boolean, hasParseError: boolean } => {
 
         let hasError = false;
@@ -118,11 +198,11 @@ export function validateScript(scriptData: string,
 
     // writeFileSync('dump/raw-parser-2.txt', visitorResolver.logger.dump());
 
-    return visitor;
+    return visitorResolver;
 }
 
 export function renderScript(scriptData: string, outputPath: string,
-    options: ScriptOptions): string {
+    options: ScriptOptions): string | null {
 
     const {
         currentDirectory = null,
@@ -142,8 +222,9 @@ export function renderScript(scriptData: string, outputPath: string,
     const visitor = new ParserVisitor(
         true, onErrorHandler, currentDirectory, defaultLibsPath);
 
-    visitor.onImportFile = (visitor: BaseVisitor, fileData: string,
-        errorHandler: OnErrorCallback): { hasError: boolean, hasParseError: boolean } => {
+    visitor.onImportFile = (visitor: BaseVisitor, fileData: string)
+        : { hasError: boolean, hasParseError: boolean } => {
+
         const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
         return { hasError, hasParseError };
     }
@@ -191,7 +272,6 @@ export function renderScript(scriptData: string, outputPath: string,
     //     console.log(instance.pinNets);
     // }
 
-
     const tmpSequence = sequence.map(item => {
         const tmp = [...item];
 
@@ -212,7 +292,7 @@ export function renderScript(scriptData: string, outputPath: string,
     });
 
     dumpData && writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
-    let svgOutput: string = null;
+    let svgOutput: string | null = null;
 
     try {
         const layoutEngine = new LayoutEngine();
