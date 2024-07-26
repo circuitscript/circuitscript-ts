@@ -31,11 +31,10 @@ export class SemanticTokensVisitor extends BaseVisitor {
 
     }
 
-    visitFunction_args_expr = (ctx: Function_args_exprContext) => {
+    visitFunction_args_expr = (ctx: Function_args_exprContext): void => {
         // The last <defaultValuesProvided> IDs have default values
         const IDs = ctx.ID(); // Do in reverse
-        return IDs.map(id => {
-            
+        IDs.map(id => {    
             this.addSemanticToken(
                 this.parseToken(
                     id, ['declaration'], 'parameter',
@@ -49,8 +48,9 @@ export class SemanticTokensVisitor extends BaseVisitor {
         const functionName = ctx.ID().getText();
 
         // These are the defined arguments for the function
-        if (ctx.function_args_expr()) {
-            this.visit(ctx.function_args_expr()!);
+        const ctxFunctionArgsExpr = ctx.function_args_expr(); 
+        if (ctxFunctionArgsExpr) {
+            this.visit(ctxFunctionArgsExpr);
         }
         
         this.addSemanticToken(
@@ -59,11 +59,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
         // create a new scope and evalutate the functions
         const executionContextName =
             functionName + '_validate';
-
-        // const passedInParamsNull = funcDefinedParameters.map((param, index) => {
-        //     return ['position', index, null];
-        // });
-
+            
         const newExecutor = this.enterNewChildContext(
             this.executionStack,
             this.getExecutor(),
@@ -71,16 +67,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
             { netNamespace: "" },
             [],
             []
-        )
-
-        // For each funcDefinedParameters, create the variable in scope
-        // funcDefinedParameters.forEach(param => {
-        //     this.addSemanticToken(
-        //         this.parseToken(
-                    
-        //         )
-        //     )
-        // });
+        );
 
         this.runExpressions(newExecutor,
             ctx.function_expr());
@@ -89,7 +76,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
         this.executionStack.pop();
     }
 
-    visitCreate_component_expr = (ctx: Create_component_exprContext) => {
+    visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
         this.addSemanticToken(
             this.parseToken(ctx.Create(), ['defaultLibrary'], 'function'));
 
@@ -98,7 +85,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
         });
     }
 
-    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext) => {
+    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
         this.addSemanticToken(
             this.parseToken(ctx.Create(), ['defaultLibrary'], 'function'));
 
@@ -107,8 +94,9 @@ export class SemanticTokensVisitor extends BaseVisitor {
         });
     }
 
-    visitProperty_key_expr = (ctx: Property_key_exprContext) => {
-        let useValue: TerminalNode;
+    visitProperty_key_expr = (ctx: Property_key_exprContext): void => {
+        let useValue: TerminalNode | null = null;
+
         if (ctx.ID()) {
             useValue = ctx.ID();
         } else if (ctx.INTEGER_VALUE()) {
@@ -117,42 +105,48 @@ export class SemanticTokensVisitor extends BaseVisitor {
             useValue = ctx.STRING_VALUE();
         }
 
-        this.addSemanticToken(
-            this.parseToken(useValue, [], 'property')
-        )
+        if (useValue) {
+            this.addSemanticToken(
+                this.parseToken(useValue, [], 'property')
+            );
+        }
     }
 
-    visitSub_expr = (ctx: Sub_exprContext) => {
-        let useValue: TerminalNode;
+    visitSub_expr = (ctx: Sub_exprContext): void  => {
+        let useValue: TerminalNode | null = null;
+
         if (ctx.ID()){
             useValue = ctx.ID();
         } else if (ctx.Pin()){
             useValue = ctx.Pin();
         }
 
-        this.addSemanticToken(
-            this.parseToken(
-                useValue, [], 'property'
-            )
-        )
-    }
-
-    visitValueAtomExpr = (ctx: ValueAtomExprContext): ComplexType => {
-        let value: ComplexType;
-        if (ctx.value_expr()) {
-            value = this.visit(ctx.value_expr()!) as ValueType;
-
-        } else if (ctx.atom_expr()) {
-            value = this.visit(ctx.atom_expr()!);
+        if (useValue){
+            this.addSemanticToken(
+                this.parseToken(
+                    useValue, [], 'property'
+                )
+            );
         }
     }
 
-    visitAssignment_expr = (ctx: Assignment_exprContext): ComplexType => {
+    visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
+        const ctxValueExpr = ctx.value_expr();
+        const ctxAtomExpr = ctx.atom_expr();
+
+        if (ctxValueExpr) {
+            this.visit(ctxValueExpr);
+        } else if (ctxAtomExpr) {
+            this.visit(ctxAtomExpr);
+        }
+    }
+
+    visitAssignment_expr = (ctx: Assignment_exprContext): void => {
         this.visit(ctx.atom_expr());
         this.visit(ctx.data_expr());
     }
 
-    visitAtom_expr = (ctx: Atom_exprContext): ReferenceType => {
+    visitAtom_expr = (ctx: Atom_exprContext): void => {
         if (ctx.parent instanceof Assignment_exprContext && ctx.ID()){
             this.addSemanticToken(
                 this.parseToken(

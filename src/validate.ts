@@ -7,7 +7,8 @@ import path from 'path';
 import { readFileSync } from 'fs';
 
 import { prepareSVGEnvironment } from './sizing.js';
-import { getCurrentPath, getScriptText, validateScript } from './helpers.js';
+import { getCurrentPath, getScriptText, getSemanticTokens, 
+    validateScript } from './helpers.js';
 
 
 export async function validate(): Promise<void> {
@@ -91,7 +92,11 @@ export async function validate(): Promise<void> {
     }
     
     const visitor = validateScript(scriptData, scriptOptions);
-    visitor.dumpSymbols();
+    // visitor.dumpSymbols();
+
+    const semanticTokensVisitor = getSemanticTokens(scriptData, scriptOptions);
+
+
 }
 
 validate();

@@ -1,21 +1,23 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { Assignment_exprContext, Atom_exprContext, ExpressionContext, 
+import { Assignment_exprContext, Atom_exprContext, Blank_exprContext, Break_keywordContext, ExpressionContext, 
     Function_args_exprContext, Function_exprContext, 
     Function_return_exprContext, Import_exprContext, 
     ParametersContext, RoundedBracketsExprContext, 
+    ScriptContext, 
     Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser";
 import { CircuitScriptVisitor } from "./antlr/CircuitScriptVisitor";
 import { ExecutionContext } from "./execute";
 import { Logger } from "./logger";
 import { ClassComponent } from "./objects/ClassComponent";
 import { Net } from "./objects/Net";
-import { NumericValue, PercentageValue } from "./objects/ParamDefinition";
+import { NumericValue, PercentageValue, PinBlankValue } from "./objects/ParamDefinition";
 import { PinTypes } from "./objects/PinTypes";
 import { CallableParameter, CFunctionOptions, ComplexType, 
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
+import { ParserRuleContext, TerminalNode } from 'antlr4ng';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -40,6 +42,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     printToConsole = true;
 
     acceptedDirections = ['left', 'right', 'up', 'down'];
+
+    protected contextData = new Map<ParserRuleContext, any>;
 
     pinTypesList: string[] = [
         PinTypes.Any,
@@ -159,16 +163,21 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return result;
     }
 
-    visitAssignment_expr = (ctx: Assignment_exprContext): ComplexType => {
+    visitAssignment_expr = (ctx: Assignment_exprContext): void => {
         const atomStr = ctx.atom_expr().getText();
 
         // Do not allow the atom to have any parentheses in the assignment
         if (atomStr.indexOf('(') !== -1 || atomStr.indexOf(')') !== -1) {
             throw "Invalid assignment expression!";
         }
+
+        const ctxAtomExpr = ctx.atom_expr();
         
-        const reference = this.visit(ctx.atom_expr()) as ReferenceType;
-        const value = this.visit(ctx.data_expr()) as ComplexType;
+        this.visit(ctxAtomExpr);
+        const reference: ReferenceType = this.getResult(ctxAtomExpr);
+
+        this.visit(ctx.data_expr());
+        const value: ComplexType = this.getResult(ctx.data_expr());
 
         if (value instanceof ClassComponent) {
             // If value is a class component, then update the instance name
@@ -200,10 +209,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         }
 
-        return value;
+        this.setResult(ctx, value);
     }
 
-    visitAtom_expr = (ctx: Atom_exprContext): ReferenceType => {
+    visitAtom_expr = (ctx: Atom_exprContext): void => {
         const executor = this.getExecutor();
 
         const atomId = ctx.ID().getText();
@@ -212,7 +221,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         const netNameSpaceExpr = ctx.net_namespace_expr();
         if (netNameSpaceExpr) {
-            passedNetNamespace = this.visit(netNameSpaceExpr);
+            this.visit(netNameSpaceExpr);
+            passedNetNamespace = this.getResult(netNameSpaceExpr);
         }
 
         let currentReference: ReferenceType;
@@ -251,8 +261,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 const itemValue = item.getText();
                 if (item.OPEN_PAREN() && item.CLOSE_PAREN()) {
                     let parameters: CallableParameter[] = [];
-                    if (item.parameters()) {
-                        parameters = this.visit(item.parameters());
+
+                    const ctxParameters = item.parameters();
+                    if (ctxParameters) {
+                        this.visit(ctxParameters);
+                        parameters = this.getResult(ctxParameters);
                     }
 
                     const useNetNamespace = this.getNetNamespace(
@@ -287,22 +300,32 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             throw "Unknown symbol: " + atomId;
         }
 
-        return currentReference;
+        this.setResult(ctx, currentReference);
     }
 
-    visitValue_expr = (ctx: Value_exprContext): ValueType | null => {
+    visitValue_expr = (ctx: Value_exprContext): void => {
         const sign = ctx.Minus() ? -1 : 1;
 
-        if (ctx.INTEGER_VALUE() || ctx.DECIMAL_VALUE() || ctx.NUMERIC_VALUE()) {
-            if (ctx.INTEGER_VALUE()) {
-                return sign * Number(ctx.INTEGER_VALUE()!.getText());
+        const ctxIntegerValue = ctx.INTEGER_VALUE();
+        const ctxDecimalValue = ctx.DECIMAL_VALUE();
+        const ctxNumericValue = ctx.NUMERIC_VALUE();
+        const ctxBooleanValue = ctx.BOOLEAN_VALUE();
+        const ctxStringValue = ctx.STRING_VALUE();
+        const ctxPercentageValue = ctx.PERCENTAGE_VALUE();
+        const ctxBlankExpr = ctx.blank_expr();
+        
+        let result: ValueType | null = null;
 
-            } else if (ctx.DECIMAL_VALUE()) {
-                return sign * Number(ctx.DECIMAL_VALUE()!.getText());
+        if (ctxIntegerValue || ctxDecimalValue || ctxNumericValue) {
+            if (ctxIntegerValue) {
+                result = sign * Number(ctxIntegerValue.getText());
 
-            } else if (ctx.NUMERIC_VALUE()) {
+            } else if (ctxDecimalValue) {
+                result = sign * Number(ctxDecimalValue.getText());
+
+            } else if (ctxNumericValue) {
                 const textExtra = ctx.Minus() ? '-' : '';
-                return new NumericValue(textExtra + ctx.NUMERIC_VALUE()!.getText());
+                result = new NumericValue(textExtra + ctxNumericValue.getText());
 
             }
         } else {
@@ -311,35 +334,49 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         }
 
-        if (ctx.BOOLEAN_VALUE()) {
-            const stringValue = ctx.BOOLEAN_VALUE()!.getText();
+        if (ctxBooleanValue) {
+            const stringValue = ctxBooleanValue.getText();
             if (stringValue === 'true') {
-                return true;
+                result = true;
             } else if (stringValue === 'false') {
-                return false;
+                result = false;
             }
 
-        } else if (ctx.STRING_VALUE()) {
-            return this.prepareStringValue(ctx.STRING_VALUE()!.getText());
+        } else if (ctxStringValue) {
+            result = this.prepareStringValue(ctxStringValue.getText());
 
-        } else if (ctx.PERCENTAGE_VALUE()) {
-            return new PercentageValue(ctx.PERCENTAGE_VALUE()!.getText());
+        } else if (ctxPercentageValue) {
+            result = new PercentageValue(ctxPercentageValue.getText());
 
-        } else if (ctx.blank_expr()) {
-            return this.visit(ctx.blank_expr()!);
+        } else if (ctxBlankExpr) {
+            this.visit(ctxBlankExpr);
+            result = this.getResult(ctxBlankExpr);
         }
 
-        return null;
+        this.setResult(ctx, result);
     }
 
-    visitValueAtomExpr = (ctx: ValueAtomExprContext): ComplexType => {
-        let value: ComplexType;
+    visitBlank_expr = (ctx: Blank_exprContext): void => {
+        // There must be an integer value, otherwise the rule wouldn't match.
+        this.setResult(ctx,
+            new PinBlankValue(
+                Number(
+                    ctx.INTEGER_VALUE().getText())));
+    }
 
-        if (ctx.value_expr()) {
-            value = this.visit(ctx.value_expr()!) as ValueType;
+    visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
+        let value: ComplexType = null;
 
-        } else if (ctx.atom_expr()) {
-            const reference = this.visit(ctx.atom_expr()!);
+        const ctxValueExpr = ctx.value_expr();
+        const ctxAtomExpr = ctx.atom_expr();
+
+        if (ctxValueExpr) {
+            this.visit(ctxValueExpr);
+            value = this.getResult(ctxValueExpr);
+
+        } else if (ctxAtomExpr) {
+            this.visit(ctxAtomExpr);
+            const reference = this.getResult(ctxAtomExpr);
 
             if (!reference.found) {
                 value = new UndeclaredReference(reference);
@@ -349,20 +386,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         }
 
-        return value;
+        this.setResult(ctx, value);
     }
 
-
-    visitFunction_args_expr = (ctx: Function_args_exprContext):
-        FunctionDefinedParameter[] => {
-
+    visitFunction_args_expr = (ctx: Function_args_exprContext): void => {
         const defaultValuesProvided = ctx.value_expr();
         // The last <defaultValuesProvided> IDs have default values
         const IDs = ctx.ID(); // Do in reverse
 
         const boundary = IDs.length - defaultValuesProvided.length;
 
-        return IDs.map((id, index) => {
+        const result: FunctionDefinedParameter[] = IDs.map((id, index) => {
             if (index >= boundary) {
                 const defaultValue =
                     this.visit(defaultValuesProvided[index - boundary]);
@@ -371,25 +405,29 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 return [id.getText()];
             }
         });
+
+        this.setResult(ctx, result);
     }
 
-    visitParameters = (ctx: ParametersContext): CallableParameter[] => {
+    visitParameters = (ctx: ParametersContext): void => {
         const dataExpressions = ctx.data_expr();
         const keywordAssignmentExpressions = ctx.keyword_assignment_expr();
 
         const returnList: CallableParameter[] = [];
 
         dataExpressions.forEach((item, index) => {
-            const value = this.visit(item);
+            this.visit(item);
+            const value = this.getResult(item); 
             returnList.push(['position', index, value]);
         });
 
         keywordAssignmentExpressions.forEach((item) => {
-            const [key, value] = this.visit(item);
+            this.visit(item);
+            const [key, value] = this.getResult(item);
             returnList.push(['keyword', key, value]);
         });
 
-        return returnList;
+        this.setResult(ctx, returnList);
     }
 
     visitImport_expr = (ctx: Import_exprContext): void => {
@@ -409,25 +447,37 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         this.log('done import', ID);
     }
 
-    visitFunction_return_expr = (ctx: Function_return_exprContext): ComplexType => {
+    visitFunction_return_expr = (ctx: Function_return_exprContext): void => {
         const executor = this.getExecutor();
+
         executor.log('return from function');
-        const returnValue = this.visit(ctx.data_expr()) as ComplexType;
+
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr)
+        const returnValue = this.getResult(ctxDataExpr);
 
         executor.stopFurtherExpressions = true;
         executor.returnValue = returnValue;
 
-        return returnValue;
+        this.setResult(ctx, returnValue);
     }
 
-    visitBreak_keyword = (): number => {
+    visitBreak_keyword = (ctx: Break_keywordContext): void => {
         // When the break keyword is encountered inside a branch, then leave the branch
         // without storing the final state. If used, the break should be
         // the last expression in the branch, any expressions after the break
         // will be skipped
 
         this.getExecutor().breakBranch();
-        return -1;
+        this.setResult(ctx, -1);
+    }
+
+    protected setResult(ctx: ParserRuleContext, value: any): void {
+        this.contextData.set(ctx, value);
+    }
+
+    protected getResult(ctx: ParserRuleContext): any {
+        return this.contextData.get(ctx);
     }
 
     protected handleImportFile(name: string): {
@@ -482,8 +532,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         }
     }
 
-    visitRoundedBracketsExpr = (ctx: RoundedBracketsExprContext) => {
-        return this.visit(ctx.data_expr());
+    visitRoundedBracketsExpr = (ctx: RoundedBracketsExprContext):void => {
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const innerResult = this.getResult(ctxDataExpr);
+        this.setResult(ctx, innerResult);
     }
 
     protected setupDefinedParameters(

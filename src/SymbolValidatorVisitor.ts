@@ -5,7 +5,7 @@ import { AdditionExprContext, Assignment_exprContext, Atom_exprContext,
     ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
-import { ComplexType, FunctionDefinedParameter, ParseSymbolType, ReferenceType, ValueType } from "./objects/types.js";
+import { ComplexType, FunctionDefinedParameter, ParseSymbolType, ValueType } from "./objects/types.js";
 
 export class SymbolValidatorVisitor extends BaseVisitor {
 
@@ -62,13 +62,16 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
     visitAssignment_expr = (ctx: Assignment_exprContext): ComplexType => {
         const atomStr = ctx.atom_expr().getText();
-        const value = this.visit(ctx.data_expr()) as ComplexType;
+
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const value = this.getResult(ctxDataExpr) as ComplexType;
 
         this.addSymbolVariable(atomStr, value);
         return null;
     }
 
-    visitAtom_expr = (ctx: Atom_exprContext): ReferenceType => {
+    visitAtom_expr = (ctx: Atom_exprContext): void => {
         const tmpSymbol = this.handleAtomSymbol(ctx.ID());
 
         // This is a function call, check if function 
@@ -84,42 +87,46 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             });
         }
 
-        return tmpSymbol;
+        this.setResult(ctx, tmpSymbol);
     }
 
-    visitValueAtomExpr = (ctx: ValueAtomExprContext): ComplexType => {
-        let value: ComplexType;
+    visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
+        let value: ComplexType | null = null;
+        const ctxValueExpr = ctx.value_expr();
+        const cxtAtomExpr = ctx.atom_expr();
 
-        if (ctx.value_expr()) {
-            value = this.visit(ctx.value_expr()!) as ValueType;
+        if (ctxValueExpr) {
+            this.visit(ctxValueExpr);
+            value = this.getResult(ctxValueExpr) as ValueType;
 
-        } else if (ctx.atom_expr()) {
-            value = this.visit(ctx.atom_expr()!);
+        } else if (cxtAtomExpr) {
+            this.visit(cxtAtomExpr);
+            value = this.getResult(cxtAtomExpr);
         }
 
-        return value;
+        this.setResult(ctx, value);
     }
 
-    visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext) => {
-        return this.visit(ctx.data_expr());
+    visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
+        this.visit(ctx.data_expr());
     }
 
-    visitMultiplyExpr = (ctx: MultiplyExprContext) => {
+    visitMultiplyExpr = (ctx: MultiplyExprContext): void => {
         this.visit(ctx.data_expr(0)!);
         this.visit(ctx.data_expr(1)!);
     }
 
-    visitAdditionExpr = (ctx: AdditionExprContext) => {
+    visitAdditionExpr = (ctx: AdditionExprContext): void => {
         this.visit(ctx.data_expr(0)!);
         this.visit(ctx.data_expr(1)!);
     };
 
-    visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext) => {
+    visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext):void => {
         this.visit(ctx.data_expr(0)!);
         this.visit(ctx.data_expr(1)!);
     }
 
-    visitDataExpr = (ctx: DataExprContext) => {
+    visitDataExpr = (ctx: DataExprContext):void => {
         return;
     }
 
@@ -128,8 +135,10 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
         // These are the defined arguments for the function
         let funcDefinedParameters: FunctionDefinedParameter[] = [];
-        if (ctx.function_args_expr()) {
-            funcDefinedParameters = this.visit(ctx.function_args_expr()!);
+        const ctxFunctionArgsExpr = ctx.function_args_expr();
+        if (ctxFunctionArgsExpr) {
+            this.visit(ctxFunctionArgsExpr);
+            funcDefinedParameters = this.contextData.get(ctxFunctionArgsExpr);
         }
 
         this.addSymbolFunction(functionName, funcDefinedParameters);

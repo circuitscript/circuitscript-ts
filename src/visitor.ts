@@ -8,7 +8,6 @@ import {
     At_block_pin_expression_simpleContext,
     At_component_exprContext,
     BinaryOperatorExprContext,
-    Blank_exprContext,
     Path_blocksContext,
     Component_select_exprContext,
     Create_component_exprContext,
@@ -28,7 +27,6 @@ import {
     Property_exprContext,
     Property_key_exprContext,
     Property_set_exprContext,
-    ScriptContext,
     Single_line_propertyContext,
     Sub_exprContext,
     To_component_exprContext,
@@ -44,7 +42,6 @@ import { ClassComponent } from './objects/ClassComponent.js';
 import {
     NumericValue,
     ParamDefinition,
-    PinBlankValue,
 } from './objects/ParamDefinition.js';
 import { PinDefinition, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
@@ -60,33 +57,38 @@ import { ParserRuleContext } from 'antlr4ng';
 
 export class ParserVisitor extends BaseVisitor {
 
-    visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext):
-        [key: string, value: any] => {
+    visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext): void => {
         const id = ctx.ID().getText();
-        const value = this.visit(ctx.data_expr());
-        return [id, value];
-    }
-    
-    visitBlank_expr = (ctx: Blank_exprContext): PinBlankValue => {
-        // There must be an integer value, otherwise the rule wouldn't match.
-        return new PinBlankValue(Number(ctx.INTEGER_VALUE().getText()));
+        const ctxDataExpr = ctx.data_expr();
+
+        this.visit(ctxDataExpr);
+        const value = this.getResult(ctxDataExpr);
+        
+        this.setResult(ctx, [id, value]);
     }
 
-    visitPin_select_expr = (ctx: Pin_select_exprContext): string | number | null => {
-        if (ctx.INTEGER_VALUE()) {
-            return Number(ctx.INTEGER_VALUE()!.getText());
+    visitPin_select_expr = (ctx: Pin_select_exprContext): void => {
+        let value: string| number | null = null;
 
-        } else if (ctx.STRING_VALUE()) {
-            return this.prepareStringValue(ctx.STRING_VALUE()!.getText());
+        const ctxIntegerValue = ctx.INTEGER_VALUE();
+        const ctxStringValue = ctx.STRING_VALUE();
+
+        if (ctxIntegerValue) {
+            value = Number(ctxIntegerValue.getText());
+
+        } else if (ctxStringValue) {
+            value = this.prepareStringValue(ctxStringValue.getText());
         }
 
-        return null;
+        this.setResult(ctx, value);
     }
 
     visitAdd_component_expr = (ctx: Add_component_exprContext): ComponentPin => {
         // The component is always the last item
+        const ctxDataWithAssignmentExpr = ctx.data_expr_with_assignment();
+        this.visit(ctxDataWithAssignmentExpr);
         const [component, pinValue] = 
-            this.visit(ctx.data_expr_with_assignment());
+            this.getResult(ctxDataWithAssignmentExpr);
 
         if (ctx.ID()){
             this.setComponentOrientation(
@@ -101,7 +103,9 @@ export class ParserVisitor extends BaseVisitor {
             this.getExecutor().atPointBlock();
 
         } else {
-            const [component, pin] = this.visit(ctx.component_select_expr()!);
+            const ctxComponentSelectExpr = ctx.component_select_expr()!;
+            this.visit(ctxComponentSelectExpr);
+            const [component, pin] = this.getResult(ctxComponentSelectExpr);
 
             const currentPoint = this.getExecutor().atComponent(component, pin, {
                 addSequence: true,
@@ -127,7 +131,8 @@ export class ParserVisitor extends BaseVisitor {
 
         } else {
             ctx.component_select_expr().forEach(item => {
-                const [component, pin] = this.visit(item);
+                this.visit(item);
+                const [component, pin] = this.getResult(item); 
                 currentPoint = this.getExecutor().toComponent(component, pin, {
                     addSequence: true, cloneNetComponent: true
                 });
@@ -144,17 +149,22 @@ export class ParserVisitor extends BaseVisitor {
         return this.getExecutor().getCurrentPoint();
     }
 
-    visitComponent_select_expr = (ctx: Component_select_exprContext): ComponentPin => {
-        if (ctx.data_expr_with_assignment()) {
-            return this.visit(ctx.data_expr_with_assignment()!);
+    visitComponent_select_expr = (ctx: Component_select_exprContext): void => {
+        const ctxDataExprWithAssigment = ctx.data_expr_with_assignment();
+        if (ctxDataExprWithAssigment) {
+            this.visit(ctxDataExprWithAssigment);
+            this.setResult(ctx, this.getResult(ctxDataExprWithAssigment));
         } else {
             const component = this.getExecutor().scope.currentComponent;
             let pinId: number | string | null = null;
 
-            if (ctx.pin_select_expr()) {
-                pinId = this.visit(ctx.pin_select_expr()!);
+            const ctxPinSelectExpr = ctx.pin_select_expr();
+            if (ctxPinSelectExpr) {
+                this.visit(ctxPinSelectExpr);
+                pinId = this.getResult(ctxPinSelectExpr);
             }
-            return [component, pinId];
+            
+            this.setResult(ctx, [component, pinId]);
         }
     }
 
@@ -199,8 +209,7 @@ export class ParserVisitor extends BaseVisitor {
         return this.getExecutor().getCurrentPoint();
     }
 
-    
-    visitCreate_component_expr = (ctx: Create_component_exprContext): ClassComponent => {
+    visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
         const properties = this.getPropertyExprList(ctx.property_expr());
 
         const pins: PinDefinition[] = this.parseCreateComponentPins(
@@ -247,15 +256,15 @@ export class ParserVisitor extends BaseVisitor {
             width,
         }
 
-        return this.getExecutor().createComponent(instanceName, 
-            pins, params, props);
+        this.setResult(ctx, this.getExecutor().createComponent(instanceName, 
+            pins, params, props));
     }
 
-    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): 
-        SymbolDrawingCommands => {
+    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
         
         const commands = ctx.sub_expr().reduce((accum, item) => {
-            const [commandName, parameters] = this.visit(item);
+            this.visit(item);
+            const [commandName, parameters] = this.getResult(item) as [string, CallableParameter[]];
 
             const keywordParams = new Map<string, any>();
             const positionParams = parameters.reduce(
@@ -272,11 +281,10 @@ export class ParserVisitor extends BaseVisitor {
             return accum;
         }, [] as SubExpressionCommand[]);
 
-        return new SymbolDrawingCommands(commands);
+        this.setResult(ctx, new SymbolDrawingCommands(commands));
     }
 
-    visitSub_expr= (ctx: Sub_exprContext):
-        [id: string, parameters: CallableParameter[]] => {
+    visitSub_expr = (ctx: Sub_exprContext): void => {
         let commandName: string | null = null;
         if (ctx.ID()) {
             commandName = ctx.ID()!.getText();
@@ -286,36 +294,51 @@ export class ParserVisitor extends BaseVisitor {
             throw "Invalid command!";
         }
 
-        const parameters: CallableParameter[] = this.visit(ctx.parameters()!);
-        return [commandName, parameters];
+        const ctxParameters = ctx.parameters()!;
+        this.visit(ctxParameters);
+        const parameters: CallableParameter[] = this.getResult(ctxParameters);
+
+        this.setResult(ctx, [commandName, parameters]);
     }
 
-    visitProperty_expr = (ctx: Property_exprContext): Map<string, any> => {
-        const keyName = this.visit(ctx.property_key_expr());
-        const value = this.visit(ctx.property_value_expr());
+    visitProperty_expr = (ctx: Property_exprContext): void => {
+
+        const ctxPropertyKeyExpr = ctx.property_key_expr();
+        const ctxPropertyValueExpr = ctx.property_value_expr();
+
+        this.visit(ctxPropertyKeyExpr);
+        this.visit(ctxPropertyValueExpr);
+
+        const keyName = this.getResult(ctxPropertyKeyExpr);
+        const value = this.getResult(ctxPropertyValueExpr);
 
         const map = new Map<string, any>();
         map.set(keyName, value);
 
-        return map;
+        this.setResult(ctx, map);
     }
 
-    visitSingle_line_property = (ctx: Single_line_propertyContext): any | any[] => {
+    visitSingle_line_property = (ctx: Single_line_propertyContext): void => {
         let value;
         if (ctx.data_expr().length === 1) {
-            value = this.visit(ctx.data_expr(0)!);
+            const ctxFirst = ctx.data_expr(0)!;
+            this.visit(ctxFirst);
+            value = this.getResult(ctxFirst);
         } else {
             value = ctx.data_expr().map(item => {
-                return this.visit(item);
+                this.visit(item);
+                return this.getResult(item);
             });
         }
-        return value;
+
+        this.setResult(ctx, value);
     }
 
-    visitNested_properties = (ctx: Nested_propertiesContext): Map<string, any> => {
+    visitNested_properties = (ctx: Nested_propertiesContext): void => {
         const result = new Map<string, any>();
         ctx.property_expr().forEach((item) => {
-            const property: Map<string, any> = this.visit(item);
+            this.visit(item);
+            const property: Map<string, any> = this.getResult(item);
 
             // Get out all items, by default
             for (const [key, value] of property) {
@@ -323,53 +346,61 @@ export class ParserVisitor extends BaseVisitor {
             }
         });
 
-        return result;
+        this.setResult(ctx, result);
     }
 
-    visitProperty_key_expr = (ctx: Property_key_exprContext): string | number | null => {
+    visitProperty_key_expr = (ctx: Property_key_exprContext): void => {
         const ctxID = ctx.ID();
         const ctxIntegerValue = ctx.INTEGER_VALUE();
         const ctxStringValue = ctx.STRING_VALUE();
 
+        let result: string| number| null = null;
         if (ctxID) {
-            return ctxID.getText();
+            result = ctxID.getText();
         } else if (ctxIntegerValue) {
-            return Number(ctxIntegerValue.getText());
+            result = Number(ctxIntegerValue.getText());
         } else if (ctxStringValue) {
-            return this.prepareStringValue(ctxStringValue.getText());
+            result = this.prepareStringValue(ctxStringValue.getText());
         }
-
-        return null;
+        this.setResult(ctx, result);
     }
 
-    visitData_expr_with_assignment = (ctx: Data_expr_with_assignmentContext):
-        [component: ComplexType, pin: string | number | null] => {
+    visitData_expr_with_assignment = (ctx: Data_expr_with_assignmentContext): void => {
 
         let component: ComplexType;
-        if (ctx.data_expr()) {
-            component = this.visit(ctx.data_expr()!);
+        const ctxDataExpr = ctx.data_expr();
+        const ctxAssignmentExpr = ctx.assignment_expr();
+
+        if (ctxDataExpr) {
+            this.visit(ctxDataExpr);
+            component =  this.getResult(ctxDataExpr);
 
             if (component === null || component === undefined) {
-                throw "Could not find component: " + ctx.data_expr()!.getText();
+                throw "Could not find component: " + ctxDataExpr.getText();
             }
 
-        } else if (ctx.assignment_expr()) {
-            component = this.visit(ctx.assignment_expr()!)
+        } else if (ctxAssignmentExpr) {
+            this.visit(ctxAssignmentExpr);
+            component = this.getResult(ctxAssignmentExpr);
         }
 
-        let pinValue: number | string = null;
-        if (ctx.pin_select_expr()) {
-            pinValue = this.visit(ctx.pin_select_expr()!);
+        let pinValue: number | string | null = null;
+        const ctxPinSelectExpr = ctx.pin_select_expr();
+
+        if (ctxPinSelectExpr) {
+            this.visit(ctxPinSelectExpr);
+            pinValue = this.getResult(ctxPinSelectExpr);
         } else {
             pinValue = (component as ClassComponent).getDefaultPin();
         }
 
-        return [component, pinValue];
+        this.setResult(ctx, [component, pinValue]);
     }
 
     
-    visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): ComplexType => {
-        let value = this.visit(ctx.data_expr());
+    visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
+        this.visit(ctx.data_expr());
+        let value = this.getResult(ctx.data_expr());
 
         const unaryOp = ctx.unary_operator();
         if (unaryOp) {
@@ -381,64 +412,90 @@ export class ParserVisitor extends BaseVisitor {
                 }
             } else if (unaryOp.Minus()) {
                 if (typeof value === 'number') {
-                    return -value;
+                    value = -value;
                 } else {
                     throw "Failed to do Negation operator";
                 }
             }
         }
 
-        return value;
+        this.setResult(ctx, value);
     }
 
-    visitDataExpr = (ctx: DataExprContext): ComplexType => {
+    visitDataExpr = (ctx: DataExprContext): void => {
         let value: ComplexType;
 
-        if (ctx.create_component_expr()) {
-            value = this.visit(ctx.create_component_expr()!) as ClassComponent;
+        const ctxCreateComponentExpr = ctx.create_component_expr();
+        const ctxCreateGraphicExpr = ctx.create_graphic_expr();
 
-        } else if (ctx.create_graphic_expr()) {
-            value = this.visit(ctx.create_graphic_expr()!) as ClassComponent;
+        if (ctxCreateComponentExpr) {
+            this.visit(ctxCreateComponentExpr);
+            value = this.getResult(ctxCreateComponentExpr);
+        } else if (ctxCreateGraphicExpr) {
+            this.visit(ctxCreateGraphicExpr);
+            value = this.getResult(ctxCreateGraphicExpr);
         } else {
             throw "Invalid data expression";
         }
 
-        return value;
+        this.setResult(ctx, value);
     }
 
-    visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): boolean | number => {
-        const value1 = this.visit(ctx.data_expr(0)!);
-        const value2 = this.visit(ctx.data_expr(1)!);
+    visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): void => {
+        const ctx0 = ctx.data_expr(0)!;
+        const ctx1 = ctx.data_expr(1)!;
+
+        this.visit(ctx0);
+        this.visit(ctx1);
+
+        const value1: number = this.getResult(ctx0);
+        const value2: number = this.getResult(ctx1);
 
         const binaryOperatorType = ctx.binary_operator();
+        let result: boolean | null = null;
 
         if (binaryOperatorType.Equals()) {
-            return value1 == value2; // Boolean result
+            result = value1 == value2; // Boolean result
         } else if (binaryOperatorType.NotEquals()) {
-            return value1 != value2;
+            result = value1 != value2;
         }
+
+        this.setResult(ctx, result);
     }
 
-    visitMultiplyExpr = (ctx: MultiplyExprContext): number => {
-        const value1 = this.visit(ctx.data_expr(0)!) as number;
-        const value2 = this.visit(ctx.data_expr(1)!) as number;
+    visitMultiplyExpr = (ctx: MultiplyExprContext): void => {
+        this.visit(ctx.data_expr(0)!);
+        this.visit(ctx.data_expr(1)!);
+
+        const value1: number = this.getResult(ctx.data_expr(0)!);
+        const value2: number = this.getResult(ctx.data_expr(1)!);
+
+        let result: number | null = null;
 
         if (ctx.Multiply()) {
-            return value1 * value2;
+            result = value1 * value2;
         } else if (ctx.Divide()) {
-            return value1 / value2;
+            result = value1 / value2;
         }
+
+        this.setResult(ctx, result);
     }
 
-    visitAdditionExpr = (ctx: AdditionExprContext): number => {
-        const value1 = this.visit(ctx.data_expr(0)) as number;
-        const value2 = this.visit(ctx.data_expr(1)) as number;
+    visitAdditionExpr = (ctx: AdditionExprContext): void => {
+        this.visit(ctx.data_expr(0)!);
+        this.visit(ctx.data_expr(1)!);
 
+        const value1: number = this.getResult(ctx.data_expr(0)!);
+        const value2: number = this.getResult(ctx.data_expr(1)!);
+
+        let result: number | null = null;
         if (ctx.Addition()) {
-            return value1 + value2;
+            result = value1 + value2;
         } else if (ctx.Minus()) {
-            return value1 - value2;
+            result = value1 - value2;
         }
+
+        this.setResult(ctx, result);
     }
 
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
@@ -446,8 +503,10 @@ export class ParserVisitor extends BaseVisitor {
 
         // These are the defined arguments for the function
         let funcDefinedParameters: FunctionDefinedParameter[] = [];
-        if (ctx.function_args_expr()) {
-            funcDefinedParameters = this.visit(ctx.function_args_expr()!);
+        const ctxFunctionArgsExpr = ctx.function_args_expr();
+        if (ctxFunctionArgsExpr) {
+            this.visit(ctxFunctionArgsExpr);
+            funcDefinedParameters = this.contextData.get(ctxFunctionArgsExpr);
         }
 
         const executionStack = this.executionStack;
@@ -495,20 +554,28 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().createFunction(functionName, __runFunc);
     }
 
-    visitPin_select_expr2 = (ctx: Pin_select_expr2Context): string | number => {
-        if (ctx.STRING_VALUE()) {
-            return this.prepareStringValue(ctx.STRING_VALUE().getText());
-        } else if (ctx.INTEGER_VALUE()) {
-            return Number(ctx.INTEGER_VALUE().getText());
+    visitPin_select_expr2 = (ctx: Pin_select_expr2Context): void => {
+        const ctxStringValue = ctx.STRING_VALUE();
+        const ctxIntegerValue = ctx.INTEGER_VALUE();
+        let result: string| number | null = null;
+
+        if (ctxStringValue) {
+            result = this.prepareStringValue(ctxStringValue.getText());
+        } else if (ctxIntegerValue) {
+            result = Number(ctxIntegerValue.getText());
         }
+
+        this.setResult(ctx, result);
     }
 
-    visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): ComponentPin => {
-        const atPin: number | string = this.visit(ctx.pin_select_expr2());
+    visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): void => {
+        const ctxPinSelectExpr2 = ctx.pin_select_expr2();
+        this.visit(ctxPinSelectExpr2);
+        const atPin: number | string = this.getResult(ctxPinSelectExpr2);
 
         const executor = this.getExecutor();
 
-        const currentComponent = executor.scope.currentComponent;
+        const currentComponent = executor.scope.currentComponent!;
         const currentPin = executor.scope.currentPin;
 
         executor.atComponent(currentComponent, atPin, {
@@ -517,19 +584,22 @@ export class ParserVisitor extends BaseVisitor {
 
         executor.log('at block pin expressions');
 
-        if (ctx.at_block_pin_expression_simple()) {
-            this.visit(ctx.at_block_pin_expression_simple());
-        } else if (ctx.at_block_pin_expression_complex()) {
-            this.visit(ctx.at_block_pin_expression_complex());
+        const ctxAtBlockSimple = ctx.at_block_pin_expression_simple();
+        const ctxAtBlockComplex = ctx.at_block_pin_expression_complex();
+
+        if (ctxAtBlockSimple) {
+            this.visit(ctxAtBlockSimple);
+        } else if (ctxAtBlockComplex) {
+            this.visit(ctxAtBlockComplex);
         }
 
         executor.log('end at block pin expressions');
 
         // Go back to the original position
-        return executor.atComponent(currentComponent, currentPin);
+        executor.atComponent(currentComponent, currentPin);
     }
 
-    visitAt_block = (ctx: At_blockContext): ComponentPin => {
+    visitAt_block = (ctx: At_blockContext): void => {
         const executor = this.getExecutor();
         executor.log('entering at block');
 
@@ -552,25 +622,26 @@ export class ParserVisitor extends BaseVisitor {
 
         executor.log('leaving at block');
 
-        return executor.getCurrentPoint();
+        // executor.getCurrentPoint();
     }
 
     visitAt_block_pin_expression_simple = (ctx: At_block_pin_expression_simpleContext): void => {
-        if (ctx.expression()) {
+        const ctxExpression = ctx.expression();
+        if (ctxExpression) {
             // Handle any expressions within
-            this.visit(ctx.expression());
+            this.visit(ctxExpression);
         } else if (ctx.NOT_CONNECTED()) {
             // Do nothing
             return;
         }
     }
 
-    visitAt_block_pin_expression_complex = (ctx: At_block_pin_expression_complexContext): ComponentPin => {
+    visitAt_block_pin_expression_complex = (ctx: At_block_pin_expression_complexContext): void => {
         ctx.expression().forEach(item => {
             this.visit(item);
-        })
+        });
 
-        return this.getExecutor().getCurrentPoint();
+        // this.getExecutor().getCurrentPoint();
     }
 
     visitWire_atom_expr = (ctx: Wire_atom_exprContext) => {
@@ -584,28 +655,34 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    visitWire_expr_direction_only = (ctx: Wire_expr_direction_onlyContext) => {
+    visitWire_expr_direction_only = (ctx: Wire_expr_direction_onlyContext): void => {
         const value = ctx.ID().getText();
         if (value === 'auto' || value === 'auto_'){
-            return [value];
+            this.setResult(ctx, [value]);
         } else {
             throw 'Invalid direction for wire';
         }
     }
 
-    visitWire_expr_direction_value = (ctx: Wire_expr_direction_valueContext) => {
+    visitWire_expr_direction_value = (ctx: Wire_expr_direction_valueContext): void => {
         const direction = ctx.ID().getText();
 
         if (this.acceptedDirections.indexOf(direction) !== -1) {
             let useValue: number | null = null;
-            if (ctx.INTEGER_VALUE()) {
-                useValue = Number(ctx.INTEGER_VALUE());
-            } else if (ctx.data_expr()) {
-                useValue = this.visit(ctx.data_expr()!);
+
+            const ctxIntegerValue = ctx.INTEGER_VALUE();
+            const ctxDataExpr = ctx.data_expr();
+
+            if (ctxIntegerValue) {
+                useValue = Number(ctxIntegerValue);
+            } else if (ctxDataExpr) {
+                this.visit(ctxDataExpr);
+                useValue = this.getResult(ctxDataExpr);
             }
 
             if (useValue !== null) {
-                return [direction, useValue];
+                this.setResult(ctx, [direction, useValue]);
+                return;
             }
         }
 
@@ -615,7 +692,8 @@ export class ParserVisitor extends BaseVisitor {
     visitWire_expr = (ctx: Wire_exprContext): void => {
         const wireAtomExpr = ctx.wire_atom_expr();
         const segments = wireAtomExpr.map(wireSegment => {
-            return this.visit(wireSegment);
+            this.visit(wireSegment);
+            return this.getResult(wireSegment);
         });
 
         this.getExecutor().addWire(segments);
@@ -627,17 +705,25 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperty_set_expr = (ctx: Property_set_exprContext): void => {
-        const result = this.visit(ctx.data_expr());
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const result = this.getResult(ctxDataExpr);
+        
 
         // To check if this works
-        const resolvedProperty = this.visit(ctx.atom_expr());
+        const ctxAtomExpr = ctx.atom_expr();
+        this.visit(ctxAtomExpr);
+        const resolvedProperty = this.getResult(ctxAtomExpr);
 
         // TODO: check if this works correctly
         this.getExecutor().setProperty(resolvedProperty, result);
     }
     
-    visitDouble_dot_property_set_expr = (ctx: Double_dot_property_set_exprContext) => {
-        const result = this.visit(ctx.data_expr());
+    visitDouble_dot_property_set_expr = (ctx: Double_dot_property_set_exprContext): void => {
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const result = this.getResult(ctxDataExpr);
+
         const propertyName = ctx.ID().getText();
         this.getExecutor().setProperty('..' + propertyName, result);
     }
@@ -648,14 +734,17 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().exitFrame(frameId);
     }
 
-    visitNet_namespace_expr = (ctx: Net_namespace_exprContext): string => {
+    visitNet_namespace_expr = (ctx: Net_namespace_exprContext): void => {
         let dataValue: ComplexType = null;
 
         let netNamespace = null;
         const hasPlus = ctx.Addition();
 
-        if (ctx.data_expr()) {
-            dataValue = this.visit(ctx.data_expr()) as ComplexType;
+        const ctxDataExpr = ctx.data_expr();
+
+        if (ctxDataExpr) {
+            this.visit(ctxDataExpr);
+            dataValue = this.getResult(ctxDataExpr);
 
             if (dataValue instanceof UndeclaredReference) {
                 netNamespace = "/" + dataValue.reference.name;
@@ -671,7 +760,7 @@ export class ParserVisitor extends BaseVisitor {
             netNamespace = "/";
         }
 
-        return (hasPlus ? "+" : "") + netNamespace;
+        this.setResult(ctx, (hasPlus ? "+" : "") + netNamespace);
     }
 
     pinTypes = [
@@ -949,7 +1038,8 @@ export class ParserVisitor extends BaseVisitor {
         const properties = new Map<string, any>();
 
         items.forEach((item) => {
-            const result: Map<string, any> = this.visit(item); // Map should be returned
+            this.visit(item);
+            const result: Map<string, any> = this.getResult(item); // Map should be returned
 
             for (const [key, value] of result) {
                 properties.set(key, value);
