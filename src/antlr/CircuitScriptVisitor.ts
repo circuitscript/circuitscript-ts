@@ -30,6 +30,7 @@ import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Property_set_exprContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
+import { FunctionCallExprContext } from "./CircuitScriptParser.js";
 import { AdditionExprContext } from "./CircuitScriptParser.js";
 import { MultiplyExprContext } from "./CircuitScriptParser.js";
 import { DataExprContext } from "./CircuitScriptParser.js";
@@ -45,6 +46,7 @@ import { Function_exprContext } from "./CircuitScriptParser.js";
 import { Function_args_exprContext } from "./CircuitScriptParser.js";
 import { Atom_exprContext } from "./CircuitScriptParser.js";
 import { Trailer_exprContext } from "./CircuitScriptParser.js";
+import { Function_call_exprContext } from "./CircuitScriptParser.js";
 import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Function_return_exprContext } from "./CircuitScriptParser.js";
 import { Create_component_exprContext } from "./CircuitScriptParser.js";
@@ -234,6 +236,13 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitDouble_dot_property_set_expr?: (ctx: Double_dot_property_set_exprContext) => Result;
     /**
+     * Visit a parse tree produced by the `FunctionCallExpr`
+     * labeled alternative in `CircuitScriptParser.data_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFunctionCallExpr?: (ctx: FunctionCallExprContext) => Result;
+    /**
      * Visit a parse tree produced by the `AdditionExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
@@ -330,6 +339,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitTrailer_expr?: (ctx: Trailer_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.function_call_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFunction_call_expr?: (ctx: Function_call_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.net_namespace_expr`.
      * @param ctx the parse tree

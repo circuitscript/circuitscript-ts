@@ -9,7 +9,7 @@ import { SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
 import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
-import { CharStream, CommonTokenStream } from "antlr4ng";
+import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
@@ -79,6 +79,8 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
         lexer, scriptData,
     );
 
+    parser.removeErrorListeners();
+
     visitor.onImportFile = (visitor: BaseVisitor, textData: string)
         : { hasError: boolean, hasParseError: boolean } => {
 
@@ -123,25 +125,51 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
         }
     });
 
-    // finalParsedTokens.forEach(item => {
-    //     console.log(item.line.toString().padEnd(5), 
-    //         item.column.toString().padEnd(5), 
-    //         item.textValue.padEnd(10), 
-    //         item.tokenType, item.tokenModifiers)
-    // });
-
-    // writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
-
     return {
         visitor,
         parsedTokens: finalParsedTokens
     };
 }
 
+class TokenErrorListener extends BaseErrorListener {
+
+    syntaxError<S extends Token, T extends ATNSimulator>(
+        recognizer: Recognizer<T>, 
+        offendingSymbol: S | null, 
+        line: number, column: number, msg: string, 
+        e: RecognitionException | null): void {
+        console.log(msg);
+    }
+
+}
+
+export class ParseErrorStrategy extends DefaultErrorStrategy {
+
+    reportUnwantedToken(recognizer: Parser): void {
+        if (this.inErrorRecoveryMode(recognizer)) {
+            return;
+        }
+
+        this.beginErrorCondition(recognizer);
+        
+        const t = recognizer.getCurrentToken();
+        const tokenName = this.getTokenErrorDisplay(t);
+        const msg = "extraneous input " + tokenName;
+        recognizer.notifyErrorListeners(msg, t, null);
+
+        this.endErrorCondition(recognizer);
+    }
+}
+
 export function validateScript(scriptData: string,
     options: ScriptOptions): SymbolValidatorVisitor {
 
     const { parser } = prepareFile(scriptData);
+    parser.removeErrorListeners();
+
+    parser.errorHandler = new ParseErrorStrategy();
+    parser.addErrorListener(new TokenErrorListener());
+
     const tree = parser.script();
 
     const {
@@ -149,7 +177,8 @@ export function validateScript(scriptData: string,
         defaultLibsPath,
     } = options;
 
-    const visitor = new SymbolValidatorVisitor(true, null, currentDirectory, defaultLibsPath);
+    const visitor = new SymbolValidatorVisitor(true, null, 
+        currentDirectory, defaultLibsPath);
 
     visitor.onImportFile = (visitor: BaseVisitor, textData: string)
         : { hasError: boolean, hasParseError: boolean } => {
@@ -180,8 +209,7 @@ export function validateScript(scriptData: string,
 
     // First pass defines variables, functions
     visitor.visit(tree);
-    // writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
-
+    
     const symbolTable = visitor.getSymbols();
     symbolTable.clearUndefined();
 
@@ -195,9 +223,7 @@ export function validateScript(scriptData: string,
 
     // Second pass to resolve variables, functions
     visitorResolver.visit(tree);
-
-    // writeFileSync('dump/raw-parser-2.txt', visitorResolver.logger.dump());
-
+    
     return visitorResolver;
 }
 

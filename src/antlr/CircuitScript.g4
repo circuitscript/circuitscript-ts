@@ -49,6 +49,7 @@ expression: add_component_expr
         | double_dot_property_set_expr
         | break_keyword
         | function_def_expr
+        | function_call_expr
         | wire_expr
         | import_expr
         | frame_expr
@@ -116,6 +117,7 @@ data_expr:
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
+    | function_call_expr                                #FunctionCallExpr
     ;           
 
 binary_operator: Equals 
@@ -141,9 +143,12 @@ function_args_expr:
     | ID '=' value_expr (',' ID '=' value_expr)*
     ;
 
-atom_expr: net_namespace_expr? ID trailer_expr*;
+atom_expr: ID ('.' ID)*;
+
 trailer_expr: '(' parameters? ')'
         | '.' ID;
+
+function_call_expr: net_namespace_expr? ID trailer_expr+;
 
 net_namespace_expr: '+'? '/' data_expr?;
 

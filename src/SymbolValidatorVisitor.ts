@@ -1,6 +1,7 @@
 import { TerminalNode } from "antlr4ng";
 import { AdditionExprContext, Assignment_exprContext, Atom_exprContext, 
-    BinaryOperatorExprContext, DataExprContext, Function_def_exprContext, 
+    BinaryOperatorExprContext, DataExprContext, Function_call_exprContext, Function_def_exprContext, 
+    Import_exprContext, 
     MultiplyExprContext, UnaryOperatorExprContext, 
     ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor } from "./BaseVisitor.js";
@@ -60,6 +61,16 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         this.symbolTable = symbolTable;
     }
 
+    visitImport_expr = (ctx: Import_exprContext): void => {
+        const ID = ctx.ID().toString(); // filename
+        const { pathExists } =
+            this.handleImportFile(ID, false);
+
+        if (!pathExists) {
+            this.symbolTable.addUndefined(this.getExecutor(), ID, ctx.ID());
+        }
+    }
+
     visitAssignment_expr = (ctx: Assignment_exprContext): ComplexType => {
         const atomStr = ctx.atom_expr().getText();
 
@@ -72,22 +83,23 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     }
 
     visitAtom_expr = (ctx: Atom_exprContext): void => {
-        const tmpSymbol = this.handleAtomSymbol(ctx.ID());
+        const tmpSymbol = this.handleAtomSymbol(ctx.ID(0)!);
+        this.setResult(ctx, tmpSymbol);
+    }
 
-        // This is a function call, check if function 
-        // parameter arguments exists
-        if (ctx.trailer_expr().length > 0){
-            
+    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
+        this.handleAtomSymbol(ctx.ID()!);
+
+        if (ctx.trailer_expr().length > 0) {
             ctx.trailer_expr().forEach(item => {
                 if (item.OPEN_PAREN() && item.CLOSE_PAREN()) {
-                    if (item.parameters()) {
-                        this.visit(item.parameters()!);
+                    const params = item.parameters();
+                    if (params) {
+                        this.visit(params);
                     }
                 }
             });
         }
-
-        this.setResult(ctx, tmpSymbol);
     }
 
     visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
