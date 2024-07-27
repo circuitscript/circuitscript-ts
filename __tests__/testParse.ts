@@ -16,7 +16,7 @@ describe('test parsing', () => {
         ["assignment in at/to/add statement", script10],
         ["net namespace local and global", script11],
         ["create component with __is_net", script12],
-        ["corret nets after function call and also `join` keyword", script13],
+        ["correct nets after function call and also `join` keyword", script13],
         ["path with 'point' keyword", script14],
         ["path with 'parallel' keyword", script15],
         ["consecutive blocks with 'join' then 'point'", script16]

@@ -138,7 +138,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         const ctxFunctionArgsExpr = ctx.function_args_expr();
         if (ctxFunctionArgsExpr) {
             this.visit(ctxFunctionArgsExpr);
-            funcDefinedParameters = this.contextData.get(ctxFunctionArgsExpr);
+            funcDefinedParameters = this.getResult(ctxFunctionArgsExpr);
         }
 
         this.addSymbolFunction(functionName, funcDefinedParameters);

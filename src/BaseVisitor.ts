@@ -397,12 +397,14 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         const boundary = IDs.length - defaultValuesProvided.length;
 
         const result: FunctionDefinedParameter[] = IDs.map((id, index) => {
+            const idText = id.getText();
             if (index >= boundary) {
-                const defaultValue =
-                    this.visit(defaultValuesProvided[index - boundary]);
-                return [id.getText(), defaultValue];
+                const tmpCtx = defaultValuesProvided[index - boundary];
+                this.visit(tmpCtx);
+                const defaultValue = this.getResult(tmpCtx);
+                return [idText, defaultValue];
             } else {
-                return [id.getText()];
+            return [idText];
             }
         });
 

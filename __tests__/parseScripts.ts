@@ -43,7 +43,7 @@ to U2 pin 3
 
 export const script2 = new ScriptTest(`
 import lib
-gnd = dgnd()
+gnd = dgnd("XGND")
 
 # Test functions
 def power_input():
@@ -66,10 +66,10 @@ branch:
 wire down 20
 to gnd
 `, [
-    [ '/GND', 'gnd', 1 ],
-    [ '/GND', 'J1', 1 ],
-    [ '/GND', 'J1', 3 ],
-    [ '/GND', 'gnd:0', 1 ]
+    [ '/XGND', 'gnd', 1 ],
+    [ '/XGND', 'J1', 1 ],
+    [ '/XGND', 'J1', 3 ],
+    [ '/XGND', 'gnd:0', 1 ]
   ]);
 
 export const script3 = new ScriptTest(`

@@ -150,11 +150,10 @@ def cgnd():
             net_name: net_name
             priority: 100
 
-def dgnd():
+def dgnd(net_name="GND"):
     height = 10
     width = 20
 
-    net_name = "GND"
     return create component:
         pins: 1
         display: create graphic:

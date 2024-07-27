@@ -261,10 +261,11 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
-        
+
         const commands = ctx.sub_expr().reduce((accum, item) => {
             this.visit(item);
-            const [commandName, parameters] = this.getResult(item) as [string, CallableParameter[]];
+            const [commandName, parameters] = 
+                this.getResult(item) as [string, CallableParameter[]];
 
             const keywordParams = new Map<string, any>();
             const positionParams = parameters.reduce(
@@ -286,10 +287,10 @@ export class ParserVisitor extends BaseVisitor {
 
     visitSub_expr = (ctx: Sub_exprContext): void => {
         let commandName: string | null = null;
-        if (ctx.ID()) {
-            commandName = ctx.ID()!.getText();
-        } else if (ctx.Pin()) {
-            commandName = ctx.Pin()!.getText();
+        const command = ctx._command;
+
+        if (command) {
+            commandName = command.text!;
         } else {
             throw "Invalid command!";
         }
@@ -506,7 +507,7 @@ export class ParserVisitor extends BaseVisitor {
         const ctxFunctionArgsExpr = ctx.function_args_expr();
         if (ctxFunctionArgsExpr) {
             this.visit(ctxFunctionArgsExpr);
-            funcDefinedParameters = this.contextData.get(ctxFunctionArgsExpr);
+            funcDefinedParameters = this.getResult(ctxFunctionArgsExpr);
         }
 
         const executionStack = this.executionStack;
