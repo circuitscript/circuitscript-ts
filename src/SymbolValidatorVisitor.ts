@@ -25,9 +25,9 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
     protected addSymbolFunction(functionName: string,
         funcDefinedParameters: FunctionDefinedParameter[]): void {
-        if (this.symbolTable.exists(this.getExecutor(), functionName)) {
-            throw "Function name already exists in scope";
-        } else {
+        if (!this.symbolTable.exists(this.getExecutor(), functionName)) {
+        //     throw "Function name already exists in scope";
+        // } else {
             this.symbolTable.addFunction(this.getExecutor(),
                 functionName,
                 funcDefinedParameters);

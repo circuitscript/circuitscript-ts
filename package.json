@@ -10,7 +10,7 @@
     "module": "./dist/esm/index.mjs",
     "types": "./dist/types/index.d.ts",
     "bin": {
-        "circuitscript": "./dist/esm/main.mjs"
+        "circuitscript": "./dist/cjs/main.js"
     },
     "exports": {
         ".": {
@@ -19,7 +19,9 @@
         }
     },
     "files": [
-        "dist"
+        "dist",
+        "fonts",
+        "libs"
     ],
     "devDependencies": {
         "@types/figlet": "^1.5.8",
@@ -63,7 +65,8 @@
         "antlr4ng": "npx antlr4ng -Dlanguage=TypeScript -o src/antlr -visitor -no-listener -Xexact-output-dir src/antlr/CircuitScript.g4",
         "profile": "node --prof build/src/main.js examples/example_garden_pump.cst",
         "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer",
-        "server": "node server.js"
+        "server": "node server.js",
+        "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server"
     },
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "MIT",

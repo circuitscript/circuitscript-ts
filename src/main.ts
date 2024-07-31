@@ -7,19 +7,13 @@ import path from 'path';
 import { readFileSync, watch } from 'fs';
 
 import { prepareSVGEnvironment } from './sizing.js';
-import { getCurrentPath, renderScript, validateScript } from './helpers.js';
-
+import { getDefaultLibsPath, getFontsPath, getPackageVersion, 
+    renderScript } from './helpers.js';
 
 export default async function main(): Promise<void> {
-    const { filePath } = getCurrentPath();
-    const toolSrcPath = filePath;
-
-    const toolDirectory = path.dirname(toolSrcPath) + '/../../';
-    const fontsPath = toolDirectory + '/fonts';
-    const defaultLibsPath = toolDirectory + '/libs'; 
-    
-    const packageJson = JSON.parse(readFileSync(toolDirectory + 'package.json').toString());;
-    const {version} = packageJson;
+    const fontsPath = getFontsPath();
+    const defaultLibsPath = getDefaultLibsPath(); 
+    const version = getPackageVersion();
 
     program
         .description('generate graphical output from circuitscript files')

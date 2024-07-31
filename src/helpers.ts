@@ -15,6 +15,7 @@ import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
+import path from "path";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -361,4 +362,26 @@ const context = createContext();
 export function getCurrentPath(): { filePath: string } {
     const filename = context.filename;
     return { filePath: filename };
+}
+
+function getToolsPath(): string {
+    const { filePath } = getCurrentPath();
+    return path.normalize(path.dirname(filePath) + '/../../');
+}
+
+export function getFontsPath(): string {
+    const toolsPath = getToolsPath();
+    return path.normalize(toolsPath + "fonts");
+}
+
+export function getDefaultLibsPath(): string {
+    const toolsPath = getToolsPath();
+    return path.normalize(toolsPath + "libs");
+}
+
+export function getPackageVersion(): string {
+    const packageJson = JSON.parse(
+        readFileSync(getToolsPath() + 'package.json').toString());
+    const {version} = packageJson;
+    return version;
 }

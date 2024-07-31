@@ -6,7 +6,8 @@ import { Function_def_exprContext, Create_component_exprContext,
     ValueAtomExprContext,
     Assignment_exprContext,
     Import_exprContext,
-    Function_args_exprContext} from "./antlr/CircuitScriptParser";
+    Function_args_exprContext,
+    Function_call_exprContext} from "./antlr/CircuitScriptParser";
 import { BaseVisitor, OnErrorCallback } from "./BaseVisitor";
 
 export class SemanticTokensVisitor extends BaseVisitor {
@@ -40,6 +41,10 @@ export class SemanticTokensVisitor extends BaseVisitor {
                 id, ['declaration'], 'parameter',
             )
         });
+    }
+
+    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
+        this.addSemanticToken(ctx.ID(), [], 'function');
     }
 
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
@@ -142,8 +147,8 @@ export class SemanticTokensVisitor extends BaseVisitor {
     }
 
     visitAtom_expr = (ctx: Atom_exprContext): void => {
-        if (ctx.parent instanceof Assignment_exprContext && ctx.ID()){
-            this.addSemanticToken(ctx.ID(), [], 'variable');
+        if (ctx.parent instanceof Assignment_exprContext && ctx.ID(0)){
+            this.addSemanticToken(ctx.ID(0)!, [], 'variable');
         }
     }
 
