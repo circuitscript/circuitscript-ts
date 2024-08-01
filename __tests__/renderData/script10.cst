@@ -1,0 +1,7 @@
+import lib
+
+tmp = create component:
+    pins: 5
+
+wire down 20 right 20 down 20 right 20
+to tmp pin 1

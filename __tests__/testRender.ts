@@ -17,7 +17,9 @@ describe('Render tests', () => {
         ['drawing 180 deg flipped components', 'script5.cst'],
         ['join command', 'script6.cst'],
         ['parallel command', 'script7.cst'],
-        ['point block command', 'script8.cst']
+        ['point block command', 'script8.cst'],
+        ['start immediately with `add component` command', 'script9.cst'],
+        ['start immediately with `wire` command', 'script10.cst']
 
     ])('render - %s (%s)', async (title, scriptPath) => {
         

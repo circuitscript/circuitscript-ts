@@ -71,6 +71,16 @@ export class ExecutionContext {
 
         this.setupRoot();
 
+        if (name === '__') {
+            this.scope.sequence.push(
+                [
+                    SequenceAction.At, 
+                    this.scope.componentRoot,
+                    this.scope.currentPin
+                ]
+            );
+        }
+
         this.silent = silent;
 
         this.log(
@@ -106,7 +116,8 @@ export class ExecutionContext {
             1,
             '__root',
         );
-        componentRoot.typeProp = ComponentTypes.net;
+        componentRoot.typeProp = ComponentTypes.point;
+        componentRoot.displayProp = 'point';
 
         this.scope.instances.set(GlobalNames.__root, componentRoot);
 

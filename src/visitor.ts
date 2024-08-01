@@ -32,7 +32,6 @@ import {
     To_component_exprContext,
     Wire_exprContext,
     UnaryOperatorExprContext,
-    Wire_atom_exprContext,
     Wire_expr_direction_onlyContext,
     Wire_expr_direction_valueContext,
 } from './antlr/CircuitScriptParser.js';
@@ -644,18 +643,7 @@ export class ParserVisitor extends BaseVisitor {
 
         // this.getExecutor().getCurrentPoint();
     }
-
-    visitWire_atom_expr = (ctx: Wire_atom_exprContext) => {
-        const id = ctx.ID(0); // direction
-
-        if (ctx.ID(1)){
-            // this is either the keyword auto or a variable name
-        } else {
-            // must be a number
-
-        }
-    }
-
+    
     visitWire_expr_direction_only = (ctx: Wire_expr_direction_onlyContext): void => {
         const value = ctx.ID().getText();
         if (value === 'auto' || value === 'auto_'){
@@ -932,7 +920,18 @@ export class ParserVisitor extends BaseVisitor {
 
     getGraph() {
         const executor = this.getExecutor();
-        const sequence = executor.scope.sequence;
+        const fullSequence = executor.scope.sequence;
+
+        // If the __root component is not connected to any nets, then remove
+        // it as the first action in the sequence. Otherwise it will occupy
+        // some space in the final graphical output.
+        const tmpNet = executor.scope.getNet(
+            executor.scope.componentRoot!, 1
+        );
+
+        const sequence = (tmpNet === null) 
+            ? fullSequence.slice(1) : fullSequence;
+        
         const nets = executor.scope.getNets();
 
         return {
