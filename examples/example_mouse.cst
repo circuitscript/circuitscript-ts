@@ -1,0 +1,342 @@
+# From: https://github.com/biomurph/Mouse/blob/master/Hardware/KiCad/Mouse.pdf
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+def right_side_wire(tmp_label):
+    wire right 20
+    add tmp_label
+    wire right 20
+
+def fuse(value):
+    width = 40
+    height = 20
+    return create component:
+        pins: 2
+        type: "F"
+        display: create graphic:
+            rect: 0, 0, width, height
+            pin: 1, -width/2-20, 0, -width/2, 0
+            pin: 2, width/2+20, 0, width/2, 0
+            hline: -width/2, 0, width
+            label: "refdes", -width/2, -height/2 - 5, "?"
+            label: "value", -width/2, height/2 + 2, "?", fontSize=8, vanchor="top"
+        params:
+            value: value
+
+def esd():
+    width = 40
+    height = 20
+
+    return create component:
+        pins: 2
+        type: "Z"
+        display: create graphic:
+            fill: "#333"
+            triangle: -width/2, 0, 0, 0, 20
+            triangle: width/2, 0, 0, 0, 20
+            path: "M", 5, -height/2-5, "L", 0, -height/2, "L", 0, height/2, "L", -5, height/2+5
+            pin: 1, -width/2 - 20, 0, -width/2, 0
+            pin: 2, width/2+20, 0, width/2, 0
+            label: "refdes", 0, -height/2 - 10, "?", anchor="middle"
+            label: "mpn", 0, height/2 + 15, "CG0603MLC-05E", anchor="middle"
+
+def pth_mounting_hole():
+    width = 40
+    height = 20
+
+    return create component:
+        pins: 1
+        type: "conn"
+        display: create graphic:
+            rect    0, 0, width, height
+            pin     1, -width/2-20, 0, -width/2, 0
+            label   "refdes", -width/2, -height/2 - 5, "?"
+            label   "PTH", -width/2, height/2 + 10, "PTH", anchor="left"
+
+def conn_1x7():
+    width = 20
+    height = 20 * (7 + 1)
+
+    return create component:
+        pins: 7
+        type: "conn"
+        display: create graphic:
+            rect 0, height/2, width, height
+            hpin 1, "", -width/2 -20, 20,  30
+            hpin 2, "", -width/2 -20, 40,  30
+            hpin 3, "", -width/2 -20, 60,  30
+            hpin 4, "", -width/2 -20, 80,  30
+            hpin 5, "", -width/2 -20, 100, 30
+            hpin 6, "", -width/2 -20, 120, 30
+            hpin 7, "", -width/2 -20, 140, 30
+            label "refdes", -width/2, -5
+
+def conn_1x7_flipped():
+    width = 20
+    height = 20 * (7 + 1)
+
+    return create component:
+        pins: 7
+        type: "conn"
+        display: create graphic:
+            rect 0, height/2, width, height
+            hpin 1, "", width/2 + 20, 20,  -30
+            hpin 2, "", width/2 + 20, 40,  -30
+            hpin 3, "", width/2 + 20, 60,  -30
+            hpin 4, "", width/2 + 20, 80,  -30
+            hpin 5, "", width/2 + 20, 100, -30
+            hpin 6, "", width/2 + 20, 120, -30
+            hpin 7, "", width/2 + 20, 140, -30
+            label "refdes", -width/2, -5
+
+
+def xtal_2(freq):
+    # only have 2 pins
+    width = 20
+    height = 40
+
+    return create component:
+        type: "X"
+        pins: 2
+        display: create graphic:
+            rect: 0, 0, width, height
+            fill: "#333"
+            rect: -width/2 - 5, 0, 1, height
+            rect: width/2 + 5, 0, 1, height
+            fill: "none"
+            pin: 1, -width/2 - 20, 0, -width/2-5, 0
+            pin: 2, width/2 + 20, 0, width/2+5, 0
+            label: "refdes", 0, -height/2 - 5, "?", anchor="middle"
+            label: "freq", 0, height/2 + 5, freq, vanchor="top", anchor="middle"
+        params:
+            freq: freq
+
+usb_conn = create component:
+    pins: 
+        1: power, "VBUS"
+        2: "D-"
+        3: "D+"
+        4: "ID"
+        5: "GND"
+        6: "SHIELD"
+    arrange:
+        right: 1, 3,2,4
+        left: 6,5
+
+frame:
+    ..title = "USB data and power"
+    ..direction = "row"
+
+    at usb_conn:
+        1:
+            wire right 20
+            add fuse("")
+            wire right 20 up 20 
+            to v5v
+
+        6:
+            wire left 20 down 20
+            branch:
+                wire auto 
+                to pin 5
+            wire down 20 to gnd
+
+        4:
+            wire right 20
+            add label("USB_ID")
+            wire right 60
+
+        2:
+            wire right 120
+            branch:
+                wire down 40    
+                add esd() down 
+                wire down 20
+                to gnd
+
+            wire right 120 down 20 right 20
+            add res(22)
+            wire right 20
+            add label("D-")
+
+        3:
+            wire right 200
+            branch:
+                wire down 60
+                add esd() down
+                wire down 20
+                to gnd
+
+            wire right 60
+            add res(22)
+            wire right 20
+
+            add label("D+")
+
+    at v5v
+    wire down 20
+    add cap(10u)
+    wire down 20
+    to gnd
+
+    at v5v 
+    wire down 20
+    add cap(100n)
+    wire down 20
+    to gnd
+
+frame:
+    ..title = "Mounting and breakout"
+    ..direction = "row"
+
+    frame:
+        ..border = 0
+        ..direction = "column"
+
+        at pth_mounting_hole()
+        at pth_mounting_hole()
+        at pth_mounting_hole()
+        at pth_mounting_hole()
+
+    at conn_1x7():
+        1:
+            wire left 20 up 20 to gnd up
+
+        2:
+            wire left 40
+            add label("D7")
+
+        3:
+            wire left 40
+            add label("D0/RX")
+        4:
+            wire left 40
+            add label("D1/TX")
+        5:
+            wire left 40
+            add label("D4")
+        6:
+            wire left 40
+            add label("D12")
+        7:
+            wire left 40
+            add label("D10")
+
+
+    at conn_1x7() flipX:
+        1:
+            wire right 20 up 20 to v5v
+        2:
+            right_side_wire(label("A5"))
+        3:
+            right_side_wire(label("A4"))
+        4:
+            right_side_wire(label("A3"))
+        5:
+            right_side_wire(label("A2"))
+        6:
+            right_side_wire(label("A1"))
+        7:
+            right_side_wire(label("A0"))
+
+
+
+frame:
+    ..title = "Mouse eye"
+
+    adns2610 = create component:
+        pins: 
+            1: "OSC_IN"
+            2: "OSC_OUT"
+            3: "SDIO"
+            4: "SCK"
+            5: "LED_CNTL"
+            6: "GND"
+            7: "VDD"
+            8: "REFA"
+
+        arrange:
+            left: 7, 1, 2, 6
+            right: 4, 3, 5, 8
+        width: 140
+        params:
+            mpn: "ADNS2610PTH"
+
+    fet = create component:
+        pins: 3
+        arrange:
+            left: 1
+            right: 3,2
+        params:
+            mpn: "BC857ALT1G"
+
+    at adns2610:
+        7:
+            wire left 20 up 160
+            branch:
+                wire up 20 
+                to v5v
+            wire left 60
+            branch:
+                wire down 20
+                add cap(4.7u) 
+                wire down 20 to gnd
+            branch:
+                wire left 40 down 20
+                add cap(100n)
+                wire down 20 to gnd
+        1: 
+            wire left 100 down 20 
+            add xtal_2(24M) down
+            
+            wire down 20 right 40 up 80 
+            wire auto to adns2610 pin 2
+
+        6:
+            wire left 20 down 20
+            to gnd
+        4:
+            wire right 20
+            add label("ADNS_SCK")
+            wire right 40
+
+        3:
+            wire right 20
+            add label("ADNS_SDIO")
+            wire right 40
+
+        5:
+            wire right 60 
+            add res(1k)
+            wire right 20
+
+            branch:
+                wire up 20
+                add res(100k) up
+                wire up 20
+                to v5v
+            wire right 20
+            to fet pin 1
+
+        8:
+            wire right 20 down 20
+            add cap(2.2u)
+            wire down 20 to gnd
+
+    at fet:
+        2:
+            wire right 20 down 20
+            to gnd
+        3:
+            point:
+                at v5v
+                wire down 20
+                add res(33) down
+                wire down 20
+                add led("red") down
+                wire down 20 left 20
+                to point
+    
+   

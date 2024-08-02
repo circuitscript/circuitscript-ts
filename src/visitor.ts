@@ -111,12 +111,18 @@ export class ParserVisitor extends BaseVisitor {
                 cloneNetComponent: true
             });
 
-            if (ctx.ID()) {
-                // If there is ID specified, then it can only be for the 
-                // component orientation.
-                this.setComponentOrientation(currentPoint[0],
-                    currentPoint[1], ctx.ID()!.getText())
-            }
+            const ctxIds = ctx.ID();
+            ctxIds.forEach(ctxId => {
+                const idText = ctxId.getText();
+                if (this.acceptedDirections.indexOf(idText) !== -1) {
+                    // If there is ID specified, then it can only be for the 
+                    // component orientation.
+                    this.setComponentOrientation(currentPoint[0],
+                        currentPoint[1], idText)
+                } else if (this.acceptedFlip.indexOf(idText) !== -1){
+                    this.setComponentFlip(component, idText);
+                }
+            });
         }
 
         return this.getExecutor().getCurrentPoint();
@@ -137,12 +143,19 @@ export class ParserVisitor extends BaseVisitor {
                 });
             });
 
-            if (ctx.ID()) {
-                // If there is ID specified, then it can only be for the 
-                // component orientation.
-                this.setComponentOrientation(currentPoint[0],
-                    currentPoint[1], ctx.ID()!.getText())
-            }
+            const ctxIds = ctx.ID();
+            ctxIds.forEach(ctxId => {
+                const idText = ctxId.getText();
+                if (this.acceptedDirections.indexOf(idText) !== -1) {
+                    // If there is ID specified, then it can only be for the 
+                    // component orientation.
+                    this.setComponentOrientation(currentPoint[0],
+                        currentPoint[1], idText);
+                        
+                } else if (this.acceptedFlip.indexOf(idText) !== -1){
+                    this.setComponentFlip(currentPoint[0], idText);
+                }
+            });
         }
 
         return this.getExecutor().getCurrentPoint();
@@ -281,7 +294,10 @@ export class ParserVisitor extends BaseVisitor {
             return accum;
         }, [] as SubExpressionCommand[]);
 
-        this.setResult(ctx, new SymbolDrawingCommands(commands));
+        const drawing = new SymbolDrawingCommands(commands);
+        drawing.source = ctx.getText();
+
+        this.setResult(ctx, drawing);
     }
 
     visitSub_expr = (ctx: Sub_exprContext): void => {
@@ -1031,6 +1047,12 @@ export class ParserVisitor extends BaseVisitor {
             component.setParam('_addPin', pin);
         } else {
             throw "Invalid modifier for orientation";
+        }
+    }
+
+    private setComponentFlip(component: ClassComponent, flipValue: string): void {
+        if (this.acceptedFlip.indexOf(flipValue) !== -1) {
+            component.setParam(flipValue, 1);
         }
     }
 

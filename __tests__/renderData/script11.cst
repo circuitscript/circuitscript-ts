@@ -1,0 +1,16 @@
+def cmp():
+    return create component:
+        pins: 5
+
+at cmp()
+
+at cmp()
+..flipX = 1
+
+at cmp()
+..flipY = 1
+
+at cmp() flipX flipY
+
+at cmp() flipX flipY
+..angle = 90

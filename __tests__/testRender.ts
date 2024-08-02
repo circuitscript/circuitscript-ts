@@ -19,7 +19,9 @@ describe('Render tests', () => {
         ['parallel command', 'script7.cst'],
         ['point block command', 'script8.cst'],
         ['start immediately with `add component` command', 'script9.cst'],
-        ['start immediately with `wire` command', 'script10.cst']
+        ['start immediately with `wire` command', 'script10.cst'],
+        ['flipX and flipY parameters', 'script11.cst'],
+        ['flipX, flipY, angle parameters with multiple components', 'script12.cst']
 
     ])('render - %s (%s)', async (title, scriptPath) => {
         

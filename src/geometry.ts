@@ -107,9 +107,18 @@ export class Label extends Flatten.Polygon {
     }
 
     rotate(angle: number, origin: Flatten.Point): Label {
-        const polygonRotate = super.rotate(angle, origin);
-        return new Label(this.id, this.text, this.anchorPoint, polygonRotate, 
+        // Override this so that a Label object is returned.
+        const feature = super.rotate(angle, origin);
+        return new Label(this.id, this.text, this.anchorPoint, feature, 
             this.style, this.textMeasurementBounds);
+    }
+
+    transform(matrix: Flatten.Matrix): Label {
+        // Override this so that a Label object is returned.
+        const feature = super.transform(matrix);
+        return new Label(this.id, this.text, this.anchorPoint, feature, 
+            this.style, this.textMeasurementBounds
+        );
     }
 
     getLabelPosition(): [number, number] {
@@ -188,12 +197,30 @@ export class Geometry {
         return feature.rotate(angleRads, Geometry.point(center[0], center[1]));
     }
 
+    static flip(feature: Feature, flipX: number, flipY: number): Feature {
+        const flipMatrix = (new Flatten.Matrix()).scale(
+            flipX === 0 ? 1 : -1,
+            flipY == 0 ? 1 : -1);
+
+        return feature.transform(flipMatrix);
+    }
+
     static groupRotate(features: Feature[], angle: number, center: [number, number]): Feature[] {
         const angleRads = angle * Math.PI / 180;
         const rotateAboutPoint = Geometry.point(center[0], center[1]);
 
         return features.map(feature => {
             return feature.rotate(angleRads, rotateAboutPoint);
+        });
+    }
+
+    static groupFlip(features: Feature[], flipX: number, flipY: number): Feature[] {
+        const flipMatrix = (new Flatten.Matrix()).scale(
+            flipX === 0 ? 1 : -1,
+            flipY == 0 ? 1 : -1);
+
+        return features.map(feature => {
+            return feature.transform(flipMatrix);
         });
     }
 

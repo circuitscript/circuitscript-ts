@@ -612,7 +612,19 @@ export class LayoutEngine {
                         didSetAngle = true;
                         tmpSymbol.angle = component.parameters.get('angle') as number;
                     }
-    
+   
+                    if (component.parameters.has('flipX')){
+                        // either 1 or 0
+                        tmpSymbol.flipX = 
+                            component.parameters.get('flipX') as number; 
+                    }
+
+                    if (component.parameters.has('flipY')){
+                        // either 1 or 0
+                        tmpSymbol.flipY = 
+                            component.parameters.get('flipY') as number; 
+                    }
+
                     if (tmpSymbol instanceof SymbolCustom && widthProp){
                         tmpSymbol.bodyWidth = widthProp;
                     }

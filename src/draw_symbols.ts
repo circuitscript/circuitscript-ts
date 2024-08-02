@@ -22,6 +22,9 @@ export abstract class SymbolGraphic {
 
     _angle = 0;
 
+    _flipX = 0;
+    _flipY = 0;
+
     width: number;
     height: number;
 
@@ -34,6 +37,22 @@ export abstract class SymbolGraphic {
 
     set angle(value: number) {
         this._angle = value;
+    }
+
+    get flipX(): number {
+        return this._flipX;
+    }
+
+    set flipX(value: number) {
+        this._flipX = value;
+    }
+
+    get flipY(): number {
+        return this._flipY;
+    }
+
+    set flipY(value: number) {
+        this._flipY = value;
     }
 
     refreshDrawing(calculateSize = true): void {
@@ -173,9 +192,9 @@ export abstract class SymbolGraphic {
                 useDominantBaseline = this.flipDominantBaseline(vanchor);
             }
 
-            switch(useAnchor){
+            switch (useAnchor) {
                 case HorizontalAlign.Left:
-                    anchorStyle = 'start';
+                    anchorStyle = (this.flipX === 0) ? 'start' : 'end';
                     break;
 
                 case HorizontalAlign.Middle:
@@ -183,13 +202,13 @@ export abstract class SymbolGraphic {
                     break;
 
                 case HorizontalAlign.Right:
-                    anchorStyle = 'end';
+                    anchorStyle = (this.flipX === 0) ? 'end' : 'start';
                     break;
             }
 
-            switch(useDominantBaseline){
+            switch (useDominantBaseline) {
                 case VerticalAlign.Top:
-                    dominantBaseline = 'hanging';
+                    dominantBaseline = (this.flipY === 0) ? 'hanging' : 'text-top';
                     break;
 
                 case VerticalAlign.Middle:
@@ -197,11 +216,21 @@ export abstract class SymbolGraphic {
                     break;
 
                 case VerticalAlign.Bottom:
-                    dominantBaseline = 'text-top';
+                    dominantBaseline = (this.flipY === 0) ? 'text-top' : 'hanging';
                     break;
             }
 
             const position = tmpLabel.getLabelPosition();
+            // const position2 = [position[0], position[1]];
+
+            if (this.flipX !== 0) {
+                position[0] *= -1;
+            }
+
+            if (this.flipY !== 0){
+                position[1] *= -1;
+            }
+
             const useFont = defaultFont;
 
             const textContainer = group.group();
@@ -320,7 +349,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.log("=== start generate drawing ===");
         
         drawing.clear();
+
+        // Store the transform properties to the drawing itself too.
         drawing.angle = this._angle;
+        drawing.flipX = this._flipX;
+        drawing.flipY = this._flipY;
+        
         const commands = drawing.getCommands();
 
         drawing.log('id: ', drawing.id, 'angle: ', this._angle, "commands:", commands.length);
@@ -439,10 +473,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
         const keywordDisplayPinId = 'display_pin_id';
         let displayPinId = true;
 
-        if (keywordParams.has(keywordDisplayPinId)) {
-            if (keywordParams.get(keywordDisplayPinId) === 0) {
-                displayPinId = false;
-            }
+        if (keywordParams.has(keywordDisplayPinId) 
+                && keywordParams.get(keywordDisplayPinId) === 0){
+            displayPinId = false;
         }
 
         let pinNameParam: string | null = null;
@@ -481,8 +514,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.addPin(...positionParams);
 
         // Add a label for the pinId and pinName
-        const latestPin = this.drawing.pins[this.drawing.pins.length - 1];
-        const [pinId, , angle] = latestPin;
+        const lastAddedPin = this.drawing.pins[this.drawing.pins.length - 1];
+        const [pinId, , angle] = lastAddedPin;
         const [, , , endX, endY] = positionParams;
 
         let pinNameAlignment = HorizontalAlign.Left;
@@ -564,6 +597,7 @@ export enum PlaceHolderCommands {
 }
 
 export class SymbolCustom extends SymbolGraphic {
+    // For generating symbols for multi-pin components.
 
     pinDefinition: SymbolPinDefintion[] = [];
 
@@ -606,6 +640,8 @@ export class SymbolCustom extends SymbolGraphic {
 
         const drawing = new SymbolDrawing();
         drawing.angle = this._angle;
+        drawing.flipX = this._flipX;
+        drawing.flipY = this._flipY;
 
         const bodyWidth = this.bodyWidth;
         const bodyHeight = (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing;
@@ -699,6 +735,9 @@ export class SymbolDrawing {
     pins: [number, Feature, number][] = [];
 
     angle = 0;
+
+    flipX = 0;
+    flipY = 0;
 
     mainOrigin:[number, number] = [0, 0];
 
@@ -950,7 +989,8 @@ export class SymbolDrawing {
                         currentFill = item.value as string;
                     }
                 } else {
-                    const rotatedPath = Geometry.groupRotate([item], this.angle, 
+                    const tmpResult = Geometry.groupFlip([item], this.flipX, this.flipY);
+                    const rotatedPath = Geometry.groupRotate(tmpResult, this.angle, 
                         this.mainOrigin);
 
                     const {path, isClosedPolygon} = 
@@ -970,9 +1010,10 @@ export class SymbolDrawing {
     }
 
     getPinsPath(): string {
-        const features = this.pins.map(item => item[1]);
-        const withAngle = Geometry.groupRotate(features, this.angle, this.mainOrigin);
-        const { path } = this.featuresToPath(withAngle);
+        let features = this.pins.map(item => item[1]);
+        features = Geometry.groupFlip(features, this.flipX, this.flipY);
+        features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
+        const { path } = this.featuresToPath(features);
         return path;
     }
 
@@ -1007,11 +1048,11 @@ export class SymbolDrawing {
 
         }, [] as Feature[]);
 
-        const measureItems = [...drawingFeatures, ...pinFeatures];
+        let features = [...drawingFeatures, ...pinFeatures];
+        features = Geometry.groupFlip(features, this.flipX, this.flipY);
+        features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
 
-        const withAngle = Geometry.groupRotate(measureItems, this.angle, this.mainOrigin);
-
-        return Geometry.groupBounds(withAngle);
+        return Geometry.groupBounds(features);
     }
 
     getPinPosition(pinId: number): { start: [number, number], end: [number, number], angle: number } {
@@ -1022,10 +1063,10 @@ export class SymbolDrawing {
         if (pin) {
             const [, feature, angle] = pin;
 
-            // Apply angle to feature
-
-            const withAngle = Geometry.rotateDegs(feature, this.angle, this.mainOrigin);
-            const coords = Geometry.getCoords(withAngle);
+            // Apply flip, angle to feature
+            let tmpFeature = Geometry.flip(feature, this.flipX, this.flipY);
+            tmpFeature = Geometry.rotateDegs(tmpFeature, this.angle, this.mainOrigin);
+            const coords = Geometry.getCoords(tmpFeature);
 
             return {
                 start: coords[0],

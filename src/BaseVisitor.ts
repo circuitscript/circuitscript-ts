@@ -42,6 +42,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     printToConsole = true;
 
     acceptedDirections = ['left', 'right', 'up', 'down'];
+    acceptedFlip = ['flipX', 'flipY'];
 
     protected contextData = new Map<ParserRuleContext, any>;
 
