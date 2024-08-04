@@ -152,7 +152,7 @@ frame:
             wire right 120
             branch:
                 wire down 40    
-                add esd() down 
+                add esd() angle:90 
                 wire down 20
                 to gnd
 
@@ -165,7 +165,7 @@ frame:
             wire right 200
             branch:
                 wire down 60
-                add esd() down
+                add esd() angle:90
                 wire down 20
                 to gnd
 
@@ -202,7 +202,7 @@ frame:
 
     at conn_1x7():
         1:
-            wire left 20 up 20 to gnd up
+            wire left 20 up 20 to gnd angle:180
 
         2:
             wire left 40
@@ -225,7 +225,7 @@ frame:
             add label("D10")
 
 
-    at conn_1x7() flipX:
+    at conn_1x7() flip:x :
         1:
             wire right 20 up 20 to v5v
         2:
@@ -289,7 +289,7 @@ frame:
                 wire down 20 to gnd
         1: 
             wire left 100 down 20 
-            add xtal_2(24M) down
+            add xtal_2(24M) angle:90
             
             wire down 20 right 40 up 80 
             wire auto to adns2610 pin 2
@@ -314,7 +314,7 @@ frame:
 
             branch:
                 wire up 20
-                add res(100k) up
+                add res(100k) angle:-90
                 wire up 20
                 to v5v
             wire right 20
@@ -333,9 +333,9 @@ frame:
             point:
                 at v5v
                 wire down 20
-                add res(33) down
+                add res(33) angle:90
                 wire down 20
-                add led("red") down
+                add led("red") angle:90
                 wire down 20 left 20
                 to point
     

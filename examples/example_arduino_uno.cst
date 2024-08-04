@@ -329,29 +329,6 @@ def conn8():
             pin: 7, -40, -120, -20, -120
             pin: 8, -40, -140, -20, -140
 
-def conn6_flipped():
-    return create component:
-        type: "conn"
-        pins: 6
-        display: create graphic:
-            rect: 0, 2.5 * -20, 40, (6+1) * 20
-            circle: 0, 0, 8
-            circle: 0, -20, 8
-            circle: 0, -40, 8
-            circle: 0, -60, 8
-            circle: 0, -80, 8
-            circle: 0, -100, 8
-
-            label: "refdes", -20, 6 * -20 - 5, "?"
-            label: "mpn", -20, 20 + 4, "?", vanchor="top"
-
-            pin: 6, -40, 0,   -20, 0
-            pin: 5, -40, -20, -20, -20
-            pin: 4, -40, -40, -20, -40
-            pin: 3, -40, -60, -20, -60
-            pin: 2, -40, -80, -20, -80
-            pin: 1, -40, -100, -20, -100
-
 def conn6():
     return create component:
         type: "conn"
@@ -427,7 +404,7 @@ at atmega:
 
         branch:
             wire up 20
-            add res(10k) up
+            add res(10k) angle:-90
 
             point:
                 at v5v
@@ -520,18 +497,18 @@ point:
         to usb_conn pin 6
 
     wire down 20
-    add label("USHIELD") down
+    add label("USHIELD") angle:90
     wire auto_
     to point
 
 wire down 20
-add ind(1u) down
+add ind(1u) angle:90
 wire down 20
 
 point:
     at usb_conn pin 4
     wire right 20 down 40
-    add label("UGND") down
+    add label("UGND") angle:90
     wire auto_
     to point
 
@@ -550,7 +527,7 @@ point:
         wire auto
         to point
         wire down 20
-        add solder_bridge() down
+        add solder_bridge() angle:90
         ..refdes = "GROUND"
         wire down 20
         to gnd
@@ -566,7 +543,7 @@ join:
         to osc1 pin 1
 
     wire up 40 left 160 wire down 20
-    add res(1M) down
+    add res(1M) angle:90
 
 join:
     at atmega pin 1
@@ -614,7 +591,7 @@ at atmega:
         to iol_conn pin 1
 
 def led_with_res():
-    add led("yellow") pin 2 right
+    add led("yellow") angle:180 pin 2
     wire right 20
     add res(1k)
     wire right 20
@@ -637,15 +614,9 @@ join:
 wire up 20
 to v5v
 
-#power_conn2 = create component:
-#    pins: 6
-#    arrange:
-#        left: 1,2,3,4,5,6
+at power_conn2 = conn6() flip:y :
+    ..mpn = "POWER"
 
-power_conn2 = conn6_flipped()
-power_conn2.mpn = "POWER"
-
-at power_conn2:
     2:
         wire left 60 up 80
         add v3v3
@@ -657,7 +628,7 @@ at power_conn2:
         wire left 20 down 20
         branch:
             wire right 20
-            to power_conn2 pin 5
+            to pin 5
         wire left 60 down 40
         to gnd
 
@@ -778,7 +749,7 @@ at atmega8:
         wire left 120
         branch:
             wire up 20
-            add res(10k) up
+            add res(10k) angle:-90
             wire up 20
             to v5v
         branch:
@@ -792,7 +763,7 @@ at atmega8:
 
         parallel:
             wire left 60
-            add solder_bridge() left
+            add solder_bridge() angle:180
             ..refdes = "RESET-EN"
             wire left 60 down 40
         parallel:
@@ -832,15 +803,15 @@ at ioh_conn:
 
         parallel:
             wire up 20
-            add res(1k) up
+            add res(1k) angle:-90
             wire up 20
         parallel:
             wire right 60 up 20
-            add res(1k) up
+            add res(1k) angle:-90
             wire auto_
 
         wire up 20
-        add led("yellow") up
+        add led("yellow") angle:-90
         wire up 40 right 60 down 20
         to gnd
 
@@ -962,18 +933,18 @@ frame:
             
         at label("VIN")
         wire right 40 down 20
-        add res(10k) ..angle=90
+        add res(10k) angle:90
         wire down 20
         branch:
             wire down 20
-            add res(10k) ..angle=90
+            add res(10k) angle:90
             to gnd
         wire right 80
         add label("CMP")
         wire right 20
         to opamp_1 pin 3
 
-        at v3v3 left
+        at v3v3 angle:-90
         wire right 20
         to opamp_1 pin 2
 
@@ -1031,7 +1002,7 @@ frame:
                 wire down 20
                 branch:
                     wire auto_
-                    to power_conn pin 3
+                    to pin 3
                 wire down 20
                 to gnd
             2:
@@ -1043,8 +1014,7 @@ frame:
                 branch:
                     wire down 20
                     add cap(47u)
-                    wire down 20
-                    to gnd
+                    wire down 20 to gnd
                 wire right 20
                 point:
                     at dcdc_5V pin 3
@@ -1053,9 +1023,8 @@ frame:
 
                     wire up 20
                     branch:
-                        wire right 20
+                        wire left 40
                         add label("VIN")
-                        wire right 40
                     wire up 100 right 80
                     to dcdc_5V_2 pin 3
 
@@ -1079,12 +1048,12 @@ frame:
                 branch:
                     wire down 20
                     add cap(47u)
-                    to gnd
+                    wire down 20 to gnd
                 wire right 60
                 branch:
                     wire down 20
                     add cap(100n)
-                    to gnd
+                    wire down 20 to gnd
                 wire up 20
                 to v5v
 
