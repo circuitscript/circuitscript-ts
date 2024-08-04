@@ -44,7 +44,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     acceptedDirections = ['left', 'right', 'up', 'down'];
     acceptedFlip = ['flipX', 'flipY'];
 
-    protected contextData = new Map<ParserRuleContext, any>;
+    protected resultData = new Map<ParserRuleContext, any>;
+    protected paramData = new Map<ParserRuleContext, any>;
 
     pinTypesList: string[] = [
         PinTypes.Any,
@@ -495,11 +496,24 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     }
 
     protected setResult(ctx: ParserRuleContext, value: any): void {
-        this.contextData.set(ctx, value);
+        this.resultData.set(ctx, value);
     }
 
     protected getResult(ctx: ParserRuleContext): any {
-        return this.contextData.get(ctx);
+        return this.resultData.get(ctx);
+    }
+
+    protected setParam(ctx: ParserRuleContext, value: any): void {
+        // Pass parameters to context
+        this.paramData.set(ctx, value);
+    }
+
+    protected getParam(ctx: ParserRuleContext): any {
+        return this.paramData.get(ctx);
+    }
+
+    protected hasParam(ctx: ParserRuleContext): boolean {
+        return this.paramData.has(ctx);
     }
 
     protected handleImportFile(name: string, throwErrors = true): {

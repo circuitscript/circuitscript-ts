@@ -68,19 +68,22 @@ property_set_expr2:
 	atom_expr ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
-data_expr_with_assignment: (data_expr | assignment_expr) pin_select_expr?;
+pin_select_expr: Pin (INTEGER_VALUE | STRING_VALUE);
+component_modifier_expr: ID ':' (value_expr | ID);
 
-add_component_expr: Add data_expr_with_assignment ID?;
+data_expr_with_assignment: (data_expr | assignment_expr) component_modifier_expr* pin_select_expr?;
+
+add_component_expr: Add data_expr_with_assignment;
 
 component_select_expr: data_expr_with_assignment | pin_select_expr;
-pin_select_expr:        Pin (INTEGER_VALUE | STRING_VALUE);
+
 // This does not have the 'pin' word
 pin_select_expr2: INTEGER_VALUE | STRING_VALUE;
 
-at_component_expr:      At ((component_select_expr ID*) | Point);                           // ID? is for orientation
+at_component_expr:      At (component_select_expr | Point);                           // ID? is for orientation
 // at_component_expr_next:   'at' component_select_expr (',' component_select_expr)*;
 
-to_component_expr: To ((component_select_expr (',' component_select_expr)* ID*) | Point);   // ID? is for orientation
+to_component_expr: To ((component_select_expr (',' component_select_expr)*) | Point);   // ID? is for orientation
 // pin_select_expr_next:   'pin' INTEGER_VALUE (',' INTEGER_VALUE)?;
 
 at_to_multiple_expr: At component_select_expr To component_select_expr (',' component_select_expr)* ':' NEWLINE INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;

@@ -184,7 +184,7 @@ export class ClassComponent {
     }
 
     clone(): ClassComponent {
-        // returns new copy
+        // returns new copy, angle, flipX, flipY should be reset
         const component = new ClassComponent(
             this.instanceName, this.numPins, this.className);
 
@@ -192,7 +192,6 @@ export class ClassComponent {
         component.arrangeProps = this.arrangeProps;
         component.widthProp = this.widthProp;
         component.typeProp = this.typeProp;
-
 
         if (this.displayProp) {
             if (typeof this.displayProp === "string") {
@@ -206,6 +205,10 @@ export class ClassComponent {
         }
 
         for (const [key, value] of this.parameters) {
+            if (key === 'flipX' || key === 'flipY' || key === 'angle') {
+                continue;
+            }
+
             component.parameters.set(key, value);
         }
 

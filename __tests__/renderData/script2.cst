@@ -5,11 +5,11 @@ gnd = dgnd()
 
 def tmp1():
 
-    at v5v left
+    at v5v angle:-90
     wire right 40
     add res(10k)
     wire right 40
-    to gnd right
+    to gnd angle:-90
 
 tmp1()
 

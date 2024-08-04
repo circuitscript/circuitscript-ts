@@ -10,7 +10,7 @@ at cmp()
 at cmp()
 ..flipY = 1
 
-at cmp() flipX flipY
+at cmp() flip:xy
 
-at cmp() flipX flipY
+at cmp() flip:xy
 ..angle = 90

@@ -61,7 +61,7 @@ export async function runScript(script: string): Promise<{
         visitor.visit(tree);
     } catch (err) {
         // Error should be internally handled in visitor
-        err.print(script);
+        console.log(err);
         hasError = true;
     }
 

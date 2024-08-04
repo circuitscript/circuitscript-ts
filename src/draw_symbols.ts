@@ -97,10 +97,12 @@ export abstract class SymbolGraphic {
             // Draw the x
             const { start, end } = this.drawing.getBoundingBox(true);
 
-            group.path([
+            const path = Geometry.roundPathValues([
                 "M", start[0], start[1], "L", end[0], end[1],
                 "M", end[0], start[1], "L", start[0], end[1]
-            ].join(" "))
+            ]);
+
+            group.path(path)
                 .stroke({
                     width: defaultSymbolLineWidth,
                     color: 'red'
@@ -257,13 +259,32 @@ export abstract class SymbolGraphic {
                 useRotateAngle = this.angle;
             }
 
+            translateX = this.roundValues(translateX);
+            translateY = this.roundValues(translateY);
+
             text.rotate(labelAngle);
             textContainer.translate(translateX, translateY)
                         .rotate(useRotateAngle, -translateX, -translateY);
+
+            const {a, b, c, d, e, f} = textContainer.matrix();
+            const newMatrix = {
+                a: this.roundValues(a),
+                b: this.roundValues(b),
+                c: this.roundValues(c),
+                d: this.roundValues(d),
+                e: this.roundValues(e),
+                f: this.roundValues(f),
+            };
+
+            textContainer.transform(newMatrix);
             
             // For debug, show the origin of the text container
             // textContainer.circle(2).fill('red');
         });
+    }
+
+    roundValues(value: number): number {
+        return +value.toFixed(7);
     }
 
     flipTextAnchor(value: HorizontalAlign): HorizontalAlign {
@@ -989,12 +1010,12 @@ export class SymbolDrawing {
                         currentFill = item.value as string;
                     }
                 } else {
-                    const tmpResult = Geometry.groupFlip([item], this.flipX, this.flipY);
-                    const rotatedPath = Geometry.groupRotate(tmpResult, this.angle, 
+                    let tmpResult = Geometry.groupFlip([item], this.flipX, this.flipY);
+                    tmpResult = Geometry.groupRotate(tmpResult, this.angle, 
                         this.mainOrigin);
 
                     const {path, isClosedPolygon} = 
-                        this.featuresToPath(rotatedPath);
+                        this.featuresToPath(tmpResult);
                 
                     pathItems.push({
                         path: path,

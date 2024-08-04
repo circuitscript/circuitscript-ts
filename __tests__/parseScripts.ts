@@ -111,11 +111,11 @@ gnd = dgnd()
 
 at vcc
 wire down 20
-add res(20k) down
+add res(20k) angle:90
 wire down 20
 branch:
     wire down 20
-    add res(20k) down
+    add res(20k) angle:90
     wire down 20
     to gnd
 wire right 60
@@ -123,7 +123,7 @@ to midpt ..angle = 90
 
 at vcc
 wire down 20
-add res(10k) down
+add res(10k) angle:90
 wire down 20 right 40 up 20
 to midpt
 `, [
@@ -181,7 +181,7 @@ gnd = dgnd()
 def divider(power_net, r1, r2, output_net):
     at power_net
     wire down 20
-    add res(r1) down
+    add res(r1) angle:90
     wire down 20
 
     branch:
@@ -190,7 +190,7 @@ def divider(power_net, r1, r2, output_net):
         wire right 20
 
     wire down 20
-    add res(r2) down
+    add res(r2) angle:90
     wire down 20
     to gnd
 
@@ -221,14 +221,14 @@ def divider(power_net, r1, r2, net_name):
         
         at power_net
         wire down 20
-        add res(r1) down
+        add res(r1) angle:90
         wire down 20
 
         branch:
             wire right 20
             add label("inner_name")
             wire right 60
-            add res(100k) right
+            add res(100k)
             wire right 20
             add / label("global_name")
             wire right 40
@@ -238,7 +238,7 @@ def divider(power_net, r1, r2, net_name):
             add / label("global_name_2")
 
         wire down 20
-        add res(r2) down
+        add res(r2) angle:90
         wire down 20
         to gnd
 
@@ -286,11 +286,11 @@ gnd = dgnd()
 
 at v5v = supply("5V")
 wire down 20
-add R1 = res(10k) down
+add R1 = res(10k) angle:90
 wire down 20
-add R2 = res(10k) down
+add R2 = res(10k) angle:90
 wire down 20
-to C1 = cap(10n) down
+to C1 = cap(10n) angle:90
 
 at C1 pin 2
 wire down 20
@@ -397,20 +397,20 @@ v5v = supply("5V")
 gnd = dgnd()
 
 def led_with_res():
-    add led("yellow") pin 2 right
+    add led("yellow") angle:180 pin 2
     wire right 20
     add res(1k)
     wire right 20
 
 join:
-    at gnd left
+    at gnd angle:180
     wire right 20
     add label("TXLED")
     wire right 60
     led_with_res()
 
 join:
-    at gnd left
+    at gnd angle:180
     wire right 20
     add label("RXLED")
     wire right 60
@@ -453,13 +453,13 @@ gnd = dgnd()
 
 at v5v
 wire down 20
-add res(360) down
+add res(360) angle:90
 wire down 20
 
 point:
     at v5v
     wire down 20
-    add res(360) down
+    add res(360) angle:90
     wire down 20 
 
     branch:
@@ -467,18 +467,18 @@ point:
         to point
 
     wire down 20
-    add res(360) down
+    add res(360) angle:90
     wire down 20
     to gnd
 
     at point
     wire right 200 down 20
-    add res(360) down
+    add res(360) angle:90
     wire down 20
     to gnd
 
 wire down 20
-add led("red") down
+add led("red") angle:90
 wire down 40
 to gnd`, [
     [ '/5V', 'v5v', 1 ],
@@ -515,17 +515,17 @@ wire down 20
 
 parallel:
     wire down 20
-    add res(1k) down
+    add res(1k) angle:90
     wire down 20
 
 parallel:
     wire right 60 down 20
-    add res(1k) down
+    add res(1k) angle:90
     wire auto
 
 parallel:
     wire right 120 down 20
-    add res(1k) down
+    add res(1k) angle:90
     wire auto
 
 wire down 20
@@ -558,24 +558,25 @@ gnd = dgnd()
 join:
     at v5v
     wire down 20
-    add res(1k) down 
+    add res(1k) angle:90 
     wire down 20
 
 join:
     at v5v
     wire down 20
-    add res(1k) down
+    add res(1k) angle:90
     wire left 100
 
 point:
     at v5v
     wire right 20
-    add res(1k) right
+    add res(1k)
     wire right 20
     to point
 
     wire down 20
-    to gnd`, [
+    to gnd
+`, [
         [ '/5V', 'v5v', 1 ],
         [ '/5V', 'v5v:0', 1 ],
         [ '/5V', 'res_0.COMP_1_1k', 1 ],

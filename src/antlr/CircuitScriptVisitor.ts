@@ -9,10 +9,11 @@ import { Path_blocksContext } from "./CircuitScriptParser.js";
 import { Path_block_innerContext } from "./CircuitScriptParser.js";
 import { Property_set_expr2Context } from "./CircuitScriptParser.js";
 import { Assignment_expr2Context } from "./CircuitScriptParser.js";
+import { Pin_select_exprContext } from "./CircuitScriptParser.js";
+import { Component_modifier_exprContext } from "./CircuitScriptParser.js";
 import { Data_expr_with_assignmentContext } from "./CircuitScriptParser.js";
 import { Add_component_exprContext } from "./CircuitScriptParser.js";
 import { Component_select_exprContext } from "./CircuitScriptParser.js";
-import { Pin_select_exprContext } from "./CircuitScriptParser.js";
 import { Pin_select_expr2Context } from "./CircuitScriptParser.js";
 import { At_component_exprContext } from "./CircuitScriptParser.js";
 import { To_component_exprContext } from "./CircuitScriptParser.js";
@@ -110,6 +111,18 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitAssignment_expr2?: (ctx: Assignment_expr2Context) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.pin_select_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPin_select_expr?: (ctx: Pin_select_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.component_modifier_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitComponent_modifier_expr?: (ctx: Component_modifier_exprContext) => Result;
+    /**
      * Visit a parse tree produced by `CircuitScriptParser.data_expr_with_assignment`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -127,12 +140,6 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitComponent_select_expr?: (ctx: Component_select_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.pin_select_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitPin_select_expr?: (ctx: Pin_select_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.pin_select_expr2`.
      * @param ctx the parse tree

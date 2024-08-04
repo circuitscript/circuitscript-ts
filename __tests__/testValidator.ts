@@ -38,7 +38,7 @@ gnd = dgnd()
 
 at gnd
 wire up tmp right tmp
-to D1 = led("GREEN") pin 2 right
+to D1 = led("GREEN") angle:180 pin 2
 at D1 pin 1
 wire right 20 up 20
 to v5v

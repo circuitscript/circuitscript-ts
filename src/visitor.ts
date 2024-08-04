@@ -36,7 +36,7 @@ import {
     Wire_expr_direction_valueContext,
 } from './antlr/CircuitScriptParser.js';
 
-import { ExecutionContext } from './execute.js';
+import { ExecutionContext, isNetOnlyComponent } from './execute.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import {
     NumericValue,
@@ -85,14 +85,11 @@ export class ParserVisitor extends BaseVisitor {
     visitAdd_component_expr = (ctx: Add_component_exprContext): ComponentPin => {
         // The component is always the last item
         const ctxDataWithAssignmentExpr = ctx.data_expr_with_assignment();
-        this.visit(ctxDataWithAssignmentExpr);
-        const [component, pinValue] = 
-            this.getResult(ctxDataWithAssignmentExpr);
+        this.setParam(ctxDataWithAssignmentExpr, { clone: false });
 
-        if (ctx.ID()){
-            this.setComponentOrientation(
-                component, pinValue, ctx.ID()!.getText());
-        }
+        this.visit(ctxDataWithAssignmentExpr);
+        const [component, pinValue] =
+            this.getResult(ctxDataWithAssignmentExpr);
 
         return this.getExecutor().addComponentExisting(component, pinValue);
     }
@@ -104,24 +101,10 @@ export class ParserVisitor extends BaseVisitor {
         } else {
             const ctxComponentSelectExpr = ctx.component_select_expr()!;
             this.visit(ctxComponentSelectExpr);
+
             const [component, pin] = this.getResult(ctxComponentSelectExpr);
-
-            const currentPoint = this.getExecutor().atComponent(component, pin, {
-                addSequence: true,
-                cloneNetComponent: true
-            });
-
-            const ctxIds = ctx.ID();
-            ctxIds.forEach(ctxId => {
-                const idText = ctxId.getText();
-                if (this.acceptedDirections.indexOf(idText) !== -1) {
-                    // If there is ID specified, then it can only be for the 
-                    // component orientation.
-                    this.setComponentOrientation(currentPoint[0],
-                        currentPoint[1], idText)
-                } else if (this.acceptedFlip.indexOf(idText) !== -1){
-                    this.setComponentFlip(component, idText);
-                }
+            this.getExecutor().atComponent(component, pin, {
+                addSequence: true
             });
         }
 
@@ -129,32 +112,16 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
-        let currentPoint: ComponentPin;
-
         if (ctx.Point()) {
             this.getExecutor().toPointBlock();
 
         } else {
             ctx.component_select_expr().forEach(item => {
                 this.visit(item);
-                const [component, pin] = this.getResult(item); 
-                currentPoint = this.getExecutor().toComponent(component, pin, {
-                    addSequence: true, cloneNetComponent: true
+                const [component, pin] = this.getResult(item);
+                this.getExecutor().toComponent(component, pin, {
+                    addSequence: true
                 });
-            });
-
-            const ctxIds = ctx.ID();
-            ctxIds.forEach(ctxId => {
-                const idText = ctxId.getText();
-                if (this.acceptedDirections.indexOf(idText) !== -1) {
-                    // If there is ID specified, then it can only be for the 
-                    // component orientation.
-                    this.setComponentOrientation(currentPoint[0],
-                        currentPoint[1], idText);
-                        
-                } else if (this.acceptedFlip.indexOf(idText) !== -1){
-                    this.setComponentFlip(currentPoint[0], idText);
-                }
             });
         }
 
@@ -383,13 +350,13 @@ export class ParserVisitor extends BaseVisitor {
 
     visitData_expr_with_assignment = (ctx: Data_expr_with_assignmentContext): void => {
 
-        let component: ComplexType;
+        let component: ComplexType = null;
         const ctxDataExpr = ctx.data_expr();
         const ctxAssignmentExpr = ctx.assignment_expr();
 
         if (ctxDataExpr) {
             this.visit(ctxDataExpr);
-            component =  this.getResult(ctxDataExpr);
+            component = this.getResult(ctxDataExpr);
 
             if (component === null || component === undefined) {
                 throw "Could not find component: " + ctxDataExpr.getText();
@@ -398,6 +365,49 @@ export class ParserVisitor extends BaseVisitor {
         } else if (ctxAssignmentExpr) {
             this.visit(ctxAssignmentExpr);
             component = this.getResult(ctxAssignmentExpr);
+        }
+
+        let allowClone = true;
+        if (this.hasParam(ctx)) {
+            const { clone } = this.getParam(ctx);
+            allowClone = clone;
+        }
+
+        if (allowClone && component instanceof ClassComponent
+            && isNetOnlyComponent(component)) {
+            component = this.getExecutor().cloneComponent(component);
+        }
+
+        if (component && component instanceof ClassComponent) {
+            // get the modifiers for the component
+            const modifiers = ctx.component_modifier_expr();
+            modifiers.forEach(modifier => {
+                const modifierText = modifier.ID(0)!.getText();
+                const ctxValueExpr = modifier.value_expr();
+                const ctxID2 = modifier.ID(1);
+
+                let result: ComplexType = null;
+                if (ctxValueExpr) {
+                    this.visit(ctxValueExpr);
+                    result = this.getResult(ctxValueExpr);
+                } else if (ctxID2) {
+                    result = ctxID2.getText();
+                }
+
+                if (modifierText === 'flip') {
+                    const flipValue = result as string;
+                    if (flipValue.indexOf('x') !== -1) {
+                        component.setParam('flipX', 1);
+                    }
+
+                    if (flipValue.indexOf('y') !== -1) {
+                        component.setParam('flipY', 1);
+                    }
+                } else if (modifierText === 'angle') {
+                    const angleValue = Number(result);
+                    component.setParam('angle', angleValue);
+                }
+            });
         }
 
         let pinValue: number | string | null = null;

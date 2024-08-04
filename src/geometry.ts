@@ -280,7 +280,7 @@ export class Geometry {
     static featuresToPath(items: Feature[]): 
         { path: string, isClosedPolygon: boolean } {
 
-        const paths = [];
+        const paths: (string | number)[] = [];
         let isClosedPolygon = false;
 
         items.forEach(item => {
@@ -311,10 +311,10 @@ export class Geometry {
                 
                 const endPoint = getArcPointRadians(x, y, radius, 
                     useEndAngle);
-                
-                paths.push('M ' + startPoint[0] + ' ' + startPoint[1]
-                    + 'A ' + radius + ' ' + radius + ' 0 1 1 ' 
-                    + endPoint[0] + ' ' + endPoint[1] + extraEnd);
+
+                paths.push('M', startPoint[0],
+                    startPoint[1], 'A', radius, radius, 0, 1, 1,
+                    endPoint[0], endPoint[1], extraEnd);
 
 
             } else {
@@ -327,21 +327,32 @@ export class Geometry {
                 for (let i = 0; i < coords.length; i++) {
                     const [x, y] = coords[i];
                     const command = (i === 0) ? 'M' : 'L';
-                    path.push(`${command} ${x} ${y}`);
+                    path.push(`${command}`, x, y);
                 }
 
                 if (isClosedPolygon){
                     path.push('Z');
                 }
 
-                paths.push(path.join(' '));
+                paths.push(...path);
             }
         });
 
         return {
-            path: paths.join(" "),
+            path: this.roundPathValues(paths),
             isClosedPolygon,
         }
+    }
+
+    static roundPathValues(pathItems:(string|number)[]): string {
+        // Ensure that values do not have very very small numbers
+        return pathItems.map(item => {
+            if (typeof item === 'number') {
+                return (+item.toFixed(7)).toString();
+            }
+
+            return item
+        }).join(" ");
     }
 
     static angle(dx: number, dy: number): number {

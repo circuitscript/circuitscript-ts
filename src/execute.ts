@@ -366,16 +366,11 @@ export class ExecutionContext {
         pinId: number | null,
         options?: {
             addSequence?: boolean,
-            cloneNetComponent?: boolean,
         }): ComponentPin {
         this.log('to component');
 
-        const { addSequence = false, cloneNetComponent = false } = options ?? {};
-
-        if (cloneNetComponent && this.isNetOnlyComponent(component)) {
-            component = this.cloneComponent(component);
-        }
-
+        const { addSequence = false } = options ?? {};
+        
         if (!(component instanceof ClassComponent)){
             throw "Not a valid component!";
         }
@@ -460,15 +455,10 @@ export class ExecutionContext {
         pinId: number | null,
         options?: {
             addSequence?: boolean,
-            cloneNetComponent?: boolean,
         }): ComponentPin {
         this.log('at component');
 
-        const { addSequence = false, cloneNetComponent = false } = options ?? {};
-
-        if (cloneNetComponent && this.isNetOnlyComponent(component)) {
-            component = this.cloneComponent(component);
-        }
+        const { addSequence = false } = options ?? {};
 
         this.scope.currentComponent = component;
 
@@ -501,11 +491,7 @@ export class ExecutionContext {
         return this.getCurrentPoint();
     }
 
-    private isNetOnlyComponent(component: ClassComponent): boolean {
-        return isNetComponent(component) && !isLabelComponent(component);
-    }
-
-    private cloneComponent(component: ClassComponent): ClassComponent {
+    cloneComponent(component: ClassComponent): ClassComponent {
         // This creates a clone from a given net component, assume only
         // has 1 pin
 
@@ -1156,6 +1142,10 @@ export function isNetComponent(component: ClassComponent): boolean {
 
 export function isLabelComponent(component: ClassComponent): boolean {
     return component.parameters.has(ParamKeys.__is_label);
+}
+
+export function isNetOnlyComponent(component: ClassComponent): boolean {
+    return isNetComponent(component) && !isLabelComponent(component);
 }
 
 export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {

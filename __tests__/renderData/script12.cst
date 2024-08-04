@@ -28,5 +28,4 @@ to cmp() pin 2
 at pin 3
 wire right 20 down 140 left 180 up 20
 
-to cmp() pin 5 flipX flipY
-..angle = 90
+to cmp() flip:xy angle:90 pin 5
