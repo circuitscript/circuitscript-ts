@@ -36,7 +36,7 @@ import {
     Wire_expr_direction_valueContext,
 } from './antlr/CircuitScriptParser.js';
 
-import { ExecutionContext, isNetOnlyComponent } from './execute.js';
+import { ExecutionContext } from './execute.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import {
     NumericValue,
@@ -85,8 +85,7 @@ export class ParserVisitor extends BaseVisitor {
     visitAdd_component_expr = (ctx: Add_component_exprContext): ComponentPin => {
         // The component is always the last item
         const ctxDataWithAssignmentExpr = ctx.data_expr_with_assignment();
-        this.setParam(ctxDataWithAssignmentExpr, { clone: false });
-
+        
         this.visit(ctxDataWithAssignmentExpr);
         const [component, pinValue] =
             this.getResult(ctxDataWithAssignmentExpr);
@@ -225,6 +224,9 @@ export class ParserVisitor extends BaseVisitor {
         const type = properties.has('type') ?
             properties.get('type') : null;
 
+        const copy = properties.has('copy') ?
+            properties.get('copy') : false;
+
         const width = properties.has('width') ?
             properties.get('width') : null;
 
@@ -233,6 +235,7 @@ export class ParserVisitor extends BaseVisitor {
             display,
             type,
             width,
+            copy
         }
 
         this.setResult(ctx, this.getExecutor().createComponent(instanceName, 
@@ -367,15 +370,9 @@ export class ParserVisitor extends BaseVisitor {
             component = this.getResult(ctxAssignmentExpr);
         }
 
-        let allowClone = true;
-        if (this.hasParam(ctx)) {
-            const { clone } = this.getParam(ctx);
-            allowClone = clone;
-        }
-
-        if (allowClone && component instanceof ClassComponent
-            && isNetOnlyComponent(component)) {
-            component = this.getExecutor().cloneComponent(component);
+        if (component instanceof ClassComponent
+            && component.copyProp) {
+            component = this.getExecutor().copyComponent(component);
         }
 
         if (component && component instanceof ClassComponent) {

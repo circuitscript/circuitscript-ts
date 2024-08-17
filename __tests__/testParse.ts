@@ -15,7 +15,7 @@ describe('test parsing', () => {
         ["resolve nets in local and upper contexts", script9],
         ["assignment in at/to/add statement", script10],
         ["net namespace local and global", script11],
-        ["create component with __is_net", script12],
+        ["create component with copy and __is_net", script12],
         ["correct nets after function call and also `join` keyword", script13],
         ["path with 'point' keyword", script14],
         ["path with 'parallel' keyword", script15],

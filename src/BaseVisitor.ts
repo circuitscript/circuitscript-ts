@@ -503,19 +503,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.resultData.get(ctx);
     }
 
-    protected setParam(ctx: ParserRuleContext, value: any): void {
-        // Pass parameters to context
-        this.paramData.set(ctx, value);
-    }
-
-    protected getParam(ctx: ParserRuleContext): any {
-        return this.paramData.get(ctx);
-    }
-
-    protected hasParam(ctx: ParserRuleContext): boolean {
-        return this.paramData.has(ctx);
-    }
-
     protected handleImportFile(name: string, throwErrors = true): {
         hasError: boolean,
         hasParseError: boolean,

@@ -43,6 +43,10 @@ export class ClassComponent {
     widthProp: number | null = null;
 
     typeProp: string | null = null;
+    
+    // If true, then this component is copied upon reference.
+    // Used for nets, supply, gnd, labels
+    copyProp = false;
 
     styles: { [key: string]: number | string } = {};
 

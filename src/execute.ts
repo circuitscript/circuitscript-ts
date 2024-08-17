@@ -248,7 +248,8 @@ export class ExecutionContext {
             arrange?: Map<string, number[]>,
             display?: string,
             type?: string,
-            width?: number
+            width?: number,
+            copy: boolean
         }
     ): ClassComponent {
 
@@ -298,6 +299,7 @@ export class ExecutionContext {
         component.displayProp = props.display ?? null;
         component.widthProp = props.width ?? null;
         component.typeProp = props.type ?? null;
+        component.copyProp = props.copy ?? false;
 
         // Determine the side for each pin and update the
         // pin definition
@@ -499,22 +501,18 @@ export class ExecutionContext {
         return this.getCurrentPoint();
     }
 
-    cloneComponent(component: ClassComponent): ClassComponent {
-        // This creates a clone from a given net component, assume only
-        // has 1 pin
-
-        let clonedComponent: ClassComponent = null;
-
-        // If is a net component and not a label component, then
-        // create a new copy of the same net component.
+    copyComponent(component: ClassComponent): ClassComponent {
+        // This creates a clone from a given component
+        let componentCopy: ClassComponent = null;
+        
         if (!this.scope.copyIDs.has(component.instanceName)) {
             this.scope.copyIDs.set(component.instanceName, 0);
         }
 
         const idNum = this.scope.copyIDs.get(component.instanceName);
-        clonedComponent = component.clone();
-        clonedComponent._copyID = idNum;
-        clonedComponent._copyFrom = component;
+        componentCopy = component.clone();
+        componentCopy._copyID = idNum;
+        componentCopy._copyFrom = component;
 
         // Set linkIDs to the next value to use
         this.scope.copyIDs.set(component.instanceName, idNum + 1);
@@ -523,18 +521,18 @@ export class ExecutionContext {
 
         // Add the cloned component
         this.scope.instances.set(cloneInstanceName, 
-            clonedComponent);
-        clonedComponent.instanceName = cloneInstanceName;
+            componentCopy);
+        componentCopy.instanceName = cloneInstanceName;
 
         // Link pin of cloned component onto the same net
         this.linkComponentPinNet(
             component, 1,
-            clonedComponent, 1
+            componentCopy, 1
         );
 
         this.log('created clone of net component:', cloneInstanceName);
 
-        return clonedComponent;
+        return componentCopy;
     }
 
     enterBlocks(blockType: BlockTypes): void {
