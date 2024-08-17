@@ -327,6 +327,14 @@ export class ExecutionContext {
 
     printPoint(extra = ''): void {
         let netName = NoNetText;
+
+        if (this.scope.currentComponent === null || this.scope.currentPin === null){
+            this.log(
+                (extra !== '' ? (extra + ' ') : '') + 'point is null'
+            );
+            return;
+        }
+
         if (this.scope.hasNet(
             this.scope.currentComponent,
             this.scope.currentPin
