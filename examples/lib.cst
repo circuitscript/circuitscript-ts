@@ -10,7 +10,6 @@ def net(net_name):
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
-            __is_net: 1
             net_name: net_name
             priority: 10
 
@@ -24,7 +23,6 @@ def supply(net_name):
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
-            __is_net: 1
             net_name: net_name
             priority: 20
 
@@ -37,7 +35,6 @@ def label(value):
             pin: 1, 0, 0, 0, 0, display_pin_id=0
         type: "label"
         params:
-            __is_net: 1
             net_name: value
             value: value
             priority: 5
@@ -150,7 +147,6 @@ def cgnd():
             label: "net_name", 0, 22, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
-            __is_net: 1
             net_name: net_name
             priority: 100
 
@@ -167,7 +163,6 @@ def dgnd(net_name="GND"):
             label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
-            __is_net: 1
             net_name: net_name
             priority: 100
 

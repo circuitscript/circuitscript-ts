@@ -90,13 +90,13 @@ branch:
     wire left 20 down 20
     add diode() ..angle = 90
 
-wire right 40 
+wire right 40
 add diode()
 `, [
     ['/NET_1', 'diode_1.COMP_1', 1],
     ['/NET_1', 'diode_2.COMP_1', 1],
-    ['/hello', 'label_0.COMP_1_1', 1],
-    ['/hello', 'label_0.COMP_1_1:0', 1],
+    ['/hello', 'label_0.COMP_1_hello', 1],
+    ['/hello', 'label_0.COMP_1_hello:0', 1],
     ['/hello', 'diode_0.COMP_1', 1],
     ['/hello', 'diode_1.COMP_1', 2],
     ['/hello', 'diode_3.COMP_1', 1]
@@ -202,8 +202,8 @@ divider(v5v, 10k, 20k, label("hello"))
     ['/GND', 'gnd', 1],
     ['/GND', 'divider_0.gnd:0', 1],
     ['/GND', 'divider_0.res_1.COMP_1_20k', 2],
-    ['/hello', 'label_0.COMP_1_1', 1],
-    ['/hello', 'divider_0.label_0.COMP_1_1:0', 1],
+    ['/hello', 'label_0.COMP_1_hello', 1],
+    ['/hello', 'divider_0.label_0.COMP_1_hello:0', 1],
     ['/hello', 'divider_0.res_0.COMP_1_10k', 2],
     ['/hello', 'divider_0.res_1.COMP_1_20k', 1]
 ]);
@@ -260,30 +260,30 @@ frame:
     ['/GND', 'divider_0.res_3.COMP_1_20k', 2],
     ['/GND', 'divider_1.gnd:0', 1],
     ['/GND', 'divider_1.res_7.COMP_1_20k', 2],
-    ['/div1/inner_name', 'divider_0.label_0.COMP_1_1', 1],
-    ['/div1/inner_name', 'divider_0.label_0.COMP_1_1:0', 1],
+    ['/div1/inner_name', 'divider_0.label_0.COMP_1_inner_name', 1],
+    ['/div1/inner_name', 'divider_0.label_0.COMP_1_inner_name:0', 1],
     ['/div1/inner_name', 'divider_0.res_0.COMP_1_10k', 2],
     ['/div1/inner_name', 'divider_0.res_1.COMP_1_100k', 1],
     ['/div1/inner_name', 'divider_0.res_3.COMP_1_20k', 1],
-    ['/div2/inner_name', 'divider_1.label_3.COMP_1_1', 1],
-    ['/div2/inner_name', 'divider_1.label_3.COMP_1_1:0', 1],
+    ['/div2/inner_name', 'divider_1.label_3.COMP_1_inner_name', 1],
+    ['/div2/inner_name', 'divider_1.label_3.COMP_1_inner_name:0', 1],
     ['/div2/inner_name', 'divider_1.res_4.COMP_1_10k', 2],
     ['/div2/inner_name', 'divider_1.res_5.COMP_1_100k', 1],
     ['/div2/inner_name', 'divider_1.res_7.COMP_1_20k', 1],
-    ['/global_name', 'net_0.COMP_1_1', 1],
-    ['/global_name', 'divider_0.label_1.COMP_1_1', 1],
-    ['/global_name', 'divider_0.label_1.COMP_1_1:0', 1],
+    ['/global_name', 'net_0.COMP_1_global_name', 1],
+    ['/global_name', 'divider_0.label_1.COMP_1_global_name', 1],
+    ['/global_name', 'divider_0.label_1.COMP_1_global_name:0', 1],
     ['/global_name', 'divider_0.res_1.COMP_1_100k', 2],
     ['/global_name', 'divider_0.res_2.COMP_1_0', 1],
-    ['/global_name', 'divider_1.label_4.COMP_1_1', 1],
-    ['/global_name', 'divider_1.label_4.COMP_1_1:0', 1],
+    ['/global_name', 'divider_1.label_4.COMP_1_global_name', 1],
+    ['/global_name', 'divider_1.label_4.COMP_1_global_name:0', 1],
     ['/global_name', 'divider_1.res_5.COMP_1_100k', 2],
     ['/global_name', 'divider_1.res_6.COMP_1_0', 1],
-    ['/global_name_2', 'divider_0.label_2.COMP_1_1', 1],
-    ['/global_name_2', 'divider_0.label_2.COMP_1_1:0', 1],
+    ['/global_name_2', 'divider_0.label_2.COMP_1_global_name_2', 1],
+    ['/global_name_2', 'divider_0.label_2.COMP_1_global_name_2:0', 1],
     ['/global_name_2', 'divider_0.res_2.COMP_1_0', 2],
-    ['/global_name_2', 'divider_1.label_5.COMP_1_1', 1],
-    ['/global_name_2', 'divider_1.label_5.COMP_1_1:0', 1],
+    ['/global_name_2', 'divider_1.label_5.COMP_1_global_name_2', 1],
+    ['/global_name_2', 'divider_1.label_5.COMP_1_global_name_2:0', 1],
     ['/global_name_2', 'divider_1.res_6.COMP_1_0', 2]
 ]);
 
@@ -356,32 +356,48 @@ branch:
     ['/5V', 'tmp1_0.res_0.COMP_1_0', 1],
     ['/5V', 'tmp1_1.__root', 1],
     ['/5V', 'tmp1_1.res_4.COMP_1_0', 1],
-    ['/global_label', 'tmp1_0.label_1.COMP_1_1', 1],
-    ['/global_label', 'tmp1_0.label_1.COMP_1_1:0', 1],
+    ['/global_label', 'tmp1_0.label_1.COMP_1_global_label', 1],
+    ['/global_label', 'tmp1_0.label_1.COMP_1_global_label:0', 1],
     ['/global_label', 'tmp1_0.res_1.COMP_1_0', 2],
     ['/global_label', 'tmp1_0.res_2.COMP_1_0', 1],
-    ['/global_label', 'tmp1_1.label_4.COMP_1_1', 1],
-    ['/global_label', 'tmp1_1.label_4.COMP_1_1:0', 1],
+    ['/global_label', 'tmp1_1.label_4.COMP_1_global_label', 1],
+    ['/global_label', 'tmp1_1.label_4.COMP_1_global_label:0', 1],
     ['/global_label', 'tmp1_1.res_5.COMP_1_0', 2],
     ['/global_label', 'tmp1_1.res_6.COMP_1_0', 1],
     ['/scope1/inner/NET_1', 'tmp2_0.__root', 1],
     ['/scope1/inner/NET_1', 'tmp1_0.tmp2_0.res_3.COMP_1_0', 1],
     ['/scope1/inner/NET_1', 'tmp1_0.res_2.COMP_1_0', 2],
-    ['/scope1/inner/label_2', 'tmp1_0.tmp2_0.label_2.COMP_1_1', 1],
-    ['/scope1/inner/label_2', 'tmp1_0.tmp2_0.label_2.COMP_1_1:0', 1],
+    [
+        '/scope1/inner/label_2',
+        'tmp1_0.tmp2_0.label_2.COMP_1_label_2',
+        1
+    ],
+    [
+        '/scope1/inner/label_2',
+        'tmp1_0.tmp2_0.label_2.COMP_1_label_2:0',
+        1
+    ],
     ['/scope1/inner/label_2', 'tmp1_0.tmp2_0.res_3.COMP_1_0', 2],
-    ['/scope1/label_1', 'tmp1_0.label_0.COMP_1_1', 1],
-    ['/scope1/label_1', 'tmp1_0.label_0.COMP_1_1:0', 1],
+    ['/scope1/label_1', 'tmp1_0.label_0.COMP_1_label_1', 1],
+    ['/scope1/label_1', 'tmp1_0.label_0.COMP_1_label_1:0', 1],
     ['/scope1/label_1', 'tmp1_0.res_0.COMP_1_0', 2],
     ['/scope1/label_1', 'tmp1_0.res_1.COMP_1_0', 1],
     ['/scope2/inner/NET_1', 'tmp2_1.__root', 1],
     ['/scope2/inner/NET_1', 'tmp1_1.tmp2_1.res_7.COMP_1_0', 1],
     ['/scope2/inner/NET_1', 'tmp1_1.res_6.COMP_1_0', 2],
-    ['/scope2/inner/label_2', 'tmp1_1.tmp2_1.label_5.COMP_1_1', 1],
-    ['/scope2/inner/label_2', 'tmp1_1.tmp2_1.label_5.COMP_1_1:0', 1],
+    [
+        '/scope2/inner/label_2',
+        'tmp1_1.tmp2_1.label_5.COMP_1_label_2',
+        1
+    ],
+    [
+        '/scope2/inner/label_2',
+        'tmp1_1.tmp2_1.label_5.COMP_1_label_2:0',
+        1
+    ],
     ['/scope2/inner/label_2', 'tmp1_1.tmp2_1.res_7.COMP_1_0', 2],
-    ['/scope2/label_1', 'tmp1_1.label_3.COMP_1_1', 1],
-    ['/scope2/label_1', 'tmp1_1.label_3.COMP_1_1:0', 1],
+    ['/scope2/label_1', 'tmp1_1.label_3.COMP_1_label_1', 1],
+    ['/scope2/label_1', 'tmp1_1.label_3.COMP_1_label_1:0', 1],
     ['/scope2/label_1', 'tmp1_1.res_4.COMP_1_0', 2],
     ['/scope2/label_1', 'tmp1_1.res_5.COMP_1_0', 1]
 ]);
@@ -390,8 +406,8 @@ export const script12 = new ScriptTest(`
 my_net = create component:
     pins: 1
     copy: 1
+    type: "net"
     params:
-        __is_net: 1
         net_name: "hello"
 
 at my_net
@@ -405,7 +421,8 @@ at my_net
 After a function call, the correct graph position should be resumed from.
 This test also checks the join keyword
 */
-export const script13 = new ScriptTest(`import lib
+export const script13 = new ScriptTest(`
+import lib
 
 v5v = supply("5V")
 gnd = dgnd()
@@ -441,13 +458,13 @@ to v5v`,
         ['/5V', 'v5v:0', 1],
         ['/GND', 'gnd', 1],
         ['/GND', 'gnd:0', 1],
-        ['/GND', 'label_0.COMP_1_1', 1],
-        ['/GND', 'label_0.COMP_1_1:0', 1],
+        ['/GND', 'label_0.COMP_1_TXLED', 1],
+        ['/GND', 'label_0.COMP_1_TXLED:0', 1],
         ['/GND', 'led_with_res_0.__root', 1],
         ['/GND', 'led_with_res_0.led_0.COMP_1_0603', 2],
         ['/GND', 'gnd:1', 1],
-        ['/GND', 'label_1.COMP_1_1', 1],
-        ['/GND', 'label_1.COMP_1_1:0', 1],
+        ['/GND', 'label_1.COMP_1_RXLED', 1],
+        ['/GND', 'label_1.COMP_1_RXLED:0', 1],
         ['/GND', 'led_with_res_1.__root', 1],
         ['/GND', 'led_with_res_1.led_1.COMP_1_0603', 2],
         ['/NET_2', 'led_with_res_0.led_0.COMP_1_0603', 1],

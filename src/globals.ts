@@ -12,11 +12,6 @@ export enum GlobalNames {
 export const NoNetText = 'NO_NET';
 
 export enum ParamKeys {
-
-    // If this is set to 1 (number), then use the component as a net.
-    __is_net = '__is_net',
-    __is_label = '__is_label',
-
     priority = 'priority',
     net_name = 'net_name',
 }

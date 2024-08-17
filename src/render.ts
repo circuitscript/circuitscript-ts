@@ -3,7 +3,7 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
-import { ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals.js';
+import { ComponentTypes, ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
 
@@ -70,7 +70,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         if (symbol !== null && symbol) {
             const extra: SymbolExtras = {};
 
-            if (item.component.parameters.has('__is_net')) {
+            if (item.component.typeProp === ComponentTypes.net) {
                 extra.net_name = item.component.parameters.get(ParamKeys.net_name) as string;
 
             } else if (item.component.parameters.has('value')) {

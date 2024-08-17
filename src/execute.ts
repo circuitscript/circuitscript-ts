@@ -263,14 +263,21 @@ export class ExecutionContext {
             component.pins.set(pin.id, pin);
         });
 
-        const paramsMap = new Map<string, any>();
+        component.arrangeProps = props.arrange ?? null;
+        component.displayProp = props.display ?? null;
+        component.widthProp = props.width ?? null;
+        component.typeProp = props.type ?? null;
+        component.copyProp = props.copy ?? false;
 
+        const paramsMap = new Map<string, any>();
         params.forEach((param) => {
             component.parameters.set(param.paramName, param.paramValue);
             paramsMap.set(param.paramName, param.paramValue);
         });
-
-        if (paramsMap.has(ParamKeys.__is_net)) {
+        
+        if (component.typeProp === ComponentTypes.net
+            || component.typeProp === ComponentTypes.label
+        ) {
             const netName = paramsMap.get(ParamKeys.net_name);
             const priority = paramsMap.get(ParamKeys.priority);
 
@@ -293,17 +300,9 @@ export class ExecutionContext {
             this.log('set net', netName, 'component', component);
         }
 
-        const {arrange = null} = props;
-
-        component.arrangeProps = arrange;
-        component.displayProp = props.display ?? null;
-        component.widthProp = props.width ?? null;
-        component.typeProp = props.type ?? null;
-        component.copyProp = props.copy ?? false;
-
         // Determine the side for each pin and update the
         // pin definition
-        const portSides = getPortSide(component.pins, arrange);
+        const portSides = getPortSide(component.pins, component.arrangeProps);
         portSides.forEach(({ pinId, side, position }) => {
             if (component.pins.has(pinId)){
                 const tmpPin = component.pins.get(pinId);
@@ -940,7 +939,8 @@ export class ExecutionContext {
                 const tmpComponent: ClassComponent = sequenceAction[1];
 
                 // Check if the component is a gnd component
-                if (isNetComponent(tmpComponent) && tmpComponent.parameters.get(ParamKeys.net_name) === 'gnd') {
+                if (tmpComponent.typeProp === ComponentTypes.net 
+                        && tmpComponent.parameters.get(ParamKeys.net_name) === 'gnd') {
                     // Is a gnd net
                     tmpComponent._copyID = gndCopyIdOffset + incrementGndLinkId;
                     incrementGndLinkId += 1;
@@ -1139,19 +1139,6 @@ function isWireSegmentsEndAuto(segments:WireSegment[]): boolean {
     }
 
     return false;
-}
-
-export function isNetComponent(component: ClassComponent): boolean {
-    // Returns true if the component is a net component
-    return component.parameters.has(ParamKeys.__is_net);
-}
-
-export function isLabelComponent(component: ClassComponent): boolean {
-    return component.parameters.has(ParamKeys.__is_label);
-}
-
-export function isNetOnlyComponent(component: ClassComponent): boolean {
-    return isNetComponent(component) && !isLabelComponent(component);
 }
 
 export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
