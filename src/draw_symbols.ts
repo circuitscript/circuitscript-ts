@@ -1100,28 +1100,28 @@ export class SymbolDrawing {
     }
 }
 
-export type SubExpressionCommand = [commandName: string,
+export type GraphicExprCommand = [commandName: string,
     positionParams: any[],
     keywordParams: Map<string, any>];
 
 export class SymbolDrawingCommands extends SymbolDrawing {
 
     id = "";
-    private commands: SubExpressionCommand[];
+    private commands: GraphicExprCommand[];
 
-    constructor(commands: SubExpressionCommand[]){
+    constructor(commands: GraphicExprCommand[]){
         super();
         this.commands = commands;
         this.id = Math.random().toString().slice(2);
     }
 
-    getCommands(): SubExpressionCommand[] {
+    getCommands(): GraphicExprCommand[] {
         return this.commands;
     }
 
     clone(): SymbolDrawingCommands {
         // Force a deep clone
-        const tmpCommands: SubExpressionCommand[] = this.commands.map(item => {
+        const tmpCommands: GraphicExprCommand[] = this.commands.map(item => {
             if (item[0] === PlaceHolderCommands.label) {
                 const commandName = item[0];
                 const positionParams = item[1];

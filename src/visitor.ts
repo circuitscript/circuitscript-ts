@@ -28,12 +28,12 @@ import {
     Property_key_exprContext,
     Property_set_exprContext,
     Single_line_propertyContext,
-    Sub_exprContext,
     To_component_exprContext,
     Wire_exprContext,
     UnaryOperatorExprContext,
     Wire_expr_direction_onlyContext,
     Wire_expr_direction_valueContext,
+    Graphic_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -49,7 +49,7 @@ import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin,
     ComponentPinNet, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, NoNetText } from './globals.js';
 import { Net } from './objects/Net.js';
-import { SubExpressionCommand, SymbolDrawingCommands } from './draw_symbols.js';
+import { GraphicExprCommand, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 
@@ -244,7 +244,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
 
-        const commands = ctx.sub_expr().reduce((accum, item) => {
+        const commands = ctx.graphic_expr().reduce((accum, item) => {
             this.visit(item);
             const [commandName, parameters] = 
                 this.getResult(item) as [string, CallableParameter[]];
@@ -262,7 +262,7 @@ export class ParserVisitor extends BaseVisitor {
 
             accum.push([commandName, positionParams, keywordParams]);
             return accum;
-        }, [] as SubExpressionCommand[]);
+        }, [] as GraphicExprCommand[]);
 
         const drawing = new SymbolDrawingCommands(commands);
         drawing.source = ctx.getText();
@@ -270,7 +270,7 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, drawing);
     }
 
-    visitSub_expr = (ctx: Sub_exprContext): void => {
+    visitGraphic_expr = (ctx:Graphic_exprContext): void => {
         let commandName: string | null = null;
         const command = ctx._command;
 

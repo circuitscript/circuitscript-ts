@@ -101,7 +101,7 @@ export class CircuitScriptParser extends antlr.Parser {
     public static readonly RULE_function_return_expr = 39;
     public static readonly RULE_create_component_expr = 40;
     public static readonly RULE_create_graphic_expr = 41;
-    public static readonly RULE_sub_expr = 42;
+    public static readonly RULE_graphic_expr = 42;
     public static readonly RULE_property_expr = 43;
     public static readonly RULE_property_key_expr = 44;
     public static readonly RULE_property_value_expr = 45;
@@ -142,9 +142,9 @@ export class CircuitScriptParser extends antlr.Parser {
         "data_expr", "binary_operator", "unary_operator", "value_expr", 
         "function_def_expr", "function_expr", "function_args_expr", "atom_expr", 
         "trailer_expr", "function_call_expr", "net_namespace_expr", "function_return_expr", 
-        "create_component_expr", "create_graphic_expr", "sub_expr", "property_expr", 
-        "property_key_expr", "property_value_expr", "blank_expr", "wire_atom_expr", 
-        "wire_expr", "point_expr", "import_expr", "frame_expr",
+        "create_component_expr", "create_graphic_expr", "graphic_expr", 
+        "property_expr", "property_key_expr", "property_value_expr", "blank_expr", 
+        "wire_atom_expr", "wire_expr", "point_expr", "import_expr", "frame_expr",
     ];
 
     public get grammarFileName(): string { return "CircuitScript.g4"; }
@@ -2559,7 +2559,7 @@ export class CircuitScriptParser extends antlr.Parser {
                 case CircuitScriptParser.ID:
                     {
                     this.state = 477;
-                    this.sub_expr();
+                    this.graphic_expr();
                     }
                     break;
                 default:
@@ -2587,9 +2587,9 @@ export class CircuitScriptParser extends antlr.Parser {
         }
         return localContext;
     }
-    public sub_expr(): Sub_exprContext {
-        let localContext = new Sub_exprContext(this.context, this.state);
-        this.enterRule(localContext, 84, CircuitScriptParser.RULE_sub_expr);
+    public graphic_expr(): Graphic_exprContext {
+        let localContext = new Graphic_exprContext(this.context, this.state);
+        this.enterRule(localContext, 84, CircuitScriptParser.RULE_graphic_expr);
         let _la: number;
         try {
             this.enterOuterAlt(localContext, 1);
@@ -4787,14 +4787,14 @@ export class Create_graphic_exprContext extends antlr.ParserRuleContext {
     public DEDENT(): antlr.TerminalNode {
         return this.getToken(CircuitScriptParser.DEDENT, 0)!;
     }
-    public sub_expr(): Sub_exprContext[];
-    public sub_expr(i: number): Sub_exprContext | null;
-    public sub_expr(i?: number): Sub_exprContext[] | Sub_exprContext | null {
+    public graphic_expr(): Graphic_exprContext[];
+    public graphic_expr(i: number): Graphic_exprContext | null;
+    public graphic_expr(i?: number): Graphic_exprContext[] | Graphic_exprContext | null {
         if (i === undefined) {
-            return this.getRuleContexts(Sub_exprContext);
+            return this.getRuleContexts(Graphic_exprContext);
         }
 
-        return this.getRuleContext(i, Sub_exprContext);
+        return this.getRuleContext(i, Graphic_exprContext);
     }
     public override get ruleIndex(): number {
         return CircuitScriptParser.RULE_create_graphic_expr;
@@ -4809,7 +4809,7 @@ export class Create_graphic_exprContext extends antlr.ParserRuleContext {
 }
 
 
-export class Sub_exprContext extends antlr.ParserRuleContext {
+export class Graphic_exprContext extends antlr.ParserRuleContext {
     public _command?: Token | null;
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
@@ -4830,11 +4830,11 @@ export class Sub_exprContext extends antlr.ParserRuleContext {
         return this.getToken(CircuitScriptParser.CLOSE_PAREN, 0);
     }
     public override get ruleIndex(): number {
-        return CircuitScriptParser.RULE_sub_expr;
+        return CircuitScriptParser.RULE_graphic_expr;
     }
     public override accept<Result>(visitor: CircuitScriptVisitor<Result>): Result | null {
-        if (visitor.visitSub_expr) {
-            return visitor.visitSub_expr(this);
+        if (visitor.visitGraphic_expr) {
+            return visitor.visitGraphic_expr(this);
         } else {
             return visitor.visitChildren(this);
         }

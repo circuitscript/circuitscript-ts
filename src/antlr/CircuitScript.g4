@@ -158,10 +158,10 @@ net_namespace_expr: '+'? '/' data_expr?;
 function_return_expr: Return data_expr ;
 
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
-create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | sub_expr)+ DEDENT;
+create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
 // Remove the ':' in the future
-sub_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')');
+graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')');
 
 property_expr: property_key_expr ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;

@@ -2,12 +2,12 @@ import { TerminalNode, Token } from "antlr4ng";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer";
 import { Function_def_exprContext, Create_component_exprContext, 
     Create_graphic_exprContext, Atom_exprContext, Property_key_exprContext, 
-    Sub_exprContext, 
     ValueAtomExprContext,
     Assignment_exprContext,
     Import_exprContext,
     Function_args_exprContext,
-    Function_call_exprContext} from "./antlr/CircuitScriptParser";
+    Function_call_exprContext,
+    Graphic_exprContext} from "./antlr/CircuitScriptParser";
 import { BaseVisitor, OnErrorCallback } from "./BaseVisitor";
 
 export class SemanticTokensVisitor extends BaseVisitor {
@@ -89,8 +89,8 @@ export class SemanticTokensVisitor extends BaseVisitor {
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
         this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
 
-        ctx.sub_expr().forEach(sub_expr => {
-            this.visit(sub_expr);
+        ctx.graphic_expr().forEach(graphic_expr => {
+            this.visit(graphic_expr);
         });
     }
 
@@ -113,7 +113,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
     }
 
-    visitSub_expr = (ctx: Sub_exprContext): void  => {
+    visitGraphic_expr = (ctx: Graphic_exprContext): void  => {
         let useValue: TerminalNode | null = null;
 
         const ctxId = ctx.ID();
