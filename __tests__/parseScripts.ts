@@ -48,7 +48,10 @@ gnd = dgnd("XGND")
 # Test functions
 def power_input():
     return create component:
-        pins: 3
+        pins: 
+            1: input, "1"
+            2: any, "2"
+            3: input, "3"
         arrange:
             left: 1,3
             right: 2

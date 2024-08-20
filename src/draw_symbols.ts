@@ -1,8 +1,9 @@
 import { G } from "@svgdotjs/svg.js";
 
-import { SymbolPinSide, defaultFont } from "./globals.js";
+import { ReferenceTypes, SymbolPinSide, defaultFont } from "./globals.js";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
+import { PinTypes } from "./objects/PinTypes.js";
 
 
 /**
@@ -500,6 +501,14 @@ export class SymbolPlaceholder extends SymbolGraphic {
         }
 
         let pinNameParam: string | null = null;
+        let pinType = PinTypes.Any;
+
+        // Store for now, not used for anything yet.
+        if (positionParams[1].type && positionParams[1].type === ReferenceTypes.pinType){
+            pinType = positionParams[1].value;
+            positionParams = [positionParams[0], ...positionParams.slice(2)];
+        }
+
         if (typeof positionParams[1] === 'string') {
             // If the type of the second position is a string, then
             // use the string value as the pin name

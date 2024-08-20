@@ -47,7 +47,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, NoNetText } from './globals.js';
+import { BlockTypes, ComponentTypes, NoNetText, ReferenceTypes } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -812,9 +812,11 @@ export class ParserVisitor extends BaseVisitor {
                     const firstValue = pinDef[0];
 
                     // Check if firstValue matches a pin type
-                    if (this.pinTypes.indexOf(firstValue) !== -1) {
+                    if (firstValue.type
+                        && firstValue.type === ReferenceTypes.pinType
+                        && this.pinTypes.indexOf(firstValue.value) !== -1) {
                         // First value matches a pin type
-                        pinType = firstValue;
+                        pinType = firstValue.value;
                         pinName = pinDef[1];
 
                         if (pinDef.length > 2) {

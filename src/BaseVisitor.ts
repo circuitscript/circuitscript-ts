@@ -18,6 +18,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
 import { ParserRuleContext } from 'antlr4ng';
+import { ReferenceTypes } from './globals';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -227,7 +228,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             // Not sure if just returning the string is enough...
             currentReference = {
                 found: true,
-                value: atomId
+                value: atomId,
+                type: ReferenceTypes.pinType,
             }
         } else {
             currentReference = executor.resolveVariable(
@@ -413,7 +415,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 value = new UndeclaredReference(reference);
             } else {
                 // This is the returned component from the function call
-                value = reference.value;
+                if (reference.type && reference.type === ReferenceTypes.pinType) {
+                    value = reference;
+                } else {
+                    value = reference.value;
+                }
             }
         }
 

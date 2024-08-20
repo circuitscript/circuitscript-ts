@@ -52,6 +52,7 @@ export enum ReferenceTypes {
     value = 'value',
     variable = 'variable',
     instance = 'instance',
+    pinType = 'pinType',
 }
 
 export enum BlockTypes {
