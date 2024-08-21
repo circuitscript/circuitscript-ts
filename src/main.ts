@@ -18,8 +18,8 @@ export default async function main(): Promise<void> {
     program
         .description('generate graphical output from circuitscript files')
         .version(version)
+        .argument('[input file]', 'Input file')
         .option('-i, --input text <input text>', 'Input text directly')
-        .option('-f, --input-file <path>', 'Input file')
         .option('-o, --output <path>', 'Output path')
         .option('-c, --current-directory <path>', 'Set current directory')
         .option('-k, --kicad-netlist <filename>', 'Create KiCad netlist')
@@ -40,6 +40,7 @@ export default async function main(): Promise<void> {
     program.parse();    
 
     const options = program.opts();
+    const args = program.args;
 
     const watchFileChanges = options.watch;
     const outputPath = options.output ?? null;
@@ -55,18 +56,21 @@ export default async function main(): Promise<void> {
 
     await prepareSVGEnvironment(fontsPath);
 
-    let inputFilePath: string = null;
+    let inputFilePath = "";
 
     let scriptData: string;
-    if (options.input) {
-        scriptData = options.input;
-    } else {
-        inputFilePath = options.inputFile; // this should be provided
+    if (args.length > 0 && args[0]){
+        inputFilePath = args[0];
         scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
 
         if (currentDirectory === null) {
             currentDirectory = path.dirname(inputFilePath);
         }
+    } else if (options.input) {
+        scriptData = options.input;
+    } else {
+        console.log("No input provided");
+        return;
     }    
 
     const scriptOptions = {
