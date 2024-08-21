@@ -1,18 +1,17 @@
-import { ComponentPinNet } from "../src/objects/types.js";
+import { ComponentPinNet } from "../src/objects/types";
 
-
-export class ScriptTest {
+export class ScriptTest<T>{
 
     script: string;
-    expected: ComponentPinNet[];
+    expected: T[];
 
-    constructor(script: string, expected: ComponentPinNet[]) {
+    constructor(script: string, expected: T[]) {
         this.script = script;
         this.expected = expected;
     }
 }
 
-export const script1 = new ScriptTest(`
+export const script1 = new ScriptTest<ComponentPinNet>(`
 U1 = create component:
     pins: 10
 
@@ -628,3 +627,248 @@ point:
     ['/GND', 'res_2.COMP_1_1k', 2],
     ['/GND', 'gnd:0', 1]
 ]);
+
+
+
+// Scripts for comparison and logical operators
+export const script17 = new ScriptTest(`
+a = 0
+b = 9
+if b > 10:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script18 = new ScriptTest(`
+a = 0
+b = 10
+if b > 10:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script19 = new ScriptTest(`
+a = 0
+b = 11
+if b > 10:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script20 = new ScriptTest(`
+a = 0
+b = 9
+if b < 10:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script21 = new ScriptTest(`
+a = 0
+b = 10
+if b < 10:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script22 = new ScriptTest(`
+a = 0
+b = 11
+if b < 10:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script23 = new ScriptTest(`
+a = 0
+b = 9
+if b >= 10:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script24 = new ScriptTest(`
+a = 0
+b = 10
+if b >= 10:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script25 = new ScriptTest(`
+a = 0
+b = 11
+if b >= 10:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script26 = new ScriptTest(`
+a = 0
+b = 9
+if b <= 10:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script27 = new ScriptTest(`
+a = 0
+b = 10
+if b <= 10:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script28 = new ScriptTest(`
+a = 0
+b = 11
+if b <= 10:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script29 = new ScriptTest(`
+a = 0
+b = 9
+if b > 10 && b < 20:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script30 = new ScriptTest(`
+a = 0
+b = 11
+if b > 10 && b < 20:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script31 = new ScriptTest(`
+a = 0
+b = 21
+if b > 10 && b < 20:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script32 = new ScriptTest(`
+a = 0
+b = 9
+if b < 10 || b < 20:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script33 = new ScriptTest(`
+a = 0
+b = 11
+if b < 10 || b < 20:
+    a = 1
+
+print(a)
+`, [1]);
+
+export const script34 = new ScriptTest(`
+a = 0
+b = 21
+if b < 10 || b < 20:
+    a = 1
+
+print(a)
+`, [0]);
+
+export const script35 = new ScriptTest(`
+a = 0
+b = 0
+
+if b > 10 && b < 20:
+    a = 1
+else if b >= 20 && b < 30:
+    a = 2
+else if b >= 30 && b < 40:
+    a = 3
+else:
+    a = 4
+
+print(a)
+`, [4]);
+
+export const script36 = new ScriptTest(`
+a = 0
+b = 11
+
+if b > 10 && b < 20:
+    a = 1
+else if b >= 20 && b < 30:
+    a = 2
+else if b >= 30 && b < 40:
+    a = 3
+else:
+    a = 4
+
+print(a)
+`, [1]);
+
+export const script37 = new ScriptTest(`
+a = 0
+b = 21
+
+if b > 10 && b < 20:
+    a = 1
+else if b >= 20 && b < 30:
+    a = 2
+else if b >= 30 && b < 40:
+    a = 3
+else:
+    a = 4
+
+print(a)
+`, [2]);
+
+export const script38 = new ScriptTest(`
+a = 0
+b = 31
+
+if b > 10 && b < 20:
+    a = 1
+else if b >= 20 && b < 30:
+    a = 2
+else if b >= 30 && b < 40:
+    a = 3
+else:
+    a = 4
+
+print(a)
+`, [3]);
+
+export const script39 = new ScriptTest(`
+a = 0
+b = 41
+
+if b > 10 && b < 20:
+    a = 1
+else if b >= 20 && b < 30:
+    a = 2
+else if b >= 30 && b < 40:
+    a = 3
+else:
+    a = 4
+
+print(a)
+`, [4]);

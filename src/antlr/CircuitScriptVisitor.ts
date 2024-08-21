@@ -34,6 +34,7 @@ import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
 import { FunctionCallExprContext } from "./CircuitScriptParser.js";
 import { AdditionExprContext } from "./CircuitScriptParser.js";
 import { MultiplyExprContext } from "./CircuitScriptParser.js";
+import { LogicalOperatorExprContext } from "./CircuitScriptParser.js";
 import { DataExprContext } from "./CircuitScriptParser.js";
 import { UnaryOperatorExprContext } from "./CircuitScriptParser.js";
 import { ValueAtomExprContext } from "./CircuitScriptParser.js";
@@ -64,6 +65,9 @@ import { Wire_exprContext } from "./CircuitScriptParser.js";
 import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_exprContext } from "./CircuitScriptParser.js";
 import { Frame_exprContext } from "./CircuitScriptParser.js";
+import { If_exprContext } from "./CircuitScriptParser.js";
+import { If_inner_exprContext } from "./CircuitScriptParser.js";
+import { Else_exprContext } from "./CircuitScriptParser.js";
 
 
 /**
@@ -264,6 +268,13 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitMultiplyExpr?: (ctx: MultiplyExprContext) => Result;
     /**
+     * Visit a parse tree produced by the `LogicalOperatorExpr`
+     * labeled alternative in `CircuitScriptParser.data_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitLogicalOperatorExpr?: (ctx: LogicalOperatorExprContext) => Result;
+    /**
      * Visit a parse tree produced by the `DataExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
@@ -452,5 +463,23 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitFrame_expr?: (ctx: Frame_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.if_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIf_expr?: (ctx: If_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.if_inner_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIf_inner_expr?: (ctx: If_inner_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.else_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitElse_expr?: (ctx: Else_exprContext) => Result;
 }
 

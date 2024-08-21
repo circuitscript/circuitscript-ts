@@ -25,12 +25,20 @@ Define:     'def';
 Import:     'import';
 
 If:         'if';
+Else:       'else';
 Not:        '!';
 
 Frame:      'frame';
 
-Equals:     '==';
-NotEquals:  '!=';
+Equals:             '==';
+NotEquals:          '!=';
+GreaterThan:        '>';
+GreatOrEqualThan:   '>=';
+LessThan:           '<';
+LessOrEqualThan:    '<=';
+LogicalAnd:         '&&';
+LogicalOr:          '||';
+
 Addition:   '+';
 Minus:      '-';
 Divide:     '/';
@@ -58,6 +66,8 @@ expression: add_component_expr
         | at_block
         | path_blocks
         | point_expr
+
+        | if_expr
         ;
 
 path_blocks: path_block_inner+;
@@ -118,6 +128,7 @@ data_expr:
     | data_expr (Multiply | Divide) data_expr           #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
+    | data_expr (LogicalAnd | LogicalOr) data_expr      #LogicalOperatorExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
     | function_call_expr                                #FunctionCallExpr
@@ -125,6 +136,10 @@ data_expr:
 
 binary_operator: Equals 
     | NotEquals
+    | GreaterThan
+    | GreatOrEqualThan
+    | LessThan
+    | LessOrEqualThan
     ;
 
 unary_operator: Not | Minus;
@@ -181,6 +196,12 @@ import_expr: Import ID;
 
 frame_expr: Frame ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
+if_expr:    If data_expr ':' 
+                NEWLINE INDENT (NEWLINE | expression)+ DEDENT
+            if_inner_expr* else_expr?;
+
+if_inner_expr: Else If data_expr ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+else_expr: Else ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};

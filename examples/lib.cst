@@ -3,7 +3,7 @@
 def net(net_name):
     return create component:
         pins: 1
-        copy: 1
+        copy: true
         display: create graphic:
             hline: -15, 0, 30
             vpin: 1, 0, 10, -10, display_pin_id=0
@@ -16,7 +16,7 @@ def net(net_name):
 def supply(net_name):
     return create component:
         pins: 1
-        copy: 1
+        copy: true
         display: create graphic:
             hline: -15, 0, 30
             vpin: 1, 0, 10, -10, display_pin_id=0
@@ -29,7 +29,7 @@ def supply(net_name):
 def label(value):
     return create component:
         pins: 1
-        copy: 1
+        copy: true
         display: create graphic:
             label: "value", 0, -2, "?", fontSize=10, anchor="left"
             pin: 1, 0, 0, 0, 0, display_pin_id=0
@@ -138,7 +138,7 @@ def cgnd():
     net_name = "gnd"
     return create component:
         pins: 1
-        copy: 1
+        copy: true
         display: create graphic:
             hline: -15, 0, 30
             hline: -10, 5, 20
@@ -156,7 +156,7 @@ def dgnd(net_name="GND"):
 
     return create component:
         pins: 1
-        copy: 1
+        copy: true
         display: create graphic:
             triangle: 0, 0, 0, height, width
             vpin: 1, 0, -10, 10, display_pin_id=0

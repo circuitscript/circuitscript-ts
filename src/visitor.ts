@@ -34,6 +34,9 @@ import {
     Wire_expr_direction_onlyContext,
     Wire_expr_direction_valueContext,
     Graphic_exprContext,
+    If_exprContext,
+    If_inner_exprContext,
+    LogicalOperatorExprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -471,8 +474,8 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctx0);
         this.visit(ctx1);
 
-        const value1: number = this.getResult(ctx0);
-        const value2: number = this.getResult(ctx1);
+        const value1: number | boolean = this.getResult(ctx0);
+        const value2: number | boolean = this.getResult(ctx1);
 
         const binaryOperatorType = ctx.binary_operator();
         let result: boolean | null = null;
@@ -481,6 +484,45 @@ export class ParserVisitor extends BaseVisitor {
             result = value1 == value2; // Boolean result
         } else if (binaryOperatorType.NotEquals()) {
             result = value1 != value2;
+        } else if (binaryOperatorType.GreaterThan()) {
+            result = value1 > value2;
+        } else if (binaryOperatorType.GreatOrEqualThan()) {
+            result = value1 >= value2;
+        } else if (binaryOperatorType.LessThan()) {
+            result = value1 < value2;
+        } else if (binaryOperatorType.LessOrEqualThan()) {
+            result = value1 <= value2;
+        }
+
+        this.setResult(ctx, result);
+    }
+
+    visitLogicalOperatorExpr = (ctx: LogicalOperatorExprContext): void => {
+        const ctx0 = ctx.data_expr(0)!;
+        const ctx1 = ctx.data_expr(1)!;
+
+        this.visit(ctx0);
+        const value1: number | boolean = this.getResult(ctx0);
+        let value2: number | boolean = false;
+
+        let skipNext = false;
+
+        if (ctx.LogicalOr() && value1){
+            // Since evaluated true already, can skip the parsing of the next
+            skipNext = true;
+        }
+
+        if (!skipNext){
+            this.visit(ctx1);
+            value2 = this.getResult(ctx1);
+        }
+        
+        let result: boolean | null = null;
+
+        if (ctx.LogicalAnd()) {
+            result = value1 && value2;
+        } else if (ctx.LogicalOr()) {
+            result = value1 || value2;
         }
 
         this.setResult(ctx, result);
@@ -774,6 +816,52 @@ export class ParserVisitor extends BaseVisitor {
 
         this.setResult(ctx, (hasPlus ? "+" : "") + netNamespace);
     }
+
+    visitIf_expr = (ctx: If_exprContext): void => {
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const result = this.getResult(ctxDataExpr);
+
+        if (result) {
+            this.runExpressions(this.getExecutor(), ctx.expression());
+        } else {
+            const ctxInnerIfExprs = ctx.if_inner_expr();
+            let innerIfWasTrue = false;
+
+            for (let i = 0; i < ctxInnerIfExprs.length; i++) {
+                const tmpCtx = ctxInnerIfExprs[i];
+                this.visit(tmpCtx);
+                const innerResult = this.getResult(tmpCtx);
+
+                // If this was true, then ignore further states
+                if (innerResult) {
+                    innerIfWasTrue = true;
+                    break;
+                }
+            }
+
+            if (!innerIfWasTrue) {
+                // Run the else statement
+                const elseCtx = ctx.else_expr();
+
+                if (elseCtx) {
+                    this.visit(elseCtx);
+                }
+            }
+        }
+    }
+
+    visitIf_inner_expr = (ctx: If_inner_exprContext): void => {
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const result = this.getResult(ctxDataExpr);
+
+        if (result) {
+            this.runExpressions(this.getExecutor(), ctx.expression());
+        }
+
+        this.setResult(ctx, result);
+    };
 
     pinTypes = [
         PinTypes.Any,
