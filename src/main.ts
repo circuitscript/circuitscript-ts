@@ -9,6 +9,7 @@ import { readFileSync, watch } from 'fs';
 import { prepareSVGEnvironment } from './sizing.js';
 import { getDefaultLibsPath, getFontsPath, getPackageVersion, 
     renderScript } from './helpers.js';
+import { _id } from './export.js';
 
 export default async function main(): Promise<void> {
     const fontsPath = getFontsPath();
@@ -18,9 +19,9 @@ export default async function main(): Promise<void> {
     program
         .description('generate graphical output from circuitscript files')
         .version(version)
-        .argument('[input file]', 'Input file')
+        .argument('[input path]', 'Input path')
+        .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')
-        .option('-o, --output <path>', 'Output path')
         .option('-c, --current-directory <path>', 'Set current directory')
         .option('-k, --kicad-netlist <filename>', 'Create KiCad netlist')
         .option('-w, --watch', 'Watch for file changes')
@@ -43,7 +44,6 @@ export default async function main(): Promise<void> {
     const args = program.args;
 
     const watchFileChanges = options.watch;
-    const outputPath = options.output ?? null;
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
     const kicadNetlist = options.kicadNetlist;
@@ -58,8 +58,13 @@ export default async function main(): Promise<void> {
 
     let inputFilePath = "";
 
+    if (args.length > 2) {
+        console.log("Error: Extra arguments passed");
+        return;
+    }
+
     let scriptData: string;
-    if (args.length > 0 && args[0]){
+    if (args.length > 0 && args[0]) {
         inputFilePath = args[0];
         scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
 
@@ -69,17 +74,23 @@ export default async function main(): Promise<void> {
     } else if (options.input) {
         scriptData = options.input;
     } else {
-        console.log("No input provided");
+        console.log("Error: No input provided");
         return;
-    }    
+    }
 
     const scriptOptions = {
         currentDirectory,
         defaultLibsPath,
-        dumpNets, 
+        dumpNets,
         dumpData,
         kicadNetlistPath: kicadNetlist,
         showStats: options.stats,
+    }
+
+    let outputPath: string | null = null;
+    if (args.length > 0 && args[1]) {
+        // This is the output path
+        outputPath = args[1];
     }
     
     const output = renderScript(scriptData, outputPath,

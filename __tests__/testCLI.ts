@@ -21,7 +21,6 @@ describe('test cli program', () => {
             `Options:
   -V, --version                   output the version number
   -i, --input text <input text>   Input text directly
-  -o, --output <path>             Output path
   -c, --current-directory <path>  Set current directory
   -k, --kicad-netlist <filename>  Create KiCad netlist
   -w, --watch                     Watch for file changes
@@ -51,7 +50,7 @@ describe('test cli program', () => {
 
         const statsFlag = withStatsFlag ? ' -s ' : '';
 
-        const result = execSync(`${baseCommand} __tests__/renderData/script1.cst -o ${outputPath} ${statsFlag}`).toString();
+        const result = execSync(`${baseCommand} __tests__/renderData/script1.cst ${outputPath} ${statsFlag}`).toString();
 
         const outputFile = readFileSync(outputPath).toString();
         const expected = readFileSync('__tests__/renderData/script1.cst.svg').toString();

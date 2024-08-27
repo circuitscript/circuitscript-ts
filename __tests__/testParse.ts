@@ -1,18 +1,13 @@
 
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
-import { script1, script10, script11, script12, script13, script14, script15, script16, script17, script18, script19, script2, 
-    script20, 
-    script21, 
-    script22, 
-    script23, 
-    script24, 
-    script25, 
-    script26, 
-    script27, 
-    script28, 
-    script29, 
-    script3, script30, script31, script32, script33, script34, script35, script36, script37, script38, script39, script6, script7, script8, script9, 
-    ScriptTest} from './parseScripts.js';
+import {
+    script1, script10, script11, script12, script13, script14, script15, 
+    script16, script17, script18, script19, script2,
+    script20, script21, script22, script23, script24, script25, script26,
+    script27, script28, script29, script3, script30, script31, script32, 
+    script33, script34, script35, script36, script37, script38, script39, 
+    script6, script7, script8, script9
+} from './parseScripts.js';
 
 describe('test parsing', () => {
 

@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
 
-import { generateKiCADNetList } from "./export.js";
+import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
 import { parseFileWithVisitor } from "./parser.js";
@@ -283,11 +283,17 @@ export function renderScript(scriptData: string, outputPath: string,
     }
 
     if (kicadNetlistPath) {
-        const kicadNetList = generateKiCADNetList(visitor.getNetList());
-        writeFileSync(kicadNetlistPath, kicadNetList);
+        const { tree: kicadNetList, missingFootprints }
+            = generateKiCADNetList(visitor.getNetList());
+
+        missingFootprints.forEach(entry => {
+            console.log(
+                `${entry.refdes} (${entry.instanceName}) does not have footprint`);
+        });
+
+        writeFileSync(kicadNetlistPath, printTree(kicadNetList));
         console.log('Generated KiCad netlist file');
     }
-    
 
     // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
