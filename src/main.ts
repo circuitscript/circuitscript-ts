@@ -1,5 +1,13 @@
 #! /usr/bin/env node
 
+/*
+ * Copyright 2023 Liu Weihao
+ * 
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+
 import { program } from 'commander';
 import figlet from 'figlet';
 import path from 'path';
@@ -76,12 +84,12 @@ export default async function main(): Promise<void> {
     } else {
         console.log("Error: No input provided");
         return;
-    }
+    }    
 
     const scriptOptions = {
         currentDirectory,
         defaultLibsPath,
-        dumpNets,
+        dumpNets, 
         dumpData,
         kicadNetlistPath: kicadNetlist,
         showStats: options.stats,

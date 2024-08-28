@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Liu Weihao
+ * 
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing.js';
 import { defaultFont } from './globals.js';

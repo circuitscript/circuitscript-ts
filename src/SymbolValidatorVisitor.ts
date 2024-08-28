@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Liu Weihao
+ * 
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 import { TerminalNode } from "antlr4ng";
 import { AdditionExprContext, Assignment_exprContext, Atom_exprContext, 
     BinaryOperatorExprContext, DataExprContext, Function_call_exprContext, Function_def_exprContext, 
