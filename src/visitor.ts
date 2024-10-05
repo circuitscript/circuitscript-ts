@@ -58,7 +58,7 @@ import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin,
     ComponentPinNet, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, NoNetText, ReferenceTypes } from './globals.js';
 import { Net } from './objects/Net.js';
-import { GraphicExprCommand, SymbolDrawingCommands } from './draw_symbols.js';
+import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 
@@ -412,6 +412,26 @@ export class ParserVisitor extends BaseVisitor {
                 } else if (modifierText === 'angle') {
                     const angleValue = Number(result);
                     component.setParam('angle', angleValue);
+                } else if (modifierText === 'anchor') {
+                    // Find the label
+                    if (component.displayProp
+                        && component.displayProp instanceof SymbolDrawingCommands) {
+
+                        const commands =
+                            ((component.displayProp) as SymbolDrawingCommands)
+                                .getCommands();
+
+                        // Set all text label fields with id 'value' to have 
+                        // the alignment specifiied
+                        commands.forEach(command => {
+                            const positionParams = command[1];
+                            const keywordParams = command[2];
+                            if (command[0] === PlaceHolderCommands.label
+                                && positionParams[0] === 'value') {
+                                keywordParams.set('anchor', result as string);
+                            }
+                        });
+                    }
                 }
             });
         }

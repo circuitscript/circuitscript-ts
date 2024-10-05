@@ -352,6 +352,7 @@ export function renderScript(scriptData: string, outputPath: string,
 
         if (outputPath) {
             writeFileSync(outputPath, svgOutput);
+            console.log('Generated file', outputPath);
         }
     } catch (err) {
         console.log('Error during render: ', err);

@@ -1,0 +1,18 @@
+def label(value, anchor="left"):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic:
+            label: "value", 0, -2, "?", fontSize=10, anchor=anchor
+            pin: 1, 0, 0, 0, 0, display_pin_id=0
+        type: "label"
+        params:
+            net_name: value
+            value: value
+            priority: 5
+
+tmp = label("hello")
+at tmp 
+wire right 100
+
+add tmp anchor:right

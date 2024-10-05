@@ -21,7 +21,8 @@ describe('Render tests', () => {
         ['start immediately with `add component` command', 'script9.cst'],
         ['start immediately with `wire` command', 'script10.cst'],
         ['flipX and flipY parameters', 'script11.cst'],
-        ['flipX, flipY, angle parameters with multiple components', 'script12.cst']
+        ['flipX, flipY, angle parameters with multiple components', 'script12.cst'],
+        ['anchor modifier', 'script13.cst']
 
     ])('render - %s (%s)', async (title, scriptPath) => {
         
