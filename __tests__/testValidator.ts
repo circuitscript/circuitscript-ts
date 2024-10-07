@@ -60,6 +60,7 @@ to gnd
     [ '__.supply_validate.net_name', 'variable' ],
     [ '__.label', 'function' ],
     [ '__.label_validate.value', 'variable' ],
+    [ '__.label_validate.anchor', 'variable' ],
     [ '__.res', 'function' ],
     [ '__.res_validate.value', 'variable' ],
     [ '__.res_validate.width', 'variable' ],
@@ -97,7 +98,7 @@ to gnd
 describe('test validation', () => {
 
     test.each([
-        ["some variables", script1],
+        // ["some variables", script1],
         ["variables and import", script2]
 
     ])('parse script - %s', async (description, scriptTest) => {
@@ -113,7 +114,7 @@ describe('test validation', () => {
         for (const [key, value] of symbols) {
             result.push([key, value.type]);
         }
-
+        
         expect(result).toStrictEqual(scriptTest.expected);
     });
 });

@@ -182,13 +182,14 @@ function_return_expr: Return data_expr ;
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
 create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
-// Remove the ':' in the future
-graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')');
+// Remove the ':' in the future?
+nested_properties_inner: (NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT);
+graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')' | nested_properties_inner);
 
 property_expr: property_key_expr ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;
-property_value_expr: NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT     # nested_properties
-                    | data_expr (',' data_expr)*                          # single_line_property
+property_value_expr: nested_properties_inner        # nested_properties
+                    | data_expr (',' data_expr)*    # single_line_property
                     ;
 
 blank_expr: '[' INTEGER_VALUE ']';

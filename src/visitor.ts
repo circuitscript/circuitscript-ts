@@ -43,6 +43,7 @@ import {
     If_exprContext,
     If_inner_exprContext,
     LogicalOperatorExprContext,
+    Nested_properties_innerContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -91,15 +92,17 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, value);
     }
 
-    visitAdd_component_expr = (ctx: Add_component_exprContext): ComponentPin => {
+    visitAdd_component_expr = (ctx: Add_component_exprContext): void => {
+        // Besides component, can also add graphic objects
+
         // The component is always the last item
         const ctxDataWithAssignmentExpr = ctx.data_expr_with_assignment();
-        
+
         this.visit(ctxDataWithAssignmentExpr);
         const [component, pinValue] =
             this.getResult(ctxDataWithAssignmentExpr);
 
-        return this.getExecutor().addComponentExisting(component, pinValue);
+        this.getExecutor().addComponentExisting(component, pinValue);
     }
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
@@ -289,9 +292,22 @@ export class ParserVisitor extends BaseVisitor {
             throw "Invalid command!";
         }
 
-        const ctxParameters = ctx.parameters()!;
-        this.visit(ctxParameters);
-        const parameters: CallableParameter[] = this.getResult(ctxParameters);
+        let parameters: CallableParameter[] = [];
+
+        const ctxNestedProperties = ctx.nested_properties_inner();
+        if (ctxNestedProperties) {
+            this.visit(ctxNestedProperties);
+            const nestedKeyValues = this.getResult(ctxNestedProperties);
+
+            nestedKeyValues.forEach((value: any, key: any) => {
+                parameters.push(['keyword', key, value]);
+            });
+
+        } else {
+            const ctxParameters = ctx.parameters()!;
+            this.visit(ctxParameters);
+            parameters = this.getResult(ctxParameters);
+        }
 
         this.setResult(ctx, [commandName, parameters]);
     }
@@ -329,7 +345,7 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, value);
     }
 
-    visitNested_properties = (ctx: Nested_propertiesContext): void => {
+    visitNested_properties_inner = (ctx: Nested_properties_innerContext): void => {
         const result = new Map<string, any>();
         ctx.property_expr().forEach((item) => {
             this.visit(item);
@@ -342,6 +358,12 @@ export class ParserVisitor extends BaseVisitor {
         });
 
         this.setResult(ctx, result);
+    }
+
+    visitNested_properties = (ctx: Nested_propertiesContext): void => {
+        const ctxNested = ctx.nested_properties_inner();
+        this.visit(ctxNested);
+        this.setResult(ctx, this.getResult(ctxNested));
     }
 
     visitProperty_key_expr = (ctx: Property_key_exprContext): void => {

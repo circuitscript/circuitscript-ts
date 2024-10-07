@@ -8,7 +8,8 @@
 import { G } from "@svgdotjs/svg.js";
 
 import { ReferenceTypes, SymbolPinSide, defaultFont } from "./globals.js";
-import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, VerticalAlign } from "./geometry.js";
+import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle, 
+    Textbox, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
 import { PinTypes } from "./objects/PinTypes.js";
 
@@ -179,7 +180,7 @@ export abstract class SymbolGraphic {
         const labels = this.drawing.getLabels();
 
         labels.forEach(label => {
-            const tmpLabel = label as Label;
+            const tmpLabel = label as Textbox;
 
             const {
                 fontSize = 10,
@@ -359,7 +360,7 @@ export class SymbolText extends SymbolGraphic {
 
     generateDrawing(): void {
         const drawing = new SymbolDrawing();
-        drawing.addLabel(0, 0, this.text, {
+        drawing.addTextbox(0, 0, this.text, {
             fontSize: this.fontSize,
             anchor: HorizontalAlign.Middle,
             fontWeight: this.fontWeight,
@@ -460,15 +461,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 }
 
                 case PlaceHolderCommands.label: {
-                    const keywords = ['fontSize', 'anchor', 'vanchor', 'angle'];
-
-                    // Create the style object
-                    const style = {};
-                    keywords.forEach(item => {
-                        if (keywordParams.has(item)) {
-                            style[item] = keywordParams.get(item);
-                        }
-                    });
+                    const style = this.parseLabelStyle(keywordParams);
 
                     positionParams = [...positionParams];
                     positionParams.push(style);
@@ -487,10 +480,32 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     drawing.addLabelId(...tmpPositionParams);
                     break;
                 }
+
+                case PlaceHolderCommands.text: {
+                    const style = this.parseLabelStyle(keywordParams);
+                    const content = keywordParams.get('content');
+
+                    drawing.addTextbox(0, 0, content, style);
+                    break;
+                }
             }
         });
 
         drawing.log("=== end generate drawing ===");
+    }
+
+    parseLabelStyle(keywordParams: Map<string, any>): { [key: string]: any } {
+        const keywords = ['fontSize', 'anchor', 'vanchor', 'angle'];
+
+        // Create the style object
+        const style: { [key: string]: any } = {};
+        keywords.forEach(item => {
+            if (keywordParams.has(item)) {
+                style[item] = keywordParams.get(item);
+            }
+        });
+
+        return style;
     }
 
     drawPinParams(drawing: SymbolDrawingCommands,
@@ -630,7 +645,8 @@ export enum PlaceHolderCommands {
     path = 'path',
     lineWidth = 'lineWidth',
     fill = 'fill',
-    lineColor = 'lineColor'
+    lineColor = 'lineColor',
+    text = 'text'
 }
 
 export class SymbolCustom extends SymbolGraphic {
@@ -914,6 +930,14 @@ export class SymbolDrawing {
         return this;
     }
 
+    addTextbox(x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
+        this.items.push(
+            Geometry.textbox(null, x, y, textValue, style)
+        );
+
+        return this;
+    }
+
     addPath(...pathParts:any): SymbolDrawing {
         const parts = pathParts.reduce((accum, tmp) => {
             if (typeof tmp === "string"){
@@ -1016,7 +1040,7 @@ export class SymbolDrawing {
         const pathItems = [];
 
         this.items.forEach(item => {
-            if (!(item instanceof Label)){
+            if (!(item instanceof Textbox)){
                 if (item instanceof GeometryProp){
                     if (item.name === 'lineWidth'){
                         currentLineWidth = item.value as number;
@@ -1054,8 +1078,8 @@ export class SymbolDrawing {
         return path;
     }
 
-    getLabels(): Label[] {
-        return this.items.filter(item => item instanceof Label) as Label[];
+    getLabels(): Textbox[] {
+        return this.items.filter(item => item instanceof Textbox) as Textbox[];
     }
 
     private featuresToPath(items: Feature[]): 
@@ -1075,7 +1099,7 @@ export class SymbolDrawing {
         });
 
         const drawingFeatures = this.items.reduce((accum, item) => {
-            if (!excludeLabels || (excludeLabels && !(item instanceof Label))){
+            if (!excludeLabels || (excludeLabels && !(item instanceof Textbox))){
                 if (!(item instanceof GeometryProp)){
                     accum.push(item);
                 }

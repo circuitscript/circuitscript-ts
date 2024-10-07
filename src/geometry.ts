@@ -18,7 +18,7 @@ export type Line = Flatten.Line;
 
 export type Arc = Flatten.Arc;
 
-export type Feature = Segment | Polygon | Label | Arc | Multiline;
+export type Feature = Segment | Polygon | Label | Textbox | Arc | Multiline;
 
 export type LabelStyle = {
     font?: string,
@@ -30,7 +30,7 @@ export type LabelStyle = {
     vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
 }
 
-export class Label extends Flatten.Polygon {
+export class Textbox extends Flatten.Polygon {
 
     id: string;
 
@@ -70,7 +70,7 @@ export class Label extends Flatten.Polygon {
     }
 
     static fromPoint(id: string, x: number, y: number, 
-        text: string, style: LabelStyle): Label {
+        text: string, style: LabelStyle): Textbox {
 
         let useText: string;
         if (typeof text === 'number'){
@@ -81,7 +81,7 @@ export class Label extends Flatten.Polygon {
         } else if (typeof text === 'string'){
             useText = text;
         } else {
-            throw 'Invalid string passed into label';
+            throw 'Invalid string passed into textbox';
         }
 
         const { fontSize = 10,
@@ -110,20 +110,20 @@ export class Label extends Flatten.Polygon {
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Label(id, useText, [x, y], polygon, style, box);
+        return new Textbox(id, useText, [x, y], polygon, style, box);
     }
 
-    rotate(angle: number, origin: Flatten.Point): Label {
+    rotate(angle: number, origin: Flatten.Point): Textbox {
         // Override this so that a Label object is returned.
         const feature = super.rotate(angle, origin);
-        return new Label(this.id, this.text, this.anchorPoint, feature, 
+        return new Textbox(this.id, this.text, this.anchorPoint, feature, 
             this.style, this.textMeasurementBounds);
     }
 
-    transform(matrix: Flatten.Matrix): Label {
+    transform(matrix: Flatten.Matrix): Textbox {
         // Override this so that a Label object is returned.
         const feature = super.transform(matrix);
-        return new Label(this.id, this.text, this.anchorPoint, feature, 
+        return new Textbox(this.id, this.text, this.anchorPoint, feature, 
             this.style, this.textMeasurementBounds
         );
     }
@@ -131,6 +131,10 @@ export class Label extends Flatten.Polygon {
     getLabelPosition(): [number, number] {
         return this.anchorPoint;
     }
+}
+
+export class Label extends Textbox {
+
 }
 
 export class GeometryProp {
@@ -155,8 +159,12 @@ export class Geometry {
         )
     }
 
-    static label(id: string, x: number, y: number, text: string, style: LabelStyle): Label {
-        return Label.fromPoint(id, x, y, text, style);
+    static label(id: string, x: number, y: number, text: string, style: LabelStyle): Textbox {
+        return Textbox.fromPoint(id, x, y, text, style);
+    }
+
+    static textbox(id: string | null, x: number, y: number, text: string, style: LabelStyle): Textbox {
+        return Textbox.fromPoint(id, x, y, text, style);
     }
 
     static segment(start: [number, number], end: [number, number]): Segment {
@@ -245,7 +253,7 @@ export class Geometry {
         features.forEach(feature => {
             const box = feature.box;
 
-            if (feature instanceof Label
+            if (feature instanceof Textbox
                 && typeof feature.text === 'string'
                 && feature.text.trim().length === 0) {
                 return;
@@ -270,18 +278,6 @@ export class Geometry {
         }
     }
 
-    static getType(feature: Feature): string {
-        if (feature instanceof Label) {
-            return 'label';
-        } else if (feature instanceof Flatten.Polygon) {
-            return 'polygon';
-        } else if (feature instanceof Flatten.Segment) {
-            return 'segment';
-        }
-
-        console.log('unknown type', feature);
-    }
-
     static FullCircleRadians = 2 * Math.PI;
 
     static featuresToPath(items: Feature[]): 
@@ -292,7 +288,7 @@ export class Geometry {
 
         items.forEach(item => {
             // Do not draw labels here
-            if (item instanceof Label) {
+            if (item instanceof Textbox) {
                 return;
             }
 

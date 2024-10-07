@@ -53,6 +53,7 @@ import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Function_return_exprContext } from "./CircuitScriptParser.js";
 import { Create_component_exprContext } from "./CircuitScriptParser.js";
 import { Create_graphic_exprContext } from "./CircuitScriptParser.js";
+import { Nested_properties_innerContext } from "./CircuitScriptParser.js";
 import { Graphic_exprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
@@ -387,6 +388,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitCreate_graphic_expr?: (ctx: Create_graphic_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.nested_properties_inner`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitNested_properties_inner?: (ctx: Nested_properties_innerContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.graphic_expr`.
      * @param ctx the parse tree
