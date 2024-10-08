@@ -8,7 +8,7 @@
 import { G } from "@svgdotjs/svg.js";
 
 import { ReferenceTypes, SymbolPinSide, defaultFont } from "./globals.js";
-import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle, 
+import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, 
     Textbox, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
 import { PinTypes } from "./objects/PinTypes.js";
@@ -1110,7 +1110,7 @@ export class SymbolDrawing {
         });
 
         const drawingFeatures = this.items.reduce((accum, item) => {
-            if (!excludeLabels || (excludeLabels && !(item instanceof Textbox))){
+            if (!excludeLabels || (excludeLabels && !(item instanceof Label))){
                 if (!(item instanceof GeometryProp)){
                     accum.push(item);
                 }

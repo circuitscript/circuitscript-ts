@@ -92,6 +92,7 @@ to gnd
     [ '__.text_validate.value', 'variable' ],
     [ '__.text_validate.offsetX', 'variable' ],
     [ '__.text_validate.offsetY', 'variable' ],
+    [ '__.text_validate.fontSize', 'variable' ],
     [ '__.v5v', 'variable' ],
     [ '__.gnd', 'variable' ],
     [ '__.D1', 'variable' ],

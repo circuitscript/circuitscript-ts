@@ -1,0 +1,34 @@
+import lib
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+frame:
+    ..border = 0
+    ..direction = "row"
+
+    frame:
+        at vcc
+        wire down 20
+
+        add text(
+        "This is some text!
+        Something else is here?
+        Or now
+        More lines
+        line 1
+        line2
+        ", 100, 100, fontSize=24)
+
+        wire down 20
+        to gnd
+
+    frame:
+        at vcc
+        wire down 20
+        add text(
+            "Hello world", 20
+        )
+
+        wire down 20
+        to gnd

@@ -47,12 +47,15 @@ export class Textbox extends Flatten.Polygon {
 
     textMeasurementBounds: Box;
 
+    // Use to indicate if this is a label or a textbox.
+    label: boolean;
+
     get box() {
         return this.polygon.box;
     }
 
     constructor(id: string, text: string, anchorPoint: [number, number], 
-        polygon: Flatten.Polygon, style: LabelStyle, bounds: Box) {
+        polygon: Flatten.Polygon, style: LabelStyle, bounds: Box, label: boolean) {
 
         super(polygon.vertices);
 
@@ -67,10 +70,12 @@ export class Textbox extends Flatten.Polygon {
         this.polygon = polygon;
 
         this.textMeasurementBounds = bounds;
+
+        this.label = label;
     }
 
     static fromPoint(id: string, x: number, y: number, 
-        text: string, style: LabelStyle): Textbox {
+        text: string, style: LabelStyle, label: boolean): Textbox {
 
         let useText: string;
         if (typeof text === 'number'){
@@ -110,21 +115,21 @@ export class Textbox extends Flatten.Polygon {
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Textbox(id, useText, [x, y], polygon, style, box);
+        return new Textbox(id, useText, [x, y], polygon, style, box, label);
     }
 
     rotate(angle: number, origin: Flatten.Point): Textbox {
         // Override this so that a Label object is returned.
         const feature = super.rotate(angle, origin);
         return new Textbox(this.id, this.text, this.anchorPoint, feature, 
-            this.style, this.textMeasurementBounds);
+            this.style, this.textMeasurementBounds, this.label);
     }
 
     transform(matrix: Flatten.Matrix): Textbox {
         // Override this so that a Label object is returned.
         const feature = super.transform(matrix);
         return new Textbox(this.id, this.text, this.anchorPoint, feature, 
-            this.style, this.textMeasurementBounds
+            this.style, this.textMeasurementBounds, this.label
         );
     }
 
@@ -160,11 +165,11 @@ export class Geometry {
     }
 
     static label(id: string, x: number, y: number, text: string, style: LabelStyle): Textbox {
-        return Textbox.fromPoint(id, x, y, text, style);
+        return Textbox.fromPoint(id, x, y, text, style, true);
     }
 
     static textbox(id: string | null, x: number, y: number, text: string, style: LabelStyle): Textbox {
-        return Textbox.fromPoint(id, x, y, text, style);
+        return Textbox.fromPoint(id, x, y, text, style, false);
     }
 
     static segment(start: [number, number], end: [number, number]): Segment {
@@ -251,13 +256,32 @@ export class Geometry {
         let maxY = Number.NEGATIVE_INFINITY;
 
         features.forEach(feature => {
-            const box = feature.box;
+            const tmpBox = feature.box;
+            let box = {
+                xmin: tmpBox.xmin,
+                ymin: tmpBox.ymin,
+                xmax: tmpBox.xmax,
+                ymax: tmpBox.ymax
+            };
 
             if (feature instanceof Textbox
+                && feature.label
                 && typeof feature.text === 'string'
                 && feature.text.trim().length === 0) {
                 return;
             }
+
+            if (feature instanceof Textbox && !feature.label){
+                // if is textbox (but not label), then include the offset
+                const [x, y] = feature.anchorPoint;
+                box = {
+                    xmin: box.xmin + x,
+                    ymin: box.ymin + y,
+                    xmax: box.xmax + x,
+                    ymax: box.ymax + y
+                }
+            }
+
 
             if (box.xmin === undefined) {
                 throw "Invalid box!";
