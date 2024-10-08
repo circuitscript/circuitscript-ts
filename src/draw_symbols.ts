@@ -483,9 +483,20 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                 case PlaceHolderCommands.text: {
                     const style = this.parseLabelStyle(keywordParams);
+                    
+                    // TODO: also support positional parameters
                     const content = keywordParams.get('content');
+                    
+                    let offsetX = 0;
+                    let offsetY = 0;
 
-                    drawing.addTextbox(0, 0, content, style);
+                    if (keywordParams.has('offset')){
+                        const offset = keywordParams.get('offset');
+                        offsetX = offset[0];
+                        offsetY = offset[1];
+                    }
+
+                    drawing.addTextbox(offsetX, offsetY, content, style);
                     break;
                 }
             }

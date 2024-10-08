@@ -182,3 +182,13 @@ def arrow_point():
             path: ("M", 15, -5, "L", 20, 0, "L", 15, 5)
             hpin: 1, 0, 0, 20
         type: "net"
+
+def text(value, offsetX = 0, offsetY = 0, fontSize = 12):
+    return create component:
+        pins: 1
+        display: create graphic:
+            pin: 1, 0, 0, 0, 0, display_pin_id=0
+            text:
+                content: value
+                offset: offsetX, offsetY
+                fontSize: fontSize

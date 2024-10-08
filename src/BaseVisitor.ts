@@ -619,7 +619,19 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                             executor.scope.setNet(component, pinNumber, net);
                         }
                     }
+                } else if (tmpPassedInArgs[0] === 'keyword') {
+                    const variableName = tmpPassedInArgs[1];
+                    executor.log(
+                        'set variable in scope, var name: ',
+                        variableName
+                    );
+
+                    executor.scope.variables.set(
+                        variableName,
+                        tmpPassedInArgs[2]
+                    );
                 }
+
             } else if (tmpFuncArg.length === 2) {
                 // Value was not provided to function, but a default 
                 // value is provided.

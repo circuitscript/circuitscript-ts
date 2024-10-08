@@ -88,6 +88,10 @@ to gnd
     [ '__.dgnd_validate.width', 'variable' ],
     [ '__.marker_point', 'function' ],
     [ '__.arrow_point', 'function' ],
+    [ '__.text', 'function' ],
+    [ '__.text_validate.value', 'variable' ],
+    [ '__.text_validate.offsetX', 'variable' ],
+    [ '__.text_validate.offsetY', 'variable' ],
     [ '__.v5v', 'variable' ],
     [ '__.gnd', 'variable' ],
     [ '__.D1', 'variable' ],
@@ -114,7 +118,7 @@ describe('test validation', () => {
         for (const [key, value] of symbols) {
             result.push([key, value.type]);
         }
-        
+
         expect(result).toStrictEqual(scriptTest.expected);
     });
 });
