@@ -1,4 +1,5 @@
 
+import { prepareSVGEnvironment } from '../src/sizing.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
     script1, script10, script11, script12, script13, script14, script15, 
@@ -28,6 +29,9 @@ describe('test parsing', () => {
         ["consecutive blocks with 'join' then 'point'", script16]
         
     ])('parse script - %s', async (description, scriptTest) => {
+
+        await prepareSVGEnvironment(null);
+        
         // Test only parsing, does not check the correctness of the 
         // parsed result!
 

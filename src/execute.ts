@@ -18,6 +18,7 @@ import { CFunction, CFunctionResult, CallableParameter, ComponentPin,
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
+import { CalculatePinPositions } from './layout.js';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -385,35 +386,7 @@ export class ExecutionContext {
         const startPin = pin;
         const nextPin = component.getNextPinAfter(startPin);
 
-        if (this.componentAngleFollowsWire 
-            && component.followWireOrientationProp 
-            && this.scope.currentWireId !== -1) {
-            
-            const currentWire = this.scope.wires[this.scope.currentWireId];
-            const lastSegment = currentWire.path[currentWire.path.length - 1];
-
-            // This is the final angle that the component will have
-            let targetAngle = 0;
-            switch (lastSegment.direction) {
-                case Direction.Down:
-                    targetAngle = 90;
-                    break;
-                case Direction.Up:
-                    targetAngle = 270;
-                    break;
-                case Direction.Right:
-                    targetAngle = 0;
-                    break;
-                case Direction.Left:
-                    targetAngle = 180;
-                    break;
-            }
-
-            const componentGraphicAngle = component.angleProp;
-            const useAngle = targetAngle - componentGraphicAngle;
-
-            component.setParam('angle', useAngle);
-        }
+        this.applyComponentAngleFromWire(component, pin);
 
         // Add to sequence
         this.toComponent(component, startPin, {addSequence: true});
@@ -479,6 +452,10 @@ export class ExecutionContext {
             component,
             pinId,
         );
+
+        // If wire is connected, then apply the wire orientation, if 
+        // applicable.
+        this.applyComponentAngleFromWire(component, pinId);
 
         this.scope.currentComponent = component;
         this.scope.currentPin = pinId;
@@ -1161,6 +1138,53 @@ export class ExecutionContext {
         // Add onto to the current component styles
         for (const key in styles) {
             this.scope.currentComponent.styles[key] = styles[key];
+        }
+    }
+
+    applyComponentAngleFromWire(component: ClassComponent, pin: number): void {
+        if (this.componentAngleFollowsWire 
+            && component.followWireOrientationProp 
+            && component.useWireOrientationAngle
+            && this.scope.currentWireId !== -1) {
+            
+            const currentWire = this.scope.wires[this.scope.currentWireId];
+            const lastSegment = currentWire.path[currentWire.path.length - 1];
+
+            // Graphical symbol of component is drawn to determine the 
+            // pin positions.
+            const pinPositions = CalculatePinPositions(component);
+
+            if (pinPositions.has(pin)){
+                const connectedPinPos = pinPositions.get(pin)!;
+
+                // This is the final angle that the component will have
+                let targetAngle = 0;
+                switch (lastSegment.direction) {
+                    case Direction.Down:
+                        targetAngle = 90;
+                        break;
+                    case Direction.Up:
+                        targetAngle = 270;
+                        break;
+                    case Direction.Right:
+                        targetAngle = 0;
+                        break;
+                    case Direction.Left:
+                        targetAngle = 180;
+                        break;
+                }
+
+                this.log('set component angle from wire, target angle:', targetAngle, 
+                    ', component angle:', component.angleProp, 'pin angle:', 
+                    connectedPinPos.angle);
+                    
+                const useAngle = targetAngle - connectedPinPos.angle;
+
+                // Do not set the angle prop directly. Modifiers will have 
+                // higher priority compared to wire orientation.
+                component.wireOrientationAngle = useAngle;
+                component.setParam('angle', useAngle);
+            }
         }
     }
 

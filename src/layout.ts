@@ -19,6 +19,7 @@ import { Logger } from './logger.js';
 import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
+import { PinDefinition } from './objects/PinDefinition.js';
 
 export class LayoutEngine {
 
@@ -1816,6 +1817,27 @@ export class RenderJunction {
     }
 }
 
+export function CalculatePinPositions(component: ClassComponent)
+    : Map<number, { x: number; y: number; angle: number; }> {
+
+    const pinPositionMapping = new Map<number, { x: number; y: number; angle: number; }>();
+
+    // Force a render of the symbol
+    if (component.displayProp !== null
+        && component.displayProp instanceof SymbolDrawing) {
+
+        const tmpSymbol = new SymbolPlaceholder(component.displayProp);
+        tmpSymbol.refreshDrawing();
+
+        const pins = component.pins;
+
+        pins.forEach((value: PinDefinition, key: number) => {
+            pinPositionMapping.set(key, tmpSymbol.pinPosition(key));
+        });
+    }
+
+    return pinPositionMapping;
+}
 
 
 function isPointOverlap(x: number, y: number, other: RenderComponent): boolean {

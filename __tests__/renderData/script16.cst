@@ -1,0 +1,31 @@
+import lib
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+wire down 20
+
+branch:
+    wire down 20
+
+    add diode(3.3) pin 2
+    wire down 20 to gnd
+
+branch:
+    wire right 20
+    add diode(3.3) pin 2
+    wire right 20 to gnd
+
+wire left 40
+
+branch:
+    wire up 20
+    add diode(3.3) pin 2
+    wire up 20 to gnd
+
+wire left 20
+
+branch:
+    add diode(3.3) pin 2
+    wire left 20 to gnd

@@ -14,7 +14,7 @@ def cmp():
             hpin 5, "", -width-20, 100, 20
             hpin 6, "", -width-20, 120, 20
             hpin 7, "", -width-20, 140, 20
-            label "refdes", -width, -5
+            label "refdes", -width, -5, "?"
 
             # use a blank label to check for errors in render
             label "random", -width, -15, ""
@@ -22,8 +22,7 @@ def cmp():
 at cmp() pin 2
 wire left 60
 
-to cmp() pin 2
-..flipX = 1
+to cmp() flip:x pin 2 
 
 at pin 3
 wire right 20 down 140 left 180 up 20

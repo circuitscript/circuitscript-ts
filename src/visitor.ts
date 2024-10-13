@@ -427,18 +427,24 @@ export class ParserVisitor extends BaseVisitor {
                     result = ctxID2.getText();
                 }
 
+                let shouldIgnoreWireOrientation = false;
+
                 if (modifierText === 'flip') {
                     const flipValue = result as string;
                     if (flipValue.indexOf('x') !== -1) {
                         component.setParam('flipX', 1);
+                        shouldIgnoreWireOrientation = true;
                     }
 
                     if (flipValue.indexOf('y') !== -1) {
                         component.setParam('flipY', 1);
+                        shouldIgnoreWireOrientation = true;
                     }
                 } else if (modifierText === 'angle') {
                     const angleValue = Number(result);
                     component.setParam('angle', angleValue);
+                    shouldIgnoreWireOrientation = true;
+
                 } else if (modifierText === 'anchor') {
                     // Find the label
                     if (component.displayProp
@@ -459,6 +465,12 @@ export class ParserVisitor extends BaseVisitor {
                             }
                         });
                     }
+                }
+
+                if (shouldIgnoreWireOrientation) {
+                    // User defined modifiers will overwrite the
+                    // wire orientation
+                    component.useWireOrientationAngle = false;
                 }
             });
         }
