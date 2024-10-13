@@ -286,7 +286,7 @@ export class ExecutionContext {
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
 
-        let useAngle = 0;
+        let useAngle = null;
         if (props.angle) {
             // Make sure it is within 0 to 360
             useAngle = props.angle % 360;
@@ -295,7 +295,7 @@ export class ExecutionContext {
             }
         }
 
-        component.angleProp = props.angle ?? 0;
+        component.angleProp = useAngle ?? 0;
         component.followWireOrientationProp = props.followWireOrientation;
 
         const paramsMap = new Map<string, any>();
@@ -1175,15 +1175,30 @@ export class ExecutionContext {
                 }
 
                 this.log('set component angle from wire, target angle:', targetAngle, 
-                    ', component angle:', component.angleProp, 'pin angle:', 
+                    ', component angle:', component.angleProp, 'pin angle:',
                     connectedPinPos.angle);
-                    
-                const useAngle = targetAngle - connectedPinPos.angle;
 
-                // Do not set the angle prop directly. Modifiers will have 
-                // higher priority compared to wire orientation.
+                let useAngle = (targetAngle - connectedPinPos.angle) % 360;
+                if (useAngle < 0) {
+                    useAngle += 360;
+                }
+
+                if (useAngle === 90) {
+                    // Just rotate the component
+                    component.setParam('angle', 90);
+                } else if (useAngle === 180) {
+                    if (component.angleProp === 0 || component.angleProp === 180) {
+                        component.setParam('flipX', 1);
+                    } else if (component.angleProp === 90 || component.angleProp === 270) {
+                        component.setParam('flipY', 1);
+                    }
+
+                } else if (useAngle === 270) {
+                    component.setParam('angle', 270);
+                }
+
                 component.wireOrientationAngle = useAngle;
-                component.setParam('angle', useAngle);
+                // component.setParam('angle', useAngle);
             }
         }
     }

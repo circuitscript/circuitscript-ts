@@ -221,6 +221,10 @@ export class ClassComponent {
         component.widthProp = this.widthProp;
         component.typeProp = this.typeProp;
 
+        component.angleProp = this.angleProp;
+        component.followWireOrientationProp = this.followWireOrientationProp;
+        component.useWireOrientationAngle = this.useWireOrientationAngle;
+
         if (this.displayProp) {
             if (typeof this.displayProp === "string") {
                 component.displayProp = this.displayProp;
