@@ -23,8 +23,8 @@ describe('Render tests', () => {
         ['flipX and flipY parameters', 'script11.cst'],
         ['flipX, flipY, angle parameters with multiple components', 'script12.cst'],
         ['anchor modifier', 'script13.cst'],
-        ['text graphic expression', 'script14.cst']
-
+        ['text graphic expression', 'script14.cst'],
+        ['component follows wire orientation', 'script15.cst']
     ])('render - %s (%s)', async (title, scriptPath) => {
         
         await prepareSVGEnvironment(null);

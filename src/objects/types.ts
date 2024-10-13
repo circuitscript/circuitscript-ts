@@ -78,3 +78,10 @@ export enum ParseSymbolType {
 
     Undefined = 'undefined',
 }
+
+export enum Direction {
+    Left = 'left',
+    Right = 'right',
+    Down = 'down',
+    Up = 'up',
+}

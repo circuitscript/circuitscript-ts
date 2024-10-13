@@ -55,6 +55,15 @@ export class ClassComponent {
     // Used for nets, supply, gnd, labels
     copyProp = false;
 
+    // The angle that the graphical symbol is drawing with.
+    // For example, a horizontal resistor will have an angle of 0.
+    // A vertical capacitor will have an angle of 90.
+    angleProp = 0;
+
+    // If true, then the component's angle will follow the connected
+    // wire orientation.
+    followWireOrientationProp = true;
+
     styles: { [key: string]: number | string } = {};
 
     assignedRefDes: string | null = null;

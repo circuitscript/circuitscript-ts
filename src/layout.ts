@@ -18,6 +18,7 @@ import { Net } from './objects/Net.js';
 import { Logger } from './logger.js';
 import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils.js';
+import { Direction } from './objects/types.js';
 
 export class LayoutEngine {
 
@@ -1431,16 +1432,16 @@ function calculateSymbolAngle(symbol: SymbolGraphic,
 
     let directionVector = 0;
     switch (direction) {
-        case 'right':
+        case Direction.Right:
             directionVector = 0;
             break;
-        case 'down':
+        case Direction.Down:
             directionVector = 90;
             break;
-        case 'left':
+        case Direction.Left:
             directionVector = 180;
             break;
-        case 'up':
+        case Direction.Up:
             directionVector = 270;
             break;
     }
@@ -1539,13 +1540,13 @@ export class RenderWire extends RenderObject {
 
             let didAddPoint = false;
 
-            if (direction === 'down') {
+            if (direction === Direction.Down) {
                 tmpY += value;
-            } else if (direction === 'up') {
+            } else if (direction === Direction.Up) {
                 tmpY -= value;
-            } else if (direction === 'left') {
+            } else if (direction === Direction.Left) {
                 tmpX -= value;
-            } else if (direction === 'right') {
+            } else if (direction === Direction.Right) {
                 tmpX += value;
             } else if (direction === 'auto' || direction === "auto_") {
                 // 'auto' means both x and y. 'auto_' is the same as 'auto', but
@@ -1631,13 +1632,13 @@ export class RenderWire extends RenderObject {
 
         excludeLastSegment.forEach(segment => {
             const { direction, value } = segment;
-            if (direction === 'down') {
+            if (direction === Direction.Down) {
                 tmpY += value;
-            } else if (direction === 'up') {
+            } else if (direction === Direction.Up) {
                 tmpY -= value;
-            } else if (direction === 'left') {
+            } else if (direction === Direction.Left) {
                 tmpX -= value;
-            } else if (direction === 'right') {
+            } else if (direction === Direction.Right) {
                 tmpX += value;
             }
         });
@@ -1650,16 +1651,16 @@ export class RenderWire extends RenderObject {
         const lastSegment = this.segments[this.segments.length-1];
 
         switch(lastSegment.direction){
-            case 'left':
+            case Direction.Left:
                 useValue = tmpX - untilX;
                 break;
-            case 'right':
+            case Direction.Right:
                 useValue = untilX - tmpX;
                 break;
-            case 'up':
+            case Direction.Up:
                 useValue = untilY - tmpY;
                 break;
-            case 'down':
+            case Direction.Down:
                 useValue = tmpY - untilY;
                 break;
 

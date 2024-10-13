@@ -4,6 +4,7 @@ def net(net_name):
     return create component:
         pins: 1
         copy: true
+        angle: -90
         display: create graphic:
             hline: -15, 0, 30
             vpin: 1, 0, 10, -10, display_pin_id=0
@@ -17,6 +18,7 @@ def supply(net_name):
     return create component:
         pins: 1
         copy: true
+        angle: -90
         display: create graphic:
             hline: -15, 0, 30
             vpin: 1, 0, 10, -10, display_pin_id=0
@@ -63,6 +65,7 @@ def cap(value):
 
     return create component:
         pins: 2
+        angle: 90
         display: create graphic:
             hline: -width/2, -3, width
             hline: -width/2, 3, width
@@ -139,6 +142,7 @@ def cgnd():
     return create component:
         pins: 1
         copy: true
+        angle: 90
         display: create graphic:
             hline: -15, 0, 30
             hline: -10, 5, 20
@@ -157,6 +161,7 @@ def dgnd(net_name="GND"):
     return create component:
         pins: 1
         copy: true
+        angle: 90
         display: create graphic:
             triangle: 0, 0, 0, height, width
             vpin: 1, 0, -10, 10, display_pin_id=0
@@ -186,6 +191,7 @@ def arrow_point():
 def text(value, offsetX = 0, offsetY = 0, fontSize = 12):
     return create component:
         pins: 1
+        followWireOrientation: false
         display: create graphic:
             pin: 1, 0, 0, 0, 0, display_pin_id=0
             text:

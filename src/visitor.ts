@@ -242,12 +242,17 @@ export class ParserVisitor extends BaseVisitor {
         const width = properties.has('width') ?
             properties.get('width') : null;
 
+        // This angle refers to the orientation that the graphic of the 
+        // component is draw with.
+        const angle = properties.has('angle') ?
+            properties.get('angle') : null;
+
+        const followWireOrientation = properties.has('followWireOrientation') ?
+            properties.get('followWireOrientation') : true;
+
         const props = {
-            arrange,
-            display,
-            type,
-            width,
-            copy
+            arrange, display, type, width, copy,
+            angle, followWireOrientation
         }
 
         this.setResult(ctx, this.getExecutor().createComponent(instanceName, 

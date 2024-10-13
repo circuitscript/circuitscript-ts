@@ -40,7 +40,7 @@ v5v = supply("5v")
 gnd = dgnd()
 
 at v5v
-wire down 20
+wire down 20 right 20
 add res_2(10k)
 wire right 20
 

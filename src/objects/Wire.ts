@@ -6,6 +6,7 @@
  */
 
 import { ClassComponent } from "./ClassComponent.js";
+import { Direction } from "./types.js";
 
 export class Wire {
 
@@ -19,7 +20,8 @@ export class Wire {
 }
 
 export type WireSegment = {
-    direction: 'up' | 'down' | 'left' | 'right' | 'auto' | 'auto_';
+    direction: Direction.Up | Direction.Down | Direction.Left
+    | Direction.Right | 'auto' | 'auto_';
     value: number,
     valueXY?: [x: number, y: number],
     until?: [instance: ClassComponent, pin: number],

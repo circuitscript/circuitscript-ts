@@ -1,0 +1,30 @@
+import lib
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+wire down 20
+branch:
+    wire down 20
+    add cap(100n)
+    wire down 20
+    to gnd
+
+branch:
+    wire left 20
+    add cap(100n)
+    wire left 20 down 20
+    to gnd
+
+wire right 100
+branch:
+    wire right 20
+    add cap(100n)
+    wire right 20 down 20
+    to gnd
+
+wire up 20
+add cap(100n)
+wire up 20
+to vcc

@@ -22,6 +22,7 @@ import { Net } from "./objects/Net";
 import { NumericValue, PercentageValue, PinBlankValue } from "./objects/ParamDefinition";
 import { PinTypes } from "./objects/PinTypes";
 import { CallableParameter, CFunctionOptions, ComplexType, 
+    Direction, 
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
 import { ParserRuleContext } from 'antlr4ng';
@@ -49,7 +50,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     printStream: string[] = [];
     printToConsole = true;
 
-    acceptedDirections = ['left', 'right', 'up', 'down'];
+    acceptedDirections = [Direction.Up, Direction.Down, 
+        Direction.Right, Direction.Left];
+    
     acceptedFlip = ['flipX', 'flipY'];
 
     protected resultData = new Map<ParserRuleContext, any>;

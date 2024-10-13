@@ -5,13 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { BlockTypes, ComponentTypes, GlobalNames, NoNetText, ParamKeys, ReferenceTypes } from './globals.js';
+import { BlockTypes, ComponentTypes, GlobalNames, NoNetText, ParamKeys, 
+    ReferenceTypes } from './globals.js';
 import { ClassComponent } from './objects/ClassComponent.js';
-import { ActiveObject, ExecutionScope, FrameAction, SequenceAction } from './objects/ExecutionScope.js';
+import { ActiveObject, ExecutionScope, FrameAction, 
+    SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
 import { ParamDefinition } from './objects/ParamDefinition.js';
 import { PinDefinition, PortSide } from './objects/PinDefinition.js';
-import { CFunction, CFunctionResult, CallableParameter, ComponentPin, ReferenceType } from './objects/types.js';
+import { CFunction, CFunctionResult, CallableParameter, ComponentPin, 
+    Direction, ReferenceType } from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
@@ -54,6 +57,10 @@ export class ExecutionContext {
     __functionCache = {};
 
     parentContext: ExecutionContext;
+
+    // If true, the component angle will be adjusted based on the
+    // wire that it is connected to.
+    componentAngleFollowsWire = true;
 
     constructor(
         name: string,
@@ -256,7 +263,9 @@ export class ExecutionContext {
             display?: string,
             type?: string,
             width?: number,
-            copy: boolean
+            copy: boolean,
+            angle?: number,
+            followWireOrientation: boolean,
         }
     ): ClassComponent {
 
@@ -275,6 +284,18 @@ export class ExecutionContext {
         component.widthProp = props.width ?? null;
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
+
+        let useAngle = 0;
+        if (props.angle) {
+            // Make sure it is within 0 to 360
+            useAngle = props.angle % 360;
+            if (useAngle < 0) {
+                useAngle += 360;
+            }
+        }
+
+        component.angleProp = props.angle ?? 0;
+        component.followWireOrientationProp = props.followWireOrientation;
 
         const paramsMap = new Map<string, any>();
         params.forEach((param) => {
@@ -363,6 +384,36 @@ export class ExecutionContext {
     addComponentExisting(component: ClassComponent, pin: number): ComponentPin {
         const startPin = pin;
         const nextPin = component.getNextPinAfter(startPin);
+
+        if (this.componentAngleFollowsWire 
+            && component.followWireOrientationProp 
+            && this.scope.currentWireId !== -1) {
+            
+            const currentWire = this.scope.wires[this.scope.currentWireId];
+            const lastSegment = currentWire.path[currentWire.path.length - 1];
+
+            // This is the final angle that the component will have
+            let targetAngle = 0;
+            switch (lastSegment.direction) {
+                case Direction.Down:
+                    targetAngle = 90;
+                    break;
+                case Direction.Up:
+                    targetAngle = 270;
+                    break;
+                case Direction.Right:
+                    targetAngle = 0;
+                    break;
+                case Direction.Left:
+                    targetAngle = 180;
+                    break;
+            }
+
+            const componentGraphicAngle = component.angleProp;
+            const useAngle = targetAngle - componentGraphicAngle;
+
+            component.setParam('angle', useAngle);
+        }
 
         // Add to sequence
         this.toComponent(component, startPin, {addSequence: true});
