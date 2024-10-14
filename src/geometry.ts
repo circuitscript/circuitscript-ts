@@ -304,7 +304,7 @@ export class Geometry {
 
     static FullCircleRadians = 2 * Math.PI;
 
-    static featuresToPath(items: Feature[]): 
+    static featuresToPath(items: Feature[], flipX: number, flipY: number): 
         { path: string, isClosedPolygon: boolean } {
 
         const paths: (string | number)[] = [];
@@ -336,11 +336,21 @@ export class Geometry {
                 const startPoint = getArcPointRadians(x, y, radius, 
                     item.startAngle);
                 
-                const endPoint = getArcPointRadians(x, y, radius, 
+                const endPoint = getArcPointRadians(x, y, radius,
                     useEndAngle);
 
+                let largeArcSweepFlag = 0;
+                if (useEndAngle - item.startAngle > Math.PI) {
+                    largeArcSweepFlag = 1;
+                }
+
+                let sweepFlag = 1;
+                if (flipX === 1 && flipY === 0) {
+                    sweepFlag = 0;
+                }
+
                 paths.push('M', startPoint[0],
-                    startPoint[1], 'A', radius, radius, 0, 1, 1,
+                    startPoint[1], 'A', radius, radius, 0, largeArcSweepFlag, sweepFlag,
                     endPoint[0], endPoint[1], extraEnd);
 
 

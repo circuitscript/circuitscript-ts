@@ -1,0 +1,51 @@
+import lib
+
+def solder_bridge():
+    width = 20
+    height = 20
+    
+    return create component:
+        type: "S"
+        pins: 2
+        display: create graphic:
+            arc: -width/2+5, 0, 10, 90, 270
+            arc: width/2-5, 0, 10, 270, 90
+            vline: -width/2 + 5, -height/2, height
+            vline: width/2-5, -height/2, height
+            pin: 1, -width/2-20, 0, -width/2-5, 0
+            pin: 2, width/2+20, 0, width/2+5, 0
+            label: "refdes", 0, -width/2 - 5, "?", anchor="middle"
+
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+wire down 20 
+
+branch:
+    wire left 40
+    
+    branch:
+        wire left 20
+        add solder_bridge()
+        wire left 20
+        to gnd
+
+    branch:
+        wire up 20
+        add solder_bridge()
+        wire up 20
+        to gnd
+
+branch:
+    wire down 20
+    add solder_bridge()
+    wire down 20
+    to gnd
+
+branch:
+    wire right 20
+    add solder_bridge()
+    wire right 20
+    to gnd

@@ -1062,12 +1062,12 @@ export class SymbolDrawing {
                     }
                 } else {
                     let tmpResult = Geometry.groupFlip([item], this.flipX, this.flipY);
-                    tmpResult = Geometry.groupRotate(tmpResult, this.angle, 
+                    tmpResult = Geometry.groupRotate(tmpResult, this.angle,
                         this.mainOrigin);
 
-                    const {path, isClosedPolygon} = 
-                        this.featuresToPath(tmpResult);
-                
+                    const { path, isClosedPolygon } =
+                        this.featuresToPath(tmpResult, this.flipX, this.flipY);
+
                     pathItems.push({
                         path: path,
                         lineWidth: currentLineWidth,
@@ -1085,7 +1085,7 @@ export class SymbolDrawing {
         let features = this.pins.map(item => item[1]);
         features = Geometry.groupFlip(features, this.flipX, this.flipY);
         features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
-        const { path } = this.featuresToPath(features);
+        const { path } = this.featuresToPath(features, this.flipX, this.flipY);
         return path;
     }
 
@@ -1093,9 +1093,9 @@ export class SymbolDrawing {
         return this.items.filter(item => item instanceof Textbox) as Textbox[];
     }
 
-    private featuresToPath(items: Feature[]): 
+    private featuresToPath(items: Feature[], flipX: number, flipY: number): 
         {path: string, isClosedPolygon: boolean} {
-        return Geometry.featuresToPath(items);
+        return Geometry.featuresToPath(items, flipX, flipY);
     }
 
     getBoundingBox(excludeLabels = false): {

@@ -25,7 +25,8 @@ describe('Render tests', () => {
         ['anchor modifier', 'script13.cst'],
         ['text graphic expression', 'script14.cst'],
         ['component follows wire orientation', 'script15.cst'],
-        ['component with defined pin follows wire orientation', 'script16.cst']
+        ['component with defined pin follows wire orientation', 'script16.cst'],
+        ['component with arc graphic expr', 'script17.cst']
     ])('render - %s (%s)', async (title, scriptPath) => {
         
         await prepareSVGEnvironment(null);
