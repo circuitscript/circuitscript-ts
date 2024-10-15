@@ -1158,7 +1158,7 @@ export class ExecutionContext {
                 const connectedPinPos = pinPositions.get(pin)!;
 
                 // This is the final angle that the component will have
-                let targetAngle = 0;
+                let targetAngle: number | null = null;
                 switch (lastSegment.direction) {
                     case Direction.Down:
                         targetAngle = 90;
@@ -1172,9 +1172,17 @@ export class ExecutionContext {
                     case Direction.Left:
                         targetAngle = 180;
                         break;
+                    default:
+                        targetAngle = null;
                 }
 
-                this.log('set component angle from wire, target angle:', targetAngle, 
+                // If wire direction is auto or auto_, then do not
+                // apply the wire orientation
+                if (targetAngle === null) {
+                    return;
+                }
+            
+                this.log('set component angle from wire, target angle:', targetAngle,
                     ', component angle:', component.angleProp, 'pin angle:',
                     connectedPinPos.angle);
 
@@ -1197,8 +1205,7 @@ export class ExecutionContext {
                     component.setParam('angle', 270);
                 }
 
-                component.wireOrientationAngle = useAngle;
-                // component.setParam('angle', useAngle);
+                component.wireOrientationAngle = useAngle;              
             }
         }
     }
