@@ -179,7 +179,6 @@ def marker_point():
             hline: -5, 0, 10
             vline: 0, -5, 10
             pin: 1, 0, 0, 0, 0, display_pin_id=0
-        type: "net"
 
 def arrow_point():
     return create component:
@@ -187,7 +186,6 @@ def arrow_point():
         display: create graphic:
             path: ("M", 15, -5, "L", 20, 0, "L", 15, 5)
             hpin: 1, 0, 0, 20
-        type: "net"
 
 def text(value, offsetX = 0, offsetY = 0, fontSize = 12):
     return create component:

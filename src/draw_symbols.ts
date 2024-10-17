@@ -1110,8 +1110,8 @@ export class SymbolDrawing {
         });
 
         const drawingFeatures = this.items.reduce((accum, item) => {
-            if (!excludeLabels || (excludeLabels && !(item instanceof Label))){
-                if (!(item instanceof GeometryProp)){
+            if (!excludeLabels || (excludeLabels && !(item instanceof Textbox && item.label))) {
+                if (!(item instanceof GeometryProp)) {
                     accum.push(item);
                 }
             }
