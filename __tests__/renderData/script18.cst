@@ -1,0 +1,26 @@
+import lib
+
+def tp():
+    return create component:
+        angle: 0
+        pins:
+            1: "TP"
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+wire down 20
+add res(10k)
+wire down 20
+
+branch:
+    wire left 20
+    add tp()
+
+wire down 20
+
+add res(10k)
+
+wire down 20
+to gnd

@@ -1822,19 +1822,25 @@ export function CalculatePinPositions(component: ClassComponent)
 
     const pinPositionMapping = new Map<number, { x: number; y: number; angle: number; }>();
 
-    // Force a render of the symbol
+    let tmpSymbol: SymbolGraphic;
     if (component.displayProp !== null
         && component.displayProp instanceof SymbolDrawing) {
 
-        const tmpSymbol = new SymbolPlaceholder(component.displayProp);
-        tmpSymbol.refreshDrawing();
+        tmpSymbol = new SymbolPlaceholder(component.displayProp);
 
-        const pins = component.pins;
-
-        pins.forEach((value: PinDefinition, key: number) => {
-            pinPositionMapping.set(key, tmpSymbol.pinPosition(key));
-        });
+    } else {
+        const symbolPinDefinitions = generateLayoutPinDefinition(component);
+        tmpSymbol = new SymbolCustom(symbolPinDefinitions);
     }
+
+    // Force a render of the symbol
+    tmpSymbol.refreshDrawing();
+
+    const pins = component.pins;
+
+    pins.forEach((value: PinDefinition, key: number) => {
+        pinPositionMapping.set(key, tmpSymbol.pinPosition(key));
+    });
 
     return pinPositionMapping;
 }

@@ -26,7 +26,12 @@ describe('Render tests', () => {
         ['text graphic expression', 'script14.cst'],
         ['component follows wire orientation', 'script15.cst'],
         ['component with defined pin follows wire orientation', 'script16.cst'],
-        ['component with arc graphic expr', 'script17.cst']
+        ['component with arc graphic expr', 'script17.cst'],
+
+        // Check that the correct pin positions are generated for
+        // custom drawn symbols 
+        ['symbol custom with pin position', 'script18.cst'],
+        
     ])('render - %s (%s)', async (title, scriptPath) => {
         
         await prepareSVGEnvironment(null);
