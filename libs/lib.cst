@@ -7,7 +7,7 @@ def net(net_name):
         angle: -90
         display: create graphic:
             hline: -15, 0, 30
-            vpin: 1, 0, 10, -10, display_pin_id=0
+            vpin: 1, 0, 10, -10, display_pin_id=false
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -21,7 +21,7 @@ def supply(net_name):
         angle: -90
         display: create graphic:
             hline: -15, 0, 30
-            vpin: 1, 0, 10, -10, display_pin_id=0
+            vpin: 1, 0, 10, -10, display_pin_id=false
             label: "net_name", 0, -5, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -34,8 +34,9 @@ def label(value, anchor="left"):
         copy: true
         followWireOrientation: false
         display: create graphic:
+            textColor: "#222"
             label: "value", 0, -2, "?", fontSize=10, anchor=anchor
-            pin: 1, 0, 0, 0, 0, display_pin_id=0
+            pin: 1, 0, 0, 0, 0, display_pin_id=false
         type: "label"
         params:
             net_name: value
@@ -148,7 +149,7 @@ def cgnd():
             hline: -15, 0, 30
             hline: -10, 5, 20
             hline: -5, 10, 10
-            vpin: 1, 0, -10, 10, display_pin_id=0
+            vpin: 1, 0, -10, 10, display_pin_id=false
             label: "net_name", 0, 22, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
@@ -165,12 +166,25 @@ def dgnd(net_name="GND"):
         angle: 90
         display: create graphic:
             triangle: 0, 0, 0, height, width
-            vpin: 1, 0, -10, 10, display_pin_id=0
+            vpin: 1, 0, -10, 10, display_pin_id=false
             label: "net_name", 0, height + 10, net_name, fontSize=10, anchor="middle"
         type: "net"
         params:
             net_name: net_name
             priority: 100
+
+def text(value, offsetX = 0, offsetY = 0, fontSize = 12):
+    return create component:
+        pins: 1
+        followWireOrientation: false
+        display: create graphic:
+            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            text:
+                content: value
+                offset: offsetX, offsetY
+                fontSize: fontSize
+
+# Drawing markers
 
 def marker_point():
     return create component:
@@ -178,22 +192,14 @@ def marker_point():
         display: create graphic:
             hline: -5, 0, 10
             vline: 0, -5, 10
-            pin: 1, 0, 0, 0, 0, display_pin_id=0
+            pin: 1, 0, 0, 0, 0, display_pin_id=false
 
 def arrow_point():
     return create component:
         pins: 1
-        display: create graphic:
-            path: ("M", 15, -5, "L", 20, 0, "L", 15, 5)
-            hpin: 1, 0, 0, 20
-
-def text(value, offsetX = 0, offsetY = 0, fontSize = 12):
-    return create component:
-        pins: 1
         followWireOrientation: false
         display: create graphic:
-            pin: 1, 0, 0, 0, 0, display_pin_id=0
-            text:
-                content: value
-                offset: offsetX, offsetY
-                fontSize: fontSize
+            lineWidth: 2
+            path: ("M", -10, -5, "L", -5, 0, "L", -10, 5)
+            path: ("M", -5, 0, "L", -20, 0)
+            hpin: 1, 0, 0, 0, display_pin_id=false

@@ -41,10 +41,16 @@ export const defaultFontBold = 'Open Sans-Bold, Arial-Bold, Arial';
 
 export const defaultFontSize = 10;
 
-export const bodyColor = '#FFFEAF';
 export const junctionSize = 5;
-export const junctionColor = 'rgb(0, 132, 0)';
-export const wireColor = 'rgb(0, 132, 0)';
+
+export const ColorScheme = {
+    BodyColor: 'rgb(255, 255, 194)',
+    JunctionColor: 'rgba(0, 132, 0)',
+    WireColor: 'rgb(0, 132, 0)',
+
+    PinLineColor: 'rgb(132, 0, 0)',
+    PinNameColor: 'rgb(0, 132, 132)',
+}
 
 
 export enum ComponentTypes {

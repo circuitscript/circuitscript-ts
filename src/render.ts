@@ -10,7 +10,7 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
-import { ComponentTypes, ParamKeys, bodyColor, junctionColor, junctionSize, wireColor } from './globals.js';
+import { ColorScheme, ComponentTypes, ParamKeys, junctionSize } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
 
@@ -103,7 +103,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         } else {
             // draw default shape
             symbolGroup.rect(width, height)
-                .fill(bodyColor)
+                .fill(ColorScheme.BodyColor)
                 .stroke({ width: 1, color: '#333' });
         }
     });
@@ -133,7 +133,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
             const pt1 = segment[0];
             const pt2 = segment[1];
             mergedWireGroup.line([pt1, pt2])
-                .stroke({ width: 1, color: wireColor, linecap: 'square' })
+                .stroke({ width: 1, color: ColorScheme.WireColor, 
+                    linecap: 'square' })
                 .fill('none');
         });
 
@@ -141,7 +142,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
             const [x, y, count] = point;
             mergedWireGroup.circle(junctionSize)
                             .translate(x - junctionSize/2, y - junctionSize/2)
-                            .fill(junctionColor)
+                            .fill(ColorScheme.JunctionColor)
                             .stroke('none');
                             
             // mergedWireGroup.text(count.toString())

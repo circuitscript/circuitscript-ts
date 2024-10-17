@@ -7,8 +7,8 @@
 
 import { G } from "@svgdotjs/svg.js";
 
-import { ReferenceTypes, SymbolPinSide, defaultFont } from "./globals.js";
-import { Feature, Geometry, GeometryProp, HorizontalAlign, Label, LabelStyle, 
+import { ColorScheme, ReferenceTypes, SymbolPinSide, defaultFont } from "./globals.js";
+import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle, 
     Textbox, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
 import { PinTypes } from "./objects/PinTypes.js";
@@ -169,11 +169,14 @@ export abstract class SymbolGraphic {
 
     protected drawPins(group: G): void {
         // Draw pins
-        group.path(this.drawing.getPinsPath())
-            .stroke({
-                width: defaultSymbolLineWidth,
-                color: '#333',
-            });
+        const pinPaths = this.drawing.getPinsPath();
+        pinPaths.forEach(({ path, lineColor }) => {
+            group.path(path)
+                .stroke({
+                    width: defaultSymbolLineWidth,
+                    color: lineColor
+                })
+        });
     }
 
     protected drawLabels(group: G): void {
@@ -188,6 +191,8 @@ export abstract class SymbolGraphic {
                 vanchor = VerticalAlign.Bottom,
                 fontWeight = 'regular',
                 angle: labelAngle = 0,
+
+                textColor = "#333",
             } = tmpLabel.style ?? {};
 
             let anchorStyle = 'start';
@@ -246,7 +251,7 @@ export abstract class SymbolGraphic {
 
             const textContainer = group.group();
             const text = textContainer.text(tmpLabel.text)
-                .fill('#333')
+                .fill(textColor)
                 .font({
                     family: useFont,
                     size: fontSize,
@@ -385,9 +390,16 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.flipX = this._flipX;
         drawing.flipY = this._flipY;
         
-        const commands = drawing.getCommands();
+        // Add default commands at the start to provide consistent style
+        const commands = [
+            [PlaceHolderCommands.lineColor, [ColorScheme.PinLineColor], {}],
+            [PlaceHolderCommands.textColor, [ColorScheme.PinNameColor], {}],
+            ...drawing.getCommands()];
 
         drawing.log('id: ', drawing.id, 'angle: ', this._angle, "commands:", commands.length);
+
+        let lineColor = "#333";
+        let textColor = "#333";
 
         commands.forEach(([commandName, positionParams, keywordParams]) => {
             switch (commandName) {
@@ -433,6 +445,13 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 case PlaceHolderCommands.lineColor:
                     // @ts-ignore
                     drawing.addSetLineColor(...positionParams);
+                    lineColor = positionParams[0];
+                    break;
+
+                case PlaceHolderCommands.textColor:
+                    // @ts-ignore
+                    drawing.addSetTextColor(...positionParams);
+                    textColor = positionParams[0];
                     break;
 
                 case PlaceHolderCommands.arc:
@@ -456,12 +475,16 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 case PlaceHolderCommands.vpin:
                 {
                     this.drawPinParams(drawing, commandName, 
-                        keywordParams, positionParams);
+                        keywordParams, positionParams, lineColor, textColor);
                     break;
                 }
 
                 case PlaceHolderCommands.label: {
                     const style = this.parseLabelStyle(keywordParams);
+
+                    if (style['textColor'] === undefined) {
+                        style['textColor'] = textColor;
+                    }
 
                     positionParams = [...positionParams];
                     positionParams.push(style);
@@ -506,7 +529,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
     }
 
     parseLabelStyle(keywordParams: Map<string, any>): { [key: string]: any } {
-        const keywords = ['fontSize', 'anchor', 'vanchor', 'angle'];
+        const keywords = ['fontSize', 'anchor', 'vanchor', 'angle', 'textColor'];
 
         // Create the style object
         const style: { [key: string]: any } = {};
@@ -521,16 +544,18 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
     drawPinParams(drawing: SymbolDrawingCommands,
         commandName: string, keywordParams: Map<string, any>,
-        positionParams: any[]): void {
+        positionParams: any[], lineColor: string, pinNameColor: string): void {
 
         drawing.log('add pin', ...positionParams);
 
         const keywordDisplayPinId = 'display_pin_id';
         let displayPinId = true;
 
-        if (keywordParams.has(keywordDisplayPinId) 
-                && keywordParams.get(keywordDisplayPinId) === 0){
-            displayPinId = false;
+        if (keywordParams.has(keywordDisplayPinId)) {
+            const value = keywordParams.get(keywordDisplayPinId);
+            if (value === 0 || value === false) {
+                displayPinId = false;
+            }
         }
 
         let pinNameParam: string | null = null;
@@ -574,7 +599,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
         }
 
         // @ts-ignore
-        drawing.addPin(...positionParams);
+        drawing.addPin(...positionParams, lineColor);
 
         // Add a label for the pinId and pinName
         const lastAddedPin = this.drawing.pins[this.drawing.pins.length - 1];
@@ -623,6 +648,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 fontSize: 10,
                 anchor: pinNameAlignment,
                 vanchor: VerticalAlign.Middle,
+                textColor: pinNameColor,
             });
 
             // Draw pin Id
@@ -631,6 +657,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 fontSize: 8,
                 anchor: pinIdAlignment,
                 vanchor: pinIdVAlignment,
+                textColor: lineColor
             });
         }
     }
@@ -657,6 +684,7 @@ export enum PlaceHolderCommands {
     lineWidth = 'lineWidth',
     fill = 'fill',
     lineColor = 'lineColor',
+    textColor = 'textColor',
     text = 'text'
 }
 
@@ -710,7 +738,9 @@ export class SymbolCustom extends SymbolGraphic {
         const bodyWidth = this.bodyWidth;
         const bodyHeight = (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing;
 
-        // drawing.addSetFillColor(bodyColor);
+        const defaultLineColor = ColorScheme.PinLineColor;
+        drawing.addSetLineColor(defaultLineColor);
+        // drawing.addSetFillColor(ColorScheme.BodyColor);
 
         drawing.addRect(0, 0, bodyWidth, bodyHeight);
 
@@ -722,12 +752,14 @@ export class SymbolCustom extends SymbolGraphic {
         leftPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPin(pin.pinId, leftPinStart - this.pinLength, pinY, leftPinStart, pinY);
+            drawing.addPin(pin.pinId, leftPinStart - this.pinLength, pinY, 
+                leftPinStart, pinY, defaultLineColor);
 
             drawing.addLabel(leftPinStart + 4, pinY, pin.text, {
                 fontSize: 10,
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Middle,
+                textColor: ColorScheme.PinNameColor,
             });
 
             // Add the pin number
@@ -735,18 +767,21 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: 8,
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Bottom,
+                textColor: defaultLineColor
             });
         });
 
         rightPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPin(pin.pinId, rightPinStart + this.pinLength, pinY, rightPinStart, pinY);
+            drawing.addPin(pin.pinId, rightPinStart + this.pinLength, pinY, 
+                rightPinStart, pinY, defaultLineColor);
 
             drawing.addLabel(rightPinStart - 4, pinY, pin.text, {
                 fontSize: 10,
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Middle,
+                textColor: ColorScheme.PinNameColor,
             });
 
             // Add the pin number
@@ -754,6 +789,7 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: 8,
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Bottom,
+                textColor: defaultLineColor
             });
         });
 
@@ -796,7 +832,7 @@ export class SymbolDrawing {
     items: (Feature | GeometryProp)[] = [];
 
     // pinId, feature, angle
-    pins: [number, Feature, number][] = [];
+    pins: [number, Feature, number, lineColor: string][] = [];
 
     angle = 0;
 
@@ -825,7 +861,7 @@ export class SymbolDrawing {
     }
 
     addPin(pinId: number, startX: number, startY: number, 
-        endX: number, endY: number): SymbolDrawing {
+        endX: number, endY: number, lineColor: string): SymbolDrawing {
 
         // Determine the pin angle based on vector with start point 
         // going to end point. The angle is relative to the x-axis. 
@@ -851,7 +887,8 @@ export class SymbolDrawing {
         this.pins.push([
             pinId,
             Geometry.segment([startX, startY], [endX, endY]),
-            angle
+            angle,
+            lineColor
         ]);
 
         return this;
@@ -1021,6 +1058,11 @@ export class SymbolDrawing {
         return this;
     }
 
+    addSetTextColor(value: string): SymbolDrawing {
+        this.items.push(new GeometryProp('textColor', value));
+        return this;
+    }
+
     addSetFillColor(value: string): SymbolDrawing {
         this.items.push(new GeometryProp('fillColor', value));
         return this;
@@ -1081,12 +1123,16 @@ export class SymbolDrawing {
         return pathItems;
     }
 
-    getPinsPath(): string {
-        let features = this.pins.map(item => item[1]);
-        features = Geometry.groupFlip(features, this.flipX, this.flipY);
-        features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
-        const { path } = this.featuresToPath(features, this.flipX, this.flipY);
-        return path;
+    getPinsPath(): { path: string, lineColor: string }[] {
+        return this.pins.map(item => {
+            let features = Geometry.groupFlip([item[1]], this.flipX, this.flipY);
+            features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
+            const { path } = this.featuresToPath(features, this.flipX, this.flipY);
+            return {
+                path,
+                lineColor: item[3],
+            }
+        });
     }
 
     getLabels(): Textbox[] {

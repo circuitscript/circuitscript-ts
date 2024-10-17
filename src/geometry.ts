@@ -28,6 +28,8 @@ export type LabelStyle = {
     
     anchor?: HorizontalAlign.Left | HorizontalAlign.Middle | HorizontalAlign.Right, // Horizontal anchor
     vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
+
+    textColor?: string,
 }
 
 export class Textbox extends Flatten.Polygon {
