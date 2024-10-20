@@ -31,10 +31,13 @@ describe('Render tests', () => {
         // Check that the correct pin positions are generated for
         // custom drawn symbols 
         ['symbol custom with pin position', 'script18.cst'],
+
+        ['ports (in, out, bidir, passive)', 'script19.cst'],
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         
-        await prepareSVGEnvironment(null);
+        const fontsPath = "./fonts";
+        await prepareSVGEnvironment(fontsPath);
 
         const script = readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
         const { hasError, visitor } = await runScript(script);

@@ -7,7 +7,7 @@
 
 import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing.js';
-import { defaultFont } from './globals.js';
+import { defaultFont, PortArrowSize } from './globals.js';
 import { Box } from '@svgdotjs/svg.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 
@@ -18,7 +18,7 @@ export type Line = Flatten.Line;
 
 export type Arc = Flatten.Arc;
 
-export type Feature = Segment | Polygon | Label | Textbox | Arc | Multiline;
+export type Feature = Segment | Polygon | Textbox | Arc | Multiline;
 
 export type LabelStyle = {
     font?: string,
@@ -30,6 +30,8 @@ export type LabelStyle = {
     vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
 
     textColor?: string,
+
+    portType?: null | 'in' | 'out' | 'bidir' | 'passive',
 }
 
 export class Textbox extends Flatten.Polygon {
@@ -95,6 +97,8 @@ export class Textbox extends Flatten.Polygon {
             anchor = HorizontalAlign.Left,
             vanchor = VerticalAlign.Bottom,
             fontWeight = 'regular',
+
+            portType = null,
          } = style ?? {};
 
         // Determine the size of the text, this is needed to determine the 
@@ -103,21 +107,73 @@ export class Textbox extends Flatten.Polygon {
             measureTextSize2(useText, defaultFont, fontSize, fontWeight, 
                 anchor, vanchor);
 
-        // const polygonCoords =
-            // labelPolygonForAnchors(x, y, width, height, anchor, vanchor);
+        let polygonCoords : [x:number, y:number][] = [];
 
-        const polygonCoords = [
-            [box.x, box.y],
-            [box.x2, box.y],
-            [box.x2, box.y2],
-            [box.x, box.y2],
-            [box.x, box.y],
-        ] as [x: number, y: number][];
+        // This is used to offset the original anchor point
+        let anchorOffsetX = 0;
+        let anchorOffsetY = 0;
+
+        if (portType === null){
+            polygonCoords = [
+                [box.x, box.y],
+                [box.x2, box.y],
+                [box.x2, box.y2],
+                [box.x, box.y2],
+                [box.x, box.y],
+            ] as [x: number, y: number][];
+
+        } else if (portType === 'in' || portType === 'out' 
+            || portType === 'bidir' || portType === 'passive') {
+            const paddingHorizontal = 5;
+            const paddingVert = 2;
+
+            // Need to account for the arrow head
+            if (portType === 'in') {
+                polygonCoords = [
+                    [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal - PortArrowSize, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
+                ];
+                anchorOffsetX += (PortArrowSize + paddingHorizontal);
+            } else if (portType === 'out') {
+                polygonCoords = [
+                    [box.x - paddingHorizontal, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal + PortArrowSize, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal + PortArrowSize, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal, box.y - paddingVert],
+                ];
+                anchorOffsetX += paddingHorizontal;
+            } else if (portType === 'bidir') {
+                polygonCoords = [
+                    [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal + PortArrowSize, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal + PortArrowSize, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal - PortArrowSize, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
+                ];
+                anchorOffsetX += paddingHorizontal + PortArrowSize;
+            } else if (portType === 'passive') {
+                polygonCoords = [
+                    [box.x - paddingHorizontal, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal, box.y - paddingVert],
+                    [box.x2 + paddingHorizontal, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal, box.y2 + paddingVert],
+                    [box.x - paddingHorizontal, box.y - paddingVert],
+                ];
+                anchorOffsetX += paddingHorizontal;
+            }
+
+            anchorOffsetY += 1;
+        }
 
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Textbox(id, useText, [x, y], polygon, style, box, label);
+        return new Textbox(id, useText, [x + anchorOffsetX, y + anchorOffsetY], 
+            polygon, style, box, label);
     }
 
     rotate(angle: number, origin: Flatten.Point): Textbox {
@@ -138,10 +194,6 @@ export class Textbox extends Flatten.Polygon {
     getLabelPosition(): [number, number] {
         return this.anchorPoint;
     }
-}
-
-export class Label extends Textbox {
-
 }
 
 export class GeometryProp {

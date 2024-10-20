@@ -43,6 +43,20 @@ def label(value, anchor="left"):
             value: value
             priority: 5
 
+def port(value, portType="in"):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic:
+            textColor: "#222"
+            label: "value", 0, 0, "?", fontSize=10, anchor="left", vanchor="middle", portType=portType
+            pin: 1, 0, 0, 0, 0, display_pin_id=false
+        type: "label"
+        params:
+            net_name: value
+            value: value
+            priority: 5
+
 def res(value):
     width = 40
     height = 20

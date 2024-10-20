@@ -1,0 +1,80 @@
+import lib
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+wire down 20
+
+branch:
+    wire right 20
+    add port("signal1", "bidir")
+
+branch:
+    wire left 20
+    add port("signal1_2", "bidir")
+
+wire down 20
+branch:
+    wire right 20
+    add port("signal2", "in")
+
+branch:
+    wire left 20
+    add port("signal2_2", "in")
+
+wire down 20
+branch:
+    wire right 20
+    add port("signal3", "out")
+
+branch:
+    wire left 20
+    add port("signal3_2", "out")
+
+wire down 20
+branch:
+    wire right 20
+    add port("signal4", "passive")
+
+branch:
+    wire left 20
+    add port("signal4_2", "passive")
+
+
+at vcc angle:-90
+wire right 20
+branch:
+    wire up 20
+    add port("signal1_3", "bidir")
+
+branch:
+    wire down 20
+    add port("signal1_4", "bidir")
+
+wire right 20
+branch:
+    wire up 20
+    add port("signal1_3", "in")
+
+branch:
+    wire down 20
+    add port("signal1_4", "in")
+
+wire right 20
+branch:
+    wire up 20
+    add port("signal1_3", "out")
+
+branch:
+    wire down 20
+    add port("signal1_4", "out")
+
+wire right 20
+branch:
+    wire up 20
+    add port("signal1_3", "passive")
+
+branch:
+    wire down 20
+    add port("signal1_4", "passive")

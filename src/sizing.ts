@@ -18,6 +18,8 @@ const supportedFonts = {
     // 'Roboto': 'Roboto-Regular.ttf',
     // 'Inter': 'Inter-Regular.ttf', 
     // 'Inter-Bold': 'Inter-Bold.ttf',
+    // 'Open Sans': 'OpenSans-Regular.ttf',
+    'Arial': 'Arial.ttf',
 }
 
 let globalCreateSVGWindow: () => SVGWindow;
@@ -49,11 +51,6 @@ export function applyFontsToSVG(canvas: SVGTypeMapping): void {
     // }
 }
 
-export async function measureTextSize(text: string, fontFamily: string, fontSize: number): Promise<{ width: number, height: number }> {
-    // Async version, in case measuring text sizes need more time
-    return measureTextSize2(text, fontFamily, fontSize);
-}
-
 // Cache measurements to avoid recalculations
 const measureTextSizeCache: {
     [key: string]: {
@@ -81,7 +78,7 @@ export function measureTextSize2(text: string, fontFamily: string,
 
     if (measureTextSizeCache[key] === undefined) {
         let dominantBaseline = 'hanging';
-        switch(vanchor){
+        switch (vanchor) {
             case VerticalAlign.Top:
                 dominantBaseline = 'hanging';
                 break;
@@ -96,8 +93,8 @@ export function measureTextSize2(text: string, fontFamily: string,
         }
 
         fontFamily = defaultFont;
-        
-        const tmpTextElement = MainCanvas.text(text).font({
+
+        const tmpTextElement = MainCanvas!.text(text).font({
             family: fontFamily,
             size: fontSize,
             anchor: anchor,

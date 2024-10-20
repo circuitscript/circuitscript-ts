@@ -7,7 +7,8 @@
 
 import { G } from "@svgdotjs/svg.js";
 
-import { ColorScheme, ReferenceTypes, SymbolPinSide, defaultFont } from "./globals.js";
+import { ColorScheme, PortArrowSize, ReferenceTypes, SymbolPinSide, 
+    defaultFont } from "./globals.js";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle, 
     Textbox, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
@@ -250,15 +251,6 @@ export abstract class SymbolGraphic {
             const useFont = defaultFont;
 
             const textContainer = group.group();
-            const text = textContainer.text(tmpLabel.text)
-                .fill(textColor)
-                .font({
-                    family: useFont,
-                    size: fontSize,
-                    anchor: anchorStyle,
-                    'dominant-baseline': dominantBaseline,
-                    weight: fontWeight,
-                });
 
             let translateX: number, translateY: number;
             let useRotateAngle = 0;
@@ -276,11 +268,146 @@ export abstract class SymbolGraphic {
             translateX = this.roundValues(translateX);
             translateY = this.roundValues(translateY);
 
-            text.rotate(labelAngle);
-            textContainer.translate(translateX, translateY)
-                        .rotate(useRotateAngle, -translateX, -translateY);
+            // The port type will add some padding to the component
+            const {portType = null} = tmpLabel.style;
 
-            const {a, b, c, d, e, f} = textContainer.matrix();
+            if (portType !== null) {
+                const { x: boundsX, y: boundsY}
+                    = tmpLabel.textMeasurementBounds;
+
+                const paddingHorizontal = 5;
+                const paddingVert = 2;
+
+                const boundsWidth = tmpLabel.textMeasurementBounds.width 
+                                        + paddingHorizontal * 2;
+                const boundsHeight = tmpLabel.textMeasurementBounds.height 
+                                        + paddingVert * 2;
+
+                let path: (string | number)[] = [];
+                let boundsTranslateX = 0;
+
+                switch (portType) {
+                    case 'in':
+                        path = ['M', 0, 0,
+                            'L', boundsWidth, 0,
+                            'L', boundsWidth, boundsHeight,
+                            'L', 0, boundsHeight,
+                            'L', -PortArrowSize, boundsHeight / 2,
+                            'Z',
+                        ];
+                        boundsTranslateX = -paddingHorizontal;
+                        break;
+
+                    case 'out':
+                        path = ['M', 0, 0,
+                            'L', boundsWidth, 0,
+                            'L', boundsWidth + PortArrowSize, 
+                                boundsHeight/2,
+                            'L', boundsWidth, boundsHeight,
+                            'L', 0, boundsHeight,
+                            'Z',
+                        ];
+                        boundsTranslateX = -paddingHorizontal;
+                        break;
+
+                    case 'bidir':
+                        path = ['M', 0, 0,
+                            'L', boundsWidth, 0,
+                            'L', boundsWidth + PortArrowSize, 
+                                boundsHeight/2,
+                            'L', boundsWidth, boundsHeight,
+                            'L', 0, boundsHeight,
+                            'L', -PortArrowSize, boundsHeight / 2,
+                            'Z',
+                        ];
+                        boundsTranslateX = -PortArrowSize;
+                        break;
+
+                    case 'passive':
+                        path = ['M', 0, 0,
+                            'L', boundsWidth, 0,
+                            'L', boundsWidth, boundsHeight,
+                            'L', 0, boundsHeight,
+                            'Z',
+                        ];
+                        boundsTranslateX = -paddingHorizontal;
+                        break;
+                }
+
+                if (path.length > 0) {
+                    let flip = 1;
+                    if (this.flipX !== 0) {
+                        flip = -1;
+
+                        if (portType === 'in') {
+                            boundsTranslateX = -boundsWidth + PortArrowSize + paddingHorizontal;
+                        } else if (portType === 'out') {
+                            boundsTranslateX = -boundsWidth;
+                        } else if (portType === 'bidir'){
+                            boundsTranslateX = -boundsWidth + PortArrowSize;
+                        } else if (portType === 'passive'){
+                            boundsTranslateX = -boundsWidth + paddingHorizontal;
+                        }
+                    }
+
+                    textContainer.path(path)
+                        .stroke({
+                            width: 1,
+                            color: '#333'
+                        })
+                        .fill('none')
+                        .scale(flip, 1)
+                        .translate(boundsTranslateX, boundsY - paddingVert)
+                        ;
+                }
+            }
+
+            const drawTextBounds = false;
+            const drawBoxBounds = false;
+
+            if (drawBoxBounds) {
+                const box = tmpLabel.box;
+                textContainer.rect(
+                    box.width,
+                    box.height
+                ).fill('red')
+                    .translate(box.xmin, box.ymin)
+                    .scale(
+                        this.flipX !== 0 ? -1 : 1,
+                        1,
+                        -box.xmin,
+                        box.ymin
+                    )
+            }
+
+            // Display text bounds
+            if (drawTextBounds) {
+                const textBounds = tmpLabel.textMeasurementBounds;
+                // display text bounds
+
+                const xOffset = (this.flipX !== 0) ? textBounds.width : 0;
+
+                textContainer.rect(
+                    textBounds.width, textBounds.height
+                ).fill('blue')
+                    .translate(textBounds.x - xOffset, textBounds.y);
+            }
+
+            textContainer.translate(translateX, translateY)
+                .rotate(useRotateAngle, -translateX, -translateY);
+
+            textContainer.text(tmpLabel.text)
+                .fill(textColor)
+                .font({
+                    family: useFont,
+                    size: fontSize,
+                    anchor: anchorStyle,
+                    'dominant-baseline': dominantBaseline,
+                    weight: fontWeight,
+                })
+                .rotate(labelAngle);
+
+            const { a, b, c, d, e, f } = textContainer.matrix();
             const newMatrix = {
                 a: this.roundValues(a),
                 b: this.roundValues(b),
@@ -293,7 +420,7 @@ export abstract class SymbolGraphic {
             textContainer.transform(newMatrix);
             
             // For debug, show the origin of the text container
-            // textContainer.circle(2).fill('red');
+            // textContainer.circle(2).fill('green');
         });
     }
 
@@ -529,7 +656,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
     }
 
     parseLabelStyle(keywordParams: Map<string, any>): { [key: string]: any } {
-        const keywords = ['fontSize', 'anchor', 'vanchor', 'angle', 'textColor'];
+        const keywords = ['fontSize', 'anchor', 'vanchor', 
+            'angle', 'textColor', 'portType'];
 
         // Create the style object
         const style: { [key: string]: any } = {};
