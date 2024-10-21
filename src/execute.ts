@@ -521,6 +521,12 @@ export class ExecutionContext {
             this.scope.currentPin = usePinId;
         }
 
+        // If component is first referenced by this at command, then do not
+        // allow it's orientation to be set by wires any more.
+        if (!component.didSetWireOrientationAngle) {
+            component.didSetWireOrientationAngle = true;
+        }
+
         // Insertion point is currently at a component pin, so clear
         // any wire/frame selected.
         this.scope.clearActive();
@@ -1145,6 +1151,7 @@ export class ExecutionContext {
         if (this.componentAngleFollowsWire 
             && component.followWireOrientationProp 
             && component.useWireOrientationAngle
+            && !component.didSetWireOrientationAngle
             && this.scope.currentWireId !== -1) {
             
             const currentWire = this.scope.wires[this.scope.currentWireId];
@@ -1205,7 +1212,8 @@ export class ExecutionContext {
                     component.setParam('angle', 270);
                 }
 
-                component.wireOrientationAngle = useAngle;              
+                component.wireOrientationAngle = useAngle;
+                component.didSetWireOrientationAngle = true;     
             }
         }
     }

@@ -50,8 +50,8 @@ export const ColorScheme = {
     JunctionColor: 'rgba(0, 132, 0)',
     WireColor: 'rgb(0, 132, 0)',
 
-    PinLineColor: 'rgb(132, 0, 0)',
-    PinNameColor: 'rgb(0, 132, 132)',
+    PinLineColor: '#333',
+    PinNameColor: '#333',
 }
 
 

@@ -67,10 +67,13 @@ export class ClassComponent {
     // The angle/orientation of the wire that is connected
     wireOrientationAngle = 0;
 
-    // If true, the wire wire orientation was used to set the angle
+    // If true, the wire orientation was used to set the angle
     // of the component. If flip or angle modifiers are set, those values
     // will have priority over the wire orientation angle.
     useWireOrientationAngle = true;
+
+    // If true, the wire orientation angle was already set before.
+    didSetWireOrientationAngle = false;
 
     styles: { [key: string]: number | string } = {};
 
