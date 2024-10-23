@@ -31,6 +31,8 @@ Return:     'return';
 Define:     'def';
 Import:     'import';
 
+Contains:   'contains';
+
 If:         'if';
 Else:       'else';
 Not:        '!';
@@ -77,12 +79,15 @@ expression: add_component_expr
         | if_expr
         ;
 
+expressions_block:
+	NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+
 path_blocks: path_block_inner+;
 path_block_inner:
-	(Branch | Join | Parallel | Point) ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+	(Branch | Join | Parallel | Point) ':' expressions_block;
 
 property_set_expr2:
-	atom_expr ':' NEWLINE INDENT ( NEWLINE | assignment_expr2)+ DEDENT;
+	atom_expr ':' NEWLINE INDENT (NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
 pin_select_expr: Pin (INTEGER_VALUE | STRING_VALUE);
@@ -115,7 +120,7 @@ at_block_expressions: expression | at_block_pin_expr;
 at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_block_pin_expression_complex);
 
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
-at_block_pin_expression_complex: NEWLINE INDENT ( NEWLINE | expression)+ DEDENT;
+at_block_pin_expression_complex: expressions_block;
 
 break_keyword: Break;
 
@@ -202,14 +207,14 @@ wire_expr: Wire wire_atom_expr*;
 point_expr: Point ID;
 import_expr: Import ID;
 
-frame_expr: Frame ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+frame_expr: Frame ':' expressions_block;
 
 if_expr:    If data_expr ':' 
-                NEWLINE INDENT (NEWLINE | expression)+ DEDENT
+                expressions_block
             if_inner_expr* else_expr?;
 
-if_inner_expr: Else If data_expr ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
-else_expr: Else ':' NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
+if_inner_expr: Else If data_expr ':' expressions_block;
+else_expr: Else ':' expressions_block;
 
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};

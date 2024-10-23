@@ -5,6 +5,7 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 
 import { ScriptContext } from "./CircuitScriptParser.js";
 import { ExpressionContext } from "./CircuitScriptParser.js";
+import { Expressions_blockContext } from "./CircuitScriptParser.js";
 import { Path_blocksContext } from "./CircuitScriptParser.js";
 import { Path_block_innerContext } from "./CircuitScriptParser.js";
 import { Property_set_expr2Context } from "./CircuitScriptParser.js";
@@ -91,6 +92,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitExpression?: (ctx: ExpressionContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.expressions_block`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitExpressions_block?: (ctx: Expressions_blockContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.path_blocks`.
      * @param ctx the parse tree

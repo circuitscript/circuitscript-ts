@@ -44,6 +44,7 @@ import {
     If_inner_exprContext,
     LogicalOperatorExprContext,
     Nested_properties_innerContext,
+    Expressions_blockContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -482,7 +483,11 @@ export class ParserVisitor extends BaseVisitor {
             this.visit(ctxPinSelectExpr);
             pinValue = this.getResult(ctxPinSelectExpr);
         } else {
-            pinValue = (component as ClassComponent).getDefaultPin();
+            if (component instanceof ClassComponent){
+                pinValue = (component as ClassComponent).getDefaultPin();
+            } else {
+                throw 'Invalid component';
+            }
         }
 
         this.setResult(ctx, [component, pinValue]);
@@ -767,11 +772,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitAt_block_pin_expression_complex = (ctx: At_block_pin_expression_complexContext): void => {
-        ctx.expression().forEach(item => {
-            this.visit(item);
-        });
-
-        // this.getExecutor().getCurrentPoint();
+        this.visit(ctx.expressions_block());
     }
     
     visitWire_expr_direction_only = (ctx: Wire_expr_direction_onlyContext): void => {
@@ -847,9 +848,14 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().setProperty('..' + propertyName, result);
     }
 
+    visitExpressions_block = (ctx: Expressions_blockContext): void => {
+        this.runExpressions(this.getExecutor(), ctx.expression());
+    }
+
+
     visitFrame_expr = (ctx: Frame_exprContext): void => {
         const frameId = this.getExecutor().enterFrame();
-        this.runExpressions(this.getExecutor(), ctx.expression());
+        this.visit(ctx.expressions_block());
         this.getExecutor().exitFrame(frameId);
     }
 
@@ -888,7 +894,7 @@ export class ParserVisitor extends BaseVisitor {
         const result = this.getResult(ctxDataExpr);
 
         if (result) {
-            this.runExpressions(this.getExecutor(), ctx.expression());
+            this.visit(ctx.expressions_block());
         } else {
             const ctxInnerIfExprs = ctx.if_inner_expr();
             let innerIfWasTrue = false;
@@ -922,7 +928,7 @@ export class ParserVisitor extends BaseVisitor {
         const result = this.getResult(ctxDataExpr);
 
         if (result) {
-            this.runExpressions(this.getExecutor(), ctx.expression());
+            this.visit(ctx.expressions_block());
         }
 
         this.setResult(ctx, result);
