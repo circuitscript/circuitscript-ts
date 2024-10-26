@@ -2,6 +2,7 @@ def label(value, anchor="left"):
     return create component:
         pins: 1
         copy: true
+        followWireOrientation: false
         display: create graphic:
             label: "value", 0, -2, "?", fontSize=10, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_pin_id=0

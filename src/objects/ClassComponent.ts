@@ -80,9 +80,8 @@ export class ClassComponent {
 
     assignedRefDes: string | null = null;
 
-    isModule = false;
     moduleContainsExpressions?: Expressions_blockContext;
-    moduleCounter = 0;
+    moduleCounter = 0; // Number of module instances
 
     constructor(instanceName: string, numPins: number, className: string) {
         this.instanceName = instanceName;

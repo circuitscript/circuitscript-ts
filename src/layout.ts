@@ -7,7 +7,9 @@
 
 import {Graph, Edge, alg} from '@dagrejs/graphlib';
 
-import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, SymbolPinDefintion, SymbolPlaceholder, SymbolText } from "./draw_symbols.js";
+import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, 
+    SymbolCustomModule, SymbolPinDefintion, SymbolPlaceholder, 
+    SymbolText } from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
 import { GlobalNames, ParamKeys } from './globals.js';
@@ -609,7 +611,12 @@ export class LayoutEngine {
                         }
                     } else {
                         const symbolPinDefinitions = generateLayoutPinDefinition(component);
-                        tmpSymbol = new SymbolCustom(symbolPinDefinitions);
+
+                        if (component.typeProp === 'module'){
+                            tmpSymbol = new SymbolCustomModule(symbolPinDefinitions);
+                        } else {
+                            tmpSymbol = new SymbolCustom(symbolPinDefinitions);
+                        }
                     }
     
                     applyComponentParamsToSymbol(typeProp, component, tmpSymbol);
@@ -1348,12 +1355,14 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
         // Automatically split pins
         for (let i = 0; i < existingPinIds.length; i++) {
             const pinPosition = Math.floor(i/2);
+            const pin = pins.get(existingPinIds[i])!;
 
             symbolPinDefinitions.push({
                 side: (i % 2 === 0) ? "left" : "right",
                 pinId: existingPinIds[i],
-                text: pins.get(existingPinIds[i]).name,
+                text: pin.name,
                 position: pinPosition,
+                pinType: pin.pinType,
             })
         }
     } else {
@@ -1362,7 +1371,7 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
         for (const [key, items] of component.arrangeProps) {
 
             let useItems;
-            if (!Array.isArray(items)){
+            if (!Array.isArray(items)) {
                 useItems = [items];
             } else {
                 // Do no mutate original array
@@ -1372,11 +1381,13 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
             useItems.forEach(pinId => {
                 // Only use the pin if it exists!
                 if (existingPinIds.indexOf(pinId) !== -1) {
+                    const pin = pins.get(pinId)!;
                     symbolPinDefinitions.push({
                         side: key,
                         pinId: pinId,
-                        text: pins.get(pinId).name,
-                        position: pins.get(pinId).position,
+                        text: pin.name,
+                        position: pin.position,
+                        pinType: pin.pinType,
                     });
                     addedPins.push(pinId);
                 }

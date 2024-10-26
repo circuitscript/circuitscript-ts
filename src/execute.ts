@@ -524,9 +524,9 @@ export class ExecutionContext {
 
         // If component is first referenced by this at command, then do not
         // allow it's orientation to be set by wires any more.
-        if (!component.didSetWireOrientationAngle) {
-            component.didSetWireOrientationAngle = true;
-        }
+        // if (!component.didSetWireOrientationAngle) {
+        //     component.didSetWireOrientationAngle = true;
+        // }
 
         // Insertion point is currently at a component pin, so clear
         // any wire/frame selected.
@@ -1086,7 +1086,14 @@ export class ExecutionContext {
 
         this.scope.currentComponent.pinWires.set(
             this.scope.currentPin, tmp
-        )
+        );
+        
+        if (!this.scope.currentComponent.didSetWireOrientationAngle) {
+            this.applyComponentAngleFromWire(
+                this.scope.currentComponent,
+                this.scope.currentPin!, true);
+            this.scope.currentComponent.didSetWireOrientationAngle = true;
+        }
     }
 
     addPoint(pointId: string, userDefined = true): ComponentPin {
@@ -1149,15 +1156,24 @@ export class ExecutionContext {
         }
     }
 
-    applyComponentAngleFromWire(component: ClassComponent, pin: number): void {
+    applyComponentAngleFromWire(component: ClassComponent, pin: number, 
+        opposite = false): void {
+        // By default the last segment of the wire is used. But if opposite
+        // is set to true, then use the first segment and also flip the
+        // wire direction that is used.
+
         if (this.componentAngleFollowsWire 
             && component.followWireOrientationProp 
             && component.useWireOrientationAngle
             && !component.didSetWireOrientationAngle
             && this.scope.currentWireId !== -1) {
-            
+
             const currentWire = this.scope.wires[this.scope.currentWireId];
-            const lastSegment = currentWire.path[currentWire.path.length - 1];
+            
+            let useSegment = currentWire.path[currentWire.path.length - 1];
+            if (opposite){
+                useSegment = currentWire.path[0];
+            }
 
             // Graphical symbol of component is drawn to determine the 
             // pin positions.
@@ -1168,7 +1184,21 @@ export class ExecutionContext {
 
                 // This is the final angle that the component will have
                 let targetAngle: number | null = null;
-                switch (lastSegment.direction) {
+
+                let useDirection = useSegment.direction;
+                if (opposite){
+                    if (useDirection === Direction.Down){
+                        useDirection = Direction.Up;
+                    } else if (useDirection === Direction.Up){
+                        useDirection = Direction.Down;
+                    } else if (useDirection === Direction.Right){
+                        useDirection = Direction.Left;
+                    } else if (useDirection === Direction.Left){
+                        useDirection = Direction.Right;
+                    }
+                }
+
+                switch (useDirection) {
                     case Direction.Down:
                         targetAngle = 90;
                         break;

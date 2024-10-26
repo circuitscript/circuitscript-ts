@@ -12,3 +12,10 @@ export enum PinTypes {
     IO = 'io',
     Power = 'power',
 }
+
+export const AllPinTypes = [
+    PinTypes.Any, 
+    PinTypes.Input, 
+    PinTypes.Output,
+    PinTypes.IO, 
+]

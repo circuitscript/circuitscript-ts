@@ -10,6 +10,7 @@ import { measureTextSize2 } from './sizing.js';
 import { defaultFont, PortArrowSize } from './globals.js';
 import { Box } from '@svgdotjs/svg.js';
 import { NumericValue } from './objects/ParamDefinition.js';
+import { AllPinTypes, PinTypes } from './objects/PinTypes.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -31,7 +32,7 @@ export type LabelStyle = {
 
     textColor?: string,
 
-    portType?: null | 'in' | 'out' | 'bidir' | 'passive',
+    portType?: null | PinTypes;
 }
 
 export class Textbox extends Flatten.Polygon {
@@ -122,13 +123,12 @@ export class Textbox extends Flatten.Polygon {
                 [box.x, box.y],
             ] as [x: number, y: number][];
 
-        } else if (portType === 'in' || portType === 'out' 
-            || portType === 'bidir' || portType === 'passive') {
+        } else if (AllPinTypes.indexOf(portType) !== -1) {
             const paddingHorizontal = 5;
             const paddingVert = 2;
 
             // Need to account for the arrow head
-            if (portType === 'in') {
+            if (portType === PinTypes.Input) {
                 polygonCoords = [
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
                     [box.x2 + paddingHorizontal, box.y - paddingVert],
@@ -137,7 +137,7 @@ export class Textbox extends Flatten.Polygon {
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
                 ];
                 anchorOffsetX += (PortArrowSize + paddingHorizontal);
-            } else if (portType === 'out') {
+            } else if (portType === PinTypes.Output) {
                 polygonCoords = [
                     [box.x - paddingHorizontal, box.y - paddingVert],
                     [box.x2 + paddingHorizontal + PortArrowSize, box.y - paddingVert],
@@ -146,7 +146,7 @@ export class Textbox extends Flatten.Polygon {
                     [box.x - paddingHorizontal, box.y - paddingVert],
                 ];
                 anchorOffsetX += paddingHorizontal;
-            } else if (portType === 'bidir') {
+            } else if (portType === PinTypes.IO) {
                 polygonCoords = [
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
                     [box.x2 + paddingHorizontal + PortArrowSize, box.y - paddingVert],
@@ -155,7 +155,7 @@ export class Textbox extends Flatten.Polygon {
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
                 ];
                 anchorOffsetX += paddingHorizontal + PortArrowSize;
-            } else if (portType === 'passive') {
+            } else if (portType === PinTypes.Any) {
                 polygonCoords = [
                     [box.x - paddingHorizontal, box.y - paddingVert],
                     [box.x2 + paddingHorizontal, box.y - paddingVert],

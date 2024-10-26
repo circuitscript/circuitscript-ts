@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { SymbolDrawingCommands } from "./draw_symbols";
+import { ClassComponent } from "./objects/ClassComponent";
+
 export class SimpleStopwatch {
     startTime: Date;
 
@@ -67,4 +70,22 @@ export function getBoundsSize(bounds: BoundBox): {width: number, height: number}
         width: bounds.xmax - bounds.xmin,
         height: bounds.ymax - bounds.ymin,
     }
+}
+
+export function getPortType(component: ClassComponent): string | null {
+    const drawingCommands = component.displayProp as SymbolDrawingCommands;
+    let foundPinType: string | null = null;
+
+    const commands = drawingCommands.getCommands();
+
+    commands.some(item => {
+        if (item[0] === 'label' && item[2].has('portType')) {
+            foundPinType = item[2].get('portType');
+            return true;
+        }
+
+        return false;
+    });
+
+    return foundPinType;
 }

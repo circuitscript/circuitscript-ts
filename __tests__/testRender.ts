@@ -23,6 +23,7 @@ describe('Render tests', () => {
         ['flipX and flipY parameters', 'script11.cst'],
         ['flipX, flipY, angle parameters with multiple components', 'script12.cst'],
         ['anchor modifier', 'script13.cst'],
+        
         ['text graphic expression', 'script14.cst'],
         ['component follows wire orientation', 'script15.cst'],
         ['component with defined pin follows wire orientation', 'script16.cst'],
@@ -32,7 +33,9 @@ describe('Render tests', () => {
         // custom drawn symbols 
         ['symbol custom with pin position', 'script18.cst'],
 
-        ['ports (in, out, bidir, passive)', 'script19.cst'],
+        ['ports (in, out, io, any)', 'script19.cst'],
+        
+        ['module with ports', 'script20.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         

@@ -287,7 +287,7 @@ export abstract class SymbolGraphic {
                 let boundsTranslateX = 0;
 
                 switch (portType) {
-                    case 'in':
+                    case PinTypes.Input:
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth, boundsHeight,
@@ -298,7 +298,7 @@ export abstract class SymbolGraphic {
                         boundsTranslateX = -paddingHorizontal;
                         break;
 
-                    case 'out':
+                    case PinTypes.Output:
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth + PortArrowSize, 
@@ -310,7 +310,7 @@ export abstract class SymbolGraphic {
                         boundsTranslateX = -paddingHorizontal;
                         break;
 
-                    case 'bidir':
+                    case PinTypes.IO:
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth + PortArrowSize, 
@@ -323,7 +323,8 @@ export abstract class SymbolGraphic {
                         boundsTranslateX = -PortArrowSize;
                         break;
 
-                    case 'passive':
+                    case PinTypes.Any:
+                    case PinTypes.Power:
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth, boundsHeight,
@@ -339,14 +340,19 @@ export abstract class SymbolGraphic {
                     if (this.flipX !== 0) {
                         flip = -1;
 
-                        if (portType === 'in') {
-                            boundsTranslateX = -boundsWidth + PortArrowSize + paddingHorizontal;
-                        } else if (portType === 'out') {
-                            boundsTranslateX = -boundsWidth;
-                        } else if (portType === 'bidir'){
-                            boundsTranslateX = -boundsWidth + PortArrowSize;
-                        } else if (portType === 'passive'){
-                            boundsTranslateX = -boundsWidth + paddingHorizontal;
+                        switch(portType){
+                            case PinTypes.Input:
+                                boundsTranslateX = -boundsWidth + PortArrowSize + paddingHorizontal;
+                                break;
+                            case PinTypes.Output:
+                                boundsTranslateX = -boundsWidth;
+                                break;
+                            case PinTypes.IO:
+                                boundsTranslateX = -boundsWidth + PortArrowSize;
+                                break;
+                            case PinTypes.Any:
+                                boundsTranslateX = -boundsWidth + paddingHorizontal;
+                                break;
                         }
                     }
 
@@ -872,6 +878,19 @@ export class SymbolCustom extends SymbolGraphic {
 
         drawing.addRect(0, 0, bodyWidth, bodyHeight);
 
+        this.generateDrawingPins(drawing, bodyWidth, bodyHeight,
+            leftPins, rightPins, defaultLineColor);
+
+        this.drawing = drawing;
+        this._cacheLeftPins = leftPins;
+        this._cacheRightPins = rightPins;
+    }
+
+    generateDrawingPins(drawing: SymbolDrawing,
+        bodyWidth: number, bodyHeight: number,
+        leftPins: SymbolPinDefintion[],
+        rightPins: SymbolPinDefintion[], defaultLineColor: string): void {
+
         // Setup the pins
         const leftPinStart = -bodyWidth / 2;
         const rightPinStart = bodyWidth / 2;
@@ -939,10 +958,6 @@ export class SymbolCustom extends SymbolGraphic {
                 });
             }
         });
-
-        this.drawing = drawing;
-        this._cacheLeftPins = leftPins;
-        this._cacheRightPins = rightPins;
     }
 
     calculateSize(): void {
@@ -950,6 +965,58 @@ export class SymbolCustom extends SymbolGraphic {
         this.width = this.bodyWidth + 2 * this.pinLength;
         this.height = (1 + Math.max(this._cacheLeftPins.length, 
             this._cacheRightPins.length)) * this.pinSpacing;
+    }
+
+}
+
+export class SymbolCustomModule extends SymbolCustom {
+
+    pinLength = 0;
+
+    portWidth = 20;
+    portHeight = 10;
+
+    generateDrawingPins(drawing: SymbolDrawing,
+        bodyWidth: number, bodyHeight: number,
+        leftPins: SymbolPinDefintion[],
+        rightPins: SymbolPinDefintion[], defaultLineColor: string): void {
+
+        // Setup the pins
+        const leftPinStart = -bodyWidth / 2;
+        const rightPinStart = bodyWidth / 2;
+        const pinStartY = -bodyHeight / 2;
+
+        leftPins.forEach(pin => {
+            const position = pin.position;
+            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
+            drawing.addPin(pin.pinId, leftPinStart - this.pinLength, pinY,
+                leftPinStart, pinY, defaultLineColor);
+
+            drawing.addModulePort(leftPinStart, pinY, this.portWidth, this.portHeight, pin.pinType);
+
+            drawing.addLabel(leftPinStart + this.portWidth + 4, pinY, pin.text, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Left,
+                vanchor: VerticalAlign.Middle,
+                textColor: ColorScheme.PinNameColor,
+            });
+        });
+
+        rightPins.forEach(pin => {
+            const position = pin.position;
+            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
+            drawing.addPin(pin.pinId, rightPinStart + this.pinLength, pinY,
+                rightPinStart, pinY, defaultLineColor);
+
+            drawing.addModulePort(rightPinStart, pinY, this.portWidth, this.portHeight, pin.pinType, -1);
+
+            drawing.addLabel(rightPinStart - this.portWidth - 4, pinY, pin.text, {
+                fontSize: 10,
+                anchor: HorizontalAlign.Right,
+                vanchor: VerticalAlign.Middle,
+                textColor: ColorScheme.PinNameColor,
+            });
+        });
     }
 
 }
@@ -1111,6 +1178,61 @@ export class SymbolDrawing {
             Geometry.textbox(null, x, y, textValue, style)
         );
 
+        return this;
+    }
+
+    addModulePort(x: number, y: number, width: number, height: number,
+        portType = PinTypes.Any, scaleX=1): SymbolDrawing {
+
+        // y will be the vertical center of the port
+        const height2 = height / 2;
+
+        let path: [x: number, y: number][] = [];
+        const arrowSize = 5;
+
+        if (portType === PinTypes.Any) {
+            path = [
+                [0, - height2],
+                [width, - height2],
+                [width, + height2],
+                [0, + height2],
+                [0, - height2]
+            ];
+        } else if (portType === PinTypes.Output) {
+            path = [
+                [arrowSize, -height2],
+                [width, -height2],
+                [width, height2],
+                [arrowSize, height2],
+                [0, 0],
+                [arrowSize, - height2]
+            ];
+        } else if (portType === PinTypes.Input) {
+            path = [
+                [0, - height2],
+                [width - arrowSize, -height2],
+                [width, 0],
+                [width - arrowSize, height2],
+                [0, + height2],
+                [0, - height2],
+            ];
+        } else if (portType === PinTypes.IO) {
+            path = [
+                [arrowSize, - height2],
+                [width - arrowSize, - height2],
+                [width, 0],
+                [width - arrowSize, + height2],
+                [arrowSize, + height2],
+                [0, 0],
+                [0 + arrowSize, - height2],
+            ];
+        }
+
+        path = path.map(point => {
+            return [x + point[0] *scaleX, y + point[1]];
+        });
+
+        this.items.push(Geometry.polygon(path));
         return this;
     }
 
@@ -1385,5 +1507,6 @@ export type SymbolPinDefintion = {
     pinId: number,
     text: string, // Display value at the pin
     position: number,
+    pinType: PinTypes,
 }
 

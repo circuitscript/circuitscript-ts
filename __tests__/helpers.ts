@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { dirname } from 'path';
 
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
@@ -111,4 +112,8 @@ export function findItemByRefDes(instances: Map<string, ClassComponent>, typePro
     }
 
     return null;
+}
+
+export function loadScriptFromFile(filePath: string): string {
+    return readFileSync(filePath).toString();
 }

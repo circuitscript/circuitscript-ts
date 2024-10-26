@@ -8,11 +8,11 @@ wire down 20
 
 branch:
     wire right 20
-    add port("signal1", "bidir")
+    add port("signal1", "io")
 
 branch:
     wire left 20
-    add port("signal1_2", "bidir")
+    add port("signal1_2", "io")
 
 wire down 20
 branch:
@@ -35,22 +35,22 @@ branch:
 wire down 20
 branch:
     wire right 20
-    add port("signal4", "passive")
+    add port("signal4", "any")
 
 branch:
     wire left 20
-    add port("signal4_2", "passive")
+    add port("signal4_2", "any")
 
 
 at vcc angle:-90
 wire right 20
 branch:
     wire up 20
-    add port("signal1_3", "bidir")
+    add port("signal1_3", "io")
 
 branch:
     wire down 20
-    add port("signal1_4", "bidir")
+    add port("signal1_4", "io")
 
 wire right 20
 branch:
@@ -73,8 +73,8 @@ branch:
 wire right 20
 branch:
     wire up 20
-    add port("signal1_3", "passive")
+    add port("signal1_3", "any")
 
 branch:
     wire down 20
-    add port("signal1_4", "passive")
+    add port("signal1_4", "any")

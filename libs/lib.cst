@@ -43,7 +43,7 @@ def label(value, anchor="left"):
             value: value
             priority: 5
 
-def port(value, portType="in"):
+def port(value, portType="input"):
     return create component:
         pins: 1
         copy: true

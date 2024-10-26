@@ -1,4 +1,5 @@
 import { ComponentPinNet } from "../src/objects/types";
+import { loadScriptFromFile } from "./helpers";
 
 export class ScriptTest<T>{
 
@@ -872,3 +873,37 @@ else:
 
 print(a)
 `, [4]);
+
+export const script20_ = new ScriptTest(
+    loadScriptFromFile('__tests__/renderData/script20.cst'),
+    [
+        [ '/GND', 'gnd', 1 ],
+        [ '/GND', 'gnd:0', 1 ],
+        [ '/GND', 'tmp', 3 ],
+        [ '/GND', 'gnd:1', 1 ],
+        [ '/GND', 'res_0.COMP_1_5k', 2 ],
+        [ '/GND', '_tmp_0.port_2.COMP_1_signal_c', 1 ],
+        [ '/GND', '_tmp_0.port_2.COMP_1_signal_c:0', 1 ],
+        [ '/GND', '_tmp_0.res_2.COMP_1_2k', 2 ],
+        [ '/NET_1', 'tmp', 5 ],
+        [ '/NET_1', 'res_0.COMP_1_5k', 1 ],
+        [ '/NET_1', '_tmp_0.port_1.COMP_1_signal_e', 1 ],
+        [ '/NET_1', '_tmp_0.port_1.COMP_1_signal_e:0', 1 ],
+        [ '/NET_1', '_tmp_0.res_1.COMP_1_1k', 2 ],
+        [ '/NET_1', '_tmp_0.res_2.COMP_1_2k', 1 ],
+        [ '/VCC', 'vcc', 1 ],
+        [ '/VCC', 'vcc:0', 1 ],
+        [ '/VCC', 'tmp', 1 ],
+        [ '/VCC', '_tmp_0.port_0.COMP_1_signal_a', 1 ],
+        [ '/VCC', '_tmp_0.port_0.COMP_1_signal_a:0', 1 ],
+        [ '/VCC', '_tmp_0.res_1.COMP_1_1k', 1 ],
+        [ 'tmp_0/NET_4', '_tmp_0.port_3.COMP_1_signal_b', 1 ],
+        [ 'tmp_0/NET_4', '_tmp_0.port_3.COMP_1_signal_b:0', 1 ],
+        [ 'tmp_0/NET_4', '_tmp_0.res_3.COMP_1_3k', 1 ],
+        [ 'tmp_0/NET_4', 'tmp', 2 ],
+        [ 'tmp_0/NET_5', '_tmp_0.port_4.COMP_1_signal_d', 1 ],
+        [ 'tmp_0/NET_5', '_tmp_0.port_4.COMP_1_signal_d:0', 1 ],
+        [ 'tmp_0/NET_5', '_tmp_0.res_3.COMP_1_3k', 2 ],
+        [ 'tmp_0/NET_5', 'tmp', 4 ]
+      ]
+);

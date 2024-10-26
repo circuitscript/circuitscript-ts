@@ -7,6 +7,7 @@ import {
     script20, script21, script22, script23, script24, script25, script26,
     script27, script28, script29, script3, script30, script31, script32, 
     script33, script34, script35, script36, script37, script38, script39, 
+    script20_, 
     script6, script7, script8, script9
 } from './parseScripts.js';
 
@@ -26,7 +27,8 @@ describe('test parsing', () => {
         ["correct nets after function call and also `join` keyword", script13],
         ["path with 'point' keyword", script14],
         ["path with 'parallel' keyword", script15],
-        ["consecutive blocks with 'join' then 'point'", script16]
+        ["consecutive blocks with 'join' then 'point'", script16],
+        ['module nets', script20_]
         
     ])('parse script - %s', async (description, scriptTest) => {
 

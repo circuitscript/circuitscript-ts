@@ -66,6 +66,7 @@ import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
+import { getPortType } from './utils.js';
 
 
 export class ParserVisitor extends BaseVisitor {
@@ -320,6 +321,20 @@ export class ParserVisitor extends BaseVisitor {
             parameters = this.getResult(ctxParameters);
         }
 
+        // For the `label` command, allow both 'in' and 'out' as shortform
+        // values to portType
+        if (commandName === 'label') {
+            parameters.forEach(item => {
+                if (item[0] == 'keyword' && item[1] === 'portType') {
+                    if (item[2] === 'in') {
+                        item[2] = 'input';
+                    } else if (item[2] === 'out') {
+                        item[2] = 'output';
+                    }
+                }
+            });
+        }
+
         this.setResult(ctx, [commandName, parameters]);
     }
 
@@ -375,15 +390,19 @@ export class ParserVisitor extends BaseVisitor {
             arrange.set('right', arrangeRightItems);
         }
 
+        const width = properties.has('width') ?
+            properties.get('width') : null;
+
         const blankParams = [];
         const props = {
-            arrange
+            arrange, width
         };
 
-        const createdComponent = this.getExecutor().createComponent("?",
-            tmpPorts, blankParams, props);
+        const moduleInstanceName = this.getExecutor().getUniqueInstanceName('');
+        const createdComponent = this.getExecutor().createComponent(
+            moduleInstanceName, tmpPorts, blankParams, props);
 
-        createdComponent.isModule = true;
+        createdComponent.typeProp = 'module';
 
         const ctxPropertyBlock = ctx.property_block_expr();
         if (ctxPropertyBlock) {
@@ -512,7 +531,8 @@ export class ParserVisitor extends BaseVisitor {
         ) {
             const tmpComponent = component.value as ClassComponent;
 
-            if (tmpComponent.isModule && tmpComponent.moduleContainsExpressions) {
+            if (tmpComponent.typeProp === 'module' 
+                && tmpComponent.moduleContainsExpressions) {
 
                 this.getExecutor().log('expanding module `contains`')
 
@@ -571,6 +591,12 @@ export class ParserVisitor extends BaseVisitor {
 
                         this.getExecutor().toComponent(
                             component, 1);
+                        
+                        // Determine the port type and apply back to the module
+                        // symbol
+                        const portType = getPortType(component);
+                        const tmpPin = tmpComponent.pins.get(modulePinId)!;
+                        tmpPin.pinType = portType;
                     }
                 }
 

@@ -4,6 +4,6 @@ tmp = create component:
     pins: 5
 
 add res(20k)
-wire right 20 down 200
+wire right 20 down 60
 
 to tmp angle:0 pin 2 
