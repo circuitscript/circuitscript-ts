@@ -63,6 +63,24 @@ export class UndeclaredReference {
     }
 }
 
+export class DeclaredReference {
+
+    found: boolean;
+    name?: string;
+    trailers?: string[];
+    type?: string;
+    value?: any
+
+
+    constructor(refType: ReferenceType) {
+        this.found = refType.found;
+        this.name = refType.name;
+        this.trailers = refType.trailers;
+        this.type = refType.type;
+        this.value = refType.value;
+    }
+}
+
 export type ReferenceType =
     {
         found: boolean,

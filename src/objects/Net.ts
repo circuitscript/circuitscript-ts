@@ -42,7 +42,8 @@ export class Net {
     }
 
     static isSame(netA: Net, netB: Net): boolean {
-        return netA.name === netB.name &&
+        return netA.namespace === netB.namespace &&
+            netA.name === netB.name &&
             netA.baseName === netB.baseName &&
             netA.priority === netB.priority &&
             netA.type === netB.type;

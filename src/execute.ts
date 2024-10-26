@@ -14,7 +14,8 @@ import { Net } from './objects/Net.js';
 import { ParamDefinition } from './objects/ParamDefinition.js';
 import { PinDefinition, PortSide } from './objects/PinDefinition.js';
 import { CFunction, CFunctionResult, CallableParameter, ComponentPin, 
-    Direction, ReferenceType } from './objects/types.js';
+    DeclaredReference, 
+    Direction } from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
@@ -783,42 +784,43 @@ export class ExecutionContext {
     }
 
     resolveVariable(executionStack: ExecutionContext[], idName: string):
-        ReferenceType {
+        DeclaredReference {
+
         // this.print('resolve variable', idName);
         const reversed = [...executionStack].reverse();
 
         for (let i = 0; i < reversed.length; i++) {
             const context = reversed[i];
             if (context.hasFunction(idName)) {
-                return {
+                return new DeclaredReference({
                     found: true,
                     value: context.getFunction(idName),
                     type: ReferenceTypes.function,
                     name: idName,
-                }
+                });
 
             } else if (context.scope.variables.has(idName)) {
-                return {
+                return new DeclaredReference({
                     found: true,
                     value: context.scope.variables.get(idName),
                     type: ReferenceTypes.variable,
                     name: idName,
-                };
+                });
 
             } else if (context.scope.instances.has(idName)) {
-                return {
+                return new DeclaredReference({
                     found: true,
                     value: context.scope.instances.get(idName),
                     type: ReferenceTypes.instance,
                     name: idName,
-                }
+                });
             }
         }
 
-        return {
+        return new DeclaredReference({
             found: false,
             name: idName,
-        }
+        })
     }
 
     callFunction(

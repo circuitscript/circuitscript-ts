@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Expressions_blockContext } from 'src/antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from '../draw_symbols.js';
 import { Net } from './Net.js';
 import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
@@ -78,6 +79,10 @@ export class ClassComponent {
     styles: { [key: string]: number | string } = {};
 
     assignedRefDes: string | null = null;
+
+    isModule = false;
+    moduleContainsExpressions?: Expressions_blockContext;
+    moduleCounter = 0;
 
     constructor(instanceName: string, numPins: number, className: string) {
         this.instanceName = instanceName;

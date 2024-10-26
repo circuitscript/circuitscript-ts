@@ -51,7 +51,7 @@ def port(value, portType="in"):
             textColor: "#222"
             label: "value", 0, 0, "?", fontSize=10, anchor="left", vanchor="middle", portType=portType
             pin: 1, 0, 0, 0, 0, display_pin_id=false
-        type: "label"
+        type: "port"
         params:
             net_name: value
             value: value

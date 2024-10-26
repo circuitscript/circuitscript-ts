@@ -273,11 +273,17 @@ export function renderScript(scriptData: string, outputPath: string,
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);
-    dumpNets && console.log(visitor.dumpNets());
+
+    if (dumpNets) {
+        const nets = visitor.dumpNets();
+        nets.forEach((item, index: number) => {
+            console.log(index, item.join(" | "));
+        });
+    }
 
     dumpData && writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
     dumpData && writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
-    
+
     if (hasError || hasParseError) {
         console.log('Error while parsing');
         return null;

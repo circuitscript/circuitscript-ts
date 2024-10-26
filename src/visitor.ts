@@ -45,6 +45,8 @@ import {
     LogicalOperatorExprContext,
     Nested_properties_innerContext,
     Expressions_blockContext,
+    Create_module_exprContext,
+    Property_block_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -52,12 +54,13 @@ import { ClassComponent } from './objects/ClassComponent.js';
 import {
     NumericValue,
     ParamDefinition,
+    PinBlankValue,
 } from './objects/ParamDefinition.js';
 import { PinDefinition, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
-    ComponentPinNet, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
+    ComponentPinNet, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, NoNetText, ReferenceTypes } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
@@ -256,8 +259,10 @@ export class ParserVisitor extends BaseVisitor {
             angle, followWireOrientation
         }
 
-        this.setResult(ctx, this.getExecutor().createComponent(instanceName, 
-            pins, params, props));
+        const createdComponent = this.getExecutor().createComponent(instanceName,
+            pins, params, props);
+
+        this.setResult(ctx, createdComponent);
     }
 
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
@@ -316,6 +321,93 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, [commandName, parameters]);
+    }
+
+    visitCreate_module_expr = (ctx: Create_module_exprContext): void => {
+        const properties = this.getPropertyExprList(ctx.property_expr());
+
+        const { left: leftPorts, right: rightPorts }
+            = this.parseCreateModulePorts(
+                properties.get('ports'),
+            );
+
+        const allPorts = [...leftPorts, ...rightPorts].filter(item => {
+            return !(item instanceof PinBlankValue);
+        }) as string[];
+
+        const nameToPinId = new Map<string, number>();
+
+        // Assign pin Id
+        const tmpPorts = allPorts.map((portName, index) => {
+            nameToPinId.set(portName, index+1);
+            
+            return new PinDefinition(
+                index + 1,
+                PinIdType.Int,
+                portName,
+                PinTypes.Any
+            );
+        });
+
+        const arrangeLeftItems = leftPorts.map(item => {
+            if (item instanceof PinBlankValue){
+                return item;
+            } else {
+                return nameToPinId.get(item);
+            }
+        });
+
+        const arrangeRightItems = rightPorts.map(item => {
+            if (item instanceof PinBlankValue){
+                return item;
+            } else {
+                return nameToPinId.get(item);
+            }
+        });
+
+        // Generate the arrange property
+        const arrange = new Map<string, any>();
+        if (arrangeLeftItems.length > 0){
+            arrange.set('left', arrangeLeftItems);
+        }
+
+        if (arrangeRightItems.length > 0){
+            arrange.set('right', arrangeRightItems);
+        }
+
+        const blankParams = [];
+        const props = {
+            arrange
+        };
+
+        const createdComponent = this.getExecutor().createComponent("?",
+            tmpPorts, blankParams, props);
+
+        createdComponent.isModule = true;
+
+        const ctxPropertyBlock = ctx.property_block_expr();
+        if (ctxPropertyBlock) {
+            // Only parse the first one, ignore the others!
+            const [firstBlock] = ctxPropertyBlock;
+            this.visit(firstBlock);
+            const [keyName, expressionsBlock] = this.getResult(firstBlock);
+
+            if (keyName === 'contains') {
+                createdComponent.moduleContainsExpressions = expressionsBlock;
+            }
+        }
+
+        this.setResult(ctx, createdComponent);
+    }
+
+    visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {
+        const tmpCtx = ctx.property_key_expr();
+        this.visit(tmpCtx);
+        const keyName = this.getResult(tmpCtx);
+
+        const expressionsBlock = ctx.expressions_block();
+
+        this.setResult(ctx, [keyName, expressionsBlock]);
     }
 
     visitProperty_expr = (ctx: Property_exprContext): void => {
@@ -410,6 +502,84 @@ export class ParserVisitor extends BaseVisitor {
         if (component instanceof ClassComponent
             && component.copyProp) {
             component = this.getExecutor().copyComponent(component);
+        }
+
+        if (component instanceof DeclaredReference
+            && component.found
+            && component.trailers
+            && component.trailers.length > 0
+            && component.trailers[0] === 'contains'
+        ) {
+            const tmpComponent = component.value as ClassComponent;
+
+            if (tmpComponent.isModule && tmpComponent.moduleContainsExpressions) {
+
+                this.getExecutor().log('expanding module `contains`')
+
+                const executionStack = this.executionStack;
+                const resolveNet = this.createNetResolver(executionStack);
+
+                const executionContextName = "_"
+                    + tmpComponent.instanceName
+                    + '_' + tmpComponent.moduleCounter;
+
+                const tmpNamespace = this.getNetNamespace(
+                    this.getExecutor().netNamespace,
+                    tmpComponent.instanceName + "_" + tmpComponent.moduleCounter
+                );
+
+                const newExecutor = this.enterNewChildContext(
+                    executionStack,
+                    this.getExecutor(),
+                    executionContextName,
+                    { netNamespace: tmpNamespace }, [], []
+                );
+
+                tmpComponent.moduleCounter += 1;
+                newExecutor.resolveNet = resolveNet;
+
+                // Create all the internal circuits of the module
+                this.visit(tmpComponent.moduleContainsExpressions);
+
+                // Done with the new context
+                const lastExecution = executionStack.pop()!;
+
+                const nextLastExecution = executionStack[executionStack.length - 1];
+                nextLastExecution.mergeScope(
+                    lastExecution.scope,
+                    executionContextName,
+                );
+
+                // Link the module pins with the internal pins too
+                const modulePinMapping = new Map<string, number>();
+
+                tmpComponent.pins.forEach(pin => {
+                    const pinName = pin.name;
+                    modulePinMapping.set(pinName, pin.id);
+                });
+
+                for (const [key, component] of lastExecution.scope.instances) {
+                    if (component._copyID !== null && component.typeProp === 'port') {
+                        // Link this to component pin
+                        // Get the port name, which is the net name
+                        const portName = component.parameters.get('net_name');
+
+                        const modulePinId = modulePinMapping.get(portName)!;
+                        this.getExecutor().atComponent(
+                            tmpComponent,
+                            modulePinId);
+
+                        this.getExecutor().toComponent(
+                            component, 1);
+                    }
+                }
+
+                // Use the final position of the circuit as the current
+                // component position
+                // const position = this.getExecutor().getCurrentPoint();
+                // component = position[0];
+                component = tmpComponent;
+            }
         }
 
         if (component && component instanceof ClassComponent) {
@@ -523,6 +693,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const ctxCreateComponentExpr = ctx.create_component_expr();
         const ctxCreateGraphicExpr = ctx.create_graphic_expr();
+        const ctxCreateModuleExpr = ctx.create_module_expr();
 
         if (ctxCreateComponentExpr) {
             this.visit(ctxCreateComponentExpr);
@@ -530,6 +701,9 @@ export class ParserVisitor extends BaseVisitor {
         } else if (ctxCreateGraphicExpr) {
             this.visit(ctxCreateGraphicExpr);
             value = this.getResult(ctxCreateGraphicExpr);
+        } else if (ctxCreateModuleExpr) {
+            this.visit(ctxCreateModuleExpr);
+            value = this.getResult(ctxCreateModuleExpr);
         } else {
             throw "Invalid data expression";
         }
@@ -1004,6 +1178,37 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         return pins;
+    }
+
+    private parseCreateModulePorts(portsDefinition: Map<string, any>)
+        : {
+            left: (string | PinBlankValue)[],
+            right: (string | PinBlankValue)[]
+        } {
+
+        let leftItems: (string | PinBlankValue)[] = [];
+        let rightItems: (string | PinBlankValue)[] = [];
+
+        if (portsDefinition.has('left')) {
+            leftItems = portsDefinition.get('left');
+
+            if (!Array.isArray(leftItems)) {
+                leftItems = [leftItems];
+            }
+        }
+
+        if (portsDefinition.has('right')) {
+            rightItems = portsDefinition.get('right');
+
+            if (!Array.isArray(rightItems)) {
+                rightItems = [rightItems];
+            }
+        }
+
+        return {
+            left: leftItems,
+            right: rightItems
+        }
     }
 
     private parseCreateComponentParams(

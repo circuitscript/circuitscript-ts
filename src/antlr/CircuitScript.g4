@@ -18,6 +18,8 @@ Branch:     'branch';
 Create:     'create';
 Component:  'component';
 Graphic:    'graphic';
+Module:     'module';
+
 Wire:       'wire';
 Pin:        'pin';
 Add:        'add';
@@ -30,8 +32,6 @@ Parallel:   'parallel';
 Return:     'return';
 Define:     'def';
 Import:     'import';
-
-Contains:   'contains';
 
 If:         'if';
 Else:       'else';
@@ -143,6 +143,7 @@ data_expr:
     | data_expr (LogicalAnd | LogicalOr) data_expr      #LogicalOperatorExpr
     | create_component_expr                             #DataExpr
     | create_graphic_expr                               #DataExpr
+    | create_module_expr                                #DataExpr
     | function_call_expr                                #FunctionCallExpr
     ;           
 
@@ -184,8 +185,13 @@ net_namespace_expr: '+'? '/' data_expr?;
 
 function_return_expr: Return data_expr ;
 
-create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT;
+property_block_expr: property_key_expr ':' expressions_block;
+
+create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr )+ DEDENT;
+
 create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
+
+create_module_expr: Create Module ':' NEWLINE INDENT (NEWLINE | property_expr | property_block_expr) + DEDENT;
 
 // Remove the ':' in the future?
 nested_properties_inner: (NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT);

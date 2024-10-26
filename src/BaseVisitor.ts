@@ -22,6 +22,7 @@ import { Net } from "./objects/Net";
 import { NumericValue, PercentageValue, PinBlankValue } from "./objects/ParamDefinition";
 import { PinTypes } from "./objects/PinTypes";
 import { CallableParameter, CFunctionOptions, ComplexType, 
+    DeclaredReference, 
     Direction, 
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
@@ -295,7 +296,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             passedNetNamespace = this.getResult(netNameSpaceExpr);
         }
 
-        let currentReference: ReferenceType = executor.resolveVariable(
+        let currentReference: DeclaredReference = executor.resolveVariable(
             this.executionStack, atomId);
 
         if (ctx.trailer_expr().length > 0) {
@@ -428,7 +429,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 if (reference.type && reference.type === ReferenceTypes.pinType) {
                     value = reference;
                 } else {
-                    value = reference.value;
+                    if (reference.trailers && reference.trailers.length > 0) {
+                        value = reference;
+                    } else {
+                        value = reference.value;
+                    }
                 }
             }
         }
