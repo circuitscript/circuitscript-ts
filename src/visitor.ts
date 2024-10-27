@@ -623,7 +623,8 @@ export class ParserVisitor extends BaseVisitor {
         const executionStack = this.executionStack;
         const resolveNet = this.createNetResolver(executionStack);
 
-        const executionContextName = "_"
+        const executionContextName = 
+            this.getExecutor().namespace + "_"
             + component.instanceName
             + '_' + component.moduleCounter;
 
