@@ -413,6 +413,9 @@ export class ParserVisitor extends BaseVisitor {
 
             if (keyName === 'contains') {
                 createdComponent.moduleContainsExpressions = expressionsBlock;
+                
+                this.expandModuleContains(createdComponent, 
+                    this.getExecutor().netNamespace);
             }
         }
 
@@ -529,83 +532,8 @@ export class ParserVisitor extends BaseVisitor {
             && component.trailers.length > 0
             && component.trailers[0] === 'contains'
         ) {
-            const tmpComponent = component.value as ClassComponent;
-
-            if (tmpComponent.typeProp === 'module' 
-                && tmpComponent.moduleContainsExpressions) {
-
-                this.getExecutor().log('expanding module `contains`')
-
-                const executionStack = this.executionStack;
-                const resolveNet = this.createNetResolver(executionStack);
-
-                const executionContextName = "_"
-                    + tmpComponent.instanceName
-                    + '_' + tmpComponent.moduleCounter;
-
-                const tmpNamespace = this.getNetNamespace(
-                    this.getExecutor().netNamespace,
-                    tmpComponent.instanceName + "_" + tmpComponent.moduleCounter
-                );
-
-                const newExecutor = this.enterNewChildContext(
-                    executionStack,
-                    this.getExecutor(),
-                    executionContextName,
-                    { netNamespace: tmpNamespace }, [], []
-                );
-
-                tmpComponent.moduleCounter += 1;
-                newExecutor.resolveNet = resolveNet;
-
-                // Create all the internal circuits of the module
-                this.visit(tmpComponent.moduleContainsExpressions);
-
-                // Done with the new context
-                const lastExecution = executionStack.pop()!;
-
-                const nextLastExecution = executionStack[executionStack.length - 1];
-                nextLastExecution.mergeScope(
-                    lastExecution.scope,
-                    executionContextName,
-                );
-
-                // Link the module pins with the internal pins too
-                const modulePinMapping = new Map<string, number>();
-
-                tmpComponent.pins.forEach(pin => {
-                    const pinName = pin.name;
-                    modulePinMapping.set(pinName, pin.id);
-                });
-
-                for (const [key, component] of lastExecution.scope.instances) {
-                    if (component._copyID !== null && component.typeProp === 'port') {
-                        // Link this to component pin
-                        // Get the port name, which is the net name
-                        const portName = component.parameters.get('net_name');
-
-                        const modulePinId = modulePinMapping.get(portName)!;
-                        this.getExecutor().atComponent(
-                            tmpComponent,
-                            modulePinId);
-
-                        this.getExecutor().toComponent(
-                            component, 1);
-                        
-                        // Determine the port type and apply back to the module
-                        // symbol
-                        const portType = getPortType(component);
-                        const tmpPin = tmpComponent.pins.get(modulePinId)!;
-                        tmpPin.pinType = portType;
-                    }
-                }
-
-                // Use the final position of the circuit as the current
-                // component position
-                // const position = this.getExecutor().getCurrentPoint();
-                // component = position[0];
-                component = tmpComponent;
-            }
+            component = component.value;
+            this.placeModuleContains(component);
         }
 
         if (component && component instanceof ClassComponent) {
@@ -689,7 +617,104 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, [component, pinValue]);
     }
 
-    
+    private expandModuleContains(component: ClassComponent, netNamespace: string): void {
+        this.getExecutor().log('expanding module `contains`')
+
+        const executionStack = this.executionStack;
+        const resolveNet = this.createNetResolver(executionStack);
+
+        const executionContextName = "_"
+            + component.instanceName
+            + '_' + component.moduleCounter;
+
+        const tmpNamespace = this.getNetNamespace(
+            netNamespace,
+            "+/" + component.instanceName + "_" + component.moduleCounter
+        );
+
+        const newExecutor = this.enterNewChildContext(
+            executionStack,
+            this.getExecutor(),
+            executionContextName,
+            { netNamespace: tmpNamespace }, [], []
+        );
+
+        component.moduleCounter += 1;
+        newExecutor.resolveNet = resolveNet;
+
+        // Create all the internal circuits of the module
+        this.visit(component.moduleContainsExpressions);
+
+        // Done with the new context
+        const executionContext = executionStack.pop()!;
+
+        // Defer the merging of execution context
+        component.moduleExecutionContext = executionContext;
+        component.moduleExecutionContextName = executionContextName;
+
+        this.linkModuleSymbolWithContains(component, executionContext);
+    }
+
+    private linkModuleSymbolWithContains(moduleComponent: ClassComponent,
+        executionContext: ExecutionContext): void {
+
+        this.log('link module symbol')
+
+        // Link the module pins with the internal pins
+        const modulePinMapping = new Map<string, number>();
+
+        moduleComponent.pins.forEach(pin => {
+            const pinName = pin.name;
+            modulePinMapping.set(pinName, pin.id);
+        });
+
+        const pinIdToPortMap = new Map<number, ClassComponent>();
+        moduleComponent.modulePinIdToPortMap = pinIdToPortMap;
+
+        for (const [key, component] of executionContext.scope.instances) {
+            if (component._copyID !== null && component.typeProp === 'port') {
+                // Link sub-circuit ports to module pin
+
+                // Get the port name, which is the net name
+                const portName = component.parameters.get('net_name');
+                const modulePinId = modulePinMapping.get(portName)!;
+
+                pinIdToPortMap.set(modulePinId, component);
+
+                // Determine the port type and apply back to the module
+                // symbol
+                const portType = getPortType(component);
+                const tmpPin = moduleComponent.pins.get(modulePinId)!;
+                tmpPin.pinType = portType;
+            }
+        }
+    }
+
+    private placeModuleContains(moduleComponent: ClassComponent):void {
+        if (moduleComponent.typeProp === 'module'
+            && moduleComponent.moduleContainsExpressions) {
+            this.log('place module `contains`');
+
+            // Merge directly into the current execution namespace
+            this.getExecutor().mergeScope(
+                moduleComponent.moduleExecutionContext.scope,
+                moduleComponent.moduleExecutionContextName
+            );
+
+            this.log('connect module ports');
+            // Link module ports to inner ports
+            for(const [pinId, portComponent] of moduleComponent.modulePinIdToPortMap){
+                this.getExecutor().atComponent(
+                    moduleComponent, pinId
+                );
+
+                this.getExecutor().toComponent(
+                    portComponent, 1
+                );
+            }
+        }
+    }
+
     visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
         this.visit(ctx.data_expr());
         let value = this.getResult(ctx.data_expr());

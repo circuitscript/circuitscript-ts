@@ -38,7 +38,7 @@ export class Net {
     }
 
     toString(): string {
-        return this.name;
+        return this.namespace + this.name;
     }
 
     static isSame(netA: Net, netB: Net): boolean {

@@ -142,7 +142,7 @@ export class ExecutionScope {
         });
 
         return sortedNet.map(([component, pin, net]) => {
-            return [net.namespace + net.name, component.instanceName, pin];
+            return [net.toString(), component.instanceName, pin];
         });
     }
 

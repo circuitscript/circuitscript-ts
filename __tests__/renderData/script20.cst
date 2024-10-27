@@ -46,4 +46,13 @@ add res(5k)
 wire down 20
 to gnd
 
+at label("input")
+wire right 60
+to tmp pin "signal_b"
+
+at tmp pin "signal_d"
+wire right 40
+add label("output")
+wire right 20
+
 at tmp.contains

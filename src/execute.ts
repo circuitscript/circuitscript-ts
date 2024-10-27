@@ -357,7 +357,7 @@ export class ExecutionContext {
     }
 
     printPoint(extra = ''): void {
-        let netName = NoNetText;
+        let netString = NoNetText;
 
         if (this.scope.currentComponent === null || this.scope.currentPin === null){
             this.log(
@@ -370,7 +370,7 @@ export class ExecutionContext {
             this.scope.currentComponent,
             this.scope.currentPin
         )) {
-            netName = this.scope
+            netString = this.scope
                 .getNet(this.scope.currentComponent, this.scope.currentPin)
                 .toString();
         }
@@ -379,7 +379,7 @@ export class ExecutionContext {
             (extra !== '' ? (extra + ' ') : '') + 'point: ' +
             this.scope.currentComponent.instanceName +
             ' ' +
-            this.scope.currentPin + ' ' + netName
+            this.scope.currentPin + ' ' + netString
         );
     }
 
@@ -861,6 +861,7 @@ export class ExecutionContext {
 
         if (__runFunc !== null) {
             this.log(`call function '${functionName}'`);
+            this.log(`net namespace: ${netNamespace}`);
 
             const functionResult = __runFunc(
                 functionParams,

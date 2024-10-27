@@ -11,6 +11,7 @@ import { Net } from './Net.js';
 import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
 import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
+import { ExecutionContext } from 'src/execute.js';
 
 export class ClassComponent {
 
@@ -80,8 +81,16 @@ export class ClassComponent {
 
     assignedRefDes: string | null = null;
 
+    // All module related properties
+
     moduleContainsExpressions?: Expressions_blockContext;
     moduleCounter = 0; // Number of module instances
+    
+    moduleExecutionContext: ExecutionContext;
+    moduleExecutionContextName: string;
+
+    modulePinIdToPortMap: Map<number, ClassComponent>;
+
 
     constructor(instanceName: string, numPins: number, className: string) {
         this.instanceName = instanceName;
