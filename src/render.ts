@@ -10,9 +10,10 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
-import { ColorScheme, ComponentTypes, ParamKeys, junctionSize } from './globals.js';
+import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, defaultScale, junctionSize } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
+import { milsToMM } from './helpers.js';
 
 export function generateSVG2(graph: {
     components: RenderComponent[],
@@ -34,13 +35,20 @@ export function generateSVG2(graph: {
         graph.components, graph.wires, graph.junctions, graph.mergedWires,
         graph.frameObjects, graph.textObjects,
         );
-    const {x, y, width, height} = canvas.bbox();
 
-    const margin = 5;
+    // Dimensions of bbox is in mm
+    const {x, y, width, height} = canvas.bbox();
+    const margin = milsToMM(10);
     const widthAndMargin = width + margin * 2;
     const heightAndMargin = height + margin * 2;
 
-    const scale = 1;
+    // 1 mil = 0.0254mm
+    // 10 mils = 0.254mm
+    // 100 mils = 2.54mm
+    // Formula: mm = 25.4 * (px / 96)
+
+    // The final output document is in metric dimensions - mm.
+    const scale = MMToPx * defaultScale; // 1mil = 0.0254mm
 
     canvas.size(widthAndMargin * scale, heightAndMargin * scale);
     canvas.viewbox(x - margin, y - margin, widthAndMargin, heightAndMargin);
@@ -56,6 +64,8 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     const displayWireId = false;
 
     // Draw the display grid
+
+    // The bounds will be in mm, since all the items are drawn in mm
     const bounds = getBounds(components, wires, junctions, frameObjects);
 
     drawGrid(
@@ -133,7 +143,9 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
             const pt1 = segment[0];
             const pt2 = segment[1];
             mergedWireGroup.line([pt1, pt2])
-                .stroke({ width: 1, color: ColorScheme.WireColor, 
+                .stroke({ 
+                    width: milsToMM(5), 
+                    color: ColorScheme.WireColor, 
                     linecap: 'square' })
                 .fill('none');
         });
@@ -170,6 +182,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
 
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
+
         if (borderWidth > 0){
             const { width, height } = getBoundsSize(bounds);
 
@@ -185,7 +198,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
 
             const tmpRect = frameGroup.rect(width, height)
                 .fill('none')
-                .stroke({ width: borderWidth, color: strokeColor });
+                .stroke({ width: milsToMM(borderWidth), color: strokeColor });
 
             tmpRect.translate(item.x, item.y);
         }
@@ -201,14 +214,16 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     const drawOrigin = false;
 
     // Draw origin
+    const originSize = milsToMM(10);
+
     drawOrigin && canvas.group().translate(0,0)
-        .circle(5)
-        .translate(-5/2, -5/2)
+        .circle(originSize)
+        .translate(-originSize/2, -originSize/2)
         .stroke('none').fill('red');
 }
 
 function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: number }): void {
-    const gridSize = 20;
+    const gridSize = defaultGridSizeUnits;
     const { x, y, x2, y2 } = canvasSize;
 
     const gridStartX = (Math.floor(x / gridSize) - 1) * gridSize;
@@ -227,22 +242,24 @@ function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: 
     //     .stroke('none');
 
     const lines = [];
+    const smallOffset = milsToMM(3);
+
+    const startY = gridStartY - smallOffset/2;
+    const endY = gridEndY + smallOffset;
 
     for (let i = 0; i <= numCols; i++) {
         const startX = gridStartX + i * gridSize;
-        const startY = gridStartY-0.5;
-        const endY = gridEndY;
         lines.push(`M ${startX} ${startY} L ${startX} ${endY}`);
     }
 
+    const strokeSize = milsToMM(3);
     group.path(lines.join(" "))
-        .fill('none')
         .attr({
-            'stroke-dasharray': '1,' + (gridSize-1),
+            'stroke-dasharray': `${strokeSize},${gridSize-strokeSize}`,
         })
         .stroke({
-            width: 1,
-            color: '#aaa'
+            width: strokeSize,
+            color: '#000'
         })
 }
 

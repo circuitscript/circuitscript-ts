@@ -12,7 +12,7 @@ import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic,
     SymbolText } from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
-import { GlobalNames, ParamKeys } from './globals.js';
+import { defaultGridSizeUnits, GlobalNames, ParamKeys } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { Geometry } from './geometry.js';
@@ -22,6 +22,7 @@ import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
+import { milsToMM, UnitDimension } from './helpers.js';
 
 export class LayoutEngine {
 
@@ -286,7 +287,7 @@ export class LayoutEngine {
         // depending on their bounds and position in the parent frame.
 
         const innerFrames = frame.innerItems as RenderFrame[];
-        const gridSize = 20;
+        const gridSize = defaultGridSizeUnits;
 
         let accumX = 0;
         let accumY = 0;
@@ -509,7 +510,7 @@ export class LayoutEngine {
                 tmpFrame.subgraphId = title.replace(/\s/g, "_");
 
                 const textObject = new RenderText(title);
-                textObject.fontSize = 16;
+                textObject.fontSize = 1;
                 textObject.fontWeight = 'bold';
 
                 textObject.symbol.refreshDrawing();
@@ -1551,15 +1552,22 @@ export class RenderWire extends RenderObject {
             const { direction, value } = segment;
 
             let didAddPoint = false;
+            let useValue: number;
+
+            if (value instanceof UnitDimension){
+                useValue = value.getMM();
+            } else {
+                useValue = value;
+            }
 
             if (direction === Direction.Down) {
-                tmpY += value;
+                tmpY += useValue;
             } else if (direction === Direction.Up) {
-                tmpY -= value;
+                tmpY -= useValue;
             } else if (direction === Direction.Left) {
-                tmpX -= value;
+                tmpX -= useValue;
             } else if (direction === Direction.Right) {
-                tmpX += value;
+                tmpX += useValue;
             } else if (direction === 'auto' || direction === "auto_") {
                 // 'auto' means both x and y. 'auto_' is the same as 'auto', but
                 // uses the alternative path to the target.
@@ -1780,13 +1788,13 @@ export class RenderFrame extends RenderObject {
     translateX = 0;
     translateY = 0;
 
-    padding = 20; // Inner frame padding
+    padding = milsToMM(100); // Inner frame padding
 
-    gap = 20;     // Spacing between inner frames
+    gap = milsToMM(100);     // Spacing between inner frames
 
     direction = FramePlotDirection.Column;
 
-    borderWidth = 1;
+    borderWidth = 5; //mils
 
     subgraphId = "";
 

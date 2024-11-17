@@ -20,6 +20,7 @@ import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
 import { CalculatePinPositions } from './layout.js';
+import { UnitDimension } from './helpers.js';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -1052,14 +1053,15 @@ export class ExecutionContext {
         this.log('-- done merging scope --');
     }
 
-    addWire(segments: [string, number?][]): void {
+    addWire(segments: [string, (number | UnitDimension)?][]): void {
 
         if (this.scope.currentComponent === null) {
             throw "No current component";
         }
 
         const tmp = segments.map(item => {
-            const [direction, value=null] = item;
+            const [direction, value = null] = item;
+
             return {
                 direction,
                 value

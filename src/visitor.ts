@@ -67,6 +67,7 @@ import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from '
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
+import { UnitDimension } from './helpers.js';
 
 
 export class ParserVisitor extends BaseVisitor {
@@ -1027,7 +1028,8 @@ export class ParserVisitor extends BaseVisitor {
             }
 
             if (useValue !== null) {
-                this.setResult(ctx, [direction, useValue]);
+                // Assume dimension is mils
+                this.setResult(ctx, [direction, new UnitDimension(useValue)]);
                 return;
             }
         }

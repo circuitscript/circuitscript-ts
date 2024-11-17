@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { UnitDimension } from "src/helpers.js";
 import { ClassComponent } from "./ClassComponent.js";
 import { Direction } from "./types.js";
 
@@ -22,7 +23,13 @@ export class Wire {
 export type WireSegment = {
     direction: Direction.Up | Direction.Down | Direction.Left
     | Direction.Right | 'auto' | 'auto_';
-    value: number,
+    
+    value: number | UnitDimension,
+
+    // If direction is auto, then both x and y might be set.
     valueXY?: [x: number, y: number],
+
+    // Used when direction is auto, to set the component and pin that
+    // it will auto connected to.
     until?: [instance: ClassComponent, pin: number],
 }

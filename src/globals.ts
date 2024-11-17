@@ -33,15 +33,38 @@ export enum SymbolPinSide {
     Right = "right"
 }
 
+export enum LengthUnit {
+    mm = 'mm',
+    mils = 'mils',
+    px = 'px',
+}
+
+export const MilsToMM = 0.0254;
+export const MMToPx = 3.779276;
+export const PxToMM = 0.2645833;
+
 export const portWidth = 20;
 export const portHeight = 2;
+
+export const defaultGridSizeUnits = 100 * MilsToMM;
+
+export const defaultScale = 5; // Convert language units into output units
+
+export const defaultSymbolLineWidth = 5 * MilsToMM;
+
+export const CustomSymbolPinTextSize = 1;
+export const CustomSymbolPinIdSize = 1;
+export const CustomSymbolRefDesSize = 1;
+
+// For now default is in mm?
+export const displayUnits = LengthUnit.mils;
 
 export const defaultFont = 'Arial';
 export const defaultFontBold = 'Arial';
 
 export const defaultFontSize = 10;
 
-export const junctionSize = 5;
+export const junctionSize = 15 * MilsToMM;
 
 export const PortArrowSize = 5;
 

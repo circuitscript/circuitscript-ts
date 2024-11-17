@@ -23,6 +23,7 @@ import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import path from "path";
+import { LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -276,9 +277,10 @@ export function renderScript(scriptData: string, outputPath: string,
 
     if (dumpNets) {
         const nets = visitor.dumpNets();
-        nets.forEach((item, index: number) => {
-            console.log(index, item.join(" | "));
-        });
+        // nets.forEach((item, index: number) => {
+        //     console.log(index, item.join(" | "));
+        // });
+        console.log(nets);
     }
 
     dumpData && writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
@@ -404,4 +406,41 @@ export function getPackageVersion(): string {
         readFileSync(getToolsPath() + 'package.json').toString());
     const {version} = packageJson;
     return version;
+}
+
+export class UnitDimension {
+    type: LengthUnit;
+    value: number;
+
+    constructor(value: number, type = LengthUnit.mils) {
+        this.value = value;
+        this.type = type;
+    }
+
+    getMM(): number {
+        switch(this.type){
+            case LengthUnit.mm:
+                return this.value;
+            case LengthUnit.mils:
+                return this.value * MilsToMM;
+            case LengthUnit.px:
+                return this.value * PxToMM;
+        }
+    }
+
+    static mm(value: number): UnitDimension {
+        return new UnitDimension(value, LengthUnit.mm);
+    }
+
+    static mils(value: number): UnitDimension {
+        return new UnitDimension(value, LengthUnit.mils);
+    }
+
+    static px(value: number): UnitDimension {
+        return new UnitDimension(value, LengthUnit.px);
+    }
+}
+
+export function milsToMM(value: number): number {
+    return value * MilsToMM;
 }
