@@ -46,15 +46,20 @@ export const PxToMM = 0.2645833;
 export const portWidth = 20;
 export const portHeight = 2;
 
-export const defaultGridSizeUnits = 100 * MilsToMM;
+export const defaultGridSizeUnits = MilsToMM * 100;
 
-export const defaultScale = 5; // Convert language units into output units
+export const defaultZoomScale = 2.5; // Convert language units into output units
 
-export const defaultSymbolLineWidth = 5 * MilsToMM;
+// Re-size fonts based on a custom defined scale.
+// A font size of 10 (before applying scale), should fit around 50 mils
+export const fontDisplayScale = 0.17;
 
-export const CustomSymbolPinTextSize = 1;
-export const CustomSymbolPinIdSize = 1;
-export const CustomSymbolRefDesSize = 1;
+export const defaultSymbolLineWidth = MilsToMM * 6;
+export const defaultWireLineWidth = MilsToMM * 6;
+
+export const CustomSymbolPinTextSize = 6;
+export const CustomSymbolPinIdSize = 6;
+export const CustomSymbolRefDesSize = 10;
 
 // For now default is in mm?
 export const displayUnits = LengthUnit.mils;
@@ -64,9 +69,11 @@ export const defaultFontBold = 'Arial';
 
 export const defaultFontSize = 10;
 
-export const junctionSize = 15 * MilsToMM;
+export const junctionSize = MilsToMM * 20;
 
-export const PortArrowSize = 5;
+export const PortArrowSize = MilsToMM * 50;
+export const PortPaddingHorizontal = MilsToMM * 10;
+export const PortPaddingVertical = MilsToMM * 10;
 
 export const ColorScheme = {
     BodyColor: 'rgb(255, 255, 194)',

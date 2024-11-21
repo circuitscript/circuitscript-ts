@@ -10,7 +10,7 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
-import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, defaultScale, junctionSize } from './globals.js';
+import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, defaultWireLineWidth, defaultZoomScale, junctionSize } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
 import { milsToMM } from './helpers.js';
@@ -48,7 +48,7 @@ export function generateSVG2(graph: {
     // Formula: mm = 25.4 * (px / 96)
 
     // The final output document is in metric dimensions - mm.
-    const scale = MMToPx * defaultScale; // 1mil = 0.0254mm
+    const scale = MMToPx * defaultZoomScale; // 1mil = 0.0254mm
 
     canvas.size(widthAndMargin * scale, heightAndMargin * scale);
     canvas.viewbox(x - margin, y - margin, widthAndMargin, heightAndMargin);
@@ -144,7 +144,7 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
             const pt2 = segment[1];
             mergedWireGroup.line([pt1, pt2])
                 .stroke({ 
-                    width: milsToMM(5), 
+                    width: defaultWireLineWidth, 
                     color: ColorScheme.WireColor, 
                     linecap: 'square' })
                 .fill('none');

@@ -43,14 +43,21 @@ export function printBounds(bounds: BoundBox): string {
     }
 }
 
+function hasRemainder(value: number, value2: number): number {
+    const tmpValue = Math.abs(value) / value2;
+    const flooredValue = Math.floor(tmpValue);
+    const diff = tmpValue - flooredValue;
+    return diff;
+}
+
 export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
-    
+
     // These extra values force the bounds to be expanded if it is already
     // to the grid, otherwise the expanded grid might "just nice" fit.
-    const addXMin = (bounds.xmin % gridSize) === 0 ? -1: 0;
-    const addYMin = (bounds.ymin % gridSize) === 0 ? -1: 0;
-    const addXMax = (bounds.xmax % gridSize) === 0 ? 1 : 0;
-    const addYMax = (bounds.ymax % gridSize) === 0 ? 1 : 0;
+    const addXMin = hasRemainder(bounds.xmin, gridSize) === 0 ? -1: 0;
+    const addYMin = hasRemainder(bounds.ymin, gridSize) === 0 ? -1: 0;
+    const addXMax = hasRemainder(bounds.xmax, gridSize) === 0 ? 1 : 0;
+    const addYMax = hasRemainder(bounds.ymax, gridSize) === 0 ? 1 : 0;
 
     return {
         xmin: Math.floor((bounds.xmin + addXMin) / gridSize) * gridSize,
@@ -88,4 +95,8 @@ export function getPortType(component: ClassComponent): string | null {
     });
 
     return foundPinType;
+}
+
+export function roundValue(value: number): number {
+    return +value.toFixed(7);
 }

@@ -12,7 +12,7 @@ import { program } from 'commander';
 import figlet from 'figlet';
 import path from 'path';
 
-import { readFileSync, watch } from 'fs';
+import { readFileSync, watch, existsSync } from 'fs';
 
 import { prepareSVGEnvironment } from './sizing.js';
 import { getDefaultLibsPath, getFontsPath, getPackageVersion, 
@@ -74,15 +74,21 @@ export default async function main(): Promise<void> {
     let scriptData: string;
     if (args.length > 0 && args[0]) {
         inputFilePath = args[0];
-        scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
 
-        if (currentDirectory === null) {
-            currentDirectory = path.dirname(inputFilePath);
+        if (existsSync(inputFilePath)) {
+            scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
+
+            if (currentDirectory === null) {
+                currentDirectory = path.dirname(inputFilePath);
+            }
+        } else {
+            console.error("Error: File could not be found");
+            return;
         }
     } else if (options.input) {
         scriptData = options.input;
     } else {
-        console.log("Error: No input provided");
+        console.error("Error: No input provided");
         return;
     }    
 

@@ -444,3 +444,7 @@ export class UnitDimension {
 export function milsToMM(value: number): number {
     return value * MilsToMM;
 }
+
+export function pxToMM(value: number): number {
+    return value * PxToMM;
+}

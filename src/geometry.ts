@@ -7,10 +7,11 @@
 
 import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing.js';
-import { defaultFont, PortArrowSize } from './globals.js';
+import { defaultFont, fontDisplayScale, PortArrowSize, PortPaddingHorizontal, PortPaddingVertical } from './globals.js';
 import { Box } from '@svgdotjs/svg.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { AllPinTypes, PinTypes } from './objects/PinTypes.js';
+import { roundValue } from './utils.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -41,7 +42,7 @@ export class Textbox extends Flatten.Polygon {
 
     text: string;
 
-    anchorPoint: [number, number] = [0, 0];
+    anchorPoint: [number, number] = [0, 0]; // Without any rotation
 
     boundingBox: { width: number, height: number } = { width: -1, height: -1 };
     polygon: Polygon;
@@ -105,7 +106,7 @@ export class Textbox extends Flatten.Polygon {
         // Determine the size of the text, this is needed to determine the 
         // bounding box of the text for layout purposes.
         const { width, height, box } =
-            measureTextSize2(useText, defaultFont, fontSize, fontWeight, 
+            measureTextSize2(useText, defaultFont, fontSize * fontDisplayScale, fontWeight, 
                 anchor, vanchor);
 
         let polygonCoords : [x:number, y:number][] = [];
@@ -124,8 +125,8 @@ export class Textbox extends Flatten.Polygon {
             ] as [x: number, y: number][];
 
         } else if (AllPinTypes.indexOf(portType) !== -1) {
-            const paddingHorizontal = 5;
-            const paddingVert = 2;
+            const paddingHorizontal = PortPaddingHorizontal;
+            const paddingVert = PortPaddingVertical;
 
             // Need to account for the arrow head
             if (portType === PinTypes.Input) {
@@ -166,7 +167,7 @@ export class Textbox extends Flatten.Polygon {
                 anchorOffsetX += paddingHorizontal;
             }
 
-            anchorOffsetY += 1;
+            anchorOffsetY += paddingVert/2;
         }
 
         const polygon = new Flatten.Polygon(polygonCoords);
@@ -179,16 +180,38 @@ export class Textbox extends Flatten.Polygon {
     rotate(angle: number, origin: Flatten.Point): Textbox {
         // Override this so that a Label object is returned.
         const feature = super.rotate(angle, origin);
-        return new Textbox(this.id, this.text, this.anchorPoint, feature, 
+        const newAnchorPoint = this.transformAnchorPoint(
+            segment => segment.rotate(angle, origin)
+        );
+
+        return new Textbox(this.id, this.text, newAnchorPoint, feature,
             this.style, this.textMeasurementBounds, this.label);
     }
 
     transform(matrix: Flatten.Matrix): Textbox {
         // Override this so that a Label object is returned.
         const feature = super.transform(matrix);
-        return new Textbox(this.id, this.text, this.anchorPoint, feature, 
+
+        const newAnchorPoint = this.transformAnchorPoint(
+            segment => segment.transform(matrix)
+        );
+
+        return new Textbox(this.id, this.text, newAnchorPoint, feature,
             this.style, this.textMeasurementBounds, this.label
         );
+    }
+
+    private transformAnchorPoint(callback: (segment: Segment) => Segment): [x: number, y: number] {
+        const anchorPointSegment = new Flatten.Segment(
+            new Flatten.Point(0, 0),
+            new Flatten.Point(this.anchorPoint)
+        );
+
+        const newSegment = callback(anchorPointSegment);
+        const lastPoint = newSegment.vertices[newSegment.vertices.length - 1];
+        return [
+            lastPoint.x, lastPoint.y
+        ];
     }
 
     getLabelPosition(): [number, number] {
@@ -325,8 +348,7 @@ export class Geometry {
                 return;
             }
 
-            if (feature instanceof Textbox && !feature.label){
-                // if is textbox (but not label), then include the offset
+            if (feature instanceof Textbox) {
                 const [x, y] = feature.anchorPoint;
                 box = {
                     xmin: box.xmin + x,
@@ -470,7 +492,10 @@ export class Geometry {
         wirePoints.forEach(points => {
 
             const tmpPoints = points.map(pt => {
-                return new Flatten.Point(pt.x, pt.y);
+                const roundedX = roundValue(pt.x);
+                const roundedY = roundValue(pt.y);
+
+                return new Flatten.Point(roundedX, roundedY);
             });
 
             // Generate segments from the points

@@ -510,7 +510,7 @@ export class LayoutEngine {
                 tmpFrame.subgraphId = title.replace(/\s/g, "_");
 
                 const textObject = new RenderText(title);
-                textObject.fontSize = 1;
+                textObject.fontSize = 12;
                 textObject.fontWeight = 'bold';
 
                 textObject.symbol.refreshDrawing();
@@ -643,7 +643,7 @@ export class LayoutEngine {
                     }
 
                     if (tmpSymbol instanceof SymbolCustom && widthProp){
-                        tmpSymbol.bodyWidth = widthProp;
+                        tmpSymbol.bodyWidth = milsToMM(widthProp);
                     }
     
                     if (!didSetAngle && component.parameters.has('_addDirection')){
@@ -1468,8 +1468,9 @@ function calculateSymbolAngle(symbol: SymbolGraphic,
 export function getBounds(
     components: (RenderComponent|RenderText)[], 
     wires: RenderWire[], junctions: RenderJunction[], frames: RenderFrame[]): BoundBox{
+    // Returns the bounds in mm.
     
-        const points = [];
+    const points = [];
 
     components.forEach(item => {
         const bbox = item.symbol.drawing.getBoundingBox();
