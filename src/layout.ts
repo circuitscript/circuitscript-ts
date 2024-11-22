@@ -19,7 +19,7 @@ import { Geometry } from './geometry.js';
 import { Net } from './objects/Net.js';
 import { Logger } from './logger.js';
 import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
-import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, toNearestGrid } from './utils.js';
+import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from './helpers.js';
@@ -1296,25 +1296,29 @@ export class LayoutEngine {
 }
 
 
-function getNodePositionAtPin(item:RenderItem, pin: number):[x: number, y: number]{
-    if (item instanceof RenderComponent){
+function getNodePositionAtPin(item: RenderItem, pin: number): [x: number, y: number] {
+    let x = 0;
+    let y = 0;
+
+    if (item instanceof RenderComponent) {
         const pinPosition = item.symbol.pinPosition(pin);
-        return [
-            item.x + pinPosition.x,
-            item.y + pinPosition.y
-        ];
-    } else if (item instanceof RenderWire){
-        if (pin === 0){
-            return [item.x, item.y];
+        x = item.x + pinPosition.x;
+        y = item.y + pinPosition.y;
+
+    } else if (item instanceof RenderWire) {
+        if (pin === 0) {
+            x = item.x;
+            y = item.y;
         } else {
             const wireEnd = item.getWireEnd();
-
-            return [
-                item.x + wireEnd.x,
-                item.y + wireEnd.y
-            ]
+            x = item.x + wireEnd.x;
+            y = item.y + wireEnd.y;
         }
     }
+
+    return [
+        roundValue(x), roundValue(y)
+    ]
 }
 
 
@@ -1595,8 +1599,11 @@ export class RenderWire extends RenderObject {
     }
 
     getAutoPoints(value: [x: number, y: number], direction: 'auto' | 'auto_'): [dx: number, dy: number][] {
-        const inQuadrant = Geometry.getQuadrant(value[0], value[1]);
-        const [dx, dy] = value;
+        const valueX = roundValue(value[0]);
+        const valueY = roundValue(value[1]);
+
+        const inQuadrant = Geometry.getQuadrant(valueX, valueY);
+        const [dx, dy] = [valueX, valueY];
 
         // Clockwise direction
         if (direction === 'auto') {

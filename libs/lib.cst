@@ -89,7 +89,7 @@ def cap(value):
             vpin: 1, 0, -100, 80
             vpin: 2, 0, 100, -80
             label: "refdes", 80, -30, "?", fontSize=50, anchor="left", vanchor="middle"
-            label: "value", 80, 30, value, fontSize=30, anchor = "left", vanchor="middle"
+            label: "value", 80, 30, value, fontSize=50, anchor = "left", vanchor="middle"
         type: "cap"
         params:
             value: value

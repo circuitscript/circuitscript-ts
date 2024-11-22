@@ -35,7 +35,9 @@ describe('Render tests', () => {
 
         ['ports (in, out, io, any)', 'script19.cst'],
         
-        ['module with ports', 'script20.cst']
+        ['module with ports', 'script20.cst'],
+
+        ['decimal places causing issues with junctions and layout', 'script21.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         

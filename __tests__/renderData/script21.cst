@@ -1,0 +1,71 @@
+import lib
+
+gnd = dgnd()
+v3v3 = supply("3V3")
+v5v = supply("5V")
+
+def conn3x2():
+    width = 300
+    height = 400
+
+    return create component:
+        pins: 6
+        display: create graphic:
+            rect: 0, 0, width, height
+
+            hpin: 1, "1", -width/2 - 100, -100,   100
+            hpin: 3, "3", -width/2 - 100, 0,      100
+            hpin: 5, "5", -width/2 - 100, 100,    100
+            
+            hpin: 2, "2", width/2 + 100, -100,   -100
+            hpin: 4, "4", width/2 + 100, 0,      -100
+            hpin: 6, "6", width/2 + 100, 100,    -100
+            
+            label: "refdes", -width/2, -height/2 - 20, "?", fontSize=50, anchor="left", vanchor="bottom"
+
+            circle: -50, -100, 40 
+            circle: -50,  0,   40
+            circle: -50,  100, 40 
+            circle: 50, -100,  40 
+            circle: 50,  0,    40
+            circle: 50,  100,  40 
+
+
+atmega = create component:
+    type: "ic"
+    pins:
+        1: "RESET"
+        2: "PB7"
+
+    width: 1000
+    arrange:
+        left: 1
+        right: 2
+    params:
+        mpn: "ATMEGA8U2-MU"
+
+
+# ICSP connector
+icsp_conn2 = conn3x2()
+
+at atmega:
+
+    1:
+        wire left 200
+        branch:
+            wire left 800 up 1000 right 100
+            to icsp_conn2 pin 5
+
+        branch:
+            wire up 100
+            add res(10k)
+
+            point:
+                at v5v
+                wire down 100
+                branch:
+                    wire left 200
+                    to icsp_conn2 pin 2
+
+                wire auto
+                to point

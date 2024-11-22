@@ -611,7 +611,8 @@ export class ParserVisitor extends BaseVisitor {
             if (component instanceof ClassComponent){
                 pinValue = (component as ClassComponent).getDefaultPin();
             } else {
-                throw 'Invalid component';
+                const undeclaredRef = (component as UndeclaredReference);
+                throw 'Invalid component: ' + undeclaredRef.reference.name;
             }
         }
 
