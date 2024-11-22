@@ -8,10 +8,10 @@
 import { G } from "@svgdotjs/svg.js";
 
 import { milsToMM } from "./helpers.js";
-import { ColorScheme, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
+import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
     CustomSymbolRefDesSize, PortArrowSize, PortPaddingHorizontal, 
     PortPaddingVertical, ReferenceTypes, SymbolPinSide, 
-    defaultFont, defaultSymbolLineWidth,
+    defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "./globals.js";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle, 
     Textbox, VerticalAlign } from "./geometry.js";
@@ -190,7 +190,7 @@ export abstract class SymbolGraphic {
             const tmpLabel = label as Textbox;
 
             const {
-                fontSize = 8,
+                fontSize = 50,
                 anchor = HorizontalAlign.Left, 
                 vanchor = VerticalAlign.Bottom,
                 fontWeight = 'regular',
@@ -475,7 +475,7 @@ export class SymbolPointHidden extends SymbolGraphic {
 export class SymbolText extends SymbolGraphic {
 
     text: string;
-    fontSize = 8;
+    fontSize = 40;
     fontWeight = 'regular';
 
     constructor(text: string){
@@ -789,7 +789,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             // Draw the pinName
             usePinName !== "" && drawing.addLabel(
                 endX + pinNameOffsetX, endY, usePinName, {
-                fontSize: 8,
+                fontSize: defaultPinNameTextSize,
                 anchor: pinNameAlignment,
                 vanchor: VerticalAlign.Middle,
                 textColor: pinNameColor,
@@ -798,7 +798,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             // Draw pin Id
             displayPinId && drawing.addLabel(
                 endX + pinIdOffsetX, endY + pinIdOffsetY, pinId.toString(), {
-                fontSize: 6,
+                fontSize: defaultPinIdTextSize,
                 anchor: pinIdAlignment,
                 vanchor: pinIdVAlignment,
                 textColor: lineColor
@@ -916,7 +916,7 @@ export class SymbolCustom extends SymbolGraphic {
             drawing.addPinMM(pin.pinId, leftPinStart - this.pinLength, pinY, 
                 leftPinStart, pinY, defaultLineColor);
 
-            drawing.addLabel(leftPinStart + milsToMM(10), 
+            drawing.addLabel(leftPinStart + milsToMM(20), 
                 pinY, pin.text, {
                 
                 fontSize: CustomSymbolPinTextSize,
@@ -926,7 +926,7 @@ export class SymbolCustom extends SymbolGraphic {
             });
 
             // Add the pin number
-            drawing.addLabel(leftPinStart - milsToMM(5) , pinY - milsToMM(10), pin.pinId.toString(), {
+            drawing.addLabel(leftPinStart - milsToMM(10) , pinY - milsToMM(10), pin.pinId.toString(), {
                 fontSize: CustomSymbolPinIdSize,
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Bottom,
@@ -940,7 +940,7 @@ export class SymbolCustom extends SymbolGraphic {
             drawing.addPinMM(pin.pinId, rightPinStart + this.pinLength, pinY, 
                 rightPinStart, pinY, defaultLineColor);
 
-            drawing.addLabel(rightPinStart - milsToMM(10), pinY, pin.text, {
+            drawing.addLabel(rightPinStart - milsToMM(20), pinY, pin.text, {
                 fontSize: CustomSymbolPinTextSize,
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Middle,
@@ -948,7 +948,7 @@ export class SymbolCustom extends SymbolGraphic {
             });
 
             // Add the pin number
-            drawing.addLabel(rightPinStart + milsToMM(5) , pinY - milsToMM(10), pin.pinId.toString(), {
+            drawing.addLabel(rightPinStart + milsToMM(10) , pinY - milsToMM(10), pin.pinId.toString(), {
                 fontSize: CustomSymbolPinIdSize,
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Bottom,
@@ -957,7 +957,7 @@ export class SymbolCustom extends SymbolGraphic {
         });
 
         const instanceName = this.getLabelValue("refdes");
-        instanceName && drawing.addLabel(-bodyWidthMM/2, -bodyHeightMM/2 - milsToMM(10), instanceName, {
+        instanceName && drawing.addLabel(-bodyWidthMM/2, -bodyHeightMM/2 - milsToMM(20), instanceName, {
             fontSize: CustomSymbolRefDesSize,
             anchor: HorizontalAlign.Left,
         });
@@ -967,8 +967,8 @@ export class SymbolCustom extends SymbolGraphic {
         acceptedMPNKeys.some(key => {
             const labelValue = this.getLabelValue(key);
             if (labelValue !== undefined){
-                drawing.addLabel(-bodyWidthMM/2, bodyHeightMM/2 + 4, labelValue, {
-                    fontSize: 10,
+                drawing.addLabel(-bodyWidthMM/2, bodyHeightMM/2 + milsToMM(20), labelValue, {
+                    fontSize: CustomSymbolParamTextSize,
                     anchor: HorizontalAlign.Left,
                     vanchor: VerticalAlign.Top,
                 });
@@ -1013,7 +1013,7 @@ export class SymbolCustomModule extends SymbolCustom {
             drawing.addModulePort(leftPinStart, pinY, this.portWidth, this.portHeight, pin.pinType);
 
             drawing.addLabel(leftPinStart + this.portWidth + milsToMM(20), pinY, pin.text, {
-                fontSize: 10,
+                fontSize: 40,
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Middle,
                 textColor: ColorScheme.PinNameColor,
@@ -1029,7 +1029,7 @@ export class SymbolCustomModule extends SymbolCustom {
             drawing.addModulePort(rightPinStart, pinY, this.portWidth, this.portHeight, pin.pinType, -1);
 
             drawing.addLabel(rightPinStart - this.portWidth - milsToMM(20), pinY, pin.text, {
-                fontSize: 10,
+                fontSize: 40,
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Middle,
                 textColor: ColorScheme.PinNameColor,

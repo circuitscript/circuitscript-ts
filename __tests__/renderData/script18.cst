@@ -10,17 +10,17 @@ vcc = supply("VCC")
 gnd = dgnd()
 
 at vcc
-wire down 20
+wire down 100
 add res(10k)
-wire down 20
+wire down 100
 
 branch:
-    wire left 20
+    wire left 100
     add tp()
 
-wire down 20
+wire down 100
 
 add res(10k)
 
-wire down 20
+wire down 100
 to gnd

@@ -9,7 +9,7 @@ frame:
 
     frame:
         at vcc
-        wire down 20
+        wire down 100
 
         add text(
         "This is some text!
@@ -18,17 +18,17 @@ frame:
         More lines
         line 1
         line2
-        ", 100, 100, fontSize=24)
+        ", 200, 100, fontSize=50)
 
-        wire down 20
+        wire down 100
         to gnd
 
     frame:
         at vcc
-        wire down 20
+        wire down 100
         add text(
-            "Hello world", 20
+            "Hello world", 100
         )
 
-        wire down 20
+        wire down 100
         to gnd

@@ -4,29 +4,29 @@ variant = "MainVariantX"
 gnd = dgnd()
 
 at net("5V")
-wire down 20
+wire down 100
 branch:
-    wire down 20
+    wire down 100
     add res(10k) ..angle = 90
     ..place = (variant == "MainVariant")
     wire down 20 to gnd
 
-wire right 40
+wire right 200
 branch:
-    wire down 20
+    wire down 100
     add res(20k) ..angle = 90
     ..place = true
-    wire down 20
+    wire down 100
     to gnd
 
-wire right 40
+wire right 200
 branch:
-    wire down 20
+    wire down 100
     add cap(100n)
-    wire down 20
+    wire down 100
     to gnd
 
-wire right 40
+wire right 200
 point tmp1
 
 tmp = create component:
@@ -45,20 +45,20 @@ at tmp:
     1:
         to tmp1
     4:
-        wire right 20 down 20
+        wire right 100 down 100
         to gnd
 
     5:
-        wire right 60 down 20
+        wire right 300 down 100
         add res(10k) 
         ..angle = 90 
         ..place = false
 
-        wire down 20
+        wire down 100
         to gnd
 
 at net("3V")
-wire down 20
+wire down 100
 add res(20k) ..angle=90
-wire down 20
+wire down 100
 to gnd

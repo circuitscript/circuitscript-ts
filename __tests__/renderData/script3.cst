@@ -11,20 +11,20 @@ frame:
                 ..title = "Voltage divider circuit"
 
                 at vcc
-                wire down 20
+                wire down 100
                 add res(20k) angle:90
-                wire down 20
+                wire down 100
 
                 branch:
-                    wire down 20
+                    wire down 100
                     add res(20k) angle:90
-                    wire down 20
+                    wire down 100
                     to gnd
                 wire right 60
                 to midpt angle:90
 
             at vcc
-            wire down 20
+            wire down 100
             add res(10k) angle:90
-            wire down 20 right 40 up 20
+            wire down 100 right 200 up 100
             to midpt

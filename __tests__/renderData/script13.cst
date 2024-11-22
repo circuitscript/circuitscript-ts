@@ -4,7 +4,7 @@ def label(value, anchor="left"):
         copy: true
         followWireOrientation: false
         display: create graphic:
-            label: "value", 0, -2, "?", fontSize=10, anchor=anchor
+            label: "value", 0, -10, "?", fontSize=50, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_pin_id=0
         type: "label"
         params:
@@ -14,6 +14,6 @@ def label(value, anchor="left"):
 
 tmp = label("hello")
 at tmp 
-wire right 100
+wire right 500
 
 add tmp anchor:right

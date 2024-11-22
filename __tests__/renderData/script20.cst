@@ -4,55 +4,55 @@ vcc = supply("VCC")
 gnd = dgnd()
 
 tmp = create module:
-    width: 140
+    width: 1000
     ports:
         left: "signal_a", "signal_b", "signal_c"
         right: [1], "signal_d", "signal_e"
 
     contains:
         at port("signal_a") flip:x
-        wire right 20 down 20
+        wire right 100 down 100
         add res(1k)
         
-        wire down 20
+        wire down 100
 
         branch:
-            wire right 20
+            wire right 100
             add port("signal_e", "output")
 
-        wire down 20
+        wire down 100
         add res(2k)
         
-        wire down 20 right 20
+        wire down 100 right 100
         to port("signal_c", "any")
 
         at port("signal_b", "io")
-        wire right 20
+        wire right 100
         add res(3k)
-        wire right 20
+        wire right 100
         to port("signal_d", "io")
 
 at vcc
-wire down 20 right 60
+wire down 100 right 300
 to tmp pin "signal_a"
 
 at tmp pin "signal_c"
-wire left 60 down 20
+wire left 300 down 100
 to gnd
 
 at tmp pin "signal_e"
-wire right 40 down 20
+wire right 200 down 100
 add res(5k)
-wire down 20
+wire down 100
 to gnd
 
 at label("input")
-wire right 60
+wire right 300
 to tmp pin "signal_b"
 
 at tmp pin "signal_d"
-wire right 40
+wire right 200
 add label("output")
-wire right 20
+wire right 100
 
 at tmp.contains

@@ -5,22 +5,22 @@ gnd = dgnd()
 
 # example with `parallel` keyword
 at v5v
-wire down 20
+wire down 100
 
 parallel:
-    wire down 20
+    wire down 100
     add res(1k) angle:90
-    wire down 20
+    wire down 100
 
 parallel:
-    wire right 60 down 20
-    add res(1k) angle:90
-    wire auto
-
-parallel:
-    wire right 120 down 20
+    wire right 300 down 100
     add res(1k) angle:90
     wire auto
 
-wire down 20
+parallel:
+    wire right 600 down 100
+    add res(1k) angle:90
+    wire auto
+
+wire down 100
 to gnd

@@ -4,27 +4,27 @@ vcc = supply("VCC")
 gnd = dgnd()
 
 at vcc
-wire down 20
+wire down 100
 branch:
-    wire down 20
+    wire down 100
     add cap(100n)
-    wire down 20
+    wire down 100
     to gnd
 
 branch:
-    wire left 20
+    wire left 100
     add cap(100n)
-    wire left 20 down 20
+    wire left 100 down 100
     to gnd
 
-wire right 100
+wire right 500
 branch:
-    wire right 20
+    wire right 100
     add cap(100n)
-    wire right 20 down 20
+    wire right 100 down 100
     to gnd
 
-wire up 20
+wire up 100
 add cap(100n)
-wire up 20
+wire up 100
 to vcc

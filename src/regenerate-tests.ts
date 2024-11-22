@@ -23,7 +23,7 @@ async function regenerateTests(extra=""): Promise<string[]> {
         const inputPath = mainDir + file;
         const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
-        const outputPath = inputPath + extra + '.svg';
+        const outputPath = mainDir + 'svgs/' + file + extra + '.svg';
         renderScript(scriptData, outputPath, {
             currentDirectory: mainDir,
             defaultLibsPath,
@@ -49,8 +49,8 @@ async function regenerateTests(extra=""): Promise<string[]> {
 
     if (generateDiff){
         cstFiles.forEach(file => {
-            const svg1 = file + '.svg';
-            const svg2 = file + '.next.svg';
+            const svg1 = 'svgs/' + file + '.svg';
+            const svg2 = 'svgs/' + file + '.next.svg';
 
             const cleanedName = file.replace('script', '').replace('.cst', '');
             allFiles.push([file, svg1, svg2, cleanedName])

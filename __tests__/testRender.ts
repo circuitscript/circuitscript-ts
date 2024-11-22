@@ -54,7 +54,7 @@ describe('Render tests', () => {
 
         const svgOutput = generateSVG2(graph);
 
-        const expectedSvgOutput = readFileSync(mainPath + scriptPath + ".svg", { encoding: 'utf8' });
+        const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toBe(expectedSvgOutput);
     });
 });

@@ -52,14 +52,20 @@ export const defaultZoomScale = 2.5; // Convert language units into output units
 
 // Re-size fonts based on a custom defined scale.
 // A font size of 10 (before applying scale), should fit around 50 mils
-export const fontDisplayScale = 0.17;
+export const fontDisplayScale = 0.032;
 
 export const defaultSymbolLineWidth = MilsToMM * 6;
 export const defaultWireLineWidth = MilsToMM * 6;
 
-export const CustomSymbolPinTextSize = 6;
-export const CustomSymbolPinIdSize = 6;
-export const CustomSymbolRefDesSize = 10;
+export const defaultPinNameTextSize = 40;
+export const defaultPinIdTextSize = 30;
+
+export const CustomSymbolPinTextSize = defaultPinNameTextSize;
+export const CustomSymbolPinIdSize = defaultPinIdTextSize;
+export const CustomSymbolRefDesSize = 50;
+export const CustomSymbolParamTextSize = 40;
+
+export const defaultFrameTitleTextSize = 60;
 
 // For now default is in mm?
 export const displayUnits = LengthUnit.mils;

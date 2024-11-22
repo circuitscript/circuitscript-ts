@@ -34,7 +34,7 @@ describe('test cli program', () => {
 
     test('pass in file and output directly', () => {
         const result = execSync(baseCommand + ' __tests__/renderData/script1.cst').toString();
-        const expected = readFileSync('__tests__/renderData/script1.cst.svg').toString();
+        const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
         expect(result.trim()).toBe(expected);
     });
 
@@ -53,7 +53,7 @@ describe('test cli program', () => {
         const result = execSync(`${baseCommand} __tests__/renderData/script1.cst ${outputPath} ${statsFlag}`).toString();
 
         const outputFile = readFileSync(outputPath).toString();
-        const expected = readFileSync('__tests__/renderData/script1.cst.svg').toString();
+        const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
 
         expect(outputFile.trim()).toBe(expected.trim());
 

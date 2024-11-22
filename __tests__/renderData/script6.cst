@@ -6,23 +6,23 @@ gnd = dgnd()
 # example with join keyword
 join:
     at v5v
-    wire down 20
-    add res(10k) angle:90
-    wire down 20
+    wire down 100
+    add res(10k)
+    wire down 100
 
 join:
     at v5v
-    wire down 20
-    add res(10k) angle:90
-    wire down 20 left 60
+    wire down 100
+    add res(10k)
+    wire down 100 left 300
 
 join:
     at v5v
-    wire down 20
-    add res(10k) angle:90
-    wire down 20
-    add res(10k) angle:90
-    wire down 20 left 120
+    wire down 100
+    add res(10k)
+    wire down 100
+    add res(10k)
+    wire down 100 left 600
 
-wire down 20
+wire down 100
 to gnd

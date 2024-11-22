@@ -1,30 +1,30 @@
 def cmp():
-    width = 20
-    height = 20 * (7 + 1) + 20
+    width = 100
+    height = 100 * (7 + 1) + 100
 
     return create component:
         pins: 7
         type: "conn"
         display: create graphic:
             rect -width/2, height/2, width, height
-            hpin 1, "", -width-20, 20,  20
-            hpin 2, "", -width-20, 40,  20
-            hpin 3, "", -width-20, 60,  20
-            hpin 4, "", -width-20, 80,  20
-            hpin 5, "", -width-20, 100, 20
-            hpin 6, "", -width-20, 120, 20
-            hpin 7, "", -width-20, 140, 20
-            label "refdes", -width, -5, "?"
+            hpin 1, "", -width-100, 100,  100
+            hpin 2, "", -width-100, 200,  100
+            hpin 3, "", -width-100, 300,  100
+            hpin 4, "", -width-100, 400,  100
+            hpin 5, "", -width-100, 500, 100
+            hpin 6, "", -width-100, 600, 100
+            hpin 7, "", -width-100, 700, 100
+            label "refdes", -width, -20, "?"
 
             # use a blank label to check for errors in render
             label "random", -width, -15, ""
 
 at cmp() pin 2
-wire left 60
+wire left 300
 
 to cmp() flip:x pin 2 
 
 at pin 3
-wire right 20 down 140 left 180 up 20
+wire right 100 down 700 left 900 up 100
 
 to cmp() flip:xy angle:90 pin 5

@@ -4,28 +4,28 @@ vcc = supply("VCC")
 gnd = dgnd()
 
 at vcc
-wire down 20
+wire down 100
 
 branch:
-    wire down 20
+    wire down 100
 
     add diode(3.3) pin 2
-    wire down 20 to gnd
+    wire down 100 to gnd
 
 branch:
-    wire right 20
+    wire right 100
     add diode(3.3) pin 2
-    wire right 20 to gnd
+    wire right 100 to gnd
 
-wire left 40
+wire left 200
 
 branch:
-    wire up 20
+    wire up 100
     add diode(3.3) pin 2
-    wire up 20 to gnd
+    wire up 100 to gnd
 
-wire left 20
+wire left 100
 
 branch:
     add diode(3.3) pin 2
-    wire left 20 to gnd
+    wire left 100 to gnd

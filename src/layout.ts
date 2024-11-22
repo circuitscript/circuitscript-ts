@@ -12,7 +12,7 @@ import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic,
     SymbolText } from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
-import { defaultGridSizeUnits, GlobalNames, ParamKeys } from './globals.js';
+import { defaultFrameTitleTextSize, defaultGridSizeUnits, GlobalNames, ParamKeys } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { Geometry } from './geometry.js';
@@ -510,7 +510,7 @@ export class LayoutEngine {
                 tmpFrame.subgraphId = title.replace(/\s/g, "_");
 
                 const textObject = new RenderText(title);
-                textObject.fontSize = 12;
+                textObject.fontSize = defaultFrameTitleTextSize;
                 textObject.fontWeight = 'bold';
 
                 textObject.symbol.refreshDrawing();

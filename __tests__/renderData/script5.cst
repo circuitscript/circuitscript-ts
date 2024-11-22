@@ -4,20 +4,14 @@ v5v = supply("5v")
 gnd = dgnd()
 
 at gnd
-wire up 20 right 20
+wire up 100 right 100
 to D1 = led("GREEN") angle:180 pin 2
 at D1 pin 1
-wire right 20 up 20
+wire right 100 up 100
 to v5v
 
 at v5v
-wire down 20 right 20
+wire down 100 right 100
 add led("RED")
-wire right 20 down 20
+wire right 100 down 100
 to gnd
-
-
-#wire down 20 
-#add led("GREEN")
-#wire down 20
-#to gnd

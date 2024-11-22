@@ -8,7 +8,7 @@ def net(net_name):
         display: create graphic:
             hline: -50, 0, 100
             vpin: 1, 0, 50, -50, display_pin_id=false
-            label: "net_name", 0, -15, net_name, fontSize=10, anchor="middle"
+            label: "net_name", 0, -15, net_name, fontSize=50, anchor="middle"
         type: "net"
         params:
             net_name: net_name
@@ -22,7 +22,7 @@ def supply(net_name):
         display: create graphic:
             hline: -50, 0, 100
             vpin: 1, 0, 50, -50, display_pin_id=false
-            label: "net_name", 0, -15, net_name, fontSize=10, anchor="middle"
+            label: "net_name", 0, -15, net_name, fontSize=50, anchor="middle"
         type: "net"
         params:
             net_name: net_name
@@ -35,7 +35,7 @@ def label(value, anchor="left"):
         followWireOrientation: false
         display: create graphic:
             textColor: "#222"
-            label: "value", 0, -10, "?", fontSize=10, anchor=anchor
+            label: "value", 0, -10, "?", fontSize=50, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_pin_id=false
         type: "label"
         params:
@@ -49,7 +49,7 @@ def port(value, portType="input"):
         copy: true
         display: create graphic:
             textColor: "#222"
-            label: "value", 0, 0, "?", fontSize=8, anchor="left", vanchor="middle", portType=portType
+            label: "value", 0, 0, "?", fontSize=40, anchor="left", vanchor="middle", portType=portType
             pin: 1, 0, 0, 0, 0, display_pin_id=false
         type: "port"
         params:
@@ -67,8 +67,8 @@ def res(value):
             rect: 0, 0, width, height
             hpin: 1, -width/2 - 30, 0, 30
             hpin: 2, width/2 + 30, 0, -30
-            label: "refdes", -width/2, -height/2 - 20 , "?", fontSize=8, anchor="left"
-            label: "value", 0, 2, value, fontSize=6, anchor="middle", vanchor="middle"
+            label: "refdes", -width/2, -height/2 - 20 , "?", fontSize=50, anchor="left"
+            label: "value", 0, 4, value, fontSize=30, anchor="middle", vanchor="middle"
         type: "res"
         params:
             value: value
@@ -88,8 +88,8 @@ def cap(value):
             hline: -width/2, -20, width
             vpin: 1, 0, -100, 80
             vpin: 2, 0, 100, -80
-            label: "refdes", 80, -30, "?", fontSize=8, anchor="left", vanchor="middle"
-            label: "value", 80, 30, value, fontSize=6, anchor = "left", vanchor="middle"
+            label: "refdes", 80, -30, "?", fontSize=50, anchor="left", vanchor="middle"
+            label: "value", 80, 30, value, fontSize=30, anchor = "left", vanchor="middle"
         type: "cap"
         params:
             value: value
@@ -110,8 +110,8 @@ def ind(value):
             arc: 15, 0, 5, 180, 360
             hpin: 1, -width/2 - 20, 0, 20
             hpin: 2, width/2 + 20, 0, -20
-            label: ("value", 0, 10, value, fontSize=10, anchor="middle", vanchor="middle")
-            label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=10, anchor="left")
+            label: ("refdes", -width/2, -height/2 -5 , "?", fontSize=50, anchor="left")
+            label: ("value", 0, 10, value, fontSize=50, anchor="middle", vanchor="middle")
         params:
             value: value
 
@@ -129,7 +129,7 @@ def diode():
             vline: width/2, -height/2, height
             hpin: 1, -width/2-100, 0, 100    # anode
             hpin: 2, width/2 + 100, 0, -100  # cathode
-            label: "refdes", 0, -100, "?", fontSize=8, anchor="middle", vanchor="top"
+            label: "refdes", 0, -100, "?", fontSize=50, anchor="middle", vanchor="top"
 
 def led(color):
     width = 100
@@ -149,8 +149,8 @@ def led(color):
                     "M", 180, 60, "L", 180, 90, "L", 150, 90)
             hpin: 1, -width/2-100, 0, 100    # anode
             hpin: 2, width/2 + 100, 0, -100  # cathode
-            label: "refdes", 0, -100, "?", fontSize=8, anchor="middle", vanchor="top"
-            label: "color", 0, 100, color, fontSize=6, anchor="middle", vanchor="bottom"
+            label: "refdes", 0, -100, "?", fontSize=50, anchor="middle", vanchor="top"
+            label: "color", 0, 100, color, fontSize=40, anchor="middle", vanchor="bottom"
         params:
             size: "0603"
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
@@ -167,7 +167,7 @@ def cgnd():
             hline: -10, 5, 20
             hline: -5, 10, 10
             vpin: 1, 0, -10, 10, display_pin_id=false
-            label: "net_name", 0, 22, net_name, fontSize=10, anchor="middle"
+            label: "net_name", 0, 22, net_name, fontSize=50, anchor="middle"
         type: "net"
         params:
             net_name: net_name
@@ -184,13 +184,13 @@ def dgnd(net_name="GND"):
         display: create graphic:
             triangle: 0, 0, 0, height, width
             vpin: 1, 0, -50, 50, display_pin_id=false
-            label: "net_name", 0, height + 50, net_name, fontSize=8, anchor="middle", vanchor="middle"
+            label: "net_name", 0, height + 50, net_name, fontSize=50, anchor="middle", vanchor="middle"
         type: "net"
         params:
             net_name: net_name
             priority: 100
 
-def text(value, offsetX = 0, offsetY = 0, fontSize = 10):
+def text(value, offsetX = 0, offsetY = 0, fontSize = 50):
     return create component:
         pins: 1
         followWireOrientation: false

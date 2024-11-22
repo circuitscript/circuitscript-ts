@@ -3,5 +3,5 @@ import lib
 tmp = create component:
     pins: 5
 
-wire down 20 right 20 down 20 right 20
+wire down 100 right 100 down 100 right 100
 to tmp pin 1
