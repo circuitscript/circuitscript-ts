@@ -61,7 +61,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, NoNetText, ReferenceTypes } from './globals.js';
+import { BlockTypes, ComponentTypes, NoNetText, ReferenceTypes, WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -1005,7 +1005,7 @@ export class ParserVisitor extends BaseVisitor {
     
     visitWire_expr_direction_only = (ctx: Wire_expr_direction_onlyContext): void => {
         const value = ctx.ID().getText();
-        if (value === 'auto' || value === 'auto_'){
+        if (value === WireAutoDirection.Auto|| value === WireAutoDirection.Auto_){
             this.setResult(ctx, [value]);
         } else {
             throw 'Invalid direction for wire';

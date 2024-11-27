@@ -8,6 +8,7 @@
 import { UnitDimension } from "src/helpers.js";
 import { ClassComponent } from "./ClassComponent.js";
 import { Direction } from "./types.js";
+import { WireAutoDirection } from "src/globals.js";
 
 export class Wire {
 
@@ -22,7 +23,7 @@ export class Wire {
 
 export type WireSegment = {
     direction: Direction.Up | Direction.Down | Direction.Left
-    | Direction.Right | 'auto' | 'auto_';
+    | Direction.Right | WireAutoDirection;
     
     value: number | UnitDimension,
 

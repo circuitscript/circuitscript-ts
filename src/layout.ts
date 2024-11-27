@@ -12,7 +12,8 @@ import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic,
     SymbolText } from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
-import { defaultFrameTitleTextSize, defaultGridSizeUnits, GlobalNames, ParamKeys } from './globals.js';
+import { defaultFrameTitleTextSize, defaultGridSizeUnits, GlobalNames, 
+    ParamKeys, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { Geometry } from './geometry.js';
@@ -942,6 +943,12 @@ export class LayoutEngine {
             return;
         }
 
+        let fixedNode: RenderItem;
+        let fixedNodePin: number;
+
+        let floatingNode: RenderItem;
+        let floatingNodePin: number;
+
         subgraphEdges.forEach(edge => {
             const [nodeId1, pin1, nodeId2, pin2]:
                 [string, number, string, number] = graph.edge(edge);
@@ -958,12 +965,6 @@ export class LayoutEngine {
                 originNodes.push(node1);
                 originNodeGroups.set(node1.toString(), [node1]);
             }
-
-            let fixedNode: RenderItem;
-            let fixedNodePin: number;
-
-            let floatingNode: RenderItem;
-            let floatingNodePin: number;
 
             this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
                 '[', node2, pin2, node2.isFloating, ']');
@@ -1046,17 +1047,25 @@ export class LayoutEngine {
             }
 
             [node1, node2].forEach(item => {
-                if (item instanceof RenderWire && item.isEndAutoLength()){
-                    this.print('auto length wire', item);
-
+                if (item instanceof RenderWire && item.isEndAutoLength()) {
                     const [instance, pin] = item.getEndAuto();
-                    const [, targetNode]:[string, RenderItem] = 
+                    const [, targetNode]: [string, RenderItem] =
                         graph.node(instance.instanceName);
 
-                    if (targetNode.isFloating){
-                        throw "Cannot create auto wire with floating node! Wire id: " + item.id + " to node " +  instance + " pin "+ pin;
+                    this.print('wire auto length to target:', instance, pin)
+
+                    if (targetNode.isFloating) {
+                        throw "Cannot create auto wire with floating node! Wire id: " + item.id + " to node " + instance + " pin " + pin;
                     }
-                    
+
+                    // Check that both share the same origin node
+                    const targetOriginNode = findOriginNode(targetNode);
+                    const itemOriginNode = findOriginNode(item);
+
+                    if (targetOriginNode !== itemOriginNode) {
+                        throw "Wire auto length failed. Please specify a fixed wire length."
+                    }
+
                     const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
                     item.setEndAuto(untilX, untilY);
                 }
@@ -1151,6 +1160,9 @@ export class LayoutEngine {
     }
 
 
+    /**
+     * @deprecated
+     */
     placeSubgraph(graph: Graph, firstNodeId: string,
         subgraphEdges: Edge[]): void {
 
@@ -1573,7 +1585,7 @@ export class RenderWire extends RenderObject {
                 tmpX -= useValue;
             } else if (direction === Direction.Right) {
                 tmpX += useValue;
-            } else if (direction === 'auto' || direction === "auto_") {
+            } else if (direction === WireAutoDirection.Auto || direction === WireAutoDirection.Auto_) {
                 // 'auto' means both x and y. 'auto_' is the same as 'auto', but
                 // uses the alternative path to the target.
                 const { valueXY = [0, 0] } = segment;
@@ -1598,7 +1610,7 @@ export class RenderWire extends RenderObject {
         this.points = points;
     }
 
-    getAutoPoints(value: [x: number, y: number], direction: 'auto' | 'auto_'): [dx: number, dy: number][] {
+    getAutoPoints(value: [x: number, y: number], direction: WireAutoDirection): [dx: number, dy: number][] {
         const valueX = roundValue(value[0]);
         const valueY = roundValue(value[1]);
 
@@ -1606,7 +1618,7 @@ export class RenderWire extends RenderObject {
         const [dx, dy] = [valueX, valueY];
 
         // Clockwise direction
-        if (direction === 'auto') {
+        if (direction === WireAutoDirection.Auto) {
             switch (inQuadrant) {
                 case 0:
                 case 2:
@@ -1615,7 +1627,7 @@ export class RenderWire extends RenderObject {
                 case 3:
                     return [[0, dy], [dx, 0]];
             }
-        } else if (direction === 'auto_') {
+        } else if (direction === WireAutoDirection.Auto_) {
             switch (inQuadrant) {
                 case 0:
                 case 2:
@@ -1655,19 +1667,27 @@ export class RenderWire extends RenderObject {
         // Find the last accumulated position up to the last item
         const excludeLastSegment = this.segments.slice(0, this.segments.length-1);
 
-        let tmpX = this.x;
+        let tmpX = this.x; // Accumulated x and y values
         let tmpY = this.y;
 
         excludeLastSegment.forEach(segment => {
             const { direction, value } = segment;
+
+            let useValue: number;
+            if (value instanceof UnitDimension){
+                useValue = value.getMM();
+            } else {
+                useValue = value;
+            }
+
             if (direction === Direction.Down) {
-                tmpY += value;
+                tmpY += useValue;
             } else if (direction === Direction.Up) {
-                tmpY -= value;
+                tmpY -= useValue;
             } else if (direction === Direction.Left) {
-                tmpX -= value;
+                tmpX -= useValue;
             } else if (direction === Direction.Right) {
-                tmpX += value;
+                tmpX += useValue;
             }
         });
 
@@ -1692,8 +1712,8 @@ export class RenderWire extends RenderObject {
                 useValue = tmpY - untilY;
                 break;
 
-            case 'auto':
-            case 'auto_':
+            case WireAutoDirection.Auto:
+            case WireAutoDirection.Auto_:
                 // Always assume positive values
                 valueXY = [
                     untilX - tmpX,

@@ -39,6 +39,11 @@ export enum LengthUnit {
     px = 'px',
 }
 
+export enum WireAutoDirection {
+    Auto = 'auto',
+    Auto_ = 'auto_',
+}
+
 export const MilsToMM = 0.0254;
 export const MMToPx = 3.779276;
 export const PxToMM = 0.2645833;

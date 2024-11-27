@@ -911,3 +911,28 @@ export const script20_ = new ScriptTest(
         [ '/output', '__._COMP_1_0.res_2.COMP_1_3k', 2 ]
       ]
 );
+
+export const script21_ = `
+import lib
+
+vcc = supply("3v3")
+gnd = dgnd()
+
+tmp = create component:
+    pins: 6
+
+at vcc
+wire down 100 right 100
+to tmp pin 1
+
+tmp2 = create component:
+    pins: 3
+
+at label("helo")
+wire right 200
+to tmp2 pin 1
+
+at tmp pin 4 
+wire right 400 down 500 auto
+to tmp2 pin 2
+`

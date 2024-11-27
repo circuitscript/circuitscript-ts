@@ -1,4 +1,5 @@
 
+import { LayoutEngine } from '../src/layout.js';
 import { prepareSVGEnvironment } from '../src/sizing.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
@@ -7,7 +8,7 @@ import {
     script20, script21, script22, script23, script24, script25, script26,
     script27, script28, script29, script3, script30, script31, script32, 
     script33, script34, script35, script36, script37, script38, script39, 
-    script20_, 
+    script20_, script21_,
     script6, script7, script8, script9
 } from './parseScripts.js';
 
@@ -287,6 +288,28 @@ print(---b)
         expect(hasError).toBe(false);
 
         expect(visitor.printStream).toStrictEqual(scriptTest.expected);
+    });
+
+    test('wire auto failure case', async () => {
+        await prepareSVGEnvironment(null);
+
+        const { hasError, visitor } = await runScript(script21_);
+
+        expect(hasError).toBe(false);
+        visitor.annotateComponents();
+
+        const { sequence, nets } = visitor.getGraph();
+
+        const layoutEngine = new LayoutEngine();
+
+        let errorMessage = "";
+        try {
+            await layoutEngine.runLayout(sequence, nets);
+        } catch (err) {
+            errorMessage = err;
+        }
+
+        expect(errorMessage).toEqual("Wire auto length failed. Please specify a fixed wire length.");
     });
 });
 
