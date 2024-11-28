@@ -3,78 +3,89 @@
 import lib
 
 def fuse(value):
-    width = 40
-    height = 20
+    width = 140
+    height = 60
+
     return create component:
         pins: 2
         type: "F"
         display: create graphic:
             rect: 0, 0, width, height
-            pin: 1, -width/2-20, 0, -width/2, 0
-            pin: 2, width/2+20, 0, width/2, 0
+            hpin: 1, -width/2-30, 0, 30
+            hpin: 2, width/2+30, 0, -30
             hline: -width/2, 0, width
-            label: "refdes", -width/2, -height/2 - 5, "?"
-            label: "value", -width/2, height/2 + 2, "?", fontSize=8, vanchor="top"
+            label: "refdes", -width/2, -height/2 - 20, "?"
+            label: "value", -width/2, height/2 + 20, "?", fontSize=40, vanchor="top"
         params:
             value: value
-
+            
 def esd():
-    width = 40
-    height = 20
+    width = 200
+    height = 100
 
     return create component:
         pins: 2
         type: "Z"
         display: create graphic:
-            fill: "#333"
-            triangle: -width/2, 0, 0, 0, 20
-            triangle: width/2, 0, 0, 0, 20
-            path: "M", 5, -height/2-5, "L", 0, -height/2, "L", 0, height/2, "L", -5, height/2+5
-            pin: 1, -width/2 - 20, 0, -width/2, 0
-            pin: 2, width/2+20, 0, width/2, 0
-            label: "refdes", 0, -height/2 - 10, "?", anchor="middle"
-            label: "mpn", 0, height/2 + 15, "PGB1010604", anchor="middle"
+            fill: "none"
+            triangle: -width/2, 0, 0, 0, 100
+            triangle: width/2, 0, 0, 0, 100
+            path: "M", 25, -height/2-25, "L", 0, -height/2, "L", 0, height/2, "L", -25, height/2+25
+            pin: 1, -width/2 - 100, 0, -width/2, 0
+            pin: 2, width/2+100, 0, width/2, 0
+            label: "refdes", 0, -height/2 - 50, "?", anchor="middle"
+            label: "mpn", 0, height/2 + 75, "PGB1010604", anchor="middle"
 
-        
 def gnd_connect():
     return create component:
         pins: 2
 
 def xtal(frequency):
-    width = 30
-    height = 10
+    width = 150
+    height = 60
+
+    tmp_y = height/2+70
+    tmp_x = 80
 
     return create component:
         type: "X"
         pins: 3
         display: create graphic:
             rect: 0, 0, width, height
-            hline: -width/2 -2, -height/2-4, width + 4
-            hline: -width/2 -2, height/2+4, width + 4
-            hline: 0, -20, -10
-            vline: -10, -25, 10
-            vline: -15, -25, 10
-            hline: 0, 20, -10
-            vline: -10, 15, 10
-            vline: -15, 15, 10
-            hline: -15, -20, -25
-            hline: -15, 20, -25
-            vline: -40, -20, 40
+            hline: -width/2 - 20, -height/2-20, width + 40
+            hline: -width/2 - 20, height/2+20, width + 40
 
-            label: "refdes", width/2 + 5, 0, "?"
-            label: "frequency", width/2 + 5, 10, "?"
+            vline: 0, -height/2 - 20, -40
+            vline: 0, height/2 + 20, 40
 
-            pin: 1, 0, -20, 0, -height/2 - 4
-            pin: 2, 0, 20, 0, height/2 + 4
-            pin: 3, -60, 0, -40, 0
+            hline: 0, -tmp_y, -tmp_x
+            hline: 0, tmp_y, -tmp_x
+
+            vline: -tmp_x, -tmp_y-30, 60
+            vline: -tmp_x-20, -tmp_y-30, 60
+
+            vline: -tmp_x, tmp_y-30, 60
+            vline: -tmp_x-20, tmp_y-30, 60
+
+            hline: -tmp_x-20, tmp_y, -100
+            hline: -tmp_x-20, -tmp_y, -100
+
+            vline: -tmp_x-120, -tmp_y, 200
+
+            label: "refdes", width/2 + 50, -50, "?"
+            label: "frequency", width/2 + 50, 50, "?"
+
+            vpin: 1, 0, -200, 140
+            vpin: 2, 0, 200, -140
+            hpin: 3, -tmp_x-120-100, 0, 100
 
         params:
             frequency: frequency
 
 def xtal_2(freq):
     # only have 2 pins
-    width = 20
-    height = 40
+    width = 80
+    height = 150
 
     return create component:
         type: "X"
@@ -82,76 +93,242 @@ def xtal_2(freq):
         display: create graphic:
             rect: 0, 0, width, height
             fill: "#333"
-            rect: -width/2 - 5, 0, 1, height
-            rect: width/2 + 5, 0, 1, height
+            rect: -width/2 - 20, 0, 10, height
+            rect: width/2 + 20, 0, 10, height
             fill: "none"
-            pin: 1, -width/2 - 20, 0, -width/2-5, 0
-            pin: 2, width/2 + 20, 0, width/2+5, 0
-            label: "refdes", 0, -height/2 - 5, "?", anchor="middle"
-            label: "freq", 0, height/2 + 5, freq, vanchor="top", anchor="middle"
+            pin: 1, -width/2 - 110, 0, -width/2-25, 0
+            pin: 2, width/2 + 110, 0, width/2+25, 0
+            label: "refdes", 0, -height/2 - 20, "?", anchor="middle"
+            label: "freq", 0, height/2 + 20, freq, vanchor="top", anchor="middle"
         params:
             freq: freq
 
 def solder_bridge():
-    width = 20
-    height = 20
+    width = 100
+    height = 100
     
     return create component:
         type: "S"
         pins: 2
         display: create graphic:
-            arc: -width/2+5, 0, 10, 90, 270
-            arc: width/2-5, 0, 10, 270, 90
-            vline: -width/2 + 5, -height/2, height
-            vline: width/2-5, -height/2, height
-            pin: 1, -width/2-20, 0, -width/2-5, 0
-            pin: 2, width/2+20, 0, width/2+5, 0
-            label: "refdes", 0, -width/2 - 5, "?", anchor="middle"
-
-def reset_button_block():
-    btn = reset_btn()
-
-    wire up 20
-    branch:
-        wire up 20 
-        to btn pin 1
-    wire right 20 up 20
-    to btn pin 2
-
-    at btn pin 4
-    wire up 20
-    branch:
-        wire auto_
-        to btn pin 3
-    wire up 20 right 40 down 20
-    to gnd
-
+            arc: -10, 0, width/2, 90, 270
+            arc: 10, 0, width/2, 270, 90
+            vline: 10, -height/2, height
+            vline: -10, -height/2, height
+            hpin: 1, -10-width/2-40, 0, 40
+            hpin: 2, 10+width/2 + 40, 0, -40
+            label: "refdes", 0, -height/2 - 20, "?", anchor="middle"
 
 def reset_btn():
     return create component:
         pins: 5
         display: create graphic:
-
-            hline: 0, 0, 20
-            hline: 0, -40, 20
-            vline: 20, -30, 20
-            path: "M", 20, -20, "L", 40, -20, "L", 40, 0
-            path: "M", -15, -30, "L", -20, -30, "L", -20, -10, "L", -15, -10
-            hline: -20, -20, 3
-            hline: -15, -20, 3
-            hline: -10, -20, 3
-            hline: -5, -20, 2
-            path: "M", 0, 0, "L", -5, -30
+            lineWidth: 10
+            hline: 0, 0, 100
+            hline: 0, -200, 100
+            vline: 100, -150, 100
+            path: "M", 100, -100, "L", 200, -100, "L", 200, 0
+            path: "M", -75, -150, "L", -100, -150, "L", -100, -50, "L", -75, -50
+            hline: -100, -100, 15
+            hline: -75, -100, 15
+            hline: -50, -100, 15
+            hline: -15, -100, 10
+            path: "M", 0, 0, "L", -15, -150
 
             fill: "#333"
             circle: 0, 0, 2
             fill: "none"
 
-            pin: 1, 0, 20, 0, 0
-            pin: 2, 20, 20, 20, 0
-            pin: 5, 40, 20, 40, 0
-            pin: 3, 0, -60, 0, -40
-            pin: 4, 20, -60, 20, -40
+            pin: 1, 0, 100, 0, 0
+            pin: 2, 100, 100, 100, 0
+            pin: 5, 200, 100, 200, 0
+            pin: 3, 0, -300, 0, -200
+            pin: 4, 100, -300, 100, -200
+
+            label: "refdes", -180, -100, "?", anchor="middle"
+            label: "mpn", -180, 0, "?", anchor="middle"
+
+
+def conn3x2():
+    width = 300
+    height = 400
+
+    return create component:
+        pins: 6
+        display: create graphic:
+            rect: 0, 0, width, height
+            hpin: 1, "1", -width/2 - 100, -100, 100
+            hpin: 3, "3", -width/2 - 100, 0,    100
+            hpin: 5, "5", -width/2 - 100, 100,  100
+            
+            hpin: 2, "2", width/2 + 100, -100,   -100
+            hpin: 4, "4", width/2 + 100, 0,      -100
+            hpin: 6, "6", width/2 + 100, 100,    -100
+            
+            label: "refdes", -width/2, -height/2 - 20, "?", fontSize=50, anchor="left", vanchor="bottom"
+
+            circle: -50, -100, 40 
+            circle: -50,  0,   40
+            circle: -50,  100, 40 
+            circle: 50, -100,  40 
+            circle: 50,  0,    40
+            circle: 50,  100,  40 
+
+def usb_conn_():
+    width = 200
+    height = 500
+
+    return create component:
+        pins: 6
+        display: create graphic:
+            #rect: 0, 0, width, 100
+            path: "M", -100, -200, "L", 100, -200, "L", 100, 300, "L", -100, 300
+
+            label: "", 0, 75, "USB", anchor="middle", fontSize=80, angle=-90
+
+            hpin: 1, width/2 + 100, -100, -100
+            hpin: 2, width/2 + 100, 0, -100
+            hpin: 3, width/2 + 100, 100, -100
+            hpin: 4, width/2 + 100, 200, -100
+
+            vpin: 5, -100, 300 + 100, -100
+            vpin: 6, 0,   300 + 100, -100
+
+def conn8():
+    return create component:
+        type: "conn"
+        pins: 8
+        display: create graphic:
+            rect: 0, 350, 200, (8+1) * 100
+            circle: 0, 0,   40
+            circle: 0, 100, 40
+            circle: 0, 200, 40
+            circle: 0, 300, 40
+            circle: 0, 400, 40
+            circle: 0, 500, 40
+            circle: 0, 600, 40
+            circle: 0, 700, 40
+
+            label: "refdes", -20, 6 * -20 - 5, "?"
+            #label: "mpn", -20, 20 + 4, "?", vanchor="top"
+
+            hpin: 1, -200, 0,   160
+            hpin: 2, -200, 100, 160
+            hpin: 3, -200, 200, 160
+            hpin: 4, -200, 300, 160
+            hpin: 5, -200, 400, 160
+            hpin: 6, -200, 500, 160
+            hpin: 7, -200, 600, 160
+            hpin: 8, -200, 700, 160
+
+def conn6():
+    return create component:
+        type: "conn"
+        pins: 6
+        display: create graphic:
+            rect: 0, 2.5 * 100, 200, (6+1) * 100
+            circle: 0, 0,   40
+            circle: 0, 100, 40
+            circle: 0, 200, 40
+            circle: 0, 300, 40
+            circle: 0, 400, 40
+            circle: 0, 500, 40
+
+            label: "refdes", -20, 6 * -20 - 5, "?"
+            #label: "mpn", -20, 20 + 4, "?", vanchor="top"
+
+            hpin: 1, -200, 0,   160
+            hpin: 2, -200, 100, 160
+            hpin: 3, -200, 200, 160
+            hpin: 4, -200, 300, 160
+            hpin: 5, -200, 400, 160
+            hpin: 6, -200, 500, 160
+
+def opamp():
+    width = 200
+    height = 200
+
+    return create component:
+        type: "ic"
+        pins: 3
+        params:
+            manufacturer_pn: "LM358D"
+        display: create graphic:
+            triangle: -width/2, 0, width/2, 0, height
+            hpin: 1, width/2 +  100, 0, -100
+            hpin: 2, "-", -width/2 - 100, 50, 100
+            hpin: 3, "+", -width/2 - 100, -50, 100
+            label: "refdes", 0, -height/2, "?"
+            label: "manufacturer_pn", 0, height/2, "?"
+
+
+def fet_():
+    return create component:
+        pins: 3
+        type: "T"
+        display: create graphic:
+            hline: -75, -25, 175
+            fill: "#333"
+            rect: 0, 0, 50, 15
+            rect: 75, 0, 50, 15
+            rect: -75, 0, 50, 15
+            vline: 75, 0, 100
+            vline: -75, 0, 100
+            vline: 0, 0, 100
+            triangle: 0, 75, 0, 100, 25
+            hline: 0, 100, 100
+            hline: -100, 100, 25
+            path: "M", -100, 100, "L", -100, 150, "L", 100, 150, "L", 100, 100
+            triangle: -12.5, 150, 12.5, 150, 25
+            vline: 12.5, 150-20, 40
+
+            label: "refdes", 0, -60, "?", anchor="middle"
+            label: "manufacturer_pn", 0, 250, "?", anchor="middle"
+
+            pin: 1, -200, 100, -100, 100
+            pin: 2, 200, 100, 100, 100
+            pin: 3, 100, -100, 100, -25
+        params:
+            manufacturer_pn: "FDN304V"
+
+def reset_button_block():
+    btn = reset_btn()
+    btn.mpn = "TS42"
+
+    wire up 100
+    branch:
+        wire up 100 
+        to btn pin 1
+
+    wire right 100 up 100
+    to btn pin 2
+
+    at btn pin 4
+    wire up 100
+    branch:
+        wire auto_
+        to btn pin 3
+    wire right 100 to gnd
+
+
+def ferrite():
+    width = 140
+    height = 60
+ 
+    return create component:
+        pins: 2
+        display: create graphic:
+            fill: "#000"
+            rect: 0, 0, width, height
+            hpin: 1, -width/2 - 30, 0, 30
+            hpin: 2, width/2 + 30, 0, -30
+            label: "refdes", -width/2, -height/2 - 20 , "?", fontSize=50, anchor="left"
+            #label: "value", 0, 4, value, fontSize=30, anchor="middle", vanchor="middle"
+        type: "ind"
+        params:
+            value: value
+            size: "0402"
+            footprint: "Resistor_SMD:R_0402_1005Metric"
 
 
 gnd = dgnd()
@@ -203,9 +380,9 @@ atmega = create component:
 
         100: "EXP"
 
-    width: 200
+    width: 1000
     arrange:
-        left: 24, [2], 2, [2], 1, [6], 32, 4, 3, [5], 27, 31, 30, 29, 28, [2], 100
+        left: 24, [2], 2, [2], 1, [6], 32, 4, 3, [5], 27, 31, 30, 29, 28, [1], 100
         right: 21,20,19,18,17,16,15,14, [2], 22,23,25,26,5, [2], 13,12,11,10,9,8,7,6
     params:
         mpn: "ATMEGA8U2-MU"
@@ -249,7 +426,7 @@ atmega8 = create component:
         18: "PB4"
         19: "PB5"
 
-    width: 200
+    width: 1000
     arrange:
         left: 1, [3], 10, [1], 9, [2], 21, 20, 22, [2], 7,8
         right: 19,18,17,16,15,14, [3], 28,27,26,25,24,23, [3], 13, 12, 11, 6,5,4,3,2
@@ -260,98 +437,6 @@ atmega8 = create component:
 osc1 = xtal("16MHz")
 osc2 = xtal("16MHz")
 
-def conn3x2():
-    width = 60
-    height = 80
-
-    return create component:
-        pins: 6
-        display: create graphic:
-            rect: 0, 0, width, height
-            pin: 1, "1", -width/2 - 20, -20, -width/2, -20
-            pin: 3, "3", -width/2 - 20, 0,   -width/2, 0
-            pin: 5, "5", -width/2 - 20, 20,  -width/2, 20
-            pin: 2, "2", width/2 + 20, -20,   width/2, -20
-            pin: 4, "4", width/2 + 20, 0,    width/2, 0
-            pin: 6, "6", width/2 + 20, 20,  width/2, 20
-            label: "refdes", -width/2, -height/2 - 5, "?", fontSize=10, anchor="left", vanchor="bottom"
-            circle: -10, -20, 8 
-            circle: -10,  0,  8 
-            circle: -10,  20, 8 
-            circle: 10, -20, 8 
-            circle: 10,  0,  8 
-            circle: 10,  20, 8 
-
-def usb_conn_():
-    width = 40
-    height = 100
-
-    return create component:
-        pins: 6
-        display: create graphic:
-            #rect: 0, 0, width, 100
-            path: "M", -20, -40, "L", 20, -40, "L", 20, 60, "L", -20, 60
-
-            label: "", 0, 15, "USB", anchor="middle", fontSize=20, angle=-90
-
-            pin: 1, width/2 + 20, -20, width/2, -20
-            pin: 2, width/2 + 20, 0, width/2, 0
-            pin: 3, width/2 + 20, 20, width/2, 20
-            pin: 4, width/2 + 20, 40, width/2, 40
-
-            pin: 5, -20, 60+ 20, -20, 60
-            pin: 6, 0,   60 + 20, 0,  60
-
-def conn8():
-    return create component:
-        type: "conn"
-        pins: 8
-        display: create graphic:
-            rect: 0, -70, 40, 180
-            circle: 0, 0, 8
-            circle: 0, -20, 8
-            circle: 0, -40, 8
-            circle: 0, -60, 8
-            circle: 0, -80, 8
-            circle: 0, -100, 8
-            circle: 0, -120, 8
-            circle: 0, -140, 8
-
-            label: "refdes", -20, -160-4, "?"
-            label: "mpn", -20, 20 + 4, "?", vanchor="top"
-
-            pin: 1, -40, 0,   -20, 0
-            pin: 2, -40, -20, -20, -20
-            pin: 3, -40, -40, -20, -40
-            pin: 4, -40, -60, -20, -60
-            pin: 5, -40, -80, -20, -80
-            pin: 6, -40, -100, -20, -100
-            pin: 7, -40, -120, -20, -120
-            pin: 8, -40, -140, -20, -140
-
-def conn6():
-    return create component:
-        type: "conn"
-        pins: 6
-        display: create graphic:
-            rect: 0, 2.5 * -20, 40, (6+1) * 20
-            circle: 0, 0, 8
-            circle: 0, -20, 8
-            circle: 0, -40, 8
-            circle: 0, -60, 8
-            circle: 0, -80, 8
-            circle: 0, -100, 8
-
-            label: "refdes", -20, 6 * -20 - 5, "?"
-            label: "mpn", -20, 20 + 4, "?", vanchor="top"
-
-            pin: 1, -40, 0,   -20, 0
-            pin: 2, -40, -20, -20, -20
-            pin: 3, -40, -40, -20, -40
-            pin: 4, -40, -60, -20, -60
-            pin: 5, -40, -80, -20, -80
-            pin: 6, -40, -100, -20, -100
-
 iol_conn = conn8()
 iol_conn.mpn = "IOL"
 
@@ -360,6 +445,8 @@ ioh_conn.mpn = "IOH"
 
 ad_conn = conn6()
 ad_conn.mpn = "AD"
+
+power_conn2 = conn6()
 
 # USB connector
 usb_conn = usb_conn_()
@@ -370,459 +457,510 @@ icsp_conn = conn3x2()
 
 at icsp_conn:
     6:
-        wire right 20 down 20
+        wire right 100 down 100
         to gnd
     2:
-        wire right 20 up 20
+        wire right 100 up 100
         to v5v
+
+at icsp_conn2:
+    6:
+        wire right 100 down 100 to gnd
+
+at usb_conn:
+    1:
+        wire right 100
+        add label("XUSB")
+        wire right 200 up 100 right 100
+        
+        add fuse(500m)
+        wire right 100
+
+        add label("USBVCC")
+        wire right 500
+
+    2:
+        wire right 100
+        add label("D-")
+        wire right 400
+
+        branch:
+            wire right 200
+            add res(22)
+            wire right 100
+            add label("RD-")
+
+            wire right 200 down 1000 right 1000
+            to atmega pin 30
+
+            wire left 500
+            add label("RD-")
+
+        wire down 200
+        add esd()
+        wire down 200 left 300 
+        point tmp1
+
+        wire down 100
+        point tmp2
+        wire down 200
+        add ferrite()
+        wire down 100
+
+        point tmp3
+
+        wire right 500
+        branch:
+            wire up 200
+            add cap(1u)
+            wire auto
+            to atmega pin 27
+
+            wire left 500
+            add label("VUCAP")
+
+        wire right 500
+        branch:
+            wire auto
+            to atmega pin 28
+
+            wire left 500
+            add label("UGND")
+
+        wire right 100
+        add solder_bridge()
+        wire auto to atmega pin 100
+
+        wire left 100 down 100
+        to gnd
+
+
+    3:
+        wire right 100
+        add label("D+")
+        wire right 100
+        branch:
+            wire right 400 down 100 right 100
+            add res(22)
+            wire right 100
+            add label("RD+")
+            wire right 100 down 900
+            wire auto
+            to atmega pin 29
+
+            wire left 500
+            add label("RD+")
+
+        wire down 100
+        add esd()
+        wire auto
+        to tmp1
+
+    6:
+        wire down 100
+        branch:
+            wire auto 
+            to pin 5
+        wire auto_
+        to tmp2
+
+        wire left 300
+        add label("USHIELD")
+
+    4: 
+        wire auto_
+        to tmp3
 
 
 at atmega:
     32:
-        wire left 40 
+        wire left 200
         branch:
-            wire up 20
+            wire up 100
             to v5v
-        wire down 20
+            
+        wire down 100
         branch:
-            wire auto 
+            wire right 100 auto
             to atmega pin 4
-        wire left 40 down 20
+            
+        wire left 200 down 100
         add cap(100n)
-        wire down 20
+        wire down 100
         to gnd
 
     3:
-        wire left 20 down 20
+        wire left 100 down 100
         to gnd
 
     24:
-        wire left 40
+        wire left 100
         branch:
-            wire left 160 up 200 right 20
+            wire left 600
+            add label("RESET2")
+            wire left 200 up 800 right 100
             to icsp_conn2 pin 5
 
         branch:
-            wire up 20
-            add res(10k) angle:-90
+            wire up 100
+            add res(10k)
 
             point:
                 at v5v
+                wire down 100
                 branch:
-                    wire down 20 left 40
+                    wire left 200
                     to icsp_conn2 pin 2
 
-                wire auto 
+                wire auto
                 to point
 
     17:
-        wire right 20
+        wire right 100
         add label("MISO2")
-        wire right 60 up 200 left 560 auto
+        wire right 300 up 800 left 2700 up 100 auto
         to icsp_conn2 pin 1
 
     16:
-        wire right 20
+        wire right 100
         add label("MOSI2")
-        wire right 80 auto_
+        wire right 400 auto_
         to icsp_conn2 pin 4
 
     15:
-        wire right 20
+        wire right 100
         add label("SCK2")
-        wire right 100 up 260 left 580 auto
+        wire right 500 up 1100 left 2800 auto
         to icsp_conn2 pin 3
 
-        at icsp_conn2 pin 6
-        wire right 20 down 20
-        to gnd
+    2:
+        wire left 500
+
+        parallel:
+            wire left 800 down 200
+            add res(1M)
+            wire down 200 right 800
+
+        parallel:
+            wire down 100
+            add osc1
+            point:
+                at osc1 pin 3
+                wire left 100 to gnd
+
+                at point
+                wire down 100
+
+        wire right 100
+        add res(27)
+        wire right 100 auto
+        to atmega pin 1
 
     31:
-        wire left 100
+        wire left 500
         add label("USBVCC")
-
-        wire left 160 up 220 left 60
-        add fuse(500m) pin 2
-        wire left 100 down 40 left 60
-        add label("XUSB")
-        wire left 80
-        to usb_conn pin 1
         
-    100: 
-        wire left 20 down 20
-        to gnd
+    11:
+        at v5v
+        wire down 100
 
-join:
-    at atmega pin 30
-    wire left 100
-    add label("RD-")
+        branch:
+            wire left 100
+            add res(1k)
+            wire left 100
+            add led("YELLOW")
+            wire left 1000
+            to atmega pin 11
 
-    wire left 180 up 180 left 40
-    add res(22) pin 2
-    wire left 20
-    add label("D-")
-    wire left 60
-    branch:
-        wire auto
-        to usb_conn pin 2
-        
-    wire down 100
-    add esd() ..angle=90
-    wire down 20 left 80
-
-join:
-    at atmega pin 29
-    wire left 100 
-    add label("RD+")
-
-    wire left 200 up 140 left 20
-    add res(22) pin 2
-    wire left 20
-    add label("D+")
-
-    wire left 20 up 40 
-    wire left 120
-    branch:
-        wire auto
-        to usb_conn pin 3
-    wire down 80
-    add esd() ..angle=90
-    wire auto
-
-point:
-    at usb_conn pin 5
-    wire down 20
-    branch:
-        wire auto_ 
-        to usb_conn pin 6
-
-    wire down 20
-    add label("USHIELD") angle:90
-    wire auto_
-    to point
-
-wire down 20
-add ind(1u) angle:90
-wire down 20
-
-point:
-    at usb_conn pin 4
-    wire right 20 down 40
-    add label("UGND") angle:90
-    wire auto_
-    to point
-
-point:
-    at atmega pin 27
-    wire left 100
-    add label("VUCAP")
-    wire left 100 down 100
-    add cap(1u)
-    wire down 40
-
-    point:
-        at atmega pin 28
+        wire down 300 left 100
+        add res(1k)
         wire left 100
-        add label("UGND")
-        wire auto
-        to point
-        wire down 20
-        add solder_bridge() angle:90
-        ..refdes = "GROUND"
-        wire down 20
-        to gnd
-    
-    wire left 360
-    to point
-
-join:
-    at atmega pin 2
-    wire left 120
-    branch:
-        wire left 20
-        to osc1 pin 1
-
-    wire up 40 left 160 wire down 20
-    add res(1M) angle:90
-
-join:
-    at atmega pin 1
-    wire left 20
-    add res(27) pin 2
-    wire left 20
-
-    branch:
-        wire auto_
-        to osc1 pin 2
-
-    wire down 20 auto 
-
-at osc1 pin 3
-wire left 20 down 20
-to gnd
-
-at atmega:
-    8:
-        wire right 40
-        add label("M8TXD")
-        wire right 60 down 160 right 540
-        add label("M8TXD")
-        wire right 60
-        add res(1k)
-        wire right 100 up 140
-        branch:
-            wire left 40
-            to atmega8 pin 3
-
-        wire right 60
-        to iol_conn pin 2
-        
-    9:
-        wire right 40
-        add label("M8RXD")
-        wire right 80 down 140 right 520
-        add label("M8RXD")
-        wire right 60
-        add res(1k)
-        wire right 80 auto_
-        to atmega8 pin 2
-
-        wire auto
-        to iol_conn pin 1
-
-def led_with_res():
-    add led("yellow") angle:180 pin 2
-    wire right 20
-    add res(1k)
-    wire right 20
-
-join:
-    at atmega pin 11
-    wire right 40
-    add label("TXLED")
-    wire right 140
-    led_with_res()
-
-join:
-    at atmega pin 10
-    wire right 40
-    add label("RXLED")
-    wire right 100 down 40 right 40
-    led_with_res()
-    wire up 60
-
-wire up 20
-to v5v
-
-at power_conn2 = conn6() flip:y :
-    ..mpn = "POWER"
-
-    2:
-        wire left 60 up 80
-        add v3v3
-    3:
-        wire left 100 up 100
-        to v5v
-
-    4: 
-        wire left 20 down 20
-        branch:
-            wire right 20
-            to pin 5
-        wire left 60 down 40
-        to gnd
-
-    6:
-        wire left 40
-        add label("VIN")
-
-
-at atmega8:
-    7:
-        wire left 40
-        branch:
-            wire auto to atmega8 pin 20
-        wire left 40
-        branch:
-            wire up 20
-            to v5v
-        wire down 20
-        add cap(100n)
-        wire down 20
-        to gnd
-    8:
-        wire left 20
-        branch:
-            wire auto to atmega8 pin 22
-        wire down 60
-        to gnd
-
+        add led("YELLOW")
+        wire left 200 auto_
+        to atmega pin 10
+    11:
+        wire right 100
+        add label("TXLED")
     10:
-        wire left 20 up 60 left 60
-        branch:
-            wire down 20
-            add res(1M) ..angle=90
-            wire down 20
-            branch:
-                wire right 60 auto
-                to atmega8 pin 9
-            wire left 60
-            to osc2 pin 2
-        wire left 40 auto
-        to osc2 pin 1
+        wire right 100
+        add label("RXLED")
 
-        at osc2 pin 3
-        wire left 20 down 20
+    9:
+        wire right 100
+        add label("M8RXD")
+        wire right 500 down 500 right 2000
+        add res(1k)
+        wire right 1000 up 300 left 100
+        to atmega8 angle:0 pin 2
+
+    8:
+        wire right 100
+        add label("M8TXD")
+        wire right 400 down 500 right 2000 down 100 right 100
+        add res(1k)
+        wire right 100 up 100
+        wire right 1000 auto_
+        to atmega8 pin 3
+
+
+at atmega8 angle:0:
+
+    1:
+        wire left 200
+
+        branch:
+            wire up 100
+            add res(10k)
+            wire up 100
+            to v5v
+        wire left 300
+        add label("RESET")
+        wire left 100
+
+        branch:
+            wire up 1900 right 1000
+            to power_conn2 pin 1
+
+            wire left 200
+            add label("RESET")
+
+        wire left 100
+        parallel:
+            wire up 200 left 100
+            add solder_bridge()
+            wire left 100 down 200
+        parallel:
+            wire left 400
+        wire left 100
+        add cap(100n)
+        wire left 300 down 1900 
+        
+        branch:
+            wire auto
+            to atmega pin 13
+        
+        branch:
+            wire right 100
+            add solder_bridge()
+            wire right 100 to gnd
+
+    8:
+        wire left 100
+
+        branch:
+            wire auto
+            to atmega8 pin 22
+
+        wire down 300 to gnd
+
+    7:
+        wire left 200
+        
+        branch:
+            wire auto
+            to atmega8 pin 20
+        wire left 100
+
+        branch:
+            wire up 100
+            to v5v
+        wire left 200 down 100
+        add cap(100n)
+        wire down 100
         to gnd
 
     21:
-        wire left 40
+        wire left 200
         add label("AREF")
 
-    4:
-        wire auto to iol_conn pin 3
-    5:
-        wire auto to iol_conn pin 4
+    10:
+        wire left 600 
+
+        parallel:
+            wire down 200
+            add res(1M)
+            wire down 200
+
+            point tmp
+
+        parallel:
+            wire left 400 down 100
+            add osc2
+
+            at osc2 pin 3
+            wire left 100
+            to gnd
+
+            at osc2 pin 2
+            wire down 100
+            wire auto 
+            to tmp
+
+        wire right 200
+        wire auto 
+        to atmega8 pin 9
+
+    2:
+        add label("IO0")
+        wire right 500
+        to iol_conn pin 8      
+    3:
+        add label("IO1")
+        wire auto
+        to iol_conn pin 7
+    4: 
+        add label("IO2")
+        wire auto
+        to iol_conn pin 6
+    5: 
+        add label("IO3")
+        wire auto 
+        to iol_conn pin 5
     6:
-        wire auto to iol_conn pin 5
-    11: 
-        wire auto to iol_conn pin 6
+        add label("IO4")
+        wire auto
+        to iol_conn pin 4
+    11:
+        add label("IO5")
+        wire auto
+        to iol_conn pin 3
     12:
-        wire auto to iol_conn pin 7
+        add label("IO6")
+        wire auto
+        to iol_conn pin 2
     13:
-        wire auto to iol_conn pin 8
-
-    23:
-        wire right 100 to ad_conn pin 1
-    24:
-        wire auto to ad_conn pin 2
-    25:
-        wire auto to ad_conn pin 3
-    26:
-        wire auto to ad_conn pin 4
-    27:
-        wire auto to ad_conn pin 5
-    28:
-        wire auto to ad_conn pin 6
-
-    14: 
-        wire right 200 to ioh_conn pin 1
-    15:
-        wire auto to ioh_conn pin 2
-    16:
-        wire right 20
-        add label("SS")
-        wire auto to ioh_conn pin 3
-    17: 
-        wire right 60
-        branch:
-            wire auto to ioh_conn pin 4
-        wire up 200 left 40
-        to icsp_conn pin 4
+        add label("IO7")
+        wire auto
+        to iol_conn pin 1
         
-    18:
-        wire right 40
-        branch:
-            wire auto to ioh_conn pin 5
+    23:
+        add label("AD0")
+        wire right 500
+        to ad_conn pin 6
+    24:
+        add label("AD1")
+        wire auto
+        to ad_conn pin 5
+    25:
+        add label("AD2")
+        wire auto
+        to ad_conn pin 4
+    26:
+        add label("AD3")
+        wire auto
+        to ad_conn pin 3
+    27:
+        add label("AD4")
+        wire auto
+        to ad_conn pin 2
+    28:
+        add label("AD5")
+        wire auto
+        to ad_conn pin 1
 
-        wire up 100 left 200 auto
+    14:
+        add label("IO8")
+        wire right 1400
+        to ioh_conn pin 8
+    15:
+        add label("IO9")
+        wire auto
+        to ioh_conn pin 7
+
+    16:
+        add label("SS")
+        wire auto
+        to ioh_conn pin 6
+
+    17:
+        branch:
+            wire auto
+            to ioh_conn pin 5
+        wire right 400 up 1000 left 300
+        to icsp_conn pin 4
+
+    18:
+        branch:
+            wire auto
+            to ioh_conn pin 4
+        wire right 100 up 300 left 700 auto
         to icsp_conn pin 1
 
     19:
-        wire right 20
         branch:
-            wire auto to ioh_conn pin 6
-        wire up 60 left 160 auto
-        to icsp_conn pin 3
+            wire auto
+            to ioh_conn pin 3
+        branch:
+            wire right 200 up 300 left 700 auto
+            to icsp_conn pin 3
+        
+        wire right 600 up 200
+        parallel:
+            wire up 100
+            add res(1k)
+            wire up 100
+        parallel:
+            wire right 200 up 100
+            add res(1k)
+            wire up 100
+            wire auto
+        wire up 100
+        add led("YELLOW")
+        wire up 100
+        to gnd
+
 
     1:
-        wire left 20
-
-        point:
-            at icsp_conn pin 5
-            wire left 140
-            branch:
-                reset_button_block()
-            wire auto_
-            to point
-
-        wire left 120
+        wire up 300 right 100
         branch:
-            wire up 20
-            add res(10k) angle:-90
-            wire up 20
-            to v5v
-        branch:
-            wire left 40 up 460 right 120
-            to power_conn2 pin 1
+            reset_button_block()
+        wire right 300 up 100 auto
+        to icsp_conn pin 5
 
-            wire left 40
-            add label("RESET")
-        
-        wire left 60
 
-        parallel:
-            wire left 60
-            add solder_bridge() angle:180
-            ..refdes = "RESET-EN"
-            wire left 60 down 40
-        parallel:
-            wire auto
-
-        wire down 20
-        add cap(100n)
-        wire down 200
-        branch:
-            wire right 20
-            add solder_bridge()
-            ..refdes = "UBOOT"
-            wire right 20 down 20 to gnd
-
-        wire auto 
-        to atmega pin 13
 
 at ioh_conn:
-    7:
-        wire left 80
-        add label("GND")
-    8:
-        wire left 40
+    1:
+        wire left 200
         branch:
-            wire left 40
-            add label("AREF")
+            wire up 100
+            add cap(100n)
+            wire up 100
+            to gnd
+        wire left 200
+        add label("AREF")
+    2:
+        wire left 400
+        add label("GND")
 
-        wire up 40
-        add cap(100n) pin 2
-        wire up 20 right 80 down 20
-        to gnd
-
-    6:
-        wire left 80
+    3:
+        wire left 100
         add label("SCK")
-        wire left 20 up 200
-
-        parallel:
-            wire up 20
-            add res(1k) angle:-90
-            wire up 20
-        parallel:
-            wire right 60 up 20
-            add res(1k) angle:-90
-            wire auto_
-
-        wire up 20
-        add led("yellow") angle:-90
-        wire up 40 right 60 down 20
-        to gnd
-
-    5:
-        wire left 80
-        add label("MISO")
     4:
-        wire left 80
+        wire left 100
+        add label("MISO")
+    5:
+        wire left 100
         add label("MOSI")
 
+at power_conn2:
+    2:
+        wire left 200
+        add label("+3V3")
+    3:
+        wire left 300 up 300
+        to v5v
 
+    4:
+        wire left 300 down 100
+        branch:
+            wire auto
+            to power_conn2 pin 5
+        wire down 100
+        to gnd
+    6:
+        wire left 200
+        add label("VIN")
 
 
 # 3V3 output converter
@@ -865,63 +1003,8 @@ dcdc_5V_2 = create component:
     params:
         manufacturer_pn: "MC33269ST-5.0T3"
 
-def opamp():
-    width = 60
-    height = 60
-
-    return create component:
-        type: "ic"
-        pins: 3
-        params:
-            manufacturer_pn: "LM358D"
-        display: create graphic:
-            triangle: -width/2, 0, width/2, 0, height
-            pin: 1, width/2 + 20, 0, width/2, 0
-            pin: 2, "-", -width/2 - 20, 20, -width/2, 20
-            pin: 3, "+", -width/2 - 20, -20, -width/2, -20
-            label: "refdes", 0, -height/2, "?"
-            label: "manufacturer_pn", 0, height/2, "?"
-
 # Block for power
 opamp_1 = opamp()
-
-def fet_():
-    return create component:
-        pins: 3
-        type: "T"
-        display: create graphic:
-            hline: -15, -5, 35
-            fill: "#333"
-            rect: 0, 0, 10, 3
-            rect: 15, 0, 10, 3
-            rect: -15, 0, 10, 3
-            vline: 15, 0, 20
-            vline: -15, 0, 20
-            vline: 0, 0, 20
-            triangle: 0, 15, 0, 20, 5
-            hline: 0, 20, 20
-            hline: -20, 20, 5
-            path: "M", -20, 20, "L", -20, 30, "L", 20, 30, "L", 20, 20
-            triangle: -2.5, 30, 2.5, 30, 5
-            vline: 2.5, 30-4, 8
-
-            label: "refdes", 0, 45, "?", anchor="middle"
-            label: "manufacturer_pn", 0, 55, "?", anchor="middle"
-
-            pin: 1, -40, 20, -20, 20
-            pin: 2, 40, 20, 20, 20
-            pin: 3, 20, -20, 20, -5
-        params:
-            manufacturer_pn: "FDN304V"
-
-fetx = create component:
-    pins: 3
-    arrange:
-        left: 1
-        right: 2,3
-    params:
-        manufacturer_pn: "FDN304V"
-
 fet = fet_()
 
 frame: 
@@ -932,54 +1015,57 @@ frame:
         ..title = "3V3 power"
             
         at label("VIN")
-        wire right 40 down 20
-        add res(10k) angle:90
-        wire down 20
+        wire right 200 down 100
+        add res(10k)
+        wire down 100
         branch:
-            wire down 20
-            add res(10k) angle:90
+            wire down 100
+            add res(10k)
+            wire down 100
             to gnd
-        wire right 80
+
+        wire right 300
         add label("CMP")
-        wire right 20
+        wire right 100
         to opamp_1 pin 3
 
-        at v3v3 angle:-90
-        wire right 20
+        at v3v3
+        wire right 100
         to opamp_1 pin 2
 
         at label("USBVCC")
-        wire right 40 to fet pin 1
+        wire right 400 to fet pin 1
 
         at opamp_1 pin 1
-        wire right 80 down 100 left 20
-        to fet pin 2
+        add label("GATE_CMD")
+        wire right 100 down 300
+        to fet pin 3
 
-        at fet pin 3
-        wire right 60
+        at fet pin 2
+        wire right 100
         branch:
-            wire up 20
+            wire up 100
             to v5v
-        wire right 60
+        wire right 100
         branch:
-            wire right 20
+            wire right 100
             to dcdc_3v3 pin 1
         wire auto_
         to dcdc_3v3 pin 3
 
         at dcdc_3v3:
             2:
-                wire left 20 down 40
+                wire left 100 down 200
                 to gnd
 
             5:
-                wire right 40
+                wire right 200
                 branch:
-                    wire up 20 
+                    wire up 100
                     to v3v3
-                wire down 20
+                wire down 100
                 add cap(1u)
-                wire down 20
+                wire down 100
                 to gnd
         
 
@@ -991,75 +1077,75 @@ frame:
             type: "conn"
             pins: 3
             display: create graphic:
-                rect: 0, 0, 80, 40
-                pin: 1, -20, 40, -20, 20
-                pin: 2, 20, 40, 20, 20
-                pin: 3, 60, 0, 40, 0
-                label: "refdes", -40, -20 - 4, "?"
+                rect: 0, 0, 400, 200
+                pin: 1, -100, 200, -100, 100
+                pin: 2, 100, 200, 100, 100
+                pin: 3, 300, 0, 200, 0
+                label: "refdes", -200, -100 - 10, "?"
 
         at power_conn:
             1:
-                wire down 20
+                wire down 100
                 branch:
                     wire auto_
                     to pin 3
-                wire down 20
+                wire down 100
                 to gnd
             2:
-                wire right 20
+                wire right 100
                 add label("PWRIN")
-                wire right 40
+                wire right 200
                 add diode()
-                wire right 20
+                wire right 100
                 branch:
-                    wire down 20
+                    wire down 100
                     add cap(47u)
-                    wire down 20 to gnd
-                wire right 20
+                    wire down 100 to gnd
+                wire right 100
                 point:
                     at dcdc_5V pin 3
-                    wire left 80
+                    wire left 400
                     to point
 
-                    wire up 20
+                    wire up 100
                     branch:
-                        wire left 40
+                        wire left 200
                         add label("VIN")
-                    wire up 100 right 80
+                    wire up 500 right 400
                     to dcdc_5V_2 pin 3
 
         at dcdc_5V:
             1:
-                wire left 20 down 20
+                wire left 100 down 100
                 to gnd
             2:
-                wire right 20
+                wire right 100
                 point:
                     at dcdc_5V_2 pin 4
-                    wire right 20 down 20
+                    wire right 100 down 100
                     branch:
                         wire auto 
                         to dcdc_5V_2 pin 2
                     wire auto
                     to point
 
-                wire right 20
+                wire right 100
 
                 branch:
-                    wire down 20
+                    wire down 100
                     add cap(47u)
-                    wire down 20 to gnd
-                wire right 60
+                    wire down 100 to gnd
+                wire right 300
                 branch:
-                    wire down 20
+                    wire down 100
                     add cap(100n)
-                    wire down 20 to gnd
-                wire up 20
+                    wire down 100 to gnd
+                wire up 100
                 to v5v
 
 
         at dcdc_5V_2 pin 1
-        wire left 20 down 20
+        wire left 100 down 100
         to gnd      
 
         frame:
@@ -1068,21 +1154,21 @@ frame:
 
             # Block for 5V leds
             at v5v
-            wire down 20
+            wire down 100
 
             parallel:
-                wire right 20
+                wire right 100
                 add res(1k)
-                wire right 20
+                wire right 100
             parallel:
-                wire down 40 right 20
+                wire down 200 right 100
                 add res(1k)
                 wire auto_
 
-            wire right 20
+            wire right 100
 
             add led("green")
-            wire right 20 down 20
+            wire right 100 down 100
             to gnd
 
 def osc_block(frequency, net1, net2):
@@ -1090,21 +1176,21 @@ def osc_block(frequency, net1, net2):
 
     join:
         at xtal pin 1
-        wire left 40
+        wire left 200
         add label(net1)
-        wire left 20 down 20
+        wire left 100 down 100
         add cap(22p)
-        wire down 20
+        wire down 100
     
     join:
         at xtal pin 2 
-        wire right 20
+        wire right 100
         add label(net2) 
-        wire right 20 down 20
+        wire right 100 down 100
         add cap(22p)
         wire auto
 
-    wire down 20
+    wire down 100
     to gnd
 
 frame:
