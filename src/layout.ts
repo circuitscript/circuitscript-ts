@@ -1029,8 +1029,8 @@ export class LayoutEngine {
                 }
             }
 
-            if (fixedNode && floatingNode){
-                this.print('place floating node', floatingNode, 'pin', floatingNodePin, 
+            if (fixedNode && floatingNode) {
+                this.print('place floating node', floatingNode, 'pin', floatingNodePin,
                     'to', fixedNode, 'pin', fixedNodePin);
 
                 const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
@@ -1042,8 +1042,14 @@ export class LayoutEngine {
                 // Find origin of the fixed node and add the floating node
                 // into the node origin tree.
                 const originNode = findOriginNode(fixedNode);
-                originNodeGroups.get(originNode).push(floatingNode);
-                this.print('linking node', floatingNode, 'to origin node', originNode);
+
+                const itemsArray = originNodeGroups.get(originNode)!;
+                if (itemsArray.indexOf(floatingNode) === -1) {
+                    itemsArray.push(floatingNode);
+                    this.print('linking node', floatingNode, 'to origin node', originNode);
+                } else {
+                    this.print('node is alread linked', floatingNode, 'to origin node', originNode);
+                }
             }
 
             [node1, node2].forEach(item => {
@@ -1052,7 +1058,7 @@ export class LayoutEngine {
                     const [, targetNode]: [string, RenderItem] =
                         graph.node(instance.instanceName);
 
-                    this.print('wire auto length to target:', instance, pin)
+                    this.print('wire', item, 'auto length to target:', instance, pin)
 
                     if (targetNode.isFloating) {
                         throw "Cannot create auto wire with floating node! Wire id: " + item.id + " to node " + instance + " pin " + pin;
@@ -1068,6 +1074,8 @@ export class LayoutEngine {
 
                     const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
                     item.setEndAuto(untilX, untilY);
+
+                    this.print(`set wire auto end at: ${untilX} ${untilY}`)
                 }
             });
 
@@ -1143,6 +1151,7 @@ export class LayoutEngine {
 
         otherItemsLinkedToOriginNode.forEach(item => {
             this.translateNodeBy(offsetX, offsetY, item);
+            // this.print('translate', item, 'to', item.x, item.y);
         });   
         
         // Merge the list of items in other node origin into the node origin

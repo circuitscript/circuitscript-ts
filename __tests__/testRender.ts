@@ -37,7 +37,9 @@ describe('Render tests', () => {
         
         ['module with ports', 'script20.cst'],
 
-        ['decimal places causing issues with junctions and layout', 'script21.cst']
+        ['decimal places causing issues with junctions and layout', 'script21.cst'],
+
+        ['catch repeated nodes in the origin nodes list', 'script22.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         

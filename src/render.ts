@@ -10,7 +10,9 @@ import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
-import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, defaultWireLineWidth, defaultZoomScale, junctionSize } from './globals.js';
+import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, 
+    defaultWireLineWidth, defaultZoomScale, fontDisplayScale, 
+    junctionSize } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
 import { milsToMM } from './helpers.js';
@@ -118,18 +120,18 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         }
     });
 
-    if (displayWireId){
+    if (displayWireId) {
         // Debugging method to draw the wire id next to the wires.
         const wiresGroup = canvas.group().translate(0, 0);
-        
+
         wires.forEach(wire => {
             // Draw the wire id at the start of the wire
             wiresGroup.text(wire.id.toString())
                 .font({
-                    family: 'Inter',
-                    size: 10,
+                    family: 'Arial',
+                    size: 50 * fontDisplayScale,
                 })
-                .translate(wire.x+5, wire.y+5)
+                .translate(wire.x + 5, wire.y + 5)
         });
     }
 
