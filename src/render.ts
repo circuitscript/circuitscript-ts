@@ -23,7 +23,7 @@ export function generateSVG2(graph: {
     mergedWires: MergedWire[], debugRects?: BoundBox[],
     frameObjects: RenderFrame[],
     textObjects: RenderText[],
-    }): string {
+}): { svg: string, width: number, height: number } {
 
     const window = getCreateSVGWindow()();
     const document = window.document;
@@ -38,12 +38,6 @@ export function generateSVG2(graph: {
         graph.frameObjects, graph.textObjects,
         );
 
-    // Dimensions of bbox is in mm
-    const {x, y, width, height} = canvas.bbox();
-    const margin = milsToMM(10);
-    const widthAndMargin = width + margin * 2;
-    const heightAndMargin = height + margin * 2;
-
     // 1 mil = 0.0254mm
     // 10 mils = 0.254mm
     // 100 mils = 2.54mm
@@ -52,10 +46,20 @@ export function generateSVG2(graph: {
     // The final output document is in metric dimensions - mm.
     const scale = MMToPx * defaultZoomScale; // 1mil = 0.0254mm
 
-    canvas.size(widthAndMargin * scale, heightAndMargin * scale);
-    canvas.viewbox(x - margin, y - margin, widthAndMargin, heightAndMargin);
+    // Dimensions of bbox is in mm
+    const { x, y, width, height } = canvas.bbox();
 
-    return canvas.svg();
+    // draw a rect around the bounds
+    const scaledWidth = width * scale;
+    const scaledHeight = height * scale;
+
+    canvas.size(scaledWidth, scaledHeight);
+    canvas.viewbox(x, y, width, height);
+
+    return {
+        svg: canvas.svg(),
+        width, height,
+    }
 }
 
 function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, 

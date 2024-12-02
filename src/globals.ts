@@ -46,6 +46,8 @@ export enum WireAutoDirection {
 
 export const MilsToMM = 0.0254;
 export const MMToPx = 3.779276;
+
+export const MMToPt = 2.8346456693;
 export const PxToMM = 0.2645833;
 
 export const portWidth = 20;

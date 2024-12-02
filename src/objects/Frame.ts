@@ -19,6 +19,9 @@ export enum FrameParamKeys {
     Direction = 'direction',
     Padding = 'padding',
     Border = 'border',
+
+    Width = 'width',
+    Height = 'height',
 }
 
 export enum FramePlotDirection {

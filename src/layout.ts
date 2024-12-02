@@ -33,8 +33,14 @@ export class LayoutEngine {
 
     layoutWarnings: string[] = [];
 
-    constructor() {
+    showBaseFrame = false;
+
+    constructor(options: { showBaseFrame: boolean } = { showBaseFrame: false }) {
         this.logger = new Logger();
+
+        const { showBaseFrame = false } = options ?? {};
+
+        this.showBaseFrame = showBaseFrame;
     }
 
     protected print(...params: any[]): void {
@@ -196,6 +202,16 @@ export class LayoutEngine {
         baseFrame.padding = 0;
         baseFrame.borderWidth = 0;
 
+        if (this.showBaseFrame){
+            // Assume A4 for now
+
+            baseFrame.borderWidth = 5;
+
+            // Use A4 size first, with a margin of 400 mils around
+            baseFrame.width = 11692 - 400 * 2;
+            baseFrame.height = 8267 - 400 * 2;
+        }
+
         baseFrame.x = 0;
         baseFrame.y = 0;
 
@@ -216,7 +232,7 @@ export class LayoutEngine {
             textObjects = result.textObjects;
             elementFrames = result.elementFrames;
 
-            const logFrames = false;
+            const logFrames = true;
             if (logFrames) {
                 this.print('===== dump frames =====');
                 this.dumpFrame(baseFrame);
@@ -409,6 +425,14 @@ export class LayoutEngine {
         // be aligned to the grid, add the frame padding to expand the bounds correctly.
         frame.bounds = resizeBounds(getBoundsFromPoints(boundPoints), 
             frame.padding);
+
+        if (frame.width !== null){
+            frame.bounds.xmax = milsToMM(frame.bounds.xmin + frame.width);
+        }
+
+        if (frame.height !== null){
+            frame.bounds.ymax = milsToMM(frame.bounds.ymin + frame.height);
+        }
     }
 
     dumpFrame(frame: RenderFrame, level = 0): void {
@@ -780,6 +804,16 @@ export class LayoutEngine {
                     if (frameObject.parameters.has(FrameParamKeys.Border)){
                         newFrame.borderWidth = 
                             frameObject.parameters.get(FrameParamKeys.Border);
+                    }
+
+                    if (frameObject.parameters.has(FrameParamKeys.Width)) {
+                        newFrame.width =
+                            frameObject.parameters.get(FrameParamKeys.Width);
+                    }
+
+                    if (frameObject.parameters.has(FrameParamKeys.Height)) {
+                        newFrame.height =
+                            frameObject.parameters.get(FrameParamKeys.Height);
                     }
 
                     containerFrames.push(newFrame);
@@ -1832,6 +1866,12 @@ export class RenderFrame extends RenderObject {
     direction = FramePlotDirection.Column;
 
     borderWidth = 5; //mils
+
+    // If width and height are null, then frame size is determined
+    // based on internal contents
+
+    width: number | null = null; // mils
+    height: number | null = null; // mils
 
     subgraphId = "";
 

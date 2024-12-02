@@ -56,7 +56,7 @@ describe('Render tests', () => {
         const layoutEngine = new LayoutEngine();
         const graph = await layoutEngine.runLayout(sequence, nets);
 
-        const svgOutput = generateSVG2(graph);
+        const { svg: svgOutput } = generateSVG2(graph);
 
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toBe(expectedSvgOutput);

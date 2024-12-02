@@ -1257,6 +1257,9 @@ export class ExecutionContext {
         // Frame 0 is the 'base' frame
         const frameId = this.scope.frames.length + 1;
         const frameObject = new Frame(frameId);
+
+        this.log('Enter frame', frameId);
+
         this.scope.frames.push(frameObject);
 
         this.scope.sequence.push([SequenceAction.Frame,
@@ -1275,6 +1278,8 @@ export class ExecutionContext {
         const frame = this.scope.frames[frameId-1];
         this.scope.sequence.push([SequenceAction.Frame,
             frame, FrameAction.Exit]);
+
+        this.log('Leave frame', frameId);
     }
 }
 

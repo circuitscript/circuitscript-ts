@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, createWriteStream } from "fs";
+import PDFDocument from "pdfkit";
+import SVGtoPDF from "svg-to-pdfkit";
 
 import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
@@ -23,7 +25,7 @@ import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import path from "path";
-import { LengthUnit, MilsToMM, PxToMM } from "./globals.js";
+import { LengthUnit, MilsToMM, MMToPt, PxToMM } from "./globals.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -343,7 +345,19 @@ export function renderScript(scriptData: string, outputPath: string,
     let svgOutput: string | null = null;
 
     try {
-        const layoutEngine = new LayoutEngine();
+        let fileExtension: string | null = null;
+        let showBaseFrame = false;
+        if (outputPath){
+            fileExtension = path.extname(outputPath).substring(1);
+        
+            if (fileExtension === 'pdf'){
+                showBaseFrame = true;
+            }
+        }
+
+        const layoutEngine = new LayoutEngine({
+            showBaseFrame,
+        });
         const layoutTimer = new SimpleStopwatch();
 
         const graph = layoutEngine.runLayout(sequence, nets);
@@ -355,11 +369,43 @@ export function renderScript(scriptData: string, outputPath: string,
         dumpData && writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
-        svgOutput = generateSVG2(graph);
+        
+        const {
+            svg: generatedSvg,
+            width: svgWidth,
+            height: svgHeight
+        } = generateSVG2(graph);
+
+        svgOutput = generatedSvg;
+
         showStats && console.log('Render took:', generateSvgTimer.lap());
 
         if (outputPath) {
-            writeFileSync(outputPath, svgOutput);
+            if (fileExtension === 'svg') {
+                writeFileSync(outputPath, svgOutput);
+
+            } else if (fileExtension === 'pdf') {
+                const doc = new PDFDocument({
+                    layout: 'landscape',
+                    size: 'A4',
+                });
+                const outputStream = createWriteStream(outputPath);
+
+                // In mils
+                const paperWidthMM = 297;
+                const paperHeightMM = 210;
+
+                // values in mm
+                const xOffset = (paperWidthMM - svgWidth) / 2;
+                const yOffset = (paperHeightMM - svgHeight) / 2;
+
+                SVGtoPDF(doc, svgOutput, 
+                        xOffset * MMToPt, yOffset * MMToPt);
+                doc.pipe(outputStream);
+                doc.end();
+            } else {
+                throw "Invalid output format";
+            }
             console.log('Generated file', outputPath);
         }
     } catch (err) {
