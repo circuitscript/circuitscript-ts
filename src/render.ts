@@ -11,7 +11,7 @@ import { BoundBox, MergedWire, RenderComponent, RenderFrame,
     RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
 import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, 
-    defaultWireLineWidth, defaultZoomScale, fontDisplayScale, 
+    defaultWireLineWidth, fontDisplayScale, 
     junctionSize } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { getBoundsSize } from './utils.js';
@@ -23,7 +23,7 @@ export function generateSVG2(graph: {
     mergedWires: MergedWire[], debugRects?: BoundBox[],
     frameObjects: RenderFrame[],
     textObjects: RenderText[],
-}): { svg: string, width: number, height: number } {
+}, zoomScale = 1): { svg: string, width: number, height: number } {
 
     const window = getCreateSVGWindow()();
     const document = window.document;
@@ -44,7 +44,7 @@ export function generateSVG2(graph: {
     // Formula: mm = 25.4 * (px / 96)
 
     // The final output document is in metric dimensions - mm.
-    const scale = MMToPx * defaultZoomScale; // 1mil = 0.0254mm
+    const scale = MMToPx * zoomScale; // 1mil = 0.0254mm
 
     // Dimensions of bbox is in mm
     const { x, y, width, height } = canvas.bbox();

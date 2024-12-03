@@ -23,7 +23,7 @@ import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
-import { milsToMM, UnitDimension } from './helpers.js';
+import { getPaperSize, milsToMM, UnitDimension } from './helpers.js';
 
 export class LayoutEngine {
 
@@ -423,15 +423,36 @@ export class LayoutEngine {
 
         // Determine the bounds based on the points. The points should already
         // be aligned to the grid, add the frame padding to expand the bounds correctly.
-        frame.bounds = resizeBounds(getBoundsFromPoints(boundPoints), 
+        const contentsBounds = resizeBounds(getBoundsFromPoints(boundPoints),
             frame.padding);
 
-        if (frame.width !== null){
-            frame.bounds.xmax = milsToMM(frame.bounds.xmin + frame.width);
-        }
+        // If frame width or height are specified, then center the elements 
+        // within the frame
+        if (frame.width !== null && frame.height !== null) {
+            // in mm
+            const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
+            const contentsHeight = contentsBounds.ymax - contentsBounds.ymin;
 
-        if (frame.height !== null){
-            frame.bounds.ymax = milsToMM(frame.bounds.ymin + frame.height);
+            const frameWidth = milsToMM(frame.width);
+            const frameHeight = milsToMM(frame.height);
+
+            const frameOffsetX = toNearestGrid((frameWidth - contentsWidth) / 2, gridSize);
+            const frameOffsetY = toNearestGrid((frameHeight - contentsHeight) / 2, gridSize);
+
+            innerFrames.forEach(innerFrame => {
+                // apply the offset to all the frames
+                innerFrame.x += frameOffsetX;
+                innerFrame.y += frameOffsetY;
+            });
+
+            frame.bounds = {
+                xmin: 0,
+                ymin: 0,
+                xmax: frameWidth,
+                ymax: frameHeight
+            };
+        } else {
+            frame.bounds = contentsBounds;
         }
     }
 
@@ -816,6 +837,16 @@ export class LayoutEngine {
                             frameObject.parameters.get(FrameParamKeys.Height);
                     }
 
+                    if (frameObject.parameters.has(FrameParamKeys.Size)) {
+                        newFrame.size =
+                            frameObject.parameters.get(FrameParamKeys.Size);
+
+                        const { width, height } = getPaperSize(newFrame.size);
+
+                        newFrame.width = width;
+                        newFrame.height = height;
+                    }
+
                     containerFrames.push(newFrame);
                     frameStack.push(newFrame);
 
@@ -824,7 +855,7 @@ export class LayoutEngine {
                     // the frame hierarchy to be tracked.
                     prevFrame && prevFrame.innerItems.push(newFrame);
 
-                } else if (frameAction === FrameAction.Exit){
+                } else if (frameAction === FrameAction.Exit) {
                     frameStack.pop();
                 }
             }
@@ -1872,6 +1903,8 @@ export class RenderFrame extends RenderObject {
 
     width: number | null = null; // mils
     height: number | null = null; // mils
+
+    size: string | null = null;
 
     subgraphId = "";
 

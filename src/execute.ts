@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { BlockTypes, ComponentTypes, GlobalNames, NoNetText, ParamKeys, 
+import { BlockTypes, ComponentTypes, FrameType, GlobalNames, NoNetText, ParamKeys, 
     ReferenceTypes } from './globals.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
@@ -1253,10 +1253,10 @@ export class ExecutionContext {
         }
     }
 
-    enterFrame(): number {
+    enterFrame(frameType: FrameType): number {
         // Frame 0 is the 'base' frame
         const frameId = this.scope.frames.length + 1;
-        const frameObject = new Frame(frameId);
+        const frameObject = new Frame(frameId, frameType);
 
         this.log('Enter frame', frameId);
 
@@ -1267,10 +1267,7 @@ export class ExecutionContext {
 
         this.scope.currentFrameId = frameId;
         this.scope.setActive(ActiveObject.Frame, frameId);
-
-        // TODO: allow frame properties to be set in double dot expressions
-        // TODO: also allow frames to be assigned in variables for reuse?
-
+        
         return frameId;
     }
 

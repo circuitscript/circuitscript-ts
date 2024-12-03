@@ -61,13 +61,14 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, NoNetText, ReferenceTypes, WireAutoDirection } from './globals.js';
+import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, NoNetText, ReferenceTypes, WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
-import { UnitDimension } from './helpers.js';
+import { isSupportedPaperSize, UnitDimension } from './helpers.js';
+import { FrameParamKeys } from './objects/Frame.js';
 
 
 export class ParserVisitor extends BaseVisitor {
@@ -1081,9 +1082,16 @@ export class ParserVisitor extends BaseVisitor {
         this.runExpressions(this.getExecutor(), ctx.expression());
     }
 
-
     visitFrame_expr = (ctx: Frame_exprContext): void => {
-        const frameId = this.getExecutor().enterFrame();
+        // Frame can be either a 'sheet' or 'frame'. 'sheet' frames have 
+        // fixed dimensions based on the document page size.
+
+        let frameType = FrameType.Frame;
+        if (ctx.Sheet()) {
+            frameType = FrameType.Sheet;
+        }
+
+        const frameId = this.getExecutor().enterFrame(frameType);
         this.visit(ctx.expressions_block());
         this.getExecutor().exitFrame(frameId);
     }
@@ -1434,6 +1442,30 @@ export class ParserVisitor extends BaseVisitor {
 
         this.log('===== annotate done =====');
         this.log('');
+    }
+
+    applySheetSizes(): { sheetSize: string } {
+        // Applies the document page size to the sheet frames
+        const baseScope = this.getExecutor().scope;
+        const document = baseScope.variables.get(GlobalDocumentName);
+
+        let sheetSize = 'A4';
+        if (document['page_size']) {
+            sheetSize = document['page_size'];
+
+            if (!isSupportedPaperSize(sheetSize)) {
+                throw 'Paper size not supported: ' + sheetSize;
+            }
+        }
+
+        // If page size is set, then use it for sheet frames
+        baseScope.frames.forEach(item => {
+            if (item.frameType === FrameType.Sheet) {
+                item.parameters.set(FrameParamKeys.Size, sheetSize);
+            }
+        });
+
+        return { sheetSize };
     }
 
     private resolveNets(

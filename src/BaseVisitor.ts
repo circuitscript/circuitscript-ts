@@ -27,7 +27,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
 import { ParserRuleContext } from 'antlr4ng';
-import { ReferenceTypes } from './globals';
+import { GlobalDocumentName, ReferenceTypes } from './globals';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -90,6 +90,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             '/',
             0, 0, silent, 
             this.logger, null);
+
+        // Add the document global object, this is used to set the page size
+        this.startingContext.scope.variables.set(GlobalDocumentName, {});
         
         this.setupPrintFunction(this.startingContext);
             
@@ -189,6 +192,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         this.visit(ctxAtomExpr);
         const reference: ReferenceType = this.getResult(ctxAtomExpr);
 
+        if (!reference.found && reference.trailers && reference.trailers.length > 0){
+            throw 'Undefined reference: ' + reference.name + '.' + reference.trailers.join('.');
+        }
+
         const ctxDataExpr = ctx.data_expr();
         this.visit(ctxDataExpr);
         const value = this.getResult(ctxDataExpr);
@@ -220,6 +227,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 
             } else if (reference.value instanceof ClassComponent) {
                 this.setInstanceParam(reference.value, trailers, value);
+            } else if (reference.value instanceof Object){
+                reference.value[trailers.join('.')] = value;
             }
         }
 
@@ -247,24 +256,25 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 this.executionStack, atomId);
         }
 
+        const idTrailers = [];
+
+        if (ctx.ID().length > 1) {
+            const idLength = ctx.ID().length;
+
+            for (let i = 1; i < idLength; i++) {
+                const tmpCtx = ctx.ID(i)!;
+                idTrailers.push(tmpCtx.getText());
+            }
+        }
+
+        currentReference.trailers = idTrailers;
+
         if (currentReference.found && currentReference.type === 'instance') {
             const tmpComponent = currentReference.value as ClassComponent;
 
             // Copy the nets into the local net
             for (const [pinId, net] of tmpComponent.pinNets) {
                 executor.scope.setNet(tmpComponent, pinId, net);
-            }
-
-            if (ctx.ID().length > 1) {
-                // The other ids are used as the trailers
-                currentReference.trailers = [];
-
-                const idLength = ctx.ID().length;
-
-                for (let i = 1; i < idLength; i++) {
-                    const tmpCtx = ctx.ID(i)!;
-                    currentReference.trailers.push(tmpCtx.getText());
-                }
             }
         }
 

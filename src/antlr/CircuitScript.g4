@@ -38,6 +38,7 @@ Else:       'else';
 Not:        '!';
 
 Frame:      'frame';
+Sheet:      'sheet';
 
 Equals:             '==';
 NotEquals:          '!=';
@@ -213,7 +214,7 @@ wire_expr: Wire wire_atom_expr*;
 point_expr: Point ID;
 import_expr: Import ID;
 
-frame_expr: Frame ':' expressions_block;
+frame_expr: (Frame | Sheet) ':' expressions_block;
 
 if_expr:    If data_expr ':' 
                 expressions_block

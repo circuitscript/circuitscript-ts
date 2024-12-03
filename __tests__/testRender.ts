@@ -4,6 +4,7 @@ import { LayoutEngine } from "../src/layout.js";
 import { generateSVG2 } from "../src/render.js";
 import { runScript } from "./helpers.js";
 import { prepareSVGEnvironment } from '../src/sizing.js';
+import { defaultZoomScale } from '../src/globals.js';
 
 const mainPath = '__tests__/renderData/';
 
@@ -56,7 +57,7 @@ describe('Render tests', () => {
         const layoutEngine = new LayoutEngine();
         const graph = await layoutEngine.runLayout(sequence, nets);
 
-        const { svg: svgOutput } = generateSVG2(graph);
+        const { svg: svgOutput } = generateSVG2(graph, defaultZoomScale);
 
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toBe(expectedSvgOutput);

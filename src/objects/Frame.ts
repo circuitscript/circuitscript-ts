@@ -5,12 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { FrameType } from "src/globals";
+
 export class Frame {
     parameters: Map<string, any> = new Map();
     frameId: number;
+    frameType: FrameType;
 
-    constructor(frameId: number) {
+    constructor(frameId: number, frameType: FrameType) {
         this.frameId = frameId;
+        this.frameType = frameType;
     }
 }
 
@@ -22,6 +26,8 @@ export enum FrameParamKeys {
 
     Width = 'width',
     Height = 'height',
+
+    Size = 'size',
 }
 
 export enum FramePlotDirection {

@@ -119,3 +119,10 @@ export enum BlockTypes {
     Parallel = 3,   // same starting and ending points for the circuit paths
     Point = 4,      // to this point
 }
+
+export enum FrameType {
+    Frame = 1,
+    Sheet = 2
+}
+
+export const GlobalDocumentName = 'document';

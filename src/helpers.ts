@@ -25,7 +25,7 @@ import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import path from "path";
-import { LengthUnit, MilsToMM, MMToPt, PxToMM } from "./globals.js";
+import { defaultGridSizeUnits, defaultZoomScale, LengthUnit, MilsToMM, MMToPt, PxToMM } from "./globals.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -293,6 +293,8 @@ export function renderScript(scriptData: string, outputPath: string,
         return null;
     }
 
+    const { sheetSize } = visitor.applySheetSizes();
+
     try {
         visitor.annotateComponents();
     } catch (err) {
@@ -346,18 +348,17 @@ export function renderScript(scriptData: string, outputPath: string,
 
     try {
         let fileExtension: string | null = null;
-        let showBaseFrame = false;
-        if (outputPath){
+        let outputDefaultZoom = defaultZoomScale;
+
+        if (outputPath) {
             fileExtension = path.extname(outputPath).substring(1);
-        
-            if (fileExtension === 'pdf'){
-                showBaseFrame = true;
+
+            if (fileExtension === "pdf") {
+                outputDefaultZoom = 1;
             }
         }
 
-        const layoutEngine = new LayoutEngine({
-            showBaseFrame,
-        });
+        const layoutEngine = new LayoutEngine();
         const layoutTimer = new SimpleStopwatch();
 
         const graph = layoutEngine.runLayout(sequence, nets);
@@ -369,12 +370,12 @@ export function renderScript(scriptData: string, outputPath: string,
         dumpData && writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
-        
+
         const {
             svg: generatedSvg,
             width: svgWidth,
             height: svgHeight
-        } = generateSVG2(graph);
+        } = generateSVG2(graph, outputDefaultZoom);
 
         svgOutput = generatedSvg;
 
@@ -387,20 +388,21 @@ export function renderScript(scriptData: string, outputPath: string,
             } else if (fileExtension === 'pdf') {
                 const doc = new PDFDocument({
                     layout: 'landscape',
-                    size: 'A4',
+                    size: sheetSize,
                 });
                 const outputStream = createWriteStream(outputPath);
 
-                // In mils
-                const paperWidthMM = 297;
-                const paperHeightMM = 210;
+                const {
+                    originalWidthMM: paperWidthMM,
+                    originalHeightMM: paperHeightMM,
+                    widthMM, heightMM
+                } = getPaperSize(sheetSize);
 
-                // values in mm
-                const xOffset = (paperWidthMM - svgWidth) / 2;
-                const yOffset = (paperHeightMM - svgHeight) / 2;
+                const xOffset = (paperWidthMM - widthMM) / 2 - defaultGridSizeUnits;
+                const yOffset = (paperHeightMM - heightMM) / 2 - defaultGridSizeUnits;
 
-                SVGtoPDF(doc, svgOutput, 
-                        xOffset * MMToPt, yOffset * MMToPt);
+                SVGtoPDF(doc, svgOutput,
+                    xOffset * MMToPt, yOffset * MMToPt);
                 doc.pipe(outputStream);
                 doc.end();
             } else {
@@ -493,4 +495,48 @@ export function milsToMM(value: number): number {
 
 export function pxToMM(value: number): number {
     return value * PxToMM;
+}
+
+// Portrait
+const PaperSizes: { [key: string]: [width: number, height: number] } = {
+    'A0': [1189, 841],
+    'A1': [841, 594],
+    'A2': [594, 420],
+    'A3': [420, 297],
+    'A4': [297, 210],
+    'A5': [210, 148],
+    'A6': [148, 105],
+}
+
+export function isSupportedPaperSize(type: string): boolean {
+    if (PaperSizes[type]) {
+        return true;
+    }
+    return false;
+}
+
+export function getPaperSize(type: string, margin = 20): {
+    width: number, height: number,
+    widthMM: number, heightMM: number,
+    originalWidthMM: number, originalHeightMM: number
+} {
+
+    if (PaperSizes[type]) {
+        const [width, height] = PaperSizes[type];
+        const useWidth = width - margin;
+        const useHeight = height - margin;
+
+        return {
+            // Mils
+            width: Math.floor(useWidth * (1 / MilsToMM)),
+            height: Math.floor(useHeight * (1 / MilsToMM)),
+
+            widthMM: useWidth,
+            heightMM: useHeight,
+            originalWidthMM: width,
+            originalHeightMM: height,
+        }
+    } else {
+        return getPaperSize('A4'); // default
+    }
 }
