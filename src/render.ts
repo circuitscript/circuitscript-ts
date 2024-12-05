@@ -5,48 +5,102 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
+import { SVG, registerWindow, Svg, G } from '@svgdotjs/svg.js';
 
-import { BoundBox, MergedWire, RenderComponent, RenderFrame, 
-    RenderFrameType, RenderJunction, RenderText, RenderWire, getBounds } from "./layout.js";
+import {
+    MergedWire, RenderComponent, RenderFrame,
+    RenderFrameType, RenderJunction, RenderText, RenderWire, SheetFrame, getBounds
+} from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
-import { ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits, 
-    defaultWireLineWidth, fontDisplayScale, 
-    junctionSize } from './globals.js';
+import {
+    ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits,
+    defaultPageSpacingMM,
+    defaultWireLineWidth, fontDisplayScale,
+    junctionSize
+} from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
-import { getBoundsSize } from './utils.js';
-import { milsToMM } from './helpers.js';
+import { BoundBox, getBoundsSize } from './utils.js';
+import { getPaperSize, milsToMM } from './helpers.js';
+import SVGtoPDF from 'svg-to-pdfkit';
 
-export function generateSVG2(graph: {
-    components: RenderComponent[],
-    wires: RenderWire[], junctions: RenderJunction[],
-    mergedWires: MergedWire[], debugRects?: BoundBox[],
-    frameObjects: RenderFrame[],
-    textObjects: RenderText[],
-}, zoomScale = 1): { svg: string, width: number, height: number } {
-
+function createSvgCanvas(): Svg {
     const window = getCreateSVGWindow()();
     const document = window.document;
 
     registerWindow(window, document);
 
-    const canvas = SVG(document.documentElement);
+    const canvas:Svg = SVG(document.documentElement);
     applyFontsToSVG(canvas);
+    
+    return canvas;
+}
 
-    generateSVGChild(canvas, 
-        graph.components, graph.wires, graph.junctions, graph.mergedWires,
-        graph.frameObjects, graph.textObjects,
-        );
+export function renderSheetsToSVG(sheetFrames: SheetFrame[]): Svg {
+    const canvas = createSvgCanvas();
 
-    // 1 mil = 0.0254mm
-    // 10 mils = 0.254mm
-    // 100 mils = 2.54mm
-    // Formula: mm = 25.4 * (px / 96)
+    sheetFrames.forEach((sheet, index) => {
+        const sheetGroup = canvas.group();
+        sheetGroup.id('sheet-' + index);
 
+        const { components, wires, junctions,
+            mergedWires, frames, textObjects } = sheet;
+
+        // Draw the original sheet frame as well
+        const allFrames = [sheet.frame, ...frames];
+
+        let gridBounds: BoundBox | null = null;
+        let extendGrid = true;
+
+        let xOffset = 0;
+        let yOffset = 0;
+
+        let sheetYOffset = 0;
+
+        if (sheet.frame.size) {
+            const {
+                widthMM, heightMM,
+                originalWidthMM, originalHeightMM
+            } = getPaperSize(sheet.frame.size);
+
+            xOffset = (originalWidthMM - widthMM) / 2;
+            yOffset = (originalHeightMM - heightMM) / 2;
+
+            // Space out sheets with a fixed space
+            sheetYOffset = index * (originalHeightMM + defaultPageSpacingMM);
+
+            sheetGroup.rect(originalWidthMM, originalHeightMM)
+                .stroke({
+                    width: milsToMM(10),
+                    color: '#ccc',
+                }).fill('none')
+                .id('sheet-border');
+
+            gridBounds = {
+                xmin: 0,
+                ymin: 0,
+                xmax: widthMM,
+                ymax: heightMM
+            };
+
+            extendGrid = false;
+        }
+
+        const sheetElements = sheetGroup.group();
+        generateSVGChild(sheetElements, components, wires, junctions,
+            mergedWires, allFrames, textObjects, gridBounds, extendGrid);
+
+        sheetElements.translate(xOffset, yOffset);
+        sheetGroup.translate(0, sheetYOffset);    
+    });
+
+    return canvas;
+}
+
+export function generateSvgOutput(canvas: Svg, zoomScale = 1): string {
     // The final output document is in metric dimensions - mm.
     const scale = MMToPx * zoomScale; // 1mil = 0.0254mm
 
-    // Dimensions of bbox is in mm
+    //  Dimensions of bbox is in mm
     const { x, y, width, height } = canvas.bbox();
 
     // draw a rect around the bounds
@@ -56,32 +110,64 @@ export function generateSVG2(graph: {
     canvas.size(scaledWidth, scaledHeight);
     canvas.viewbox(x, y, width, height);
 
-    return {
-        svg: canvas.svg(),
-        width, height,
-    }
+    return canvas.svg();
 }
 
-function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>, 
+export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg, zoomScale = 1): void {
+    // Split the canvas up into different canvases
+
+    const children = canvas.children();
+    const numChildren = children.length;
+
+    // 1 mil = 0.0254mm
+    // 10 mils = 0.254mm
+    // 100 mils = 2.54mm
+    // Formula: mm = 25.4 * (px / 96)
+    const scale = MMToPx * zoomScale; // 1mil = 0.0254mm
+
+    children.forEach((child, index) => {
+        const sheetCanvas = createSvgCanvas();
+        sheetCanvas.add(child);
+
+        const { x, y, width, height } = sheetCanvas.bbox();
+
+        // Remove the border rect
+        child.find('#sheet-border')[0].remove();
+
+        // draw a rect around the bounds
+        const scaledWidth = width * scale;
+        const scaledHeight = height * scale;
+
+        sheetCanvas.size(scaledWidth, scaledHeight);
+        sheetCanvas.viewbox(x, y, width, height);
+
+        SVGtoPDF(doc, sheetCanvas.svg(), 0, 0);
+
+        if (index + 1 < numChildren) {
+            doc.addPage();
+        }
+    });
+}
+
+function generateSVGChild(canvas: Svg | G, 
     components: RenderComponent[], wires: RenderWire[], 
     junctions: RenderJunction[], mergedWires:MergedWire[],
-    frameObjects:RenderFrame[], textObjects: RenderText[] ): void {
+    frameObjects:RenderFrame[], textObjects: RenderText[], 
+    gridBounds: BoundBox | null,
+    extendGrid: boolean): void {
 
     const displayWireId = false;
 
     // Draw the display grid
 
     // The bounds will be in mm, since all the items are drawn in mm
-    const bounds = getBounds(components, wires, junctions, frameObjects);
+    if (gridBounds === null){
+        gridBounds = getBounds(components, wires, junctions, frameObjects);
+    }
 
     drawGrid(
         canvas.group().translate(0, 0),
-        {
-            x: bounds.xmin,
-            y: bounds.ymin,
-            x2: bounds.xmax,
-            y2: bounds.ymax
-        });
+        gridBounds, extendGrid);
 
     components.forEach(item => {
         const { x, y, width, height } = item;
@@ -189,15 +275,15 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
 
-        if (borderWidth > 0){
+        if (borderWidth > 0) {
             const { width, height } = getBoundsSize(bounds);
 
             let strokeColor = '#111';
             if (item.type === RenderFrameType.Container) {
                 strokeColor = '#111';
-            } else if (item.type === RenderFrameType.Elements){
+            } else if (item.type === RenderFrameType.Elements) {
                 strokeColor = '#aaa';
-                if (!showElementFrames){
+                if (!showElementFrames) {
                     return;
                 }
             }
@@ -228,15 +314,23 @@ function generateSVGChild(canvas: SVGTypeMapping<SVGAElement>,
         .stroke('none').fill('red');
 }
 
-function drawGrid(group: G, canvasSize: { x: number, y: number, x2: number, y2: number }): void {
+function drawGrid(group: G, 
+    canvasSize: BoundBox,
+    extendGrid: boolean): void {
+    
     const gridSize = defaultGridSizeUnits;
-    const { x, y, x2, y2 } = canvasSize;
+    const { xmin, ymin, xmax, ymax } = canvasSize;
 
-    const gridStartX = (Math.floor(x / gridSize) - 1) * gridSize;
-    const gridStartY = (Math.floor(y / gridSize) - 1) * gridSize;
+    // If extend grid is true, then draw outside of the canvas size
+    const extraValue = extendGrid ? 1 : 0;
 
-    const gridEndX = (Math.ceil(x2 / gridSize) + 1) * gridSize;
-    const gridEndY = (Math.ceil(y2 / gridSize) + 1) * gridSize;
+    const gridStartX = (Math.floor(xmin / gridSize) - extraValue) * gridSize;
+    const gridStartY = (Math.floor(ymin / gridSize) - extraValue) * gridSize;
+
+    const gridEndX = (Math.ceil(xmax / gridSize) + extraValue) * gridSize;
+    const gridEndY = extendGrid 
+            ? (Math.ceil(ymax / gridSize) + extraValue) * gridSize
+            : (ymax-ymin);
 
     const numCols = Math.ceil((gridEndX - gridStartX) / gridSize);
     // const numRows = Math.ceil((gridEndY - gridStartY) / gridSize);

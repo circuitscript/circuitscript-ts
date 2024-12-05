@@ -12,7 +12,7 @@ import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic,
     SymbolText } from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
-import { defaultFrameTitleTextSize, defaultGridSizeUnits, GlobalNames, 
+import { defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, GlobalNames, 
     ParamKeys, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { NumericValue } from './objects/ParamDefinition.js';
@@ -59,12 +59,7 @@ export class LayoutEngine {
     runLayout(
         sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]
-    ): {
-        components: RenderComponent[], wires: RenderWire[],
-        junctions: RenderJunction[], mergedWires: MergedWire[],
-        frameObjects: RenderFrame[],
-        textObjects: RenderText[]
-    } {
+    ): SheetFrame[] {
         const logNodesAndEdges = false;
     
         this.print('===== creating graph and populating with nodes =====');
@@ -108,49 +103,70 @@ export class LayoutEngine {
             });
         }
 
-        const {textObjects, elementFrames} = 
+        const {elementFrames} = 
             this.placeFrames(graph, subgraphInfo, containerFrames);
         const frameObjects = [...elementFrames, ...containerFrames];
-        
-        const placedComponents: RenderComponent[] = [];
-        const placedWires: RenderWire[] = [];
-    
-        const tmpNodes = graph.nodes();
-        tmpNodes.forEach(item => {
-            const nodeValue = graph.node(item);
-            const [nodeType, nodeItem]: [string, RenderItem] = nodeValue;
-    
-            if (nodeType === RenderItemType.Component) {
-                placedComponents.push(nodeItem as RenderComponent);
-    
-            } else if (nodeType === RenderItemType.Wire) {
-                placedWires.push(nodeItem as RenderWire);
+
+        // Find sheet frames
+        const sheetFrames = frameObjects.filter(item => {
+            return item.frame.frameType === FrameType.Sheet;
+        });
+
+        // If no sheet frames are found, then use the base frame
+        if (sheetFrames.length === 0){
+            sheetFrames.push(containerFrames[0]);
+        }
+
+        const sheetFrameObjects: SheetFrame[] = sheetFrames.map(sheet => {
+            const items = this.flattenFrameItems(sheet);
+            const components = items.filter(item => item instanceof RenderComponent);
+            const wires = items.filter(item => item instanceof RenderWire);
+            const textObjects = items.filter(item => item instanceof RenderText);
+            const frames = items.filter(item => item instanceof RenderFrame);
+
+            const wireGroups = new Map<string, RenderWire[]>();
+            wires.forEach(wire => {
+                const { netName } = wire;
+                if (!wireGroups.has(netName)) {
+                    wireGroups.set(netName, []);
+                }
+
+                wireGroups.get(netName).push(wire);
+            });
+
+            const { junctions, mergedWires } = this.findJunctions(wireGroups);
+
+            return {
+                frame: sheet,
+                frames,
+                components,
+                wires,
+                textObjects,
+                junctions,
+                mergedWires,
             }
         });
-    
-        const wireGroups = new Map<string, RenderWire[]>();
-    
-        // Merge wires in the same group?
-        placedWires.forEach(wire => {
-            const {netName} = wire;
-            if (!wireGroups.has(netName)){
-                wireGroups.set(netName, []);
+
+        return sheetFrameObjects;
+    }
+
+    private flattenFrameItems(frame: RenderFrame):
+        (RenderComponent | RenderWire | RenderText | RenderFrame)[] {
+
+        // Find all nested items within this render frame and returns
+        // as a single array.
+        const items: (RenderComponent | RenderWire | RenderText | RenderFrame)[] = [];
+
+        frame.innerItems.forEach(item => {
+            items.push(item);
+
+            if (item instanceof RenderFrame) {
+                const inner = this.flattenFrameItems(item);
+                items.push(...inner);
             }
-    
-            wireGroups.get(netName).push(wire);
         });
-    
-        const { junctions, mergedWires } = this.findJunctions(wireGroups);
 
-        return {
-            components: placedComponents,
-            wires: placedWires,
-            mergedWires,
-            junctions,
-
-            frameObjects,
-            textObjects,
-        };
+        return items;
     }
 
     findJunctions(wireGroups: Map<string, RenderWire[]>): {
@@ -277,9 +293,15 @@ export class LayoutEngine {
         const innerItems = frame.innerItems as RenderFrame[];
 
         innerItems.forEach(innerFrame => {
-            // Translate the subgraph frame by the parent frame's position
-            innerFrame.x += frame.x;
-            innerFrame.y += frame.y;
+            if (innerFrame.frame.frameType === FrameType.Sheet){
+                // If frame is a sheet, then do not offset by frame position
+                innerFrame.x = 0;
+                innerFrame.y = 0;
+            } else {
+                // Translate the subgraph frame by the parent frame's position
+                innerFrame.x += frame.x;
+                innerFrame.y += frame.y;
+            }
 
             if (innerFrame.type === RenderFrameType.Elements) {
                 this.print(level, "".padStart(level * 4), 'element frame',
@@ -1944,6 +1966,19 @@ export class RenderJunction {
         this.x = x;
         this.y = y;
     }
+}
+
+// Stores all render objects referenced in the frame
+export type SheetFrame = {
+    frame: RenderFrame,
+    frames: RenderFrame[], // inner frames
+
+    components: RenderComponent[],
+    wires: RenderWire[],
+    textObjects: RenderText[],
+
+    junctions: RenderJunction[],
+    mergedWires: MergedWire[],
 }
 
 export function CalculatePinPositions(component: ClassComponent)

@@ -7,13 +7,12 @@
 
 import { readFileSync, writeFileSync, createWriteStream } from "fs";
 import PDFDocument from "pdfkit";
-import SVGtoPDF from "svg-to-pdfkit";
 
 import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
 import { parseFileWithVisitor } from "./parser.js";
-import { generateSVG2 } from "./render.js";
+import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
 import { SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
@@ -25,7 +24,7 @@ import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import path from "path";
-import { defaultGridSizeUnits, defaultZoomScale, LengthUnit, MilsToMM, MMToPt, PxToMM } from "./globals.js";
+import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -361,7 +360,7 @@ export function renderScript(scriptData: string, outputPath: string,
         const layoutEngine = new LayoutEngine();
         const layoutTimer = new SimpleStopwatch();
 
-        const graph = layoutEngine.runLayout(sequence, nets);
+        const sheetFrames = layoutEngine.runLayout(sequence, nets);
 
         layoutEngine.printWarnings();
 
@@ -371,18 +370,13 @@ export function renderScript(scriptData: string, outputPath: string,
 
         const generateSvgTimer = new SimpleStopwatch();
 
-        const {
-            svg: generatedSvg,
-            width: svgWidth,
-            height: svgHeight
-        } = generateSVG2(graph, outputDefaultZoom);
-
-        svgOutput = generatedSvg;
+        const svgCanvas = renderSheetsToSVG(sheetFrames);
 
         showStats && console.log('Render took:', generateSvgTimer.lap());
 
         if (outputPath) {
             if (fileExtension === 'svg') {
+                svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
                 writeFileSync(outputPath, svgOutput);
 
             } else if (fileExtension === 'pdf') {
@@ -392,17 +386,8 @@ export function renderScript(scriptData: string, outputPath: string,
                 });
                 const outputStream = createWriteStream(outputPath);
 
-                const {
-                    originalWidthMM: paperWidthMM,
-                    originalHeightMM: paperHeightMM,
-                    widthMM, heightMM
-                } = getPaperSize(sheetSize);
-
-                const xOffset = (paperWidthMM - widthMM) / 2 - defaultGridSizeUnits;
-                const yOffset = (paperHeightMM - heightMM) / 2 - defaultGridSizeUnits;
-
-                SVGtoPDF(doc, svgOutput,
-                    xOffset * MMToPt, yOffset * MMToPt);
+                generatePdfOutput(doc, svgCanvas, outputDefaultZoom);
+                
                 doc.pipe(outputStream);
                 doc.end();
             } else {
@@ -515,7 +500,7 @@ export function isSupportedPaperSize(type: string): boolean {
     return false;
 }
 
-export function getPaperSize(type: string, margin = 20): {
+export function getPaperSize(type: string, margin = defaultPageMarginMM): {
     width: number, height: number,
     widthMM: number, heightMM: number,
     originalWidthMM: number, originalHeightMM: number
@@ -523,8 +508,10 @@ export function getPaperSize(type: string, margin = 20): {
 
     if (PaperSizes[type]) {
         const [width, height] = PaperSizes[type];
-        const useWidth = width - margin;
-        const useHeight = height - margin;
+
+        // Margin is in mm
+        const useWidth = width - margin * 2;
+        const useHeight = height - margin * 2;
 
         return {
             // Mils

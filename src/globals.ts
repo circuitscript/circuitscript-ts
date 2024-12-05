@@ -67,6 +67,10 @@ export const defaultWireLineWidth = MilsToMM * 6;
 export const defaultPinNameTextSize = 40;
 export const defaultPinIdTextSize = 30;
 
+export const defaultPageMarginMM = 10;
+
+export const defaultPageSpacingMM = 10;
+
 export const CustomSymbolPinTextSize = defaultPinNameTextSize;
 export const CustomSymbolPinIdSize = defaultPinIdTextSize;
 export const CustomSymbolRefDesSize = 50;
