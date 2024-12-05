@@ -1,0 +1,46 @@
+import lib
+
+document.page_size = "A6"
+
+v5v = supply("5v")
+gnd = dgnd()
+
+tmp = create component:
+        pins: 6
+
+tmp2  = create component:
+        pins: 12
+
+sheet:
+    ..title = "Hello world!"
+
+    at v5v
+    wire down 100
+    add res(10k)
+    wire down 100
+    to gnd
+
+sheet:
+    at tmp2:
+        12:
+            wire right 100 down 100 to gnd
+
+    at tmp:
+        3:
+            wire left 300
+            branch:
+                wire auto_
+                to tmp pin 5
+
+            wire left 200 down 200
+            to gnd
+        1:
+            wire left 300 up 1000 right 300
+            to tmp2 pin 1
+
+sheet:
+    at v5v
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd

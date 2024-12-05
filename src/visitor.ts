@@ -1444,10 +1444,11 @@ export class ParserVisitor extends BaseVisitor {
         this.log('');
     }
 
-    applySheetSizes(): { sheetSize: string } {
+    applySheetSizes(): { sheetSize: string, sizeDefined: boolean } {
         // Applies the document page size to the sheet frames
         const baseScope = this.getExecutor().scope;
         const document = baseScope.variables.get(GlobalDocumentName);
+        let sizeDefined = false;
 
         let sheetSize = 'A4';
         if (document['page_size']) {
@@ -1456,6 +1457,8 @@ export class ParserVisitor extends BaseVisitor {
             if (!isSupportedPaperSize(sheetSize)) {
                 throw 'Paper size not supported: ' + sheetSize;
             }
+
+            sizeDefined = true;
         }
 
         // If page size is set, then use it for sheet frames
@@ -1465,7 +1468,13 @@ export class ParserVisitor extends BaseVisitor {
             }
         });
 
-        return { sheetSize };
+        return {
+            sheetSize,
+
+            // If this is not defined, it might be a script without
+            // any sheets defined.
+            sizeDefined,
+        };
     }
 
     private resolveNets(

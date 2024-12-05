@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 
 import { LayoutEngine } from "../src/layout.js";
-import { generateSVG2 } from "../src/render.js";
+import { generateSvgOutput, renderSheetsToSVG } from "../src/render.js";
 import { runScript } from "./helpers.js";
 import { prepareSVGEnvironment } from '../src/sizing.js';
 import { defaultZoomScale } from '../src/globals.js';
@@ -40,7 +40,10 @@ describe('Render tests', () => {
 
         ['decimal places causing issues with junctions and layout', 'script21.cst'],
 
-        ['catch repeated nodes in the origin nodes list', 'script22.cst']
+        ['catch repeated nodes in the origin nodes list', 'script22.cst'],
+
+        ['multiple sheet commands', 'script23.cst'],
+        ['single sheet command', 'script24.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         
@@ -51,13 +54,15 @@ describe('Render tests', () => {
         const { hasError, visitor } = await runScript(script);
         expect(hasError).toBe(false);
         visitor.annotateComponents();
+        visitor.applySheetSizes();
 
         const { sequence, nets } = visitor.getGraph();
 
         const layoutEngine = new LayoutEngine();
-        const graph = await layoutEngine.runLayout(sequence, nets);
+        const sheetFrames = await layoutEngine.runLayout(sequence, nets);
 
-        const { svg: svgOutput } = generateSVG2(graph, defaultZoomScale);
+        const svgCanvas = renderSheetsToSVG(sheetFrames);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toBe(expectedSvgOutput);

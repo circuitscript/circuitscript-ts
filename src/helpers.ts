@@ -292,7 +292,8 @@ export function renderScript(scriptData: string, outputPath: string,
         return null;
     }
 
-    const { sheetSize } = visitor.applySheetSizes();
+    const { sheetSize, 
+        sizeDefined: sheetSizeDefined } = visitor.applySheetSizes();
 
     try {
         visitor.annotateComponents();
@@ -343,7 +344,8 @@ export function renderScript(scriptData: string, outputPath: string,
     });
 
     dumpData && writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
-    let svgOutput: string | null = null;
+
+    let svgOutput = "";
 
     try {
         let fileExtension: string | null = null;
@@ -374,9 +376,10 @@ export function renderScript(scriptData: string, outputPath: string,
 
         showStats && console.log('Render took:', generateSvgTimer.lap());
 
+        svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
+
         if (outputPath) {
             if (fileExtension === 'svg') {
-                svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
                 writeFileSync(outputPath, svgOutput);
 
             } else if (fileExtension === 'pdf') {
@@ -386,7 +389,8 @@ export function renderScript(scriptData: string, outputPath: string,
                 });
                 const outputStream = createWriteStream(outputPath);
 
-                generatePdfOutput(doc, svgCanvas, outputDefaultZoom);
+                generatePdfOutput(doc, svgCanvas,  
+                    sheetSize, sheetSizeDefined, outputDefaultZoom);
                 
                 doc.pipe(outputStream);
                 doc.end();

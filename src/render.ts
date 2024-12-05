@@ -13,7 +13,7 @@ import {
 } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
 import {
-    ColorScheme, ComponentTypes, MMToPx, ParamKeys, defaultGridSizeUnits,
+    ColorScheme, ComponentTypes, MMToPt, MMToPx, ParamKeys, defaultGridSizeUnits,
     defaultPageSpacingMM,
     defaultWireLineWidth, fontDisplayScale,
     junctionSize
@@ -113,7 +113,9 @@ export function generateSvgOutput(canvas: Svg, zoomScale = 1): string {
     return canvas.svg();
 }
 
-export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg, zoomScale = 1): void {
+export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
+    sheetSize: string, sheetSizeDefined: boolean, zoomScale = 1): void {
+
     // Split the canvas up into different canvases
 
     const children = canvas.children();
@@ -125,6 +127,8 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg, zoomScal
     // Formula: mm = 25.4 * (px / 96)
     const scale = MMToPx * zoomScale; // 1mil = 0.0254mm
 
+    const { originalWidthMM, originalHeightMM } = getPaperSize(sheetSize);
+
     children.forEach((child, index) => {
         const sheetCanvas = createSvgCanvas();
         sheetCanvas.add(child);
@@ -132,7 +136,10 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg, zoomScal
         const { x, y, width, height } = sheetCanvas.bbox();
 
         // Remove the border rect
-        child.find('#sheet-border')[0].remove();
+        const sheetBorder = child.find('#sheet-border');
+        if (sheetBorder.length > 0) {
+            sheetBorder[0].remove();
+        }
 
         // draw a rect around the bounds
         const scaledWidth = width * scale;
@@ -141,7 +148,15 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg, zoomScal
         sheetCanvas.size(scaledWidth, scaledHeight);
         sheetCanvas.viewbox(x, y, width, height);
 
-        SVGtoPDF(doc, sheetCanvas.svg(), 0, 0);
+        let xOffset = 0;
+        let yOffset = 0;
+        if (!sheetSizeDefined) {
+            // Center the svg
+            xOffset = (originalWidthMM - width) / 2;
+            yOffset = (originalHeightMM - height) / 2;
+        }
+
+        SVGtoPDF(doc, sheetCanvas.svg(), xOffset * MMToPt, yOffset * MMToPt);
 
         if (index + 1 < numChildren) {
             doc.addPage();

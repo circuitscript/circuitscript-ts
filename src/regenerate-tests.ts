@@ -36,10 +36,12 @@ async function regenerateTests(extra=""): Promise<string[]> {
 }
 
 (async () => {
+
     // Set to true, to not overwrite the existing .svg and use .next.svg. This
     // is used for comparing svg when there are significant changes to the 
     // renderer.
-    const generateDiff = false;
+    const generateDiff = (process.argv.indexOf('-diff') !== -1);
+    console.log('diff flag: ', generateDiff);
 
     const nextExtra = generateDiff ? '.next' : '';
 
