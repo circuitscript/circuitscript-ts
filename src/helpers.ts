@@ -385,7 +385,7 @@ export function renderScript(scriptData: string, outputPath: string,
             } else if (fileExtension === 'pdf') {
                 const doc = new PDFDocument({
                     layout: 'landscape',
-                    size: sheetSize,
+                    size: sheetSize
                 });
                 const outputStream = createWriteStream(outputPath);
 

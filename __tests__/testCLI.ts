@@ -64,4 +64,18 @@ describe('test cli program', () => {
             result.includes('Render took:')
         ).toBe(withStatsFlag);
     });
+
+    test('generate pdf output', async () => {
+        const outputPdf = '__tests__/renderData/pdfs/script1.cst.pdf';
+
+        if (existsSync(outputPdf)) {
+            unlinkSync(outputPdf);
+        }
+
+        execSync(baseCommand + ` __tests__/renderData/script1.cst ${outputPdf}`).toString();
+
+        // A new pdf file should be created. Another test will be used
+        // to test if the pdf generated is correct.
+        expect(existsSync(outputPdf)).toEqual(true);
+    });
 });

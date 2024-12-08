@@ -94,7 +94,7 @@ export const PortPaddingVertical = MilsToMM * 10;
 
 export const ColorScheme = {
     BodyColor: 'rgb(255, 255, 194)',
-    JunctionColor: 'rgba(0, 132, 0)',
+    JunctionColor: 'rgb(0, 132, 0)',
     WireColor: 'rgb(0, 132, 0)',
 
     PinLineColor: '#333',
