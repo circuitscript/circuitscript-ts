@@ -67,7 +67,7 @@ import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from '
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
-import { isSupportedPaperSize, UnitDimension } from './helpers.js';
+import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
 
 
@@ -444,6 +444,10 @@ export class ParserVisitor extends BaseVisitor {
 
         const keyName = this.getResult(ctxPropertyKeyExpr);
         const value = this.getResult(ctxPropertyValueExpr);
+
+        if (value instanceof UndeclaredReference) {
+            throw value.throwMessage();
+        }
 
         const map = new Map<string, any>();
         map.set(keyName, value);
@@ -831,8 +835,16 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctx.data_expr(0)!);
         this.visit(ctx.data_expr(1)!);
 
-        const value1: number = this.getResult(ctx.data_expr(0)!);
-        const value2: number = this.getResult(ctx.data_expr(1)!);
+        const value1: number | UndeclaredReference = this.getResult(ctx.data_expr(0)!);
+        const value2: number | UndeclaredReference = this.getResult(ctx.data_expr(1)!);
+
+        if (value1 instanceof UndeclaredReference) {
+            throw value1.throwMessage();
+        }
+
+        if (value2 instanceof UndeclaredReference) {
+            throw value2.throwMessage();
+        }
 
         let result: number | null = null;
 
@@ -849,8 +861,16 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctx.data_expr(0)!);
         this.visit(ctx.data_expr(1)!);
 
-        const value1: number = this.getResult(ctx.data_expr(0)!);
-        const value2: number = this.getResult(ctx.data_expr(1)!);
+        const value1: number | UndeclaredReference = this.getResult(ctx.data_expr(0)!);
+        const value2: number | UndeclaredReference = this.getResult(ctx.data_expr(1)!);
+
+        if (value1 instanceof UndeclaredReference) {
+            throw value1.throwMessage();
+        }
+
+        if (value2 instanceof UndeclaredReference) {
+            throw value2.throwMessage();
+        }
 
         let result: number | null = null;
         if (ctx.Addition()) {
@@ -1444,36 +1464,28 @@ export class ParserVisitor extends BaseVisitor {
         this.log('');
     }
 
-    applySheetSizes(): { sheetSize: string, sizeDefined: boolean } {
-        // Applies the document page size to the sheet frames
+    applySheetFrameComponent(): {
+        frameComponent: ClassComponent | null
+    } {
+        // Applies sheet frame component to the sheet frames
         const baseScope = this.getExecutor().scope;
         const document = baseScope.variables.get(GlobalDocumentName);
-        let sizeDefined = false;
 
-        let sheetSize = 'A4';
-        if (document['page_size']) {
-            sheetSize = document['page_size'];
+        let frameComponent: ClassComponent | null = null;
 
-            if (!isSupportedPaperSize(sheetSize)) {
-                throw 'Paper size not supported: ' + sheetSize;
-            }
+        if (document && document[FrameParamKeys.SheetFrame]) {
+            frameComponent = document[FrameParamKeys.SheetFrame] as ClassComponent;
 
-            sizeDefined = true;
+            // If page size is set, then use it for sheet frames
+            baseScope.frames.forEach(item => {
+                if (item.frameType === FrameType.Sheet) {
+                    item.parameters.set(FrameParamKeys.SheetFrame, frameComponent);
+                }
+            });
         }
 
-        // If page size is set, then use it for sheet frames
-        baseScope.frames.forEach(item => {
-            if (item.frameType === FrameType.Sheet) {
-                item.parameters.set(FrameParamKeys.Size, sheetSize);
-            }
-        });
-
         return {
-            sheetSize,
-
-            // If this is not defined, it might be a script without
-            // any sheets defined.
-            sizeDefined,
+            frameComponent
         };
     }
 
@@ -1525,7 +1537,7 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    private getPropertyExprList(items: Property_exprContext[]): Map<string, any>{
+    private getPropertyExprList(items: Property_exprContext[]): Map<string, any> {
         const properties = new Map<string, any>();
 
         items.forEach((item) => {

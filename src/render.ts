@@ -8,20 +8,24 @@
 import { SVG, registerWindow, Svg, G } from '@svgdotjs/svg.js';
 
 import {
+    ExtractDrawingRects,
     MergedWire, RenderComponent, RenderFrame,
     RenderFrameType, RenderJunction, RenderText, RenderWire, SheetFrame, getBounds
 } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
 import {
-    ColorScheme, ComponentTypes, MMToPt, MMToPx, ParamKeys, defaultGridSizeUnits,
+    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, ParamKeys, RenderFlags, defaultFont, defaultGridSizeUnits,
     defaultPageSpacingMM,
     defaultWireLineWidth, fontDisplayScale,
     junctionSize
 } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { BoundBox, getBoundsSize } from './utils.js';
-import { getPaperSize, milsToMM } from './helpers.js';
+import { getPaperSize, milsToMM, PaperGridReferences } from './helpers.js';
 import SVGtoPDF from 'svg-to-pdfkit';
+import { FrameParamKeys } from './objects/Frame.js';
+import { SymbolPlaceholder } from './draw_symbols.js';
+import { ClassComponent } from './objects/ClassComponent.js';
 
 function createSvgCanvas(): Svg {
     const window = getCreateSVGWindow()();
@@ -56,33 +60,51 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[]): Svg {
 
         let sheetYOffset = 0;
 
-        if (sheet.frame.size) {
-            const {
-                widthMM, heightMM,
-                originalWidthMM, originalHeightMM
-            } = getPaperSize(sheet.frame.size);
+        if (sheet.frame.frame) {
+            // Get the frame component
+            const frameComponent = sheet.frame.frame.parameters
+                .get(FrameParamKeys.SheetFrame) as ClassComponent;
 
-            xOffset = (originalWidthMM - widthMM) / 2;
-            yOffset = (originalHeightMM - heightMM) / 2;
+            if (frameComponent) {
 
-            // Space out sheets with a fixed space
-            sheetYOffset = index * (originalHeightMM + defaultPageSpacingMM);
+                if (frameComponent.displayProp === null) {
+                    throw 'Invalid graphic object for sheet frame';
+                }
 
-            sheetGroup.rect(originalWidthMM, originalHeightMM)
-                .stroke({
-                    width: milsToMM(10),
-                    color: '#ccc',
-                }).fill('none')
-                .id('sheet-border');
+                // First rect in the component is the paper size, 2nd rect
+                // is the drawable area size
+                const frameRects = ExtractDrawingRects(frameComponent.displayProp) ?? [];
 
-            gridBounds = {
-                xmin: 0,
-                ymin: 0,
-                xmax: widthMM,
-                ymax: heightMM
-            };
+                let originalWidthMM = 0;
+                let originalHeightMM = 0;
+                let widthMM = 0;
+                let heightMM = 0;
 
-            extendGrid = false;
+                if (frameRects[0]) {
+                    originalWidthMM = milsToMM(frameRects[0].width);
+                    originalHeightMM = milsToMM(frameRects[0].height);
+                }
+
+                if (frameRects[1]) {
+                    widthMM = milsToMM(frameRects[1].width);
+                    heightMM = milsToMM(frameRects[1].height);
+                }
+
+                xOffset = (originalWidthMM - widthMM) / 2;
+                yOffset = (originalHeightMM - heightMM) / 2;
+
+                // Space out sheets with a fixed space
+                sheetYOffset = index * (originalHeightMM + defaultPageSpacingMM);
+
+                gridBounds = {
+                    xmin: 0,
+                    ymin: 0,
+                    xmax: widthMM,
+                    ymax: heightMM
+                };
+
+                extendGrid = false;
+            }
         }
 
         const sheetElements = sheetGroup.group();
@@ -285,29 +307,31 @@ function generateSVGChild(canvas: Svg | G,
     // });
 
     const frameGroup = canvas.group();
-    const showElementFrames = false;
 
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
+        const { width, height } = getBoundsSize(bounds);
+        let strokeColor = '#111';
 
-        if (borderWidth > 0) {
-            const { width, height } = getBoundsSize(bounds);
-
-            let strokeColor = '#111';
-            if (item.type === RenderFrameType.Container) {
-                strokeColor = '#111';
-            } else if (item.type === RenderFrameType.Elements) {
-                strokeColor = '#aaa';
-                if (!showElementFrames) {
-                    return;
+        if (item.frame.frameType === FrameType.Sheet) {
+            drawSheetFrameBorder(frameGroup, item);
+        } else {
+            if (borderWidth > 0) {
+                if (item.type === RenderFrameType.Container) {
+                    strokeColor = '#111';
+                } else if (item.type === RenderFrameType.Elements) {
+                    strokeColor = '#aaa';
+                    if (!RenderFlags.ShowElementFrames) {
+                        return;
+                    }
                 }
+
+                const tmpRect = frameGroup.rect(width, height)
+                    .fill('none')
+                    .stroke({ width: milsToMM(borderWidth), color: strokeColor });
+
+                tmpRect.translate(item.x, item.y);
             }
-
-            const tmpRect = frameGroup.rect(width, height)
-                .fill('none')
-                .stroke({ width: milsToMM(borderWidth), color: strokeColor });
-
-            tmpRect.translate(item.x, item.y);
         }
     });
 
@@ -318,12 +342,10 @@ function generateSVGChild(canvas: Svg | G,
         symbol.draw(innerGroup);
     });
 
-    const drawOrigin = false;
-
     // Draw origin
     const originSize = milsToMM(10);
 
-    drawOrigin && canvas.group().translate(0,0)
+    RenderFlags.ShowOrigin && canvas.group().translate(0,0)
         .circle(originSize)
         .translate(-originSize/2, -originSize/2)
         .stroke('none').fill('red');
@@ -342,12 +364,16 @@ function drawGrid(group: G,
     const gridStartX = (Math.floor(xmin / gridSize) - extraValue) * gridSize;
     const gridStartY = (Math.floor(ymin / gridSize) - extraValue) * gridSize;
 
-    const gridEndX = (Math.ceil(xmax / gridSize) + extraValue) * gridSize;
-    const gridEndY = extendGrid 
-            ? (Math.ceil(ymax / gridSize) + extraValue) * gridSize
-            : (ymax-ymin);
+    const gridEndX = extendGrid
+        ? (Math.ceil(xmax / gridSize) + extraValue) * gridSize
+        : (xmax - xmin);
 
-    const numCols = Math.ceil((gridEndX - gridStartX) / gridSize);
+    const gridEndY = extendGrid
+        ? (Math.ceil(ymax / gridSize) + extraValue) * gridSize
+        : (ymax - ymin);
+
+    const numCols = Math.floor((gridEndX - gridStartX) / gridSize)
+        + (extendGrid ? 1 : 0);
     // const numRows = Math.ceil((gridEndY - gridStartY) / gridSize);
 
     // Draws (0, 0) point
@@ -362,7 +388,7 @@ function drawGrid(group: G,
     const startY = gridStartY - smallOffset/2;
     const endY = gridEndY + smallOffset;
 
-    for (let i = 0; i <= numCols; i++) {
+    for (let i = 0; i < numCols; i++) {
         const startX = gridStartX + i * gridSize;
         lines.push(`M ${startX} ${startY} L ${startX} ${endY}`);
     }
@@ -378,26 +404,151 @@ function drawGrid(group: G,
         })
 }
 
-// function calculateBoundingBox(components: RenderComponent[]): { width: number, height: number } {
-//     let maxX = Number.NEGATIVE_INFINITY;
-//     let minX = Number.POSITIVE_INFINITY;
+function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
+    const frameParams = frame.frame.parameters;
+    if (frameParams.has(FrameParamKeys.SheetFrame)) {
+        const frameComponent = frameParams.get(FrameParamKeys.SheetFrame);
+        const { displayProp = null } = frameComponent ?? {}
 
-//     let maxY = Number.NEGATIVE_INFINITY;
-//     let minY = Number.POSITIVE_INFINITY;
+        if (displayProp) {
+            const sheetFrameGroup = frameGroup.group();
 
-//     components.forEach(item => {
-//         minX = Math.min(item.x, minX);
-//         maxX = Math.max(item.x + item.width, maxX);
+            const symbol = new SymbolPlaceholder(displayProp);
+            symbol.refreshDrawing();
+            symbol.draw(sheetFrameGroup);
 
-//         minY = Math.min(item.y, minY);
-//         maxY = Math.max(item.y + item.height, maxY);
-//     });
+            const offsetX = milsToMM(frameComponent.getParam('offset_x'));
+            const offsetY = milsToMM(frameComponent.getParam('offset_y'));
 
-//     return {
-//         width: (maxX - minX),
-//         height: (maxY - minY)
-//     }
-// }
+            sheetFrameGroup.translate(-offsetX, -offsetY);
+        }
+    }
+}
+
+/** @deprecated */
+function drawSheetFrameBorderDirect(frameGroup: G, frame: RenderFrame,
+    borderWidth: number, strokeColor: string, width: number, 
+    height: number): void {
+    
+    const commonStroke = {
+        width: milsToMM(borderWidth),
+        color: strokeColor
+    };
+
+    const commonFont = {
+        family: defaultFont,
+        size: 50 * fontDisplayScale,
+        'dominant-baseline': 'middle',
+        'text-anchor': 'middle',
+    };
+
+
+    let rows = 1;
+    let columns = 1;
+    let showGridReference = true;
+
+    if (PaperGridReferences[frame.size]) {
+        [rows, columns] = PaperGridReferences[frame.size];
+    } else {
+        showGridReference = false;
+    }
+
+    if (!showGridReference) {
+        return;
+    }
+
+    const outerMargin = 2;
+    const outerWidth = width + outerMargin * 2;
+    const outerHeight = height + outerMargin * 2;
+    const outerRect = frameGroup.rect(outerWidth, outerHeight)
+        .fill('none')
+        .stroke(commonStroke);
+
+    outerRect.translate(frame.x - outerMargin, frame.y - outerMargin);
+
+    const gridWidth = outerWidth / columns;
+    const gridHeight = outerHeight / rows;
+
+    const pathPoints = [];
+
+    // Draw row lines and add text
+    for (let i = 1; i < rows + 1; i++) {
+        const lineStartX = frame.x - outerMargin;
+        const lineStartX2 = frame.x - outerMargin + outerWidth - outerMargin;
+
+        const lineY = frame.y - outerMargin + (gridHeight * i);
+
+        if (i < rows) {
+            pathPoints.push(...[
+                "M", lineStartX, lineY, "L", lineStartX + outerMargin, lineY,
+                "M", lineStartX2, lineY, "L", lineStartX2 + outerMargin, lineY
+            ]);
+        }
+
+        // Add text
+        const displayValue = String.fromCharCode(i + 64);
+
+        frameGroup.text(displayValue)
+            .font(commonFont)
+            .translate(lineStartX + outerMargin / 2, lineY - gridHeight / 2);
+
+        frameGroup.text(displayValue)
+            .font(commonFont)
+            .translate(lineStartX2 + outerMargin / 2, lineY - gridHeight / 2);
+    }
+
+    // Draw column lines and add text
+    for (let i = 1; i < columns + 1; i++) {
+        const lineStartY = frame.y - outerMargin;
+        const lineStartY2 = frame.y - outerMargin + outerHeight - outerMargin;
+        const lineX = frame.x - outerMargin + (gridWidth * i);
+
+        if (i < columns) {
+            pathPoints.push(...[
+                "M", lineX, lineStartY, "L", lineX, lineStartY + outerMargin,
+                "M", lineX, lineStartY2, "L", lineX, lineStartY2 + outerMargin
+            ]);
+        }
+
+        frameGroup.text(i.toString())
+            .font(commonFont)
+            .translate(lineX - gridWidth / 2, lineStartY + outerMargin / 2 + milsToMM(10));
+
+        frameGroup.text(i.toString())
+            .font(commonFont)
+            .translate(
+                lineX - gridWidth / 2, 
+                lineStartY2 + outerMargin / 2 + milsToMM(10)
+            );
+    }
+
+    frameGroup.path(pathPoints).stroke(commonStroke);
+
+    const titleWidth = milsToMM(3000);
+    const titleHeight = milsToMM(1000);
+    const rowHeight = milsToMM(200);
+
+    const points = [
+        "M", width - titleWidth, height,
+        "L", width - titleWidth, height - titleHeight,
+        "L", width, height - titleHeight,
+
+        "M", width - titleWidth, height - rowHeight,
+        "L", width, height - rowHeight,
+
+        "M", width - titleWidth, height - rowHeight * 2,
+        "L", width, height - rowHeight * 2,
+
+        "M", width - titleWidth, height - rowHeight * 3,
+        "L", width, height - rowHeight * 3
+    ];
+
+    frameGroup.path(points).stroke(commonStroke).fill('none');
+
+    if(frame.containsTitle) {
+        // console.log(frame.frame.)
+    }
+}
 
 interface SymbolExtras {
     net_name?: string;

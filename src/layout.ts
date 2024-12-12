@@ -9,7 +9,7 @@ import {Graph, Edge, alg} from '@dagrejs/graphlib';
 
 import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, 
     SymbolCustomModule, SymbolPinDefintion, SymbolPlaceholder, 
-    SymbolText } from "./draw_symbols.js";
+    SymbolText, PlaceHolderCommands, SymbolDrawingCommands} from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
 import { defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, GlobalNames, 
@@ -23,7 +23,7 @@ import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
-import { getPaperSize, milsToMM, UnitDimension } from './helpers.js';
+import { milsToMM, UnitDimension } from './helpers.js';
 
 export class LayoutEngine {
 
@@ -448,15 +448,22 @@ export class LayoutEngine {
         const contentsBounds = resizeBounds(getBoundsFromPoints(boundPoints),
             frame.padding);
 
-        // If frame width or height are specified, then center the elements 
-        // within the frame
-        if (frame.width !== null && frame.height !== null) {
-            // in mm
+        // If frame component is specified, then center the contents within
+        if (frame.frame.parameters.has(FrameParamKeys.SheetFrame)){
+            const frameComponent = frame.frame.parameters.get
+                                (FrameParamKeys.SheetFrame) as ClassComponent;
+
+            const rects = ExtractDrawingRects(frameComponent.displayProp);
+            let frameWidth = 0;
+            let frameHeight = 0;
+
+            if (rects[1]) {
+                frameWidth = milsToMM(rects[1].width);
+                frameHeight = milsToMM(rects[1].height);
+            }
+
             const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
             const contentsHeight = contentsBounds.ymax - contentsBounds.ymin;
-
-            const frameWidth = milsToMM(frame.width);
-            const frameHeight = milsToMM(frame.height);
 
             const frameOffsetX = toNearestGrid((frameWidth - contentsWidth) / 2, gridSize);
             const frameOffsetY = toNearestGrid((frameHeight - contentsHeight) / 2, gridSize);
@@ -857,16 +864,6 @@ export class LayoutEngine {
                     if (frameObject.parameters.has(FrameParamKeys.Height)) {
                         newFrame.height =
                             frameObject.parameters.get(FrameParamKeys.Height);
-                    }
-
-                    if (frameObject.parameters.has(FrameParamKeys.Size)) {
-                        newFrame.size =
-                            frameObject.parameters.get(FrameParamKeys.Size);
-
-                        const { width, height } = getPaperSize(newFrame.size);
-
-                        newFrame.width = width;
-                        newFrame.height = height;
                     }
 
                     containerFrames.push(newFrame);
@@ -2009,6 +2006,16 @@ export function CalculatePinPositions(component: ClassComponent)
     return pinPositionMapping;
 }
 
+export function ExtractDrawingRects(drawing: SymbolDrawingCommands): { width: number, height: number }[] {
+    return drawing.getCommands().filter(item => {
+        return (item[0] === PlaceHolderCommands.rect);
+    }).map(item => {
+        return {
+            width: item[1][2],
+            height: item[1][3],
+        }
+    });
+}
 
 function isPointOverlap(x: number, y: number, other: RenderComponent): boolean {
     return (x >= other.x && y >= other.y && x <= (other.x + other.width) && y <= (other.y + other.height));

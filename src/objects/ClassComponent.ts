@@ -176,8 +176,12 @@ export class ClassComponent {
         this.refreshParamCache();
     }
 
+    hasParam(key: string): boolean {
+        return this.parameters.has(key);
+    }
+
     private refreshParamCache(): void {
-        this._cachedParams = 
+        this._cachedParams =
             JSON.stringify(Object.fromEntries(this.parameters));
     }
 
@@ -190,9 +194,9 @@ export class ClassComponent {
         this.refreshPinsCache();
     }
 
-    getParam(key: string): number | string {
+    getParam<T>(key: string): T {
         if (this.parameters.has(key)) {
-            return this.parameters.get(key);
+            return this.parameters.get(key) as T;
         } else {
             throw 'Invalid parameter key';
         }

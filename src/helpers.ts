@@ -6,6 +6,8 @@
  */
 
 import { readFileSync, writeFileSync, createWriteStream } from "fs";
+import path from "path";
+
 import PDFDocument from "pdfkit";
 
 import { generateKiCADNetList, printTree } from "./export.js";
@@ -23,8 +25,8 @@ import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
-import path from "path";
 import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
+import { FrameParamKeys } from "./objects/Frame.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -292,8 +294,7 @@ export function renderScript(scriptData: string, outputPath: string,
         return null;
     }
 
-    const { sheetSize, 
-        sizeDefined: sheetSizeDefined } = visitor.applySheetSizes();
+    const { frameComponent } = visitor.applySheetFrameComponent();
 
     try {
         visitor.annotateComponents();
@@ -383,15 +384,23 @@ export function renderScript(scriptData: string, outputPath: string,
                 writeFileSync(outputPath, svgOutput);
 
             } else if (fileExtension === 'pdf') {
+
+                let sheetSize = "A4";
+                let sheetSizeDefined = false;
+                if (frameComponent) {
+                    sheetSize = frameComponent.getParam(FrameParamKeys.PaperSize);
+                    sheetSizeDefined = true;
+                }
+
                 const doc = new PDFDocument({
                     layout: 'landscape',
                     size: sheetSize
                 });
                 const outputStream = createWriteStream(outputPath);
 
-                generatePdfOutput(doc, svgCanvas,  
+                generatePdfOutput(doc, svgCanvas,
                     sheetSize, sheetSizeDefined, outputDefaultZoom);
-                
+
                 doc.pipe(outputStream);
                 doc.end();
             } else {
@@ -496,6 +505,14 @@ const PaperSizes: { [key: string]: [width: number, height: number] } = {
     'A5': [210, 148],
     'A6': [148, 105],
 }
+
+export const PaperGridReferences: { [key: string]: [rows: number, columns: number] } = {
+    'A0': [16, 24],
+    'A1': [12, 16],
+    'A2': [8, 12],
+    'A3': [6, 8],
+    'A4': [4, 6],
+};
 
 export function isSupportedPaperSize(type: string): boolean {
     if (PaperSizes[type]) {

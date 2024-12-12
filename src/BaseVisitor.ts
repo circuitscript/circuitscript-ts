@@ -200,38 +200,37 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         this.visit(ctxDataExpr);
         const value = this.getResult(ctxDataExpr);
 
-        if (value instanceof ClassComponent) {
-            // If value is a class component, then update the instance name
-            const instances = this.getExecutor().scope.instances;
-            const tmpComponent: ClassComponent = value;
+        const trailers = reference.trailers ?? [];
 
-            const oldName = tmpComponent.instanceName;
+        if (trailers.length === 0) {
+            if (value instanceof ClassComponent) {
+                // If value is a class component, then update the instance name
+                const instances = this.getExecutor().scope.instances;
+                const tmpComponent: ClassComponent = value;
 
-            // Rename to new name
-            tmpComponent.instanceName = reference.name;
+                const oldName = tmpComponent.instanceName;
 
-            instances.delete(oldName);
-            instances.set(reference.name, tmpComponent);
+                // Rename to new name
+                tmpComponent.instanceName = reference.name;
 
-            this.getExecutor().log(
-                `assigned '${reference.name}' to ClassComponent`,
-            );
-        } else {
+                instances.delete(oldName);
+                instances.set(reference.name, tmpComponent);
 
-            // Otherwise, assign variable name to value
-            const trailers = reference.trailers ?? [];
-
-            if (trailers.length === 0){
+                this.getExecutor().log(
+                    `assigned '${reference.name}' to ClassComponent`,
+                );
+            } else {
                 // No trailers, directly assign the reference name
                 this.getExecutor().scope.variables.set(reference.name, value);
-                
-            } else if (reference.value instanceof ClassComponent) {
+            }
+        } else {
+            if (reference.value instanceof ClassComponent) {
                 this.setInstanceParam(reference.value, trailers, value);
-            } else if (reference.value instanceof Object){
+            } else if (reference.value instanceof Object) {
                 reference.value[trailers.join('.')] = value;
             }
         }
-
+        
         this.setResult(ctx, value);
     }
 
@@ -277,6 +276,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 executor.scope.setNet(tmpComponent, pinId, net);
             }
         }
+
+        this.getExecutor().log('atomId:', atomId, currentReference);
 
         if (ctx.parent instanceof ExpressionContext && !currentReference.found) {
             // If is an atom_expr and parent is just expression and no 

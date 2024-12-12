@@ -130,3 +130,8 @@ export enum FrameType {
 }
 
 export const GlobalDocumentName = 'document';
+
+export const RenderFlags = {
+    ShowElementFrames: false,
+    ShowOrigin: false,
+}

@@ -61,6 +61,10 @@ export class UndeclaredReference {
     constructor(reference: ReferenceType) {
         this.reference = reference;
     }
+
+    throwMessage(): string{
+        return `Unknown symbol: ${this.reference.name}`;
+    }
 }
 
 export class DeclaredReference {
@@ -78,6 +82,10 @@ export class DeclaredReference {
         this.trailers = refType.trailers;
         this.type = refType.type;
         this.value = refType.value;
+    }
+
+    toString(): string {
+        return `[DeclaredReference name: ${this.name} trailers:${this.trailers} found: ${this.found}]`;
     }
 }
 

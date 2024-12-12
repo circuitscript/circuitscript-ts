@@ -27,7 +27,10 @@ export enum FrameParamKeys {
     Width = 'width',
     Height = 'height',
 
-    Size = 'size',
+    PaperSize = 'paper_size',
+
+    // Same parameter is used in 'document' and 'sheet(frame)' objects
+    SheetFrame = 'sheet_frame',
 }
 
 export enum FramePlotDirection {

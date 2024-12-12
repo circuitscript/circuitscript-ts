@@ -20,7 +20,7 @@ describe('Render tests', () => {
         const { hasError, visitor } = await runScript(script);
         expect(hasError).toEqual(false);
         visitor.annotateComponents();
-        visitor.applySheetSizes();
+        visitor.applySheetFrameComponent();
 
         const { sequence, nets } = visitor.getGraph();
 
@@ -71,6 +71,9 @@ describe('Render tests', () => {
 
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toEqual(expectedSvgOutput);
+
+        // const isSame = svgOutput == expectedSvgOutput;
+        // expect(isSame).toEqual(true);
     });
     
     test('pdf output', async () => {

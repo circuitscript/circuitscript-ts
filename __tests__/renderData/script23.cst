@@ -1,6 +1,6 @@
 import lib
 
-document.page_size = "A6"
+document.sheet_frame = frame_A6()
 
 v5v = supply("5v")
 gnd = dgnd()

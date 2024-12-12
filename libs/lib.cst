@@ -220,3 +220,286 @@ def arrow_point():
             path: ("M", -10, -5, "L", -5, 0, "L", -10, 5)
             path: ("M", -5, 0, "L", -20, 0)
             hpin: 1, 0, 0, 0, display_pin_id=false
+
+def frame_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y):
+    inner_frame_margin = 50
+    return create component:
+        type: "frame"
+        display: create graphic:
+            fill: "none"
+
+            # outer rect 
+            lineColor: "#cccccc"
+            rect: paper_width/2, paper_height/2, paper_width, paper_height
+
+            # inner rect
+            lineColor: "#111111"
+            rect: paper_width/2, paper_height/2, paper_width - 2 * margin_x, paper_height - 2 * margin_y
+
+            rect: (paper_width/2, paper_height/2, 
+                    paper_width - 2 * margin_x + inner_frame_margin * 2, 
+                    paper_height - 2 * margin_y  + inner_frame_margin * 2)
+
+        params:
+            paper_size: paper_size_name
+            paper_width: paper_width
+            paper_height: paper_height
+            
+            offset_x: margin_x
+            offset_y: margin_y
+            
+            grid_width: paper_width - 2 * margin_x
+            grid_height: paper_height - 2 * margin_y
+
+
+def frame_A4 ():
+    paper_width = 297 / 25.4 * 1000
+    paper_height = 210 / 25.4 * 1000
+    margin_x = 400
+    margin_y = 400
+
+    inner_frame_margin = 50
+
+    horizontal_1 = margin_x - inner_frame_margin
+    horizontal_2 = paper_width - margin_x + inner_frame_margin
+
+    vertical_1 = margin_y - inner_frame_margin
+    vertical_2 = paper_height - margin_y + inner_frame_margin
+
+    tmp_height = paper_height - margin_y * 2 + inner_frame_margin * 2
+    tmp_y = margin_y - inner_frame_margin
+
+    tmp_width = paper_width - margin_x * 2 + inner_frame_margin * 2
+    tmp_x = margin_x - inner_frame_margin
+
+    fontSize = 30
+
+    ratio_x = 0.16667
+    ratio_y = 0.25
+
+    return create component:
+        type: "frame"
+        display: create graphic:
+            fill: "none"
+
+            # outer rect 
+            lineColor: "#cccccc"
+            rect: paper_width/2, paper_height/2, paper_width, paper_height
+
+            # inner rect
+            lineColor: "#111111"
+            rect: paper_width/2, paper_height/2, paper_width - 2 * margin_x, paper_height - 2 * margin_y
+
+            rect: (paper_width/2, paper_height/2, 
+                    paper_width - 2 * margin_x + inner_frame_margin * 2, 
+                    paper_height - 2 * margin_y  + inner_frame_margin * 2)
+
+            hline: horizontal_1, (tmp_y + tmp_height * ratio_y), inner_frame_margin
+            hline: horizontal_1, (tmp_y + tmp_height * ratio_y * 2), inner_frame_margin
+            hline: horizontal_1, (tmp_y + tmp_height * ratio_y * 3), inner_frame_margin
+
+            hline: horizontal_2, (tmp_y + tmp_height * ratio_y), -inner_frame_margin
+            hline: horizontal_2, (tmp_y + tmp_height * ratio_y * 2), -inner_frame_margin
+            hline: horizontal_2, (tmp_y + tmp_height * ratio_y * 3), -inner_frame_margin
+
+            vline: (tmp_x + tmp_width * ratio_x),     vertical_1, inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 2), vertical_1, inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 3), vertical_1, inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 4), vertical_1, inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 5), vertical_1, inner_frame_margin
+
+            vline: (tmp_x + tmp_width * ratio_x),     vertical_2, -inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 2), vertical_2, -inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 3), vertical_2, -inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 4), vertical_2, -inner_frame_margin
+            vline: (tmp_x + tmp_width * ratio_x * 5), vertical_2, -inner_frame_margin
+
+            # labels on the columns
+            text: 
+                content: "1"
+                offset: tmp_x + tmp_width * ratio_x * 0.5, tmp_y + inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "1"
+                offset: tmp_x + tmp_width * ratio_x * 0.5, tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "2"
+                offset: tmp_x + tmp_width * ratio_x * 1.5, tmp_y + inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "2"
+                offset: tmp_x + tmp_width * ratio_x * 1.5, tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "3"
+                offset: tmp_x + tmp_width * ratio_x * 2.5, tmp_y + inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "3"
+                offset: tmp_x + tmp_width * ratio_x * 2.5, tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "4"
+                offset: tmp_x + tmp_width * ratio_x * 3.5, tmp_y + inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "4"
+                offset: tmp_x + tmp_width * ratio_x * 3.5, tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+        
+            text: 
+                content: "5"
+                offset: tmp_x + tmp_width * ratio_x * 4.5, tmp_y + inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "5"
+                offset: tmp_x + tmp_width * ratio_x * 4.5, tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "6"
+                offset: tmp_x + tmp_width * ratio_x * 5.5, tmp_y + inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "6"
+                offset: tmp_x + tmp_width * ratio_x * 5.5, tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            # labels on the rows
+            text: 
+                content: "A"
+                offset: tmp_x + inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 0.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "A"
+                offset: tmp_x + tmp_width - inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 0.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "B"
+                offset: tmp_x + inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 1.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "B"
+                offset: tmp_x + tmp_width - inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 1.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "C"
+                offset: tmp_x + inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 2.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "C"
+                offset: tmp_x + tmp_width - inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 2.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "D"
+                offset: tmp_x + inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 3.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+            text: 
+                content: "D"
+                offset: tmp_x + tmp_width - inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * 3.5
+                fontSize: fontSize
+                anchor: "middle"
+                vanchor: "middle"
+
+        params:
+            paper_size: "A4"
+            paper_width: paper_width
+            paper_height: paper_height
+            
+            offset_x: margin_x
+            offset_y: margin_y
+            
+            grid_width: paper_width - 2 * margin_x
+            grid_height: paper_height - 2 * margin_y
+
+
+def frame_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y, inner_frame_margin = 50):
+    return create component:
+        type: "frame"
+        display: create graphic:
+            fill: "none"
+
+            # outer rect 
+            lineColor: "#cccccc"
+            rect: paper_width/2, paper_height/2, paper_width, paper_height
+
+            # inner rect
+            lineColor: "#111111"
+            rect: paper_width/2, paper_height/2, paper_width - 2 * margin_x, paper_height - 2 * margin_y
+
+            rect: (paper_width/2, paper_height/2, 
+                    paper_width - 2 * margin_x + inner_frame_margin * 2, 
+                    paper_height - 2 * margin_y  + inner_frame_margin * 2)
+
+        params:
+            paper_size: paper_size_name
+            paper_width: paper_width
+            paper_height: paper_height
+            
+            offset_x: margin_x
+            offset_y: margin_y
+            
+            grid_width: paper_width - 2 * margin_x
+            grid_height: paper_height - 2 * margin_y
+
+def frame_A6():
+    paper_width = 148 / 25.4 * 1000
+    paper_height = 105 / 25.4 * 1000
+    margin = 400
+
+    return frame_generator("A6", paper_width, paper_height, margin, margin, 20)
