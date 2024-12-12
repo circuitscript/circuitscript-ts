@@ -21,6 +21,7 @@ import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
 import { CalculatePinPositions } from './layout.js';
 import { UnitDimension } from './helpers.js';
+import { ParserRuleContext } from 'antlr4ng';
 
 export class ExecutionContext {
     // Contains the current running state of the circuit web
@@ -756,18 +757,19 @@ export class ExecutionContext {
         return null;
     }
 
-    breakBranch(): void {
-        this.log('break branch');
-        // Mark that the branch stack at the current indent level
-        // should be ignored
+    addBreakContext(ctx: ParserRuleContext): void {
+        this.log('add break context');
+        this.scope.breakStack.push(ctx);
+    }
 
-        const branchesInfo = this.scope.blockStack.get(
-            this.scope.indentLevel - 1,
-        );
-        const branchIndex = branchesInfo['block_index'];
+    popBreakContext(): ParserRuleContext {
+        this.log('pop break context');
+        // Find the nearest break
+        return this.scope.breakStack.pop()!;
+    }
 
-        const branchIndexRef = branchesInfo['inner_blocks'].get(branchIndex);
-        branchIndexRef['ignore_last_net'] = true;
+    getBreakContext(): ParserRuleContext {
+        return this.scope.breakStack[this.scope.breakStack.length-1];
     }
 
     createFunction(functionName: string, __runFunc: CFunction): void {

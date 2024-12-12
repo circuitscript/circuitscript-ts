@@ -47,6 +47,7 @@ import {
     Expressions_blockContext,
     Create_module_exprContext,
     Property_block_exprContext,
+    While_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -1189,6 +1190,34 @@ export class ParserVisitor extends BaseVisitor {
 
         this.setResult(ctx, result);
     };
+
+    visitWhile_expr = (ctx: While_exprContext): void => {
+        const dataExpr = ctx.data_expr();
+        let keepLooping = true;
+
+        this.log('enter while loop');
+        this.getExecutor().addBreakContext(ctx);
+
+        while (keepLooping) {
+            this.visit(dataExpr);
+            const result = this.getResult(dataExpr);
+
+            if (result) { // some truthy value
+                this.visit(ctx.expressions_block());
+                keepLooping = true;
+
+                const { breakSignal = false } = this.getResult(ctx) ?? {};
+                if (breakSignal) {
+                    keepLooping = false;
+                }
+            } else {
+                keepLooping = false;
+            }
+        }
+
+        this.getExecutor().popBreakContext();
+        this.log('exit while loop');
+    }
 
     pinTypes = [
         PinTypes.Any,

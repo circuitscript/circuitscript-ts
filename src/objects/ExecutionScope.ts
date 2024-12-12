@@ -11,6 +11,7 @@ import { CFunction, ComponentPinNet, ComponentPinNetPair, ParseSymbolType, Value
 import { LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';
+import { ParserRuleContext } from 'antlr4ng';
 
 export class ExecutionScope {
     scopeId: number;
@@ -25,6 +26,10 @@ export class ExecutionScope {
     symbols: Map<string, { type: ParseSymbolType }> = new Map();
 
     blockStack: Map<number, any> = new Map();
+
+    // Store references to the start of context/blocks that can 
+    // have 'break' within the execution blocks
+    breakStack: ParserRuleContext[] = [];
 
     wires: Wire[] = [];
     frames: Frame[] = [];

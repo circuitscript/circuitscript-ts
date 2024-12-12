@@ -8,10 +8,10 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, Blank_exprContext, Break_keywordContext, ExpressionContext, 
-    Function_args_exprContext, Function_call_exprContext, Function_exprContext, 
-    Function_return_exprContext, FunctionCallExprContext, Import_exprContext, 
-    ParametersContext, RoundedBracketsExprContext, 
+import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
+    Break_keywordContext, ExpressionContext,  Function_args_exprContext, 
+    Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
+    FunctionCallExprContext, Import_exprContext, ParametersContext, RoundedBracketsExprContext, 
     ScriptContext, 
     Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser";
 import { CircuitScriptVisitor } from "./antlr/CircuitScriptVisitor";
@@ -511,8 +511,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         // the last expression in the branch, any expressions after the break
         // will be skipped
 
-        this.getExecutor().breakBranch();
-        this.setResult(ctx, -1);
+        // this.getExecutor().breakBranch();
+        // this.setResult(ctx, -1);
+
+        const breakContext = this.getExecutor().popBreakContext();
+        const currentResult = this.getResult(breakContext) ?? {};
+        this.setResult(breakContext, {
+            ...currentResult,
+            breakSignal: true
+        });
     }
 
     visitArray_expr = (ctx: Array_exprContext): void => {
@@ -676,12 +683,21 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         let returnValue: ComplexType | null = null;
 
+        // Track this context for a break signal
+        const breakContext = executor.getBreakContext();
+
         // Execute the expressions within the context
         for (let i = 0; i < expressions.length; i++) {
             const expr = expressions[i];
 
             // The correct executor MUST be on the top/end of the stack!
             this.visit(expr);
+
+            const { breakSignal = false } = this.getResult(breakContext) ?? {};
+            if (breakSignal) {
+                returnValue = executor.returnValue;
+                break;
+            }
 
             // If this flag is set, then do not parse anything further!
             if (executor.stopFurtherExpressions) {

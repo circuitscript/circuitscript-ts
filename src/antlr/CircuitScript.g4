@@ -33,6 +33,10 @@ Return:     'return';
 Define:     'def';
 Import:     'import';
 
+For:        'for';
+In:         'in';
+While:      'while';
+
 If:         'if';
 Else:       'else';
 Not:        '!';
@@ -53,7 +57,6 @@ Addition:   '+';
 Minus:      '-';
 Divide:     '/';
 Multiply:   '*';
-
 
 script: (expression | NEWLINE)+ EOF;
 
@@ -78,6 +81,7 @@ expression: add_component_expr
         | point_expr
 
         | if_expr
+        | while_expr
         ;
 
 expressions_block:
@@ -222,6 +226,8 @@ if_expr:    If data_expr ':'
 
 if_inner_expr: Else If data_expr ':' expressions_block;
 else_expr: Else ':' expressions_block;
+
+while_expr: While data_expr ':' expressions_block;
 
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};

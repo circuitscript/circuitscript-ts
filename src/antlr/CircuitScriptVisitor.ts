@@ -73,6 +73,7 @@ import { Frame_exprContext } from "./CircuitScriptParser.js";
 import { If_exprContext } from "./CircuitScriptParser.js";
 import { If_inner_exprContext } from "./CircuitScriptParser.js";
 import { Else_exprContext } from "./CircuitScriptParser.js";
+import { While_exprContext } from "./CircuitScriptParser.js";
 
 
 /**
@@ -517,5 +518,11 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitElse_expr?: (ctx: Else_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.while_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitWhile_expr?: (ctx: While_exprContext) => Result;
 }
 
