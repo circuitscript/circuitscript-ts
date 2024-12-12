@@ -8,7 +8,7 @@
 import { ExecutionContext } from '../execute.js';
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
-import { NumericValue, PercentageValue, PinBlankValue } from './ParamDefinition.js';
+import { NumericValue, PercentageValue } from './ParamDefinition.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -44,8 +44,8 @@ export type ComplexType = ValueType
                         | UndeclaredReference 
                         | null;
 
-export type ValueType = boolean | number | string | 
-    NumericValue | PercentageValue | PinBlankValue;
+export type ValueType = boolean | number | string |
+    NumericValue | PercentageValue;
 
 export type CallableParameter = 
     ['keyword', key: string, value: ValueType] | 

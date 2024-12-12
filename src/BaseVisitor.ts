@@ -8,7 +8,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { Assignment_exprContext, Atom_exprContext, Blank_exprContext, Break_keywordContext, ExpressionContext, 
+import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, Blank_exprContext, Break_keywordContext, ExpressionContext, 
     Function_args_exprContext, Function_call_exprContext, Function_exprContext, 
     Function_return_exprContext, FunctionCallExprContext, Import_exprContext, 
     ParametersContext, RoundedBracketsExprContext, 
@@ -19,7 +19,7 @@ import { ExecutionContext } from "./execute";
 import { Logger } from "./logger";
 import { ClassComponent } from "./objects/ClassComponent";
 import { Net } from "./objects/Net";
-import { NumericValue, PercentageValue, PinBlankValue } from "./objects/ParamDefinition";
+import { NumericValue, PercentageValue } from "./objects/ParamDefinition";
 import { PinTypes } from "./objects/PinTypes";
 import { CallableParameter, CFunctionOptions, ComplexType, 
     DeclaredReference, 
@@ -367,7 +367,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         const ctxBooleanValue = ctx.BOOLEAN_VALUE();
         const ctxStringValue = ctx.STRING_VALUE();
         const ctxPercentageValue = ctx.PERCENTAGE_VALUE();
-        const ctxBlankExpr = ctx.blank_expr();
         
         let result: ValueType | null = null;
 
@@ -403,20 +402,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         } else if (ctxPercentageValue) {
             result = new PercentageValue(ctxPercentageValue.getText());
 
-        } else if (ctxBlankExpr) {
-            this.visit(ctxBlankExpr);
-            result = this.getResult(ctxBlankExpr);
         }
 
         this.setResult(ctx, result);
-    }
-
-    visitBlank_expr = (ctx: Blank_exprContext): void => {
-        // There must be an integer value, otherwise the rule wouldn't match.
-        this.setResult(ctx,
-            new PinBlankValue(
-                Number(
-                    ctx.INTEGER_VALUE().getText())));
     }
 
     visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
@@ -525,6 +513,20 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         this.getExecutor().breakBranch();
         this.setResult(ctx, -1);
+    }
+
+    visitArray_expr = (ctx: Array_exprContext): void => {
+        const array = ctx.data_expr().map(item => {
+            this.visit(item);
+            return this.getResult(item);
+        });
+
+        this.setResult(ctx, array);
+    }
+
+    visitArrayExpr = (ctx: ArrayExprContext): void => {
+        this.visit(ctx.array_expr());
+        this.setResult(ctx, this.getResult(ctx.array_expr()));
     }
 
     protected setResult(ctx: ParserRuleContext, value: any): void {

@@ -53,8 +53,7 @@ import { ExecutionContext } from './execute.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import {
     NumericValue,
-    ParamDefinition,
-    PinBlankValue,
+    ParamDefinition
 } from './objects/ParamDefinition.js';
 import { PinDefinition, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
@@ -349,7 +348,7 @@ export class ParserVisitor extends BaseVisitor {
             );
 
         const allPorts = [...leftPorts, ...rightPorts].filter(item => {
-            return !(item instanceof PinBlankValue);
+            return !(Array.isArray(item));
         }) as string[];
 
         const nameToPinId = new Map<string, number>();
@@ -367,7 +366,7 @@ export class ParserVisitor extends BaseVisitor {
         });
 
         const arrangeLeftItems = leftPorts.map(item => {
-            if (item instanceof PinBlankValue){
+            if (Array.isArray(item)){
                 return item;
             } else {
                 return nameToPinId.get(item);
@@ -375,7 +374,7 @@ export class ParserVisitor extends BaseVisitor {
         });
 
         const arrangeRightItems = rightPorts.map(item => {
-            if (item instanceof PinBlankValue){
+            if (Array.isArray(item)){
                 return item;
             } else {
                 return nameToPinId.get(item);
@@ -1265,12 +1264,12 @@ export class ParserVisitor extends BaseVisitor {
 
     private parseCreateModulePorts(portsDefinition: Map<string, any>)
         : {
-            left: (string | PinBlankValue)[],
-            right: (string | PinBlankValue)[]
+            left: (string | [blank: number])[],
+            right: (string | [blank: number])[]
         } {
 
-        let leftItems: (string | PinBlankValue)[] = [];
-        let rightItems: (string | PinBlankValue)[] = [];
+        let leftItems: (string | [blank: number])[] = [];
+        let rightItems: (string | [blank: number])[] = [];
 
         if (portsDefinition.has('left')) {
             leftItems = portsDefinition.get('left');

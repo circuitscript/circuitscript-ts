@@ -1335,10 +1335,8 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             let position = 0;
 
             useItems.forEach(item => {
-                if (typeof item === 'object'){
-                    if (item.blank){
-                        position += item.blank;
-                    }
+                if (typeof item === 'object' && Array.isArray(item)) {
+                    position += item[0];
                 }
 
                 // Only use the pin if it exists!

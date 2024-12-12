@@ -146,6 +146,7 @@ data_expr:
     | create_graphic_expr                               #DataExpr
     | create_module_expr                                #DataExpr
     | function_call_expr                                #FunctionCallExpr
+    | array_expr                                        #ArrayExpr
     ;           
 
 binary_operator: Equals 
@@ -164,8 +165,7 @@ value_expr: ('-'?
     | INTEGER_VALUE
     | STRING_VALUE 
     | PERCENTAGE_VALUE
-    | BOOLEAN_VALUE)) 
-    | blank_expr;
+    | BOOLEAN_VALUE));
 
 function_def_expr: Define ID '(' function_args_expr? ')' ':' NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
 function_expr: expression | function_return_expr;
@@ -204,12 +204,12 @@ property_value_expr: nested_properties_inner        # nested_properties
                     | data_expr (',' data_expr)*    # single_line_property
                     ;
 
-blank_expr: '[' INTEGER_VALUE ']';
-
 wire_atom_expr: ID (INTEGER_VALUE | data_expr)     # wire_expr_direction_value
                 | ID                               # wire_expr_direction_only
                 ;    
 wire_expr: Wire wire_atom_expr*;
+
+array_expr: '[' data_expr (',' data_expr)* ']';
 
 point_expr: Point ID;
 import_expr: Import ID;

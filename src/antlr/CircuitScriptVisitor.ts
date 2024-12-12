@@ -32,6 +32,7 @@ import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Property_set_exprContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
+import { ArrayExprContext } from "./CircuitScriptParser.js";
 import { FunctionCallExprContext } from "./CircuitScriptParser.js";
 import { AdditionExprContext } from "./CircuitScriptParser.js";
 import { MultiplyExprContext } from "./CircuitScriptParser.js";
@@ -62,10 +63,10 @@ import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
 import { Nested_propertiesContext } from "./CircuitScriptParser.js";
 import { Single_line_propertyContext } from "./CircuitScriptParser.js";
-import { Blank_exprContext } from "./CircuitScriptParser.js";
 import { Wire_expr_direction_valueContext } from "./CircuitScriptParser.js";
 import { Wire_expr_direction_onlyContext } from "./CircuitScriptParser.js";
 import { Wire_exprContext } from "./CircuitScriptParser.js";
+import { Array_exprContext } from "./CircuitScriptParser.js";
 import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_exprContext } from "./CircuitScriptParser.js";
 import { Frame_exprContext } from "./CircuitScriptParser.js";
@@ -256,6 +257,13 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitDouble_dot_property_set_expr?: (ctx: Double_dot_property_set_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `ArrayExpr`
+     * labeled alternative in `CircuitScriptParser.data_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitArrayExpr?: (ctx: ArrayExprContext) => Result;
     /**
      * Visit a parse tree produced by the `FunctionCallExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
@@ -448,12 +456,6 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitSingle_line_property?: (ctx: Single_line_propertyContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.blank_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitBlank_expr?: (ctx: Blank_exprContext) => Result;
-    /**
      * Visit a parse tree produced by the `wire_expr_direction_value`
      * labeled alternative in `CircuitScriptParser.wire_atom_expr`.
      * @param ctx the parse tree
@@ -473,6 +475,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitWire_expr?: (ctx: Wire_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.array_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitArray_expr?: (ctx: Array_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.point_expr`.
      * @param ctx the parse tree
