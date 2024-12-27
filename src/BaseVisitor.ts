@@ -9,7 +9,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
-    Break_keywordContext, ExpressionContext,  Function_args_exprContext, 
+    Break_keywordContext, Continue_keywordContext, ExpressionContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, ParametersContext, RoundedBracketsExprContext, 
     ScriptContext, 
@@ -114,7 +114,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         context.createFunction('print', (params) => {
             // Only accept position params
             const items = params.map(([, , value]) => {
-                return value
+                if (value.toString) {
+                    return value.toString();
+                } else {
+                    throw "Failed to print value";
+                }
             });
 
             if (this.printToConsole) {
@@ -514,11 +518,24 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         // this.getExecutor().breakBranch();
         // this.setResult(ctx, -1);
 
-        const breakContext = this.getExecutor().popBreakContext();
+        const breakContext = this.getExecutor().getBreakContext();
         const currentResult = this.getResult(breakContext) ?? {};
         this.setResult(breakContext, {
             ...currentResult,
             breakSignal: true
+        });
+    }
+
+    visitContinue_keyword = (ctx: Continue_keywordContext): void => {
+        const breakContext = this.getExecutor().getBreakContext();
+        const currentResult = this.getResult(breakContext) ?? {};
+        this.setResult(breakContext, {
+            ...currentResult,
+
+            // continue is similar to break, except the loop is not 
+            // completely stopped.
+            breakSignal: true,
+            continueSignal: true,
         });
     }
 

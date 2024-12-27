@@ -639,7 +639,7 @@ if b > 10:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script18 = new ScriptTest(`
 a = 0
@@ -648,7 +648,7 @@ if b > 10:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script19 = new ScriptTest(`
 a = 0
@@ -657,7 +657,7 @@ if b > 10:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script20 = new ScriptTest(`
 a = 0
@@ -666,7 +666,7 @@ if b < 10:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script21 = new ScriptTest(`
 a = 0
@@ -675,7 +675,7 @@ if b < 10:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script22 = new ScriptTest(`
 a = 0
@@ -684,7 +684,7 @@ if b < 10:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script23 = new ScriptTest(`
 a = 0
@@ -693,7 +693,7 @@ if b >= 10:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script24 = new ScriptTest(`
 a = 0
@@ -702,7 +702,7 @@ if b >= 10:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script25 = new ScriptTest(`
 a = 0
@@ -711,7 +711,7 @@ if b >= 10:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script26 = new ScriptTest(`
 a = 0
@@ -720,7 +720,7 @@ if b <= 10:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script27 = new ScriptTest(`
 a = 0
@@ -729,7 +729,7 @@ if b <= 10:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script28 = new ScriptTest(`
 a = 0
@@ -738,7 +738,7 @@ if b <= 10:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script29 = new ScriptTest(`
 a = 0
@@ -747,7 +747,7 @@ if b > 10 && b < 20:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script30 = new ScriptTest(`
 a = 0
@@ -756,7 +756,7 @@ if b > 10 && b < 20:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script31 = new ScriptTest(`
 a = 0
@@ -765,7 +765,7 @@ if b > 10 && b < 20:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script32 = new ScriptTest(`
 a = 0
@@ -774,7 +774,7 @@ if b < 10 || b < 20:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script33 = new ScriptTest(`
 a = 0
@@ -783,7 +783,7 @@ if b < 10 || b < 20:
     a = 1
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script34 = new ScriptTest(`
 a = 0
@@ -792,7 +792,7 @@ if b < 10 || b < 20:
     a = 1
 
 print(a)
-`, [0]);
+`, ['0']);
 
 export const script35 = new ScriptTest(`
 a = 0
@@ -808,7 +808,7 @@ else:
     a = 4
 
 print(a)
-`, [4]);
+`, ['4']);
 
 export const script36 = new ScriptTest(`
 a = 0
@@ -824,7 +824,7 @@ else:
     a = 4
 
 print(a)
-`, [1]);
+`, ['1']);
 
 export const script37 = new ScriptTest(`
 a = 0
@@ -840,7 +840,7 @@ else:
     a = 4
 
 print(a)
-`, [2]);
+`, ['2']);
 
 export const script38 = new ScriptTest(`
 a = 0
@@ -856,7 +856,7 @@ else:
     a = 4
 
 print(a)
-`, [3]);
+`, ['3']);
 
 export const script39 = new ScriptTest(`
 a = 0
@@ -872,7 +872,7 @@ else:
     a = 4
 
 print(a)
-`, [4]);
+`, ['4']);
 
 export const script20_ = new ScriptTest(
     loadScriptFromFile('__tests__/renderData/script20.cst'),

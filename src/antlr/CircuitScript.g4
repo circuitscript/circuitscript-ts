@@ -36,6 +36,7 @@ Import:     'import';
 For:        'for';
 In:         'in';
 While:      'while';
+Continue:   'continue';
 
 If:         'if';
 Else:       'else';
@@ -69,6 +70,7 @@ expression: add_component_expr
         | property_set_expr2
         | double_dot_property_set_expr
         | break_keyword
+        | continue_keyword
         | function_def_expr
         | function_call_expr
         | wire_expr
@@ -82,6 +84,7 @@ expression: add_component_expr
 
         | if_expr
         | while_expr
+        | for_expr
         ;
 
 expressions_block:
@@ -128,6 +131,7 @@ at_block_pin_expression_simple: (expression | NOT_CONNECTED);
 at_block_pin_expression_complex: expressions_block;
 
 break_keyword: Break;
+continue_keyword: Continue;
 
 assignment_expr: atom_expr '=' data_expr;
 keyword_assignment_expr: ID '=' data_expr;
@@ -228,6 +232,7 @@ if_inner_expr: Else If data_expr ':' expressions_block;
 else_expr: Else ':' expressions_block;
 
 while_expr: While data_expr ':' expressions_block;
+for_expr: For ID 'in' data_expr ':' expressions_block;
 
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};

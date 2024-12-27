@@ -48,6 +48,7 @@ import {
     Create_module_exprContext,
     Property_block_exprContext,
     While_exprContext,
+    For_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -1206,9 +1207,19 @@ export class ParserVisitor extends BaseVisitor {
                 this.visit(ctx.expressions_block());
                 keepLooping = true;
 
-                const { breakSignal = false } = this.getResult(ctx) ?? {};
-                if (breakSignal) {
+                const currentResult = this.getResult(ctx) ?? {};
+                const {breakSignal = false, continueSignal = false} = currentResult;
+               
+                if (breakSignal && !continueSignal) {
                     keepLooping = false;
+
+                } else if (breakSignal && continueSignal) {
+                    // Reset these signals
+                    this.setResult(ctx, {
+                        ...currentResult,
+                        breakSignal: false,
+                        continueSignal: false
+                    });
                 }
             } else {
                 keepLooping = false;
@@ -1217,6 +1228,35 @@ export class ParserVisitor extends BaseVisitor {
 
         this.getExecutor().popBreakContext();
         this.log('exit while loop');
+    }
+
+    visitFor_expr = (ctx: For_exprContext): void => {
+        const forVariableName = ctx.ID().getText();
+        const ctxDataExpr = ctx.data_expr();
+
+        this.visit(ctxDataExpr);
+        const listItems = this.getResult(ctxDataExpr);
+
+        this.getExecutor().addBreakContext(ctx);
+
+        let keepLooping = true;
+        let counter = 0;
+
+        while (keepLooping) {
+            const item = listItems[counter];
+
+            if (item) {
+                this.getExecutor().scope.variables.set(
+                    forVariableName, listItems[counter]);
+
+                this.visit(ctx.expressions_block());
+                counter += 1;
+            } else {
+                keepLooping = false;
+            }
+        }
+
+        this.getExecutor().popBreakContext();
     }
 
     pinTypes = [

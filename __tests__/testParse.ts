@@ -42,7 +42,7 @@ describe('test parsing', () => {
         // define the script content before the test itself
         const {hasError, componentPinNets} = await runScript(scriptTest.script);
 
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
         expect(componentPinNets).toStrictEqual(scriptTest.expected);
     });
 
@@ -76,7 +76,7 @@ branch:
     wire down 20
     to gnd
 `);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
         visitor.annotateComponents();
         const instances = visitor.dumpInstances();
@@ -112,7 +112,7 @@ to a2 pin 3
 
 `
         const {hasError, visitor} = await runScript(script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
         visitor.annotateComponents();
 
@@ -146,7 +146,7 @@ add res(40k)
 ..refdes = "R100"
 `
         const {hasError, visitor} = await runScript(script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
         visitor.annotateComponents();
 
@@ -170,9 +170,9 @@ def test1(a,
 print(test1(1,2,3))
 `
         const { hasError, visitor } = await runScript(script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
-        expect(visitor.printStream[0]).toBe(6);
+        expect(visitor.printStream[0]).toBe('6');
     });
 
     test('double dot syntax', async () => {
@@ -196,7 +196,7 @@ wire down 20
 to gnd
 `
         const {hasError, visitor} = await runScript(script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
         visitor.annotateComponents();
         const instances = visitor.dumpInstances();
@@ -227,7 +227,7 @@ R1.mpn = "res-12345"
 `;
 
         const {hasError, visitor} = await runScript(script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
         visitor.annotateComponents();
         const instances = visitor.dumpInstances();
@@ -247,9 +247,9 @@ print(---b)
 `;
 
         const { hasError, visitor } = await runScript(script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
-        expect(visitor.printStream).toStrictEqual([20, -20, 20, -20]);
+        expect(visitor.printStream).toStrictEqual(['20', '-20', '20', '-20']);
     });
 
     test.each([
@@ -285,7 +285,7 @@ print(---b)
 
     ])('comparison, logical operators and if, else if, else - %s', async (description, scriptTest) => {
         const { hasError, visitor } = await runScript(scriptTest.script);
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
 
         expect(visitor.printStream).toStrictEqual(scriptTest.expected);
     });
@@ -295,7 +295,7 @@ print(---b)
 
         const { hasError, visitor } = await runScript(script21_);
 
-        expect(hasError).toBe(false);
+        expect(hasError).toEqual(false);
         visitor.annotateComponents();
 
         const { sequence, nets } = visitor.getGraph();
@@ -310,6 +310,41 @@ print(---b)
         }
 
         expect(errorMessage).toEqual("Wire auto length failed. Please specify a fixed wire length.");
+    });
+
+    test('while loop with continue', async () => {
+        const script = `
+a = 0
+
+while a < 10:
+    print(a)
+    if a < 5:
+        a = a +1
+        continue
+
+    a = a + 2
+`;
+        const { hasError, visitor } = await runScript(script);
+        expect(hasError).toEqual(false);
+
+        expect(visitor.printStream).toStrictEqual([
+            '0', '1', '2', '3', '4', '5', '7', '9'
+        ]);
+    });
+
+    test('for loop with array', async () => {
+        const script = `
+a = ["hello", "world", 1,2,3]
+
+for item in a:
+    print(item)        
+`;
+        const {hasError, visitor} = await runScript(script);
+        expect(hasError).toEqual(false);
+
+        expect(visitor.printStream).toStrictEqual([
+            'hello', 'world', '1', '2', '3'
+        ]);
     });
 });
 

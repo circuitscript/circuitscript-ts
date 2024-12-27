@@ -27,6 +27,7 @@ import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_simpleContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_complexContext } from "./CircuitScriptParser.js";
 import { Break_keywordContext } from "./CircuitScriptParser.js";
+import { Continue_keywordContext } from "./CircuitScriptParser.js";
 import { Assignment_exprContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
@@ -74,6 +75,7 @@ import { If_exprContext } from "./CircuitScriptParser.js";
 import { If_inner_exprContext } from "./CircuitScriptParser.js";
 import { Else_exprContext } from "./CircuitScriptParser.js";
 import { While_exprContext } from "./CircuitScriptParser.js";
+import { For_exprContext } from "./CircuitScriptParser.js";
 
 
 /**
@@ -228,6 +230,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitBreak_keyword?: (ctx: Break_keywordContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.continue_keyword`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitContinue_keyword?: (ctx: Continue_keywordContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.assignment_expr`.
      * @param ctx the parse tree
@@ -524,5 +532,11 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitWhile_expr?: (ctx: While_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.for_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFor_expr?: (ctx: For_exprContext) => Result;
 }
 
