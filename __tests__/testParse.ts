@@ -23,7 +23,8 @@ import {
     inlineScript49,
     inlineScript50,
     inlineScript51,
-    inlineScript52
+    inlineScript52,
+    inlineScript53
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -328,7 +329,8 @@ print(---b)
 
     test.each([
         ['range function', inlineScript51],
-        ['enumerate function', inlineScript52]
+        ['enumerate function', inlineScript52],
+        ['enumerate function with `for` loop', inlineScript53]
     ])('built-in functions - %s',  async (description, scriptTest) => 
         await expectInlineScriptTest(description, scriptTest)
     );

@@ -1263,7 +1263,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitFor_expr = (ctx: For_exprContext): void => {
-        const forVariableName = ctx.ID().getText();
+        const forVariableNames = ctx.ID().map(item => item.getText());
         const ctxDataExpr = ctx.data_expr();
 
         this.visit(ctxDataExpr);
@@ -1277,8 +1277,15 @@ export class ParserVisitor extends BaseVisitor {
         while (keepLooping) {
             if (counter < listItems.length) {
 
-                this.getExecutor().scope.variables.set(
-                    forVariableName, listItems[counter]);
+                let useValueArray: unknown[] = listItems[counter];
+                if (!Array.isArray(useValueArray)) {
+                    useValueArray = [useValueArray];
+                }
+
+                useValueArray.forEach((value, index) => {
+                    this.getExecutor().scope.variables.set(
+                        forVariableNames[index], value);
+                });
 
                 this.visit(ctx.expressions_block());
                 keepLooping = true;

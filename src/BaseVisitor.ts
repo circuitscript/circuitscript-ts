@@ -137,7 +137,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             if (this.printToConsole) {
                 console.log('::', ...items);
             }
-            this.printStream.push(...items);
+            this.printStream.push(items.join(" "));
 
             return [this, null];
         });

@@ -247,7 +247,7 @@ if_inner_expr: Else If data_expr ':' expressions_block;
 else_expr: Else ':' expressions_block;
 
 while_expr: While data_expr ':' expressions_block;
-for_expr: For ID 'in' data_expr ':' expressions_block;
+for_expr: For ID (',' ID)* 'in' data_expr ':' expressions_block;
 
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};
