@@ -3,32 +3,38 @@ import { LayoutEngine } from '../src/layout.js';
 import { prepareSVGEnvironment } from '../src/sizing.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
-    script1, script10, script11, script12, script13, script14, script15, 
-    script16, script17, script18, script19, script2,
-    script20, script21, script22, script23, script24, script25, script26,
-    script27, script28, script29, script3, script30, script31, script32, 
-    script33, script34, script35, script36, script37, script38, script39, 
+    inlineScript1, inlineScript10, inlineScript11, inlineScript12, inlineScript13, inlineScript14, inlineScript15, 
+    inlineScript16, inlineScript17, inlineScript18, inlineScript19, inlineScript2,
+    inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
+    inlineScript27, inlineScript28, inlineScript29, inlineScript3, inlineScript30, inlineScript31, inlineScript32, 
+    inlineScript33, inlineScript34, inlineScript35, inlineScript36, inlineScript37, inlineScript38, inlineScript39, 
     script20_, script21_,
-    script6, script7, script8, script9
+    inlineScript6, inlineScript7, inlineScript8, inlineScript9,
+    inlineScript40,
+    inlineScript41,
+    inlineScript42,
+    inlineScript43,
+    inlineScript44,
+    inlineScript45
 } from './parseScripts.js';
 
 describe('test parsing', () => {
 
     test.each([
-        ["create component command", script1],
-        ["function to create component and branching", script2],
-        ["nested branching, add with pin selected", script3],
-        ["'at' and 'to' commands will clone net components", script6],
-        ["resolve instances in upper contexts", script7],
-        ["components in function parameters", script8],
-        ["resolve nets in local and upper contexts", script9],
-        ["assignment in at/to/add statement", script10],
-        ["net namespace local and global", script11],
-        ["create component with copy and is net", script12],
-        ["correct nets after function call and also `join` keyword", script13],
-        ["path with 'point' keyword", script14],
-        ["path with 'parallel' keyword", script15],
-        ["consecutive blocks with 'join' then 'point'", script16],
+        ["create component command", inlineScript1],
+        ["function to create component and branching", inlineScript2],
+        ["nested branching, add with pin selected", inlineScript3],
+        ["'at' and 'to' commands will clone net components", inlineScript6],
+        ["resolve instances in upper contexts", inlineScript7],
+        ["components in function parameters", inlineScript8],
+        ["resolve nets in local and upper contexts", inlineScript9],
+        ["assignment in at/to/add statement", inlineScript10],
+        ["net namespace local and global", inlineScript11],
+        ["create component with copy and is net", inlineScript12],
+        ["correct nets after function call and also `join` keyword", inlineScript13],
+        ["path with 'point' keyword", inlineScript14],
+        ["path with 'parallel' keyword", inlineScript15],
+        ["consecutive blocks with 'join' then 'point'", inlineScript16],
         ['module nets', script20_]
         
     ])('parse script - %s', async (description, scriptTest) => {
@@ -253,40 +259,54 @@ print(---b)
     });
 
     test.each([
-        ["greater than case 1", script17],
-        ["greater than case 2", script18],
-        ["greater than case 3", script19],
+        ["greater than case 1", inlineScript17],
+        ["greater than case 2", inlineScript18],
+        ["greater than case 3", inlineScript19],
 
-        ["less than case 1", script20],
-        ["less than case 2", script21],
-        ["less than case 3", script22],
+        ["less than case 1", inlineScript20],
+        ["less than case 2", inlineScript21],
+        ["less than case 3", inlineScript22],
 
-        ["greater than or equal case 1", script23],
-        ["greater than or equal case 2", script24],
-        ["greater than or equal case 3", script25],
+        ["greater than or equal case 1", inlineScript23],
+        ["greater than or equal case 2", inlineScript24],
+        ["greater than or equal case 3", inlineScript25],
 
-        ["less than or equal case 1", script26],
-        ["less than or equal case 2", script27],
-        ["less than or equal case 3", script28],
+        ["less than or equal case 1", inlineScript26],
+        ["less than or equal case 2", inlineScript27],
+        ["less than or equal case 3", inlineScript28],
 
-        ["and case 1", script29],
-        ["and case 2", script30],
-        ["and case 3", script31],
+        ["and case 1", inlineScript29],
+        ["and case 2", inlineScript30],
+        ["and case 3", inlineScript31],
 
-        ["or case 1", script32],
-        ["or case 2", script33],
-        ["or case 3", script34],
+        ["or case 1", inlineScript32],
+        ["or case 2", inlineScript33],
+        ["or case 3", inlineScript34],
 
-        ["if, else if, else case 1", script35],
-        ["if, else if, else case 2", script36],
-        ["if, else if, else case 3", script37],
-        ["if, else if, else case 4", script38],
-        ["if, else if, else case 5", script39],
+        ["if, else if, else case 1", inlineScript35],
+        ["if, else if, else case 2", inlineScript36],
+        ["if, else if, else case 3", inlineScript37],
+        ["if, else if, else case 4", inlineScript38],
+        ["if, else if, else case 5", inlineScript39],
 
     ])('comparison, logical operators and if, else if, else - %s', async (description, scriptTest) => {
         const { hasError, visitor } = await runScript(scriptTest.script);
         expect(hasError).toEqual(false);
+        expect(visitor.printStream).toStrictEqual(scriptTest.expected);
+    });
 
+    test.each([
+        ['while loop with continue', inlineScript40],
+        ['basic while loop', inlineScript42],
+        ['nested while loop', inlineScript43],
+        ['infinite loop with break', inlineScript44],
+        ['while loop should not run', inlineScript45],
+
+        ['for loop with array', inlineScript41],
+
+    ])('while, for loop - %s', async (description, scriptTest) => {
+        const { hasError, visitor } = await runScript(scriptTest.script);
+        expect(hasError).toEqual(false);
         expect(visitor.printStream).toStrictEqual(scriptTest.expected);
     });
 
@@ -310,41 +330,6 @@ print(---b)
         }
 
         expect(errorMessage).toEqual("Wire auto length failed. Please specify a fixed wire length.");
-    });
-
-    test('while loop with continue', async () => {
-        const script = `
-a = 0
-
-while a < 10:
-    print(a)
-    if a < 5:
-        a = a +1
-        continue
-
-    a = a + 2
-`;
-        const { hasError, visitor } = await runScript(script);
-        expect(hasError).toEqual(false);
-
-        expect(visitor.printStream).toStrictEqual([
-            '0', '1', '2', '3', '4', '5', '7', '9'
-        ]);
-    });
-
-    test('for loop with array', async () => {
-        const script = `
-a = ["hello", "world", 1,2,3]
-
-for item in a:
-    print(item)        
-`;
-        const {hasError, visitor} = await runScript(script);
-        expect(hasError).toEqual(false);
-
-        expect(visitor.printStream).toStrictEqual([
-            'hello', 'world', '1', '2', '3'
-        ]);
     });
 });
 

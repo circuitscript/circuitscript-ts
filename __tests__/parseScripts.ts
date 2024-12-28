@@ -12,7 +12,7 @@ export class ScriptTest<T>{
     }
 }
 
-export const script1 = new ScriptTest<ComponentPinNet>(`
+export const inlineScript1 = new ScriptTest<ComponentPinNet>(`
 U1 = create component:
     pins: 10
 
@@ -41,7 +41,7 @@ to U2 pin 3
     ['/NET_2', 'U2', 3]
 ]);
 
-export const script2 = new ScriptTest(`
+export const inlineScript2 = new ScriptTest(`
 import lib
 gnd = dgnd("XGND")
 
@@ -75,7 +75,7 @@ to gnd
     ['/XGND', 'gnd:0', 1]
 ]);
 
-export const script3 = new ScriptTest(`
+export const inlineScript3 = new ScriptTest(`
 import lib
 
 at label("hello")
@@ -105,7 +105,7 @@ add diode()
     ['/hello', 'diode_3.COMP_1', 1]
 ]);
 
-export const script6 = new ScriptTest(`
+export const inlineScript6 = new ScriptTest(`
 import lib
 
 vcc = net("3v3")
@@ -146,7 +146,7 @@ to midpt
     ['/out', 'res_2.COMP_1_10k', 2]
 ]);
 
-export const script7 = new ScriptTest(`
+export const inlineScript7 = new ScriptTest(`
 import lib
 
 v5v = net("5V")
@@ -175,7 +175,7 @@ tmp1()
     ['/GND', 'tmp1_1.res_1.COMP_1_10k', 2]
 ]);
 
-export const script8 = new ScriptTest(`
+export const inlineScript8 = new ScriptTest(`
 import lib
 
 v5v = supply("5v")
@@ -211,7 +211,7 @@ divider(v5v, 10k, 20k, label("hello"))
     ['/hello', 'divider_0.res_1.COMP_1_20k', 1]
 ]);
 
-export const script9 = new ScriptTest(`
+export const inlineScript9 = new ScriptTest(`
 import lib
 
 v5v = supply("5v")
@@ -290,7 +290,7 @@ frame:
     ['/global_name_2', 'divider_1.res_6.COMP_1_0', 2]
 ]);
 
-export const script10 = new ScriptTest(`
+export const inlineScript10 = new ScriptTest(`
 import lib
 gnd = dgnd()
 
@@ -318,7 +318,7 @@ to gnd
     ['/NET_2', 'C1', 1]
 ]);
 
-export const script11 = new ScriptTest(`
+export const inlineScript11 = new ScriptTest(`
 import lib
 
 v5v = supply("5V")
@@ -405,7 +405,7 @@ branch:
     ['/scope2/label_1', 'tmp1_1.res_5.COMP_1_0', 1]
 ]);
 
-export const script12 = new ScriptTest(`
+export const inlineScript12 = new ScriptTest(`
 my_net = create component:
     pins: 1
     copy: 1
@@ -424,7 +424,7 @@ at my_net
 After a function call, the correct graph position should be resumed from.
 This test also checks the join keyword
 */
-export const script13 = new ScriptTest(`
+export const inlineScript13 = new ScriptTest(`
 import lib
 
 v5v = supply("5V")
@@ -481,7 +481,7 @@ to v5v`,
 /**
 Tests the `point` branching keyword
  */
-export const script14 = new ScriptTest(`
+export const inlineScript14 = new ScriptTest(`
 import lib
 
 v5v = supply("5V")
@@ -538,9 +538,9 @@ to gnd`, [
 ]);
 
 /*
-Test with `paralell` keyword
+Test with `parallel` keyword
 */
-export const script15 = new ScriptTest(`
+export const inlineScript15 = new ScriptTest(`
 import lib
 
 v5v = supply("5V")
@@ -585,7 +585,7 @@ to gnd
 Test that consecutive blocks with different block type
 are parsed correctly.
 */
-export const script16 = new ScriptTest(`
+export const inlineScript16 = new ScriptTest(`
 import lib
 
 v5v = supply("5V")
@@ -632,7 +632,7 @@ point:
 
 
 // Scripts for comparison and logical operators
-export const script17 = new ScriptTest(`
+export const inlineScript17 = new ScriptTest(`
 a = 0
 b = 9
 if b > 10:
@@ -641,7 +641,7 @@ if b > 10:
 print(a)
 `, ['0']);
 
-export const script18 = new ScriptTest(`
+export const inlineScript18 = new ScriptTest(`
 a = 0
 b = 10
 if b > 10:
@@ -650,7 +650,7 @@ if b > 10:
 print(a)
 `, ['0']);
 
-export const script19 = new ScriptTest(`
+export const inlineScript19 = new ScriptTest(`
 a = 0
 b = 11
 if b > 10:
@@ -659,7 +659,7 @@ if b > 10:
 print(a)
 `, ['1']);
 
-export const script20 = new ScriptTest(`
+export const inlineScript20 = new ScriptTest(`
 a = 0
 b = 9
 if b < 10:
@@ -668,7 +668,7 @@ if b < 10:
 print(a)
 `, ['1']);
 
-export const script21 = new ScriptTest(`
+export const inlineScript21 = new ScriptTest(`
 a = 0
 b = 10
 if b < 10:
@@ -677,7 +677,7 @@ if b < 10:
 print(a)
 `, ['0']);
 
-export const script22 = new ScriptTest(`
+export const inlineScript22 = new ScriptTest(`
 a = 0
 b = 11
 if b < 10:
@@ -686,7 +686,7 @@ if b < 10:
 print(a)
 `, ['0']);
 
-export const script23 = new ScriptTest(`
+export const inlineScript23 = new ScriptTest(`
 a = 0
 b = 9
 if b >= 10:
@@ -695,7 +695,7 @@ if b >= 10:
 print(a)
 `, ['0']);
 
-export const script24 = new ScriptTest(`
+export const inlineScript24 = new ScriptTest(`
 a = 0
 b = 10
 if b >= 10:
@@ -704,7 +704,7 @@ if b >= 10:
 print(a)
 `, ['1']);
 
-export const script25 = new ScriptTest(`
+export const inlineScript25 = new ScriptTest(`
 a = 0
 b = 11
 if b >= 10:
@@ -713,7 +713,7 @@ if b >= 10:
 print(a)
 `, ['1']);
 
-export const script26 = new ScriptTest(`
+export const inlineScript26 = new ScriptTest(`
 a = 0
 b = 9
 if b <= 10:
@@ -722,7 +722,7 @@ if b <= 10:
 print(a)
 `, ['1']);
 
-export const script27 = new ScriptTest(`
+export const inlineScript27 = new ScriptTest(`
 a = 0
 b = 10
 if b <= 10:
@@ -731,7 +731,7 @@ if b <= 10:
 print(a)
 `, ['1']);
 
-export const script28 = new ScriptTest(`
+export const inlineScript28 = new ScriptTest(`
 a = 0
 b = 11
 if b <= 10:
@@ -740,7 +740,7 @@ if b <= 10:
 print(a)
 `, ['0']);
 
-export const script29 = new ScriptTest(`
+export const inlineScript29 = new ScriptTest(`
 a = 0
 b = 9
 if b > 10 && b < 20:
@@ -749,7 +749,7 @@ if b > 10 && b < 20:
 print(a)
 `, ['0']);
 
-export const script30 = new ScriptTest(`
+export const inlineScript30 = new ScriptTest(`
 a = 0
 b = 11
 if b > 10 && b < 20:
@@ -758,7 +758,7 @@ if b > 10 && b < 20:
 print(a)
 `, ['1']);
 
-export const script31 = new ScriptTest(`
+export const inlineScript31 = new ScriptTest(`
 a = 0
 b = 21
 if b > 10 && b < 20:
@@ -767,7 +767,7 @@ if b > 10 && b < 20:
 print(a)
 `, ['0']);
 
-export const script32 = new ScriptTest(`
+export const inlineScript32 = new ScriptTest(`
 a = 0
 b = 9
 if b < 10 || b < 20:
@@ -776,7 +776,7 @@ if b < 10 || b < 20:
 print(a)
 `, ['1']);
 
-export const script33 = new ScriptTest(`
+export const inlineScript33 = new ScriptTest(`
 a = 0
 b = 11
 if b < 10 || b < 20:
@@ -785,7 +785,7 @@ if b < 10 || b < 20:
 print(a)
 `, ['1']);
 
-export const script34 = new ScriptTest(`
+export const inlineScript34 = new ScriptTest(`
 a = 0
 b = 21
 if b < 10 || b < 20:
@@ -794,7 +794,7 @@ if b < 10 || b < 20:
 print(a)
 `, ['0']);
 
-export const script35 = new ScriptTest(`
+export const inlineScript35 = new ScriptTest(`
 a = 0
 b = 0
 
@@ -810,7 +810,7 @@ else:
 print(a)
 `, ['4']);
 
-export const script36 = new ScriptTest(`
+export const inlineScript36 = new ScriptTest(`
 a = 0
 b = 11
 
@@ -826,7 +826,7 @@ else:
 print(a)
 `, ['1']);
 
-export const script37 = new ScriptTest(`
+export const inlineScript37 = new ScriptTest(`
 a = 0
 b = 21
 
@@ -842,7 +842,7 @@ else:
 print(a)
 `, ['2']);
 
-export const script38 = new ScriptTest(`
+export const inlineScript38 = new ScriptTest(`
 a = 0
 b = 31
 
@@ -858,7 +858,7 @@ else:
 print(a)
 `, ['3']);
 
-export const script39 = new ScriptTest(`
+export const inlineScript39 = new ScriptTest(`
 a = 0
 b = 41
 
@@ -936,3 +936,61 @@ at tmp pin 4
 wire right 400 down 500 auto
 to tmp2 pin 2
 `
+
+export const inlineScript40 =  new ScriptTest(`
+a = 0
+
+while a < 10:
+    print(a)
+    if a < 5:
+        a = a +1
+        continue
+
+    a = a + 2
+    `, [
+        '0', '1', '2', '3', '4', '5', '7', '9'
+    ]);
+
+export const inlineScript41 = new ScriptTest(`
+a = ["hello", "world", 1,2,3]
+
+for item in a:
+    print(item)
+`,
+    ['hello', 'world', '1', '2', '3']);
+
+
+export const inlineScript42 = new ScriptTest(`
+counter = 0
+while counter < 5:
+    counter = counter + 1
+print(counter)
+`, ['5'])
+
+export const inlineScript43 = new ScriptTest(`
+outer = 0
+inner_sum = 0
+while outer < 3:
+    inner = 0
+    while inner < 2:
+        inner_sum = inner_sum + 1
+        inner = inner + 1
+    outer = outer + 1
+print(inner_sum)
+`, ['6']);
+
+export const inlineScript44 = new ScriptTest(`
+counter = 0
+while True:
+    counter = counter + 1
+    if counter == 10:
+        break
+print(counter)
+`, ['10']);
+
+export const inlineScript45 = new ScriptTest(`
+counter = 0
+while counter > 5:
+    counter = counter + 1
+print(counter)
+`, ['0'])
