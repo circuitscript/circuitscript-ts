@@ -114,10 +114,28 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         context.createFunction('print', (params) => {
             // Only accept position params
             const items = params.map(([, , value]) => {
-                if (value.toString) {
-                    return value.toString();
+                if (Array.isArray(value)) {
+                    const tmpValues = value.map(item => {
+                        if (item instanceof String) {
+                            return `"${item}"`;
+                        } else if (item.toString) {
+                            return item.toString();
+                        } else {
+                            throw "Failed to print value: " + value;
+                        }
+                    });
+
+                    const valueStr = tmpValues.join(", ");
+                    return "[ " + valueStr + " ]";
+
+                } else if (value.toString) {
+                    if (value instanceof String) {
+                        return `"${value}"`;
+                    } else {
+                        return value.toString();
+                    }
                 } else {
-                    throw "Failed to print value";
+                    throw "Failed to print value: " + value;
                 }
             });
 
@@ -127,6 +145,32 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             this.printStream.push(...items);
 
             return [this, null];
+        });
+
+        context.createFunction('range', (params) => {
+            const items = params.map(([, , value]) => {
+                if (isNaN(value)) {
+                    throw 'Invalid value: ' + value;
+                }
+                return value;
+            });
+
+            let startValue = 0;
+            let endValue = 0;
+
+            if (items.length === 1) {
+                endValue = items[0] as number;
+            } else if (items.length === 2) {
+                startValue = items[0] as number;
+                endValue = items[1] as number;
+            }
+
+            const returnArray = [];
+            for (let i = startValue; i < endValue; i++) {
+                returnArray.push(i);
+            }
+
+            return [this, returnArray];
         });
     }
 

@@ -1,3 +1,4 @@
+/* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
 import { LayoutEngine } from '../src/layout.js';
 import { prepareSVGEnvironment } from '../src/sizing.js';
@@ -20,7 +21,8 @@ import {
     inlineScript47,
     inlineScript48,
     inlineScript49,
-    inlineScript50
+    inlineScript50,
+    inlineScript51
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -263,6 +265,12 @@ print(---b)
         expect(visitor.printStream).toStrictEqual(['20', '-20', '20', '-20']);
     });
 
+    async function expectInlineScriptTest(description, scriptTest): Promise<void> {
+        const { hasError, visitor } = await runScript(scriptTest.script);
+        expect(hasError).toEqual(false);
+        expect(visitor.printStream).toStrictEqual(scriptTest.expected);
+    }
+
     test.each([
         ["greater than case 1", inlineScript17],
         ["greater than case 2", inlineScript18],
@@ -294,11 +302,9 @@ print(---b)
         ["if, else if, else case 4", inlineScript38],
         ["if, else if, else case 5", inlineScript39],
 
-    ])('comparison, logical operators and if, else if, else - %s', async (description, scriptTest) => {
-        const { hasError, visitor } = await runScript(scriptTest.script);
-        expect(hasError).toEqual(false);
-        expect(visitor.printStream).toStrictEqual(scriptTest.expected);
-    });
+    ])('comparison, logical operators and if, else if, else - %s', async (description, scriptTest) => 
+        await expectInlineScriptTest(description, scriptTest)
+    );
 
     test.each([
         ['while loop with continue', inlineScript40],
@@ -315,11 +321,15 @@ print(---b)
         ['for, skipping even numbers', inlineScript49],
         ['for, skipping all iterations', inlineScript50]
 
-    ])('while, for loop - %s', async (description, scriptTest) => {
-        const { hasError, visitor } = await runScript(scriptTest.script);
-        expect(hasError).toEqual(false);
-        expect(visitor.printStream).toStrictEqual(scriptTest.expected);
-    });
+    ])('while, for loop - %s',  async (description, scriptTest) => 
+        await expectInlineScriptTest(description, scriptTest)
+    );
+
+    test.each([
+        ['range function', inlineScript51]
+    ])('while, for loop - %s',  async (description, scriptTest) => 
+        await expectInlineScriptTest(description, scriptTest)
+    );
 
     test('wire auto failure case', async () => {
         await prepareSVGEnvironment(null);
