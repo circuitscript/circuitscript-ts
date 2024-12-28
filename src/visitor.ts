@@ -49,6 +49,7 @@ import {
     Property_block_exprContext,
     While_exprContext,
     For_exprContext,
+    Data_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -833,46 +834,25 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitMultiplyExpr = (ctx: MultiplyExprContext): void => {
-        this.visit(ctx.data_expr(0)!);
-        this.visit(ctx.data_expr(1)!);
-
-        const value1: number | UndeclaredReference = this.getResult(ctx.data_expr(0)!);
-        const value2: number | UndeclaredReference = this.getResult(ctx.data_expr(1)!);
-
-        if (value1 instanceof UndeclaredReference) {
-            throw value1.throwMessage();
-        }
-
-        if (value2 instanceof UndeclaredReference) {
-            throw value2.throwMessage();
-        }
-
+        const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
+        const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
+        
         let result: number | null = null;
-
         if (ctx.Multiply()) {
             result = value1 * value2;
         } else if (ctx.Divide()) {
             result = value1 / value2;
+        } else if (ctx.Modulus()) {
+            result = value1 % value2;
         }
 
         this.setResult(ctx, result);
     }
 
     visitAdditionExpr = (ctx: AdditionExprContext): void => {
-        this.visit(ctx.data_expr(0)!);
-        this.visit(ctx.data_expr(1)!);
-
-        const value1: number | UndeclaredReference = this.getResult(ctx.data_expr(0)!);
-        const value2: number | UndeclaredReference = this.getResult(ctx.data_expr(1)!);
-
-        if (value1 instanceof UndeclaredReference) {
-            throw value1.throwMessage();
-        }
-
-        if (value2 instanceof UndeclaredReference) {
-            throw value2.throwMessage();
-        }
-
+        const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
+        const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
+        
         let result: number | null = null;
         if (ctx.Addition()) {
             result = value1 + value2;
@@ -1250,6 +1230,23 @@ export class ParserVisitor extends BaseVisitor {
                     forVariableName, listItems[counter]);
 
                 this.visit(ctx.expressions_block());
+                keepLooping = true;
+
+                const currentResult = this.getResult(ctx) ?? {};
+                const {breakSignal = false, continueSignal = false} = currentResult;
+               
+                if (breakSignal && !continueSignal) {
+                    keepLooping = false;
+
+                } else if (breakSignal && continueSignal) {
+                    // Reset these signals
+                    this.setResult(ctx, {
+                        ...currentResult,
+                        breakSignal: false,
+                        continueSignal: false
+                    });
+                }
+
                 counter += 1;
             } else {
                 keepLooping = false;
@@ -1257,6 +1254,17 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.getExecutor().popBreakContext();
+    }
+
+    private resolveDataExpr<T>(data_expr: Data_exprContext | null): T {
+        this.visit(data_expr!);
+        const value: T | UndeclaredReference = this.getResult(data_expr!);
+
+        if (value instanceof UndeclaredReference) {
+            throw value.throwMessage();
+        }
+
+        return value;
     }
 
     pinTypes = [

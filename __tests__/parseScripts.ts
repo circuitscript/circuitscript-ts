@@ -994,3 +994,59 @@ while counter > 5:
     counter = counter + 1
 print(counter)
 `, ['0'])
+
+export const inlineScript46 = new ScriptTest(`
+# Test 1: Skipping even numbers
+counter = 0
+odd_sum = 0
+while counter < 10:
+    counter += 1
+    if counter % 2 == 0:  # Skip even numbers
+        continue
+    odd_sum += counter
+print(odd_sum)
+`, ['25']);
+
+export const inlineScript47 = new ScriptTest(`
+counter = 0
+while True:
+    counter += 1
+    if counter < 5:  # Skip first few iterations
+        continue
+    break
+print(counter)
+`, ['5']);
+
+export const inlineScript48 = new ScriptTest(`
+outer = 0
+inner_sum = 0
+while outer < 3:
+    inner = 0
+    while inner < 5:
+        inner += 1
+        if inner % 2 == 0:  # Skip even numbers
+            continue
+        inner_sum += inner
+    outer += 1
+print(inner_sum)
+`, ['27'])
+
+export const inlineScript49 = new ScriptTest(`
+numbers = [1, 2, 3, 4, 5, 6]
+odd_sum = 0
+for num in numbers:
+    if num % 2 == 0:  # Skip even numbers
+        continue
+    odd_sum += num
+print(odd_sum)
+`, ['9']);
+
+export const inlineScript50 = new ScriptTest(`
+empty_list = []
+count = 0
+for _ in empty_list:
+    count += 1
+    if true:  # Unreachable but should work
+        continue
+print(count)
+`, ['0'])

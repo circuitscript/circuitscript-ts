@@ -1,13 +1,26 @@
 import { runScript } from "./helpers.js";
 
-const script1 = `
+const inlineScript1 = `
 b = 10
 a = -b
 `
 
-const script2 = `
+const inlineScript2 = `
 b = 10
 a = -b / 2 - 1
+`
+
+const inlineScript3 = `
+a = 10
+a += 5
+a -= 2
+a *= 30
+a /= 5
+`
+
+const inlineScript4 = `
+a = 10
+a %= 3
 `
 
 describe('Simple math tests', () => {
@@ -23,11 +36,20 @@ describe('Simple math tests', () => {
         ["a = -1+2", 1],
         ["a = -123", -123],
         ["a = 0-123", -123],
-        [script1, -10],
-        [script2, -6]
+        [inlineScript1, -10],
+        [inlineScript2, -6],
+
+        // Modulus operators
+        ['a = 10 % 5', 0],
+        ['a = 10 % 3', 1],
+        ['a = 10 % 4', 2],
+        ['a = 10 % 2', 0],
+
+        [inlineScript3, 78],
+        [inlineScript4, 1],
+
     ])('math test - %s', async (script, expectedResult) => {
         const {visitor, hasError} = await runScript(script);
-
         expect(hasError).toBe(false);
 
         const variables = visitor.dumpVariables();

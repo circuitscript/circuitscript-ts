@@ -15,7 +15,12 @@ import {
     inlineScript42,
     inlineScript43,
     inlineScript44,
-    inlineScript45
+    inlineScript45,
+    inlineScript46,
+    inlineScript47,
+    inlineScript48,
+    inlineScript49,
+    inlineScript50
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -302,7 +307,13 @@ print(---b)
         ['infinite loop with break', inlineScript44],
         ['while loop should not run', inlineScript45],
 
+        ['while with continue (skip even numbers)', inlineScript46],
+        ['while infinite loop with `continue` and break', inlineScript47],
+        ['nested `while` with `continue`', inlineScript48],
+
         ['for loop with array', inlineScript41],
+        ['for, skipping even numbers', inlineScript49],
+        ['for, skipping all iterations', inlineScript50]
 
     ])('while, for loop - %s', async (description, scriptTest) => {
         const { hasError, visitor } = await runScript(scriptTest.script);

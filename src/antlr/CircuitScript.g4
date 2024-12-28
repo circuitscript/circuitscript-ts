@@ -58,6 +58,13 @@ Addition:   '+';
 Minus:      '-';
 Divide:     '/';
 Multiply:   '*';
+Modulus:    '%';
+
+AdditionAssign:     '+=';
+MinusAssign:        '-=';
+DivideAssign:       '/=';
+MultiplyAssign:     '*=';
+ModulusAssign:      '%=';
 
 script: (expression | NEWLINE)+ EOF;
 
@@ -66,6 +73,7 @@ expression: add_component_expr
 		| to_component_expr
         | at_component_expr
         | assignment_expr
+        | operator_assignment_expr
         | property_set_expr
         | property_set_expr2
         | double_dot_property_set_expr
@@ -133,7 +141,9 @@ at_block_pin_expression_complex: expressions_block;
 break_keyword: Break;
 continue_keyword: Continue;
 
-assignment_expr: atom_expr '=' data_expr;
+assignment_expr:            atom_expr '=' data_expr;
+operator_assignment_expr:   atom_expr (AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;
+
 keyword_assignment_expr: ID '=' data_expr;
 
 parameters: (data_expr (',' data_expr)* (',' keyword_assignment_expr)*)
@@ -146,7 +156,7 @@ data_expr:
     '(' data_expr ')'                                   #RoundedBracketsExpr
     | (value_expr | atom_expr)                          #ValueAtomExpr
     | unary_operator data_expr                          #UnaryOperatorExpr
-    | data_expr (Multiply | Divide) data_expr           #MultiplyExpr
+    | data_expr (Multiply | Divide | Modulus) data_expr #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
     | data_expr binary_operator data_expr               #BinaryOperatorExpr
     | data_expr (LogicalAnd | LogicalOr) data_expr      #LogicalOperatorExpr
@@ -217,7 +227,7 @@ wire_atom_expr: ID (INTEGER_VALUE | data_expr)     # wire_expr_direction_value
                 ;    
 wire_expr: Wire wire_atom_expr*;
 
-array_expr: '[' data_expr (',' data_expr)* ']';
+array_expr: '[' (data_expr (',' data_expr)*)* ']';
 
 point_expr: Point ID;
 import_expr: Import ID;

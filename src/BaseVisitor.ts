@@ -11,8 +11,8 @@ import { join } from 'path';
 import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
     Break_keywordContext, Continue_keywordContext, ExpressionContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
-    FunctionCallExprContext, Import_exprContext, ParametersContext, RoundedBracketsExprContext, 
-    ScriptContext, 
+    FunctionCallExprContext, Import_exprContext, Operator_assignment_exprContext, 
+    ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
     Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser";
 import { CircuitScriptVisitor } from "./antlr/CircuitScriptVisitor";
 import { ExecutionContext } from "./execute";
@@ -185,20 +185,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     }
 
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
-        const atomStr = ctx.atom_expr().getText();
-
-        // Do not allow the atom to have any parentheses in the assignment
-        if (atomStr.indexOf('(') !== -1 || atomStr.indexOf(')') !== -1) {
-            throw "Invalid assignment expression!";
-        }
-
-        const ctxAtomExpr = ctx.atom_expr();
-        this.visit(ctxAtomExpr);
-        const reference: ReferenceType = this.getResult(ctxAtomExpr);
-
-        if (!reference.found && reference.trailers && reference.trailers.length > 0){
-            throw 'Undefined reference: ' + reference.name + '.' + reference.trailers.join('.');
-        }
+        const reference = this.getReference(ctx.atom_expr()!);
 
         const ctxDataExpr = ctx.data_expr();
         this.visit(ctxDataExpr);
@@ -236,6 +223,82 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         }
         
         this.setResult(ctx, value);
+    }
+
+    visitOperator_assignment_expr = (ctx: Operator_assignment_exprContext): void => {
+        const reference = this.getReference(ctx.atom_expr()!);
+
+        const ctxDataExpr = ctx.data_expr();
+        this.visit(ctxDataExpr);
+        const value = this.getResult(ctxDataExpr);
+
+        if (!reference.found) {
+            throw 'Undefined reference: ' + reference.name;
+        }
+
+        const trailers = reference.trailers ?? [];
+
+        let currentValue: number | null = null;
+
+        if (trailers.length === 0) {
+            currentValue = this.getExecutor().scope.variables.get(reference.name) as number;
+        } else {
+            if (reference.value instanceof ClassComponent) {
+                currentValue = this.getInstanceParam(reference.value, trailers);
+            } else if (reference.value instanceof Object) {
+                currentValue = reference.value[trailers.join('.')];
+            }
+        }
+
+        if (currentValue === null) {
+            throw 'Operator assignment failed: could not get value';
+        }
+
+        let newValue = 0;
+        if (ctx.AdditionAssign()) {
+            newValue = currentValue + value;
+        } else if (ctx.MinusAssign()) {
+            newValue = currentValue - value;
+        } else if (ctx.MultiplyAssign()) {
+            newValue = currentValue * value;
+        } else if (ctx.DivideAssign()) {
+            newValue = currentValue / value;
+        } else if (ctx.ModulusAssign()){
+            newValue = currentValue % value;
+        } else {
+            throw 'Operator assignment failed: could not perform operator';
+        }
+
+        // Reassign back to value
+        if (trailers.length === 0) {
+            this.getExecutor().scope.variables.set(reference.name, newValue);
+        } else {
+            if (reference.value instanceof ClassComponent) {
+                this.setInstanceParam(reference.value, trailers, newValue);
+            } else if (reference.value instanceof Object) {
+                reference.value[trailers.join('.')] = newValue;
+            }
+        }
+
+        this.setResult(ctx, newValue);
+    }
+
+    private getReference(ctx: Atom_exprContext): ReferenceType {
+        const atomStr = ctx.getText();
+
+        // Do not allow the atom to have any parentheses in the assignment
+        if (atomStr.indexOf('(') !== -1 || atomStr.indexOf(')') !== -1) {
+            throw "Invalid assignment expression!";
+        }
+
+        this.visit(ctx);
+        const reference: ReferenceType = this.getResult(ctx);
+
+        if (!reference.found && reference.trailers && reference.trailers.length > 0) {
+            throw 'Undefined reference: ' + reference.name + '.' + reference.trailers.join('.');
+        }
+
+        return reference;
     }
 
     visitAtom_expr = (ctx: Atom_exprContext): void => {
@@ -758,6 +821,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         this.getExecutor().log(
             `set instance ${object.instanceName} param ${paramName} to ${value}`);
+    }
+
+    protected getInstanceParam<T>(object: ClassComponent, trailers: string[]): T {
+        const paramName = trailers[0];
+        return object.getParam(paramName) as T;
     }
 
     protected enterNewChildContext(executionStack: ExecutionContext[],
