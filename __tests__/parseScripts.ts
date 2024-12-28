@@ -952,12 +952,12 @@ while a < 10:
     ]);
 
 export const inlineScript41 = new ScriptTest(`
-a = ["hello", "world", 1,2,3]
+a = [0, "hello", "world", 1,2,3]
 
 for item in a:
     print(item)
 `,
-    ['hello', 'world', '1', '2', '3']);
+    ['0', '"hello"', '"world"', '1', '2', '3']);
 
 
 export const inlineScript42 = new ScriptTest(`
@@ -1057,4 +1057,9 @@ print(a)
 
 b = range(3, 10)
 print(b)
-`, ['[ 0, 1, 2, 3, 4 ]', '[ 3, 4, 5, 6, 7, 8, 9 ]'])
+`, ['[0, 1, 2, 3, 4]', '[3, 4, 5, 6, 7, 8, 9]']);
+
+export const inlineScript52 = new ScriptTest(`
+a = enumerate(["A", "B", "C", "D"])
+print(a)
+`, ['[[0, "A"], [1, "B"], [2, "C"], [3, "D"]]']);

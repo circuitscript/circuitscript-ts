@@ -832,6 +832,8 @@ export enum PlaceHolderCommands {
     text = 'text',
 
     units = 'units',
+
+    for = 'for',
 }
 
 export class SymbolCustom extends SymbolGraphic {

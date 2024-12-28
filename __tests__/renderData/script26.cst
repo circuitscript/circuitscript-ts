@@ -1,0 +1,26 @@
+import lib
+
+width = 100
+height = 100
+value = 30k
+
+tmp = create component:
+    pins: 2
+    display: create graphic:
+        rect: 0, 0, width, height
+        hpin: 1, -width/2 - 30, 0, 30
+        hpin: 2, width/2 + 30, 0, -30
+        label: "refdes", -width/2, -height/2 - 20 , "?", fontSize=50, anchor="left"
+        label: "value", 0, 4, value, fontSize=30, anchor="middle", vanchor="middle"
+
+        for i in range(0, 5):
+            vline: i * 100, 0, 100
+
+    type: "res"
+    params:
+        value: value
+        size: "0402"
+        footprint: "Resistor_SMD:R_0402_1005Metric"
+
+at tmp
+wire left 100

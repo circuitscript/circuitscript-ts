@@ -110,33 +110,28 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.executionStack[this.executionStack.length - 1];
     }
 
+    protected toString(obj: any): string {
+        if (typeof obj === 'string') {
+            return `"${obj}"`;
+        } else if (typeof obj === 'number') {
+            return obj.toString();
+        } else if (Array.isArray(obj)) {
+            const inner = obj.map(item => this.toString(item)).join(", ");
+            return "[" + inner + "]";
+        } else {
+            if (obj.toString) {
+                return obj.toString();
+            } else {
+                throw "Could not create string from object: " + obj;
+            }
+        }
+    }
+
     protected setupPrintFunction(context: ExecutionContext): void {
         context.createFunction('print', (params) => {
             // Only accept position params
             const items = params.map(([, , value]) => {
-                if (Array.isArray(value)) {
-                    const tmpValues = value.map(item => {
-                        if (item instanceof String) {
-                            return `"${item}"`;
-                        } else if (item.toString) {
-                            return item.toString();
-                        } else {
-                            throw "Failed to print value: " + value;
-                        }
-                    });
-
-                    const valueStr = tmpValues.join(", ");
-                    return "[ " + valueStr + " ]";
-
-                } else if (value.toString) {
-                    if (value instanceof String) {
-                        return `"${value}"`;
-                    } else {
-                        return value.toString();
-                    }
-                } else {
-                    throw "Failed to print value: " + value;
-                }
+                return this.toString(value);
             });
 
             if (this.printToConsole) {
@@ -171,6 +166,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
 
             return [this, returnArray];
+        });
+
+        context.createFunction('enumerate', (params) => {
+            const [, , array] = params[0];
+            if (!Array.isArray(array)) {
+                throw "Invalid parameter for enumerate function!";
+            }
+            const output = array.map((item, index) => {
+                return [index, item];
+            });
+            return [this, output];
         });
     }
 

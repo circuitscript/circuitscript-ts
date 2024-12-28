@@ -39,7 +39,6 @@ import {
     UnaryOperatorExprContext,
     Wire_expr_direction_onlyContext,
     Wire_expr_direction_valueContext,
-    Graphic_exprContext,
     If_exprContext,
     If_inner_exprContext,
     LogicalOperatorExprContext,
@@ -50,6 +49,9 @@ import {
     While_exprContext,
     For_exprContext,
     Data_exprContext,
+    GraphicCommandExprContext,
+    Graphic_expressions_blockContext,
+    GraphicForExprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -271,26 +273,9 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
-
-        const commands = ctx.graphic_expr().reduce((accum, item) => {
-            this.visit(item);
-            const [commandName, parameters] = 
-                this.getResult(item) as [string, CallableParameter[]];
-
-            const keywordParams = new Map<string, any>();
-            const positionParams = parameters.reduce(
-                (accum, [argType, name, value]) => {
-                    if (argType === 'position') {
-                        accum.push(value);
-                    } else {
-                        keywordParams.set(name, value);
-                    }
-                    return accum;
-                }, [] as any[]);
-
-            accum.push([commandName, positionParams, keywordParams]);
-            return accum;
-        }, [] as GraphicExprCommand[]);
+        const graphicsExpressionsCtx = ctx.graphic_expressions_block();
+        this.visit(graphicsExpressionsCtx);
+        const commands = this.getResult(graphicsExpressionsCtx);
 
         const drawing = new SymbolDrawingCommands(commands);
         drawing.source = ctx.getText();
@@ -298,7 +283,36 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, drawing);
     }
 
-    visitGraphic_expr = (ctx:Graphic_exprContext): void => {
+    visitGraphic_expressions_block = (ctx: Graphic_expressions_blockContext): void => {
+        const commands = ctx.graphic_expr().reduce((accum, item) => {
+            this.visit(item);
+            const [commandName, parameters] =
+                this.getResult(item) as [string, CallableParameter[]];
+
+            if (commandName === PlaceHolderCommands.for) {
+                accum = accum.concat(parameters);
+            } else {
+                const keywordParams = new Map<string, any>();
+                const positionParams = parameters.reduce(
+                    (accum, [argType, name, value]) => {
+                        if (argType === 'position') {
+                            accum.push(value);
+                        } else {
+                            keywordParams.set(name, value);
+                        }
+                        return accum;
+                    }, [] as any[]);
+
+                accum.push([commandName, positionParams, keywordParams]);
+            }
+
+            return accum;
+        }, [] as GraphicExprCommand[]);
+
+        this.setResult(ctx, commands);
+    }
+
+    visitGraphicCommandExpr = (ctx:GraphicCommandExprContext): void => {
         let commandName: string | null = null;
         const command = ctx._command;
 
@@ -340,6 +354,44 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, [commandName, parameters]);
+    }
+
+    visitGraphicForExpr = (ctx: GraphicForExprContext): void => {
+        const forVariableNames = ctx.ID().map(item => item.getText());
+        const ctxDataExpr = ctx.data_expr();
+
+        this.visit(ctxDataExpr);
+        const listItems = this.getResult(ctxDataExpr);
+
+        let keepLooping = true;
+        let counter = 0;
+        let allCommands: CallableParameter[] = [];
+
+        while (keepLooping) {
+            if (counter < listItems.length) {
+                let useValueArray: unknown[] = listItems[counter];
+                if (!Array.isArray(useValueArray)) {
+                    useValueArray = [useValueArray];
+                }
+
+                useValueArray.forEach((value, index) => {
+                    this.getExecutor().scope.variables.set(
+                        forVariableNames[index], value);
+                });
+
+                const graphicsExpressionsCtx = ctx.graphic_expressions_block()!;
+                this.visit(graphicsExpressionsCtx);
+                const commands = this.getResult(graphicsExpressionsCtx);
+
+                allCommands = allCommands.concat(commands);
+
+                counter += 1;
+            } else {
+                keepLooping = false;
+            }
+        }
+
+        this.setResult(ctx, [PlaceHolderCommands.for, allCommands]);
     }
 
     visitCreate_module_expr = (ctx: Create_module_exprContext): void => {
@@ -1223,9 +1275,8 @@ export class ParserVisitor extends BaseVisitor {
         let counter = 0;
 
         while (keepLooping) {
-            const item = listItems[counter];
+            if (counter < listItems.length) {
 
-            if (item) {
                 this.getExecutor().scope.variables.set(
                     forVariableName, listItems[counter]);
 

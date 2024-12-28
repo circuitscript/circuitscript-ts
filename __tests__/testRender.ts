@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream, readFileSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, readFileSync, unlinkSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
@@ -61,7 +61,9 @@ describe('Render tests', () => {
         ['catch repeated nodes in the origin nodes list', 'script22.cst'],
 
         ['multiple sheet commands', 'script23.cst'],
-        ['single sheet command', 'script24.cst']
+        ['single sheet command', 'script24.cst'],
+        
+        ['for command in graphics expr', 'script26.cst'],
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);
@@ -78,26 +80,43 @@ describe('Render tests', () => {
     
     test('pdf output', async () => {
         const scriptPath = 'script1.cst';
+        const targetPdf = mainPath + "pdfs/" + scriptPath + ".pdf";
+
+        // Remove the original file first
+        if (existsSync(targetPdf)) {
+            unlinkSync(targetPdf);
+        }
 
         // First, generate the PDF
         const sheetFrames = await renderCommon(scriptPath);
         const svgCanvas = renderSheetsToSVG(sheetFrames);
+
+        // Full ISO time string is given, because the CI server might
+        // have a different timezone
+        const useDate = new Date("2024-10-31T16:00:00.000Z");
 
         const sheetSize = "A4";
         const doc = new PDFDocument({
             layout: 'landscape',
             size: sheetSize,
             info: {
-                CreationDate: new Date(2024, 10, 1, 0, 0, 0, 0),
+                CreationDate: useDate,
             }
         });
 
         generatePdfOutput(doc, svgCanvas, sheetSize, false, 1);
-
-        const targetPdf = mainPath + "pdfs/" + scriptPath + ".pdf";
         const outputStream = createWriteStream(targetPdf);
         doc.pipe(outputStream);
         doc.end();
+
+        // Wait for stream to finish
+        await new Promise(resolve => {
+            outputStream.on('finish', () => {
+                resolve();
+            });
+        });
+
+        expect(existsSync(targetPdf)).toEqual(true);
 
         // Done creating PDF, now generate the md5 hash for comparison
         const hash = crypto.createHash('md5');
@@ -116,6 +135,5 @@ describe('Render tests', () => {
 
         // Use file hash to verify that files are the same.
         expect(result).toEqual('f393653f5a848afcb1125ed3cda5b124');
-
     });
 });

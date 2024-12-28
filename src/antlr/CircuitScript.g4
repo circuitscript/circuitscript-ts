@@ -208,13 +208,18 @@ property_block_expr: property_key_expr ':' expressions_block;
 
 create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_expr )+ DEDENT;
 
-create_graphic_expr: Create Graphic ':' NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
+graphic_expressions_block:
+    NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
+
+create_graphic_expr: Create Graphic ':' graphic_expressions_block;
 
 create_module_expr: Create Module ':' NEWLINE INDENT (NEWLINE | property_expr | property_block_expr) + DEDENT;
 
 // Remove the ':' in the future?
 nested_properties_inner: (NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT);
-graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')' | nested_properties_inner);
+graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')' | nested_properties_inner)  # GraphicCommandExpr
+              | For ID (',' ID)* 'in' data_expr ':' graphic_expressions_block                                # GraphicForExpr
+              ;
 
 property_expr: property_key_expr ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;

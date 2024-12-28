@@ -57,10 +57,12 @@ import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Function_return_exprContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Create_component_exprContext } from "./CircuitScriptParser.js";
+import { Graphic_expressions_blockContext } from "./CircuitScriptParser.js";
 import { Create_graphic_exprContext } from "./CircuitScriptParser.js";
 import { Create_module_exprContext } from "./CircuitScriptParser.js";
 import { Nested_properties_innerContext } from "./CircuitScriptParser.js";
-import { Graphic_exprContext } from "./CircuitScriptParser.js";
+import { GraphicCommandExprContext } from "./CircuitScriptParser.js";
+import { GraphicForExprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
 import { Nested_propertiesContext } from "./CircuitScriptParser.js";
@@ -422,6 +424,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitCreate_component_expr?: (ctx: Create_component_exprContext) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.graphic_expressions_block`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitGraphic_expressions_block?: (ctx: Graphic_expressions_blockContext) => Result;
+    /**
      * Visit a parse tree produced by `CircuitScriptParser.create_graphic_expr`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -440,11 +448,19 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitNested_properties_inner?: (ctx: Nested_properties_innerContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.graphic_expr`.
+     * Visit a parse tree produced by the `GraphicCommandExpr`
+     * labeled alternative in `CircuitScriptParser.graphic_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitGraphic_expr?: (ctx: Graphic_exprContext) => Result;
+    visitGraphicCommandExpr?: (ctx: GraphicCommandExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `GraphicForExpr`
+     * labeled alternative in `CircuitScriptParser.graphic_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitGraphicForExpr?: (ctx: GraphicForExprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.property_expr`.
      * @param ctx the parse tree
