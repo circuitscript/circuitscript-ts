@@ -1,23 +1,995 @@
 # Changelog
 
-## v0.0.35
-- Added CHANGELOG.md
+## [v0.0.35](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.34...v0.0.35) - 2024-12-28
 
-## v0.0.34
-- Added builtin functions: `enumerate` and `range`
-- Added `for` command within graphics expressions
-- Added operator assignment
-- Updated tests
-- Added basic support for arrays
-- Added `sheet` command
+[b7312a5](https://gitlab.com/circuitscript/circuitscript-ts/commit/b7312a570ce50f4a540adb6162afbaa36b9553d2) added change log
 
-## v0.0.32
-- Fixed bug with auto wires
-- Added PDF output
+## [v0.0.34](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.32...v0.0.34) - 2024-12-28
 
-## v0.0.31
-- Changed default units to be based on mils instead of arbitrary units
-- Added support for `modules` and `ports`
+[a117e9a](https://gitlab.com/circuitscript/circuitscript-ts/commit/a117e9a72e4a5b178df6225e3f19415ab9307bc6) added operator assignment
+-  updated tests
 
-### Older notes
-Please refer to commit history
+[530f6b1](https://gitlab.com/circuitscript/circuitscript-ts/commit/530f6b1d4c76642550f24f6fc1be343b46c3b886) added simple tests for while, for and continue
+
+[fd65e32](https://gitlab.com/circuitscript/circuitscript-ts/commit/fd65e327585ff0b9efe83ee46bd7cca36aa295c7) added support for while loop
+
+[3df52b9](https://gitlab.com/circuitscript/circuitscript-ts/commit/3df52b909ef52b1a2d120fd7b375a8f37a5d85b9) added for command in graphcis expressions
+-  added enumerate function
+-  updated tests
+
+[64ab9c1](https://gitlab.com/circuitscript/circuitscript-ts/commit/64ab9c19b52c7b1fc5fdc9cd59c70e971e1df0cd) removed blank expr from grammar
+-  added simple array
+
+[1b7c22c](https://gitlab.com/circuitscript/circuitscript-ts/commit/1b7c22cd5bf1aacb9713b018b208d36b86f56c45) improved support for pdf output
+-  added 'sheet' keyword for separate sheets
+
+[5f12400](https://gitlab.com/circuitscript/circuitscript-ts/commit/5f124000f3b5c7f447c4eec10f6c6be87a9321ba) changed sheet frames to be defined in terms of component object
+-  fixed undeclared reference bugs
+-  updated tests
+
+[032c759](https://gitlab.com/circuitscript/circuitscript-ts/commit/032c759cca9750d157d98b311a15272628345179) support multi page PDF output
+
+[5d0d3df](https://gitlab.com/circuitscript/circuitscript-ts/commit/5d0d3df40ade543852bee818c8298d6370a15583) added more while loop tests
+
+[d0ae511](https://gitlab.com/circuitscript/circuitscript-ts/commit/d0ae5119238a644963e5ef9f8d90852c4ac08dd7) updated tests for sheet command
+-  fixed pdf output if sheet not defined
+-  updated tests
+
+[738ab5c](https://gitlab.com/circuitscript/circuitscript-ts/commit/738ab5c60e0c29247346e8459f3a611f5f0c5647) fixed bug in pdf output rendering
+-  updated tests
+
+[53438cf](https://gitlab.com/circuitscript/circuitscript-ts/commit/53438cf1a151ce08d46cf34b9df21d986d7e1d96) added range function
+-  added tests for range function
+
+## [v0.0.32](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.31...v0.0.32) - 2024-12-02
+
+[d568819](https://gitlab.com/circuitscript/circuitscript-ts/commit/d56881985a5b181885c0e62dc2e54d6c2b2d59b0) backup
+
+[6dd9eec](https://gitlab.com/circuitscript/circuitscript-ts/commit/6dd9eecf1e652db88e166071e5d04e5c53af31fb) added pdf output
+-  updated tests
+
+[045e224](https://gitlab.com/circuitscript/circuitscript-ts/commit/045e224a0a0e0e8d54c4c5d6013d354c68d3758c) fixed bug with auto wires
+-  added tests
+
+## [v0.0.31](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.30...v0.0.31) - 2024-11-28
+
+[4faa3f7](https://gitlab.com/circuitscript/circuitscript-ts/commit/4faa3f751fb96519ec39a22e2eb1cc23d696b654) backup font
+
+## [v0.0.30](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.29...v0.0.30) - 2024-11-27
+
+[60dba2b](https://gitlab.com/circuitscript/circuitscript-ts/commit/60dba2b8a5b03053f9f36b8e115954fd9aade347) wrap indented expressions in block
+
+[dcf25b6](https://gitlab.com/circuitscript/circuitscript-ts/commit/dcf25b65ac2a6c05a59bac80975b266e196fc70e) added initial support for modules
+-  changed component type to module in library
+
+[19e7cf1](https://gitlab.com/circuitscript/circuitscript-ts/commit/19e7cf1bfbaee96414df298d391522329dd271e5) change font sizing to be based on mils
+-  updated lib.cst
+-  updated tests, moved svg outputs to another folder
+
+[9bfc6f4](https://gitlab.com/circuitscript/circuitscript-ts/commit/9bfc6f48ad209478dcb83c21a408ba13003a3d05) added tests for modules
+
+[fc25211](https://gitlab.com/circuitscript/circuitscript-ts/commit/fc2521117fbbc6477cc7e1d086ac95858a1b787d) changed internal units to mm
+-  set default user code units to mils
+-  updated tests to mils
+
+[4147e33](https://gitlab.com/circuitscript/circuitscript-ts/commit/4147e336dca4c635b8801b83f97a1c62d4d89f8d) changed font to Arial to fix rendering issues
+-  added support for ports
+
+[0741db6](https://gitlab.com/circuitscript/circuitscript-ts/commit/0741db6be4ca65f1b3dc23110819cfe738bc2840) backup for integrating mm and mils units
+
+[3aec157](https://gitlab.com/circuitscript/circuitscript-ts/commit/3aec157e8571437fd88be5fbd4aa1904a3968825) updated module creation scope
+-  fixed module component namespace
+-  updated tests
+
+[685d31f](https://gitlab.com/circuitscript/circuitscript-ts/commit/685d31f6b6e2a277221c69d48d334a656f83e75d) fixed issue with extra wire junctions and warnings about component placement
+
+[e368cfd](https://gitlab.com/circuitscript/circuitscript-ts/commit/e368cfddba7b74e5f27bf00bcbf0772928d606b9) added error for auto wire length case
+-  updated test
+
+[85adee0](https://gitlab.com/circuitscript/circuitscript-ts/commit/85adee094613c2bdfb13d6bccd6198e6691b60b2) fixed orientation bug in initial at command
+-  changed global colors
+
+[0571b32](https://gitlab.com/circuitscript/circuitscript-ts/commit/0571b321ed3358a8c17a8ef5e328038d6e5c92e5) fixed component naming issue
+-  updated test
+
+## [v0.0.29](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.28...v0.0.29) - 2024-10-18
+
+[a7f5a57](https://gitlab.com/circuitscript/circuitscript-ts/commit/a7f5a5793f7bdeb77fe66ba921a4c5bcd6e95d74) updated color scheme
+-  updated tests
+
+## [v0.0.28](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.27...v0.0.28) - 2024-10-17
+
+[2d8d9f2](https://gitlab.com/circuitscript/circuitscript-ts/commit/2d8d9f20a0091ec3731df169fd8645ca3b21ef2c) fixed not fitted cross placement
+-  fixed tests
+-  updated lib
+
+## [v0.0.27](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.26...v0.0.27) - 2024-10-17
+
+[2b8322f](https://gitlab.com/circuitscript/circuitscript-ts/commit/2b8322f6f328347864407abc49f27fca025f085f) added textbox as parent of label geometry
+
+[f09de7d](https://gitlab.com/circuitscript/circuitscript-ts/commit/f09de7d62a8c52c2afcd9f1dbf476510b6c32aef) generate pin positions for symbol custom
+-  added test
+
+[07c1912](https://gitlab.com/circuitscript/circuitscript-ts/commit/07c19123bcf262f23b58841d7ad37c02c0e3c436) updated execute engine to layout components based on connect wire orientation
+-  added tests
+
+[3298ad5](https://gitlab.com/circuitscript/circuitscript-ts/commit/3298ad52248d6d87474205f9dcd1e67bc5f756b5) set modifiers to have priority over wire orientation
+-  fixed tests
+
+[6a28b8a](https://gitlab.com/circuitscript/circuitscript-ts/commit/6a28b8a6b5248091ec44745f4bc618c7c5d2b25b) fixed arc drawing bug
+-  added test
+
+[d8e92c2](https://gitlab.com/circuitscript/circuitscript-ts/commit/d8e92c2dac90971c48e26dc3fe589dbb9431c805) added test for text graphic expr command
+-  fixed tests
+
+[792de12](https://gitlab.com/circuitscript/circuitscript-ts/commit/792de12bf81c33a6e8a240c0405a40d086adeeb2) added handling of keywords for function calls
+
+[ea0216c](https://gitlab.com/circuitscript/circuitscript-ts/commit/ea0216c116e4a5f9519babebd29f4208ce3d0969) added anchor modifier
+-  added tests
+
+[778e8b9](https://gitlab.com/circuitscript/circuitscript-ts/commit/778e8b97ad74e3ee96b90748454299b3bbb0518c) fixed component cloning issues
+-  fixed tests
+-  changed component orientation to flip
+
+[b06bd7d](https://gitlab.com/circuitscript/circuitscript-ts/commit/b06bd7d1836145a2e9e3e9421275b889587b1f2b) fixed wire orientation for auto wires
+
+## [v0.0.26](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.25...v0.0.26) - 2024-08-28
+
+[0b82f1a](https://gitlab.com/circuitscript/circuitscript-ts/commit/0b82f1a0d1b3705938298c9b4cf14d94f9c2e27d) added comparison and logical operators
+-  updated tests
+
+[2cf8c67](https://gitlab.com/circuitscript/circuitscript-ts/commit/2cf8c6739c9c4658217a0fada09fc1802253d358) added copy main param to create component
+-  updated tests
+
+[a07e963](https://gitlab.com/circuitscript/circuitscript-ts/commit/a07e963c292ddf312ffc7b8b465ed585e824a014) updated cli command format
+-  added test for kicad export format and missing footprints
+
+[826352a](https://gitlab.com/circuitscript/circuitscript-ts/commit/826352a7d82509a98e44161fa8dad191c1014cdf) updated license info
+
+[b9be16a](https://gitlab.com/circuitscript/circuitscript-ts/commit/b9be16a933199a7cfac21077a745490f53f89151) removed __is_net
+-  updated tests
+
+[80374e6](https://gitlab.com/circuitscript/circuitscript-ts/commit/80374e6fe5250d3bb26bc0140946d0f7b4b1af8d) renamed sub_expr to graphic_expr
+
+[b0a8204](https://gitlab.com/circuitscript/circuitscript-ts/commit/b0a8204a7f371d7e7a7d7831c6fdd755a7ad54fd) updated handling of reference type for pin type
+
+[5deb2cd](https://gitlab.com/circuitscript/circuitscript-ts/commit/5deb2cd3a18244a1e9720daf4b0a0e7957072fae) removed -f flag for cli
+
+[7089606](https://gitlab.com/circuitscript/circuitscript-ts/commit/7089606c3ec6d817104d65052a85cc356d246716) fixed handling of null component or pin
+
+## [v0.0.25](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.24...v0.0.25) - 2024-08-04
+
+[0334eb8](https://gitlab.com/circuitscript/circuitscript-ts/commit/0334eb8d99140f2dc224128619f83f7a40448101) changed antlr4 runtime to antlr4ng
+-  updated code and tests for antlr4ng
+
+[94212f3](https://gitlab.com/circuitscript/circuitscript-ts/commit/94212f32d097cc789ee9ed4914f7d2ef879c9b75) initial version of symbol validator parser
+-  updated wire expression handling
+
+[60e8289](https://gitlab.com/circuitscript/circuitscript-ts/commit/60e828909f4d0742c3b90d860ac55dc029204dce) added flipX flipY commands
+-  updated tests
+
+[8bad76b](https://gitlab.com/circuitscript/circuitscript-ts/commit/8bad76b9cdfb797a6abaafdb285a13455dab4eed) backup
+
+[85c0fed](https://gitlab.com/circuitscript/circuitscript-ts/commit/85c0fed0c15c08f272bdac336c2d5b0c965d039f) updated syntax for component modifiers
+-  updated tests
+
+[2d7a845](https://gitlab.com/circuitscript/circuitscript-ts/commit/2d7a845e24afdd442367ed662ed9549c4dc3d462) added semantic token visitor
+-  minor cleanups
+
+[77d4351](https://gitlab.com/circuitscript/circuitscript-ts/commit/77d4351e736748c66b8c89af4ec6f4d8c7e81112) changed from return values to storing in map
+
+[1f6564e](https://gitlab.com/circuitscript/circuitscript-ts/commit/1f6564e7cd9f74e4702c7d3cf6320e910c462a7e) cleanups
+
+[30e2c73](https://gitlab.com/circuitscript/circuitscript-ts/commit/30e2c73e42c0ded5a40d68191e180fab8046017f) updated symbol validation
+-  updated tests
+-  renamed logging function to log
+
+[09ac372](https://gitlab.com/circuitscript/circuitscript-ts/commit/09ac372daa0a6fcb8a6ab7317cb6d1a9a2ace7aa) added tests for symbol validation
+
+[01a34e5](https://gitlab.com/circuitscript/circuitscript-ts/commit/01a34e55f81154c1e4c4746d27dac96314662902) error handling cleanup
+-  added launch.json
+-  fixed comments in lib.cst
+
+[f5816e7](https://gitlab.com/circuitscript/circuitscript-ts/commit/f5816e7bc3285e6e7d6a1f85886f00c777897493) backup examples
+
+[1d09e93](https://gitlab.com/circuitscript/circuitscript-ts/commit/1d09e93d9044eb854dbb4fdcf4e5c8e4b1f35fdd) clean up tools path fetching
+-  update package json list of files
+
+[2ef31ef](https://gitlab.com/circuitscript/circuitscript-ts/commit/2ef31efe072b832f418eec1581be78f70a466ce5) improved scripts that start with `add` or `wire` commands
+-  updated tests
+
+## [v0.0.24](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.23...v0.0.24) - 2024-07-10
+
+[fd1e5c6](https://gitlab.com/circuitscript/circuitscript-ts/commit/fd1e5c69626b6a7aee5bbe4e80322d3f3a35d438) updated release configs
+-  update gitlab ci config
+
+## [v0.0.23](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.22...v0.0.23) - 2024-07-10
+
+[a9bec24](https://gitlab.com/circuitscript/circuitscript-ts/commit/a9bec24884856a855f8247dc7119ab4599d3494c) got tests working again with cjs
+
+[3becc96](https://gitlab.com/circuitscript/circuitscript-ts/commit/3becc964bf8bc00abc8ed78267efe5adac73362e) moved frame into keyword
+-  fixed wrong char for comment in lib.cst
+
+[cc9c1ca](https://gitlab.com/circuitscript/circuitscript-ts/commit/cc9c1cad4718315b3d6c2b97dd11305086323c18) minor typing fixes
+
+[3b8576e](https://gitlab.com/circuitscript/circuitscript-ts/commit/3b8576e9bf5340a9fd92c6a60a43b31042d639e4) parse comments as tokens
+-  fixed svgdom import for commonjs
+
+[918ab2e](https://gitlab.com/circuitscript/circuitscript-ts/commit/918ab2e284e0e978f91e78b538c01271a1291434) initial semantic parsing
+
+[352dabe](https://gitlab.com/circuitscript/circuitscript-ts/commit/352dabeac5e5969e2d08f477583954a798403a27) added tsconfigs for mjs and cjs
+-  updated tests
+
+[ffa4adb](https://gitlab.com/circuitscript/circuitscript-ts/commit/ffa4adb994033230601c36976750ee8fa7393438) updated semantic tokens
+
+## [v0.0.22](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.21...v0.0.22) - 2024-06-28
+
+[e82d205](https://gitlab.com/circuitscript/circuitscript-ts/commit/e82d205d30ef1255f1ecf9cc117a492a6c861860) generate types
+
+## [v0.0.21](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.20...v0.0.21) - 2024-06-27
+
+[1c9ffcf](https://gitlab.com/circuitscript/circuitscript-ts/commit/1c9ffcfeffa66fdd85f8c74a65bc08322b443807) fixed handling of unary operator before parentheses
+-  updated test
+
+## [v0.0.20](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.19...v0.0.20) - 2024-06-07
+
+[db9f734](https://gitlab.com/circuitscript/circuitscript-ts/commit/db9f7342ea172c15754494653d0b91d554d38f5b) updated arduino example with joins, parallels, branches and points
+
+[003da66](https://gitlab.com/circuitscript/circuitscript-ts/commit/003da66b97498f26ff477d4adcde74ebe0e06f20) added parsing of different consecutive block types
+-  added test
+
+## [v0.0.19](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.18...v0.0.19) - 2024-06-02
+
+[1104420](https://gitlab.com/circuitscript/circuitscript-ts/commit/11044206d26f9872c252099a40394e8d0a2afe18) added `point` blocks
+-  added tests for `point` blocks
+
+[512cf7e](https://gitlab.com/circuitscript/circuitscript-ts/commit/512cf7e27f0d9de3bb86fc1f022e46f58129f42b) refactor branch related to blocks
+
+[6bbe52c](https://gitlab.com/circuitscript/circuitscript-ts/commit/6bbe52ccde6a6e59dbd038a608cc529c1a31e4f2) updated tests
+
+## [v0.0.18](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.17...v0.0.18) - 2024-05-31
+
+[e01f99f](https://gitlab.com/circuitscript/circuitscript-ts/commit/e01f99f0168a18905a4f57a9fa4330c589fe71f7) added support for join keyword
+-  updated tests
+
+[7367952](https://gitlab.com/circuitscript/circuitscript-ts/commit/73679521a6530cfd3e0fd5e042f03473b0f76029) fixed bug in post function calls
+-  added test
+-  added NO_NET as a global string
+
+[9ce6de4](https://gitlab.com/circuitscript/circuitscript-ts/commit/9ce6de4c530dac34900c6e1c5fa37ff1ade825ee) fixed precision issue that cause small mismatch of junction points
+
+## [v0.0.17](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.16...v0.0.17) - 2024-05-24
+
+[d828f94](https://gitlab.com/circuitscript/circuitscript-ts/commit/d828f94374f42ccc21794dbb36f6706f79445eec) fixed display and position of text
+-  hide pin display for marker point in standard lib
+-  updated test
+
+## [v0.0.16](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.16-test1...v0.0.16) - 2024-05-20
+
+## [v0.0.16-test1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.15...v0.0.16-test1) - 2024-05-20
+
+[ee8617f](https://gitlab.com/circuitscript/circuitscript-ts/commit/ee8617fc2e189b9060c9645a371fa994e6a77d71) test
+
+[8be9f9e](https://gitlab.com/circuitscript/circuitscript-ts/commit/8be9f9e25994b65d6bd116cd73a52daa6c0f150d) updated ci
+
+## [v0.0.15](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.15-test6...v0.0.15) - 2024-05-20
+
+## [v0.0.15-test6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.15-test5...v0.0.15-test6) - 2024-05-20
+
+[f5515ba](https://gitlab.com/circuitscript/circuitscript-ts/commit/f5515baa45889585abba33b0ec4af09e62d93cbe) test
+
+## [v0.0.15-test5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.15-test3...v0.0.15-test5) - 2024-05-20
+
+[e36cd07](https://gitlab.com/circuitscript/circuitscript-ts/commit/e36cd077043d93451c14b9a502daa5f5321cbf04) test
+
+## [v0.0.15-test3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.15-test2...v0.0.15-test3) - 2024-05-20
+
+## [v0.0.15-test2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.15-test...v0.0.15-test2) - 2024-05-20
+
+[dda0517](https://gitlab.com/circuitscript/circuitscript-ts/commit/dda05171077631361ad6ab76b6c2d4167ca34dd4) test
+
+## [v0.0.15-test](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.14...v0.0.15-test) - 2024-05-20
+
+[1fed7f3](https://gitlab.com/circuitscript/circuitscript-ts/commit/1fed7f32f700d88de7f72547c68654cdddfc0cda) backup arduino example
+
+[8726edc](https://gitlab.com/circuitscript/circuitscript-ts/commit/8726edcc6fb28227941d9eabc12a7ee630404bdd) cleaned up symbol drawing, added triangles
+-  updated tests
+
+[bd22fbe](https://gitlab.com/circuitscript/circuitscript-ts/commit/bd22fbe1578dbea596bbbcbeb7968da80534e865) updated font
+
+[67bc723](https://gitlab.com/circuitscript/circuitscript-ts/commit/67bc72396e8fbaf3a2eb31bcbc95d778dd2de9c7) added vpin and hpin drawing commands
+-  updated tests
+
+[8feef89](https://gitlab.com/circuitscript/circuitscript-ts/commit/8feef89b58b4e788d6539bc473c62bff96cc958b) added labels to indicate pinId and pinName
+-  fixed bug of measuring bounds of empty string
+-  updated annotater to accept custom types at runtime
+-  updated tests
+
+[90f24c1](https://gitlab.com/circuitscript/circuitscript-ts/commit/90f24c1f752fed8c938c2eb59a77f0ed1dfe3dbb) added angle for labels
+-  fixed rendering of circles
+-  updated applying of text values to labels
+-  regenerate test render data
+
+[a6a52c7](https://gitlab.com/circuitscript/circuitscript-ts/commit/a6a52c7b13891fa8f580eca7639733ecbcd9e9ae) fixed ci
+
+[93f0e2e](https://gitlab.com/circuitscript/circuitscript-ts/commit/93f0e2edd7eb4043a48ba4f8156828419f510c22) test
+
+[2fbdcf7](https://gitlab.com/circuitscript/circuitscript-ts/commit/2fbdcf720c6b519e7d470787b48c5caf1fd5c2e5) updated ci
+
+[44c4603](https://gitlab.com/circuitscript/circuitscript-ts/commit/44c460300479292242c4215c34d31f8793721127) fixed undefined labels
+
+[4abc30e](https://gitlab.com/circuitscript/circuitscript-ts/commit/4abc30e0e9b14a5934b349aad1d67cbb967b4434) test
+
+[0276917](https://gitlab.com/circuitscript/circuitscript-ts/commit/0276917296cba3fba2c67f0948512282ffc1ee23) test
+
+[b6dc9a2](https://gitlab.com/circuitscript/circuitscript-ts/commit/b6dc9a25d5332e3b55016b5718d593010c2fee5c) test
+
+## [v0.0.14](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.13...v0.0.14) - 2024-05-09
+
+[8fe3d89](https://gitlab.com/circuitscript/circuitscript-ts/commit/8fe3d89847e79bc4bfc99b4bf2b344451ac5cf8b) updated font
+
+[b2e211b](https://gitlab.com/circuitscript/circuitscript-ts/commit/b2e211ba4a9e7fd734648cf9faf74ad640dca7e5) fixed wrong
+
+[02d16e0](https://gitlab.com/circuitscript/circuitscript-ts/commit/02d16e00b402eb8b326af8444a85e8123f6e457c) fixed ci issue
+
+## [v0.0.13](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.12...v0.0.13) - 2024-05-03
+
+[dca8164](https://gitlab.com/circuitscript/circuitscript-ts/commit/dca81645083696f83e61186afbd708990b46b230) updated arduino example
+-  renamed file
+
+[d5fedf4](https://gitlab.com/circuitscript/circuitscript-ts/commit/d5fedf4682766c24645d25560b955a3c5bb95972) minor cleanups
+
+[588a98f](https://gitlab.com/circuitscript/circuitscript-ts/commit/588a98f5fbad6857d4f3b0e0cd0485df74f3884f) fixed bug in labels for flipped components
+-  added test
+
+## [v0.0.12](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.11...v0.0.12) - 2024-04-28
+
+[146aa58](https://gitlab.com/circuitscript/circuitscript-ts/commit/146aa58b42d43b522ce35d84de39f34f41b1a7b4) fixed version in cli tool
+-  updated package.json and README
+
+## [v0.0.11](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.10...v0.0.11) - 2024-04-28
+
+[4d6df9a](https://gitlab.com/circuitscript/circuitscript-ts/commit/4d6df9a2a89e53b82bae9135d5cea86514df335c) fixed import path of fonts
+-  added resolve to default lib.cst
+
+## [v0.0.10](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.9...v0.0.10) - 2024-04-28
+
+[1d8f80c](https://gitlab.com/circuitscript/circuitscript-ts/commit/1d8f80c42498fb7116d6cb3d623892053517859d) fixed jest tests and package version bug
+
+[c5f8947](https://gitlab.com/circuitscript/circuitscript-ts/commit/c5f8947bc6ef7aba20e7f42822c56945d5bac4d9) added smoke test for build
+
+## v0.0.9 - 2024-04-27
+
+[119973f](https://gitlab.com/circuitscript/circuitscript-ts/commit/119973f643aa891ffa459922fb37e519da6f6b54) missed out package
+
+[f455715](https://gitlab.com/circuitscript/circuitscript-ts/commit/f455715ca63fc823966ebb44195d81b77f32c70a) initial commit
+
+[8b7a511](https://gitlab.com/circuitscript/circuitscript-ts/commit/8b7a511af4387831fd2eaf96ff798b0246043a78) backup
+
+[5e79c3a](https://gitlab.com/circuitscript/circuitscript-ts/commit/5e79c3acc4a11a7126aac336579dd66b6e9564ce) minor cleanup to grammar
+
+[9c70991](https://gitlab.com/circuitscript/circuitscript-ts/commit/9c7099163c6df30f554c46bfee55e380716552ab) added basic support for frames and text
+
+[3545ec5](https://gitlab.com/circuitscript/circuitscript-ts/commit/3545ec567363a82d262139a7be5418c76df1e9a1) fixed bug in handling of negative numeric values
+
+[012617d](https://gitlab.com/circuitscript/circuitscript-ts/commit/012617d60bfd5e5cea4ae08af4315c546bea048c) update grammar to fix math operations
+-  added double dot operator
+
+[43f174e](https://gitlab.com/circuitscript/circuitscript-ts/commit/43f174e14051dc8b16b19a31d9579d6ea84438ef) added some binary and unary operators
+
+[332bb9a](https://gitlab.com/circuitscript/circuitscript-ts/commit/332bb9a7a9d3d204eaedce06fdf6ed0ceb8a14cf) backup
+
+[bb640e7](https://gitlab.com/circuitscript/circuitscript-ts/commit/bb640e75ea5a893f5492ab3ac7c49e4ab512b5e8) added net namespace command into grammar
+-  split off instance namespace and net namespace
+
+[4b02466](https://gitlab.com/circuitscript/circuitscript-ts/commit/4b0246690f5ea22bdc480fef943b3ab0c9283ead) changed indent parsing to use adapted python 3 lexer from antlr repo
+-  updated import to return errors
+
+[a1a7723](https://gitlab.com/circuitscript/circuitscript-ts/commit/a1a7723cfdec8d3d94a2de4628ec44169bf9a7a1) clean up grammar
+
+[628f7a2](https://gitlab.com/circuitscript/circuitscript-ts/commit/628f7a2c363a2a68fcc123e914fe32955760862c) fixed bug with negative unary operator
+-  fixed order of value_expr in data_expr
+
+[9c03c90](https://gitlab.com/circuitscript/circuitscript-ts/commit/9c03c9051c0c46aafcc031b0c93e22e9258c8c00) added point keyword
+
+[3849ce6](https://gitlab.com/circuitscript/circuitscript-ts/commit/3849ce64857fdd732c20dc2787b1794f19778712) fixed bug in assignment in at/to/add commands
+
+[9c9690a](https://gitlab.com/circuitscript/circuitscript-ts/commit/9c9690a3891eb718ab5d259e781651bb84727d47) added import keyword
+-  added basic support for import
+
+[a9590ab](https://gitlab.com/circuitscript/circuitscript-ts/commit/a9590abde1462ebd06f902809c2bcac17c0c8765) minor cleanups to grammar
+
+[6d22cf8](https://gitlab.com/circuitscript/circuitscript-ts/commit/6d22cf8329ff0c90b79517ff3de51568aac17ad0) simplify signed value grammar
+
+[060080e](https://gitlab.com/circuitscript/circuitscript-ts/commit/060080eb1e5e0acd21dacd1e678424ad22539be2) updated language to include wire command
+
+[6cd3dfa](https://gitlab.com/circuitscript/circuitscript-ts/commit/6cd3dfa7432598a968952518d18f4e109b5b6cd6) added style to language
+
+[6f6f903](https://gitlab.com/circuitscript/circuitscript-ts/commit/6f6f903a26ee9e10ba558e46b6df374885a33ab8) updated wire command
+
+[f90688a](https://gitlab.com/circuitscript/circuitscript-ts/commit/f90688acb32c02a3813163252debf6f235b64144) formatted with prettier
+
+[143adaf](https://gitlab.com/circuitscript/circuitscript-ts/commit/143adafb539a3b10ef72eccd0496694ef34b7132) backup examples
+
+[78b1a4c](https://gitlab.com/circuitscript/circuitscript-ts/commit/78b1a4cac9a1e59708694448799d445ad6c11905) cleanup examples
+
+[2b48928](https://gitlab.com/circuitscript/circuitscript-ts/commit/2b489285c4180e703f7bdaf74317b81f57bddda8) backup
+
+[27098eb](https://gitlab.com/circuitscript/circuitscript-ts/commit/27098eb4bf9e16b703eda10717715ae462d1e024) removed elk based code
+
+[41c5653](https://gitlab.com/circuitscript/circuitscript-ts/commit/41c565300caa6a0351baf1cb254086d96fa10a45) added direction modifiers for at and to commands
+
+[bfb4bc3](https://gitlab.com/circuitscript/circuitscript-ts/commit/bfb4bc3ecc6561a0e3dc7fc1c0e009759d5604f2) added add direction into grammar
+-  updated execute to set orientation and layout to calculate angle
+
+[551fea9](https://gitlab.com/circuitscript/circuitscript-ts/commit/551fea9478d46d0d30407ea286300e8fb4caa933) minor refactor to tests
+-  added tests for net namespace syntax
+-  backup example
+
+[046a8a5](https://gitlab.com/circuitscript/circuitscript-ts/commit/046a8a5c5b38037e5960a7fe6745857e1657cd20) added blank items to grammar
+
+[2eaae58](https://gitlab.com/circuitscript/circuitscript-ts/commit/2eaae58a418c16e7088821a25244d02beccd6cfb) backup examples
+
+[218de8a](https://gitlab.com/circuitscript/circuitscript-ts/commit/218de8a9d95b5e84ca77c1397857447a77406254) added create graphic command and sub expressions
+-  allow drawing of graphics to be handled within circuitscript
+
+[81f9de7](https://gitlab.com/circuitscript/circuitscript-ts/commit/81f9de76325cdbecac4a1fa112e8758b24028732) added handling for default params in function defs
+
+[0399966](https://gitlab.com/circuitscript/circuitscript-ts/commit/0399966b6a3a7670d791e95cc6b643287b46647d) minor cleanup to grammar
+
+[c97a274](https://gitlab.com/circuitscript/circuitscript-ts/commit/c97a274224af152c049afdc6e8556065213fe98a) added support for booleans
+-  basic implementation for set property
+
+[06f7a32](https://gitlab.com/circuitscript/circuitscript-ts/commit/06f7a32d32868893600f048725694ee1617be1e8) minor refactor for layout code into layout engine
+-  added logger to layout engine
+-  added error handling to main.ts
+
+[c3fd0d9](https://gitlab.com/circuitscript/circuitscript-ts/commit/c3fd0d91623e4aa425c304e8d80ec1e9de497102) first working basic version
+
+[32e8f57](https://gitlab.com/circuitscript/circuitscript-ts/commit/32e8f57d8dfa24ed3939d08df440a14568f0abf7) added EOF to grammar
+
+[1f3aa13](https://gitlab.com/circuitscript/circuitscript-ts/commit/1f3aa130eee8b739e6584c86c2881b1e81232dd0) moved out geometry code to separate file/interface
+-  ported symbols to use geometry code
+
+[4bd0a77](https://gitlab.com/circuitscript/circuitscript-ts/commit/4bd0a77df3f6bdbe2ec52be78691b36540986233) updated language to select pin when adding components
+
+[896ca82](https://gitlab.com/circuitscript/circuitscript-ts/commit/896ca8241e7dac8e0ffea6da49a5034b54355e55) backup arduino schematic 1
+
+[452ad37](https://gitlab.com/circuitscript/circuitscript-ts/commit/452ad37355ca843e6a1228fb8648e713537c2ec8) added test for pre ELK output
+
+[c8caafc](https://gitlab.com/circuitscript/circuitscript-ts/commit/c8caafc3ad21b8db97553336e532264edb52c43b) updated grammar for appending net namespace
+
+[7121c36](https://gitlab.com/circuitscript/circuitscript-ts/commit/7121c36b64241bd06ec89bdb81e10b4deb9dae72) initial example with custom render and layout
+
+[4b1d3d8](https://gitlab.com/circuitscript/circuitscript-ts/commit/4b1d3d8155a1ecd585b47f85330124ab6992daea) updated language to allow auto length wires
+
+[a91b74a](https://gitlab.com/circuitscript/circuitscript-ts/commit/a91b74a3c9cefd4a77ee24c1cfb17ccb640451b7) remove deleted files
+
+[2bafeb8](https://gitlab.com/circuitscript/circuitscript-ts/commit/2bafeb8093f9a6be54550d6f2c4b280d10d4aade) parse decimal values
+
+[bb26227](https://gitlab.com/circuitscript/circuitscript-ts/commit/bb2622753a332739e750c6013714666fbaae1b08) updated example with frames
+
+[7b8dfff](https://gitlab.com/circuitscript/circuitscript-ts/commit/7b8dfff729aa3c8a68bf9520fd1b67211872b606) initial implementation of nested frames
+
+[9ff8a9f](https://gitlab.com/circuitscript/circuitscript-ts/commit/9ff8a9f5c3766a1db3e9a4336414874d93172965) initial version of graph based layout
+
+[25ff025](https://gitlab.com/circuitscript/circuitscript-ts/commit/25ff02531908f591729f6aa49779e1b1eca7ba01) changed wire command handling
+-  added drawing of custom symbols
+
+[7d9fa5b](https://gitlab.com/circuitscript/circuitscript-ts/commit/7d9fa5bd6cf120ce008d5469e5bc3323311dad2a) added decimal support into grammar
+
+[b88db2e](https://gitlab.com/circuitscript/circuitscript-ts/commit/b88db2e29901e9cd319d50d0515fc350a2f47d7a) initial CI script
+-  fixes for node cli app
+
+[af4f36f](https://gitlab.com/circuitscript/circuitscript-ts/commit/af4f36fe029d699e63e4ba759ed4aadd9e4f136c) added auto keyword for parsing wires
+
+[d5ef9b7](https://gitlab.com/circuitscript/circuitscript-ts/commit/d5ef9b7b48fcc0f534ceaddbdcbdd66943a16136) backup examples
+
+[f3cef94](https://gitlab.com/circuitscript/circuitscript-ts/commit/f3cef9452010115f4aede93a04998a94cf856194) initial working version of graph layout
+
+[f362385](https://gitlab.com/circuitscript/circuitscript-ts/commit/f362385cbfd411d6b77bc3bbed8879b3e3ed67f5) update custom symbol drawing
+-  minor color update
+-  fixed undefined bbox values
+
+[cab363e](https://gitlab.com/circuitscript/circuitscript-ts/commit/cab363e535d59a8d4c2e6740021d7fc1ef94d00a) backup
+
+[b845e31](https://gitlab.com/circuitscript/circuitscript-ts/commit/b845e31633c4105f122fd83220057e62bcfdc309) backup
+
+[86dbad9](https://gitlab.com/circuitscript/circuitscript-ts/commit/86dbad92afeb5949d0c3feedf341993c23dcfa29) added place subgraph strategy 2
+
+[a00d561](https://gitlab.com/circuitscript/circuitscript-ts/commit/a00d561538a45e76cd9ea610d0d411650625f65b) backup examples
+
+[76fb6d2](https://gitlab.com/circuitscript/circuitscript-ts/commit/76fb6d2a697dba368f704c9c7bd2841fbbfe8740) updated wire merging code
+
+[55b9882](https://gitlab.com/circuitscript/circuitscript-ts/commit/55b9882d8722e2587621e4c3d595962f89367b5d) update symbols
+-  change port display
+-  show net name
+
+[fbfc4c5](https://gitlab.com/circuitscript/circuitscript-ts/commit/fbfc4c5c3393a0f0eb13232ce406ba3da93e8a70) improve typing
+
+[9b3e85a](https://gitlab.com/circuitscript/circuitscript-ts/commit/9b3e85ac5eafb420f8c17c4744bbf4768775e183) clean up examples
+
+[216f28d](https://gitlab.com/circuitscript/circuitscript-ts/commit/216f28d64f75102111062aed37d867b51b61acb4) updated typing and cleanups
+
+[c94c325](https://gitlab.com/circuitscript/circuitscript-ts/commit/c94c3257c74c3307439d6e8ffd6c9904819dff0a) initial integration with elkjs
+
+[26afa3c](https://gitlab.com/circuitscript/circuitscript-ts/commit/26afa3c0c72716143c0f4403b9c177d211728ee2) added junctions
+-  added horizontal and vertical alignment for text
+
+[00786de](https://gitlab.com/circuitscript/circuitscript-ts/commit/00786dee62b3e6d0770d338b4d8e767e34b259fb) moved test data into files
+
+[8e8f064](https://gitlab.com/circuitscript/circuitscript-ts/commit/8e8f064df4bbe085eeb04765f39e61e9ca868e10) update code for merging wires
+-  added test for merging wires
+-  minor cleanups
+
+[1463d9e](https://gitlab.com/circuitscript/circuitscript-ts/commit/1463d9e98a14ed1b0de3dd3e274d5cf7dc5d733d) added net name for To sequence action
+-  updated elk layout config
+
+[72e4cda](https://gitlab.com/circuitscript/circuitscript-ts/commit/72e4cdaa2d65df3e3c487439c7c605092bf1ef3d) backup documentation from python repo
+
+[f49354b](https://gitlab.com/circuitscript/circuitscript-ts/commit/f49354b4c82832ace87aa6965397db9813e9b430) fixed cloning bug of display prop
+
+[e3ad9df](https://gitlab.com/circuitscript/circuitscript-ts/commit/e3ad9df652fbbe1af37a29210102c5569ebdecaf) added concept of the sequence to determine the drawing order
+-  updated config for layout algorithm
+
+[c9f6948](https://gitlab.com/circuitscript/circuitscript-ts/commit/c9f69480bd11f8ec0b4db9cd3f3e37443019774c) added atom expr to better handle properties of IDs, etc.
+
+[562cd56](https://gitlab.com/circuitscript/circuitscript-ts/commit/562cd562adf525b7c8984c30d0ee7fb414cb473c) added symbol drawing class
+
+[b149a7f](https://gitlab.com/circuitscript/circuitscript-ts/commit/b149a7f4bac200fee79595cb81063240388be402) added layout for subgraphs
+-  moved get bounds to layout
+
+[8cce5f9](https://gitlab.com/circuitscript/circuitscript-ts/commit/8cce5f9e49065206680ad0dbb3554985e77b29b2) added example 3
+
+[aa5db37](https://gitlab.com/circuitscript/circuitscript-ts/commit/aa5db3778579fe637f8cfe9628bb500bd6eda9e7) added handling for branches
+-  fixed bug when merging nets
+
+[b435da4](https://gitlab.com/circuitscript/circuitscript-ts/commit/b435da4f9c9cfc7451d890264ed876ddfe3b510e) updated example for frames
+
+[3edc4b9](https://gitlab.com/circuitscript/circuitscript-ts/commit/3edc4b9288071dcccee8615240adae968a7bcb47) updated arduino example
+
+[9ec6d84](https://gitlab.com/circuitscript/circuitscript-ts/commit/9ec6d84981dfecfddc49dc9ea921d45665ee5313) moved gnd to be defined as a circuitscript function instead of hardcoded into language
+-  updated tests
+
+[19709fc](https://gitlab.com/circuitscript/circuitscript-ts/commit/19709fc90e919a9b655dde3082885e3dfa46fcc4) added code to measure text bbox
+-  use text bbox for label sizes
+-  added basic symbols for gnd and power
+
+[b66cc30](https://gitlab.com/circuitscript/circuitscript-ts/commit/b66cc300314e70e2f0b472d14250aadb46b17031) added display prop to component to determine which graphic to display
+-  added symbol factory and basic symbols
+
+[a907d6d](https://gitlab.com/circuitscript/circuitscript-ts/commit/a907d6df9a6f0fe44bb0fc3faf93643717f09d19) removed DenterHelper
+
+[20a742e](https://gitlab.com/circuitscript/circuitscript-ts/commit/20a742eff6664ff2cd2342a54287fcdaa3d69cff) initial version of denter helper
+
+[ee9cd2e](https://gitlab.com/circuitscript/circuitscript-ts/commit/ee9cd2e4757729bab20e948c79762fe1f0a8909c) updated tests
+
+[eabff3b](https://gitlab.com/circuitscript/circuitscript-ts/commit/eabff3b4d336b4f61e8054287b015c1f3cead5ee) added tests
+
+[629946a](https://gitlab.com/circuitscript/circuitscript-ts/commit/629946af006a0ebdd32b9cd12ffcb68f8f57fdfc) clean up label structure
+-  added labels to res symbol
+
+[ff7a6ea](https://gitlab.com/circuitscript/circuitscript-ts/commit/ff7a6ea1904857c0700badc457c344a4354b99d0) cleaned up test
+
+[4912a93](https://gitlab.com/circuitscript/circuitscript-ts/commit/4912a93f5c7eb4ab482ebc3ff2889c48ab680381) changed layout algo
+-  added floating concept to render items
+
+[907a872](https://gitlab.com/circuitscript/circuitscript-ts/commit/907a8721e64da47d04f89531de2161936d8b0922) updated package name
+-  updated cli options, removed font
+
+[3892b44](https://gitlab.com/circuitscript/circuitscript-ts/commit/3892b442ceaf8d22ad3c93290fe495535eeffe0a) added arrange property when create component
+-  added ports to components
+
+[6fce2aa](https://gitlab.com/circuitscript/circuitscript-ts/commit/6fce2aa42060ae1b9ec1fcdc683c3a0123bd17dd) added handling for path drawing command
+-  added drawing commands to set line width, color and fill
+
+[b90853c](https://gitlab.com/circuitscript/circuitscript-ts/commit/b90853cdafd09c9fda2c8b78990816b3ae1f68be) updated placement and render of frames
+
+[aab7ff7](https://gitlab.com/circuitscript/circuitscript-ts/commit/aab7ff7e38a714885d244fe90682dccd65f8005e) minor refactor to layout
+
+[f6c82fc](https://gitlab.com/circuitscript/circuitscript-ts/commit/f6c82fc0e532793b7b179413266989554827bbd8) added support for labels
+
+[ce485e2](https://gitlab.com/circuitscript/circuitscript-ts/commit/ce485e202637ccebd3a9f3e791d65d575bfc6859) backup config for jest and typescript compile
+
+[6595698](https://gitlab.com/circuitscript/circuitscript-ts/commit/6595698fd60f2fee26e82a86d591b41cdfe96c04) fixed test for CI
+
+[0a8eda0](https://gitlab.com/circuitscript/circuitscript-ts/commit/0a8eda0fbbbe928740be4d02846ff8b501422073) moved annotations into visitor from layout2
+
+[3e5d57e](https://gitlab.com/circuitscript/circuitscript-ts/commit/3e5d57e2b0f903c62c1b754ef5af111a7f9f1a54) changed render position to be relative instead of absolute
+
+[a314e4f](https://gitlab.com/circuitscript/circuitscript-ts/commit/a314e4f69da1859d60f1fe84e1690ebbcc38b694) cleaned up symbol label
+
+[264f2c7](https://gitlab.com/circuitscript/circuitscript-ts/commit/264f2c73d7bbf8751062e5a1ea04741fca0f64d1) added grid
+-  minor cleanups
+
+[47c816c](https://gitlab.com/circuitscript/circuitscript-ts/commit/47c816cba6a93261281124217ba5c719ee52d6f1) reduce calls to symbol redrawing
+-  added cache for measure text to speed up layout
+
+[18b8059](https://gitlab.com/circuitscript/circuitscript-ts/commit/18b805941e1612a1176ceb7a74cc063e2b3cc6a5) added export for kicad
+-  added base name for nets
+
+[d87536f](https://gitlab.com/circuitscript/circuitscript-ts/commit/d87536f1750c31447730c3a4178a79c348272008) changed name and namespace for initial context
+-  update tests
+
+[a33e557](https://gitlab.com/circuitscript/circuitscript-ts/commit/a33e5575490452745ee37c712e50ecb90ea72b8f) renamed subgraph frames to element frames
+-  rename frame properties to parameters
+-  add text object if frame has title
+
+[a7f6cb0](https://gitlab.com/circuitscript/circuitscript-ts/commit/a7f6cb00efa811e88efdaeba26f1a002539a94d2) fixed bug in calculating label bounds
+
+[600e422](https://gitlab.com/circuitscript/circuitscript-ts/commit/600e422c83752516d7a538eaff637f746c0b5f01) fixed bug where equal reversed segments are not matched
+-  updated tests
+
+[d4f9825](https://gitlab.com/circuitscript/circuitscript-ts/commit/d4f9825e805e99c973d9736ebee66e5df2d11dac) minor cleanup and logging
+
+[bfcd75f](https://gitlab.com/circuitscript/circuitscript-ts/commit/bfcd75fc74dab4722e1cb21e3df9bae32db02bf3) any reference to net components will link to a "copy" of it
+
+[200a93e](https://gitlab.com/circuitscript/circuitscript-ts/commit/200a93e1abd460245d45122b6e7fd5b39d79847b) added type to components
+-  added basic annotation to components
+-  updated symbols to have refdes
+
+[0f7a23d](https://gitlab.com/circuitscript/circuitscript-ts/commit/0f7a23daae9aff62f5e42b57d1819d91a8a37643) changed power function to supply
+-  updated tests
+-  backup
+
+[9c58724](https://gitlab.com/circuitscript/circuitscript-ts/commit/9c587248d1e26d4fbbd9f848ed1111a7f66cd7ab) added proper bold font support
+
+[2d79889](https://gitlab.com/circuitscript/circuitscript-ts/commit/2d79889fdd8b9ae3b2900f9ef838f19bae072403) backup example
+
+[965db6f](https://gitlab.com/circuitscript/circuitscript-ts/commit/965db6fea58b8e7e956f381d3f170c55a4f85b97) added label text for power symbols
+
+[76af079](https://gitlab.com/circuitscript/circuitscript-ts/commit/76af0793f2a40f1823ef3a24c6e32e011cd80934) example with import
+
+[faac62a](https://gitlab.com/circuitscript/circuitscript-ts/commit/faac62af206ab6574dfb78b98d1d645f3c4ccf43) cleanups
+
+[d80efe8](https://gitlab.com/circuitscript/circuitscript-ts/commit/d80efe8f1b18a77c260917fe01159e668f60e564) assign port/pin position when component is created
+-  added step to swap direction of arrows
+-  rounded precision of text measurements
+
+[0499bc7](https://gitlab.com/circuitscript/circuitscript-ts/commit/0499bc76d68930184de7045be23dede84e033acd) updated handling of atom trailers and assignment
+-  create method to generate import handlers
+
+[3ea389f](https://gitlab.com/circuitscript/circuitscript-ts/commit/3ea389f476f57b1fd74c1d29b70a0b36382e4bd1) updated net objects to include namespace
+-  added namespace to execution context
+
+[2cbab6d](https://gitlab.com/circuitscript/circuitscript-ts/commit/2cbab6df3c038be979c62b3eb5c3e6778486de79) minor refactor to fix bug in origin node groups
+
+[c28f555](https://gitlab.com/circuitscript/circuitscript-ts/commit/c28f555ff773b94f62832c3046f20cddf7ea6782) fixed branching bug for sequences
+-  updated layout direction pre-process for ELK
+
+[0b1a6d9](https://gitlab.com/circuitscript/circuitscript-ts/commit/0b1a6d90183416390f8b11f0a7cd0f71ee7ecbc4) updated at command to clone net components and use as current component
+-  added tests
+
+[3c1c279](https://gitlab.com/circuitscript/circuitscript-ts/commit/3c1c27970046779cd02872c35d85f711d46f8a06) cleaned up test
+
+[904ad04](https://gitlab.com/circuitscript/circuitscript-ts/commit/904ad04ea8f291b5b8ca2c74aac93c48aec8fce7) added angle for pins
+-  added minor documentation
+
+[1f821ee](https://gitlab.com/circuitscript/circuitscript-ts/commit/1f821ee59b7dc3ed33e780761a9251c20f559d15) updated tests
+
+[3a38e93](https://gitlab.com/circuitscript/circuitscript-ts/commit/3a38e93a0787e2a50332e5e6d852bf5771d2318e) added style to component
+-  updated visitor to handle style
+-  updated resistor symbol to handle angle rotation
+
+[12c82cf](https://gitlab.com/circuitscript/circuitscript-ts/commit/12c82cfdbcb850350b3193c695c21983308489e9) improved frame layout with padding
+
+[d3829a1](https://gitlab.com/circuitscript/circuitscript-ts/commit/d3829a12a662b6a53722bfbc5e87d4f347c2cd9f) added integration with commander and figlet
+
+[2ef847e](https://gitlab.com/circuitscript/circuitscript-ts/commit/2ef847e1a90ddeef56cb51b24bc6e253bef44c5d) cleaned up how pins are specified
+
+[f2b8ebd](https://gitlab.com/circuitscript/circuitscript-ts/commit/f2b8ebd62d5679dc2b6e80eacc922f00f7081243) clean up setting of render frame parameters
+-  added special handling for title frames
+
+[d6a7d5b](https://gitlab.com/circuitscript/circuitscript-ts/commit/d6a7d5be2ee66343652b416adefacc69269e1612) split between handling of polygons and multilines
+
+[a26fab9](https://gitlab.com/circuitscript/circuitscript-ts/commit/a26fab97685ed1c7c779c2ca5cee25ba15b5c558) updated program options
+
+[a01287a](https://gitlab.com/circuitscript/circuitscript-ts/commit/a01287a791b71f8a49939e666c51893c733eeb02) missed out
+
+[6fe9c5e](https://gitlab.com/circuitscript/circuitscript-ts/commit/6fe9c5e6d6217bae2d0105193689cb4a16c2fc72) added test
+
+[1b6d23b](https://gitlab.com/circuitscript/circuitscript-ts/commit/1b6d23bfe4a4431cbe122e9e1263be7f75c91279) helpers for auto refresh
+
+[5494db7](https://gitlab.com/circuitscript/circuitscript-ts/commit/5494db7f0b0a031b97154e2b2525dab38fb97865) typing fixes
+
+[8523945](https://gitlab.com/circuitscript/circuitscript-ts/commit/85239450d31ccb0c7b169be0c891d41f07699f50) adjust canvas size
+-  cleanups
+
+[5593179](https://gitlab.com/circuitscript/circuitscript-ts/commit/55931793ddf0ff957cc8c6b23983d175ca2a95f0) removed component and changed all to use class component
+
+[2d59abf](https://gitlab.com/circuitscript/circuitscript-ts/commit/2d59abfdf635c4ae7f849aee5aa90d9a83926091) added support for specifying blanks in arrange prop
+-  added support for width prop in custom components
+-  fixed bug in getting wire bounds
+
+[a820a56](https://gitlab.com/circuitscript/circuitscript-ts/commit/a820a56788c9e9053721a9bdb1548dfdca584b10) added basic support for drawing arcs
+-  updated lib to draw arcs for inductors
+
+[c8977cd](https://gitlab.com/circuitscript/circuitscript-ts/commit/c8977cd8114899d58cb2180cb7bb519664b7c79b) updated tests
+
+[0075a15](https://gitlab.com/circuitscript/circuitscript-ts/commit/0075a159a0b24559ea67d19239b68dbefeaf8b86) minor refactor
+
+[c90dbbd](https://gitlab.com/circuitscript/circuitscript-ts/commit/c90dbbdfd27b66f1abbe010831cd50920ff0a86a) added option to generate kicad output
+-  moved server utils script into src
+-  updated test output
+
+[7ad4b78](https://gitlab.com/circuitscript/circuitscript-ts/commit/7ad4b78fab55ffd2cf7b1850d0b3ffc0b61e8a26) minor cleanups
+-  link nets
+
+[671680e](https://gitlab.com/circuitscript/circuitscript-ts/commit/671680efc890ba6c7cabfba777862d227013bd26) fixed bug in merging scope
+-  clean up types
+
+[5757081](https://gitlab.com/circuitscript/circuitscript-ts/commit/5757081fb0fe7a7cfa5fc926b4e9ef6b9b589dce) added test for component annotation
+
+[2031533](https://gitlab.com/circuitscript/circuitscript-ts/commit/2031533c37f7229d3152c15b25daaaf730622ea5) backup
+
+[29f2f91](https://gitlab.com/circuitscript/circuitscript-ts/commit/29f2f91f13678bf185d2b8f6d5ed90cd61c3f15c) added auto_ mode for anti-clockwise wire drawing to target
+-  changed auto mode to plot either an L or inverted L
+
+[480b0e3](https://gitlab.com/circuitscript/circuitscript-ts/commit/480b0e3ad9322a5b2bc74692297e17149961f505) updated layout of subgraphs
+
+[fcb8573](https://gitlab.com/circuitscript/circuitscript-ts/commit/fcb8573894bcd2c2f6b87c4ca4dccaf304bbc01e) added wire jump sequence action
+
+[0a39922](https://gitlab.com/circuitscript/circuitscript-ts/commit/0a3992249d3f2a7db5f8e4feafe0871f86f7d4f6) updated visitor to include at blocks
+
+[c9cb52c](https://gitlab.com/circuitscript/circuitscript-ts/commit/c9cb52c34ef4e47c18a3de6bcef5d90428d43e5d) fix wrong map usage
+-  added dump methods
+
+[be0924a](https://gitlab.com/circuitscript/circuitscript-ts/commit/be0924a498e3ac7eb100b7e61d716b39e7e89dc6) added namespace check to match local names to global/upper cscopes
+
+[e91ac89](https://gitlab.com/circuitscript/circuitscript-ts/commit/e91ac8910d2455df2b85b48e7771c259e7015ef6) swapped pin start and end points
+-  updated common lib
+
+[dde5544](https://gitlab.com/circuitscript/circuitscript-ts/commit/dde55448c37c555ae39689481c9300607d2c44b4) added simple math tests
+
+[27c3f77](https://gitlab.com/circuitscript/circuitscript-ts/commit/27c3f775d2e24bfb78837ddc0f31e226a1476533) add handling for 'place' property
+-  add rendering of 'x' for not placed component
+-  added print function
+
+[d3002f9](https://gitlab.com/circuitscript/circuitscript-ts/commit/d3002f93c97e8c85addcace80b33838ca6a153b8) changed type from junction to point
+-  minor cleanups on strings
+
+[3400e82](https://gitlab.com/circuitscript/circuitscript-ts/commit/3400e825ccb03743088de377fd6e4e4a7e07377d) added test for component in function param
+
+[dcde148](https://gitlab.com/circuitscript/circuitscript-ts/commit/dcde148f288d31a5cce1477ef2af11f1f4e57475) minor cleanups, version bump
+
+[4d2bd06](https://gitlab.com/circuitscript/circuitscript-ts/commit/4d2bd068841574d0891baeba2f4cb02372ee8c1e) added test for instance param assignment
+
+[ecf8a7b](https://gitlab.com/circuitscript/circuitscript-ts/commit/ecf8a7b1d970789b0b549c94fe0daa29571d5c2a) fixed ts-jest config
+-  backup packages
+
+[e99a5c1](https://gitlab.com/circuitscript/circuitscript-ts/commit/e99a5c162c382955d511d21b440b8832a183efed) backup examples
+
+[e672a70](https://gitlab.com/circuitscript/circuitscript-ts/commit/e672a703a1d1ba02acb7ae9a300c851d9a4eb02a) added test for specified refdes
+
+[8a18d9c](https://gitlab.com/circuitscript/circuitscript-ts/commit/8a18d9cfa0a5f3c1ee896aae29eaea51d445c876) added symbols for diode and LED
+
+[087c89b](https://gitlab.com/circuitscript/circuitscript-ts/commit/087c89b9dd904a107daa51f471875e207f12415f) fix bug for auto wires
+-  added debug rects
+
+[8f43ef5](https://gitlab.com/circuitscript/circuitscript-ts/commit/8f43ef5a6d18aa9f155f412b2dbe2fac13d905ae) update antlr file for updated denter helper
+
+[bc7955d](https://gitlab.com/circuitscript/circuitscript-ts/commit/bc7955dcff078cd7e5e22fc93f96e3bc9b228815) use refdes for annotation if set
+
+[e234152](https://gitlab.com/circuitscript/circuitscript-ts/commit/e2341527c9115de97ee6b7de531e4e0dcf2a22eb) use manual equality instead of lodash, much faster performance
+
+[e412dad](https://gitlab.com/circuitscript/circuitscript-ts/commit/e412dadc81d8af12ea1c394d349e52801b596f06) updated to component command to be similar to at command
+-  fixed tests
+
+[71c7a20](https://gitlab.com/circuitscript/circuitscript-ts/commit/71c7a2045606c9762daf9c25129c52f2540ec3bb) added integration with logger
+
+[c075fc3](https://gitlab.com/circuitscript/circuitscript-ts/commit/c075fc3b65ea434a4840a0edd6cbb25c11fbfc5e) minor cleanup to fix tests
+
+[fd1fdc0](https://gitlab.com/circuitscript/circuitscript-ts/commit/fd1fdc0892cd89f76105c2b8fc705895160681d7) fixed missing net resolver in base executor context
+-  added test
+
+[40d06c5](https://gitlab.com/circuitscript/circuitscript-ts/commit/40d06c51e4b35bb23df7645939d41a7e7c4835c1) added error parsing
+
+[91a72eb](https://gitlab.com/circuitscript/circuitscript-ts/commit/91a72ebb23f96db5c4cee4f7039dcab2e06f9bdb) fixed bug when symbol custom angle is not applied
+-  added text handling for 180 deg rotation
+
+[3791d04](https://gitlab.com/circuitscript/circuitscript-ts/commit/3791d04b3894bcf40e8b23c087927ef9ca5c5571) update tests
+
+[5357e8b](https://gitlab.com/circuitscript/circuitscript-ts/commit/5357e8b3903fbd04532ca04dc2975484ab837429) added test for render
+
+[c6cf328](https://gitlab.com/circuitscript/circuitscript-ts/commit/c6cf328c06d513daa9f27de23e039c1b83714ca8) updated example with latest grammar
+
+[bc1ae04](https://gitlab.com/circuitscript/circuitscript-ts/commit/bc1ae04fec776d861b72adeef0cb039fc60ef5d9) improve error handling
+
+[280f858](https://gitlab.com/circuitscript/circuitscript-ts/commit/280f858a09776273f8547828690ac8828adb1a18) added method to remove net
+-  remove child scope gnd after merging gnds
+-  added error message for wire if no value is provided for direction
+
+[bfb2f47](https://gitlab.com/circuitscript/circuitscript-ts/commit/bfb2f47d7a34b94156bc5b165c616905ac03f5a3) fixed bug in inner frame positioning
+
+[9c4d9a3](https://gitlab.com/circuitscript/circuitscript-ts/commit/9c4d9a34a0316fee761ee113a98633a83146ad03) remove redundant code
+
+[5199beb](https://gitlab.com/circuitscript/circuitscript-ts/commit/5199beb5ba0a047ba5ad5e484307b1a85c7a749c) added resolve net function to find global/upper level nets
+
+[3eef7d5](https://gitlab.com/circuitscript/circuitscript-ts/commit/3eef7d5fc7a0ff43828980fe1e165a3f6560bad5) handle parsing of blank
+
+[a17c18d](https://gitlab.com/circuitscript/circuitscript-ts/commit/a17c18db392abbb4dff5baf1bc9a19636324f6b3) added clone method
+
+[db07b60](https://gitlab.com/circuitscript/circuitscript-ts/commit/db07b60ee4d95389a1b709f2bc25209cfb458ac1) updated tests for double dot param
+
+[caa500c](https://gitlab.com/circuitscript/circuitscript-ts/commit/caa500c4aba8eb7492377c4b3657bdced183e6ed) backup example
+
+[e3055b6](https://gitlab.com/circuitscript/circuitscript-ts/commit/e3055b66b882d472d9ee620118481861cfba5338) moved out file writing from render2
+-  remove use of Inter font for now
+
+[1d200de](https://gitlab.com/circuitscript/circuitscript-ts/commit/1d200dea0a38bed4a24158216b1f7587cb171155) initial strategy handling component placed at multiple points
+-  minor update to main cli program
+
+[a59e337](https://gitlab.com/circuitscript/circuitscript-ts/commit/a59e337f2e19b130071c1d515667f71dcb25c180) added simple stop watch
+
+[8831e91](https://gitlab.com/circuitscript/circuitscript-ts/commit/8831e917f372c96bcac82e31d3d9761be90eca9a) parse pin type, pin names and alt pin names
+
+[7a06e9e](https://gitlab.com/circuitscript/circuitscript-ts/commit/7a06e9e37fab2d9482a9f97936b65a0aea65e1d6) missed out
+
+[517461a](https://gitlab.com/circuitscript/circuitscript-ts/commit/517461a0d44ff62de590e470c6d3791e9847800f) type fixes
+
+[7113f3c](https://gitlab.com/circuitscript/circuitscript-ts/commit/7113f3c587aa99a99be46f41a84915904362bbcd) updated lib to include drawing commands
+
+[5dfa691](https://gitlab.com/circuitscript/circuitscript-ts/commit/5dfa6916effc3f211a7ff375c368509168664fff) updated method to collect subgraph frames
+
+[12093c1](https://gitlab.com/circuitscript/circuitscript-ts/commit/12093c1f7977163a7bf990dfb321ab181fb3b183) fixed bug in merging child scope root in sequence actions
+
+[8fd708c](https://gitlab.com/circuitscript/circuitscript-ts/commit/8fd708c605df6550d5b885d8df3d09f6ab21ffd9) added test for drawing functions
+
+[f021939](https://gitlab.com/circuitscript/circuitscript-ts/commit/f021939278556dc57fc2b33b8dacbf43c0b53497) updated example
+
+[f16b102](https://gitlab.com/circuitscript/circuitscript-ts/commit/f16b102ec8ba29c7a6ce4fc477db289400fc01d7) added test for double dot syntax
+
+[2bc1014](https://gitlab.com/circuitscript/circuitscript-ts/commit/2bc10148854b34e5a189f7ed8436905f2a6d6579) minor cleanups
+
+[bd2280b](https://gitlab.com/circuitscript/circuitscript-ts/commit/bd2280bb74bf3689f6a52d9d16e2b1ff0994ffea) backup common lib
+
+[ceadee4](https://gitlab.com/circuitscript/circuitscript-ts/commit/ceadee4feb41448529f1aa493367cbaead713596) added test for indent
+
+[4f5a744](https://gitlab.com/circuitscript/circuitscript-ts/commit/4f5a744030f17d3f2b911d7a6426537df1b40f02) backup
+
+[254aaba](https://gitlab.com/circuitscript/circuitscript-ts/commit/254aaba6ac48ace80a901a848ef3e26df44e7b8d) updated tests
+
+[7dcfac4](https://gitlab.com/circuitscript/circuitscript-ts/commit/7dcfac4fa8fd37be239e5f59014680b26306273a) updated base lib
+
+[eff37d5](https://gitlab.com/circuitscript/circuitscript-ts/commit/eff37d57f64a313061d05027161eae8929fcc3d8) updated tests
+
+[8dc3c56](https://gitlab.com/circuitscript/circuitscript-ts/commit/8dc3c569d40e6dbc7877bcc18cb67fadc8bb38d0) separate time measurement for lexer and parser
+
+[2c595b3](https://gitlab.com/circuitscript/circuitscript-ts/commit/2c595b36ef60419cfee1406ae2bf1b77f664a3cc) added back intersection count parsing to geometry
+
+[3c0c151](https://gitlab.com/circuitscript/circuitscript-ts/commit/3c0c15158c3074b9e9b1aff6a5fb1b1eb3094a2f) add nets when component is a function param
+
+[7220e58](https://gitlab.com/circuitscript/circuitscript-ts/commit/7220e589d4b1a8f730255758dd42ae8a7535cf55) added script to regenerate test data
+
+[9a14073](https://gitlab.com/circuitscript/circuitscript-ts/commit/9a140734216e942ac5759da2dafb5037703e8b6a) added new components to common lib
+
+[27cdba2](https://gitlab.com/circuitscript/circuitscript-ts/commit/27cdba20808af90219dc9cd89770080f1a1eb39d) backup
+
+[eb6aaa5](https://gitlab.com/circuitscript/circuitscript-ts/commit/eb6aaa5d62376de1e58a77dc02babd69dcb8dd8d) updated components to have type prop
+
+[1d8b831](https://gitlab.com/circuitscript/circuitscript-ts/commit/1d8b831db861329262400dc8d7d0891ae5fcbd74) removed unused
+
+[13b9ef8](https://gitlab.com/circuitscript/circuitscript-ts/commit/13b9ef8d3bc918a867a31579acc57cc6f51c0ad2) updated tests
+
+[b9fe718](https://gitlab.com/circuitscript/circuitscript-ts/commit/b9fe7187496c66889fe5ca5a72153568ea375162) fixed bug in merging of gnd in child scope and parent scope
+-  fixed bug when finding functions in upper context
+
+[8edb3fa](https://gitlab.com/circuitscript/circuitscript-ts/commit/8edb3fa0c35fba6c0346050f8c59efd79fe95ea5) cleanup
+
+[b92c67f](https://gitlab.com/circuitscript/circuitscript-ts/commit/b92c67fe5653110d7b6aa00cafbe9c67acc9bcc1) added license
+
+[ed6b92d](https://gitlab.com/circuitscript/circuitscript-ts/commit/ed6b92d1b28c820983ace782f404095b7a0692bd) add
+
+[40b02b9](https://gitlab.com/circuitscript/circuitscript-ts/commit/40b02b94f294c9b02ff710a20f6d1583f2eb3963) place component even if subgraph only has a single node
+
+[78e85fe](https://gitlab.com/circuitscript/circuitscript-ts/commit/78e85fec7c1bb03dbc9fefd9e6a0f75dddb71173) backup
+
+[e78a8e9](https://gitlab.com/circuitscript/circuitscript-ts/commit/e78a8e99a02fbb51aa92f4e548499565cef9e068) removed elkjs
+
+[3d51dce](https://gitlab.com/circuitscript/circuitscript-ts/commit/3d51dce86096489cabed832a9a9e5c0722bbece0) changed background to dotted grid
+
+[ee9c5b8](https://gitlab.com/circuitscript/circuitscript-ts/commit/ee9c5b81a6c2debe7cde1b7bbc942745d4f40f64) backup
+
+[97b68a6](https://gitlab.com/circuitscript/circuitscript-ts/commit/97b68a61aab99d08beb092b5bdc7a0326c378c64) removed old addPin method
+-  renamed addPin2 to addPin
+-  fixed bug in custom symbol pin direction
+
+[b9e1b1b](https://gitlab.com/circuitscript/circuitscript-ts/commit/b9e1b1b1639cd70c70ce5979b27951ad33144fcb) backup examples
+
+[1b14151](https://gitlab.com/circuitscript/circuitscript-ts/commit/1b14151fd79793929e9d97d95a310937420fd7af) added blank junction symbol
+
+[497de0e](https://gitlab.com/circuitscript/circuitscript-ts/commit/497de0e6fd5a6cf0f919460ccce8c7aca90594e2) changed net name used for kicad output
+
+[1b3116e](https://gitlab.com/circuitscript/circuitscript-ts/commit/1b3116e79ab9529487400850cbe9080120786864) allow frames in functions
+
+[0a92cc8](https://gitlab.com/circuitscript/circuitscript-ts/commit/0a92cc85daa28d3f3fe2b45d8a94864c2f71adba) added pin id to render
+
+[26f205b](https://gitlab.com/circuitscript/circuitscript-ts/commit/26f205b8ca2286aa303207cbe0329e900c7e81e3) added enum for sequence actions
+
+[a2bdc35](https://gitlab.com/circuitscript/circuitscript-ts/commit/a2bdc35a346b3ac0aecc658a3ec7178500a450e4) added layout warnings
+-  added scale for render
+
+[f1df503](https://gitlab.com/circuitscript/circuitscript-ts/commit/f1df5030c733815477068dee650899df526b409d) renamed file
+
+[e719a09](https://gitlab.com/circuitscript/circuitscript-ts/commit/e719a09c39867e0f312eaee5791fc07380a1e1b1) backup packages
+
+[adbfe5a](https://gitlab.com/circuitscript/circuitscript-ts/commit/adbfe5ab89d89e07bf7beca95457827139d18582) backup packages
+-  added source maps for typescript
+
+[16d2c7d](https://gitlab.com/circuitscript/circuitscript-ts/commit/16d2c7d5f60bbd56c6da1c51dc01e2c589533611) backup
+
+[c203c24](https://gitlab.com/circuitscript/circuitscript-ts/commit/c203c243b28102d47da2fa4176306a071a2d735d) added power function
+
+[e0d8b23](https://gitlab.com/circuitscript/circuitscript-ts/commit/e0d8b2340dea21d12b86781ec459adbab618be38) fixed bug if no net is defined yet for current component and pin
+
+[8a7dfc3](https://gitlab.com/circuitscript/circuitscript-ts/commit/8a7dfc37c91955bf03604b67923035c6e8f650d7) added condition for creating new symbols
+-  removed log messages
+
+[660cb7d](https://gitlab.com/circuitscript/circuitscript-ts/commit/660cb7de9114b59ec94385d3e9e1bf864188f27c) update callback for denter helper
+
+[050658d](https://gitlab.com/circuitscript/circuitscript-ts/commit/050658db099ee0205054946808032b083444b39a) update test data
+
+[b4a3fa7](https://gitlab.com/circuitscript/circuitscript-ts/commit/b4a3fa753c1330bb3ce7aa416921ebb5f1ab851a) update test
+
+[038f85b](https://gitlab.com/circuitscript/circuitscript-ts/commit/038f85b057f14bc3dd2d62420a6e3a80cb09ccc6) updated tests for dotted grid
+
+[40ecd99](https://gitlab.com/circuitscript/circuitscript-ts/commit/40ecd997e6731c6ebdbadcc9d58fff2cf1f76af3) added math test
+
+[9ed4f49](https://gitlab.com/circuitscript/circuitscript-ts/commit/9ed4f4980795f8fb06ac5f67f6bf9876388785d0) revert back to old version to fix bug
+
+[f2e648f](https://gitlab.com/circuitscript/circuitscript-ts/commit/f2e648fcabe9dc6fb4b6045203b281b9ecefa159) ignore wire points that are empty
+
+[13c4599](https://gitlab.com/circuitscript/circuitscript-ts/commit/13c4599edede6f1ba0846cc69ca4ec8219027aba) clear typescript errors
+
+[b5d6f25](https://gitlab.com/circuitscript/circuitscript-ts/commit/b5d6f2500066d6c23d32f52257015b95f474ea8e) added test for frame
+
+[542e0e9](https://gitlab.com/circuitscript/circuitscript-ts/commit/542e0e95478122715595c1e71c2f8623c0ee7b0a) added body color for symbol custom
+-  minor update to label position for cap
+
+[ab6da08](https://gitlab.com/circuitscript/circuitscript-ts/commit/ab6da082ad45e5a3131924d905f4c3be7152fd4d) updated test data
+
+[a16dd77](https://gitlab.com/circuitscript/circuitscript-ts/commit/a16dd77a68cbddb35ddee7406313b1c7b71b3aef) added gap parameter to frame
+
+[4fc52e9](https://gitlab.com/circuitscript/circuitscript-ts/commit/4fc52e9bf2ff776fbfdf12f4ac92964653161bb9) updated res symbol to fit grid
+
+[f16c158](https://gitlab.com/circuitscript/circuitscript-ts/commit/f16c158d81477e80056811836c453bebaa4cc07e) backup
+
+[614be7f](https://gitlab.com/circuitscript/circuitscript-ts/commit/614be7f6b6147c0f8bf3e75c2aa4c2210e7f0100) minor cleanups
+
+[941980e](https://gitlab.com/circuitscript/circuitscript-ts/commit/941980e449ae24aa9af471249199ab4bc4efd738) added check if component not found
+
+[0ad88b7](https://gitlab.com/circuitscript/circuitscript-ts/commit/0ad88b7ad84220dd5e00dbf172f8d9b2fbf05df7) updated common library to set labels as nets
+
+[d7ae622](https://gitlab.com/circuitscript/circuitscript-ts/commit/d7ae622ae0941947e9e3c571e2071454093160d8) changed angle from style to a double dot param
+
+[bb245e0](https://gitlab.com/circuitscript/circuitscript-ts/commit/bb245e087f4cbb36d1cee552df799967ad11cf65) fixed slow lexing
+
+[d4b598a](https://gitlab.com/circuitscript/circuitscript-ts/commit/d4b598a0030efb1ba9199128f898e319a3767ce6) backup
+
+[cd5cac5](https://gitlab.com/circuitscript/circuitscript-ts/commit/cd5cac57802c0b45f4d6f041bf974cde123d19ab)  updated gitignore
+
+[8df17cd](https://gitlab.com/circuitscript/circuitscript-ts/commit/8df17cd6193e9dfaef1bc2b1aab6119ec03ad750) backup
+
+[1cb94a3](https://gitlab.com/circuitscript/circuitscript-ts/commit/1cb94a3252ad2a38a3d1a9fec5e68d9856028aa2) missed out
+
+[013ae07](https://gitlab.com/circuitscript/circuitscript-ts/commit/013ae07869dbab52618ad7a84806b243784c98ea) missed out
+
+[84dab9e](https://gitlab.com/circuitscript/circuitscript-ts/commit/84dab9e2ca29ce1b781c090eb6b85626fa53c891) backup font and sizing script
+
+[07c9f51](https://gitlab.com/circuitscript/circuitscript-ts/commit/07c9f51a33a074826d5f07a0db7b98cadd88f0ba) added warning for floating ndoe
+
+[9bd2fc5](https://gitlab.com/circuitscript/circuitscript-ts/commit/9bd2fc533271841120ff10ba4dd7d5ab7630e7c1) added command
+
+[e210546](https://gitlab.com/circuitscript/circuitscript-ts/commit/e2105462efe5c104adab20fbde57c40b58058cca) missed out
+
+[8a204b8](https://gitlab.com/circuitscript/circuitscript-ts/commit/8a204b8e03a902b77679a91c101be2fd267266f5) minor update to test to silence console logs
+
+[c3a4779](https://gitlab.com/circuitscript/circuitscript-ts/commit/c3a4779c64416399eea0168b53816a6d234aa0a7) renamed files
+
+[82c3faf](https://gitlab.com/circuitscript/circuitscript-ts/commit/82c3faf7d470e3c9b05111dcfa1e4e0a4827bb74) missed out
+
+[e149f5d](https://gitlab.com/circuitscript/circuitscript-ts/commit/e149f5d6c60f542986f2ced6123b555f9ab01643) renamed
+
+[9a2da98](https://gitlab.com/circuitscript/circuitscript-ts/commit/9a2da985788e82c84648e8c4703c8fc55c9a4429) backup font
+
+[e0620b5](https://gitlab.com/circuitscript/circuitscript-ts/commit/e0620b559f441192390ebd9e6241e68ed11316c8) add fonts

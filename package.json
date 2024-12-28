@@ -68,7 +68,8 @@
         "profile": "node --prof build/src/main.js examples/example_garden_pump.cst",
         "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer",
         "server": "node server.js",
-        "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server"
+        "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server",
+        "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js"
     },
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "MIT",
@@ -90,5 +91,10 @@
     },
     "volta": {
         "node": "18.12.1"
+    },
+    "auto-changelog": {
+        "output": "CHANGELOG.md",
+        "commitLimit": false,
+        "template": "../changelog/template.hbs"
     }
 }
