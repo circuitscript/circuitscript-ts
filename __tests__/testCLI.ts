@@ -22,7 +22,6 @@ describe('test cli program', () => {
   -V, --version                   output the version number
   -i, --input text <input text>   Input text directly
   -c, --current-directory <path>  Set current directory
-  -k, --kicad-netlist <filename>  Create KiCad netlist
   -w, --watch                     Watch for file changes
   -n, --dump-nets                 Dump out net information
   -d, --dump-data                 Dump data during parsing

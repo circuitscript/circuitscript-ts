@@ -38,7 +38,6 @@ export type ScriptOptions = {
     defaultLibsPath: string,
     dumpNets: boolean,
     dumpData: boolean,
-    kicadNetlistPath: string| null, 
     showStats: boolean,
 };
 
@@ -247,7 +246,6 @@ export function renderScript(scriptData: string, outputPath: string,
         defaultLibsPath,
         dumpNets = false,
         dumpData = false,
-        kicadNetlistPath = null,
         showStats = false } = options;
 
     const onErrorHandler: OnErrorCallback =
@@ -302,19 +300,6 @@ export function renderScript(scriptData: string, outputPath: string,
         console.log('Error during annotation: ', err);
     }
 
-    if (kicadNetlistPath) {
-        const { tree: kicadNetList, missingFootprints }
-            = generateKiCADNetList(visitor.getNetList());
-
-        missingFootprints.forEach(entry => {
-            console.log(
-                `${entry.refdes} (${entry.instanceName}) does not have footprint`);
-        });
-
-        writeFileSync(kicadNetlistPath, printTree(kicadNetList));
-        console.log('Generated KiCad netlist file');
-    }
-
     // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
     const { sequence, nets } = visitor.getGraph();
@@ -358,6 +343,23 @@ export function renderScript(scriptData: string, outputPath: string,
             if (fileExtension === "pdf") {
                 outputDefaultZoom = 1;
             }
+        }
+
+        if (fileExtension === 'net') {
+            // Generate the kicad net list
+            const { tree: kicadNetList, missingFootprints }
+                = generateKiCADNetList(visitor.getNetList());
+
+            missingFootprints.forEach(entry => {
+                console.log(
+                    `${entry.refdes} (${entry.instanceName}) does not have footprint`);
+            });
+
+            writeFileSync(outputPath, printTree(kicadNetList));
+            console.log('Generated file', outputPath);
+
+            // Quit here, since SVG output is not needed
+            return null;
         }
 
         const layoutEngine = new LayoutEngine();

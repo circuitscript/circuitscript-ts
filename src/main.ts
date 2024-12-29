@@ -31,7 +31,6 @@ export default async function main(): Promise<void> {
         .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')
         .option('-c, --current-directory <path>', 'Set current directory')
-        .option('-k, --kicad-netlist <filename>', 'Create KiCad netlist')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
@@ -54,7 +53,6 @@ export default async function main(): Promise<void> {
     const watchFileChanges = options.watch;
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
-    const kicadNetlist = options.kicadNetlist;
 
     let currentDirectory = options.currentDirectory ?? null;
 
@@ -97,7 +95,6 @@ export default async function main(): Promise<void> {
         defaultLibsPath,
         dumpNets, 
         dumpData,
-        kicadNetlistPath: kicadNetlist,
         showStats: options.stats,
     }
 

@@ -106,7 +106,8 @@ export enum ComponentTypes {
     gnd = 'gnd',
     net = 'net',
     label = 'label',
-    point = 'point'
+    point = 'point',
+    frame = 'frame',
 }
 
 export enum ReferenceTypes {

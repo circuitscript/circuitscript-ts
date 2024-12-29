@@ -74,6 +74,7 @@ export function generateKiCADNetList(netlist: NetListItem[])
             if (instance.typeProp !== ComponentTypes.label && 
                 instance.typeProp !== ComponentTypes.net && 
                 instance.typeProp !== ComponentTypes.point && 
+                instance.typeProp !== ComponentTypes.frame &&
                 instance.typeProp !== null){
                 console.log('Skipping', instance.instanceName);
             }

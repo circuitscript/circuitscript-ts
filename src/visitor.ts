@@ -1767,6 +1767,10 @@ class ComponentAnnotater {
             }
         }
 
+        if (ComponentRefDesPrefixes[type] === undefined) {
+            return null;
+        }
+
         let attempts = 100;
         let proposedName: string;
 
