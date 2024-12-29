@@ -1,5 +1,23 @@
 # Changelog
 
+## [v0.0.37](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.36...v0.0.37)
+
+[7e5046a](https://gitlab.com/circuitscript/circuitscript-ts/commit/7e5046a081cec3f0bc4ec57653a0cbcaab481ac4) changed kicad output method
+
+## [v0.0.36](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.35...v0.0.36) - 2024-12-29
+
+[6e6d7be](https://gitlab.com/circuitscript/circuitscript-ts/commit/6e6d7be9b02a8b992d8acbb3a6710f178a683cf6) updated changelog format
+
+[0011685](https://gitlab.com/circuitscript/circuitscript-ts/commit/001168534a792001bac7b6f9f592ff0afddb2842) added more frame methods to draw sheets
+-  tidied up sheet naming
+-  updated tests
+
+[dfb78f7](https://gitlab.com/circuitscript/circuitscript-ts/commit/dfb78f75f02884b517931979414673acc381a27c) updated main for loop to support enumerate
+-  updated tests
+
+[7e0bc25](https://gitlab.com/circuitscript/circuitscript-ts/commit/7e0bc25fb6e1fec61830e2ca05652f6aef612b47) moved builtin methods to separate file
+-  refactor to builtin methods handling
+
 ## [v0.0.35](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.34...v0.0.35) - 2024-12-28
 
 [b7312a5](https://gitlab.com/circuitscript/circuitscript-ts/commit/b7312a570ce50f4a540adb6162afbaa36b9553d2) added change log
