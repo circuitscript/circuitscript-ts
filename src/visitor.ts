@@ -1607,13 +1607,13 @@ export class ParserVisitor extends BaseVisitor {
 
         let frameComponent: ClassComponent | null = null;
 
-        if (document && document[FrameParamKeys.SheetFrame]) {
-            frameComponent = document[FrameParamKeys.SheetFrame] as ClassComponent;
+        if (document && document[FrameParamKeys.SheetType]) {
+            frameComponent = document[FrameParamKeys.SheetType] as ClassComponent;
 
             // If page size is set, then use it for sheet frames
             baseScope.frames.forEach(item => {
                 if (item.frameType === FrameType.Sheet) {
-                    item.parameters.set(FrameParamKeys.SheetFrame, frameComponent);
+                    item.parameters.set(FrameParamKeys.SheetType, frameComponent);
                 }
             });
         }

@@ -449,9 +449,9 @@ export class LayoutEngine {
             frame.padding);
 
         // If frame component is specified, then center the contents within
-        if (frame.frame.parameters.has(FrameParamKeys.SheetFrame)){
+        if (frame.frame.parameters.has(FrameParamKeys.SheetType)){
             const frameComponent = frame.frame.parameters.get
-                                (FrameParamKeys.SheetFrame) as ClassComponent;
+                                (FrameParamKeys.SheetType) as ClassComponent;
 
             const rects = ExtractDrawingRects(frameComponent.displayProp);
             let frameWidth = 0;

@@ -20,6 +20,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         ['enumerate', enumerate],
         ['toMils', toMils],
         ['range', range],
+        ['len', objectLength],
     ];
 
     builtIns.forEach(([functionName, functionImpl]) => {
@@ -67,6 +68,19 @@ function toMils(value: number): number {
     }
 
     return (value as number) / 25.4 * 1000;
+}
+
+function objectLength(obj: any[] | any): number {
+    if (Array.isArray(obj)){
+        return obj.length;
+    } else {
+        // If object has some length property
+        if (obj.length){
+            return obj.length;
+        } else {
+            throw "Could not get length of object: " + obj;
+        }
+    }
 }
 
 function getPositionParams(params: CallableParameter[]): unknown[] {

@@ -30,7 +30,7 @@ export enum FrameParamKeys {
     PaperSize = 'paper_size',
 
     // Same parameter is used in 'document' and 'sheet(frame)' objects
-    SheetFrame = 'sheet_frame',
+    SheetType = 'sheet_type',
 }
 
 export enum FramePlotDirection {

@@ -63,7 +63,7 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[]): Svg {
         if (sheet.frame.frame) {
             // Get the frame component
             const frameComponent = sheet.frame.frame.parameters
-                .get(FrameParamKeys.SheetFrame) as ClassComponent;
+                .get(FrameParamKeys.SheetType) as ClassComponent;
 
             if (frameComponent) {
 
@@ -406,8 +406,8 @@ function drawGrid(group: G,
 
 function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
     const frameParams = frame.frame.parameters;
-    if (frameParams.has(FrameParamKeys.SheetFrame)) {
-        const frameComponent = frameParams.get(FrameParamKeys.SheetFrame);
+    if (frameParams.has(FrameParamKeys.SheetType)) {
+        const frameComponent = frameParams.get(FrameParamKeys.SheetType);
         const { displayProp = null } = frameComponent ?? {}
 
         if (displayProp) {
