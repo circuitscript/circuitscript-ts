@@ -28,6 +28,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     ValueType } from "./objects/types";
 import { ParserRuleContext } from 'antlr4ng';
 import { GlobalDocumentName, ReferenceTypes } from './globals';
+import { linkBuiltInMethods } from './builtinMethods';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -110,74 +111,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.executionStack[this.executionStack.length - 1];
     }
 
-    protected toString(obj: any): string {
-        if (typeof obj === 'string') {
-            return `"${obj}"`;
-        } else if (typeof obj === 'number') {
-            return obj.toString();
-        } else if (Array.isArray(obj)) {
-            const inner = obj.map(item => this.toString(item)).join(", ");
-            return "[" + inner + "]";
-        } else {
-            if (obj.toString) {
-                return obj.toString();
-            } else {
-                throw "Could not create string from object: " + obj;
-            }
-        }
-    }
-
     protected setupPrintFunction(context: ExecutionContext): void {
-        context.createFunction('print', (params) => {
-            // Only accept position params
-            const items = params.map(([, , value]) => {
-                return this.toString(value);
-            });
-
-            if (this.printToConsole) {
-                console.log('::', ...items);
-            }
-            this.printStream.push(items.join(" "));
-
-            return [this, null];
-        });
-
-        context.createFunction('range', (params) => {
-            const items = params.map(([, , value]) => {
-                if (isNaN(value)) {
-                    throw 'Invalid value: ' + value;
-                }
-                return value;
-            });
-
-            let startValue = 0;
-            let endValue = 0;
-
-            if (items.length === 1) {
-                endValue = items[0] as number;
-            } else if (items.length === 2) {
-                startValue = items[0] as number;
-                endValue = items[1] as number;
-            }
-
-            const returnArray = [];
-            for (let i = startValue; i < endValue; i++) {
-                returnArray.push(i);
-            }
-
-            return [this, returnArray];
-        });
-
-        context.createFunction('enumerate', (params) => {
-            const [, , array] = params[0];
-            if (!Array.isArray(array)) {
-                throw "Invalid parameter for enumerate function!";
-            }
-            const output = array.map((item, index) => {
-                return [index, item];
-            });
-            return [this, output];
-        });
+        linkBuiltInMethods(context, this);
     }
 
     createNetResolver(executionStack: ExecutionContext[]): 
