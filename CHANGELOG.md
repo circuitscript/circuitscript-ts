@@ -1,8 +1,15 @@
 # Changelog
 
-## [v0.0.37](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.36...v0.0.37)
+## [v0.0.38](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.37...v0.0.38) - 2025-01-14
+
+[4a4c0bb](https://gitlab.com/circuitscript/circuitscript-ts/commit/4a4c0bbe4a66ac3f571131914fbed4dc809da5e0) support 'and', 'or' and 'not' text as operators
+-  added test
+
+## [v0.0.37](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.36...v0.0.37) - 2024-12-29
 
 [7e5046a](https://gitlab.com/circuitscript/circuitscript-ts/commit/7e5046a081cec3f0bc4ec57653a0cbcaab481ac4) changed kicad output method
+
+[b82f3fb](https://gitlab.com/circuitscript/circuitscript-ts/commit/b82f3fbeabfa748c15324853c19487fd75ca9c39) updated changelog
 
 ## [v0.0.36](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.35...v0.0.36) - 2024-12-29
 
