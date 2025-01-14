@@ -1069,3 +1069,14 @@ for index, value in enumerate(["A", "B", "C", "D"]):
     print(index, value)
 
 `, ['0 "A"', '1 "B"', '2 "C"', '3 "D"']);
+
+
+export const inlineScript54 = new ScriptTest(`
+a = 1
+b = 0
+print(not a)
+print(not b)
+print(a or b)
+print(a and b)
+print(a and a)
+`, ['true', 'false', '1', '0', '1'])

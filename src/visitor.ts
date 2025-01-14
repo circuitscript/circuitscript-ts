@@ -786,6 +786,8 @@ export class ParserVisitor extends BaseVisitor {
             if (unaryOp.Not()) {
                 if (typeof value === "boolean") {
                     value = !value;
+                } else if (typeof value === "number"){
+                    value = (value === 0) ? false: true;
                 } else {
                     throw "Failed to do Not operator";
                 }

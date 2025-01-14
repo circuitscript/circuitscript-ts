@@ -40,7 +40,7 @@ Continue:   'continue';
 
 If:         'if';
 Else:       'else';
-Not:        '!';
+Not:        '!' | 'not';
 
 Frame:      'frame';
 Sheet:      'sheet';
@@ -51,8 +51,8 @@ GreaterThan:        '>';
 GreatOrEqualThan:   '>=';
 LessThan:           '<';
 LessOrEqualThan:    '<=';
-LogicalAnd:         '&&';
-LogicalOr:          '||';
+LogicalAnd:         '&&' | 'and';
+LogicalOr:          '||' | 'or';
 
 Addition:   '+';
 Minus:      '-';

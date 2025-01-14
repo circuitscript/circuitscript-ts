@@ -148,8 +148,8 @@ export class CircuitScriptParser extends antlr.Parser {
         "'branch'", "'create'", "'component'", "'graphic'", "'module'", 
         "'wire'", "'pin'", "'add'", "'at'", "'to'", "'point'", "'join'", 
         "'parallel'", "'return'", "'def'", "'import'", "'for'", "'in'", 
-        "'while'", "'continue'", "'if'", "'else'", "'!'", "'frame'", "'sheet'", 
-        "'=='", "'!='", "'>'", "'>='", "'<'", "'<='", "'&&'", "'||'", "'+'", 
+        "'while'", "'continue'", "'if'", "'else'", null, "'frame'", "'sheet'", 
+        "'=='", "'!='", "'>'", "'>='", "'<'", "'<='", null, null, "'+'", 
         "'-'", "'/'", "'*'", "'%'", "'+='", "'-='", "'/='", "'*='", "'%='", 
         "'('", "')'"
     ];
