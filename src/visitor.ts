@@ -65,7 +65,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, NoNetText, ReferenceTypes, WireAutoDirection } from './globals.js';
+import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ReferenceTypes, WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -467,7 +467,7 @@ export class ParserVisitor extends BaseVisitor {
             this.visit(firstBlock);
             const [keyName, expressionsBlock] = this.getResult(firstBlock);
 
-            if (keyName === 'contains') {
+            if (keyName === ModuleContainsKeyword) {
                 createdComponent.moduleContainsExpressions = expressionsBlock;
                 
                 this.expandModuleContains(createdComponent, 
@@ -565,20 +565,25 @@ export class ParserVisitor extends BaseVisitor {
     visitData_expr_with_assignment = (ctx: Data_expr_with_assignmentContext): void => {
 
         let component: ComplexType = null;
+        let componentCtx: ParserRuleContext | null = null;
+
         const ctxDataExpr = ctx.data_expr();
         const ctxAssignmentExpr = ctx.assignment_expr();
 
         if (ctxDataExpr) {
             this.visit(ctxDataExpr);
             component = this.getResult(ctxDataExpr);
+            componentCtx = ctxDataExpr;
 
             if (component === null || component === undefined) {
-                throw "Could not find component: " + ctxDataExpr.getText();
+                this.throwWithContext(ctxDataExpr, 
+                    "Could not find component: " + ctxDataExpr.getText());
             }
 
         } else if (ctxAssignmentExpr) {
             this.visit(ctxAssignmentExpr);
             component = this.getResult(ctxAssignmentExpr);
+            componentCtx = ctxAssignmentExpr;
         }
 
         if (component instanceof ClassComponent
@@ -586,14 +591,15 @@ export class ParserVisitor extends BaseVisitor {
             component = this.getExecutor().copyComponent(component);
         }
 
-        if (component instanceof DeclaredReference
-            && component.found
-            && component.trailers
-            && component.trailers.length > 0
-            && component.trailers[0] === 'contains'
-        ) {
-            component = component.value;
-            this.placeModuleContains(component);
+        if (component instanceof UndeclaredReference){
+            const {reference : {trailers = [], parentValue = null}} = component;
+            if (parentValue instanceof ClassComponent
+                && trailers.length > 0
+                && trailers[0] === ModuleContainsKeyword
+            ) {
+                component = parentValue;
+                this.placeModuleContains(component);
+            }
         }
 
         if (component && component instanceof ClassComponent) {
@@ -667,11 +673,14 @@ export class ParserVisitor extends BaseVisitor {
             this.visit(ctxPinSelectExpr);
             pinValue = this.getResult(ctxPinSelectExpr);
         } else {
-            if (component instanceof ClassComponent){
+            if (component instanceof ClassComponent) {
                 pinValue = (component as ClassComponent).getDefaultPin();
             } else {
                 const undeclaredRef = (component as UndeclaredReference);
-                throw 'Invalid component: ' + undeclaredRef.reference.name;
+                this.throwWithContext(
+                    componentCtx,
+                    'Invalid component: ' + undeclaredRef.reference.name
+                )
             }
         }
 
@@ -1185,7 +1194,12 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctxDataExpr);
         const result = this.getResult(ctxDataExpr);
 
-        if (result) {
+        let resultValue = result;
+        if (result instanceof UndeclaredReference){
+            resultValue = false;
+        }
+
+        if (resultValue) {
             this.visit(ctx.expressions_block());
         } else {
             const ctxInnerIfExprs = ctx.if_inner_expr();
@@ -1321,7 +1335,7 @@ export class ParserVisitor extends BaseVisitor {
         const value: T | UndeclaredReference = this.getResult(data_expr!);
 
         if (value instanceof UndeclaredReference) {
-            throw value.throwMessage();
+            this.throwWithContext(data_expr, value.throwMessage());
         }
 
         return value;

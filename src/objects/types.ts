@@ -65,6 +65,10 @@ export class UndeclaredReference {
     throwMessage(): string{
         return `Unknown symbol: ${this.reference.name}`;
     }
+
+    toString(): string {
+        return 'undefined';
+    }
 }
 
 export class DeclaredReference {
@@ -72,9 +76,11 @@ export class DeclaredReference {
     found: boolean;
     name?: string;
     trailers?: string[];
-    type?: string;
-    value?: any
+    type?: 'value' | 'instance' | 'variable';
+    value?: any;
 
+    parentValue?: any; // If trailers are available, then this holds the parent
+                       // object of the trailers
 
     constructor(refType: ReferenceType) {
         this.found = refType.found;
@@ -82,10 +88,41 @@ export class DeclaredReference {
         this.trailers = refType.trailers;
         this.type = refType.type;
         this.value = refType.value;
+        this.parentValue = refType.parentValue;
     }
 
-    toString(): string {
+    toString(): string {        
         return `[DeclaredReference name: ${this.name} trailers:${this.trailers} found: ${this.found}]`;
+    }
+
+    toDisplayString(): string {
+        let returnValue: any = undefined;
+
+        if (this.parentValue) {
+            // Have trailers
+            const trailersString = this.trailers.join(".");
+            if (this.type === 'instance') {
+                returnValue = (this.parentValue as ClassComponent).parameters.get(trailersString);
+            } else if (this.type === 'variable') {
+                returnValue = this.parentValue[trailersString];
+            }
+        } else {
+            returnValue = this.value;
+        }
+
+        if (returnValue !== undefined) {
+            if (returnValue !== null) {
+                if (returnValue.toDisplayString) {
+                    return returnValue.toDisplayString();
+                } else {
+                    return returnValue.toString();
+                }
+            } else {
+                return 'null';
+            }
+        }
+
+        throw 'Could not find string value: ' + this;
     }
 }
 
@@ -94,8 +131,9 @@ export type ReferenceType =
         found: boolean,
         name?: string,
         trailers?: string[],
-        type?: string,
-        value?: any
+        type?: 'value' | 'instance' | 'variable',
+        value?: any,
+        parentValue?: any,
     };
 
 export enum ParseSymbolType {

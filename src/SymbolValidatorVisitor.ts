@@ -71,7 +71,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     visitImport_expr = (ctx: Import_exprContext): void => {
         const ID = ctx.ID().toString(); // filename
         const { pathExists } =
-            this.handleImportFile(ID, false);
+            this.handleImportFile(ID, false, ctx);
 
         if (!pathExists) {
             this.symbolTable.addUndefined(this.getExecutor(), ID, ctx.ID());

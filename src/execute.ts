@@ -786,8 +786,8 @@ export class ExecutionContext {
         return this.scope.functions.get(functionName);
     }
 
-    resolveVariable(executionStack: ExecutionContext[], idName: string):
-        DeclaredReference {
+    resolveVariable(executionStack: ExecutionContext[], idName: string, 
+        trailers:string[] = []): DeclaredReference {
 
         // this.print('resolve variable', idName);
         const reversed = [...executionStack].reverse();
@@ -802,22 +802,39 @@ export class ExecutionContext {
                     name: idName,
                 });
 
-            } else if (context.scope.variables.has(idName)) {
-                return new DeclaredReference({
-                    found: true,
-                    value: context.scope.variables.get(idName),
-                    type: ReferenceTypes.variable,
-                    name: idName,
-                });
+            } else {
+                const isVariable = context.scope.variables.has(idName);
+                const isComponentInstance = context.scope.instances.has(idName);
 
-            } else if (context.scope.instances.has(idName)) {
-                return new DeclaredReference({
-                    found: true,
-                    value: context.scope.instances.get(idName),
-                    type: ReferenceTypes.instance,
-                    name: idName,
-                });
-            }
+                if (isVariable || isComponentInstance) {
+                    const scopeList = isVariable ? context.scope.variables
+                        : context.scope.instances;
+
+                    let parentValue = undefined;
+                    let useValue = scopeList.get(idName);
+
+                    if (trailers.length > 0) {
+                        parentValue = useValue;
+                        const trailersPath = trailers.join(".");
+
+                        if (isVariable){
+                            useValue = parentValue[trailersPath];
+                        } else if (isComponentInstance) {
+                            useValue = (parentValue as ClassComponent).parameters.get(trailersPath);
+                        }
+                    }
+
+                    return new DeclaredReference({
+                        type: isVariable ? ReferenceTypes.variable
+                            : ReferenceTypes.instance,
+                        found: (useValue !== undefined),
+                        parentValue,
+                        value: useValue,
+                        name: idName,
+                        trailers,
+                    });
+                }
+            } 
         }
 
         return new DeclaredReference({

@@ -200,10 +200,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 this.getExecutor().scope.variables.set(reference.name, value);
             }
         } else {
-            if (reference.value instanceof ClassComponent) {
-                this.setInstanceParam(reference.value, trailers, value);
-            } else if (reference.value instanceof Object) {
-                reference.value[trailers.join('.')] = value;
+            if (reference.parentValue instanceof ClassComponent){
+                this.setInstanceParam(reference.parentValue, trailers, value);
+            } else if (reference.parentValue instanceof Object) {
+                reference.parentValue[trailers.join('.')] = value;
             }
         }
         
@@ -218,7 +218,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         const value = this.getResult(ctxDataExpr);
 
         if (!reference.found) {
-            throw 'Undefined reference: ' + reference.name;
+            this.throwWithContext(ctx, 'Undefined reference: ' + reference.name);
         }
 
         const trailers = reference.trailers ?? [];
@@ -236,7 +236,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         }
 
         if (currentValue === null) {
-            throw 'Operator assignment failed: could not get value';
+            this.throwWithContext(ctx, 
+                'Operator assignment failed: could not get value');
         }
 
         let newValue = 0;
@@ -251,7 +252,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         } else if (ctx.ModulusAssign()){
             newValue = currentValue % value;
         } else {
-            throw 'Operator assignment failed: could not perform operator';
+            this.throwWithContext(ctx, 
+                'Operator assignment failed: could not perform operator');
         }
 
         // Reassign back to value
@@ -273,14 +275,19 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         // Do not allow the atom to have any parentheses in the assignment
         if (atomStr.indexOf('(') !== -1 || atomStr.indexOf(')') !== -1) {
-            throw "Invalid assignment expression!";
+            this.throwWithContext(ctx, "Invalid assignment expression!");
         }
 
         this.visit(ctx);
         const reference: ReferenceType = this.getResult(ctx);
+        const { trailers = [] } = reference;
 
-        if (!reference.found && reference.trailers && reference.trailers.length > 0) {
-            throw 'Undefined reference: ' + reference.name + '.' + reference.trailers.join('.');
+        const undefinedParentWithTrailers = trailers.length > 0
+            && reference.parentValue === undefined;
+
+        if (undefinedParentWithTrailers) {
+            this.throwWithContext(ctx, 
+                'Undefined reference: ' + reference.name + '.' + trailers.join('.'));
         }
 
         return reference;
@@ -294,6 +301,16 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         let currentReference: ReferenceType;
 
+        const idTrailers = [];
+        if (ctx.ID().length > 1) {
+            const idLength = ctx.ID().length;
+
+            for (let i = 1; i < idLength; i++) {
+                const tmpCtx = ctx.ID(i)!;
+                idTrailers.push(tmpCtx.getText());
+            }
+        }
+
         // Check if it is hardcoded values, like the pin types.
         if (this.pinTypesList.indexOf(atomId) !== -1) {
             // Not sure if just returning the string is enough...
@@ -304,23 +321,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         } else {
             currentReference = executor.resolveVariable(
-                this.executionStack, atomId);
+                this.executionStack, atomId, idTrailers);
         }
 
-        const idTrailers = [];
-
-        if (ctx.ID().length > 1) {
-            const idLength = ctx.ID().length;
-
-            for (let i = 1; i < idLength; i++) {
-                const tmpCtx = ctx.ID(i)!;
-                idTrailers.push(tmpCtx.getText());
-            }
-        }
-
-        currentReference.trailers = idTrailers;
-
-        if (currentReference.found && currentReference.type === 'instance') {
+        if (currentReference.found && currentReference.type === 'instance' && idTrailers.length === 0) {
             const tmpComponent = currentReference.value as ClassComponent;
 
             // Copy the nets into the local net
@@ -334,8 +338,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         if (ctx.parent instanceof ExpressionContext && !currentReference.found) {
             // If is an atom_expr and parent is just expression and no 
             // reference was found.
-            // throw "Unknown token: " + atomId;
-            throw "Unknown symbol: " + atomId;
+            this.throwWithContext(ctx, "Unknown symbol: " + atomId);
         }
 
         this.setResult(ctx, currentReference);
@@ -366,7 +369,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             // Resolve all elements in the trailer expression list
 
             if (!currentReference.found) {
-                throw "Unknown function name: " + atomId;
+                this.throwWithContext(ctx,
+                    "Unknown function name: " + atomId);
             }
 
             currentReference.trailers = [];
@@ -387,18 +391,22 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                         passedNetNamespace,
                     )
 
-                    const [, functionResult] =
-                        executor.callFunction(
-                            currentReference.name,
-                            parameters,
-                            this.executionStack,
-                            useNetNamespace);
+                    try {
+                        const [, functionResult] =
+                            executor.callFunction(
+                                currentReference.name,
+                                parameters,
+                                this.executionStack,
+                                useNetNamespace);
 
-                    currentReference = {
-                        found: true,
-                        value: functionResult,
-                        type: (functionResult instanceof ClassComponent) ? 
-                            'instance' : 'value',
+                        currentReference = {
+                            found: true,
+                            value: functionResult,
+                            type: (functionResult instanceof ClassComponent) ?
+                                'instance' : 'value',
+                        }
+                    } catch (err) {
+                        this.throwWithContext(ctx, err);
                     }
 
                 } else {
@@ -436,7 +444,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         } else {
             if (sign === -1) {
-                throw "Invalid value!";
+                this.throwWithContext(ctx, "Invalid value");
             }
         }
 
@@ -538,7 +546,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     visitImport_expr = (ctx: Import_exprContext): void => {
         const ID = ctx.ID().toString(); // filename
         this.log('import', ID);
-        this.handleImportFile(ID, true);
+        this.handleImportFile(ID, true, ctx);
         this.log('done import', ID);
     }
 
@@ -609,7 +617,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.resultData.get(ctx);
     }
 
-    protected handleImportFile(name: string, throwErrors = true): {
+    protected handleImportFile(name: string, 
+        throwErrors = true, ctx: ParserRuleContext | null =null): {
+
         hasError: boolean,
         hasParseError: boolean,
         pathExists: boolean
@@ -657,12 +667,18 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             this.log('Failed to import file: ', err.message);
         }
 
+        let errorMessage = null;
+        
         if (throwErrors && (hasError || hasParseError || !pathExists)) {
             if (!pathExists) {
-                throw `File does not exist: ${name}`
+                errorMessage = `File does not exist: ${name}`
             } else {
-                throw `Failed to import: ${name}`;
+                errorMessage =  `Failed to import: ${name}`;
             }
+        }
+
+        if (errorMessage !== null && ctx){
+            this.throwWithContext(ctx, errorMessage);
         }
 
         return {
@@ -861,6 +877,23 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     protected prepareStringValue(value: string): string {
         return value.slice(1, value.length - 1);
+    }
+
+    protected throwWithContext(context: ParserRuleContext, message: string): void {
+        const startLine = context.start?.line;
+        const startColumn = context.start?.column;
+        const startString = startLine + ":" + startColumn;
+
+        const stopLine = context.stop?.line;
+        const stopColumn = context.stop?.column;
+        let stopString = "";
+        if (startLine === stopLine) {
+            stopString = stopColumn?.toString();
+        } else {
+            stopString = stopLine + ":" + stopString;
+        }
+
+        throw `Parse exception at [${startString} - ${stopString}] : ${message}`;
     }
 }
 

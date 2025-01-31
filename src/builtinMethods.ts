@@ -53,7 +53,7 @@ function range(...args) {
 
 function enumerate(array:any[]): [index: number, value: any][] {
     if (!Array.isArray(array)) {
-        throw "Invalid parameter for enumerate function!";
+        throw "Invalid parameter for enumerate function";
     }
     const output = array.map((item, index) => {
         return [index, item];
@@ -96,7 +96,9 @@ function toString(obj: any): string {
         const inner = obj.map(item => toString(item)).join(", ");
         return "[" + inner + "]";
     } else {
-        if (obj.toString) {
+        if (obj.toDisplayString) {
+            return obj.toDisplayString();
+        } else if (obj.toString) {
             return obj.toString();
         } else {
             throw "Could not create string from object: " + obj;

@@ -130,6 +130,9 @@ export enum FrameType {
     Sheet = 2
 }
 
+// The keyword for module contains
+export const ModuleContainsKeyword = 'contains';
+
 export const GlobalDocumentName = 'document';
 
 export const RenderFlags = {
