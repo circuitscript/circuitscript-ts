@@ -504,6 +504,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.flipX = this._flipX;
         drawing.flipY = this._flipY;
         
+        // Setup the variable references
+        drawing.prepareVariables(this.componentParams ?? new Map());
+
         // Add default commands at the start to provide consistent style
         const commands = [
             [PlaceHolderCommands.units, ['mils'], {}],
@@ -518,23 +521,18 @@ export class SymbolPlaceholder extends SymbolGraphic {
         let lineColor = "#333";
         let textColor = "#333";
 
-        // Setup the variable references
-        drawing.prepareVariables(this.componentParams ?? new Map());
-
-        // Go through position params and resolve it
-
         commands.forEach(([commandName, positionParams, keywordParams, ctx]) => {
 
             // evaluate any declared references in the position and keywork params
             positionParams = (positionParams as any[]).map(param => {
-                return this.resolveReference(drawing, param);
+                return this.resolveReference(param);
             });
 
             if (keywordParams instanceof Map) {
                 const tmpKeywordParams = new Map(keywordParams);
                 tmpKeywordParams.forEach((value, key) => {
                     tmpKeywordParams.set(key,
-                        this.resolveReference(drawing, value));
+                        this.resolveReference(value));
                 });
 
                 keywordParams = tmpKeywordParams;
@@ -669,18 +667,11 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.log("=== end generate drawing ===");
     }
 
-    private resolveReference(drawing: SymbolDrawingCommands, param: any): any {
-        if (param instanceof UndeclaredReference
-            || param instanceof DeclaredReference) {
-
-            const { name, trailers = [] } =
-                (param instanceof UndeclaredReference) ? param.reference : param;
-
-            const updatedRef = drawing.resolveVariables(name!, trailers);
-            if (updatedRef instanceof DeclaredReference) {
-                return updatedRef.value;
-            }
-            return undefined;
+    private resolveReference(param: any): any {
+        if (param instanceof DeclaredReference) {
+            return param.value;
+        } else if (param instanceof UndeclaredReference) {
+            throw "Undefined symbol: " + param.nameString();
         }
 
         return param;
@@ -1571,44 +1562,42 @@ export type GraphicExprCommand = [commandName: string,
 export class SymbolDrawingCommands extends SymbolDrawing {
 
     id = "";
-    private commands: GraphicExprCommand[];
+    private commands: GraphicExprCommand[] = [];
+
+    // Stores values that will be used to populate/fill up fields
+    // in the graphic object.
+    variables: Map<string, any> = new Map();
 
     paramIds: string[] = [];    // For component reference when executing
                                 // graphic commands
     
+    callback: (variables: Map<string, any>) => GraphicExprCommand[];
 
-    // TODO: move these somewhere else to keep this class clean!!
-    resolveVariables: (name: string, trailers?: string[]) => DeclaredReference;
-
-    // TODO: move this method elsewhere.
-    // Called before resolveVariables is used. This sets up the context for
-    // resolving variables properly.
-    prepareVariables: (params: Map<string, any>) => void;
-
-    constructor(commands: GraphicExprCommand[]){
+    constructor(callback: (variables: Map<string, any>) => GraphicExprCommand[]){
         super();
-        this.commands = commands;
+        this.callback = callback;
+
+        // this.commands = commands;
         this.id = Math.random().toString().slice(2);
     }
 
+    runCommands(): void {
+        this.commands = this.callback(this.variables);
+    }
+
     getCommands(): GraphicExprCommand[] {
+        this.runCommands();
         return this.commands;
     }
 
+    prepareVariables(params: Map<string, any>): void {
+        this.variables = params;
+    }
+
     clone(): SymbolDrawingCommands {
-        // Force a deep clone
-        const tmpCommands: GraphicExprCommand[] = this.commands.map(item => {
-            if (item[0] === PlaceHolderCommands.label) {
-                const [commandName, positionParams, keywordParams, ctx] = item;
-                return [commandName, positionParams, new Map(keywordParams), ctx];
-            } else {
-                return [...item];
-            }
-        });
-        
-        const cloned = new SymbolDrawingCommands(tmpCommands);
+        const cloned = new SymbolDrawingCommands(this.callback);
         cloned.prepareVariables = this.prepareVariables;
-        cloned.resolveVariables = this.resolveVariables;
+        cloned.variables = this.variables;
         
         return cloned;
     }

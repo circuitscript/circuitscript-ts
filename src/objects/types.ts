@@ -69,6 +69,15 @@ export class UndeclaredReference {
     toString(): string {
         return 'undefined';
     }
+
+    nameString(): string {
+        const {name, trailers = []} = this.reference;
+        let extra = '';
+        if (trailers.length > 0){
+            extra = '.' + trailers.join('.');
+        } 
+        return name + extra;
+    }
 }
 
 export class DeclaredReference {

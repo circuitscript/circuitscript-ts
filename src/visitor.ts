@@ -284,36 +284,40 @@ export class ParserVisitor extends BaseVisitor {
             this.getExecutor().scope.variables.set(varName, {});
         }
 
-        const graphicsExpressionsCtx = ctx.graphic_expressions_block();
-        this.visit(graphicsExpressionsCtx);
-        const commands = this.getResult(graphicsExpressionsCtx);
-
-        const drawing = new SymbolDrawingCommands(commands);
-        drawing.source = ctx.getText();
-        drawing.paramIds = paramIds;
-
         const executor = this.getExecutor();
 
         // Save stack structure to reference the variables
         const stack = [...this.executionStack];
 
-        // Setup the scope for variable references
-        drawing.prepareVariables = (params: Map<string, any>) => {
-            if (params && paramIds.length > 0) {
+        const drawing = new SymbolDrawingCommands(variables => {
+            if (variables && paramIds.length > 0) {
                 // Evaluate into an object
                 const obj = {};
-                params.forEach((value, key) => {
+                variables.forEach((value, key) => {
                     obj[key] = value;
                 });
 
                 executor.scope.variables.set(paramIds[0], obj);
             }
-        }
 
-        // Used for resolving variable references during the drawing phase.
-        drawing.resolveVariables = (name: string, trailers: string[] = []) => {
-            return executor.resolveVariable(stack, name, trailers);
-        }
+            // Set to execution stack for running the callbacks, do not
+            // override the reference!!
+            const currentStack = this.executionStack.splice(0); // remove all elements
+            this.executionStack.push(...stack);
+
+            const graphicsExpressionsCtx = ctx.graphic_expressions_block();
+            this.visit(graphicsExpressionsCtx);
+            const commands = this.getResult(graphicsExpressionsCtx);
+
+            // Restore the stack
+            this.executionStack.splice(0);
+            this.executionStack.push(...currentStack);
+
+            return commands;
+        });
+
+        drawing.source = ctx.getText();
+        // drawing.paramIds = paramIds;
 
         this.setResult(ctx, drawing);
     }
