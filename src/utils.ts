@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ParserRuleContext } from "antlr4ng";
 import { SymbolDrawingCommands } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
 
@@ -99,4 +100,21 @@ export function getPortType(component: ClassComponent): string | null {
 
 export function roundValue(value: number): number {
     return +value.toFixed(7);
+}
+
+export function throwWithContext(context: ParserRuleContext, message: string): void {
+    const startLine = context.start?.line;
+    const startColumn = context.start?.column;
+    const startString = startLine + ":" + startColumn;
+
+    const stopLine = context.stop?.line;
+    const stopColumn = context.stop?.column;
+    let stopString = "";
+    if (startLine === stopLine) {
+        stopString = stopColumn?.toString();
+    } else {
+        stopString = stopLine + ":" + stopString;
+    }
+
+    throw `Parse exception at [${startString} - ${stopString}] : ${message}`;
 }

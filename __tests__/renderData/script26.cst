@@ -6,12 +6,12 @@ value = 30k
 
 tmp = create component:
     pins: 2
-    display: create graphic:
+    display: create graphic (params):
         rect: 0, 0, width, height
         hpin: 1, -width/2 - 30, 0, 30
         hpin: 2, width/2 + 30, 0, -30
-        label: "refdes", -width/2, -height/2 - 20 , "?", fontSize=50, anchor="left"
-        label: "value", 0, 4, value, fontSize=30, anchor="middle", vanchor="middle"
+        label: params.refdes, -width/2, -height/2 - 20 , fontSize=50, anchor="left"
+        label: params.value, 0, 4, fontSize=30, anchor="middle", vanchor="middle"
 
         for i in range(0, 5):
             vline: i * 100, 0, 100

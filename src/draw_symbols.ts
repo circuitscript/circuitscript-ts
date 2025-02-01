@@ -17,7 +17,9 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle,
     Textbox, VerticalAlign } from "./geometry.js";
 import { Logger } from "./logger.js";
 import { PinTypes } from "./objects/PinTypes.js";
-import { roundValue } from "./utils.js";
+import { roundValue, throwWithContext } from "./utils.js";
+import { DeclaredReference, UndeclaredReference } from "./objects/types.js";
+import { ParserRuleContext } from "antlr4ng";
 
 
 /**
@@ -39,6 +41,10 @@ export abstract class SymbolGraphic {
 
     width: number;
     height: number;
+    
+    // References the parameter map in the component that this
+    // symbol represents.
+    componentParams: Map<string, any>;
 
     // Stores a reference of <labelID> to the label value
     labelTexts = new Map<string, string>();
@@ -440,18 +446,6 @@ export abstract class SymbolGraphic {
             return VerticalAlign.Middle;
         }
     }
-
-    setLabelValue(labelId: string, labelValue: string): void {
-        this.labelTexts.set(labelId, labelValue);
-    }
-
-    getLabelValue(labelId: string): string {
-        if (this.labelTexts.has(labelId)) {
-            return this.labelTexts.get(labelId);
-        }
-
-        return undefined;
-    }
 }
 
 export function SymbolFactory(name: string): SymbolGraphic {
@@ -524,7 +518,28 @@ export class SymbolPlaceholder extends SymbolGraphic {
         let lineColor = "#333";
         let textColor = "#333";
 
-        commands.forEach(([commandName, positionParams, keywordParams]) => {
+        // Setup the variable references
+        drawing.prepareVariables(this.componentParams ?? new Map());
+
+        // Go through position params and resolve it
+
+        commands.forEach(([commandName, positionParams, keywordParams, ctx]) => {
+
+            // evaluate any declared references in the position and keywork params
+            positionParams = (positionParams as any[]).map(param => {
+                return this.resolveReference(drawing, param);
+            });
+
+            if (keywordParams instanceof Map) {
+                const tmpKeywordParams = new Map(keywordParams);
+                tmpKeywordParams.forEach((value, key) => {
+                    tmpKeywordParams.set(key,
+                        this.resolveReference(drawing, value));
+                });
+
+                keywordParams = tmpKeywordParams;
+            }
+
             switch (commandName) {
                 case PlaceHolderCommands.rect:
                     drawing.log('add rect', ...positionParams);
@@ -609,21 +624,19 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         style['textColor'] = textColor;
                     }
 
-                    positionParams = [...positionParams];
-                    positionParams.push(style);
-
-                    const labelId = positionParams[0];
-
-                    const tmpPositionParams = [...positionParams];
-
-                    const tmpLabelValue = this.getLabelValue(labelId);
-                    if (tmpLabelValue !== undefined) {
-                        tmpPositionParams[3] = tmpLabelValue;
-                    }
+                    const tmpPositionParams = [
+                        positionParams[1], positionParams[2],
+                        positionParams[0], style
+                    ];
 
                     drawing.log('add label', JSON.stringify(tmpPositionParams));
-                    // @ts-ignore
-                    drawing.addLabelId(...tmpPositionParams);
+
+                    //@ts-ignore
+                    try {
+                        drawing.addLabelMils(...tmpPositionParams);
+                    } catch (err) {
+                        throwWithContext(ctx, err);
+                    }
                     break;
                 }
 
@@ -656,15 +669,41 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.log("=== end generate drawing ===");
     }
 
+    private resolveReference(drawing: SymbolDrawingCommands, param: any): any {
+        if (param instanceof UndeclaredReference
+            || param instanceof DeclaredReference) {
+
+            const { name, trailers = [] } =
+                (param instanceof UndeclaredReference) ? param.reference : param;
+
+            const updatedRef = drawing.resolveVariables(name!, trailers);
+            if (updatedRef instanceof DeclaredReference) {
+                return updatedRef.value;
+            }
+            return undefined;
+        }
+
+        return param;
+    }
+
     parseLabelStyle(keywordParams: Map<string, any>): { [key: string]: any } {
         const keywords = ['fontSize', 'anchor', 'vanchor', 
-            'angle', 'textColor', 'portType'];
+            'angle', 'textColor', 'portType', 'bold'];
 
         // Create the style object
         const style: { [key: string]: any } = {};
         keywords.forEach(item => {
             if (keywordParams.has(item)) {
                 style[item] = keywordParams.get(item);
+                
+                if (item === 'bold'){
+                    if (keywordParams.get(item) === true){
+                        style['fontWeight'] = 'bold';
+                    } else {
+                        style['fontWeight'] = 'normal';
+                    }
+                }
+
             }
         });
 
@@ -958,7 +997,7 @@ export class SymbolCustom extends SymbolGraphic {
             });
         });
 
-        const instanceName = this.getLabelValue("refdes");
+        const instanceName = this.componentParams.get('refdes');
         instanceName && drawing.addLabel(-bodyWidthMM/2, -bodyHeightMM/2 - milsToMM(20), instanceName, {
             fontSize: CustomSymbolRefDesSize,
             anchor: HorizontalAlign.Left,
@@ -967,7 +1006,7 @@ export class SymbolCustom extends SymbolGraphic {
         const acceptedMPNKeys = ['MPN', 'mpn', 'manufacturer_pn'];
 
         acceptedMPNKeys.some(key => {
-            const labelValue = this.getLabelValue(key);
+            const labelValue = this.componentParams.get(key);
             if (labelValue !== undefined){
                 drawing.addLabel(-bodyWidthMM/2, bodyHeightMM/2 + milsToMM(20), labelValue, {
                     fontSize: CustomSymbolParamTextSize,
@@ -1225,12 +1264,12 @@ export class SymbolDrawing {
         return this;
     }
 
-    addLabelId(id: string, x: number, y: number, textValue: string, style: LabelStyle,): SymbolDrawing {
+    addLabelMils( x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
         x = milsToMM(x);
         y = milsToMM(y);
 
         this.items.push(
-            Geometry.label(id, x, y, textValue, style)
+            Geometry.label(null, x, y, textValue, style)
         )
 
         return this;
@@ -1525,12 +1564,26 @@ export class SymbolDrawing {
 
 export type GraphicExprCommand = [commandName: string,
     positionParams: any[],
-    keywordParams: Map<string, any>];
+    keywordParams: Map<string, any>,
+    ctx: ParserRuleContext
+];
 
 export class SymbolDrawingCommands extends SymbolDrawing {
 
     id = "";
     private commands: GraphicExprCommand[];
+
+    paramIds: string[] = [];    // For component reference when executing
+                                // graphic commands
+    
+
+    // TODO: move these somewhere else to keep this class clean!!
+    resolveVariables: (name: string, trailers?: string[]) => DeclaredReference;
+
+    // TODO: move this method elsewhere.
+    // Called before resolveVariables is used. This sets up the context for
+    // resolving variables properly.
+    prepareVariables: (params: Map<string, any>) => void;
 
     constructor(commands: GraphicExprCommand[]){
         super();
@@ -1546,21 +1599,18 @@ export class SymbolDrawingCommands extends SymbolDrawing {
         // Force a deep clone
         const tmpCommands: GraphicExprCommand[] = this.commands.map(item => {
             if (item[0] === PlaceHolderCommands.label) {
-                const commandName = item[0];
-                const positionParams = item[1];
-                const keywordParams = item[2];
-
-                const newMap = new Map<string, any>();
-                for (const [key, value] of keywordParams) {
-                    newMap.set(key, value);
-                }
-
-                return [commandName, positionParams, newMap];
+                const [commandName, positionParams, keywordParams, ctx] = item;
+                return [commandName, positionParams, new Map(keywordParams), ctx];
             } else {
                 return [...item];
             }
         });
-        return new SymbolDrawingCommands(tmpCommands);
+        
+        const cloned = new SymbolDrawingCommands(tmpCommands);
+        cloned.prepareVariables = this.prepareVariables;
+        cloned.resolveVariables = this.resolveVariables;
+        
+        return cloned;
     }
 }
 

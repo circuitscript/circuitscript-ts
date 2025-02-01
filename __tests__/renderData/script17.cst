@@ -7,14 +7,14 @@ def solder_bridge():
     return create component:
         type: "S"
         pins: 2
-        display: create graphic:
+        display: create graphic (params):
             arc: -10, 0, width/2, 90, 270
             arc: 10, 0, width/2, 270, 90
             vline: 10, -height/2, height
             vline: -10, -height/2, height
             hpin: 1, -10-width/2-40, 0, 40
             hpin: 2, 10+width/2 + 40, 0, -40
-            label: "refdes", 0, -height/2 - 20, "?", anchor="middle"
+            label: params.refdes, 0, -height/2 - 20, anchor="middle"
 
 
 vcc = supply("VCC")

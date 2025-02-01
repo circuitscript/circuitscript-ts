@@ -29,6 +29,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
 import { ParserRuleContext } from 'antlr4ng';
 import { GlobalDocumentName, ReferenceTypes } from './globals';
 import { linkBuiltInMethods } from './builtinMethods';
+import { throwWithContext } from './utils';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -192,18 +193,21 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 instances.delete(oldName);
                 instances.set(reference.name, tmpComponent);
 
-                this.getExecutor().log(
+                this.log2(
                     `assigned '${reference.name}' to ClassComponent`,
                 );
             } else {
                 // No trailers, directly assign the reference name
                 this.getExecutor().scope.variables.set(reference.name, value);
+                this.log2(`assigned variable ${reference.name} to ${value}`);
             }
         } else {
             if (reference.parentValue instanceof ClassComponent){
                 this.setInstanceParam(reference.parentValue, trailers, value);
+                this.log2(`assigned component param ${reference.parentValue} trailers: ${trailers} value: ${value}`);
             } else if (reference.parentValue instanceof Object) {
                 reference.parentValue[trailers.join('.')] = value;
+                this.log2(`assigned object ${reference.parentValue} trailers: ${trailers} value: ${value}`)
             }
         }
         
@@ -333,7 +337,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         }
 
-        this.getExecutor().log('atomId:', atomId, currentReference);
+        this.log2(`atomId: ${atomId} ${currentReference}`);
 
         if (ctx.parent instanceof ExpressionContext && !currentReference.found) {
             // If is an atom_expr and parent is just expression and no 
@@ -820,7 +824,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         const paramName = trailers[0];
         object.setParam(paramName, value);
 
-        this.getExecutor().log(
+        this.log2(
             `set instance ${object.instanceName} param ${paramName} to ${value}`);
     }
 
@@ -880,20 +884,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     }
 
     protected throwWithContext(context: ParserRuleContext, message: string): void {
-        const startLine = context.start?.line;
-        const startColumn = context.start?.column;
-        const startString = startLine + ":" + startColumn;
-
-        const stopLine = context.stop?.line;
-        const stopColumn = context.stop?.column;
-        let stopString = "";
-        if (startLine === stopLine) {
-            stopString = stopColumn?.toString();
-        } else {
-            stopString = stopLine + ":" + stopString;
-        }
-
-        throw `Parse exception at [${startString} - ${stopString}] : ${message}`;
+        throwWithContext(context, message);
     }
 }
 

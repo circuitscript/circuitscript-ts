@@ -3,11 +3,12 @@ def label(value, anchor="left"):
         pins: 1
         copy: true
         followWireOrientation: false
-        display: create graphic:
-            label: "value", 0, -10, "?", fontSize=50, anchor=anchor
+        display: create graphic (params):
+            label: params.net_name, 0, -10, fontSize=50, anchor=params.anchor
             pin: 1, 0, 0, 0, 0, display_pin_id=0
         type: "label"
         params:
+            anchor: anchor
             net_name: value
             value: value
             priority: 5

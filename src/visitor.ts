@@ -273,12 +273,47 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
+        const ctxId = ctx.ID();
+        const paramIds = [];
+        if (ctxId !== null) {
+            const varName = ctxId.getText();
+            // assign this value to the component value
+            paramIds.push(varName);
+
+            // create blank object first, so that the reference exists
+            this.getExecutor().scope.variables.set(varName, {});
+        }
+
         const graphicsExpressionsCtx = ctx.graphic_expressions_block();
         this.visit(graphicsExpressionsCtx);
         const commands = this.getResult(graphicsExpressionsCtx);
 
         const drawing = new SymbolDrawingCommands(commands);
         drawing.source = ctx.getText();
+        drawing.paramIds = paramIds;
+
+        const executor = this.getExecutor();
+
+        // Save stack structure to reference the variables
+        const stack = [...this.executionStack];
+
+        // Setup the scope for variable references
+        drawing.prepareVariables = (params: Map<string, any>) => {
+            if (params && paramIds.length > 0) {
+                // Evaluate into an object
+                const obj = {};
+                params.forEach((value, key) => {
+                    obj[key] = value;
+                });
+
+                executor.scope.variables.set(paramIds[0], obj);
+            }
+        }
+
+        // Used for resolving variable references during the drawing phase.
+        drawing.resolveVariables = (name: string, trailers: string[] = []) => {
+            return executor.resolveVariable(stack, name, trailers);
+        }
 
         this.setResult(ctx, drawing);
     }
@@ -303,7 +338,7 @@ export class ParserVisitor extends BaseVisitor {
                         return accum;
                     }, [] as any[]);
 
-                accum.push([commandName, positionParams, keywordParams]);
+                accum.push([commandName, positionParams, keywordParams, item]);
             }
 
             return accum;
@@ -635,27 +670,8 @@ export class ParserVisitor extends BaseVisitor {
                     const angleValue = Number(result);
                     component.setParam('angle', angleValue);
                     shouldIgnoreWireOrientation = true;
-
-                } else if (modifierText === 'anchor') {
-                    // Find the label
-                    if (component.displayProp
-                        && component.displayProp instanceof SymbolDrawingCommands) {
-
-                        const commands =
-                            ((component.displayProp) as SymbolDrawingCommands)
-                                .getCommands();
-
-                        // Set all text label fields with id 'value' to have 
-                        // the alignment specifiied
-                        commands.forEach(command => {
-                            const positionParams = command[1];
-                            const keywordParams = command[2];
-                            if (command[0] === PlaceHolderCommands.label
-                                && positionParams[0] === 'value') {
-                                keywordParams.set('anchor', result as string);
-                            }
-                        });
-                    }
+                } else if (modifierText === 'anchor'){
+                    component.setParam('anchor', result as string);
                 }
 
                 if (shouldIgnoreWireOrientation) {

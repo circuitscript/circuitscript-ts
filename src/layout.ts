@@ -695,7 +695,7 @@ export class LayoutEngine {
                         }
                     }
     
-                    applyComponentParamsToSymbol(typeProp, component, tmpSymbol);
+                    applyComponentParamsToSymbol(component, tmpSymbol);
     
                     // Set rotation of object
                     let didSetAngle = false;
@@ -1520,33 +1520,15 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
     return symbolPinDefinitions;
 }
 
-function applyComponentParamsToSymbol(typeProp: string, 
-    component: ClassComponent, symbol: SymbolGraphic): void {
-    
-    if (typeProp === 'net') {
-        symbol.setLabelValue("net_name", 
-            component.parameters.get(ParamKeys.net_name) as string);
+function applyComponentParamsToSymbol(component: ClassComponent,
+    symbol: SymbolGraphic): void {
+        
+    const newMap = new Map(component.parameters);
+    if (!newMap.has('refdes')) {
+        newMap.set('refdes', component.assignedRefDes ?? "?");
     }
 
-    if (component.assignedRefDes !== null){
-        symbol.setLabelValue("refdes", component.assignedRefDes);
-    }
-
-    for (const [key, value] of component.parameters) {
-        if (key !== 'refdes' && key !== 'net_name') {
-            let useValue: string;
-
-            if (typeof value == 'object' && (value instanceof NumericValue)) {
-                useValue = (value as NumericValue).toDisplayString();
-            } else if (typeof value === 'number') {
-                useValue = value.toString();
-            } else if (typeof value === 'string'){
-                useValue = value;
-            }
-
-            symbol.setLabelValue(key, useValue);
-        }
-    }
+    symbol.componentParams = newMap;
 }
 
 function calculateSymbolAngle(symbol: SymbolGraphic,
@@ -1995,6 +1977,7 @@ export function CalculatePinPositions(component: ClassComponent)
     }
 
     // Force a render of the symbol
+    applyComponentParamsToSymbol(component, tmpSymbol);
     tmpSymbol.refreshDrawing();
 
     const pins = component.pins;

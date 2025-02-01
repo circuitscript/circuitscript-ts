@@ -5,7 +5,7 @@ def cmp():
     return create component:
         pins: 7
         type: "conn"
-        display: create graphic:
+        display: create graphic (params):
             rect -width/2, height/2, width, height
             hpin 1, "", -width-100, 100,  100
             hpin 2, "", -width-100, 200,  100
@@ -14,10 +14,10 @@ def cmp():
             hpin 5, "", -width-100, 500, 100
             hpin 6, "", -width-100, 600, 100
             hpin 7, "", -width-100, 700, 100
-            label "refdes", -width, -20, "?"
+            label params.refdes, -width, -20
 
             # use a blank label to check for errors in render
-            label "random", -width, -15, ""
+            label "", -width, -15
 
 at cmp() pin 2
 wire left 300

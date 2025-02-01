@@ -211,7 +211,7 @@ create_component_expr: Create Component ':' NEWLINE INDENT (NEWLINE | property_e
 graphic_expressions_block:
     NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
-create_graphic_expr: Create Graphic ':' graphic_expressions_block;
+create_graphic_expr: Create Graphic ('(' ID ')')? ':' graphic_expressions_block;
 
 create_module_expr: Create Module ':' NEWLINE INDENT (NEWLINE | property_expr | property_block_expr) + DEDENT;
 

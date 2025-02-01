@@ -10,7 +10,7 @@ def conn3x2():
 
     return create component:
         pins: 6
-        display: create graphic:
+        display: create graphic (params):
             rect: 0, 0, width, height
 
             hpin: 1, "1", -width/2 - 100, -100,   100
@@ -21,7 +21,7 @@ def conn3x2():
             hpin: 4, "4", width/2 + 100, 0,      -100
             hpin: 6, "6", width/2 + 100, 100,    -100
             
-            label: "refdes", -width/2, -height/2 - 20, "?", fontSize=50, anchor="left", vanchor="bottom"
+            label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left", vanchor="bottom"
 
             circle: -50, -100, 40 
             circle: -50,  0,   40
