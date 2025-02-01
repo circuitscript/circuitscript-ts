@@ -1520,7 +1520,7 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
     return symbolPinDefinitions;
 }
 
-function applyComponentParamsToSymbol(component: ClassComponent,
+export function applyComponentParamsToSymbol(component: ClassComponent,
     symbol: SymbolGraphic): void {
         
     const newMap = new Map(component.parameters);

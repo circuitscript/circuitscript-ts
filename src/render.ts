@@ -414,6 +414,15 @@ function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
             const sheetFrameGroup = frameGroup.group();
 
             const symbol = new SymbolPlaceholder(displayProp);
+
+            // Merge frame params into frame component params
+            const newParams = new Map<string, any>(frameComponent.parameters);
+            frameParams.forEach((value, key) => {
+                newParams.set(key, value);
+            });
+
+            symbol.componentParams = newParams;
+
             symbol.refreshDrawing();
             symbol.draw(sheetFrameGroup);
 

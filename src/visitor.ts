@@ -534,7 +534,11 @@ export class ParserVisitor extends BaseVisitor {
         const keyName = this.getResult(ctxPropertyKeyExpr);
         const value = this.getResult(ctxPropertyValueExpr);
 
-        if (value instanceof UndeclaredReference) {
+        if (value instanceof UndeclaredReference && (
+            value.reference.parentValue === undefined 
+            && value.reference.value ===undefined
+        )) {
+            
             throw value.throwMessage();
         }
 
