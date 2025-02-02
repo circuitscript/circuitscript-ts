@@ -1,17 +1,25 @@
 import { Geometry } from "../src/geometry.js";
+import { numeric, NumericValue } from "../src/objects/ParamDefinition.js";
 
 describe('geometry merge wires test', () => {
+
+    function makePoint(x: number, y:number): {x: NumericValue, y: NumericValue} {
+        return {
+            x: numeric(x),
+            y: numeric(y)
+        }
+    }
 
     test('wire connected end to end', () => {
 
         const wire1 = [
-            { x: 100, y: 100 },
-            { x: 200, y: 100 }
+            makePoint(100, 100),
+            makePoint(200, 100),
         ];
 
         const wire2 = [
-            { x: 200, y: 100 },
-            { x: 200, y: 120 }
+            makePoint(200, 100),
+            makePoint(200, 120),
         ];
 
         const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
@@ -30,13 +38,13 @@ describe('geometry merge wires test', () => {
     test('wire connected at some point of wire 1', () => {
 
         const wire1 = [
-            { x: 100, y: 100 },
-            { x: 200, y: 100 }
+            makePoint(100, 100),
+            makePoint(200, 100),
         ];
 
         const wire2 = [
-            { x: 160, y: 100 },
-            { x: 160, y: 120 }
+            makePoint(160, 100),
+            makePoint(160, 120)
         ];
 
         const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
@@ -61,13 +69,13 @@ describe('geometry merge wires test', () => {
     test('wire connected at some point of wire 2', () => {
 
         const wire1 = [
-            { x: 100, y: 100 },
-            { x: 200, y: 100 }
+            makePoint(100, 100),
+            makePoint(200, 100),
         ];
 
         const wire2 = [
-            { x: 160, y: 100 },
-            { x: 160, y: 120 }
+            makePoint(160, 100),
+            makePoint(160, 120),
         ];
 
         const { intersectPoints, segments } = Geometry.mergeWires([wire2, wire1]);
@@ -92,13 +100,13 @@ describe('geometry merge wires test', () => {
     test('overlapping wires', () => {
 
         const wire1 = [
-            { x: 100, y: 100 },
-            { x: 140, y: 100 }
+            makePoint(100, 100),
+            makePoint(140, 100)
         ];
 
         const wire2 = [
-            { x: 120, y: 100 },
-            { x: 160, y: 100 }
+            makePoint(120, 100),
+            makePoint(160, 100),
         ];
 
         const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
@@ -119,13 +127,13 @@ describe('geometry merge wires test', () => {
     test('reversed wires', () => {
 
         const wire1 = [
-            { x: 100, y: 100 },
-            { x: 140, y: 100 }
+            makePoint(100, 100),
+            makePoint(140, 100),
         ];
 
         const wire2 = [
-            { x: 140, y: 100 },
-            { x: 100, y: 100 }
+            makePoint(140, 100),
+            makePoint(100, 100),
         ];
 
         const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);

@@ -57,6 +57,9 @@ import {
 import { ExecutionContext } from './execute.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 import {
+    NumberOperator,
+    NumberOperatorType,
+    numeric,
     NumericValue,
     ParamDefinition
 } from './objects/ParamDefinition.js';
@@ -73,6 +76,7 @@ import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
+import Big from 'big.js';
 
 
 export class ParserVisitor extends BaseVisitor {
@@ -463,7 +467,7 @@ export class ParserVisitor extends BaseVisitor {
             if (Array.isArray(item)){
                 return item;
             } else {
-                return nameToPinId.get(item);
+                return numeric(nameToPinId.get(item));
             }
         });
 
@@ -471,7 +475,7 @@ export class ParserVisitor extends BaseVisitor {
             if (Array.isArray(item)){
                 return item;
             } else {
-                return nameToPinId.get(item);
+                return numeric(nameToPinId.get(item));
             }
         });
 
@@ -675,8 +679,7 @@ export class ParserVisitor extends BaseVisitor {
                         shouldIgnoreWireOrientation = true;
                     }
                 } else if (modifierText === 'angle') {
-                    const angleValue = Number(result);
-                    component.setParam('angle', angleValue);
+                    component.setParam('angle', result as NumericValue);
                     shouldIgnoreWireOrientation = true;
                 } else if (modifierText === 'anchor'){
                     component.setParam('anchor', result as string);
@@ -827,6 +830,8 @@ export class ParserVisitor extends BaseVisitor {
             } else if (unaryOp.Minus()) {
                 if (typeof value === 'number') {
                     value = -value;
+                } else if (value instanceof NumericValue){
+                    value = value.neg();
                 } else {
                     throw "Failed to do Negation operator";
                 }
@@ -866,8 +871,16 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctx0);
         this.visit(ctx1);
 
-        const value1: number | boolean = this.getResult(ctx0);
-        const value2: number | boolean = this.getResult(ctx1);
+        let value1: number | boolean | NumericValue = this.getResult(ctx0);
+        let value2: number | boolean | NumericValue = this.getResult(ctx1);
+
+        if (value1 instanceof NumericValue) {
+            value1 = value1.toNumber();
+        }
+
+        if (value2 instanceof NumericValue) {
+            value2 = value2.toNumber();
+        }
 
         const binaryOperatorType = ctx.binary_operator();
         let result: boolean | null = null;
@@ -924,13 +937,17 @@ export class ParserVisitor extends BaseVisitor {
         const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
         const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
         
-        let result: number | null = null;
+        const operator = new NumberOperator();
+        const tmpValue1 = operator.prepare(value1);
+        const tmpValue2 = operator.prepare(value2);
+
+        let result: number | null | NumberOperatorType = null;
         if (ctx.Multiply()) {
-            result = value1 * value2;
+            result = operator.multiply(tmpValue1, tmpValue2);
         } else if (ctx.Divide()) {
-            result = value1 / value2;
+            result = operator.divide(tmpValue1, tmpValue2);
         } else if (ctx.Modulus()) {
-            result = value1 % value2;
+            result = operator.modulus(tmpValue1, tmpValue2);
         }
 
         this.setResult(ctx, result);
@@ -939,15 +956,36 @@ export class ParserVisitor extends BaseVisitor {
     visitAdditionExpr = (ctx: AdditionExprContext): void => {
         const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
         const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
-        
-        let result: number | null = null;
-        if (ctx.Addition()) {
-            result = value1 + value2;
-        } else if (ctx.Minus()) {
-            result = value1 - value2;
-        }
 
-        this.setResult(ctx, result);
+        if (ctx.Addition() && (typeof value1 === 'string' || typeof value2 === 'string')) {
+            // String concatenation
+
+            let tmpValue1 = value1;
+            if (value1 instanceof NumericValue) {
+                tmpValue1 = value1.toDisplayString();
+            }
+
+            let tmpValue2 = value2;
+            if (value2 instanceof NumericValue) {
+                tmpValue2 = value2.toDisplayString();
+            }
+
+            const result = tmpValue1 + tmpValue2;
+            this.setResult(ctx, result);
+
+        } else {
+            const operator = new NumberOperator();
+            const tmpValue1 = operator.prepare(value1);
+            const tmpValue2 = operator.prepare(value2);
+
+            let result: number | null | NumberOperatorType = null;
+            if (ctx.Addition()) {
+                result = operator.addition(tmpValue1, tmpValue2);
+            } else if (ctx.Minus()) {
+                result = operator.subtraction(tmpValue1, tmpValue2);
+            }
+            this.setResult(ctx, result);
+        }
     }
 
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
@@ -1303,6 +1341,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitFor_expr = (ctx: For_exprContext): void => {
+        this.log('in for loop');
         const forVariableNames = ctx.ID().map(item => item.getText());
         const ctxDataExpr = ctx.data_expr();
 
@@ -1332,6 +1371,7 @@ export class ParserVisitor extends BaseVisitor {
 
                 const currentResult = this.getResult(ctx) ?? {};
                 const {breakSignal = false, continueSignal = false} = currentResult;
+                this.log('condition result: ', breakSignal, continueSignal);
                
                 if (breakSignal && !continueSignal) {
                     keepLooping = false;
@@ -1386,12 +1426,12 @@ export class ParserVisitor extends BaseVisitor {
 
 
     private parseCreateComponentPins(
-        pinData: number | Map<string, any>,
+        pinData: NumericValue | Map<string, any>,
     ): PinDefinition[] {
         const pins: PinDefinition[] = [];
 
-        if (typeof pinData === 'number') {
-            const lastPin = pinData;
+        if (pinData instanceof NumericValue) {
+            const lastPin = pinData.toNumber();
             for (let i = 0; i < lastPin; i++) {
                 const pinId = i + 1;
                 pins.push(
@@ -1432,6 +1472,8 @@ export class ParserVisitor extends BaseVisitor {
                 } else {
                     pinName = pinDef;
                 }
+
+                this.log('pins', pinId, pinIdType, pinName, pinType, altPinNames);
 
                 pins.push(
                     new PinDefinition(

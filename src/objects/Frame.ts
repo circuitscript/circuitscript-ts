@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { FrameType } from "src/globals";
+import { FrameType } from "../globals.js";
 
 export class Frame {
     parameters: Map<string, any> = new Map();
     frameId: number;
     frameType: FrameType;
 
-    constructor(frameId: number, frameType: FrameType) {
+    constructor(frameId: number, frameType = FrameType.Frame) {
         this.frameId = frameId;
         this.frameType = frameType;
     }

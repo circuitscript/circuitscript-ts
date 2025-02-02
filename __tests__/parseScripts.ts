@@ -60,13 +60,13 @@ def power_input():
 J1 = power_input()
 
 at J1 pin 1
-wire left 20 down 20
+wire left 100 down 100
 
 branch:
-    wire right 20
+    wire right 100
     to J1 pin 3
 
-wire down 20
+wire down 100
 to gnd
 `, [
     ['/XGND', 'gnd', 1],

@@ -23,6 +23,7 @@ import { BoundBox, combineMaps, getBoundsSize, printBounds, resizeBounds, resize
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from './helpers.js';
+import { numeric, NumericValue } from './objects/ParamDefinition.js';
 
 export class LayoutEngine {
 
@@ -182,8 +183,8 @@ export class LayoutEngine {
             const allLines = wires.map(wire => {
                 return wire.points.map(pt => {
                     return {
-                        x: wire.x + pt.x,
-                        y: wire.y + pt.y,
+                        x: wire.x.add(pt.x),
+                        y: wire.y.add(pt.y),
                     }
                 });
             });
@@ -196,7 +197,8 @@ export class LayoutEngine {
             });
 
             intersectPoints.forEach(([x, y]) => {
-                junctions.push(new RenderJunction(x, y));
+                junctions.push(
+                    new RenderJunction(numeric(x), numeric(y)));
             });
         }
 
@@ -214,21 +216,21 @@ export class LayoutEngine {
 
         // The base/default frame will always be the first element
         const baseFrame = frameObjects[0];
-        baseFrame.padding = 0;
-        baseFrame.borderWidth = 0;
+        baseFrame.padding = numeric(0);
+        baseFrame.borderWidth = numeric(0);
 
         if (this.showBaseFrame){
             // Assume A4 for now
 
-            baseFrame.borderWidth = 5;
+            baseFrame.borderWidth = numeric(5);
 
             // Use A4 size first, with a margin of 400 mils around
             baseFrame.width = 11692 - 400 * 2;
             baseFrame.height = 8267 - 400 * 2;
         }
 
-        baseFrame.x = 0;
-        baseFrame.y = 0;
+        baseFrame.x = numeric(0);
+        baseFrame.y = numeric(0);
 
         let textObjects: RenderText[] = [];
         let elementFrames: RenderFrame[] = [];
@@ -294,12 +296,12 @@ export class LayoutEngine {
         innerItems.forEach(innerFrame => {
             if (innerFrame.frame.frameType === FrameType.Sheet){
                 // If frame is a sheet, then do not offset by frame position
-                innerFrame.x = 0;
-                innerFrame.y = 0;
+                innerFrame.x = numeric(0);
+                innerFrame.y = numeric(0);
             } else {
                 // Translate the subgraph frame by the parent frame's position
-                innerFrame.x += frame.x;
-                innerFrame.y += frame.y;
+                innerFrame.x = innerFrame.x.add(frame.x);
+                innerFrame.y = innerFrame.y.add(frame.y);
             }
 
             if (innerFrame.type === RenderFrameType.Elements) {
@@ -307,8 +309,8 @@ export class LayoutEngine {
                     innerFrame.x, innerFrame.y);
 
                 innerFrame.innerItems.forEach(item2 => {
-                    item2.x += innerFrame.x - innerFrame.translateX;
-                    item2.y += innerFrame.y - innerFrame.translateY;
+                    item2.x = item2.x.add(innerFrame.x).sub(innerFrame.translateX);
+                    item2.y = item2.y.add(innerFrame.y).sub(innerFrame.translateY);
                 });
 
             } else {
@@ -327,11 +329,11 @@ export class LayoutEngine {
         const innerFrames = frame.innerItems as RenderFrame[];
         const gridSize = defaultGridSizeUnits;
 
-        let accumX = 0;
-        let accumY = 0;
+        let accumX = numeric(0);
+        let accumY = numeric(0);
 
         // This is used to determine the final bounds of this frame
-        const boundPoints = [];
+        const boundPoints: [x: NumericValue, y: NumericValue][] = [];
 
         // First pass collects the size of all inner frames
         const frameSizes = innerFrames.map(innerFrame => {
@@ -415,37 +417,45 @@ export class LayoutEngine {
                 = getBoundsSize(innerFrame.bounds);
 
             if (innerFrame.containsTitle) {
-                innerFrame.x = offsetX + accumX + toNearestGrid(widthForTitle / 2 - frameWidth / 2, gridSize);
-                innerFrame.y = offsetY + accumY;
-                accumY += (frameHeight + frame.gap);
+                innerFrame.x = offsetX.add(accumX).add(toNearestGrid(widthForTitle / 2 - frameWidth / 2, gridSize));
+                innerFrame.y = offsetY.add(accumY);
+                accumY = accumY.add(frameHeight).add(frame.gap);
 
             } else {
                 if (frame.direction === FramePlotDirection.Column) {
                     // Align to the center, but also to the nearest grid size.
-                    innerFrame.x = offsetX + accumX + toNearestGrid(maxWidth / 2 - frameWidth / 2, gridSize);
-                    innerFrame.y = offsetY + accumY;
+                    innerFrame.x = offsetX.add(accumX).add(toNearestGrid(maxWidth / 2 - frameWidth / 2, gridSize));
+                    innerFrame.y = offsetY.add(accumY);
 
-                    accumY += (frameHeight + frame.gap);
+                    accumY = accumY.add(frameHeight).add(frame.gap);
 
                 } else if (frame.direction === FramePlotDirection.Row) {
                     // Align to the top?
-                    innerFrame.x = offsetX + centeredOffsetX + accumX;
-                    innerFrame.y = offsetY + accumY; //+ toNearestGrid(maxHeight / 2 - frameHeight / 2, gridSize);
+                    innerFrame.x = offsetX.add(centeredOffsetX).add(accumX);
+                    innerFrame.y = offsetY.add(accumY); //+ toNearestGrid(maxHeight / 2 - frameHeight / 2, gridSize);
 
-                    accumX += (frameWidth + frame.gap);
+                    accumX = accumX.add(frameWidth).add(frame.gap);
                 }
             }
 
             boundPoints.push(
                 [innerFrame.x, innerFrame.y],
-                [innerFrame.x + frameWidth, innerFrame.y + frameHeight]
+                [innerFrame.x.add(frameWidth), innerFrame.y.add(frameHeight)]
             );
         });
 
         // Determine the bounds based on the points. The points should already
         // be aligned to the grid, add the frame padding to expand the bounds correctly.
-        const contentsBounds = resizeBounds(getBoundsFromPoints(boundPoints),
-            frame.padding);
+
+        const tmpBoundPoints = boundPoints.map(item => {
+            return [
+                item[0].toNumber(),
+                item[1].toNumber(),
+            ]
+        }) as [x: number, y: number][];
+
+        const contentsBounds = resizeBounds(getBoundsFromPoints(tmpBoundPoints),
+            frame.padding.toNumber());
 
         // If frame component is specified, then center the contents within
         if (frame.frame.parameters.has(FrameParamKeys.SheetType)){
@@ -457,8 +467,8 @@ export class LayoutEngine {
                 frame.frame.parameters);
 
             const rects = ExtractDrawingRects(frameDrawing);
-            let frameWidth = 0;
-            let frameHeight = 0;
+            let frameWidth = numeric(0);
+            let frameHeight = numeric(0);
 
             if (rects[1]) {
                 frameWidth = milsToMM(rects[1].width);
@@ -468,20 +478,20 @@ export class LayoutEngine {
             const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
             const contentsHeight = contentsBounds.ymax - contentsBounds.ymin;
 
-            const frameOffsetX = toNearestGrid((frameWidth - contentsWidth) / 2, gridSize);
-            const frameOffsetY = toNearestGrid((frameHeight - contentsHeight) / 2, gridSize);
+            const frameOffsetX = toNearestGrid((frameWidth.toNumber() - contentsWidth) / 2, gridSize);
+            const frameOffsetY = toNearestGrid((frameHeight.toNumber() - contentsHeight) / 2, gridSize);
 
             innerFrames.forEach(innerFrame => {
                 // apply the offset to all the frames
-                innerFrame.x += frameOffsetX;
-                innerFrame.y += frameOffsetY;
+                innerFrame.x = innerFrame.x.add(frameOffsetX);
+                innerFrame.y = innerFrame.y.add(frameOffsetY);
             });
 
             frame.bounds = {
                 xmin: 0,
                 ymin: 0,
-                xmax: frameWidth,
-                ymax: frameHeight
+                xmax: frameWidth.toNumber(),
+                ymax: frameHeight.toNumber(),
             };
         } else {
             frame.bounds = contentsBounds;
@@ -592,7 +602,7 @@ export class LayoutEngine {
                 tmpFrame.subgraphId = title.replace(/\s/g, "_");
 
                 const textObject = new RenderText(title);
-                textObject.fontSize = defaultFrameTitleTextSize;
+                textObject.fontSize = numeric(defaultFrameTitleTextSize);
                 textObject.fontWeight = 'bold';
 
                 textObject.symbol.refreshDrawing();
@@ -606,8 +616,8 @@ export class LayoutEngine {
                     ymax: tmpBox.start[1] + tmpBox.height
                 };
 
-                textObject.x = 0;
-                textObject.y = 0;
+                textObject.x = numeric(0);
+                textObject.y = numeric(0);
 
                 // Add as first element
                 frame.innerItems.splice(0, 0, tmpFrame);
@@ -709,7 +719,11 @@ export class LayoutEngine {
 
                     if (component.parameters.has('angle')) {
                         didSetAngle = true;
-                        tmpSymbol.angle = component.parameters.get('angle') as number;
+                        const value = (
+                            component.parameters.get('angle') as NumericValue
+                        ).toNumber();
+
+                        tmpSymbol.angle = value;
                     }
    
                     if (component.parameters.has('flipX')){
@@ -770,7 +784,7 @@ export class LayoutEngine {
                 const [, wireId, wireSegments] = 
                     sequence[i] as [SequenceAction.Wire, number, WireSegment[]];
 
-                const wire = new RenderWire(0, 0, wireSegments);
+                const wire = new RenderWire(numeric(0), numeric(0), wireSegments);
                 wire.id = wireId;
                 let useNetName = null;
 
@@ -1030,7 +1044,7 @@ export class LayoutEngine {
             const [, node1]: [string, RenderItem] = graph.node(firstNodeId);
 
             // By default align pin 1 to the grid
-            this.placeNodeAtPosition(0, 0, node1, 1);
+            this.placeNodeAtPosition(numeric(0), numeric(0), node1, 1);
             return;
         }
 
@@ -1049,7 +1063,8 @@ export class LayoutEngine {
 
             if (nodeId1 === firstNodeId && !firstNodePlaced) {
                 this.print('first node placed at origin');
-                this.placeNodeAtPosition(0, 0, node1, pin1);
+                this.placeNodeAtPosition(
+                    numeric(0), numeric(0), node1, pin1);
                 firstNodePlaced = true;
                 node1.isFloating = false;
 
@@ -1081,7 +1096,7 @@ export class LayoutEngine {
                 originNodeGroups.set(node1.toString(), [node1]);
                 this.print('creating new origin node at', node1);
 
-                this.placeNodeAtPosition(0, 0, node1, pin1);
+                this.placeNodeAtPosition(numeric(0), numeric(0), node1, pin1);
                 node1.isFloating = false;
 
                 fixedNode = node1;
@@ -1109,7 +1124,8 @@ export class LayoutEngine {
                     // If have same node, then compare their position
                     const [x1, y1] = getNodePositionAtPin(node1, pin1);
                     const [x2, y2] = getNodePositionAtPin(node2, pin2);
-                    if (x1 !== x2 && y1 !== y2) {
+
+                    if (!x1.eq(x2) && !y1.eq(y2)) {
                         if (node1 instanceof RenderWire &&
                             node2 instanceof RenderComponent) {
 
@@ -1232,8 +1248,8 @@ export class LayoutEngine {
         const [otherNodeOriginX, otherNodeOriginY] = 
             getNodePositionAtPin(mergedNode, mergedNodePin);
 
-        const offsetX = x - otherNodeOriginX
-        const offsetY = y - otherNodeOriginY;
+        const offsetX = x.sub(otherNodeOriginX);
+        const offsetY = y.sub(otherNodeOriginY);
 
         this.print('offset of other origin:', offsetX, offsetY);
 
@@ -1277,7 +1293,7 @@ export class LayoutEngine {
 
             if (nodeId1 === firstNodeId && !firstNodePlaced) {
                 this.print('first node placed at origin');
-                this.placeNodeAtPosition(0, 0, node1, pin1);
+                this.placeNodeAtPosition(numeric(0), numeric(0), node1, pin1);
                 firstNodePlaced = true;
                 node1.isFloating = false;
             }
@@ -1340,15 +1356,15 @@ export class LayoutEngine {
     }
 
     translateNodeBy(offsetX: number, offsetY: number, item: RenderItem): void {
-        item.x += offsetX;
-        item.y += offsetY;
+        item.x = item.x.add(offsetX);
+        item.y = item.y.add(offsetY);
     }
 
-    placeNodeAtPosition(fromX: number, fromY: number, item: RenderItem, pin: number, depth=0): void {
+    placeNodeAtPosition(fromX: NumericValue, fromY: NumericValue, item: RenderItem, pin: number, depth=0): void {
         if (item instanceof RenderComponent){
             const pinPosition = item.symbol.pinPosition(pin);
-            item.x = fromX - pinPosition.x;
-            item.y = fromY - pinPosition.y; 
+            item.x = fromX.sub(pinPosition.x);
+            item.y = fromY.sub(pinPosition.y); 
 
         } else if (item instanceof RenderWire){
             if (pin === 0) { // Start of the wire
@@ -1356,8 +1372,8 @@ export class LayoutEngine {
                 item.y = fromY;
             } else { // End of wire
                 const wireEnd = item.getWireEnd();
-                item.x = fromX - wireEnd.x;
-                item.y = fromY - wireEnd.y;
+                item.x = fromX.sub(wireEnd.x);
+                item.y = fromY.sub(wireEnd.y);
             }
         }
 
@@ -1408,14 +1424,14 @@ export class LayoutEngine {
 }
 
 
-function getNodePositionAtPin(item: RenderItem, pin: number): [x: number, y: number] {
-    let x = 0;
-    let y = 0;
+function getNodePositionAtPin(item: RenderItem, pin: number): [x: NumericValue, y: NumericValue] {
+    let x = numeric(0);
+    let y = numeric(0);
 
     if (item instanceof RenderComponent) {
         const pinPosition = item.symbol.pinPosition(pin);
-        x = item.x + pinPosition.x;
-        y = item.y + pinPosition.y;
+        x = item.x.add(pinPosition.x);
+        y = item.y.add(pinPosition.y);
 
     } else if (item instanceof RenderWire) {
         if (pin === 0) {
@@ -1423,8 +1439,8 @@ function getNodePositionAtPin(item: RenderItem, pin: number): [x: number, y: num
             y = item.y;
         } else {
             const wireEnd = item.getWireEnd();
-            x = item.x + wireEnd.x;
-            y = item.y + wireEnd.y;
+            x = item.x.add(wireEnd.x);
+            y = item.y.add(wireEnd.y);
         }
     }
 
@@ -1483,40 +1499,40 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
             })
         }
     } else {
-        const addedPins = [];
-
+        const addedPins: number[] = [];
         for (const [key, items] of component.arrangeProps) {
 
-            let useItems;
+            let useItems : number[];
             if (!Array.isArray(items)) {
                 useItems = [items];
             } else {
-                // Do no mutate original array
+                // Do not mutate original array
                 useItems = [...items];
             }
 
             useItems.forEach(pinId => {
-                // Only use the pin if it exists!
-                if (existingPinIds.indexOf(pinId) !== -1) {
-                    const pin = pins.get(pinId)!;
-                    symbolPinDefinitions.push({
-                        side: key,
-                        pinId: pinId,
-                        text: pin.name,
-                        position: pin.position,
-                        pinType: pin.pinType,
-                    });
-                    addedPins.push(pinId);
-                }
+                if (pinId instanceof NumericValue){
+                    const pinIdValue = (pinId as NumericValue).toNumber();
+
+                    // Only use the pin if it exists!
+                    if (existingPinIds.indexOf(pinIdValue) !== -1) {
+                        const pin = pins.get(pinIdValue)!;
+                        symbolPinDefinitions.push({
+                            side: key,
+                            pinId: pinIdValue,
+                            text: pin.name,
+                            position: pin.position,
+                            pinType: pin.pinType,
+                        });
+                        addedPins.push(pinIdValue);
+                    }
+                }                
             });
         }
         
         // Make sure all existing pins are added, otherwise throw an error
-        const unplacedPins = [];
-        existingPinIds.forEach(item => {
-            if (addedPins.indexOf(item) === -1){
-                unplacedPins.push(item);
-            }
+        const unplacedPins: number[] = existingPinIds.filter(pinId => {
+            return addedPins.indexOf(pinId) === -1;
         });
 
         if (unplacedPins.length > 0){
@@ -1568,7 +1584,7 @@ export function getBounds(
     wires: RenderWire[], junctions: RenderJunction[], frames: RenderFrame[]): BoundBox{
     // Returns the bounds in mm.
     
-    const points = [];
+    const points: [x: number, y: number][] = [];
 
     components.forEach(item => {
         const bbox = item.symbol.drawing.getBoundingBox();
@@ -1576,25 +1592,25 @@ export function getBounds(
         const [x1, y1] = bbox.start;
         const [x2, y2] = bbox.end;
 
-        points.push([x1 + item.x, y1 + item.y]);
-        points.push([x2 + item.x, y2 + item.y]);
+        points.push([x1 + item.x.toNumber(), y1 + item.y.toNumber()]);
+        points.push([x2 + item.x.toNumber(), y2 + item.y.toNumber()]);
     });
 
     wires.forEach(wire => {
         wire.points.forEach(point => {
-            points.push([wire.x + point.x, wire.y + point.y]);
+            points.push([wire.x.add(point.x).toNumber(), wire.y.add(point.y).toNumber()]);
         });
     });
 
     junctions.forEach(item => {
-        points.push([item.x, item.y]);
+        points.push([item.x.toNumber(), item.y.toNumber()]);
     });
 
     frames.forEach(item => {
-        const {width, height} = getBoundsSize(item.bounds);
-        points.push([item.x, item.y]);
-        points.push([item.x + width, item.y + height]);
-    })
+        const { width, height } = getBoundsSize(item.bounds);
+        points.push([item.x.toNumber(), item.y.toNumber()]);
+        points.push([item.x.toNumber() + width, item.y.toNumber() + height]);
+    });
 
     return getBoundsFromPoints(points);
 }
@@ -1615,8 +1631,8 @@ function getBoundsFromPoints(points: [x: number, y: number][]): BoundBox {
 }
 
 export class RenderObject {
-    x = -1;
-    y = -1;
+    x = numeric(-1);
+    y = numeric(-1);
 
     isFloating = true;
     floatingRelativeTo: [selfPin: number, nodeId: string, pin: number][] = [];
@@ -1632,7 +1648,7 @@ export class RenderWire extends RenderObject {
     // can overlap
     netName: string;
 
-    constructor(x: number, y: number, segments: WireSegment[]) {
+    constructor(x: NumericValue, y: NumericValue, segments: WireSegment[]) {
         super();
         this.x = x;
         this.y = y;
@@ -1670,7 +1686,7 @@ export class RenderWire extends RenderObject {
             } else if (direction === WireAutoDirection.Auto || direction === WireAutoDirection.Auto_) {
                 // 'auto' means both x and y. 'auto_' is the same as 'auto', but
                 // uses the alternative path to the target.
-                const { valueXY = [0, 0] } = segment;
+                const { valueXY = [numeric(0), numeric(0)] } = segment;
 
                 const tmpPoints = this.getAutoPoints(valueXY, direction);
 
@@ -1692,9 +1708,9 @@ export class RenderWire extends RenderObject {
         this.points = points;
     }
 
-    getAutoPoints(value: [x: number, y: number], direction: WireAutoDirection): [dx: number, dy: number][] {
-        const valueX = roundValue(value[0]);
-        const valueY = roundValue(value[1]);
+    getAutoPoints(value: [x: NumericValue, y: NumericValue], direction: WireAutoDirection): [dx: number, dy: number][] {
+        const valueX = roundValue(value[0]).toNumber();
+        const valueY = roundValue(value[1]).toNumber();
 
         const inQuadrant = Geometry.getQuadrant(valueX, valueY);
         const [dx, dy] = [valueX, valueY];
@@ -1744,7 +1760,7 @@ export class RenderWire extends RenderObject {
         }
     }
 
-    setEndAuto(untilX: number, untilY: number): void {
+    setEndAuto(untilX: NumericValue, untilY: NumericValue): void {
 
         // Find the last accumulated position up to the last item
         const excludeLastSegment = this.segments.slice(0, this.segments.length-1);
@@ -1763,13 +1779,13 @@ export class RenderWire extends RenderObject {
             }
 
             if (direction === Direction.Down) {
-                tmpY += useValue;
+                tmpY = tmpY.add(useValue);
             } else if (direction === Direction.Up) {
-                tmpY -= useValue;
+                tmpY = tmpY.sub(useValue);
             } else if (direction === Direction.Left) {
-                tmpX -= useValue;
+                tmpX = tmpX.sub(useValue);
             } else if (direction === Direction.Right) {
-                tmpX += useValue;
+                tmpX = tmpX.add(useValue);
             }
         });
 
@@ -1782,24 +1798,24 @@ export class RenderWire extends RenderObject {
 
         switch(lastSegment.direction){
             case Direction.Left:
-                useValue = tmpX - untilX;
+                useValue = tmpX.sub(untilX);
                 break;
             case Direction.Right:
-                useValue = untilX - tmpX;
+                useValue = untilX.sub(tmpX);
                 break;
             case Direction.Up:
-                useValue = untilY - tmpY;
+                useValue = untilY.sub(tmpY);
                 break;
             case Direction.Down:
-                useValue = tmpY - untilY;
+                useValue = tmpY.sub(untilY);
                 break;
 
             case WireAutoDirection.Auto:
             case WireAutoDirection.Auto_:
                 // Always assume positive values
                 valueXY = [
-                    untilX - tmpX,
-                    untilY - tmpY,
+                    untilX.sub(tmpX),
+                    untilY.sub(tmpY),
                 ];
 
                 // Set to 0, to mark that auto length
@@ -1860,14 +1876,14 @@ export class RenderComponent extends RenderObject {
 export class RenderText extends RenderObject {
     symbol: SymbolText;
 
-    _fontSize = 12;
+    _fontSize = numeric(12);
     _fontWeight = 'regular';
 
-    get fontSize (): number {
+    get fontSize (): NumericValue {
         return this._fontSize;
     }
 
-    set fontSize(value: number) {
+    set fontSize(value: NumericValue) {
         this._fontSize = value;
         this.symbol.fontSize = value;
     }
@@ -1904,7 +1920,7 @@ export class RenderFrame extends RenderObject {
 
     direction = FramePlotDirection.Column;
 
-    borderWidth = 5; //mils
+    borderWidth = numeric(5); //mils
 
     // If width and height are null, then frame size is determined
     // based on internal contents
@@ -1945,10 +1961,10 @@ export enum RenderFrameType {
 }
 
 export class RenderJunction {
-    x: number;
-    y: number;
+    x: NumericValue;
+    y: NumericValue;
 
-    constructor(x: number, y: number){
+    constructor(x: NumericValue, y: NumericValue){
         this.x = x;
         this.y = y;
     }
@@ -1968,9 +1984,9 @@ export type SheetFrame = {
 }
 
 export function CalculatePinPositions(component: ClassComponent)
-    : Map<number, { x: number; y: number; angle: number; }> {
+    : Map<number, { x: NumericValue; y: NumericValue; angle: NumericValue; }> {
 
-    const pinPositionMapping = new Map<number, { x: number; y: number; angle: number; }>();
+    const pinPositionMapping = new Map<number, { x: NumericValue; y: NumericValue; angle: NumericValue; }>();
 
     let tmpSymbol: SymbolGraphic;
     if (component.displayProp !== null
@@ -1996,7 +2012,9 @@ export function CalculatePinPositions(component: ClassComponent)
     return pinPositionMapping;
 }
 
-export function ExtractDrawingRects(drawing: SymbolDrawingCommands): { width: number, height: number }[] {
+export function ExtractDrawingRects(drawing: SymbolDrawingCommands)
+    : { width: NumericValue, height: NumericValue }[] {
+    
     return drawing.getCommands().filter(item => {
         return (item[0] === PlaceHolderCommands.rect);
     }).map(item => {

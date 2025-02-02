@@ -24,6 +24,7 @@
         "libs"
     ],
     "devDependencies": {
+        "@types/big.js": "^6.2.2",
         "@types/figlet": "^1.5.8",
         "@types/jest": "~29.5",
         "@types/node": "~18",
@@ -69,7 +70,9 @@
         "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer",
         "server": "node server.js",
         "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server",
-        "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js"
+        "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js",
+        "preversion": "npm run test",
+        "version": "npm run changelog && git add CHANGELOG.md"
     },
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "MIT",
@@ -78,6 +81,7 @@
         "@flatten-js/core": "1.5.5",
         "@svgdotjs/svg.js": "3.2.0",
         "antlr4ng": "^3.0.4",
+        "big.js": "^6.2.2",
         "commander": "^11.1.0",
         "express": "^4.18.2",
         "figlet": "^1.7.0",

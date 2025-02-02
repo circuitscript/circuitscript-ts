@@ -136,6 +136,7 @@ export const ModuleContainsKeyword = 'contains';
 export const GlobalDocumentName = 'document';
 
 export const RenderFlags = {
-    ShowElementFrames: false,
-    ShowOrigin: false,
+    ShowElementFrames:      false,
+    ShowOrigin:             false,
+    ShowGridOrigin:         false,
 }

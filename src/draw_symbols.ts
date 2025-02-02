@@ -20,6 +20,7 @@ import { PinTypes } from "./objects/PinTypes.js";
 import { roundValue, throwWithContext } from "./utils.js";
 import { DeclaredReference, UndeclaredReference } from "./objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
+import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 
 
 /**
@@ -39,8 +40,8 @@ export abstract class SymbolGraphic {
     _flipX = 0;
     _flipY = 0;
 
-    width: number;
-    height: number;
+    width: NumericValue = numeric(-1);
+    height: NumericValue = numeric(-1);
     
     // Stores a reference of <labelID> to the label value
     labelTexts = new Map<string, string>();
@@ -80,8 +81,8 @@ export abstract class SymbolGraphic {
 
     calculateSize(): void {
         const { width, height } = this.drawing.getBoundingBox();
-        this.width = width;
-        this.height = height;
+        this.width = numeric(width);
+        this.height = numeric(height);
     }
 
     // Subclasses should implement this
@@ -89,8 +90,8 @@ export abstract class SymbolGraphic {
 
     size(): { width: number; height: number; } {
         return {
-            width: this.width,
-            height: this.height
+            width: this.width.toNumber(),
+            height: this.height.toNumber(),
         }
     }
 
@@ -129,7 +130,7 @@ export abstract class SymbolGraphic {
     }
 
     // Returns the port position, relative to the symbol origin
-    pinPosition(id: number): { x: number; y: number; angle: number; } {
+    pinPosition(id: number): { x: NumericValue; y: NumericValue; angle: NumericValue; } {
         const pin = this.drawing.getPinPosition(id);
 
         // Allow pin position values to be rounded to 4 d.p
@@ -148,8 +149,10 @@ export abstract class SymbolGraphic {
         const bbox = this.drawing.getBoundingBox();
 
         const originSize = milsToMM(10)
-        group.circle(originSize)
-            .translate(-originSize / 2, -originSize / 2)
+        group.circle(originSize.toNumber())
+            .translate(
+                originSize.neg().div(2).toNumber(), 
+                originSize.neg().div(2).toNumber())
             .fill('red')
             .stroke('none');
 
@@ -157,7 +160,7 @@ export abstract class SymbolGraphic {
             .translate(bbox.start[0], bbox.start[1])
             .fill('none')
             .stroke({
-                width: milsToMM(2),
+                width: milsToMM(2).toNumber(),
                 color: '#ccc',
             })
     }
@@ -170,7 +173,7 @@ export abstract class SymbolGraphic {
             const {path, lineColor, fillColor, lineWidth} = pathInfo;
             group.path(path)
                 .stroke({
-                    width: lineWidth,
+                    width: lineWidth.toNumber(),
                     color: lineColor,
                 })
                 .fill(fillColor)
@@ -196,7 +199,7 @@ export abstract class SymbolGraphic {
             const tmpLabel = label as Textbox;
 
             const {
-                fontSize = 50,
+                fontSize = numeric(50),
                 anchor = HorizontalAlign.Left, 
                 vanchor = VerticalAlign.Bottom,
                 fontWeight = 'regular',
@@ -250,23 +253,23 @@ export abstract class SymbolGraphic {
             // const position2 = [position[0], position[1]];
 
             if (this.flipX !== 0) {
-                position[0] *= -1;
+                position[0] = position[0].neg();
             }
 
             if (this.flipY !== 0){
-                position[1] *= -1;
+                position[1] = position[1].neg();
             }
 
             const useFont = defaultFont;
 
             const textContainer = group.group();
 
-            let translateX: number, translateY: number;
+            let translateX: NumericValue, translateY: NumericValue;
             let useRotateAngle = 0;
 
             if (isRotation180){
-                translateX = -position[0];
-                translateY = -position[1];
+                translateX = position[0].neg();
+                translateY = position[1].neg();
                 useRotateAngle = 0;
             } else {
                 translateX = position[0];
@@ -349,7 +352,7 @@ export abstract class SymbolGraphic {
 
                     textContainer.path(path)
                         .stroke({
-                            width: milsToMM(5),
+                            width: milsToMM(5).toNumber(),
                             color: '#333'
                         })
                         .fill('none')
@@ -391,14 +394,16 @@ export abstract class SymbolGraphic {
                     .translate(textBounds.x - xOffset, textBounds.y);
             }
 
-            textContainer.translate(translateX, translateY)
-                .rotate(useRotateAngle, -translateX, -translateY);
+            textContainer.translate(
+                    translateX.toNumber(), translateY.toNumber())
+                .rotate(useRotateAngle, 
+                    -translateX.toNumber(), -translateY.toNumber());
 
             textContainer.text(tmpLabel.text)
                 .fill(textColor)
                 .font({
                     family: useFont,
-                    size: fontSize * fontDisplayScale,
+                    size: fontSize.toNumber() * fontDisplayScale,
                     anchor: anchorStyle,
                     'dominant-baseline': dominantBaseline,
                     weight: fontWeight,
@@ -407,12 +412,12 @@ export abstract class SymbolGraphic {
 
             const { a, b, c, d, e, f } = textContainer.matrix();
             const newMatrix = {
-                a: roundValue(a),
-                b: roundValue(b),
-                c: roundValue(c),
-                d: roundValue(d),
-                e: roundValue(e),
-                f: roundValue(f),
+                a: roundValue(numeric(a)).toNumber(),
+                b: roundValue(numeric(b)).toNumber(),
+                c: roundValue(numeric(c)).toNumber(),
+                d: roundValue(numeric(d)).toNumber(),
+                e: roundValue(numeric(e)).toNumber(),
+                f: roundValue(numeric(f)).toNumber(),
             };
 
             textContainer.transform(newMatrix);
@@ -420,8 +425,10 @@ export abstract class SymbolGraphic {
             // For debug, show the origin of the text container
             if (drawOrigin){
                 const originSize = milsToMM(10);
-                textContainer.circle(originSize)
-                    .translate(originSize/2, originSize/2)
+                textContainer.circle(originSize.toNumber())
+                    .translate(
+                        originSize.div(2).toNumber(), 
+                        originSize.div(2).toNumber())
                     .fill('green');
             }
         });
@@ -462,7 +469,10 @@ export class SymbolPointHidden extends SymbolGraphic {
         const drawing = this.drawing;
         drawing.clear();
 
-        drawing.addPin(1, 0, 0, 0, 0);
+        const defaultLineColor = ColorScheme.PinLineColor;
+        drawing.addPin(
+            numeric(1), numeric(0), numeric(0), 
+            numeric(0), numeric(0), defaultLineColor);
 
         this.drawing = drawing;
     }
@@ -471,7 +481,7 @@ export class SymbolPointHidden extends SymbolGraphic {
 export class SymbolText extends SymbolGraphic {
 
     text: string;
-    fontSize = 40;
+    fontSize = numeric(40);
     fontWeight = 'regular';
 
     constructor(text: string){
@@ -483,7 +493,7 @@ export class SymbolText extends SymbolGraphic {
         const drawing = this.drawing;
         drawing.clear();
         
-        drawing.addTextbox(0, 0, this.text, {
+        drawing.addTextbox(numeric(0), numeric(0), this.text, {
             fontSize: this.fontSize,
             anchor: HorizontalAlign.Middle,
             fontWeight: this.fontWeight,
@@ -513,7 +523,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             [PlaceHolderCommands.units, ['mils'], {}],
             [PlaceHolderCommands.lineColor, [ColorScheme.PinLineColor], {}],
             [PlaceHolderCommands.textColor, [ColorScheme.PinNameColor], {}],
-            [PlaceHolderCommands.lineWidth, [5], {}],
+            [PlaceHolderCommands.lineWidth, [numeric(5)], {}],
             ...drawing.getCommands()
             ];
 
@@ -599,7 +609,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 case PlaceHolderCommands.circle:
                     // circle params: center x, center y, radius
                     // @ts-ignore
-                    drawing.addArc(...positionParams, 0, 360);
+                    drawing.addArc(...positionParams, numeric(0), numeric(360));
                     break;
 
                 case PlaceHolderCommands.triangle:
@@ -645,8 +655,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     // TODO: also support positional parameters
                     const content = keywordParams.get('content');
                     
-                    let offsetX = 0;
-                    let offsetY = 0;
+                    let offsetX = numeric(0);
+                    let offsetY = numeric(0);
 
                     if (keywordParams.has('offset')){
                         const offset = keywordParams.get('offset');
@@ -715,6 +725,10 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         if (keywordParams.has(keywordDisplayPinId)) {
             const value = keywordParams.get(keywordDisplayPinId);
+            if (value instanceof NumericValue && value.toNumber() === 0){
+                displayPinId = false;
+            }
+
             if (value === 0 || value === false) {
                 displayPinId = false;
             }
@@ -747,7 +761,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 startX,
                 startY,
                 startX,
-                startY + magnitude
+                startY.add(magnitude)
             ];
         } else if (commandName === PlaceHolderCommands.hpin) {
             const magnitude = milsToMM(positionParams[3]);
@@ -755,7 +769,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 positionParams[0],
                 startX,
                 startY,
-                startX + magnitude,
+                startX.add(magnitude),
                 startY
             ];
         } else {
@@ -784,13 +798,15 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         let pinNameOffsetX = milsToMM(offset1);
 
-        let pinIdOffsetX = 0;
+        let pinIdOffsetX = numeric(0);
         let pinIdAlignment = HorizontalAlign.Left;
 
         let pinIdVAlignment = VerticalAlign.Bottom;
         let pinIdOffsetY = milsToMM(-offset2);
 
-        switch (angle) {
+        const angleValue = angle.toNumber();
+
+        switch (angleValue) {
             case 0:
                 pinNameAlignment = HorizontalAlign.Left;
                 pinNameOffsetX = milsToMM(offset1);
@@ -814,13 +830,13 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 break;
         }
 
-        if (angle === 0 || angle === 90 || angle === 180 || angle === 270) {
+        if (angleValue === 0 || angleValue === 90 || angleValue === 180 || angleValue === 270) {
             const usePinName = pinNameParam ?? "";
 
             // Draw the pinName
             usePinName !== "" && drawing.addLabel(
-                endX + pinNameOffsetX, endY, usePinName, {
-                fontSize: defaultPinNameTextSize,
+                endX.add(pinNameOffsetX), endY, usePinName, {
+                fontSize: numeric(defaultPinNameTextSize),
                 anchor: pinNameAlignment,
                 vanchor: VerticalAlign.Middle,
                 textColor: pinNameColor,
@@ -828,8 +844,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
             // Draw pin Id
             displayPinId && drawing.addLabel(
-                endX + pinIdOffsetX, endY + pinIdOffsetY, pinId.toString(), {
-                fontSize: defaultPinIdTextSize,
+                endX.add(pinIdOffsetX), endY.add(pinIdOffsetY), 
+                pinId.toDisplayString(), {
+                fontSize: numeric(defaultPinIdTextSize),
                 anchor: pinIdAlignment,
                 vanchor: pinIdVAlignment,
                 textColor: lineColor
@@ -918,14 +935,16 @@ export class SymbolCustom extends SymbolGraphic {
 
         const bodyWidth = this.bodyWidth;
         
-        const bodyHeight = (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing;
+        const bodyHeight = numeric(
+            (1 + Math.max(maxLeftPins, maxRightPins)) * this.pinSpacing.toNumber()
+        );
 
         const defaultLineColor = ColorScheme.PinLineColor;
         drawing.addSetLineColor(defaultLineColor);
         // drawing.addSetFillColor(ColorScheme.BodyColor);
 
-        drawing.addSetLineWidth(5);
-        drawing.addRectMM(0, 0, bodyWidth, bodyHeight);
+        drawing.addSetLineWidth(numeric(5));
+        drawing.addRectMM(numeric(0), numeric(0), bodyWidth, bodyHeight);
 
         this.generateDrawingPins(drawing, bodyWidth, bodyHeight,
             leftPins, rightPins, defaultLineColor);
@@ -936,33 +955,33 @@ export class SymbolCustom extends SymbolGraphic {
     }
 
     generateDrawingPins(drawing: SymbolDrawing,
-        bodyWidthMM: number, bodyHeightMM: number,
+        bodyWidthMM: NumericValue, bodyHeightMM: NumericValue,
         leftPins: SymbolPinDefintion[],
         rightPins: SymbolPinDefintion[], defaultLineColor: string): void {
 
         // Setup the pins
-        const leftPinStart = -bodyWidthMM / 2;
-        const rightPinStart = bodyWidthMM / 2;
-        const pinStartY = -bodyHeightMM / 2;
+        const leftPinStart = bodyWidthMM.neg().div(2);
+        const rightPinStart = bodyWidthMM.div(2);
+        const pinStartY = bodyHeightMM.neg().div(2);
 
         leftPins.forEach(pin => {
             const position = pin.position;
-            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPinMM(pin.pinId, leftPinStart - this.pinLength, pinY, 
+            const pinY = pinStartY.add((position + 1) * this.pinSpacing.toNumber()) // Includes the offset too
+            drawing.addPinMM(numeric(pin.pinId), leftPinStart.sub(this.pinLength), pinY, 
                 leftPinStart, pinY, defaultLineColor);
 
-            drawing.addLabel(leftPinStart + milsToMM(20), 
+            drawing.addLabel(leftPinStart.add(milsToMM(20)), 
                 pinY, pin.text, {
                 
-                fontSize: CustomSymbolPinTextSize,
+                fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Middle,
                 textColor: ColorScheme.PinNameColor,
             });
 
             // Add the pin number
-            drawing.addLabel(leftPinStart - milsToMM(10) , pinY - milsToMM(10), pin.pinId.toString(), {
-                fontSize: CustomSymbolPinIdSize,
+            drawing.addLabel(leftPinStart.sub(milsToMM(10)) , pinY.sub(milsToMM(10)), pin.pinId.toString(), {
+                fontSize: numeric(CustomSymbolPinIdSize),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor
@@ -971,20 +990,20 @@ export class SymbolCustom extends SymbolGraphic {
 
         rightPins.forEach(pin => {
             const position = pin.position;
-            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPinMM(pin.pinId, rightPinStart + this.pinLength, pinY, 
+            const pinY = pinStartY.add((position + 1) * this.pinSpacing.toNumber()) // Includes the offset too
+            drawing.addPinMM(numeric(pin.pinId), rightPinStart.add(this.pinLength), pinY, 
                 rightPinStart, pinY, defaultLineColor);
 
-            drawing.addLabel(rightPinStart - milsToMM(20), pinY, pin.text, {
-                fontSize: CustomSymbolPinTextSize,
+            drawing.addLabel(rightPinStart.sub(milsToMM(20)), pinY, pin.text, {
+                fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Middle,
                 textColor: ColorScheme.PinNameColor,
             });
 
             // Add the pin number
-            drawing.addLabel(rightPinStart + milsToMM(10) , pinY - milsToMM(10), pin.pinId.toString(), {
-                fontSize: CustomSymbolPinIdSize,
+            drawing.addLabel(rightPinStart.add(milsToMM(10)) , pinY.sub(milsToMM(10)), pin.pinId.toString(), {
+                fontSize: numeric(CustomSymbolPinIdSize),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor
@@ -992,8 +1011,11 @@ export class SymbolCustom extends SymbolGraphic {
         });
 
         const instanceName = drawing.variables.get('refdes');
-        instanceName && drawing.addLabel(-bodyWidthMM/2, -bodyHeightMM/2 - milsToMM(20), instanceName, {
-            fontSize: CustomSymbolRefDesSize,
+        instanceName && drawing.addLabel(
+            bodyWidthMM.neg().div(2), 
+            bodyHeightMM.neg().div(2).sub(milsToMM(20)
+        ), instanceName, {
+            fontSize: numeric(CustomSymbolRefDesSize),
             anchor: HorizontalAlign.Left,
         });
 
@@ -1002,8 +1024,11 @@ export class SymbolCustom extends SymbolGraphic {
         acceptedMPNKeys.some(key => {
             const labelValue = drawing.variables.get(key);
             if (labelValue !== undefined){
-                drawing.addLabel(-bodyWidthMM/2, bodyHeightMM/2 + milsToMM(20), labelValue, {
-                    fontSize: CustomSymbolParamTextSize,
+                drawing.addLabel(
+                    bodyWidthMM.neg().div(2), 
+                    bodyHeightMM.div(2).add(milsToMM(20)), 
+                    labelValue, {
+                    fontSize: numeric(CustomSymbolParamTextSize),
                     anchor: HorizontalAlign.Left,
                     vanchor: VerticalAlign.Top,
                 });
@@ -1013,42 +1038,42 @@ export class SymbolCustom extends SymbolGraphic {
 
     calculateSize(): void {
         // This width also includes the pin length
-        this.width = this.bodyWidth + 2 * this.pinLength;
-        this.height = (1 + Math.max(this._cacheLeftPins.length, 
-            this._cacheRightPins.length)) * this.pinSpacing;
+        this.width = this.bodyWidth.add(2 * this.pinLength.toNumber());
+        this.height = numeric((1 + Math.max(this._cacheLeftPins.length, 
+            this._cacheRightPins.length)) * this.pinSpacing.toNumber());
     }
 
 }
 
 export class SymbolCustomModule extends SymbolCustom {
 
-    pinLength = 0;
+    pinLength = milsToMM(0);
 
     portWidth = milsToMM(100);
     portHeight = milsToMM(50);
 
     generateDrawingPins(drawing: SymbolDrawing,
-        bodyWidthMM: number, bodyHeightMM: number,
+        bodyWidthMM: NumericValue, bodyHeightMM: NumericValue,
         leftPins: SymbolPinDefintion[],
         rightPins: SymbolPinDefintion[], defaultLineColor: string): void {
 
         // Values should already be in mm
 
         // Setup the pins
-        const leftPinStart = -bodyWidthMM / 2;
-        const rightPinStart = bodyWidthMM / 2;
-        const pinStartY = -bodyHeightMM / 2;
+        const leftPinStart = bodyWidthMM.neg().div(2);
+        const rightPinStart = bodyWidthMM.div(2);
+        const pinStartY = bodyHeightMM.neg().div(2);
 
         leftPins.forEach(pin => {
             const position = pin.position;
-            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPinMM(pin.pinId, leftPinStart - this.pinLength, pinY,
+            const pinY = pinStartY.add((position + 1) * this.pinSpacing.toNumber()) // Includes the offset too
+            drawing.addPinMM(numeric(pin.pinId), leftPinStart.sub(this.pinLength), pinY,
                 leftPinStart, pinY, defaultLineColor);
 
             drawing.addModulePort(leftPinStart, pinY, this.portWidth, this.portHeight, pin.pinType);
 
-            drawing.addLabel(leftPinStart + this.portWidth + milsToMM(20), pinY, pin.text, {
-                fontSize: 40,
+            drawing.addLabel(leftPinStart.add(this.portWidth).add(milsToMM(20)), pinY, pin.text, {
+                fontSize: numeric(40),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Middle,
                 textColor: ColorScheme.PinNameColor,
@@ -1057,14 +1082,14 @@ export class SymbolCustomModule extends SymbolCustom {
 
         rightPins.forEach(pin => {
             const position = pin.position;
-            const pinY = pinStartY + (position + 1) * this.pinSpacing // Includes the offset too
-            drawing.addPinMM(pin.pinId, rightPinStart + this.pinLength, pinY,
+            const pinY = pinStartY.add((position + 1) * this.pinSpacing.toNumber()) // Includes the offset too
+            drawing.addPinMM(numeric(pin.pinId), rightPinStart.add(this.pinLength), pinY,
                 rightPinStart, pinY, defaultLineColor);
 
             drawing.addModulePort(rightPinStart, pinY, this.portWidth, this.portHeight, pin.pinType, -1);
 
-            drawing.addLabel(rightPinStart - this.portWidth - milsToMM(20), pinY, pin.text, {
-                fontSize: 40,
+            drawing.addLabel(rightPinStart.sub(this.portWidth).sub(milsToMM(20)), pinY, pin.text, {
+                fontSize: numeric(40),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Middle,
                 textColor: ColorScheme.PinNameColor,
@@ -1080,14 +1105,14 @@ export class SymbolDrawing {
     items: (Feature | GeometryProp)[] = [];
 
     // pinId, feature, angle
-    pins: [number, Feature, number, lineColor: string][] = [];
+    pins: [NumericValue, Feature, angle: NumericValue, lineColor: string][] = [];
 
     angle = 0;
 
     flipX = 0;
     flipY = 0;
 
-    mainOrigin:[number, number] = [0, 0];
+    mainOrigin:[x: NumericValue, y:NumericValue] = [numeric(0), numeric(0)];
 
     logger: Logger = null;
 
@@ -1104,7 +1129,9 @@ export class SymbolDrawing {
         this.logger && this.logger.add(params.join(' '));
     }
 
-    addLine(startX: number, startY: number, endX: number, endY: number): SymbolDrawing {
+    addLine(startX: NumericValue, startY: NumericValue, 
+        endX: NumericValue, endY: NumericValue): SymbolDrawing {
+        
         startX = milsToMM(startX);
         startY = milsToMM(startY);
         endX = milsToMM(endX);
@@ -1117,8 +1144,8 @@ export class SymbolDrawing {
         return this;
     }
 
-    addPin(pinId: number, startX: number, startY: number,
-        endX: number, endY: number, lineColor: string): SymbolDrawing {
+    addPin(pinId: NumericValue, startX: NumericValue, startY: NumericValue,
+        endX: NumericValue, endY: NumericValue, lineColor: string): SymbolDrawing {
         startX = milsToMM(startX);
         startY = milsToMM(startY);
         endX = milsToMM(endX);
@@ -1127,8 +1154,8 @@ export class SymbolDrawing {
         return this.addPinMM(pinId, startX, startY, endX, endY, lineColor);
     }
 
-    addPinMM(pinId: number, startXMM: number, startYMM: number, 
-        endXMM: number, endYMM: number, lineColor: string): SymbolDrawing {
+    addPinMM(pinId: NumericValue, startXMM: NumericValue, startYMM: NumericValue, 
+        endXMM: NumericValue, endYMM: NumericValue, lineColor: string): SymbolDrawing {
         // Values should be in mm
 
         // Determine the pin angle based on vector with start point 
@@ -1138,16 +1165,23 @@ export class SymbolDrawing {
         //             90
 
         let angle = 0;
-        if (startXMM === endXMM) {
-            if (startYMM > endYMM) {
+
+        const tmpStartXMM = startXMM.toNumber();
+        const tmpEndXMM = endXMM.toNumber();
+
+        const tmpStartYMM = startYMM.toNumber();
+        const tmpEndYMM = endYMM.toNumber();
+
+        if (tmpStartXMM === tmpEndXMM) {
+            if (tmpStartYMM > tmpEndYMM) {
                 angle = 270;
-            } else if (startYMM < endYMM) {
+            } else if (tmpStartYMM < tmpEndYMM) {
                 angle = 90;
             }
         } else {
-            if (startXMM < endXMM) {
+            if (tmpStartXMM < tmpEndXMM) {
                 angle = 0;
-            } else if (startXMM > endXMM) {
+            } else if (tmpStartXMM > tmpEndXMM) {
                 angle = 180;
             }
         }
@@ -1155,36 +1189,38 @@ export class SymbolDrawing {
         this.pins.push([
             pinId,
             Geometry.segment([startXMM, startYMM], [endXMM, endYMM]),
-            angle,
+            numeric(angle),
             lineColor
         ]);
 
         return this;
     }
 
-    addVLine(startX: number, startY: number, value: number): SymbolDrawing {
+    addVLine(startX: NumericValue, startY: NumericValue, value: NumericValue): SymbolDrawing {
         startX = milsToMM(startX);
         startY = milsToMM(startY);
         value = milsToMM(value);
 
         this.items.push(
-            Geometry.segment([startX, startY], [startX, startY + value])
+            Geometry.segment([startX, startY], [startX, startY.add(value)])
         );
         return this;
     }
 
-    addHLine(startX: number, startY: number, value: number): SymbolDrawing {
+    addHLine(startX: NumericValue, startY: NumericValue, value: NumericValue): SymbolDrawing {
         startX = milsToMM(startX);
         startY = milsToMM(startY);
         value = milsToMM(value);
 
         this.items.push(
-            Geometry.segment([startX, startY], [startX + value, startY])
+            Geometry.segment([startX, startY], [startX.add(value), startY])
         );
         return this;
     }
 
-    addRect(centerX: number, centerY: number, width: number, height: number): SymbolDrawing {
+    addRect(centerX: NumericValue, centerY: NumericValue, 
+        width: NumericValue, height: NumericValue): SymbolDrawing {
+        
         centerX = milsToMM(centerX);
         centerY = milsToMM(centerY);
         width = milsToMM(width);
@@ -1193,24 +1229,28 @@ export class SymbolDrawing {
         return this.addRectMM(centerX, centerY, width, height);
     }
 
-    addRectMM(centerX: number, centerY: number, width: number, height: number): SymbolDrawing {
-        const width2 = width / 2;
-        const height2 = height / 2;
+    addRectMM(centerX: NumericValue, centerY: NumericValue, 
+        width: NumericValue, height: NumericValue): SymbolDrawing {
+        
+        const width2 = width.div(2);
+        const height2 = height.div(2);
 
         this.items.push(
             Geometry.polygon([
-                [centerX - width2, centerY - height2],
-                [centerX + width2, centerY - height2],
-                [centerX + width2, centerY + height2],
-                [centerX - width2, centerY + height2],
-                [centerX - width2, centerY - height2]
+                [centerX.sub(width2), centerY.sub(height2)],
+                [centerX.add(width2), centerY.sub(height2)],
+                [centerX.add(width2), centerY.add(height2)],
+                [centerX.sub(width2), centerY.add(height2)],
+                [centerX.sub(width2), centerY.sub(height2)]
             ])
         );
 
         return this;
     }
 
-    addTriangle(startX: number, startY: number, endX: number, endY: number, width: number): SymbolDrawing {
+    addTriangle(startX: NumericValue, startY: NumericValue,
+        endX: NumericValue, endY: NumericValue, width: NumericValue): SymbolDrawing {
+
         startX = milsToMM(startX);
         startY = milsToMM(startY);
         endX = milsToMM(endX);
@@ -1223,38 +1263,38 @@ export class SymbolDrawing {
             endX, endY);
 
         const normLine = line.norm;
-        const dx1 = normLine.x * width / 2;
-        const dy1 = normLine.y * width / 2;
-        const dx2 = normLine.x * -width / 2;
-        const dy2 = normLine.y * -width / 2;
+        const dx1 = numeric(normLine.x).mul(width).div(2);
+        const dy1 = numeric(normLine.y).mul(width).div(2);
+        const dx2 = numeric(normLine.x).mul(width.neg()).div(2);
+        const dy2 = numeric(normLine.y).mul(width.neg()).div(2);
 
         this.items.push(
             Geometry.polygon([
-                [dx1 + startX, dy1 + startY],
-                [dx2 + startX, dy2 + startY],
+                [dx1.add(startX), dy1.add(startY)],
+                [dx2.add(startX), dy2.add(startY)],
                 [endX, endY],
-                [dx1 + startX, dy1 + startY],
+                [dx1.add(startX), dy1.add(startY)],
             ])
         );
 
         return this;
     }
 
-    addRect2(x: number, y: number, x2: number, y2: number): SymbolDrawing {
-        this.items.push(
-            Geometry.polygon([
-                [x, y],
-                [x2, y],
-                [x2, y2],
-                [x, y2],
-                [x, y]
-            ])
-        );
+    // addRect2(x: NumericValue, y: NumericValue, x2: NumericValue, y2: NumericValue): SymbolDrawing {
+    //     this.items.push(
+    //         Geometry.polygon([
+    //             [x, y],
+    //             [x2, y],
+    //             [x2, y2],
+    //             [x, y2],
+    //             [x, y]
+    //         ])
+    //     );
 
-        return this;
-    }
+    //     return this;
+    // }
 
-    addLabel(x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
+    addLabel(x: NumericValue, y: NumericValue, textValue: string, style: LabelStyle): SymbolDrawing {
         this.items.push(
             Geometry.label(null, x, y, textValue, style)
         )
@@ -1262,7 +1302,7 @@ export class SymbolDrawing {
         return this;
     }
 
-    addLabelMils( x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
+    addLabelMils( x: NumericValue, y: NumericValue, textValue: string, style: LabelStyle): SymbolDrawing {
         x = milsToMM(x);
         y = milsToMM(y);
 
@@ -1273,7 +1313,7 @@ export class SymbolDrawing {
         return this;
     }
 
-    addTextbox(x: number, y: number, textValue: string, style: LabelStyle): SymbolDrawing {
+    addTextbox(x: NumericValue, y: NumericValue, textValue: string, style: LabelStyle): SymbolDrawing {
         x = milsToMM(x);
         y = milsToMM(y);
 
@@ -1284,73 +1324,78 @@ export class SymbolDrawing {
         return this;
     }
 
-    addModulePort(x: number, y: number, width: number, height: number,
+    addModulePort(x: NumericValue, y: NumericValue, width: NumericValue, height: NumericValue,
         portType = PinTypes.Any, scaleX=1): SymbolDrawing {
 
         // y will be the vertical center of the port
-        const height2 = height / 2;
+        const height2 = height.div(2);
 
-        let path: [x: number, y: number][] = [];
+        let path: [x: NumericValue, y: NumericValue][] = [];
         const arrowSize = milsToMM(30);
 
         if (portType === PinTypes.Any) {
             path = [
-                [0, - height2],
-                [width, - height2],
-                [width, + height2],
-                [0, + height2],
-                [0, - height2]
+                [numeric(0),    height2.neg()],
+                [width,         height2.neg()],
+                [width,         height2],
+                [numeric(0),    height2],
+                [numeric(0),    height2.neg()]
             ];
         } else if (portType === PinTypes.Output) {
             path = [
-                [arrowSize, -height2],
-                [width, -height2],
-                [width, height2],
-                [arrowSize, height2],
-                [0, 0],
-                [arrowSize, - height2]
+                [arrowSize,     height2.neg()],
+                [width,         height2.neg()],
+                [width,         height2],
+                [arrowSize,     height2],
+                [numeric(0),    numeric(0)],
+                [arrowSize,     height2.neg()]
             ];
         } else if (portType === PinTypes.Input) {
             path = [
-                [0, - height2],
-                [width - arrowSize, -height2],
-                [width, 0],
-                [width - arrowSize, height2],
-                [0, + height2],
-                [0, - height2],
+                [numeric(0),            height2.neg()],
+                [width.sub(arrowSize),  height2.neg()],
+                [width,                 numeric(0)],
+                [width.sub(arrowSize),  height2],
+                [numeric(0),            height2],
+                [numeric(0),            height2.neg()],
             ];
         } else if (portType === PinTypes.IO) {
             path = [
-                [arrowSize, - height2],
-                [width - arrowSize, - height2],
-                [width, 0],
-                [width - arrowSize, + height2],
-                [arrowSize, + height2],
-                [0, 0],
-                [0 + arrowSize, - height2],
+                [arrowSize,             height2.neg()],
+                [width.sub(arrowSize),  height2.neg()],
+                [width,                 numeric(0)],
+                [width.sub(arrowSize),  height2],
+                [arrowSize,             height2],
+                [numeric(0),            numeric(0)],
+                [arrowSize,             height2.neg()],
             ];
         }
 
         path = path.map(point => {
-            return [x + point[0] *scaleX, y + point[1]];
+            return [
+                x.add(point[0].mul(scaleX)),
+                y.add(point[1])
+            ];
         });
 
         this.items.push(Geometry.polygon(path));
         return this;
     }
 
-    addPath(...pathParts:any): SymbolDrawing {
+    addPath(...pathParts: any): SymbolDrawing {
         const parts = pathParts.reduce((accum, tmp) => {
-            if (typeof tmp === "string"){
+            if (typeof tmp === "string") {
                 accum = accum.concat(tmp.split(" "));
-            } else if (typeof tmp === "number"){
+            } else if (typeof tmp === "number") {
+                accum.push(numeric(tmp));
+            } else if (tmp instanceof NumericValue) {
                 accum.push(tmp);
             }
             return accum;
-        }, [] as (number|string)[]);
+        }, [] as (NumericValue | string)[]);
 
         const geomObjects = [];
-        let currentObj: [x: number, y: number][] = null;
+        let currentObj: [x: NumericValue, y: NumericValue][] = null;
 
         for (let i = 0; i < parts.length; i++) {
             const command = parts[i];
@@ -1360,16 +1405,16 @@ export class SymbolDrawing {
                     geomObjects.push(currentObj);
                 }
 
-                const x = milsToMM(Number(parts[i + 1]));
-                const y = milsToMM(Number(parts[i + 2]));
+                const x = milsToMM(parts[i + 1]);
+                const y = milsToMM(parts[i + 2]);
 
                 currentObj = [[x, y]];
 
                 i += 2;
 
             } else if (command === 'L') {
-                const x = milsToMM(Number(parts[i + 1]));
-                const y = milsToMM(Number(parts[i + 2]));
+                const x = milsToMM(parts[i + 1]);
+                const y = milsToMM(parts[i + 2]);
                 currentObj.push([x, y]);
 
                 i += 2;
@@ -1401,7 +1446,7 @@ export class SymbolDrawing {
         return this;
     }
 
-    addSetLineWidth(value: number): SymbolDrawing {
+    addSetLineWidth(value: NumericValue): SymbolDrawing {
         value = milsToMM(value);
         this.items.push(new GeometryProp('lineWidth', value));
         return this;
@@ -1422,16 +1467,16 @@ export class SymbolDrawing {
         return this;
     }
 
-    addArc(x: number, y: number, radius: number, 
-        startAngle: number, endAngle: number): SymbolDrawing {
+    addArc(x: NumericValue, y: NumericValue, radius: NumericValue, 
+        startAngle: NumericValue, endAngle: NumericValue): SymbolDrawing {
 
         x = milsToMM(x);
         y = milsToMM(y);
         radius = milsToMM(radius);
 
         // Angles in degrees, convert to radians
-        startAngle = startAngle * Math.PI / 180;
-        endAngle = endAngle * Math.PI / 180;
+        startAngle = startAngle.mul(Math.PI).div(180);
+        endAngle = endAngle.mul(Math.PI).div(180);
         
         this.items.push(
             Geometry.arc([x, y], radius, startAngle, endAngle, true));
@@ -1447,10 +1492,10 @@ export class SymbolDrawing {
     getPaths(): {path: string, 
         fillColor: string, 
         lineColor: string, 
-        lineWidth: number}[] {
+        lineWidth: NumericValue}[] {
         
         let currentFill = "#fff";
-        let currentLineWidth = 1;
+        let currentLineWidth = numeric(1);
         let currentLineColor = '#333';
 
         const pathItems = [];
@@ -1459,7 +1504,7 @@ export class SymbolDrawing {
             if (!(item instanceof Textbox)){
                 if (item instanceof GeometryProp){
                     if (item.name === 'lineWidth'){
-                        currentLineWidth = item.value as number;
+                        currentLineWidth = item.value as NumericValue;
                     } else if (item.name === 'lineColor'){
                         currentLineColor = item.value as string;
                     } else if (item.name === 'fillColor'){
@@ -1536,9 +1581,9 @@ export class SymbolDrawing {
         return Geometry.groupBounds(features);
     }
 
-    getPinPosition(pinId: number): { start: [number, number], end: [number, number], angle: number } {
+    getPinPosition(pinId: number): { start: [x: NumericValue, y: NumericValue], end: [x: NumericValue, y: NumericValue], angle: NumericValue } {
         const pin = this.pins.find(item => {
-            return item[0] === pinId;
+            return item[0].toNumber() === pinId;
         });
 
         if (pin) {

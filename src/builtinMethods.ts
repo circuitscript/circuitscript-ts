@@ -1,6 +1,9 @@
+import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor";
 import { ExecutionContext } from "./execute";
+import { numeric, NumericValue } from "./objects/ParamDefinition";
 import { CallableParameter } from "./objects/types";
+import { resolveToNumericValue } from "./utils";
 
 export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisitor): void {
     context.createFunction('print', (params) => {
@@ -33,18 +36,21 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
 }
 
 function range(...args) {
-    let startValue = 0;
-    let endValue = 0;
+    let startValue = numeric(0);
+    let endValue = numeric(0);
 
     if (args.length === 1) {
-        endValue = args[0] as number;
+        endValue = args[0] as NumericValue;
     } else if (args.length === 2) {
-        startValue = args[0] as number;
-        endValue = args[1] as number;
+        startValue = args[0] as NumericValue;
+        endValue = args[1] as NumericValue;
     }
 
+    const startValueNum = startValue.toNumber();
+    const endValueNum = endValue.toNumber();
+
     const returnArray = [];
-    for (let i = startValue; i < endValue; i++) {
+    for (let i = startValueNum; i < endValueNum; i++) {
         returnArray.push(i);
     }
 
@@ -62,21 +68,30 @@ function enumerate(array:any[]): [index: number, value: any][] {
     return output;
 }
 
-function toMils(value: number): number {
-    if (isNaN(value)) {
-        throw "Invalid input for method toMils";
+function toMils(value: number | NumericValue): NumericValue {
+    let bigValue: Big;
+    if (value instanceof NumericValue) {
+        bigValue = value.toBigNumber();
+    } else {
+        if (isNaN(value)) {
+            throw "Invalid input for method toMils";
+        }
+
+        // Assume is number type
+        bigValue = new Big(value as number);
     }
 
-    return (value as number) / 25.4 * 1000;
+    bigValue = bigValue.div(new Big(25.4 / 1000));
+    return resolveToNumericValue(bigValue);
 }
 
-function objectLength(obj: any[] | any): number {
+function objectLength(obj: any[] | any): NumericValue {
     if (Array.isArray(obj)){
-        return obj.length;
+        return numeric(obj.length);
     } else {
         // If object has some length property
         if (obj.length){
-            return obj.length;
+            return numeric(obj.length);
         } else {
             throw "Could not get length of object: " + obj;
         }
@@ -95,6 +110,9 @@ function toString(obj: any): string {
     } else if (Array.isArray(obj)) {
         const inner = obj.map(item => toString(item)).join(", ");
         return "[" + inner + "]";
+    } else if (obj instanceof NumericValue) {
+        // Display as a big number string, instead of numeric value
+        return obj.toBigNumber().toString();
     } else {
         if (obj.toDisplayString) {
             return obj.toDisplayString();

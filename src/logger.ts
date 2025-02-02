@@ -14,8 +14,14 @@ export class Logger {
         this.add('starting logger...');
     }
 
-    add(message: string): void {
-        this.logs.push((new Date()).toISOString()+" | " + message);
+    add(...args: (string | number)[]): void {
+        let message = "";
+        if (args.length === 1) {
+            message = args[0].toString();
+        } else {
+            message = args.join(" ");
+        }
+        this.logs.push((new Date()).toISOString() + " | " + message);
     }
 
     dump(): string {

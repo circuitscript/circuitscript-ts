@@ -7,6 +7,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { Big } from 'big.js';
 
 import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
     Break_keywordContext, Continue_keywordContext, ExpressionContext,  Function_args_exprContext, 
@@ -19,7 +20,7 @@ import { ExecutionContext } from "./execute";
 import { Logger } from "./logger";
 import { ClassComponent } from "./objects/ClassComponent";
 import { Net } from "./objects/Net";
-import { NumericValue, PercentageValue } from "./objects/ParamDefinition";
+import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition";
 import { PinTypes } from "./objects/PinTypes";
 import { CallableParameter, CFunctionOptions, ComplexType, 
     DeclaredReference, 
@@ -29,7 +30,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
 import { ParserRuleContext } from 'antlr4ng';
 import { GlobalDocumentName, ReferenceTypes } from './globals';
 import { linkBuiltInMethods } from './builtinMethods';
-import { throwWithContext } from './utils';
+import { resolveToNumericValue, throwWithContext } from './utils';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -227,7 +228,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         const trailers = reference.trailers ?? [];
 
-        let currentValue: number | null = null;
+        let currentValue: NumberOperatorType | number | null = null;
 
         if (trailers.length === 0) {
             currentValue = this.getExecutor().scope.variables.get(reference.name) as number;
@@ -244,19 +245,26 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 'Operator assignment failed: could not get value');
         }
 
-        let newValue = 0;
+        let newValue: number | NumberOperatorType = 0;
+
+        const operator = new NumberOperator();
         if (ctx.AdditionAssign()) {
-            newValue = currentValue + value;
+            newValue = operator.addition(
+                currentValue as NumberOperatorType, value);
         } else if (ctx.MinusAssign()) {
-            newValue = currentValue - value;
+            newValue = operator.subtraction(
+                currentValue as NumberOperatorType, value);
         } else if (ctx.MultiplyAssign()) {
-            newValue = currentValue * value;
+            newValue = operator.multiply(
+                currentValue as NumberOperatorType, value);
         } else if (ctx.DivideAssign()) {
-            newValue = currentValue / value;
-        } else if (ctx.ModulusAssign()){
-            newValue = currentValue % value;
+            newValue = operator.divide(
+                currentValue as NumberOperatorType, value);
+        } else if (ctx.ModulusAssign()) {
+            newValue = operator.modulus(
+                currentValue as NumberOperatorType, value);
         } else {
-            this.throwWithContext(ctx, 
+            this.throwWithContext(ctx,
                 'Operator assignment failed: could not perform operator');
         }
 
@@ -436,10 +444,13 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         if (ctxIntegerValue || ctxDecimalValue || ctxNumericValue) {
             if (ctxIntegerValue) {
-                result = sign * Number(ctxIntegerValue.getText());
-
+                result = resolveToNumericValue(
+                    (new Big(ctxIntegerValue.getText())).mul(new Big(sign))
+                );
             } else if (ctxDecimalValue) {
-                result = sign * Number(ctxDecimalValue.getText());
+                result = resolveToNumericValue(
+                    (new Big(ctxDecimalValue.getText())).mul(new Big(sign))
+                );
 
             } else if (ctxNumericValue) {
                 const textExtra = ctx.Minus() ? '-' : '';

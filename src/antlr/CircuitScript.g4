@@ -269,7 +269,7 @@ fragment DecimalIntegerLiteral
 
 INTEGER_VALUE: ([1-9]+ [0-9]*) | [0];
 DECIMAL_VALUE: DecimalIntegerLiteral '.' [0-9][0-9_]*;
-NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [kmMunp]?;
+NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [GMKkmunpf]?;
 
 STRING_VALUE: '"' (.)*? '"';
 PERCENTAGE_VALUE: [1-9]+[0-9]* '%';

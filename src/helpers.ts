@@ -15,7 +15,7 @@ import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
-import { SimpleStopwatch } from "./utils.js";
+import { resolveToNumericValue, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
 import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
@@ -27,6 +27,9 @@ import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 import { FrameParamKeys } from "./objects/Frame.js";
+import { NumericValue } from "./objects/ParamDefinition.js";
+import Big from "big.js";
+import { Logger } from "./logger.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -375,9 +378,12 @@ export function renderScript(scriptData: string, outputPath: string,
 
         const generateSvgTimer = new SimpleStopwatch();
 
-        const svgCanvas = renderSheetsToSVG(sheetFrames);
+        const renderLogger = new Logger();
+        const svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger);
 
         showStats && console.log('Render took:', generateSvgTimer.lap());
+
+        dumpData && writeFileSync('dump/raw-render.txt', renderLogger.dump());
 
         svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
 
@@ -489,8 +495,14 @@ export class UnitDimension {
     }
 }
 
-export function milsToMM(value: number): number {
-    return value * MilsToMM;
+export function milsToMM(value: NumericValue | number): NumericValue {
+    if (typeof value === 'number'){
+        value = resolveToNumericValue(new Big(value));
+    }
+
+    return resolveToNumericValue(
+        value.toBigNumber().mul(new Big(MilsToMM))
+    );
 }
 
 export function pxToMM(value: number): number {

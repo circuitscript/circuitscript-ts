@@ -12,6 +12,7 @@ import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
 import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
 import { ExecutionContext } from 'src/execute.js';
+import { NumericValue } from './ParamDefinition.js';
 
 export class ClassComponent {
 
@@ -22,7 +23,7 @@ export class ClassComponent {
     instanceName: string;
     numPins: number;
 
-    parameters: Map<string, number | string> = new Map();
+    parameters: Map<string, number | string | NumericValue> = new Map();
 
     // Maps pin indexes to the pin definition
     pins: Map<number, PinDefinition> = new Map();
@@ -44,7 +45,7 @@ export class ClassComponent {
     _copyFrom?: ClassComponent = null;
 
     // This determines how pins are arrange on the component/symbol.
-    arrangeProps: Map<string, number[]> | null = null;
+    arrangeProps: Map<string, NumericValue[]> | null = null;
 
     // Used to identify what graphic to draw for this symbol
     displayProp: string | SymbolDrawingCommands | null = null;
@@ -171,7 +172,7 @@ export class ClassComponent {
         }
     }
 
-    setParam(key: string, value: number | string): void {
+    setParam(key: string, value: number | string | NumericValue): void {
         this.parameters.set(key, value);
         this.refreshParamCache();
     }

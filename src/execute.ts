@@ -11,7 +11,7 @@ import { ClassComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
-import { ParamDefinition } from './objects/ParamDefinition.js';
+import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
 import { PinDefinition, PortSide } from './objects/PinDefinition.js';
 import { CFunction, CFunctionResult, CallableParameter, ComponentPin, 
     DeclaredReference, 
@@ -268,7 +268,7 @@ export class ExecutionContext {
             type?: string,
             width?: number,
             copy: boolean,
-            angle?: number,
+            angle?: NumericValue,
             followWireOrientation: boolean,
         }
     ): ClassComponent {
@@ -292,7 +292,7 @@ export class ExecutionContext {
         let useAngle = null;
         if (props.angle) {
             // Make sure it is within 0 to 360
-            useAngle = props.angle % 360;
+            useAngle = props.angle.toNumber() % 360;
             if (useAngle < 0) {
                 useAngle += 360;
             }
@@ -311,7 +311,11 @@ export class ExecutionContext {
             || component.typeProp === ComponentTypes.label
         ) {
             const netName = paramsMap.get(ParamKeys.net_name);
-            const priority = paramsMap.get(ParamKeys.priority);
+
+            let priority = 0;
+            if (paramsMap.has(ParamKeys.priority)) {
+                priority = (paramsMap.get(ParamKeys.priority) as NumericValue).toNumber();
+            }
 
             // Check if the net exists
             const result = this.resolveNet(netName, this.netNamespace);
@@ -1247,14 +1251,14 @@ export class ExecutionContext {
                     ', component angle:', component.angleProp, 'pin angle:',
                     connectedPinPos.angle);
 
-                let useAngle = (targetAngle - connectedPinPos.angle) % 360;
+                let useAngle = (targetAngle - connectedPinPos.angle.toNumber()) % 360;
                 if (useAngle < 0) {
                     useAngle += 360;
                 }
 
                 if (useAngle === 90) {
                     // Just rotate the component
-                    component.setParam('angle', 90);
+                    component.setParam('angle', numeric(90));
                 } else if (useAngle === 180) {
                     if (component.angleProp === 0 || component.angleProp === 180) {
                         component.setParam('flipX', 1);
@@ -1263,7 +1267,7 @@ export class ExecutionContext {
                     }
 
                 } else if (useAngle === 270) {
-                    component.setParam('angle', 270);
+                    component.setParam('angle', numeric(270));
                 }
 
                 component.wireOrientationAngle = useAngle;
@@ -1354,20 +1358,22 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             let position = 0;
 
             useItems.forEach(item => {
+                // This is for blank spaces
                 if (typeof item === 'object' && Array.isArray(item)) {
-                    position += item[0];
-                }
-
-                // Only use the pin if it exists!
-                if (existingPinIds.indexOf(item) !== -1) {
-                    result.push({
-                        pinId: item,
-                        side: useSide,
-                        position,
-                        order: counter
-                    });
-                    counter--;
-                    position += 1;
+                    position += (item[0] as NumericValue).toNumber();
+                } else {
+                    // Only use the pin if it exists!
+                    const itemValue = (item as NumericValue).toNumber();
+                    if (existingPinIds.indexOf(itemValue) !== -1) {
+                        result.push({
+                            pinId: itemValue,
+                            side: useSide,
+                            position,
+                            order: counter
+                        });
+                        counter--;
+                        position += 1;
+                    }
                 }
             });
         }

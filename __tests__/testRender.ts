@@ -7,6 +7,7 @@ import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/
 import { runScript } from "./helpers.js";
 import { prepareSVGEnvironment } from '../src/sizing.js';
 import { defaultZoomScale } from '../src/globals.js';
+import { Logger } from '../src/logger.js';
 
 const mainPath = '__tests__/renderData/';
 
@@ -68,7 +69,7 @@ describe('Render tests', () => {
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);
 
-        const svgCanvas = renderSheetsToSVG(sheetFrames);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
@@ -89,7 +90,7 @@ describe('Render tests', () => {
 
         // First, generate the PDF
         const sheetFrames = await renderCommon(scriptPath);
-        const svgCanvas = renderSheetsToSVG(sheetFrames);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
 
         // Full ISO time string is given, because the CI server might
         // have a different timezone
@@ -134,6 +135,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('f393653f5a848afcb1125ed3cda5b124');
+        expect(result).toEqual('c83779667f613463f22f706ba74842c5');
     });
 });

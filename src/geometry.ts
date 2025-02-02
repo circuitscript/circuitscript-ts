@@ -9,7 +9,7 @@ import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from './sizing.js';
 import { defaultFont, fontDisplayScale, PortArrowSize, PortPaddingHorizontal, PortPaddingVertical } from './globals.js';
 import { Box } from '@svgdotjs/svg.js';
-import { NumericValue } from './objects/ParamDefinition.js';
+import { numeric, NumericValue } from './objects/ParamDefinition.js';
 import { AllPinTypes, PinTypes } from './objects/PinTypes.js';
 import { roundValue } from './utils.js';
 
@@ -24,7 +24,7 @@ export type Feature = Segment | Polygon | Textbox | Arc | Multiline;
 
 export type LabelStyle = {
     font?: string,
-    fontSize?: number,
+    fontSize?: NumericValue,
     fontWeight?: string,
     angle?: number,
     
@@ -42,7 +42,8 @@ export class Textbox extends Flatten.Polygon {
 
     text: string;
 
-    anchorPoint: [number, number] = [0, 0]; // Without any rotation
+    anchorPoint: [NumericValue, NumericValue] = [
+        numeric(0), numeric(0)]; // Without any rotation
 
     boundingBox: { width: number, height: number } = { width: -1, height: -1 };
     polygon: Polygon;
@@ -60,7 +61,7 @@ export class Textbox extends Flatten.Polygon {
         return this.polygon.box;
     }
 
-    constructor(id: string, text: string, anchorPoint: [number, number], 
+    constructor(id: string, text: string, anchorPoint: [NumericValue, NumericValue], 
         polygon: Flatten.Polygon, style: LabelStyle, bounds: Box, label: boolean) {
 
         super(polygon.vertices);
@@ -80,7 +81,7 @@ export class Textbox extends Flatten.Polygon {
         this.label = label;
     }
 
-    static fromPoint(id: string, x: number, y: number, 
+    static fromPoint(id: string, x: NumericValue, y: NumericValue, 
         text: string, style: LabelStyle, label: boolean): Textbox {
 
         let useText: string;
@@ -95,18 +96,18 @@ export class Textbox extends Flatten.Polygon {
             throw 'Invalid string passed into textbox';
         }
 
-        const { fontSize = 10,
+        const { fontSize = numeric(10),
             anchor = HorizontalAlign.Left,
             vanchor = VerticalAlign.Bottom,
             fontWeight = 'regular',
 
             portType = null,
          } = style ?? {};
-
+         
         // Determine the size of the text, this is needed to determine the 
         // bounding box of the text for layout purposes.
         const { width, height, box } =
-            measureTextSize2(useText, defaultFont, fontSize * fontDisplayScale, fontWeight, 
+            measureTextSize2(useText, defaultFont, fontSize.mul(fontDisplayScale).toNumber(), fontWeight, 
                 anchor, vanchor);
 
         let polygonCoords : [x:number, y:number][] = [];
@@ -173,7 +174,7 @@ export class Textbox extends Flatten.Polygon {
         const polygon = new Flatten.Polygon(polygonCoords);
 
         // Create the bounds of the label
-        return new Textbox(id, useText, [x + anchorOffsetX, y + anchorOffsetY], 
+        return new Textbox(id, useText, [x.add(anchorOffsetX), y.add(anchorOffsetY)], 
             polygon, style, box, label);
     }
 
@@ -184,7 +185,12 @@ export class Textbox extends Flatten.Polygon {
             segment => segment.rotate(angle, origin)
         );
 
-        return new Textbox(this.id, this.text, newAnchorPoint, feature,
+        const tmpAnchorPoint = [
+            numeric(newAnchorPoint[0]),
+            numeric(newAnchorPoint[1])
+        ] as [x: NumericValue, y: NumericValue];
+
+        return new Textbox(this.id, this.text, tmpAnchorPoint, feature,
             this.style, this.textMeasurementBounds, this.label);
     }
 
@@ -196,7 +202,12 @@ export class Textbox extends Flatten.Polygon {
             segment => segment.transform(matrix)
         );
 
-        return new Textbox(this.id, this.text, newAnchorPoint, feature,
+        const tmpAnchorPoint = [
+            numeric(newAnchorPoint[0]),
+            numeric(newAnchorPoint[1])
+        ] as [x: NumericValue, y: NumericValue];
+
+        return new Textbox(this.id, this.text, tmpAnchorPoint, feature,
             this.style, this.textMeasurementBounds, this.label
         );
     }
@@ -204,7 +215,10 @@ export class Textbox extends Flatten.Polygon {
     private transformAnchorPoint(callback: (segment: Segment) => Segment): [x: number, y: number] {
         const anchorPointSegment = new Flatten.Segment(
             new Flatten.Point(0, 0),
-            new Flatten.Point(this.anchorPoint)
+            new Flatten.Point([
+                this.anchorPoint[0].toNumber(),
+                this.anchorPoint[1].toNumber(),
+            ])
         );
 
         const newSegment = callback(anchorPointSegment);
@@ -214,7 +228,7 @@ export class Textbox extends Flatten.Polygon {
         ];
     }
 
-    getLabelPosition(): [number, number] {
+    getLabelPosition(): [x: NumericValue, y: NumericValue] {
         return this.anchorPoint;
     }
 }
@@ -230,37 +244,44 @@ export class GeometryProp {
 
 export class Geometry {
     
-    static point(x: number, y: number): Flatten.Point {
-        return new Flatten.Point(x, y);
+    static point(x: NumericValue, y: NumericValue): Flatten.Point {
+        return new Flatten.Point(
+            x.toNumber(),
+            y.toNumber());
     }
 
-    static line(x1: number, y1: number, x2: number, y2: number): Flatten.Line {
+    static line(x1: NumericValue, y1: NumericValue, x2: NumericValue, y2: NumericValue): Flatten.Line {
         return new Flatten.Line(
             Geometry.point(x1, y1),
             Geometry.point(x2, y2)
         )
     }
 
-    static label(id: string, x: number, y: number, text: string, style: LabelStyle): Textbox {
+    static label(id: string, x: NumericValue, y: NumericValue, text: string, style: LabelStyle): Textbox {
         return Textbox.fromPoint(id, x, y, text, style, true);
     }
 
-    static textbox(id: string | null, x: number, y: number, text: string, style: LabelStyle): Textbox {
+    static textbox(id: string | null, x: NumericValue, y: NumericValue, text: string, style: LabelStyle): Textbox {
         return Textbox.fromPoint(id, x, y, text, style, false);
     }
 
-    static segment(start: [number, number], end: [number, number]): Segment {
+    static segment(start: [NumericValue, NumericValue], end: [NumericValue, NumericValue]): Segment {
         return new Flatten.Segment(
             Geometry.point(start[0], start[1]),
             Geometry.point(end[0], end[1])
         );
     }
 
-    static polygon(coords: [number, number][]): Polygon {
-        return new Flatten.Polygon(coords);
+    static polygon(coords: [NumericValue, NumericValue][]): Polygon {
+        return new Flatten.Polygon(coords.map(item => {
+            return [
+                item[0].toNumber(),
+                item[1].toNumber(),
+            ]
+        }));
     }
 
-    static multiline(coords: [number, number][]): Multiline {
+    static multiline(coords: [NumericValue, NumericValue][]): Multiline {
         const segments: Flatten.Segment[] = [];
 
         // Create the segments
@@ -274,22 +295,25 @@ export class Geometry {
         return new Flatten.Multiline(segments);
     }
 
-    static arc(center: [x: number, y: number], radius: number,
-        startAngle: number, endAngle: number, sweepDirection: boolean): Arc {
+    static arc(center: [x: NumericValue, y: NumericValue], radius: NumericValue,
+        startAngle: NumericValue, endAngle: NumericValue, sweepDirection: boolean): Arc {
         // Angle should be in radians for Flatten library.
         return new Flatten.Arc(Geometry.point(center[0], center[1]),
-            radius, startAngle, endAngle, sweepDirection);
+            radius.toNumber(), 
+            startAngle.toNumber(), endAngle.toNumber(), sweepDirection);
     }
 
-    static getCoords(item: Feature): [number, number][] {
+    static getCoords(item: Feature): [x: NumericValue, y: NumericValue][] {
         const points = item.vertices.map(vertex => {
-            return [vertex.x, vertex.y];
-        }) as [number, number][];
-        
+            return [
+                numeric(vertex.x), numeric(vertex.y)
+            ];
+        }) as [x: NumericValue, y: NumericValue][];
+
         return points;
     }
 
-    static rotateDegs(feature: Feature, angleDegrees: number, center: [number, number]): Feature {
+    static rotateDegs(feature: Feature, angleDegrees: number, center: [x: NumericValue, y: NumericValue]): Feature {
         const angleRads = angleDegrees * Math.PI / 180;
         return feature.rotate(angleRads, Geometry.point(center[0], center[1]));
     }
@@ -302,7 +326,7 @@ export class Geometry {
         return feature.transform(flipMatrix);
     }
 
-    static groupRotate(features: Feature[], angle: number, center: [number, number]): Feature[] {
+    static groupRotate(features: Feature[], angle: number, center: [x: NumericValue, y: NumericValue]): Feature[] {
         const angleRads = angle * Math.PI / 180;
         const rotateAboutPoint = Geometry.point(center[0], center[1]);
 
@@ -351,10 +375,10 @@ export class Geometry {
             if (feature instanceof Textbox) {
                 const [x, y] = feature.anchorPoint;
                 box = {
-                    xmin: box.xmin + x,
-                    ymin: box.ymin + y,
-                    xmax: box.xmax + x,
-                    ymax: box.ymax + y
+                    xmin: box.xmin + x.toNumber(),
+                    ymin: box.ymin + y.toNumber(),
+                    xmax: box.xmax + x.toNumber(),
+                    ymax: box.ymax + y.toNumber()
                 }
             }
 
@@ -440,7 +464,7 @@ export class Geometry {
                 for (let i = 0; i < coords.length; i++) {
                     const [x, y] = coords[i];
                     const command = (i === 0) ? 'M' : 'L';
-                    path.push(`${command}`, x, y);
+                    path.push(`${command}`, x.toNumber(), y.toNumber());
                 }
 
                 if (isClosedPolygon){
@@ -479,7 +503,7 @@ export class Geometry {
         return Number(Math.floor(angle/90));
     }
 
-    static mergeWires(wirePoints: { x: number, y: number }[][]): {
+    static mergeWires(wirePoints: { x: NumericValue, y: NumericValue }[][]): {
         intersectPoints: WirePointCount[],
         segments: [x: number, y: number][][]
     } {
@@ -492,8 +516,8 @@ export class Geometry {
         wirePoints.forEach(points => {
 
             const tmpPoints = points.map(pt => {
-                const roundedX = roundValue(pt.x);
-                const roundedY = roundValue(pt.y);
+                const roundedX = roundValue(pt.x).toNumber();
+                const roundedY = roundValue(pt.y).toNumber();
 
                 return new Flatten.Point(roundedX, roundedY);
             });
