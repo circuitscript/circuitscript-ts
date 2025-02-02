@@ -1360,9 +1360,20 @@ export class ParserVisitor extends BaseVisitor {
 
         if (value instanceof UndeclaredReference) {
             this.throwWithContext(data_expr, value.throwMessage());
+        } else if (value instanceof DeclaredReference) {
+            return this.resolveDataValue(value);
         }
 
         return value;
+    }
+
+    private resolveDataValue(reference: DeclaredReference): any {
+        const { value } = reference;
+        if (value instanceof NumericValue) {
+            return value.toDisplayString();
+        } else {
+            return value;
+        }
     }
 
     pinTypes = [
@@ -1650,11 +1661,19 @@ export class ParserVisitor extends BaseVisitor {
         if (document && document[FrameParamKeys.SheetType]) {
             frameComponent = document[FrameParamKeys.SheetType] as ClassComponent;
 
-            // If page size is set, then use it for sheet frames
-            baseScope.frames.forEach(item => {
-                if (item.frameType === FrameType.Sheet) {
-                    item.parameters.set(FrameParamKeys.SheetType, frameComponent);
-                }
+            // Get all sheet type frames
+            const sheets = baseScope.frames.filter(item => {
+                return item.frameType === FrameType.Sheet;
+            });
+
+            const totalSheets = sheets.length;
+
+            // Assign frame component, sheet number and sheet total. This will
+            // override existing params!
+            sheets.forEach((item, index) => {
+                item.parameters.set(FrameParamKeys.SheetType, frameComponent);
+                item.parameters.set(FrameParamKeys.SheetNumber, index + 1);
+                item.parameters.set(FrameParamKeys.SheetTotal, totalSheets);
             });
         }
 

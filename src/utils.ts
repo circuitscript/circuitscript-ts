@@ -118,3 +118,13 @@ export function throwWithContext(context: ParserRuleContext, message: string): v
 
     throw `Parse exception at [${startString} - ${stopString}] : ${message}`;
 }
+
+export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
+    : Map<string, any> {
+
+    const newMap = new Map(map1);
+    map2.forEach((value, key) => {
+        newMap.set(key, value);
+    });
+    return newMap;
+}

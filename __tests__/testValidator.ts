@@ -147,9 +147,12 @@ to gnd
     [ '__.sheet_A5_validate.paper_height', 'variable' ],
     [ '__.sheet_A5_validate.margin', 'variable' ],
     [ '__.sheet_A6', 'function' ],
+    [ '__.sheet_A6_validate.revision', 'variable' ],
     [ '__.sheet_A6_validate.paper_width', 'variable' ],
     [ '__.sheet_A6_validate.paper_height', 'variable' ],
     [ '__.sheet_A6_validate.margin', 'variable' ],
+    [ '__.sheet_A6_validate.tmp_sheet', 'variable' ],
+    [ '__.sheet_A6_validate.tmp_sheet.revision', 'variable' ],
     [ '__.document.sheet_type', 'variable' ],
     [ '__.v5v', 'variable' ],
     [ '__.gnd', 'variable' ],
@@ -196,7 +199,6 @@ describe('test validation', () => {
         // result.forEach(value => {
         //     output.push(`[ '${value[0]}', '${value[1]}' ]`);
         // });
-        
         // console.log(output.join(",\n"));
         
         expect(result).toStrictEqual(scriptTest.expected);

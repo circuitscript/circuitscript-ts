@@ -15,12 +15,11 @@ import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionSc
 import { defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, GlobalNames, 
     ParamKeys, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
-import { NumericValue } from './objects/ParamDefinition.js';
 import { Geometry } from './geometry.js';
 import { Net } from './objects/Net.js';
 import { Logger } from './logger.js';
 import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
-import { BoundBox, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
+import { BoundBox, combineMaps, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from './helpers.js';
@@ -453,7 +452,11 @@ export class LayoutEngine {
             const frameComponent = frame.frame.parameters.get
                                 (FrameParamKeys.SheetType) as ClassComponent;
 
-            const rects = ExtractDrawingRects(frameComponent.displayProp);
+            const frameDrawing = (frameComponent.displayProp as SymbolDrawingCommands);
+            frameDrawing.variables = combineMaps(frameComponent.parameters, 
+                frame.frame.parameters);
+
+            const rects = ExtractDrawingRects(frameDrawing);
             let frameWidth = 0;
             let frameHeight = 0;
 
@@ -570,7 +573,11 @@ export class LayoutEngine {
         // element frame.
         if (frame.type === RenderFrameType.Container) {
             const frameObject = frame.frame;
-            if (frameObject.parameters.has(FrameParamKeys.Title)) {
+
+            // Do not draw title if this is a sheet frame
+            const isSheetFrame = frameObject.frameType === FrameType.Sheet;
+
+            if (frameObject.parameters.has(FrameParamKeys.Title) && !isSheetFrame) {
                 const title = 
                     frameObject.parameters.get(FrameParamKeys.Title) as string;
                 
@@ -1528,7 +1535,7 @@ export function applyComponentParamsToSymbol(component: ClassComponent,
         newMap.set('refdes', component.assignedRefDes ?? "?");
     }
 
-    symbol.componentParams = newMap;
+    symbol.drawing.variables = newMap;
 }
 
 function calculateSymbolAngle(symbol: SymbolGraphic,

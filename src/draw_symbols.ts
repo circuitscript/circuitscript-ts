@@ -42,12 +42,12 @@ export abstract class SymbolGraphic {
     width: number;
     height: number;
     
-    // References the parameter map in the component that this
-    // symbol represents.
-    componentParams: Map<string, any>;
-
     // Stores a reference of <labelID> to the label value
     labelTexts = new Map<string, string>();
+
+    constructor(){
+        this.drawing = new SymbolDrawing();
+    }
 
     get angle(): number {
         return (this._angle % 360);
@@ -459,7 +459,9 @@ export function SymbolFactory(name: string): SymbolGraphic {
 
 export class SymbolPointHidden extends SymbolGraphic {
     generateDrawing(): void {
-        const drawing = new SymbolDrawing();
+        const drawing = this.drawing;
+        drawing.clear();
+
         drawing.addPin(1, 0, 0, 0, 0);
 
         this.drawing = drawing;
@@ -478,7 +480,9 @@ export class SymbolText extends SymbolGraphic {
     }
 
     generateDrawing(): void {
-        const drawing = new SymbolDrawing();
+        const drawing = this.drawing;
+        drawing.clear();
+        
         drawing.addTextbox(0, 0, this.text, {
             fontSize: this.fontSize,
             anchor: HorizontalAlign.Middle,
@@ -503,9 +507,6 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.angle = this._angle;
         drawing.flipX = this._flipX;
         drawing.flipY = this._flipY;
-        
-        // Setup the variable references
-        drawing.prepareVariables(this.componentParams ?? new Map());
 
         // Add default commands at the start to provide consistent style
         const commands = [
@@ -908,7 +909,9 @@ export class SymbolCustom extends SymbolGraphic {
         const maxLeftPins = Math.max(...leftPins.map(item => item.position)) + 1;
         const maxRightPins = Math.max(...rightPins.map(item => item.position)) + 1;
 
-        const drawing = new SymbolDrawing();
+        this.drawing.clear();
+
+        const drawing = this.drawing;
         drawing.angle = this._angle;
         drawing.flipX = this._flipX;
         drawing.flipY = this._flipY;
@@ -988,7 +991,7 @@ export class SymbolCustom extends SymbolGraphic {
             });
         });
 
-        const instanceName = this.componentParams.get('refdes');
+        const instanceName = drawing.variables.get('refdes');
         instanceName && drawing.addLabel(-bodyWidthMM/2, -bodyHeightMM/2 - milsToMM(20), instanceName, {
             fontSize: CustomSymbolRefDesSize,
             anchor: HorizontalAlign.Left,
@@ -997,7 +1000,7 @@ export class SymbolCustom extends SymbolGraphic {
         const acceptedMPNKeys = ['MPN', 'mpn', 'manufacturer_pn'];
 
         acceptedMPNKeys.some(key => {
-            const labelValue = this.componentParams.get(key);
+            const labelValue = drawing.variables.get(key);
             if (labelValue !== undefined){
                 drawing.addLabel(-bodyWidthMM/2, bodyHeightMM/2 + milsToMM(20), labelValue, {
                     fontSize: CustomSymbolParamTextSize,
@@ -1087,6 +1090,10 @@ export class SymbolDrawing {
     mainOrigin:[number, number] = [0, 0];
 
     logger: Logger = null;
+
+    // Stores values that will be used to populate/fill up fields
+    // in the graphic object.
+    variables: Map<string, any> = new Map();
 
     clear(): void {
         this.items = [];
@@ -1564,10 +1571,6 @@ export class SymbolDrawingCommands extends SymbolDrawing {
     id = "";
     private commands: GraphicExprCommand[] = [];
 
-    // Stores values that will be used to populate/fill up fields
-    // in the graphic object.
-    variables: Map<string, any> = new Map();
-
     paramIds: string[] = [];    // For component reference when executing
                                 // graphic commands
     
@@ -1590,15 +1593,9 @@ export class SymbolDrawingCommands extends SymbolDrawing {
         return this.commands;
     }
 
-    prepareVariables(params: Map<string, any>): void {
-        this.variables = params;
-    }
-
     clone(): SymbolDrawingCommands {
         const cloned = new SymbolDrawingCommands(this.callback);
-        cloned.prepareVariables = this.prepareVariables;
         cloned.variables = this.variables;
-        
         return cloned;
     }
 }

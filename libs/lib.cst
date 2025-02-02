@@ -260,7 +260,7 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
 
     return create component:
         type: "frame"
-        display: create graphic:
+        display: create graphic (params):
             fill: "none"
 
             # outer rect 
@@ -315,42 +315,45 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
                     vanchor: "middle"
 
             # Draw title frame
-            ignore:
-                text: 
-                    content: "Size: " + paper_size_name
-                    offset: title_block_x + 20, title_block_y2 - 30
-                    anchor: "left"
-                    vanchor: "bottom"
+            text: 
+                content: "Size: " + paper_size_name
+                offset: title_block_x + 20, title_block_y2 - 30
+                anchor: "left"
+                vanchor: "bottom"
 
-                text:
-                    content: "circuitscript"
-                    anchor: "left"
-                    vanchor: "bottom"
-                    offset: title_block_x + title_block_width / 2 + 20, title_block_y2 - 30
+            text:
+                content: "Sheet: " + params.sheet_number + "/" + params.sheet_total
+                anchor: "left"
+                vanchor: "bottom"
+                offset: title_block_x + title_block_width / 2 + 20, title_block_y2 - 30
 
-                hline: title_block_x, title_block_y2 - 100, title_block_width
-                vline: title_block_x + title_block_width / 2, title_block_y2, -100
+            hline: title_block_x, title_block_y2 - 100, title_block_width
+            vline: title_block_x + title_block_width / 2, title_block_y2, -100
 
-                text:
-                    content: "Rev: "
-                    anchor: "left"
-                    vanchor: "bottom"
-                    offset: title_block_x + 20 , title_block_y2 - 130
+            text:
+                content: "Rev: " + params.revision
+                anchor: "left"
+                vanchor: "bottom"
+                offset: title_block_x + 20 , title_block_y2 - 130
 
-                hline: title_block_x, title_block_y2 - 200, title_block_width
+            hline: title_block_x, title_block_y2 - 200, title_block_width
 
-                text: 
-                    content: "Title: "
-                    offset: title_block_x + 20, title_block_y2 - 240
-                    bold: true
-                    fontSize: 60
-                    anchor: "left"
-                    vanchor: "bottom"
+            text: 
+                content: params.title
+                offset: title_block_x + 20, title_block_y2 - 240
+                bold: true
+                fontSize: 60
+                anchor: "left"
+                vanchor: "bottom"
 
-                rect: title_block_x + title_block_width / 2, title_block_y + title_block_height / 2, title_block_width, title_block_height
+            rect: title_block_x + title_block_width / 2, title_block_y + title_block_height / 2, title_block_width, title_block_height
 
         params:
             title: "Sheet title"
+            revision: "V1"
+            sheet_number: 1
+            sheet_total: 1
+
             paper_size: paper_size_name
             paper_width: paper_width
             paper_height: paper_height
@@ -400,11 +403,14 @@ def sheet_A5():
 
     return sheet_generator("A5", paper_width, paper_height, margin, margin, range(1, 5), ["A", "B", "C"])
 
-def sheet_A6():
+def sheet_A6(revision="V1"):
     paper_width = toMils(148)
     paper_height = toMils(105)
     margin = 400
 
-    return sheet_generator("A6", paper_width, paper_height, margin, margin, range(1, 4), ["A", "B"])
+    tmp_sheet = sheet_generator("A6", paper_width, paper_height, margin, margin, range(1, 4), ["A", "B"])
+    tmp_sheet.revision = revision
+
+    return tmp_sheet
 
 document.sheet_type = sheet_A4()

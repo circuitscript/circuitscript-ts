@@ -31,6 +31,9 @@ export enum FrameParamKeys {
 
     // Same parameter is used in 'document' and 'sheet(frame)' objects
     SheetType = 'sheet_type',
+
+    SheetNumber = 'sheet_number',   // Current sheet number
+    SheetTotal = 'sheet_total',     // Total number of sheets
 }
 
 export enum FramePlotDirection {

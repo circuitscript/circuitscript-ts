@@ -20,7 +20,7 @@ import {
     junctionSize
 } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
-import { BoundBox, getBoundsSize } from './utils.js';
+import { BoundBox, combineMaps, getBoundsSize } from './utils.js';
 import { getPaperSize, milsToMM, PaperGridReferences } from './helpers.js';
 import SVGtoPDF from 'svg-to-pdfkit';
 import { FrameParamKeys } from './objects/Frame.js';
@@ -416,12 +416,8 @@ function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
             const symbol = new SymbolPlaceholder(displayProp);
 
             // Merge frame params into frame component params
-            const newParams = new Map<string, any>(frameComponent.parameters);
-            frameParams.forEach((value, key) => {
-                newParams.set(key, value);
-            });
-
-            symbol.componentParams = newParams;
+            symbol.drawing.variables = combineMaps(frameComponent.parameters, 
+                frameParams);
 
             symbol.refreshDrawing();
             symbol.draw(sheetFrameGroup);
