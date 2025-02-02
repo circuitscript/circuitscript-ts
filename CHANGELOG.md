@@ -1,6 +1,22 @@
 # Changelog
 
-## [v0.0.38](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.37...v0.0.38) - 2025-01-14
+## [v0.1.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.38...v0.1.0)
+
+[0bd1374](https://gitlab.com/circuitscript/circuitscript-ts/commit/0bd1374e99f8d5a6a8088b62744fcfb1f897005c) changed create graphic syntax to include parameter
+-  updated lib and tests for variable references in graphic exprs
+
+[6ce01d7](https://gitlab.com/circuitscript/circuitscript-ts/commit/6ce01d7e4d7a8c33c746981c9217163d4afa689a) improved error reporting
+-  fixed reference issues
+
+[6990bf7](https://gitlab.com/circuitscript/circuitscript-ts/commit/6990bf711ee897542f3220f36a9f733d1236f435) cleaned up graphic variables
+-  updated tests
+-  updated lib to include simple title block in frames
+
+[290cfa9](https://gitlab.com/circuitscript/circuitscript-ts/commit/290cfa9fa206a55ade9d39a7f9425bbd6fc8c697) changed graphic expr to be evaluated lazily as a callback
+
+[5dd90bf](https://gitlab.com/circuitscript/circuitscript-ts/commit/5dd90bf6d0298a3866223561979b143aac564a4a) updated frame component params with frame params
+
+## [v0.0.38](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.37...v0.0.38) - 2025-01-15
 
 [4a4c0bb](https://gitlab.com/circuitscript/circuitscript-ts/commit/4a4c0bbe4a66ac3f571131914fbed4dc809da5e0) support 'and', 'or' and 'not' text as operators
 -  added test
