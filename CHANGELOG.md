@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.38...v0.1.0)
+## [v0.1.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.0...v0.1.1) - 2025-02-02
+
+[39824a1](https://gitlab.com/circuitscript/circuitscript-ts/commit/39824a18719ba6987333e346f6377c1fce6b60c5) updated package json for version release
+
+## [v0.1.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.38...v0.1.0) - 2025-02-02
 
 [0bd1374](https://gitlab.com/circuitscript/circuitscript-ts/commit/0bd1374e99f8d5a6a8088b62744fcfb1f897005c) changed create graphic syntax to include parameter
 -  updated lib and tests for variable references in graphic exprs
@@ -13,6 +17,8 @@
 -  updated lib to include simple title block in frames
 
 [290cfa9](https://gitlab.com/circuitscript/circuitscript-ts/commit/290cfa9fa206a55ade9d39a7f9425bbd6fc8c697) changed graphic expr to be evaluated lazily as a callback
+
+[c61b4f0](https://gitlab.com/circuitscript/circuitscript-ts/commit/c61b4f08303c86a0c982edb71cf8eda7989e8ac7) updated changelog
 
 [5dd90bf](https://gitlab.com/circuitscript/circuitscript-ts/commit/5dd90bf6d0298a3866223561979b143aac564a4a) updated frame component params with frame params
 
