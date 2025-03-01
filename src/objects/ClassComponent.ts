@@ -47,8 +47,8 @@ export class ClassComponent {
     // This determines how pins are arrange on the component/symbol.
     arrangeProps: Map<string, NumericValue[]> | null = null;
 
-    // Used to identify what graphic to draw for this symbol
-    displayProp: string | SymbolDrawingCommands | null = null;
+    /** Used to identify what graphic to draw for this symbol */
+    displayProp: SymbolDrawingCommands | null = null;
 
     widthProp: number | null = null;
 
@@ -225,7 +225,11 @@ export class ClassComponent {
             && this.className === other.className
             && this._copyID === other._copyID
             && this.arrangeProps === other.arrangeProps
-            && this.displayProp === other.displayProp 
+            && (
+                (this.displayProp === null && other.displayProp === null)
+                ||
+                (this.displayProp && other.displayProp && this.displayProp.eq(other.displayProp))
+            ) 
             && this.widthProp === other.widthProp
             && this.typeProp === other.typeProp
             && this._cachedPins === other._cachedPins
@@ -246,15 +250,11 @@ export class ClassComponent {
         component.followWireOrientationProp = this.followWireOrientationProp;
         component.useWireOrientationAngle = this.useWireOrientationAngle;
 
-        if (this.displayProp) {
-            if (typeof this.displayProp === "string") {
-                component.displayProp = this.displayProp;
-            } else if (this.displayProp instanceof SymbolDrawingCommands) {
-                // Do a proper clone, otherwise, cloned objects will share the 
-                // same drawing object.
-                component.displayProp =
-                    (this.displayProp as SymbolDrawingCommands).clone();
-            }
+        if (this.displayProp instanceof SymbolDrawingCommands) {
+            // Do a proper clone, otherwise, cloned objects will share the 
+            // same drawing object.
+            component.displayProp =
+                (this.displayProp as SymbolDrawingCommands).clone();
         }
 
         for (const [key, value] of this.parameters) {

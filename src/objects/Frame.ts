@@ -7,6 +7,7 @@
 
 import { FrameType } from "../globals.js";
 
+/** Frame class to hold frame parameters */
 export class Frame {
     parameters: Map<string, any> = new Map();
     frameId: number;

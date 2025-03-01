@@ -24,15 +24,17 @@ import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 
 
 /**
- * Symbols should also define where their ports
+ * Base class for a graphical object on the schematic. Defines the position
+ * and stores a reference to the drawing object that provides the actual
+ * drawing instructions for the symbol.
  */
-
 export abstract class SymbolGraphic {
 
     drawPortsName = true;
 
     displayBounds = false;
 
+    /** Instructions on how to draw the symbol */
     drawing: SymbolDrawing;
 
     _angle = 0;
@@ -455,29 +457,6 @@ export abstract class SymbolGraphic {
     }
 }
 
-export function SymbolFactory(name: string): SymbolGraphic {
-    switch (name) {
-        case 'point':
-            return new SymbolPointHidden();
-    }
-
-    return null;
-}
-
-export class SymbolPointHidden extends SymbolGraphic {
-    generateDrawing(): void {
-        const drawing = this.drawing;
-        drawing.clear();
-
-        const defaultLineColor = ColorScheme.PinLineColor;
-        drawing.addPin(
-            numeric(1), numeric(0), numeric(0), 
-            numeric(0), numeric(0), defaultLineColor);
-
-        this.drawing = drawing;
-    }
-}
-
 export class SymbolText extends SymbolGraphic {
 
     text: string;
@@ -503,6 +482,10 @@ export class SymbolText extends SymbolGraphic {
     }
 }
 
+/** Extends the base graphic object and stores drawing instructions
+ *  that are provided through circuitscript code itself. Drawing instructions
+ *  are stored as an array of commands.
+ */
 export class SymbolPlaceholder extends SymbolGraphic {
     // This is used if the drawing object is defined within
     // circuitscript code itself.
@@ -711,7 +694,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         return style;
     }
-
+    
     drawPinParams(drawing: SymbolDrawingCommands,
         commandName: string, keywordParams: Map<string, any>,
         positionParams: any[], lineColor: string, pinNameColor: string): void {
@@ -1099,7 +1082,9 @@ export class SymbolCustomModule extends SymbolCustom {
 
 }
 
-
+/** Base class for that provides methods to draw the graphical symbol
+ *  on the canvas.
+ */
 export class SymbolDrawing {
 
     items: (Feature | GeometryProp)[] = [];
@@ -1611,6 +1596,9 @@ export type GraphicExprCommand = [commandName: string,
     ctx: ParserRuleContext
 ];
 
+/** Stores a list of instructions/commands that will call the drawing 
+ *  methods in the base symbol drawing class.
+ */
 export class SymbolDrawingCommands extends SymbolDrawing {
 
     id = "";
@@ -1642,6 +1630,11 @@ export class SymbolDrawingCommands extends SymbolDrawing {
         const cloned = new SymbolDrawingCommands(this.callback);
         cloned.variables = this.variables;
         return cloned;
+    }
+
+    /** Returns true if both symbol drawing commands are equivalent */
+    eq(other: SymbolDrawingCommands): boolean {
+        return this.callback === other.callback;
     }
 }
 

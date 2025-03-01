@@ -637,20 +637,20 @@ export class LayoutEngine {
         }
     }
 
+    /** Given the sequence of actions (generated from parser), return a 
+     * graph that links nodes (components and wires). */
     generateLayoutGraph(sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]): {
             graph: Graph,
             containerFrames: RenderFrame[],
          } {
-        // Based on the sequence of actions, generate a graph that links
-        // the nodes (components and wires)
 
         let previousNode: string | null = null;
         let previousPin: number | null = null;
 
         const graph = new Graph({
             directed: false,
-            compound: true,
+            compound: true, // Subgraphs supported
         });
 
         this.print('sequence length:', sequence.length);
@@ -659,7 +659,11 @@ export class LayoutEngine {
         // within a defined frame.
         const baseRenderFrame = new RenderFrame(new Frame(-1));
 
+        // Tracks the current frame that is active as the sequence actions
+        // are executed.
         const frameStack: RenderFrame[] = [baseRenderFrame];
+        
+        // Holds all frames that are encountered
         const containerFrames: RenderFrame[] = [baseRenderFrame];
 
         // Based on the sequence steps create all the graph connections first and
@@ -682,27 +686,15 @@ export class LayoutEngine {
                 if (!graph.hasNode(tmpInstanceName)) {
                     this.print('create instance', tmpInstanceName);
 
-                    let { displayProp = null, widthProp = null, 
-                        typeProp = null } = component;
+                    const { displayProp = null, widthProp = null } = component;
                     
                     let tmpSymbol: SymbolGraphic;
-    
-                    // If it is a gnd net, then use the gnd symbol
-                    if (displayProp === null && 
-                        component.parameters.get(ParamKeys.net_name) === GlobalNames.gnd) {
-                        
-                        displayProp = 'gnd';
-                    }
-    
-                    if (displayProp !== null) {
-                        if (displayProp instanceof SymbolDrawing){
-                            tmpSymbol = new SymbolPlaceholder(displayProp);
-                            tmpSymbol.drawing.logger = this.logger;
+
+                    if (displayProp instanceof SymbolDrawing) {
+                        tmpSymbol = new SymbolPlaceholder(displayProp);
+                        tmpSymbol.drawing.logger = this.logger;
                             
-                        } else if (typeof displayProp === "string"){
-                            tmpSymbol = SymbolFactory(displayProp);
-                        }
-                    } else {
+                    }  else {
                         const symbolPinDefinitions = generateLayoutPinDefinition(component);
 
                         if (component.typeProp === 'module'){
@@ -1903,24 +1895,33 @@ export class RenderText extends RenderObject {
     }
 }
 
+/**
+ * Frame that will be rendered. Can contain other frames and components.
+ */
 export class RenderFrame extends RenderObject {
     bounds: BoundBox | null = null;
     frame: Frame;
 
-    // Store all items in the same array so that the order of frames
-    // can be identified.
+    /**
+     * Store all items in the same array so that the order of frames
+     * can be identified.
+     */
     innerItems: (RenderComponent | RenderFrame | RenderText)[] = [];
+    
     
     translateX = 0;
     translateY = 0;
 
-    padding = milsToMM(100); // Inner frame padding
+    /** Frame inner padding (between frame border and inner elements) */
+    padding = milsToMM(100);
 
-    gap = milsToMM(100);     // Spacing between inner frames
-
-    direction = FramePlotDirection.Column;
+    /** Spacing between frames within this frame */
+    gap = milsToMM(100);
 
     borderWidth = numeric(5); //mils
+
+    /** Direction that frame elements are plotted */
+    direction = FramePlotDirection.Column;
 
     // If width and height are null, then frame size is determined
     // based on internal contents
@@ -1928,13 +1929,11 @@ export class RenderFrame extends RenderObject {
     width: number | null = null; // mils
     height: number | null = null; // mils
 
-    size: string | null = null;
-
     subgraphId = "";
 
     type: RenderFrameType;
 
-    // If true, then frame only contains text for frame title.
+    /** If true, then frame only contains text for frame title. */
     containsTitle = false;
 
     constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
@@ -1951,13 +1950,16 @@ export class RenderFrame extends RenderObject {
             name = 'elements_' + this.subgraphId;
         }
 
-        return name + ": " + this.x + "," + this.y + " bounds:" + printBounds(this.bounds);
+        return name + ": " + this.x + "," + this.y 
+            + " bounds:" + (this.bounds && printBounds(this.bounds));
     }
 }
 
 export enum RenderFrameType {
     Container = 1,
-    Elements = 2, // Holds subgraphs and text.
+
+    /** Holds subgraphs/frames/components, etc. */
+    Elements = 2,
 }
 
 export class RenderJunction {

@@ -22,38 +22,44 @@ import { Frame } from './objects/Frame.js';
 import { CalculatePinPositions } from './layout.js';
 import { UnitDimension } from './helpers.js';
 import { ParserRuleContext } from 'antlr4ng';
+import { PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 
+/** Contains the current running state of the circuit graph */
 export class ExecutionContext {
-    // Contains the current running state of the circuit web
 
-    name: string;      // Local name of the execution context.
+    /** Local name of the execution context.  */
+    name: string;      
     
-    // Namespace of current execution context, used for 
-    // building the specific name of instances
+    /** Namespace of current execution context, used for 
+     * building the specific name of instances */
     namespace: string; 
 
-    // Namespace for building nets, split away from instance namespace so 
-    // that the net names generated are cleaner.
+    /** Namespace for building nets, split away from instance namespace so 
+     * that the net names generated are cleaner. */
     netNamespace: string;
 
+    /** Tracks how nested the current execution context is within the
+     * execution stack */
     executionLevel: number;
 
+    /** Contains variables, components within this execution context */
     scope: ExecutionScope;
 
     tmpPointId = 0;     // Counter for points created within the context
 
+    /** Callback to determine how nets in parent execution contexts are resolved */
     resolveNet: (name: string, netNamespace:string) => ({
         found: boolean, net?: Net
     }) = null;
 
-    // If true, then do no evaluate further expressions.
-    // Used for function state control
+    /** If true, then do no evaluate further expressions. 
+     * Used for function state control */
     stopFurtherExpressions = false;
 
-    // Return result of the context
+    /** Return result of the context */
     returnValue = null;
 
-    // If true, then do not print any messages
+    /** If true, then do not print any messages */
     silent = false;
 
     logger: Logger;
@@ -127,15 +133,16 @@ export class ExecutionContext {
         console.log.apply(null, args);
     }
 
+    /** All scope will always have a root node. This is first added to the
+     * canvas */
     private setupRoot(): void {
-        // Setup the root node in the scope
         const componentRoot = ClassComponent.simple(
             GlobalNames.__root,
             1,
             '__root',
         );
         componentRoot.typeProp = ComponentTypes.point;
-        componentRoot.displayProp = 'point';
+        componentRoot.displayProp = this.getPointSymbol();
 
         this.scope.instances.set(GlobalNames.__root, componentRoot);
 
@@ -264,7 +271,7 @@ export class ExecutionContext {
         params: ParamDefinition[],
         props: {
             arrange?: Map<string, number[]>,
-            display?: string,
+            display?: SymbolDrawingCommands,
             type?: string,
             width?: number,
             copy: boolean,
@@ -1129,13 +1136,28 @@ export class ExecutionContext {
 
         const useName = userDefined ? 'point.' + pointId : pointId;
         const componentPoint = ClassComponent.simple(useName, 1, "point");
-        componentPoint.displayProp = "point";
+        componentPoint.displayProp = this.getPointSymbol();
         componentPoint.typeProp = ComponentTypes.point;
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });
 
         return this.getCurrentPoint();
+    }
+
+    private getPointSymbol(): SymbolDrawingCommands {
+        return new SymbolDrawingCommands(() => {
+            return [
+                [PlaceHolderCommands.pin,
+                [numeric(1), numeric(0), numeric(0),
+                numeric(0), numeric(0)],
+                new Map([
+                    ["display_pin_id", false]
+                ]),
+                    null
+                ]
+            ]
+        });
     }
 
     setProperty(nameWithProp: string, value: any): void {
