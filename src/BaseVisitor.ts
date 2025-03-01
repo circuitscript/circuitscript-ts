@@ -56,9 +56,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     acceptedDirections = [Direction.Up, Direction.Down, 
         Direction.Right, Direction.Left];
-    
-    acceptedFlip = ['flipX', 'flipY'];
-
+        
     protected resultData = new Map<ParserRuleContext, any>;
     protected paramData = new Map<ParserRuleContext, any>;
 

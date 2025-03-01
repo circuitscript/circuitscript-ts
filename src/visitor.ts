@@ -55,7 +55,7 @@ import {
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
-import { ClassComponent } from './objects/ClassComponent.js';
+import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
 import {
     NumberOperator,
     NumberOperatorType,
@@ -68,7 +68,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ReferenceTypes, WireAutoDirection } from './globals.js';
+import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -76,8 +76,6 @@ import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
-import Big from 'big.js';
-
 
 export class ParserVisitor extends BaseVisitor {
 
@@ -222,7 +220,7 @@ export class ParserVisitor extends BaseVisitor {
         );
 
         // Use a unique instance name in the context for now
-        let instanceName = this.getExecutor().getUniqueInstanceName('');
+        let instanceName = this.getExecutor().getUniqueInstanceName();
 
         const propParams = properties.get('params');
         const params: ParamDefinition[] =
@@ -259,8 +257,8 @@ export class ParserVisitor extends BaseVisitor {
 
         // This angle refers to the orientation that the graphic of the 
         // component is draw with.
-        const angle = properties.has('angle') ?
-            properties.get('angle') : null;
+        const angle = properties.has(ParamKeys.angle) ?
+            properties.get(ParamKeys.angle) : null;
 
         const followWireOrientation = properties.has('followWireOrientation') ?
             properties.get('followWireOrientation') : true;
@@ -441,10 +439,10 @@ export class ParserVisitor extends BaseVisitor {
         const properties = this.getPropertyExprList(ctx.property_expr());
 
         const { left: leftPorts, right: rightPorts }
-            = this.parseCreateModulePorts(
-                properties.get('ports'),
-            );
+            = this.parseCreateModulePorts(properties.get('ports'));
 
+        // Go through all ports in the list and skip items that are arrays. Arrays
+        // are blank pin/port definition.
         const allPorts = [...leftPorts, ...rightPorts].filter(item => {
             return !(Array.isArray(item));
         }) as string[];
@@ -467,7 +465,7 @@ export class ParserVisitor extends BaseVisitor {
             if (Array.isArray(item)){
                 return item;
             } else {
-                return numeric(nameToPinId.get(item));
+                return numeric(nameToPinId.get(item) as number);
             }
         });
 
@@ -475,7 +473,7 @@ export class ParserVisitor extends BaseVisitor {
             if (Array.isArray(item)){
                 return item;
             } else {
-                return numeric(nameToPinId.get(item));
+                return numeric(nameToPinId.get(item) as number);
             }
         });
 
@@ -492,16 +490,22 @@ export class ParserVisitor extends BaseVisitor {
         const width = properties.has('width') ?
             properties.get('width') : null;
 
-        const blankParams = [];
+        const blankParams: ParamDefinition[] = [];
         const props = {
-            arrange, width
+            arrange, width,
+
+            /** Should behave like a normal component (resistor, cap, etc.), 
+             * do not duplicate the module if referenced. */
+            copy: false,
+
+            followWireOrientation: true,
         };
 
-        const moduleInstanceName = this.getExecutor().getUniqueInstanceName('');
-        const createdComponent = this.getExecutor().createComponent(
-            moduleInstanceName, tmpPorts, blankParams, props);
+        const moduleInstanceName = this.getExecutor().getUniqueInstanceName();
+        const moduleComponent = this.getExecutor().createComponent(
+            moduleInstanceName, tmpPorts, blankParams, props, true) as ModuleComponent;
 
-        createdComponent.typeProp = 'module';
+        moduleComponent.typeProp = ComponentTypes.module;
 
         const ctxPropertyBlock = ctx.property_block_expr();
         if (ctxPropertyBlock) {
@@ -511,14 +515,18 @@ export class ParserVisitor extends BaseVisitor {
             const [keyName, expressionsBlock] = this.getResult(firstBlock);
 
             if (keyName === ModuleContainsKeyword) {
-                createdComponent.moduleContainsExpressions = expressionsBlock;
+                moduleComponent.moduleContainsExpressions = expressionsBlock;
                 
-                this.expandModuleContains(createdComponent, 
+                this.expandModuleContains(moduleComponent, 
                     this.getExecutor().netNamespace);
             }
         }
 
-        this.setResult(ctx, createdComponent);
+        if (moduleComponent.moduleContainsExpressions === undefined){
+            throw 'Module has no `contains` block defined!';
+        }
+
+        this.setResult(ctx, moduleComponent);
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {
@@ -667,19 +675,19 @@ export class ParserVisitor extends BaseVisitor {
 
                 let shouldIgnoreWireOrientation = false;
 
-                if (modifierText === 'flip') {
+                if (modifierText === ParamKeys.flip) {
                     const flipValue = result as string;
                     if (flipValue.indexOf('x') !== -1) {
-                        component.setParam('flipX', 1);
+                        component.setParam(ParamKeys.flipX, 1);
                         shouldIgnoreWireOrientation = true;
                     }
 
                     if (flipValue.indexOf('y') !== -1) {
-                        component.setParam('flipY', 1);
+                        component.setParam(ParamKeys.flipY, 1);
                         shouldIgnoreWireOrientation = true;
                     }
-                } else if (modifierText === 'angle') {
-                    component.setParam('angle', result as NumericValue);
+                } else if (modifierText === ParamKeys.angle) {
+                    component.setParam(ParamKeys.angle, result as NumericValue);
                     shouldIgnoreWireOrientation = true;
                 } else if (modifierText === 'anchor'){
                     component.setParam('anchor', result as string);
@@ -714,14 +722,17 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, [component, pinValue]);
     }
 
-    private expandModuleContains(component: ClassComponent, netNamespace: string): void {
+    /** Creates a new context and execute the expressions within the module
+     *  `contains` block. */
+    private expandModuleContains(component: ModuleComponent, netNamespace: string): void {
         this.getExecutor().log('expanding module `contains`')
 
         const executionStack = this.executionStack;
         const resolveNet = this.createNetResolver(executionStack);
+        const executor = this.getExecutor();
 
         const executionContextName = 
-            this.getExecutor().namespace + "_"
+            executor.namespace + "_"
             + component.instanceName
             + '_' + component.moduleCounter;
 
@@ -732,7 +743,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const newExecutor = this.enterNewChildContext(
             executionStack,
-            this.getExecutor(),
+            executor,
             executionContextName,
             { netNamespace: tmpNamespace }, [], []
         );
@@ -753,7 +764,7 @@ export class ParserVisitor extends BaseVisitor {
         this.linkModuleSymbolWithContains(component, executionContext);
     }
 
-    private linkModuleSymbolWithContains(moduleComponent: ClassComponent,
+    private linkModuleSymbolWithContains(moduleComponent: ModuleComponent,
         executionContext: ExecutionContext): void {
 
         this.log('link module symbol')
@@ -769,12 +780,12 @@ export class ParserVisitor extends BaseVisitor {
         const pinIdToPortMap = new Map<number, ClassComponent>();
         moduleComponent.modulePinIdToPortMap = pinIdToPortMap;
 
-        for (const [key, component] of executionContext.scope.instances) {
-            if (component._copyID !== null && component.typeProp === 'port') {
+        for (const [, component] of executionContext.scope.instances) {
+            if (component._copyID !== null && component.typeProp === ComponentTypes.port) {
                 // Link sub-circuit ports to module pin
 
                 // Get the port name, which is the net name
-                const portName = component.parameters.get('net_name');
+                const portName = component.parameters.get(ParamKeys.net_name);
                 const modulePinId = modulePinMapping.get(portName)!;
 
                 pinIdToPortMap.set(modulePinId, component);
@@ -788,8 +799,8 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    private placeModuleContains(moduleComponent: ClassComponent):void {
-        if (moduleComponent.typeProp === 'module'
+    private placeModuleContains(moduleComponent: ModuleComponent):void {
+        if (moduleComponent.typeProp === ComponentTypes.module
             && moduleComponent.moduleContainsExpressions) {
             this.log('place module `contains`');
 
@@ -1065,8 +1076,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const executor = this.getExecutor();
 
-        const currentComponent = executor.scope.currentComponent!;
-        const currentPin = executor.scope.currentPin;
+        const [currentComponent, currentPin] = executor.getCurrentPoint();
 
         executor.atComponent(currentComponent, atPin, {
             addSequence: true
@@ -1490,35 +1500,34 @@ export class ParserVisitor extends BaseVisitor {
         return pins;
     }
 
+    /**
+     * Returns module ports defined in the `create module` command
+     */
     private parseCreateModulePorts(portsDefinition: Map<string, any>)
         : {
             left: (string | [blank: number])[],
             right: (string | [blank: number])[]
         } {
 
-        let leftItems: (string | [blank: number])[] = [];
-        let rightItems: (string | [blank: number])[] = [];
-
-        if (portsDefinition.has('left')) {
-            leftItems = portsDefinition.get('left');
-
-            if (!Array.isArray(leftItems)) {
-                leftItems = [leftItems];
-            }
-        }
-
-        if (portsDefinition.has('right')) {
-            rightItems = portsDefinition.get('right');
-
-            if (!Array.isArray(rightItems)) {
-                rightItems = [rightItems];
-            }
-        }
-
         return {
-            left: leftItems,
-            right: rightItems
+            left: this.getPortItems(portsDefinition, 'left'),
+            right: this.getPortItems(portsDefinition, 'right'),
         }
+    }
+
+    private getPortItems(portsDefinition: Map<string, any>, key: string)
+        : (string | [blank: number])[] {
+
+        let tmpItems: (string | [blank: number])[] = [];
+        if (portsDefinition.has(key)) {
+            tmpItems = portsDefinition.get(key);
+
+            if (!Array.isArray(tmpItems)) {
+                tmpItems = [tmpItems];
+            }
+        }
+
+        return tmpItems;
     }
 
     private parseCreateComponentParams(
@@ -1649,18 +1658,15 @@ export class ParserVisitor extends BaseVisitor {
         const toAnnotate:ClassComponent[] = [];
 
         for (const [, instance] of instances) {
+            // Do not annotate these
+            if (instance.typeProp === ComponentTypes.net 
+                || instance.typeProp == ComponentTypes.graphic) {
+                continue;
+            }
+
             if (instance.assignedRefDes === null) {
-                if (instance.typeProp === ComponentTypes.label ||
-                    instance.typeProp === ComponentTypes.net ||
-                    instance.typeProp === ComponentTypes.point) {
-                    continue;
-                }
-
-                if (instance.typeProp === null){
-                    this.log('Instance has no type:', instance.instanceName, ' assuming connector');
-                    instance.typeProp = 'conn';
-                }
-
+                /** If component has a refdes parameter already defined, then
+                 * use it for the final value as well. */
                 if (instance.parameters.has('refdes')) {
                     const refdes = instance.parameters.get('refdes') as string;
 
@@ -1677,7 +1683,11 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         toAnnotate.forEach(instance => {
-            const newRefDes = annotater.getAnnotation(instance.typeProp);
+            const useTypeProp = instance.typeProp ?? 'conn';
+            instance.typeProp === null 
+                && this.log('Instance has no type:', instance.instanceName, ' assuming connector');
+
+            const newRefDes = annotater.getAnnotation(useTypeProp);
 
             if (newRefDes !== null) {
                 instance.assignedRefDes = newRefDes;
@@ -1763,12 +1773,6 @@ export class ParserVisitor extends BaseVisitor {
             component.setParam('_addPin', pin);
         } else {
             throw "Invalid modifier for orientation";
-        }
-    }
-
-    private setComponentFlip(component: ClassComponent, flipValue: string): void {
-        if (this.acceptedFlip.indexOf(flipValue) !== -1) {
-            component.setParam(flipValue, 1);
         }
     }
 

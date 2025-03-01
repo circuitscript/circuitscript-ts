@@ -1,6 +1,7 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
 import { LayoutEngine } from '../src/layout.js';
+import { ComponentPinNet } from '../src/objects/types.js';
 import { prepareSVGEnvironment } from '../src/sizing.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
@@ -28,6 +29,24 @@ import {
 } from './parseScripts.js';
 
 describe('test parsing', () => {
+
+    function orderNets(componentPinNets: ComponentPinNet): ComponentPinNet[] {
+        const tmp = [...componentPinNets];
+        tmp.sort((a, b) => {
+            const valueA = `${a[0]} ${a[1]} ${a[2]}`;
+            const valueB = `${b[0]} ${b[1]} ${b[2]}`;
+            if (valueA < valueB) {
+                return -1;
+            } else if (valueA > valueB) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
+        return tmp;
+    }
+
 
     test.each([
         ["create component command", inlineScript1],
@@ -58,7 +77,8 @@ describe('test parsing', () => {
         const {hasError, componentPinNets} = await runScript(scriptTest.script);
 
         expect(hasError).toEqual(false);
-        expect(componentPinNets).toStrictEqual(scriptTest.expected);
+        expect(orderNets(componentPinNets))
+            .toStrictEqual(orderNets(scriptTest.expected));
     });
 
     test('component annotation', async () => {

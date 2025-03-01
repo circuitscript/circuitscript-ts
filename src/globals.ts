@@ -7,12 +7,6 @@
 
 export enum GlobalNames {
     __root = '__root',
-    gnd = 'gnd',
-
-    DefaultResistor = 'res',
-    DefaultCapacitor = 'cap',
-    DefaultInductor = 'ind',
-
     symbol = 'symbol',
 }
 
@@ -21,6 +15,12 @@ export const NoNetText = 'NO_NET';
 export enum ParamKeys {
     priority = 'priority',
     net_name = 'net_name',
+
+    flip = 'flip',
+    flipX = 'flipX',
+    flipY = 'flipY',
+    angle = 'angle',
+
 }
 
 export enum LayoutDirection {
@@ -103,11 +103,18 @@ export const ColorScheme = {
 
 
 export enum ComponentTypes {
-    gnd = 'gnd',
+    /** For net related components (power supplies, gnd, labels) */
     net = 'net',
-    label = 'label',
-    point = 'point',
-    frame = 'frame',
+
+    /** For components that are purely graphical (sheet frames, text) */
+    graphic = 'graphic',
+
+    /** Ports are used to connect different circuits together across 
+     *  module boundaries. */
+    port = 'port',
+
+    /** Component is a module and contains an internal circuit */
+    module = 'module',
 }
 
 export enum ReferenceTypes {

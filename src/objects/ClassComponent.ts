@@ -11,92 +11,86 @@ import { Net } from './Net.js';
 import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
 import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
-import { ExecutionContext } from 'src/execute.js';
+import { ExecutionContext } from '../execute.js';
 import { NumericValue } from './ParamDefinition.js';
+import { ParamKeys } from '../globals.js';
 
 export class ClassComponent {
 
-    // A component has an instance_name to identify it
-    // num_pins: The maximum number of pins that are avaible from this component
-    // Note: the pin number starts from 1
-
+    /** A component has an instance_name to identify it */
     instanceName: string;
+
+    /** Maximum number of pins available on this component.
+     * Pin number starts from 1. */
     numPins: number;
 
+    /** Component parameters in a map. These parameters may be defined by 
+     * user code. These are defined in the `params` property in the 
+     * `create component` command. */
     parameters: Map<string, number | string | NumericValue> = new Map();
 
-    // Maps pin indexes to the pin definition
+    /** Maps pin indexes to the pin definition */
     pins: Map<number, PinDefinition> = new Map();
 
-    // Maps pin indexes to the nets.
+    /** Maps pin indexes to the nets */
     pinNets: Map<number, Net> = new Map();
 
+    /** Maps pin indexes to wire segments */
     pinWires: Map<number, WireSegment[]> = new Map();
 
     // The cached values are used for easier comparison/equality check.
     _cachedPins: string;
     _cachedParams: string;
 
-    className: string;
-
-    // For nets, labels and gnds, this can be used to identify different
-    // copies of the same symbol on the schematic
+    /** For nets, labels and gnds, this can be used to identify different 
+     * copies of the same symbol on the schematic */
     _copyID?: number = null;
     _copyFrom?: ClassComponent = null;
 
-    // This determines how pins are arrange on the component/symbol.
+    /** This determines how pins are arranged on the component/symbol. */
     arrangeProps: Map<string, NumericValue[]> | null = null;
 
     /** Used to identify what graphic to draw for this symbol */
     displayProp: SymbolDrawingCommands | null = null;
 
+    /** User-defined width for the component */
     widthProp: number | null = null;
 
-    typeProp: string | null = null;
+    /** User-defined type prop for the component. The type is important to 
+     * provide additionality functionality to the component.
+    */
+    typeProp: string| null = null;
     
-    // If true, then this component is copied upon reference.
-    // Used for nets, supply, gnd, labels
+    /** If true, then this component is copied upon reference. 
+     * Used for nets, supply, gnd, labels */
     copyProp = false;
 
-    // The angle that the graphical symbol is drawing with.
-    // For example, a horizontal resistor will have an angle of 0.
-    // A vertical capacitor will have an angle of 90.
+    /** The angle that the graphical symbol is drawing with.
+    * For example, a horizontal resistor will have an angle of 0.
+    * A vertical capacitor will have an angle of 90. */
     angleProp = 0;
 
-    // If true, then the component's angle will follow the connected
-    // wire orientation.
+    /** User-defined value. If set to true, then the component's angle follows 
+     * the connected wire orientation. For all components, this is the default. */
     followWireOrientationProp = true;
 
-    // The angle/orientation of the wire that is connected
+    /** The angle/orientation of the wire that is connected */
     wireOrientationAngle = 0;
 
-    // If true, the wire orientation was used to set the angle
-    // of the component. If flip or angle modifiers are set, those values
-    // will have priority over the wire orientation angle.
+    /** If true, the wire orientation was used to set the angle
+    * of the component. If flip or angle modifiers are set, those values
+    * will have priority over the wire orientation angle. */
     useWireOrientationAngle = true;
 
-    // If true, the wire orientation angle was already set before.
+    /** If true, the wire orientation angle was already set before. */
     didSetWireOrientationAngle = false;
 
-    styles: { [key: string]: number | string } = {};
-
+    /** Assigned refdes that is set for the component during the annotation step. */
     assignedRefDes: string | null = null;
 
-    // All module related properties
-
-    moduleContainsExpressions?: Expressions_blockContext;
-    moduleCounter = 0; // Number of module instances
-    
-    moduleExecutionContext: ExecutionContext;
-    moduleExecutionContextName: string;
-
-    modulePinIdToPortMap: Map<number, ClassComponent>;
-
-
-    constructor(instanceName: string, numPins: number, className: string) {
+    constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;
-        this.className = className;
     }
 
     setupPins(): void {
@@ -209,10 +203,9 @@ export class ClassComponent {
 
     static simple(
         instanceName: string,
-        numPins: number,
-        className: string,
+        numPins: number
     ): ClassComponent {
-        const component = new ClassComponent(instanceName, numPins, className);
+        const component = new ClassComponent(instanceName, numPins);
         component.setupPins();
         return component;
     }
@@ -222,13 +215,12 @@ export class ClassComponent {
         // Make sure that all important props are added.
         return this.instanceName === other.instanceName 
             && this.numPins === other.numPins
-            && this.className === other.className
             && this._copyID === other._copyID
             && this.arrangeProps === other.arrangeProps
             && (
                 (this.displayProp === null && other.displayProp === null)
                 ||
-                (this.displayProp && other.displayProp && this.displayProp.eq(other.displayProp))
+                (this.displayProp !== null && other.displayProp !== null && this.displayProp.eq(other.displayProp))
             ) 
             && this.widthProp === other.widthProp
             && this.typeProp === other.typeProp
@@ -239,7 +231,7 @@ export class ClassComponent {
     clone(): ClassComponent {
         // returns new copy, angle, flipX, flipY should be reset
         const component = new ClassComponent(
-            this.instanceName, this.numPins, this.className);
+            this.instanceName, this.numPins);
 
         component._copyID = this._copyID;
         component.arrangeProps = this.arrangeProps;
@@ -258,7 +250,7 @@ export class ClassComponent {
         }
 
         for (const [key, value] of this.parameters) {
-            if (key === 'flipX' || key === 'flipY' || key === 'angle') {
+            if (key === ParamKeys.flipX || key === ParamKeys.flipY || key === ParamKeys.angle) {
                 continue;
             }
 
@@ -269,11 +261,22 @@ export class ClassComponent {
             component.pins.set(key, value);
         }
 
-        for (const key in this.styles) {
-            component.styles[key] = this.styles[key];
-        }
-
         component.refreshCache();
         return component;
     }
+}
+
+export class ModuleComponent extends ClassComponent {
+    /** The expressions that define the circuit within the module. */
+    moduleContainsExpressions?: Expressions_blockContext;
+
+    /** Number of module instances */
+    moduleCounter = 0;
+    
+    moduleExecutionContext?: ExecutionContext;
+    moduleExecutionContextName?: string;
+
+    /** Module is the same as a component, except the component pins are mapped
+     * to ports that are defined within the module's inner circuits. */
+    modulePinIdToPortMap?: Map<number, ClassComponent>;
 }

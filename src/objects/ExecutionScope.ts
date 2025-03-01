@@ -36,6 +36,8 @@ export class ExecutionScope {
 
     indentLevel = 0;
     netCounter = 1;
+
+    /** Counter for unnamed components */
     unnamedCounter = 1;
 
     currentComponent: ClassComponent | null = null;
@@ -73,7 +75,8 @@ export class ExecutionScope {
         return scope;
     }
 
-    private findNet(component: ClassComponent, pin: number): ComponentPinNetPair {
+    /** Returns the component pin net pair, if the component pin pair matches */
+    private findNet(component: ClassComponent, pin: number): ComponentPinNetPair | undefined {
         return this.nets.find(([tmpComponent, tmpPin]) => {
             // Use manual equality, much faster than using lodash
             return tmpComponent.isEqual(component) && tmpPin === pin;
@@ -92,13 +95,10 @@ export class ExecutionScope {
         return this.findNet(component, pin) !== undefined;
     }
 
-    getNet(component: ClassComponent, pin: number): Net {
+    /** Returns net if found, otherwise returns null */
+    getNet(component: ClassComponent, pin: number): Net | null {
         const result = this.findNet(component, pin);
-        if (result) {
-            return result[2]; // net
-        }
-
-        return null;
+        return result ? result[2] : null;
     }
 
     setNet(component: ClassComponent, pin: number, net: Net): void {
@@ -175,6 +175,16 @@ export class ExecutionScope {
         // Clears any current selected wire or frame
         this.currentWireId = -1;
         this.currentFrameId = -1;
+    }
+
+    /** Sets current insertion point in the scope */
+    setCurrent(component: ClassComponent | null, pin: number | null = null): void {
+        this.currentComponent = component;
+        if (component !== null) {
+            this.currentPin = (pin === null) ? component.getDefaultPin() : pin;
+        } else {
+            this.currentPin = null;
+        }
     }
 }
 

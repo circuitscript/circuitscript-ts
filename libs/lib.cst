@@ -37,7 +37,7 @@ def label(value, anchor="left"):
             textColor: "#222"
             label: params.value, 0, -10, fontSize=50, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_pin_id=false
-        type: "label"
+        type: "net"
         params:
             net_name: value
             value: value
@@ -195,6 +195,7 @@ def text(value, offsetX = 0, offsetY = 0, fontSize = 50):
     return create component:
         pins: 1
         followWireOrientation: false
+        type: "graphic"
         display: create graphic:
             pin: 1, 0, 0, 0, 0, display_pin_id=false
             text:
@@ -259,7 +260,7 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
     title_block_y2 = title_block_y + title_block_height
 
     return create component:
-        type: "frame"
+        type: "graphic"
         display: create graphic (params):
             fill: "none"
 

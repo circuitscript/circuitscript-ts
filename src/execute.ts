@@ -7,7 +7,7 @@
 
 import { BlockTypes, ComponentTypes, FrameType, GlobalNames, NoNetText, ParamKeys, 
     ReferenceTypes } from './globals.js';
-import { ClassComponent } from './objects/ClassComponent.js';
+import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
@@ -141,63 +141,45 @@ export class ExecutionContext {
             1,
             '__root',
         );
-        componentRoot.typeProp = ComponentTypes.point;
+        componentRoot.typeProp = ComponentTypes.net;
         componentRoot.displayProp = this.getPointSymbol();
 
         this.scope.instances.set(GlobalNames.__root, componentRoot);
 
-        this.scope.currentComponent = componentRoot;
-        this.scope.currentPin = componentRoot.getDefaultPin();
-
+        this.scope.setCurrent(componentRoot);
         this.scope.componentRoot = componentRoot;
     }
 
-    getUniqueInstanceName(className: string): string {
-        let extraPrefix = '';
-
-        switch (className) {
-            case GlobalNames.DefaultResistor:
-                extraPrefix = 'R_';
-                break;
-            case GlobalNames.DefaultCapacitor:
-                extraPrefix = 'C_';
-                break;
-            case GlobalNames.DefaultInductor:
-                extraPrefix = 'L_';
-                break;
-        }
-
-        const tmpName = extraPrefix + 'COMP_' + this.scope.unnamedCounter;
+    getUniqueInstanceName(): string {
+        const tmpName = 'COMP_' + this.scope.unnamedCounter;
         this.scope.unnamedCounter += 1;
 
         return tmpName;
     }
 
-    getUniqueNetName(): string {
+    private getUniqueNetName(): string {
         const tmpName = 'NET_' + this.scope.netCounter;
         this.scope.netCounter++;
         return tmpName;
     }
 
+    /** Returns current insertion point within the scope */
     getCurrentPoint(): ComponentPin {
         return [this.scope.currentComponent, this.scope.currentPin];
     }
 
+    /** Connects two component-pin pairs into the same net. If either of
+     * the pins have already been assigned nets, the nets with a higher priority
+     * number will be used for both pins. Returns the final net that is used.
+    */
     private linkComponentPinNet(
         component1: ClassComponent,
         component1Pin: number,
         component2: ClassComponent,
         component2Pin: number,
     ): Net {
-        const net1_exists = this.scope.hasNet(component1, component1Pin);
-        const net2_exists = this.scope.hasNet(component2, component2Pin);
-
-        const net1 = net1_exists
-            ? this.scope.getNet(component1, component1Pin)
-            : null;
-        const net2 = net2_exists
-            ? this.scope.getNet(component2, component2Pin)
-            : null;
+        const net1 = this.scope.getNet(component1, component1Pin);
+        const net2 = this.scope.getNet(component2, component2Pin);
 
         this.log('link nets', component1, component1Pin, net1,
             'to', component2, component2Pin, net2);
@@ -229,34 +211,35 @@ export class ExecutionContext {
                 returnNet = this.mergeNets(net1, net2);
             } else {
                 // Otherwise, both nets are the same.
-                return net1;
+                returnNet = net1;
             }
         }
 
-        return returnNet;
+        this.log('final net after link: ', returnNet);
+
+        return returnNet!;
     }
 
+    /** Combines 2 nets into a single net. Component-pin pairs in the nets will
+     * also be merged. By default net2 will be merged into net1 and net2 will
+     * no longer be used. */
     private mergeNets(net1: Net, net2: Net): Net {
-        // By default merge net2 into net1, net2 will no longer be used.
         if (net1 === net2) {
             return net1;
         }
-
-        let tmpNet: Net;
 
         // Check priority to ensure that net1 always
         // has the higher priority. Swap both nets
         // if this is not the case.
         if (net2.priority > net1.priority) {
-            tmpNet = net1;
+            const tmpNet = net1;
             net1 = net2;
             net2 = tmpNet;
         }
 
         // Get all (component, pin) pairs that are linked to net2
         // and change them to net1
-        const scopeNets = this.scope.getNets();
-        scopeNets.forEach(([component, pin, net]) => {
+        this.scope.getNets().forEach(([component, pin, net]) => {
             if (Net.isSame(net, net2)) {
                 this.scope.setNet(component, pin, net1);
             }
@@ -265,6 +248,7 @@ export class ExecutionContext {
         return net1;
     }
 
+    /** Given the component parameters, returns a component */
     createComponent(
         instanceName: string,
         pins: PinDefinition[],
@@ -277,15 +261,16 @@ export class ExecutionContext {
             copy: boolean,
             angle?: NumericValue,
             followWireOrientation: boolean,
-        }
+        },
+        isModule = false
     ): ClassComponent {
 
-        const numPins = pins.length;
-        const component = new ClassComponent(
+        const className = isModule ? ModuleComponent : ClassComponent;
+        const component: ClassComponent = new className(
             instanceName,
-            numPins,
-            GlobalNames.symbol,
+            pins.length
         );
+
         pins.forEach((pin) => {
             component.pins.set(pin.id, pin);
         });
@@ -314,9 +299,7 @@ export class ExecutionContext {
             paramsMap.set(param.paramName, param.paramValue);
         });
         
-        if (component.typeProp === ComponentTypes.net
-            || component.typeProp === ComponentTypes.label
-        ) {
+        if (component.typeProp === ComponentTypes.net) {
             const netName = paramsMap.get(ParamKeys.net_name);
 
             let priority = 0;
@@ -470,9 +453,7 @@ export class ExecutionContext {
         // If wire is connected, then apply the wire orientation, if 
         // applicable.
         this.applyComponentAngleFromWire(component, pinId);
-
-        this.scope.currentComponent = component;
-        this.scope.currentPin = pinId;
+        this.scope.setCurrent(component, pinId);
 
         this.scope.clearActive();
 
@@ -482,9 +463,9 @@ export class ExecutionContext {
                 // Prevent component pin from being connected to multiple
                 // wires at the same time. This happens if the user tries
                 // to add the same (non-net) component at multiple places.
-                if (component.pinWires.has(pinId) && component.typeProp !== ComponentTypes.point) {
-                    // throw "Component pin already connected to wire"
-                }
+                // if (component.pinWires.has(pinId) && component.typeProp !== ComponentTypes.point) {
+                //     // throw "Component pin already connected to wire"
+                // }
 
                 // Check if the previous entry is a wire
                 const [entryType, , segments]: [SequenceAction, number, WireSegment[]] =
@@ -518,8 +499,6 @@ export class ExecutionContext {
 
         const { addSequence = false } = options ?? {};
 
-        this.scope.currentComponent = component;
-
         let usePinId: number;
         if (pinId === null) {
             usePinId = component.getDefaultPin();
@@ -531,9 +510,7 @@ export class ExecutionContext {
             }
         }
 
-        if (usePinId) {
-            this.scope.currentPin = usePinId;
-        }
+        this.scope.setCurrent(component, usePinId);
 
         // If component is first referenced by this at command, then do not
         // allow it's orientation to be set by wires any more.
@@ -627,8 +604,7 @@ export class ExecutionContext {
             const { final_point: finalPoint } = stackRef;
             const [component, pin, wireId] = finalPoint;
 
-            this.scope.currentComponent = component;
-            this.scope.currentPin = pin;
+            this.scope.setCurrent(component, pin);
             this.scope.currentWireId = wireId;
 
             if (wireId !== -1) {
@@ -662,9 +638,9 @@ export class ExecutionContext {
 
         if (blockType === BlockTypes.Join || blockType === BlockTypes.Point) {
             // Clear current component, pin, wire before entering the block
-            this.scope.currentComponent = null;
-            this.scope.currentPin = null;
+            this.scope.setCurrent(null);
             this.scope.currentWireId = -1;
+
         } else if (blockType === BlockTypes.Parallel) {
             // Move to starting point of the parallel blocks
             const { entered_at: [component, pin,] } = stackRef;
@@ -989,8 +965,6 @@ export class ExecutionContext {
         // Need to renumber the frame ids too.
         const frameIdOffset = this.scope.frames.length;
 
-        let incrementGndLinkId = 0;
-
         childScope.sequence.forEach(sequenceAction => {
             const [action] = sequenceAction;
 
@@ -1011,30 +985,6 @@ export class ExecutionContext {
                     [SequenceAction.WireJump, jumpWireId, 1]
                 );
             } else if (action === SequenceAction.At || action === SequenceAction.To) {
-                const tmpComponent: ClassComponent = sequenceAction[1];
-
-                // Check if the component is a gnd component
-                if (tmpComponent.typeProp === ComponentTypes.net 
-                        && tmpComponent.parameters.get(ParamKeys.net_name) === 'gnd') {
-                    // Is a gnd net
-                    tmpComponent._copyID = gndCopyIdOffset + incrementGndLinkId;
-                    incrementGndLinkId += 1;
-
-                } else if (tmpComponent === tmpRoot) {
-                    // If this sequence action contains the root component,
-                    // then replace it with a corresponding sequence action.
-                    // If current wire id is set, then use a wire jump sequence
-                    // action, otherwise use at/to action.
-
-                    if (currentWireId !== -1){
-                        sequenceAction = [SequenceAction.WireJump, currentWireId];
-
-                    } else {
-                        // If is the root component, then replace it by the current
-                        // component and pin
-                        sequenceAction = [action, currentComponent, currentPin];
-                    }                    
-                }
                 this.scope.sequence.push(sequenceAction);
 
             } else if (action === SequenceAction.Frame){
@@ -1053,15 +1003,15 @@ export class ExecutionContext {
             // If child scope is current at the root node, then use the 
             // location in the parent scope as the current component 
             // since that would be equivalent
-            this.scope.currentComponent = currentComponent;
-            this.scope.currentPin = currentPin;
+            this.scope.setCurrent(currentComponent, currentPin);
             this.scope.currentWireId = currentWireId;
 
         } else {
             // Otherwise move the current scope to the current node within 
             // the child scope
-            this.scope.currentComponent = childScope.currentComponent;
-            this.scope.currentPin = childScope.currentPin;
+            this.scope.setCurrent(childScope.currentComponent, 
+                childScope.currentPin);
+
             this.scope.currentWireId = childScope.currentWireId + wireIdOffset;
         }
 
@@ -1105,7 +1055,16 @@ export class ExecutionContext {
 
         const output = [];
         segments.forEach(item => {
-            output.push(item.join(","));
+
+            const tmpArray = item.map(item2 => {
+                if (item2 instanceof UnitDimension){
+                    return item2.value;
+                } else {
+                    return item2;
+                }
+            });
+
+            output.push(tmpArray.join(","));
         });
 
         this.log('add wire: ', output.join("|"));
@@ -1137,7 +1096,7 @@ export class ExecutionContext {
         const useName = userDefined ? 'point.' + pointId : pointId;
         const componentPoint = ClassComponent.simple(useName, 1, "point");
         componentPoint.displayProp = this.getPointSymbol();
-        componentPoint.typeProp = ComponentTypes.point;
+        componentPoint.typeProp = ComponentTypes.net;
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });
@@ -1145,6 +1104,7 @@ export class ExecutionContext {
         return this.getCurrentPoint();
     }
 
+    /** Provides the drawing commands for a point object on the canvas */
     private getPointSymbol(): SymbolDrawingCommands {
         return new SymbolDrawingCommands(() => {
             return [
@@ -1194,13 +1154,6 @@ export class ExecutionContext {
             } else {
                 throw "Unknown identifier: " + idName;
             }
-        }
-    }
-
-    setCurrentComponentStyle(styles: { [key: string]: number | string }): void {
-        // Add onto to the current component styles
-        for (const key in styles) {
-            this.scope.currentComponent.styles[key] = styles[key];
         }
     }
 
@@ -1280,16 +1233,16 @@ export class ExecutionContext {
 
                 if (useAngle === 90) {
                     // Just rotate the component
-                    component.setParam('angle', numeric(90));
+                    component.setParam(ParamKeys.angle, numeric(90));
                 } else if (useAngle === 180) {
                     if (component.angleProp === 0 || component.angleProp === 180) {
-                        component.setParam('flipX', 1);
+                        component.setParam(ParamKeys.flipX, 1);
                     } else if (component.angleProp === 90 || component.angleProp === 270) {
-                        component.setParam('flipY', 1);
+                        component.setParam(ParamKeys.flipY, 1);
                     }
 
                 } else if (useAngle === 270) {
-                    component.setParam('angle', numeric(270));
+                    component.setParam(ParamKeys.angle, numeric(270));
                 }
 
                 component.wireOrientationAngle = useAngle;

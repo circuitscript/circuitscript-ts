@@ -75,8 +75,7 @@ describe('Render tests', () => {
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
         expect(svgOutput).toEqual(expectedSvgOutput);
 
-        // const isSame = svgOutput == expectedSvgOutput;
-        // expect(isSame).toEqual(true);
+        // expect(svgOutput == expectedSvgOutput).toEqual(true);
     });
     
     test('pdf output', async () => {

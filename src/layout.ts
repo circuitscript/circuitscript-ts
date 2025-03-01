@@ -7,12 +7,12 @@
 
 import {Graph, Edge, alg} from '@dagrejs/graphlib';
 
-import { SymbolCustom, SymbolDrawing, SymbolFactory, SymbolGraphic, 
+import { SymbolCustom, SymbolDrawing, SymbolGraphic, 
     SymbolCustomModule, SymbolPinDefintion, SymbolPlaceholder, 
     SymbolText, PlaceHolderCommands, SymbolDrawingCommands} from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
-import { defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, GlobalNames, 
+import { ComponentTypes, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     ParamKeys, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { Geometry } from './geometry.js';
@@ -697,7 +697,7 @@ export class LayoutEngine {
                     }  else {
                         const symbolPinDefinitions = generateLayoutPinDefinition(component);
 
-                        if (component.typeProp === 'module'){
+                        if (component.typeProp === ComponentTypes.module){
                             tmpSymbol = new SymbolCustomModule(symbolPinDefinitions);
                         } else {
                             tmpSymbol = new SymbolCustom(symbolPinDefinitions);
@@ -709,25 +709,25 @@ export class LayoutEngine {
                     // Set rotation of object
                     let didSetAngle = false;
 
-                    if (component.parameters.has('angle')) {
+                    if (component.parameters.has(ParamKeys.angle)) {
                         didSetAngle = true;
                         const value = (
-                            component.parameters.get('angle') as NumericValue
+                            component.parameters.get(ParamKeys.angle) as NumericValue
                         ).toNumber();
 
                         tmpSymbol.angle = value;
                     }
    
-                    if (component.parameters.has('flipX')){
+                    if (component.parameters.has(ParamKeys.flipX)){
                         // either 1 or 0
                         tmpSymbol.flipX = 
-                            component.parameters.get('flipX') as number; 
+                            component.parameters.get(ParamKeys.flipX) as number; 
                     }
 
-                    if (component.parameters.has('flipY')){
+                    if (component.parameters.has(ParamKeys.flipY)){
                         // either 1 or 0
                         tmpSymbol.flipY = 
-                            component.parameters.get('flipY') as number; 
+                            component.parameters.get(ParamKeys.flipY) as number; 
                     }
 
                     if (tmpSymbol instanceof SymbolCustom && widthProp){

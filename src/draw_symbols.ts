@@ -867,8 +867,9 @@ export enum PlaceHolderCommands {
     for = 'for',
 }
 
+/** Symbol that is generated only from pin definitions and does not have a 
+ *  custom graphic to draw. */
 export class SymbolCustom extends SymbolGraphic {
-    // For generating symbols for multi-pin components.
 
     pinDefinition: SymbolPinDefintion[] = [];
 
@@ -885,8 +886,8 @@ export class SymbolCustom extends SymbolGraphic {
 
     pins: SymbolPinLayout[] = [];
 
-    _cacheLeftPins: SymbolPinDefintion[];
-    _cacheRightPins: SymbolPinDefintion[];
+    _cacheLeftPins: SymbolPinDefintion[] = [];
+    _cacheRightPins: SymbolPinDefintion[] = [];
 
     constructor(pinDefinition: SymbolPinDefintion[]) {
         super();
