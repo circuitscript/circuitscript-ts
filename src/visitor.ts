@@ -63,7 +63,7 @@ import {
     NumericValue,
     ParamDefinition
 } from './objects/ParamDefinition.js';
-import { PinDefinition, PinIdType } from './objects/PinDefinition.js';
+import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
@@ -90,7 +90,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitPin_select_expr = (ctx: Pin_select_exprContext): void => {
-        let value: string| number | null = null;
+        let value: PinId | null = null;
 
         const ctxIntegerValue = ctx.INTEGER_VALUE();
         const ctxStringValue = ctx.STRING_VALUE();
@@ -119,56 +119,59 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
-        if (ctx.Point()) {
-            this.getExecutor().atPointBlock();
+        const ctxComponentSelectExpr = ctx.component_select_expr()!;
+        this.visit(ctxComponentSelectExpr);
 
-        } else {
-            const ctxComponentSelectExpr = ctx.component_select_expr()!;
-            this.visit(ctxComponentSelectExpr);
-
-            const [component, pin] = this.getResult(ctxComponentSelectExpr);
-            this.getExecutor().atComponent(component, pin, {
-                addSequence: true
-            });
-        }
+        const [component, pin] = this.getResult(ctxComponentSelectExpr);
+        this.getExecutor().atComponent(component, pin, {
+            addSequence: true
+        });
 
         return this.getExecutor().getCurrentPoint();
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
-        if (ctx.Point()) {
-            this.getExecutor().toPointBlock();
-
-        } else {
-            ctx.component_select_expr().forEach(item => {
-                this.visit(item);
-                const [component, pin] = this.getResult(item);
-                this.getExecutor().toComponent(component, pin, {
-                    addSequence: true
-                });
+        ctx.component_select_expr().forEach(item => {
+            this.visit(item);
+            const [component, pin] = this.getResult(item);
+            this.getExecutor().toComponent(component, pin, {
+                addSequence: true
             });
-        }
-
+        });
+        
         return this.getExecutor().getCurrentPoint();
     }
 
     visitComponent_select_expr = (ctx: Component_select_exprContext): void => {
         const ctxDataExprWithAssigment = ctx.data_expr_with_assignment();
-        if (ctxDataExprWithAssigment) {
+        let componentPin: ComponentPin | null = null;
+
+        if (ctx.Point()) {
+            const [component, pin,] = this.getExecutor().getPointBlockLocation();
+            componentPin = [component, pin];
+
+        } else if (ctxDataExprWithAssigment) {
             this.visit(ctxDataExprWithAssigment);
-            this.setResult(ctx, this.getResult(ctxDataExprWithAssigment));
+            componentPin = this.getResult(ctxDataExprWithAssigment);
+
         } else {
-            const component = this.getExecutor().scope.currentComponent;
-            let pinId: number | string | null = null;
+            const component = this.getExecutor().scope.currentComponent!;
+            let pinId: PinId | null = null;
 
             const ctxPinSelectExpr = ctx.pin_select_expr();
             if (ctxPinSelectExpr) {
                 this.visit(ctxPinSelectExpr);
                 pinId = this.getResult(ctxPinSelectExpr);
             }
-            
-            this.setResult(ctx, [component, pinId]);
+
+            if (pinId === null) {
+                this.throwWithContext(ctx, "Could not resolve pin");
+            }
+
+            componentPin = [component, pinId];
         }
+
+        this.setResult(ctx, componentPin);
     }
 
     visitPath_blocks = (ctx: Path_blocksContext): ComponentPin => {

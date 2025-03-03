@@ -380,14 +380,14 @@ export class ExecutionContext {
     }
 
     addComponentExisting(component: ClassComponent, pin: number): ComponentPin {
-        const startPin = pin;
-        const nextPin = component.getNextPinAfter(startPin);
+        const nextPin = component.getNextPinAfter(pin);
 
         this.applyComponentAngleFromWire(component, pin);
 
-        // Add to sequence
-        this.toComponent(component, startPin, {addSequence: true});
+        // Connect previous position to the component pin
+        this.toComponent(component, pin, {addSequence: true});
 
+        // Continue the circuit graph from the next pin of the component
         this.log('move to next pin: ' + nextPin);
         this.atComponent(component, nextPin, {
             addSequence: true

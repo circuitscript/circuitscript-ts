@@ -156,6 +156,12 @@ export class ClassComponent {
         }
     }
 
+    /**
+     * Returns the next pin after the current pin. This will wrap around once
+     * the last pin is reached.
+     * @param pinIndex
+     * @returns 
+     */
     getNextPinAfter(pinIndex: number): number {
         if (pinIndex + 1 <= this.numPins) {
             return pinIndex + 1;

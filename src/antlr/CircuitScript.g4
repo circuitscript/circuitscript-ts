@@ -113,15 +113,15 @@ data_expr_with_assignment: (data_expr | assignment_expr) component_modifier_expr
 
 add_component_expr: Add data_expr_with_assignment;
 
-component_select_expr: data_expr_with_assignment | pin_select_expr;
+component_select_expr: data_expr_with_assignment | pin_select_expr | Point;
 
 // This does not have the 'pin' word
 pin_select_expr2: INTEGER_VALUE | STRING_VALUE;
 
-at_component_expr:      At (component_select_expr | Point);                           // ID? is for orientation
+at_component_expr:      At component_select_expr;                           // ID? is for orientation
 // at_component_expr_next:   'at' component_select_expr (',' component_select_expr)*;
 
-to_component_expr: To ((component_select_expr (',' component_select_expr)*) | Point);   // ID? is for orientation
+to_component_expr: To (component_select_expr (',' component_select_expr)*);   // ID? is for orientation
 // pin_select_expr_next:   'pin' INTEGER_VALUE (',' INTEGER_VALUE)?;
 
 at_to_multiple_expr: At component_select_expr To component_select_expr (',' component_select_expr)* ':' NEWLINE INDENT (NEWLINE | at_to_multiple_line_expr) + DEDENT;

@@ -41,7 +41,10 @@ export class PinDefinition {
 }
 
 export enum PinIdType {
+    /** Pin specified as a number */
     Int = 'int',
+
+    /** Pin specified as string (PA3, etc.) */
     Str = 'str',
 }
 
@@ -51,6 +54,3 @@ export enum PortSide {
     SOUTH = 'SOUTH',
     NORTH = 'NORTH'
 }
-
-
-export class PinReference {}
