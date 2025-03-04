@@ -630,6 +630,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.resultData.get(ctx);
     }
 
+    protected visitResult(ctx: ParserRuleContext): any {
+        this.visit(ctx);
+        return this.getResult(ctx);
+    }
+
     protected handleImportFile(name: string, 
         throwErrors = true, ctx: ParserRuleContext | null =null): {
 

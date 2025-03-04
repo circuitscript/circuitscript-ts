@@ -67,7 +67,7 @@ import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
-    ComponentPinNet, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
+    ComponentPinNet, ComponentPinNetPair, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
@@ -81,10 +81,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext): void => {
         const id = ctx.ID().getText();
-        const ctxDataExpr = ctx.data_expr();
-
-        this.visit(ctxDataExpr);
-        const value = this.getResult(ctxDataExpr);
+        const value = this.visitResult(ctx.data_expr());
         
         this.setResult(ctx, [id, value]);
     }
@@ -109,20 +106,14 @@ export class ParserVisitor extends BaseVisitor {
         // Besides component, can also add graphic objects
 
         // The component is always the last item
-        const ctxDataWithAssignmentExpr = ctx.data_expr_with_assignment();
-
-        this.visit(ctxDataWithAssignmentExpr);
-        const [component, pinValue] =
-            this.getResult(ctxDataWithAssignmentExpr);
+        const [component, pinValue] = 
+            this.visitResult(ctx.data_expr_with_assignment());
 
         this.getExecutor().addComponentExisting(component, pinValue);
     }
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
-        const ctxComponentSelectExpr = ctx.component_select_expr()!;
-        this.visit(ctxComponentSelectExpr);
-
-        const [component, pin] = this.getResult(ctxComponentSelectExpr);
+        const [component, pin] = this.visitResult(ctx.component_select_expr());
         this.getExecutor().atComponent(component, pin, {
             addSequence: true
         });
@@ -132,8 +123,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
         ctx.component_select_expr().forEach(item => {
-            this.visit(item);
-            const [component, pin] = this.getResult(item);
+            const [component, pin] = this.visitResult(item);
             this.getExecutor().toComponent(component, pin, {
                 addSequence: true
             });
@@ -151,8 +141,7 @@ export class ParserVisitor extends BaseVisitor {
             componentPin = [component, pin];
 
         } else if (ctxDataExprWithAssigment) {
-            this.visit(ctxDataExprWithAssigment);
-            componentPin = this.getResult(ctxDataExprWithAssigment);
+            componentPin = this.visitResult(ctxDataExprWithAssigment);
 
         } else {
             const component = this.getExecutor().scope.currentComponent!;
@@ -160,8 +149,7 @@ export class ParserVisitor extends BaseVisitor {
 
             const ctxPinSelectExpr = ctx.pin_select_expr();
             if (ctxPinSelectExpr) {
-                this.visit(ctxPinSelectExpr);
-                pinId = this.getResult(ctxPinSelectExpr);
+                pinId = this.visitResult(ctxPinSelectExpr);
             }
 
             if (pinId === null) {
@@ -179,7 +167,7 @@ export class ParserVisitor extends BaseVisitor {
 
         let blockIndex = 0; // Tracks the index of the block with the given type
         let blockType = BlockTypes.Branch;
-        let prevBlockType = null;
+        let prevBlockType: BlockTypes | null = null;
 
         blocks.forEach((block, index) => {
             if (block.Branch()) {
@@ -192,10 +180,12 @@ export class ParserVisitor extends BaseVisitor {
                 blockType = BlockTypes.Point;
             }
 
+            // Check if the block type has changed. When the same block
+            // types are used in sequence, they are part of the same 'group'
+            // of blocks (i.e. they may share a certain common branch/join point)
             if (prevBlockType !== blockType) {
                 if (index > 0) { 
-                    // If not the first block, then exit the 
-                    // group of blocks.
+                    // If not the first block, then exit the group of blocks.
                     this.getExecutor().exitBlocks();
                 }
 
@@ -311,8 +301,7 @@ export class ParserVisitor extends BaseVisitor {
             this.executionStack.push(...stack);
 
             const graphicsExpressionsCtx = ctx.graphic_expressions_block();
-            this.visit(graphicsExpressionsCtx);
-            const commands = this.getResult(graphicsExpressionsCtx);
+            const commands = this.visitResult(graphicsExpressionsCtx);
 
             // Restore the stack
             this.executionStack.splice(0);
@@ -329,9 +318,8 @@ export class ParserVisitor extends BaseVisitor {
 
     visitGraphic_expressions_block = (ctx: Graphic_expressions_blockContext): void => {
         const commands = ctx.graphic_expr().reduce((accum, item) => {
-            this.visit(item);
             const [commandName, parameters] =
-                this.getResult(item) as [string, CallableParameter[]];
+                this.visitResult(item) as [string, CallableParameter[]];
 
             if (commandName === PlaceHolderCommands.for) {
                 accum = accum.concat(parameters);
@@ -370,22 +358,19 @@ export class ParserVisitor extends BaseVisitor {
 
         const ctxNestedProperties = ctx.nested_properties_inner();
         if (ctxNestedProperties) {
-            this.visit(ctxNestedProperties);
-            const nestedKeyValues = this.getResult(ctxNestedProperties);
+            const nestedKeyValues = this.visitResult(ctxNestedProperties);
 
             nestedKeyValues.forEach((value: any, key: any) => {
                 parameters.push(['keyword', key, value]);
             });
 
         } else {
-            const ctxParameters = ctx.parameters()!;
-            this.visit(ctxParameters);
-            parameters = this.getResult(ctxParameters);
+            parameters = this.visitResult(ctx.parameters()!);
         }
 
         // For the `label` command, allow both 'in' and 'out' as shortform
         // values to portType
-        if (commandName === 'label') {
+        if (commandName === PlaceHolderCommands.label) {
             parameters.forEach(item => {
                 if (item[0] == 'keyword' && item[1] === 'portType') {
                     if (item[2] === 'in') {
@@ -402,10 +387,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitGraphicForExpr = (ctx: GraphicForExprContext): void => {
         const forVariableNames = ctx.ID().map(item => item.getText());
-        const ctxDataExpr = ctx.data_expr();
-
-        this.visit(ctxDataExpr);
-        const listItems = this.getResult(ctxDataExpr);
+        const listItems = this.visitResult(ctx.data_expr());
 
         let keepLooping = true;
         let counter = 0;
@@ -423,9 +405,8 @@ export class ParserVisitor extends BaseVisitor {
                         forVariableNames[index], value);
                 });
 
-                const graphicsExpressionsCtx = ctx.graphic_expressions_block()!;
-                this.visit(graphicsExpressionsCtx);
-                const commands = this.getResult(graphicsExpressionsCtx);
+                const commands = 
+                    this.visitResult(ctx.graphic_expressions_block()!);
 
                 allCommands = allCommands.concat(commands);
 
@@ -514,8 +495,7 @@ export class ParserVisitor extends BaseVisitor {
         if (ctxPropertyBlock) {
             // Only parse the first one, ignore the others!
             const [firstBlock] = ctxPropertyBlock;
-            this.visit(firstBlock);
-            const [keyName, expressionsBlock] = this.getResult(firstBlock);
+            const [keyName, expressionsBlock] = this.visitResult(firstBlock);
 
             if (keyName === ModuleContainsKeyword) {
                 moduleComponent.moduleContainsExpressions = expressionsBlock;
@@ -533,9 +513,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {
-        const tmpCtx = ctx.property_key_expr();
-        this.visit(tmpCtx);
-        const keyName = this.getResult(tmpCtx);
+        const keyName = this.visitResult(ctx.property_key_expr());
 
         const expressionsBlock = ctx.expressions_block();
 
@@ -543,21 +521,13 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperty_expr = (ctx: Property_exprContext): void => {
-
-        const ctxPropertyKeyExpr = ctx.property_key_expr();
-        const ctxPropertyValueExpr = ctx.property_value_expr();
-
-        this.visit(ctxPropertyKeyExpr);
-        this.visit(ctxPropertyValueExpr);
-
-        const keyName = this.getResult(ctxPropertyKeyExpr);
-        const value = this.getResult(ctxPropertyValueExpr);
+        const keyName = this.visitResult(ctx.property_key_expr());
+        const value = this.visitResult(ctx.property_value_expr());
 
         if (value instanceof UndeclaredReference && (
-            value.reference.parentValue === undefined 
-            && value.reference.value ===undefined
+            value.reference.parentValue === undefined
+            && value.reference.value === undefined
         )) {
-            
             throw value.throwMessage();
         }
 
@@ -570,13 +540,10 @@ export class ParserVisitor extends BaseVisitor {
     visitSingle_line_property = (ctx: Single_line_propertyContext): void => {
         let value;
         if (ctx.data_expr().length === 1) {
-            const ctxFirst = ctx.data_expr(0)!;
-            this.visit(ctxFirst);
-            value = this.getResult(ctxFirst);
+            value = this.visitResult(ctx.data_expr(0)!);
         } else {
             value = ctx.data_expr().map(item => {
-                this.visit(item);
-                return this.getResult(item);
+                return this.visitResult(item);
             });
         }
 
@@ -586,8 +553,7 @@ export class ParserVisitor extends BaseVisitor {
     visitNested_properties_inner = (ctx: Nested_properties_innerContext): void => {
         const result = new Map<string, any>();
         ctx.property_expr().forEach((item) => {
-            this.visit(item);
-            const property: Map<string, any> = this.getResult(item);
+            const property: Map<string, any> = this.visitResult(item);
 
             // Get out all items, by default
             for (const [key, value] of property) {
@@ -599,9 +565,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitNested_properties = (ctx: Nested_propertiesContext): void => {
-        const ctxNested = ctx.nested_properties_inner();
-        this.visit(ctxNested);
-        this.setResult(ctx, this.getResult(ctxNested));
+        this.setResult(ctx, this.visitResult(ctx.nested_properties_inner()));
     }
 
     visitProperty_key_expr = (ctx: Property_key_exprContext): void => {
@@ -629,8 +593,7 @@ export class ParserVisitor extends BaseVisitor {
         const ctxAssignmentExpr = ctx.assignment_expr();
 
         if (ctxDataExpr) {
-            this.visit(ctxDataExpr);
-            component = this.getResult(ctxDataExpr);
+            component = this.visitResult(ctxDataExpr);
             componentCtx = ctxDataExpr;
 
             if (component === null || component === undefined) {
@@ -639,8 +602,7 @@ export class ParserVisitor extends BaseVisitor {
             }
 
         } else if (ctxAssignmentExpr) {
-            this.visit(ctxAssignmentExpr);
-            component = this.getResult(ctxAssignmentExpr);
+            component = this.visitResult(ctxAssignmentExpr);
             componentCtx = ctxAssignmentExpr;
         }
 
@@ -656,7 +618,7 @@ export class ParserVisitor extends BaseVisitor {
                 && trailers[0] === ModuleContainsKeyword
             ) {
                 component = parentValue;
-                this.placeModuleContains(component);
+                this.placeModuleContains(component as ModuleComponent);
             }
         }
 
@@ -670,8 +632,7 @@ export class ParserVisitor extends BaseVisitor {
 
                 let result: ComplexType = null;
                 if (ctxValueExpr) {
-                    this.visit(ctxValueExpr);
-                    result = this.getResult(ctxValueExpr);
+                    result = this.visitResult(ctxValueExpr);
                 } else if (ctxID2) {
                     result = ctxID2.getText();
                 }
@@ -708,8 +669,7 @@ export class ParserVisitor extends BaseVisitor {
         const ctxPinSelectExpr = ctx.pin_select_expr();
 
         if (ctxPinSelectExpr) {
-            this.visit(ctxPinSelectExpr);
-            pinValue = this.getResult(ctxPinSelectExpr);
+            pinValue = this.visitResult(ctxPinSelectExpr);
         } else {
             if (component instanceof ClassComponent) {
                 pinValue = (component as ClassComponent).getDefaultPin();
@@ -828,23 +788,20 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
-        this.visit(ctx.data_expr());
-        let value = this.getResult(ctx.data_expr());
+        let value = this.visitResult(ctx.data_expr());
 
         const unaryOp = ctx.unary_operator();
         if (unaryOp) {
             if (unaryOp.Not()) {
                 if (typeof value === "boolean") {
                     value = !value;
-                } else if (typeof value === "number"){
-                    value = (value === 0) ? false: true;
+                } else if (value instanceof NumericValue){
+                    value = (value.toNumber() === 0) ? true: false;
                 } else {
                     throw "Failed to do Not operator";
                 }
             } else if (unaryOp.Minus()) {
-                if (typeof value === 'number') {
-                    value = -value;
-                } else if (value instanceof NumericValue){
+                if (value instanceof NumericValue){
                     value = value.neg();
                 } else {
                     throw "Failed to do Negation operator";
@@ -863,14 +820,11 @@ export class ParserVisitor extends BaseVisitor {
         const ctxCreateModuleExpr = ctx.create_module_expr();
 
         if (ctxCreateComponentExpr) {
-            this.visit(ctxCreateComponentExpr);
-            value = this.getResult(ctxCreateComponentExpr);
+            value = this.visitResult(ctxCreateComponentExpr);
         } else if (ctxCreateGraphicExpr) {
-            this.visit(ctxCreateGraphicExpr);
-            value = this.getResult(ctxCreateGraphicExpr);
+            value = this.visitResult(ctxCreateGraphicExpr);
         } else if (ctxCreateModuleExpr) {
-            this.visit(ctxCreateModuleExpr);
-            value = this.getResult(ctxCreateModuleExpr);
+            value = this.visitResult(ctxCreateModuleExpr);
         } else {
             throw "Invalid data expression";
         }
@@ -882,11 +836,8 @@ export class ParserVisitor extends BaseVisitor {
         const ctx0 = ctx.data_expr(0)!;
         const ctx1 = ctx.data_expr(1)!;
 
-        this.visit(ctx0);
-        this.visit(ctx1);
-
-        let value1: number | boolean | NumericValue = this.getResult(ctx0);
-        let value2: number | boolean | NumericValue = this.getResult(ctx1);
+        let value1: number | boolean | NumericValue = this.visitResult(ctx0);
+        let value2: number | boolean | NumericValue = this.visitResult(ctx1);
 
         if (value1 instanceof NumericValue) {
             value1 = value1.toNumber();
@@ -920,28 +871,40 @@ export class ParserVisitor extends BaseVisitor {
         const ctx0 = ctx.data_expr(0)!;
         const ctx1 = ctx.data_expr(1)!;
 
-        this.visit(ctx0);
-        const value1: number | boolean = this.getResult(ctx0);
+        let value1: number | boolean | NumericValue = this.visitResult(ctx0);
+        if (value1 instanceof NumericValue){
+            value1 = value1.toNumber();
+        }
+
         let value2: number | boolean = false;
 
         let skipNext = false;
 
-        if (ctx.LogicalOr() && value1){
+        const isLogicalOr = ctx.LogicalOr();
+
+        if (isLogicalOr && value1){
             // Since evaluated true already, can skip the parsing of the next
             skipNext = true;
         }
 
         if (!skipNext){
-            this.visit(ctx1);
-            value2 = this.getResult(ctx1);
+            value2 = this.visitResult(ctx1);
+            if (value2 instanceof NumericValue){
+                value2 = value2.toNumber();
+            }    
         }
         
-        let result: boolean | null = null;
+        let result: number | boolean | null = null;
 
         if (ctx.LogicalAnd()) {
             result = value1 && value2;
-        } else if (ctx.LogicalOr()) {
+
+        } else if (isLogicalOr) {
             result = value1 || value2;
+        }
+
+        if (typeof result === "number"){
+            result = numeric(result);
         }
 
         this.setResult(ctx, result);
@@ -1009,8 +972,7 @@ export class ParserVisitor extends BaseVisitor {
         let funcDefinedParameters: FunctionDefinedParameter[] = [];
         const ctxFunctionArgsExpr = ctx.function_args_expr();
         if (ctxFunctionArgsExpr) {
-            this.visit(ctxFunctionArgsExpr);
-            funcDefinedParameters = this.getResult(ctxFunctionArgsExpr);
+            funcDefinedParameters = this.visitResult(ctxFunctionArgsExpr);
         }
 
         const executionStack = this.executionStack;
@@ -1073,9 +1035,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): void => {
-        const ctxPinSelectExpr2 = ctx.pin_select_expr2();
-        this.visit(ctxPinSelectExpr2);
-        const atPin: number | string = this.getResult(ctxPinSelectExpr2);
+        const atPin: number | string = this.visitResult(ctx.pin_select_expr2());
 
         const executor = this.getExecutor();
 
@@ -1164,8 +1124,7 @@ export class ParserVisitor extends BaseVisitor {
             if (ctxIntegerValue) {
                 useValue = Number(ctxIntegerValue);
             } else if (ctxDataExpr) {
-                this.visit(ctxDataExpr);
-                useValue = this.getResult(ctxDataExpr);
+                useValue = this.visitResult(ctxDataExpr);
             }
 
             if (useValue !== null) {
@@ -1181,8 +1140,7 @@ export class ParserVisitor extends BaseVisitor {
     visitWire_expr = (ctx: Wire_exprContext): void => {
         const wireAtomExpr = ctx.wire_atom_expr();
         const segments = wireAtomExpr.map(wireSegment => {
-            this.visit(wireSegment);
-            return this.getResult(wireSegment);
+            return this.visitResult(wireSegment);
         });
 
         this.getExecutor().addWire(segments);
@@ -1194,25 +1152,17 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperty_set_expr = (ctx: Property_set_exprContext): void => {
-        const ctxDataExpr = ctx.data_expr();
-        this.visit(ctxDataExpr);
-        const result = this.getResult(ctxDataExpr);
-        
+        const result = this.visitResult(ctx.data_expr());
 
         // To check if this works
-        const ctxAtomExpr = ctx.atom_expr();
-        this.visit(ctxAtomExpr);
-        const resolvedProperty = this.getResult(ctxAtomExpr);
+        const resolvedProperty = this.visitResult(ctx.atom_expr());
 
         // TODO: check if this works correctly
         this.getExecutor().setProperty(resolvedProperty, result);
     }
     
     visitDouble_dot_property_set_expr = (ctx: Double_dot_property_set_exprContext): void => {
-        const ctxDataExpr = ctx.data_expr();
-        this.visit(ctxDataExpr);
-        const result = this.getResult(ctxDataExpr);
-
+        const result = this.visitResult(ctx.data_expr());
         const propertyName = ctx.ID().getText();
         this.getExecutor().setProperty('..' + propertyName, result);
     }
@@ -1244,8 +1194,7 @@ export class ParserVisitor extends BaseVisitor {
         const ctxDataExpr = ctx.data_expr();
 
         if (ctxDataExpr) {
-            this.visit(ctxDataExpr);
-            dataValue = this.getResult(ctxDataExpr);
+            dataValue = this.visitResult(ctxDataExpr);
 
             if (dataValue instanceof UndeclaredReference) {
                 netNamespace = "/" + dataValue.reference.name;
@@ -1265,9 +1214,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitIf_expr = (ctx: If_exprContext): void => {
-        const ctxDataExpr = ctx.data_expr();
-        this.visit(ctxDataExpr);
-        const result = this.getResult(ctxDataExpr);
+        const result = this.visitResult(ctx.data_expr());
 
         let resultValue = result;
         if (result instanceof UndeclaredReference){
@@ -1281,9 +1228,7 @@ export class ParserVisitor extends BaseVisitor {
             let innerIfWasTrue = false;
 
             for (let i = 0; i < ctxInnerIfExprs.length; i++) {
-                const tmpCtx = ctxInnerIfExprs[i];
-                this.visit(tmpCtx);
-                const innerResult = this.getResult(tmpCtx);
+                const innerResult = this.visitResult(ctxInnerIfExprs[i]);
 
                 // If this was true, then ignore further states
                 if (innerResult) {
@@ -1304,9 +1249,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitIf_inner_expr = (ctx: If_inner_exprContext): void => {
-        const ctxDataExpr = ctx.data_expr();
-        this.visit(ctxDataExpr);
-        const result = this.getResult(ctxDataExpr);
+        const result = this.visitResult(ctx.data_expr());
 
         if (result) {
             this.visit(ctx.expressions_block());
@@ -1323,8 +1266,7 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().addBreakContext(ctx);
 
         while (keepLooping) {
-            this.visit(dataExpr);
-            const result = this.getResult(dataExpr);
+            const result = this.visitResult(dataExpr);
 
             if (result) { // some truthy value
                 this.visit(ctx.expressions_block());
@@ -1356,10 +1298,7 @@ export class ParserVisitor extends BaseVisitor {
     visitFor_expr = (ctx: For_exprContext): void => {
         this.log('in for loop');
         const forVariableNames = ctx.ID().map(item => item.getText());
-        const ctxDataExpr = ctx.data_expr();
-
-        this.visit(ctxDataExpr);
-        const listItems = this.getResult(ctxDataExpr);
+        const listItems = this.visitResult(ctx.data_expr());
 
         this.getExecutor().addBreakContext(ctx);
 
@@ -1408,8 +1347,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     private resolveDataExpr<T>(data_expr: Data_exprContext | null): T {
-        this.visit(data_expr!);
-        const value: T | UndeclaredReference = this.getResult(data_expr!);
+        const value: T | UndeclaredReference = this.visitResult(data_expr!);
 
         if (value instanceof UndeclaredReference) {
             this.throwWithContext(data_expr, value.throwMessage());
@@ -1629,7 +1567,7 @@ export class ParserVisitor extends BaseVisitor {
         return netlist;
     }
 
-    getGraph() {
+    getGraph(): {sequence: any[], nets: ComponentPinNetPair[]} {
         const executor = this.getExecutor();
         const fullSequence = executor.scope.sequence;
 
@@ -1647,11 +1585,11 @@ export class ParserVisitor extends BaseVisitor {
 
         return {
             sequence,
-            nets,
-            components: Array.from(executor.scope.instances.values())
+            nets
         };
     }
 
+    /** Performs annotation for components */
     annotateComponents(): void {
         this.log('===== annotate components =====');
 
@@ -1661,7 +1599,8 @@ export class ParserVisitor extends BaseVisitor {
         const toAnnotate:ClassComponent[] = [];
 
         for (const [, instance] of instances) {
-            // Do not annotate these
+            // Net and graphic components are skipped as they do not need
+            // to be annotated
             if (instance.typeProp === ComponentTypes.net 
                 || instance.typeProp == ComponentTypes.graphic) {
                 continue;
@@ -1704,10 +1643,11 @@ export class ParserVisitor extends BaseVisitor {
         this.log('');
     }
 
+    /** Sets the frame component used for the document sheet type as the sheet
+     *  type for each frame. */
     applySheetFrameComponent(): {
         frameComponent: ClassComponent | null
     } {
-        // Applies sheet frame component to the sheet frames
         const baseScope = this.getExecutor().scope;
         const document = baseScope.variables.get(GlobalDocumentName);
 
@@ -1726,9 +1666,9 @@ export class ParserVisitor extends BaseVisitor {
             // Assign frame component, sheet number and sheet total. This will
             // override existing params!
             sheets.forEach((item, index) => {
-                item.parameters.set(FrameParamKeys.SheetType, frameComponent);
-                item.parameters.set(FrameParamKeys.SheetNumber, index + 1);
-                item.parameters.set(FrameParamKeys.SheetTotal, totalSheets);
+                item.parameters.set(FrameParamKeys.SheetType, frameComponent)
+                    .set(FrameParamKeys.SheetNumber, index + 1)
+                    .set(FrameParamKeys.SheetTotal, totalSheets);
             });
         }
 
@@ -1737,12 +1677,11 @@ export class ParserVisitor extends BaseVisitor {
         };
     }
 
+    /** Returns the list of nets that a component's pins are assigned to */
     private resolveNets(
         scope: ExecutionScope,
         instance: ClassComponent,
     ): { pin: PinDefinition; netName: string, netBaseName: string }[] {
-        // Returns the list of nets that the component pins are
-        // connected to.
 
         const result = [];
 
@@ -1751,7 +1690,7 @@ export class ParserVisitor extends BaseVisitor {
             let netBaseName = NoNetText;
 
             if (scope.hasNet(instance, pinId)) {
-                const netObject = scope.getNet(instance, pinId);
+                const netObject = scope.getNet(instance, pinId)!;
                 netName = netObject.namespace + netObject.name;
                 netBaseName = netObject.baseName;
             }
@@ -1766,26 +1705,12 @@ export class ParserVisitor extends BaseVisitor {
         return result;
     }
 
-    private setComponentOrientation(component: ClassComponent, pin: number,
-        orientation: string): void {
-
-        // This can be used to modify the orientation of the component.
-        if (this.acceptedDirections.indexOf(orientation) !== -1) {
-            // a valid direction
-            component.setParam('_addDirection', orientation);
-            component.setParam('_addPin', pin);
-        } else {
-            throw "Invalid modifier for orientation";
-        }
-    }
-
-    private getPropertyExprList(items: Property_exprContext[]): Map<string, any> {
-        const properties = new Map<string, any>();
+    private getPropertyExprList(items: Property_exprContext[]): Map<string, unknown> {
+        const properties = new Map<string, unknown>();
 
         items.forEach((item) => {
-            this.visit(item);
-            const result: Map<string, any> = this.getResult(item); // Map should be returned
-
+            const result: Map<string, unknown> = this.visitResult(item); // Map should be returned
+            
             for (const [key, value] of result) {
                 properties.set(key, value);
             }
@@ -1793,69 +1718,37 @@ export class ParserVisitor extends BaseVisitor {
 
         return properties;
     }
-
-
-    // private checkNetNamespaceIncludes(
-    //     targetNetName: string, targetNamespaceParts: string[], net: Net): boolean {
-
-    //     // Returns true if the namespace of <net> is a fit for 
-    //     // the target namespace supplied
-
-    //     if (net.name === targetNetName) {
-    //         // split the net namespace into parts for comparison.
-    //         // For true to be returned, all parts in net must also be in
-    //         // targetNamespaceParts.
-    //         const netNamespaceParts = this.getNamespaceParts(net.namespace);
-    //         this.print('check namespace', targetNetName,
-    //             targetNamespaceParts, netNamespaceParts);
-
-    //         let matches = 0;
-    //         for (let i = 0; i < netNamespaceParts.length; i++) {
-    //             if (netNamespaceParts[i] === targetNamespaceParts[i]) {
-    //                 matches++;
-    //             }
-    //         }
-
-    //         if (matches === netNamespaceParts.length) {
-    //             return true;
-    //         }
-    //     }
-
-    //     return false;
-    // }
-
-    // private getNamespaceParts(namespace: string): string[] {
-    //     return namespace.split(".").slice(0, -2);
-    // }
-
 }
 
 
-const ComponentRefDesPrefixes = {
-    'res': 'R',
-    'cap': 'C',
-    'ind': 'L',
-    'diode': 'D',
-    'conn': 'J',
-    'transistor': 'Q',
-    'relay': 'K',
-    'ic': 'U',
+/**
+ * Standard prefixes for components
+ */
+const ComponentRefDesPrefixes: { [key: string]: string } = {
+    res: 'R',
+    cap: 'C',
+    ind: 'L',
+    diode: 'D',
+    conn: 'J',
+    transistor: 'Q',
+    relay: 'K',
+    ic: 'U',
 
     '?': '?',
 }
 
+/** Tracks annotations already assigned and determines refdes for components */
 class ComponentAnnotater {
 
-    counter = {};
+    counter:{[key: string]: number } = {};
 
     existingRefDes: string[] = [];
 
-    constructor(){
-        for(const key in ComponentRefDesPrefixes){
+    constructor() {
+        // Refdes counting should all start at 1. e.g. R1, C1, etc.
+        for (const key in ComponentRefDesPrefixes) {
             this.counter[key] = 1;
         }
-
-        this.counter['?'] = 1;
     }
 
     getAnnotation(type: string): string | null {
@@ -1880,7 +1773,7 @@ class ComponentAnnotater {
         }
 
         let attempts = 100;
-        let proposedName: string;
+        let proposedName = "";
 
         while (attempts >= 0) {
             proposedName = ComponentRefDesPrefixes[type] + this.counter[type];

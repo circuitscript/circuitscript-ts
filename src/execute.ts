@@ -570,11 +570,9 @@ export class ExecutionContext {
         // Create object to track all the inner blocks of 
         // the block group
 
-        if (blockType === BlockTypes.Point) {
-            this.addPoint(`_point.${this.name}.${this.tmpPointId}`, false);
-            this.tmpPointId += 1;
-        } else if (blockType === BlockTypes.Parallel) {
-            this.addPoint(`_parallel.${this.name}.${this.tmpPointId}`, false);
+        if (blockType === BlockTypes.Point || blockType === BlockTypes.Parallel) {
+            const key = blockType === BlockTypes.Point ? 'point' : 'parallel';
+            this.addPoint(`_${key}.${this.name}.${this.tmpPointId}`, false);
             this.tmpPointId += 1;
         }
 

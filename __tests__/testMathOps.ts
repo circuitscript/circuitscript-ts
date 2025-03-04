@@ -23,7 +23,7 @@ a = 10
 a %= 3
 `
 
-describe('Simple math tests', () => {
+describe('Simple operator tests', () => {
     test.each([
         ["a = -1 + 2", 1],
         ["a = 1 + 2", 3],
@@ -86,6 +86,23 @@ describe('Simple math tests', () => {
         // Javascript number quirk (in normal JS this returns 0.300...4)
         ['a = 0.1 + 0.2', '300m'],
 
+        // Not operator (!) tests
+        ['a = !0', true],
+        ['a = !0.1', false],
+        ['a = !10', false],
+
+        // Logical And operator (&&) tests
+        ['a = 10 && 20', 20],
+        ['a = 20 && 10', 10],
+        ['a = 10 && 0',  0],
+        ['a = 0  && 10', 0],
+
+        // Logical Or operator (||) tests
+        ['a = 10 || 20', 10],
+        ['a = 20 || 10', 20],
+        ['a = 0  || 10', 10],
+        ['a = 10 || 0',  10]
+
     ])('math test - %s', async (script, expectedResult) => {
         const { visitor, hasError } = await runScript(script);
         expect(hasError).toBe(false);
@@ -93,9 +110,14 @@ describe('Simple math tests', () => {
         const variables = visitor.dumpVariables();
         const value = variables.get('a');
 
-        // Use the display value to compare, easier to express
-        const useValue = (typeof expectedResult === 'string')
-            ? value.toDisplayString() : value.toNumber();
+        let useValue: any;
+        if (typeof expectedResult === 'boolean'){
+            useValue = value;
+        } else if (typeof expectedResult === 'string'){
+            useValue = value.toDisplayString();
+        } else {
+            useValue = value.toNumber();
+        }
 
         expect(useValue).toEqual(expectedResult);
     });
