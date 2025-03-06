@@ -320,7 +320,15 @@ export function renderScript(scriptData: string, outputPath: string,
 
         if (action === SequenceAction.Wire) {
             tmp[2] = tmp[2].map(item2 => {
-                return [item2.direction, item2.value].join(",");
+                const lengthValue = item2.value as UnitDimension;
+
+                const useValue = [item2.direction];
+                if (lengthValue !== null){
+                    useValue.push(lengthValue.value);
+                    useValue.push(lengthValue.type);
+                }
+
+                return useValue.join(",");
             }).join(" ");
         } else if (action === SequenceAction.Frame) {
             tmp[1] = item[1].frameId;
@@ -331,7 +339,7 @@ export function renderScript(scriptData: string, outputPath: string,
 
         return tmp.join(" | ");
     });
-
+    
     dumpData && writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
 
     let svgOutput = "";

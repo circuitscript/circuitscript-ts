@@ -380,7 +380,7 @@ export class LayoutEngine {
                 }
                 
                 return accum + width + 
-                    ((index + 1 < frameSizes.length) ? frame.gap: 0);
+                    ((index + 1 < frameSizes.length) ? frame.gap.toNumber() : 0);
             }, 0);
 
         } else {
@@ -417,7 +417,8 @@ export class LayoutEngine {
                 = getBoundsSize(innerFrame.bounds);
 
             if (innerFrame.containsTitle) {
-                innerFrame.x = offsetX.add(accumX).add(toNearestGrid(widthForTitle / 2 - frameWidth / 2, gridSize));
+                innerFrame.x = offsetX.add(accumX).add(
+                    toNearestGrid(widthForTitle / 2 - frameWidth / 2, gridSize));
                 innerFrame.y = offsetY.add(accumY);
                 accumY = accumY.add(frameHeight).add(frame.gap);
 

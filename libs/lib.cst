@@ -223,6 +223,17 @@ def arrow_point():
             path: ("M", -5, 0, "L", -20, 0)
             hpin: 1, 0, 0, 0, display_pin_id=false
 
+def no_connect(size=20):
+    return create component:
+        pins: 1
+        display: create graphic:
+            path: "M", -size, -size, "L", size, size
+            path: "M", -size, size, "L", size, -size
+            pin: 1, 0, 0, 0, 0, display_pin_id=false
+
+def dnc(size=20):
+    return no_connect(size)
+
 def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y, 
     col_display_value, row_display_value, inner_frame_margin = 50):
     
