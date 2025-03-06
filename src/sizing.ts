@@ -100,7 +100,9 @@ export function measureTextSize2(text: string, fontFamily: string,
             anchor: anchor,
             'dominant-baseline': dominantBaseline,
             weight: fontWeight,
-        }).fill('#333');
+        })
+        .attr("xml:space", "preserve")
+        .fill('#333');
 
         const textbox = tmpTextElement.bbox();
         const { width, height } = textbox;

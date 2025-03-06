@@ -410,6 +410,7 @@ export abstract class SymbolGraphic {
                     'dominant-baseline': dominantBaseline,
                     weight: fontWeight,
                 })
+                .attr("xml:space", "preserve")
                 .rotate(labelAngle);
 
             const { a, b, c, d, e, f } = textContainer.matrix();
