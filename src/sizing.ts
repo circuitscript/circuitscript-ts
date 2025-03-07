@@ -92,19 +92,42 @@ export function measureTextSize2(text: string, fontFamily: string,
                 break;
         }
 
+        let useAnchor = 'start';
+        switch(anchor){
+            case HorizontalAlign.Left:
+                useAnchor = 'start';
+                break;
+            case HorizontalAlign.Middle:
+                useAnchor = 'middle';
+                break;
+            case HorizontalAlign.Right:
+                useAnchor = 'end';
+                break;
+        }
+
         fontFamily = defaultFont;
 
         const tmpTextElement = MainCanvas!.text(text).font({
             family: fontFamily,
             size: fontSize,
-            anchor: anchor,
+            anchor: useAnchor,
             'dominant-baseline': dominantBaseline,
             weight: fontWeight,
         })
         .attr("xml:space", "preserve")
         .fill('#333');
 
-        const textbox = tmpTextElement.bbox();
+        let textbox = tmpTextElement.bbox();
+        const tmpTextBox = {...textbox};
+
+        if (dominantBaseline === 'hanging') {
+            // Not sure if this is a bug or intended, but code below
+            // is needed to set the correct .y and .y2
+            tmpTextBox.y = textbox.cy - textbox.height;
+            tmpTextBox.y2 = tmpTextBox.y + textbox.height;
+            textbox = tmpTextBox;
+        }
+
         const { width, height } = textbox;
         tmpTextElement.remove();
 
@@ -113,6 +136,7 @@ export function measureTextSize2(text: string, fontFamily: string,
             height: Math.round(height * 100) / 100,
             box: textbox,
         }
+
         measureTextSizeCacheHits[key] = 0;
     }
 

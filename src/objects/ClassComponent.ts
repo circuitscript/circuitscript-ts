@@ -38,6 +38,10 @@ export class ClassComponent {
     /** Maps pin indexes to wire segments */
     pinWires: Map<number, WireSegment[]> = new Map();
 
+    /** Stores the largest position for each side of the component. This is needed
+     * to calculate the component width and height. */
+    pinsMaxPositions: {[key: string]: number} = {};
+
     // The cached values are used for easier comparison/equality check.
     _cachedPins: string;
     _cachedParams: string;
@@ -55,6 +59,9 @@ export class ClassComponent {
 
     /** User-defined width for the component */
     widthProp: number | null = null;
+    
+    /** User-defined height for component */
+    heightProp: number | null = null;
 
     /** User-defined type prop for the component. The type is important to 
      * provide additionality functionality to the component.

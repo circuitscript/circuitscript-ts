@@ -63,8 +63,11 @@ describe('Render tests', () => {
 
         ['multiple sheet commands', 'script23.cst'],
         ['single sheet command', 'script24.cst'],
+        ['test blank spaces at start and end in symbol custom', 'script25.cst'],
         
         ['for command in graphics expr', 'script26.cst'],
+        ['label angle check', 'script27.cst'],
+        ['component width and height prop', 'script28.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);

@@ -30,7 +30,11 @@ export enum LayoutDirection {
 
 export enum SymbolPinSide {
     Left = "left",
-    Right = "right"
+    Right = "right",
+
+    Top = "top",
+
+    Bottom = "bottom"
 }
 
 export enum LengthUnit {
@@ -146,4 +150,8 @@ export const RenderFlags = {
     ShowElementFrames:      false,
     ShowOrigin:             false,
     ShowGridOrigin:         false,
+
+    ShowLabelBoxBounds:     false,
+    ShowLabelBounds:        false,
+    ShowLabelOrigin:        false,
 }

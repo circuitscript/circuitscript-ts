@@ -5,9 +5,12 @@ gnd = dgnd()
 
 tmp = create module:
     width: 1000
+    height: 700
     ports:
-        left: "signal_a", "signal_b", "signal_c"
-        right: [1], "signal_d", "signal_e"
+        left:  [1], "signal_a", "signal_c"
+        right: [1], "signal_d"
+        top:    [3], "signal_b"
+        bottom: [3], "signal_e"
 
     contains:
         at port("signal_a") flip:x
@@ -41,13 +44,13 @@ wire left 300 down 100
 to gnd
 
 at tmp pin "signal_e"
-wire right 200 down 100
+wire down 100
 add res(5k)
 wire down 100
 to gnd
 
 at label("input")
-wire right 300
+wire right 300 down 100
 to tmp pin "signal_b"
 
 at tmp pin "signal_d"

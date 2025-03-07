@@ -6,7 +6,8 @@
  */
 
 import { BlockTypes, ComponentTypes, FrameType, GlobalNames, NoNetText, ParamKeys, 
-    ReferenceTypes } from './globals.js';
+    ReferenceTypes, 
+    SymbolPinSide} from './globals.js';
 import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction } from './objects/ExecutionScope.js';
@@ -258,6 +259,7 @@ export class ExecutionContext {
             display?: SymbolDrawingCommands,
             type?: string,
             width?: number,
+            height?: number,
             copy: boolean,
             angle?: NumericValue,
             followWireOrientation: boolean,
@@ -278,6 +280,7 @@ export class ExecutionContext {
         component.arrangeProps = props.arrange ?? null;
         component.displayProp = props.display ?? null;
         component.widthProp = props.width ?? null;
+        component.heightProp = props.height ?? null;
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
 
@@ -328,10 +331,13 @@ export class ExecutionContext {
 
         // Determine the side for each pin and update the
         // pin definition
-        const portSides = getPortSide(component.pins, component.arrangeProps);
-        portSides.forEach(({ pinId, side, position }) => {
-            if (component.pins.has(pinId)){
-                const tmpPin = component.pins.get(pinId);
+        const { pins: pinSides, maxPositions } = 
+            getPortSide(component.pins, component.arrangeProps);
+        
+        component.pinsMaxPositions = maxPositions;
+        pinSides.forEach(({ pinId, side, position }) => {
+            if (component.pins.has(pinId)) {
+                const tmpPin = component.pins.get(pinId)!;
                 tmpPin.side = side;
                 tmpPin.position = position;
             }
@@ -1286,13 +1292,25 @@ function isWireSegmentsEndAuto(segments:WireSegment[]): boolean {
     return false;
 }
 
-export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): PortSideItem[] {
+export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): 
+    { 
+        pins: PortSideItem[],
+        maxPositions: {
+            [key: string]: number
+        }
+    } {
     // Takes the arrangeProps and determines how to arrange pins in the symbol.
 
     const result = [];
 
-    if (arrangeProps === null) {
+    const maxPositions: { [key: string]: number } = {
+        [SymbolPinSide.Left]: 0,
+        [SymbolPinSide.Right]: 0,
+        [SymbolPinSide.Top]: 0,
+        [SymbolPinSide.Bottom]: 0,
+    };
 
+    if (arrangeProps === null) {
         let counter = 0;
         for (const [pinId] of pins) {
             result.push({
@@ -1303,6 +1321,17 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             });
             counter++;
         }
+
+        const leftSideItems = result.filter(item => {
+            return item.side === PortSide.WEST
+        });
+
+        const rightSideItems = result.filter(item => {
+            return item.side === PortSide.EAST
+        });
+
+        maxPositions[SymbolPinSide.Left] = leftSideItems.length;
+        maxPositions[SymbolPinSide.Right] = rightSideItems.length;
 
     } else {
         let counter = pins.size;
@@ -1318,21 +1347,26 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             }
 
             let useSide = PortSide.WEST;
-            if (key === 'left') {
-                useSide = PortSide.WEST;
-            } else if (key === 'right') {
-                useSide = PortSide.EAST;
-            } else if (key === 'top') {
-                useSide = PortSide.NORTH;
-            } else if (key === 'bottom') {
-                useSide = PortSide.SOUTH;
+            switch(key){
+                case SymbolPinSide.Left:
+                    useSide = PortSide.WEST;
+                    break;
+                case SymbolPinSide.Right:
+                    useSide = PortSide.EAST;
+                    break;
+                case SymbolPinSide.Top:
+                    useSide = PortSide.NORTH;
+                    break;
+                case SymbolPinSide.Bottom:
+                    useSide = PortSide.SOUTH;
+                    break;
             }
 
             let position = 0;
 
             useItems.forEach(item => {
-                // This is for blank spaces
                 if (typeof item === 'object' && Array.isArray(item)) {
+                    // This is for blank spaces
                     position += (item[0] as NumericValue).toNumber();
                 } else {
                     // Only use the pin if it exists!
@@ -1349,10 +1383,15 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
                     }
                 }
             });
+
+            maxPositions[key] = position;
         }
     }
     
-    return result;
+    return {
+        pins: result,
+        maxPositions,
+    }
 }
 
 type PortSideItem = {

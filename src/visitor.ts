@@ -68,7 +68,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, WireAutoDirection } from './globals.js';
+import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -248,6 +248,9 @@ export class ParserVisitor extends BaseVisitor {
         const width = properties.has('width') ?
             properties.get('width') : null;
 
+        const height = properties.has('height') ?
+            properties.get('height') : null;
+
         // This angle refers to the orientation that the graphic of the 
         // component is draw with.
         const angle = properties.has(ParamKeys.angle) ?
@@ -257,7 +260,7 @@ export class ParserVisitor extends BaseVisitor {
             properties.get('followWireOrientation') : true;
 
         const props = {
-            arrange, display, type, width, copy,
+            arrange, display, type, width, height, copy,
             angle, followWireOrientation
         }
 
@@ -422,12 +425,20 @@ export class ParserVisitor extends BaseVisitor {
     visitCreate_module_expr = (ctx: Create_module_exprContext): void => {
         const properties = this.getPropertyExprList(ctx.property_expr());
 
-        const { left: leftPorts, right: rightPorts }
-            = this.parseCreateModulePorts(properties.get('ports'));
+        const modulePorts = this.parseCreateModulePorts(properties.get('ports'));
+
+        const { 
+            [SymbolPinSide.Left]: leftPorts, 
+            [SymbolPinSide.Right]: rightPorts, 
+            [SymbolPinSide.Top]: topPorts, 
+            [SymbolPinSide.Bottom]: bottomPorts 
+        } = modulePorts; 
 
         // Go through all ports in the list and skip items that are arrays. Arrays
         // are blank pin/port definition.
-        const allPorts = [...leftPorts, ...rightPorts].filter(item => {
+        const allPorts = [...leftPorts, ...rightPorts, 
+            ...topPorts, ...bottomPorts].filter(item => {
+            
             return !(Array.isArray(item));
         }) as string[];
 
@@ -445,38 +456,19 @@ export class ParserVisitor extends BaseVisitor {
             );
         });
 
-        const arrangeLeftItems = leftPorts.map(item => {
-            if (Array.isArray(item)){
-                return item;
-            } else {
-                return numeric(nameToPinId.get(item) as number);
-            }
-        });
-
-        const arrangeRightItems = rightPorts.map(item => {
-            if (Array.isArray(item)){
-                return item;
-            } else {
-                return numeric(nameToPinId.get(item) as number);
-            }
-        });
-
-        // Generate the arrange property
-        const arrange = new Map<string, any>();
-        if (arrangeLeftItems.length > 0){
-            arrange.set('left', arrangeLeftItems);
-        }
-
-        if (arrangeRightItems.length > 0){
-            arrange.set('right', arrangeRightItems);
-        }
+        const arrange = this.getArrangePropFromModulePorts(
+            modulePorts, nameToPinId
+        );
 
         const width = properties.has('width') ?
             properties.get('width') : null;
 
+        const height = properties.has('height') ?
+            properties.get('height') : null;
+
         const blankParams: ParamDefinition[] = [];
         const props = {
-            arrange, width,
+            arrange, width, height
 
             /** Should behave like a normal component (resistor, cap, etc.), 
              * do not duplicate the module if referenced. */
@@ -1447,13 +1439,45 @@ export class ParserVisitor extends BaseVisitor {
     private parseCreateModulePorts(portsDefinition: Map<string, any>)
         : {
             left: (string | [blank: number])[],
-            right: (string | [blank: number])[]
+            right: (string | [blank: number])[],
+            top: (string | [blank: number])[],
+            bottom: (string | [blank: number])[]
         } {
 
         return {
-            left: this.getPortItems(portsDefinition, 'left'),
-            right: this.getPortItems(portsDefinition, 'right'),
+            left: this.getPortItems(portsDefinition, SymbolPinSide.Left),
+            right: this.getPortItems(portsDefinition, SymbolPinSide.Right),
+            top: this.getPortItems(portsDefinition, SymbolPinSide.Top),
+            bottom: this.getPortItems(portsDefinition, SymbolPinSide.Bottom),
         }
+    }
+
+    private getArrangePropFromModulePorts(
+        modulePorts: { [key: string]: (string | [blank: number])[] },
+        nameToPinId: Map<string, number>
+    ): Map<string, any> {
+        const keys = [SymbolPinSide.Left, SymbolPinSide.Right, SymbolPinSide.Top, SymbolPinSide.Bottom];
+
+        const arrangeProp = new Map<string, any>();
+
+        keys.forEach(key => {
+            // Prepare for the arrange prop
+            if (modulePorts[key]) {
+                const items = modulePorts[key].map(item => {
+                    if (Array.isArray(item)) {
+                        return item;
+                    } else {
+                        return numeric(nameToPinId.get(item) as number);
+                    }
+                });
+
+                if (items.length > 0){
+                    arrangeProp.set(key, items);
+                }
+            }
+        });
+        
+        return arrangeProp;
     }
 
     private getPortItems(portsDefinition: Map<string, any>, key: string)

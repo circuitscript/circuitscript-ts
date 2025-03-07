@@ -13,7 +13,7 @@ import { SymbolCustom, SymbolDrawing, SymbolGraphic,
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
 import { ComponentTypes, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
-    ParamKeys, WireAutoDirection } from './globals.js';
+    ParamKeys, SymbolPinSide, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { Geometry } from './geometry.js';
 import { Net } from './objects/Net.js';
@@ -687,7 +687,8 @@ export class LayoutEngine {
                 if (!graph.hasNode(tmpInstanceName)) {
                     this.print('create instance', tmpInstanceName);
 
-                    const { displayProp = null, widthProp = null } = component;
+                    const { displayProp = null, 
+                        widthProp = null, heightProp = null} = component;
                     
                     let tmpSymbol: SymbolGraphic;
 
@@ -699,9 +700,11 @@ export class LayoutEngine {
                         const symbolPinDefinitions = generateLayoutPinDefinition(component);
 
                         if (component.typeProp === ComponentTypes.module){
-                            tmpSymbol = new SymbolCustomModule(symbolPinDefinitions);
+                            tmpSymbol = new SymbolCustomModule(symbolPinDefinitions, 
+                                component.pinsMaxPositions);
                         } else {
-                            tmpSymbol = new SymbolCustom(symbolPinDefinitions);
+                            tmpSymbol = new SymbolCustom(symbolPinDefinitions, 
+                                component.pinsMaxPositions);
                         }
                     }
     
@@ -731,8 +734,13 @@ export class LayoutEngine {
                             component.parameters.get(ParamKeys.flipY) as number; 
                     }
 
-                    if (tmpSymbol instanceof SymbolCustom && widthProp){
-                        tmpSymbol.bodyWidth = milsToMM(widthProp);
+                    if (tmpSymbol instanceof SymbolCustom) {
+                        if (widthProp) {
+                            tmpSymbol.bodyWidth = milsToMM(widthProp);
+                        }
+                        if (heightProp) {
+                            tmpSymbol.bodyHeight = milsToMM(heightProp);
+                        }
                     }
     
                     if (!didSetAngle && component.parameters.has('_addDirection')){
@@ -1484,7 +1492,7 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
             const pin = pins.get(existingPinIds[i])!;
 
             symbolPinDefinitions.push({
-                side: (i % 2 === 0) ? "left" : "right",
+                side: (i % 2 === 0) ? SymbolPinSide.Left : SymbolPinSide.Right,
                 pinId: existingPinIds[i],
                 text: pin.name,
                 position: pinPosition,
@@ -1999,7 +2007,8 @@ export function CalculatePinPositions(component: ClassComponent)
 
     } else {
         const symbolPinDefinitions = generateLayoutPinDefinition(component);
-        tmpSymbol = new SymbolCustom(symbolPinDefinitions);
+        tmpSymbol = new SymbolCustom(symbolPinDefinitions, 
+            component.pinsMaxPositions);
     }
 
     // Force a render of the symbol
