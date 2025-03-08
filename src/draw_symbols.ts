@@ -13,8 +13,9 @@ import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSy
     PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
     defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "./globals.js";
-import { Feature, Geometry, GeometryProp, HorizontalAlign, LabelStyle, 
-    Textbox, VerticalAlign } from "./geometry.js";
+import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, LabelStyle, 
+    Textbox, VerticalAlign, 
+    VerticalAlignProp} from "./geometry.js";
 import { Logger } from "./logger.js";
 import { PinTypes } from "./objects/PinTypes.js";
 import { roundValue, throwWithContext } from "./utils.js";
@@ -239,29 +240,33 @@ export abstract class SymbolGraphic {
 
             switch (useAnchor) {
                 case HorizontalAlign.Left:
-                    anchorStyle = (this.flipX === 0) ? 'start' : 'end';
+                    anchorStyle = (this.flipX === 0) 
+                        ? HorizontalAlignProp.Start : HorizontalAlignProp.End;
                     break;
 
                 case HorizontalAlign.Middle:
-                    anchorStyle = 'middle';
+                    anchorStyle = HorizontalAlignProp.Middle;
                     break;
 
                 case HorizontalAlign.Right:
-                    anchorStyle = (this.flipX === 0) ? 'end' : 'start';
+                    anchorStyle = (this.flipX === 0) 
+                        ? HorizontalAlignProp.End : HorizontalAlignProp.Start;
                     break;
             }
 
             switch (useDominantBaseline) {
                 case VerticalAlign.Top:
-                    dominantBaseline = (this.flipY === 0) ? 'hanging' : 'text-top';
+                    dominantBaseline = (this.flipY === 0) 
+                        ? VerticalAlignProp.Hanging : VerticalAlignProp.TextTop;
                     break;
 
                 case VerticalAlign.Middle:
-                    dominantBaseline = 'middle';
+                    dominantBaseline = VerticalAlignProp.Central;
                     break;
 
                 case VerticalAlign.Bottom:
-                    dominantBaseline = (this.flipY === 0) ? 'text-top' : 'hanging';
+                    dominantBaseline = (this.flipY === 0) 
+                        ? VerticalAlignProp.TextTop : VerticalAlignProp.Hanging;
                     break;
             }
 
@@ -383,8 +388,8 @@ export abstract class SymbolGraphic {
                     box.width,
                     box.height
                 )
-                .fill('none')
-                .stroke({
+                    .fill('none')
+                    .stroke({
                         width: 0.1,
                         color: 'blue',
                     })
@@ -401,7 +406,12 @@ export abstract class SymbolGraphic {
 
                 textContainer.rect(
                     textBounds.width, textBounds.height
-                ).fill('#cccccc')
+                )
+                .fill('none')
+                .stroke({
+                        width: 0.1,
+                        color: 'red',
+                    })
                     .translate(textBounds.x - xOffset, textBounds.y);
             }
 

@@ -152,6 +152,6 @@ export const RenderFlags = {
     ShowGridOrigin:         false,
 
     ShowLabelBoxBounds:     false,
-    ShowLabelBounds:        false,
     ShowLabelOrigin:        false,
+    // ShowLabelBounds:        true,
 }

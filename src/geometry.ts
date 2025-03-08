@@ -797,6 +797,18 @@ export enum VerticalAlign {
     Middle = 'middle',
     Bottom = 'bottom',
 }
+export enum HorizontalAlignProp {
+    Start = 'start',
+    Middle = 'middle',
+    End = 'end',
+}
+
+export enum VerticalAlignProp {
+    Hanging = 'hanging',
+    Middle = 'middle',
+    Central = 'central',
+    TextTop = 'text-top'
+}
 
 // function getArcPoint(centerX: number, centerY: number, radius: number,
 //     angleDegrees: number): [x: number, y: number] {

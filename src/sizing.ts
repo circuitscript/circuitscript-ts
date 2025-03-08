@@ -7,7 +7,7 @@
 
 import { Box, Dom, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
 
-import { HorizontalAlign, VerticalAlign } from './geometry.js';
+import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './geometry.js';
 import { defaultFont } from './globals.js';
 import { SVGWindow } from 'svgdom';
 import { JSModuleType, detectJSModuleType } from './helpers.js';
@@ -77,31 +77,31 @@ export function measureTextSize2(text: string, fontFamily: string,
     const key = `${text}-${fontFamily}-${fontSize}-${fontWeight}-${anchor}-${vanchor}`;
 
     if (measureTextSizeCache[key] === undefined) {
-        let dominantBaseline = 'hanging';
+        let dominantBaseline = VerticalAlignProp.Hanging;
         switch (vanchor) {
             case VerticalAlign.Top:
-                dominantBaseline = 'hanging';
+                dominantBaseline = VerticalAlignProp.Hanging;
                 break;
 
             case VerticalAlign.Middle:
-                dominantBaseline = 'middle';
+                dominantBaseline = VerticalAlignProp.Central;
                 break;
 
             case VerticalAlign.Bottom:
-                dominantBaseline = 'text-top';
+                dominantBaseline = VerticalAlignProp.TextTop;
                 break;
         }
 
-        let useAnchor = 'start';
+        let useAnchor = HorizontalAlignProp.Start;
         switch(anchor){
             case HorizontalAlign.Left:
-                useAnchor = 'start';
+                useAnchor = HorizontalAlignProp.Start;
                 break;
             case HorizontalAlign.Middle:
-                useAnchor = 'middle';
+                useAnchor = HorizontalAlignProp.Middle;
                 break;
             case HorizontalAlign.Right:
-                useAnchor = 'end';
+                useAnchor = HorizontalAlignProp.End;
                 break;
         }
 
@@ -120,11 +120,18 @@ export function measureTextSize2(text: string, fontFamily: string,
         let textbox = tmpTextElement.bbox();
         const tmpTextBox = {...textbox};
 
-        if (dominantBaseline === 'hanging') {
+        if (dominantBaseline === VerticalAlignProp.Hanging) {
             // Not sure if this is a bug or intended, but code below
             // is needed to set the correct .y and .y2
             tmpTextBox.y = textbox.cy - textbox.height;
             tmpTextBox.y2 = tmpTextBox.y + textbox.height;
+            textbox = tmpTextBox;
+        } else if (dominantBaseline === VerticalAlignProp.Central){
+            // .cy is the offset from the center point, so use it to "negate" 
+            // the offset
+            tmpTextBox.y -= textbox.cy;
+            tmpTextBox.y2 -= textbox.cy;
+            tmpTextBox.cy = 0;
             textbox = tmpTextBox;
         }
 

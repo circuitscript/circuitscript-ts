@@ -68,7 +68,7 @@ def res(value):
             hpin: 1, -width/2 - 30, 0, 30
             hpin: 2, width/2 + 30, 0, -30
             label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left"
-            label: params.value, 0, 4, fontSize=30, anchor="middle", vanchor="middle"
+            label: params.value, 0, 0, fontSize=30, anchor="middle", vanchor="middle"
         type: "res"
         params:
             value: value

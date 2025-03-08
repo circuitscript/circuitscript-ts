@@ -137,6 +137,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('c83779667f613463f22f706ba74842c5');
+        expect(result).toEqual('fe049d01349c6b3e024ba5452779fc8b');
     });
 });
