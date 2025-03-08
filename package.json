@@ -1,6 +1,6 @@
 {
     "name": "circuitscript",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Interpreter for the circuitscript language",
     "homepage": "https://circuitscript.net",
     "engines": {
@@ -70,7 +70,7 @@
         "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer",
         "server": "node server.js",
         "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server",
-        "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js",
+        "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js -p",
         "preversion": "npm run test",
         "version": "npm run changelog && git add CHANGELOG.md"
     },
@@ -88,7 +88,7 @@
         "lodash": "^4.17.21",
         "pdfkit": "^0.15.1",
         "svg-to-pdfkit": "^0.1.8",
-        "svgdom": "0.1.14",
+        "svgdom": "^0.1.14",
         "this-file": "^2.0.3",
         "tslib": "~2.5",
         "ws": "^8.14.2"

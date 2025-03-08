@@ -1,8 +1,29 @@
 # Changelog
 
-## [v0.1.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.0...v0.1.1) - 2025-02-02
+## [v0.1.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.1...v0.1.2)
 
-[39824a1](https://gitlab.com/circuitscript/circuitscript-ts/commit/39824a18719ba6987333e346f6377c1fce6b60c5) updated package json for version release
+[c54cd01](https://gitlab.com/circuitscript/circuitscript-ts/commit/c54cd013bcf5d3e043a1475222add5b24dc2fb4f) cleaned up at/to syntax
+
+[aa43d83](https://gitlab.com/circuitscript/circuitscript-ts/commit/aa43d839c9be89b60df64b7bcb2467a6bb87b46e) improved label/text rendering with angle
+-  updated tests
+
+[5a07d74](https://gitlab.com/circuitscript/circuitscript-ts/commit/5a07d74c42d9f4e88b119719155ce75ca3317c34) refactor cleanups
+
+[5ccf30e](https://gitlab.com/circuitscript/circuitscript-ts/commit/5ccf30e84a08c92694d4c8f95ddc081f7545ad3b) fixed logical operators and added tests
+-  cleanups
+
+[132ed5d](https://gitlab.com/circuitscript/circuitscript-ts/commit/132ed5d2c983b9483e8b02dbbe8c81cd7da2d005) clean up functions, added documentation
+
+[3e832ee](https://gitlab.com/circuitscript/circuitscript-ts/commit/3e832ee45e3dbce3857f36a80bc6940c0ed12e2d) improved text vertical alignment
+-  updated tests
+
+[ce4f9a8](https://gitlab.com/circuitscript/circuitscript-ts/commit/ce4f9a8eeaadd4faa6888414d35bba5813dbd70c) support white space in text
+
+[f78e3b1](https://gitlab.com/circuitscript/circuitscript-ts/commit/f78e3b11d7ac5a18a84d5beb0fa842d0ce7a7f63) fixed bug
+
+## [v0.1.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.0...v0.1.1) - 2025-02-26
+
+[a598b8d](https://gitlab.com/circuitscript/circuitscript-ts/commit/a598b8d430b1b4265d480411ab3af8b8c53e3e24) integration with big.js for more accurate number handling
 
 ## [v0.1.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.0.38...v0.1.0) - 2025-02-02
 
