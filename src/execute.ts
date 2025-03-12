@@ -97,11 +97,13 @@ export class ExecutionContext {
         this.setupRoot();
 
         if (name === '__') {
+            // Start the sequence list with the cursor positioned at
+            // the root node.
             this.scope.sequence.push(
                 [
-                    SequenceAction.At, 
-                    this.scope.componentRoot,
-                    this.scope.currentPin
+                    SequenceAction.At,
+                    this.scope.componentRoot!,
+                    this.scope.currentPin!
                 ]
             );
         }
@@ -138,10 +140,7 @@ export class ExecutionContext {
      * canvas */
     private setupRoot(): void {
         const componentRoot = ClassComponent.simple(
-            GlobalNames.__root,
-            1,
-            '__root',
-        );
+            GlobalNames.__root, 1);
         componentRoot.typeProp = ComponentTypes.net;
         componentRoot.displayProp = this.getPointSymbol();
 

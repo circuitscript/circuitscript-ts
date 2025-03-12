@@ -15,10 +15,10 @@ import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionSc
 import { ComponentTypes, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     ParamKeys, SymbolPinSide, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
-import { Geometry } from './geometry.js';
+import { Geometry, HorizontalAlign, VerticalAlign } from './geometry.js';
 import { Net } from './objects/Net.js';
 import { Logger } from './logger.js';
-import { Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
+import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { BoundBox, combineMaps, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
@@ -28,8 +28,6 @@ import { numeric, NumericValue } from './objects/ParamDefinition.js';
 export class LayoutEngine {
 
     logger: Logger;
-
-    placeSubgraphVersion = 2;
 
     layoutWarnings: string[] = [];
 
@@ -169,7 +167,7 @@ export class LayoutEngine {
         return items;
     }
 
-    findJunctions(wireGroups: Map<string, RenderWire[]>): {
+    private findJunctions(wireGroups: Map<string, RenderWire[]>): {
         junctions: RenderJunction[],
         mergedWires: MergedWire[],
     } {
@@ -208,7 +206,11 @@ export class LayoutEngine {
         }
     }
 
-    placeFrames(graph: Graph, subgraphInfo: SubGraphInfo[],
+    /** 
+     * Goes through all frame objects and handles placement of components/
+     * sub frames within.
+     */
+    private placeFrames(graph: Graph, subgraphInfo: SubGraphInfo[],
         frameObjects: RenderFrame[]): {
             elementFrames: RenderFrame[],
             textObjects: RenderText[],
@@ -219,26 +221,24 @@ export class LayoutEngine {
         baseFrame.padding = numeric(0);
         baseFrame.borderWidth = numeric(0);
 
-        if (this.showBaseFrame){
+        if (this.showBaseFrame) {
             // Assume A4 for now
-
             baseFrame.borderWidth = numeric(5);
 
             // Use A4 size first, with a margin of 400 mils around
-            baseFrame.width = 11692 - 400 * 2;
-            baseFrame.height = 8267 - 400 * 2;
+            baseFrame.width = numeric(11692 - 400 * 2);
+            baseFrame.height = numeric(8267 - 400 * 2);
         }
 
         baseFrame.x = numeric(0);
         baseFrame.y = numeric(0);
-
-        let textObjects: RenderText[] = [];
-        let elementFrames: RenderFrame[] = [];
-
         baseFrame.bounds = {
             xmin: 0, ymin: 0,
             xmax: 0, ymax: 0,
         }
+
+        let textObjects: RenderText[] = [];
+        let elementFrames: RenderFrame[] = [];
 
         if (subgraphInfo.length > 0){
             // Update render frames so that frames consist of only nested frames.
@@ -278,9 +278,9 @@ export class LayoutEngine {
         const frames: RenderFrame[] = [];
 
         innerItems.forEach(item => {
-            if (item.type === RenderFrameType.Elements) {
+            if (item.renderType === RenderFrameType.Elements) {
                 frames.push(item);
-            } else if (item.type === RenderFrameType.Container) {
+            } else if (item.renderType === RenderFrameType.Container) {
                 const innerFrames = this.collectElementFrames(item, level + 1);    
                 frames.push(...innerFrames);       
             }
@@ -289,13 +289,17 @@ export class LayoutEngine {
         return frames;
     }
 
+    /** Goes through all frames and nested frames and determines the final
+     *  x and y positions of the elements relative to the absolute origin.
+     */
     applyFrameOffset(frame: RenderFrame, level = 0): void {
         this.print(level, "".padStart(level * 4), 'frame', frame.x, frame.y);
         const innerItems = frame.innerItems as RenderFrame[];
 
         innerItems.forEach(innerFrame => {
             if (innerFrame.frame.frameType === FrameType.Sheet){
-                // If frame is a sheet, then do not offset by frame position
+                // If frame is a sheet, then there is no offset as the sheet
+                // will be placed at the absolute origin.
                 innerFrame.x = numeric(0);
                 innerFrame.y = numeric(0);
             } else {
@@ -304,28 +308,35 @@ export class LayoutEngine {
                 innerFrame.y = innerFrame.y.add(frame.y);
             }
 
-            if (innerFrame.type === RenderFrameType.Elements) {
+            if (innerFrame.renderType === RenderFrameType.Elements) {
                 this.print(level, "".padStart(level * 4), 'element frame',
                     innerFrame.x, innerFrame.y);
 
-                innerFrame.innerItems.forEach(item2 => {
-                    item2.x = item2.x.add(innerFrame.x).sub(innerFrame.translateX);
-                    item2.y = item2.y.add(innerFrame.y).sub(innerFrame.translateY);
+                const diffX = innerFrame.x.sub(innerFrame.translateX);
+                const diffY = innerFrame.y.sub(innerFrame.translateY);
+
+                // Calculate the positionof each inner item based on the 
+                // parent frame's position and the relative position.
+                innerFrame.innerItems.forEach(item => {
+                    item.x = item.x.add(diffX);
+                    item.y = item.y.add(diffY);
                 });
 
             } else {
                 this.print(level, "".padStart(level * 4), 'container frame',
                     innerFrame.x, innerFrame.y);
-                    
+
                 this.applyFrameOffset(innerFrame, level + 1);
             }
         });
     }
 
-    placeAndSizeFrame(frame: RenderFrame, level = 0): void {
-        // Recursively walk through the frame's inner items and lay them out
-        // depending on their bounds and position in the parent frame.
-
+    /**
+     * Recursively walk through the frame's inner items and lay them out
+     * depending on their bounds and position in the parent frame.
+     */
+    private placeAndSizeFrame(frame: RenderFrame, level = 0): void {
+        // All inner items are either Container or Element frames.
         const innerFrames = frame.innerItems as RenderFrame[];
         const gridSize = defaultGridSizeUnits;
 
@@ -337,22 +348,21 @@ export class LayoutEngine {
 
         // First pass collects the size of all inner frames
         const frameSizes = innerFrames.map(innerFrame => {
-            if (innerFrame.type === RenderFrameType.Elements) {
+            if (innerFrame.renderType === RenderFrameType.Elements) {
                 // Set translate such that the origin of the frame is at it's 
                 // upper left corner.
                 innerFrame.bounds = resizeToNearestGrid(
-                    innerFrame.bounds, gridSize);
+                    innerFrame.bounds!, gridSize);
 
                 innerFrame.translateX = innerFrame.bounds.xmin;
                 innerFrame.translateY = innerFrame.bounds.ymin;
-
             } else {
                 // If this is a container frame, then apply the same strategy
                 // to size the inner items of this frame.
                 this.placeAndSizeFrame(innerFrame, level + 1);
             }
 
-            return innerFrame.bounds;
+            return innerFrame.bounds!;
         });
 
         // Find the largest width (should already be aligned to grid size).
@@ -361,8 +371,14 @@ export class LayoutEngine {
             return width;
         }));
 
+        // Frame with the largest height
+        const maxHeight = Math.max(...frameSizes.map(item => {
+            const { height } = getBoundsSize(item);
+            return height;
+        }));
+
         let accumRowWidth = 0;
-        let titleFrameWidth = null;
+        let titleFrameWidth = 0;
 
         const inRowShouldCenterInnerFrames = true;
 
@@ -387,6 +403,49 @@ export class LayoutEngine {
             accumRowWidth = maxWidth;
         }
 
+        let frameWidth: NumericValue | null = numeric(0);
+        let frameHeight: NumericValue | null = numeric(0);
+
+        let frameXMin = numeric(0);
+        let frameYMin = numeric(0);
+
+        const frameParams = frame.frame.parameters;
+
+        // If frame component is specified, then center the contents within
+        if (frameParams.has(FrameParamKeys.SheetType)) {
+            const frameComponent = frameParams.get
+                (FrameParamKeys.SheetType) as ClassComponent;
+
+            const frameDrawing = (frameComponent.displayProp as SymbolDrawingCommands);
+
+            // Variables may be accessible by the drawing itself
+            frameDrawing.variables = combineMaps(frameComponent.parameters,
+                frameParams);
+
+            // The first rect (rect[0]) is the actual dimensions of the 
+            // sheet (A4, A5, etc.). The second rect (rect[1]) is the dimensions
+            // of the drawable area within the sheet.
+            const rects = ExtractDrawingRects(frameDrawing);
+           
+            if (rects[1]) {
+                frameWidth = milsToMM(rects[1].width);
+                frameHeight = milsToMM(rects[1].height);
+            }
+        } else {
+            // If not sheet frame, then check if width and height is defined
+            if (frame.width !== null) {
+                frameWidth = frame.width;
+            } else {
+                frameWidth = null;
+            }
+
+            if (frame.height !== null) {
+                frameHeight = frame.height;
+            } else {
+                frameHeight = null;
+            }
+        }
+
         // Always start arranging inner frames (excluding frame with title)
         // from the top left corner.
         const offsetX = frame.padding;
@@ -397,7 +456,9 @@ export class LayoutEngine {
         // This is used to determine position of the title in the frame.
         let widthForTitle: number;
 
-        if (titleFrameWidth > accumRowWidth){
+        if (frameWidth !== null) {
+            widthForTitle = frameWidth.toNumber();
+        } else if (titleFrameWidth > accumRowWidth) {
             widthForTitle = titleFrameWidth;
         } else {
             widthForTitle = accumRowWidth;
@@ -407,41 +468,47 @@ export class LayoutEngine {
             inRowShouldCenterInnerFrames &&
             titleFrameWidth !== null && titleFrameWidth > accumRowWidth) {
             
-            centeredOffsetX = toNearestGrid(titleFrameWidth / 2 - accumRowWidth / 2, gridSize);
+            centeredOffsetX = 
+                toNearestGrid(titleFrameWidth / 2 - accumRowWidth / 2, gridSize);
+        }
+
+        let title_align = HorizontalAlign.Middle;
+
+        if (frameParams.has(FrameParamKeys.TitleAlign)){
+            title_align = frameParams.get(FrameParamKeys.TitleAlign) as HorizontalAlign;
         }
 
         // Second pass arranges the items and sets the height
         innerFrames.forEach(innerFrame => {
             // Align to nearest grid
-            const { width: frameWidth, height: frameHeight }
-                = getBoundsSize(innerFrame.bounds);
+            const { width: innerFrameWidth, height: innerFrameHeight }
+                = getBoundsSize(innerFrame.bounds!);
 
             if (innerFrame.containsTitle) {
-                innerFrame.x = offsetX.add(accumX).add(
-                    toNearestGrid(widthForTitle / 2 - frameWidth / 2, gridSize));
+                // Assume title is aligned to the left
+                innerFrame.x = offsetX.add(accumX);
                 innerFrame.y = offsetY.add(accumY);
-                accumY = accumY.add(frameHeight).add(frame.gap);
+                accumY = accumY.add(innerFrameHeight).add(frame.gap);
 
             } else {
                 if (frame.direction === FramePlotDirection.Column) {
                     // Align to the center, but also to the nearest grid size.
-                    innerFrame.x = offsetX.add(accumX).add(toNearestGrid(maxWidth / 2 - frameWidth / 2, gridSize));
+                    innerFrame.x = offsetX.add(accumX).add(toNearestGrid(maxWidth / 2 - innerFrameWidth / 2, gridSize));
                     innerFrame.y = offsetY.add(accumY);
 
-                    accumY = accumY.add(frameHeight).add(frame.gap);
+                    accumY = accumY.add(innerFrameHeight).add(frame.gap);
 
                 } else if (frame.direction === FramePlotDirection.Row) {
-                    // Align to the top?
                     innerFrame.x = offsetX.add(centeredOffsetX).add(accumX);
                     innerFrame.y = offsetY.add(accumY); //+ toNearestGrid(maxHeight / 2 - frameHeight / 2, gridSize);
 
-                    accumX = accumX.add(frameWidth).add(frame.gap);
+                    accumX = accumX.add(innerFrameWidth).add(frame.gap);
                 }
             }
 
             boundPoints.push(
                 [innerFrame.x, innerFrame.y],
-                [innerFrame.x.add(frameWidth), innerFrame.y.add(frameHeight)]
+                [innerFrame.x.add(innerFrameWidth), innerFrame.y.add(innerFrameHeight)]
             );
         });
 
@@ -458,44 +525,106 @@ export class LayoutEngine {
         const contentsBounds = resizeBounds(getBoundsFromPoints(tmpBoundPoints),
             frame.padding.toNumber());
 
-        // If frame component is specified, then center the contents within
-        if (frame.frame.parameters.has(FrameParamKeys.SheetType)){
-            const frameComponent = frame.frame.parameters.get
-                                (FrameParamKeys.SheetType) as ClassComponent;
+        const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
+        const contentsHeight = contentsBounds.ymax - contentsBounds.ymin;
 
-            const frameDrawing = (frameComponent.displayProp as SymbolDrawingCommands);
-            frameDrawing.variables = combineMaps(frameComponent.parameters, 
-                frame.frame.parameters);
+        // Find the alignment options
+        let hAlign = HorizontalAlign.Middle;
+        let vAlign = VerticalAlign.Middle;
 
-            const rects = ExtractDrawingRects(frameDrawing);
-            let frameWidth = numeric(0);
-            let frameHeight = numeric(0);
+        if (frameParams.has(FrameParamKeys.HorizontalAlign)){
+            hAlign = 
+                frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;
+        }
 
-            if (rects[1]) {
-                frameWidth = milsToMM(rects[1].width);
-                frameHeight = milsToMM(rects[1].height);
+        if (frameParams.has(FrameParamKeys.VerticalAlign)){
+            vAlign = 
+                frameParams.get(FrameParamKeys.VerticalAlign) as VerticalAlign;
+        }
+
+        if (frameParams.has(FrameParamKeys.SheetType)) {
+            frameXMin = numeric(0);
+            frameYMin = numeric(0);
+        } else {
+            frameXMin = numeric(contentsBounds.xmin);
+            frameYMin = numeric(contentsBounds.ymin);
+        }
+
+        if (frameWidth === null) {
+            frameWidth = numeric(contentsWidth);
+        }
+
+        if (frameHeight === null) {
+            frameHeight = numeric(contentsHeight);
+        }
+
+        // Second pass: set the alignment of the title
+        const titleFrame = innerFrames.find(frame => {
+            return frame.containsTitle;
+        });
+
+        if (titleFrame) {
+            // Align to nearest grid
+            const { width: innerFrameWidth }
+                = getBoundsSize(titleFrame.bounds!);
+
+            // This is a title frame
+            let titleOffset = 0;
+
+            switch (title_align) {
+                case HorizontalAlign.Left:
+                    titleOffset = 0;
+                    break;
+                case HorizontalAlign.Middle:
+                    titleOffset = toNearestGrid(widthForTitle / 2 - innerFrameWidth / 2, gridSize);
+                    break;
+                case HorizontalAlign.Right:
+                    titleOffset = frameWidth!.toNumber() - innerFrameWidth;
+                    break;
             }
 
-            const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
-            const contentsHeight = contentsBounds.ymax - contentsBounds.ymin;
+            titleFrame.x = titleFrame.x.add(titleOffset);
+        }
 
-            const frameOffsetX = toNearestGrid((frameWidth.toNumber() - contentsWidth) / 2, gridSize);
-            const frameOffsetY = toNearestGrid((frameHeight.toNumber() - contentsHeight) / 2, gridSize);
 
-            innerFrames.forEach(innerFrame => {
-                // apply the offset to all the frames
-                innerFrame.x = innerFrame.x.add(frameOffsetX);
-                innerFrame.y = innerFrame.y.add(frameOffsetY);
-            });
+        let frameOffsetX = 0;
+        let frameOffsetY = 0;
 
-            frame.bounds = {
-                xmin: 0,
-                ymin: 0,
-                xmax: frameWidth.toNumber(),
-                ymax: frameHeight.toNumber(),
-            };
-        } else {
-            frame.bounds = contentsBounds;
+        switch (hAlign) {
+            case HorizontalAlign.Left:
+                frameOffsetX = 0;
+                break;
+            case HorizontalAlign.Middle:
+                frameOffsetX = toNearestGrid((frameWidth.toNumber() - contentsWidth) / 2, gridSize);
+                break;
+            case HorizontalAlign.Right:
+                frameOffsetX = toNearestGrid(frameWidth.toNumber() - contentsWidth, gridSize);
+                break;
+        }
+
+        switch (vAlign) {
+            case VerticalAlign.Top:
+                frameOffsetY = 0;
+                break;
+            case VerticalAlign.Middle:
+                frameOffsetY = toNearestGrid((frameHeight.toNumber() - contentsHeight) / 2, gridSize);
+                break;
+            case VerticalAlign.Bottom:
+                frameOffsetY = toNearestGrid(frameHeight.toNumber() - contentsHeight, gridSize);
+                break;
+        }
+
+        innerFrames.forEach(innerFrame => {
+            // apply the offset to all the frames
+            innerFrame.x = innerFrame.x.add(frameOffsetX);
+            innerFrame.y = innerFrame.y.add(frameOffsetY);
+        });
+
+        frame.bounds = {
+            xmin: frameXMin.toNumber(),
+            ymin: frameYMin.toNumber(),
+            xmax: frameXMin.toNumber() + frameWidth.toNumber(),
+            ymax: frameYMin.toNumber() + frameHeight.toNumber(),
         }
     }
 
@@ -507,9 +636,9 @@ export class LayoutEngine {
             // items must only be of type RenderFrame
             item = item as RenderFrame;
             
-            if (item.type === RenderFrameType.Elements) {
+            if (item.renderType === RenderFrameType.Elements) {
                 this.print(level, "".padStart(level * 4),
-                    'element frame, items:', item.innerItems.map(item => {
+                    '- element frame, items:', item.innerItems.map(item => {
                         if (item instanceof RenderComponent) {
                             return item.component.instanceName;
                         } else if (item instanceof RenderWire) {
@@ -518,26 +647,32 @@ export class LayoutEngine {
                         return null;
                     }));
             } else {
-                this.print(level, "".padStart(level * 4), 'container');
+                this.print(level, "".padStart(level * 4), '- container');
                 this.dumpFrame((item as RenderFrame), level + 1);
             }
         });
     }
 
-    prepareFrames(graph: Graph, subgraphInfo: SubGraphInfo[], 
+    /** 
+     * Prepare render frame objects for placement. Components will be 
+     * wrapped within element frames to simplify the frame placement flow.
+     * At the same time, extract all frame and text objects within the frames 
+     * and sub-frames.
+     */
+    private prepareFrames(graph: Graph, subgraphInfo: SubGraphInfo[], 
         frame: RenderFrame, level = 0): {
             elementFrames: RenderFrame[],
             textObjects: RenderText[] 
         } {
         
         const ignoreItems: string[] = [];
-        const textObjects = [];
-        const elementFrames = [];
+        const textObjects: RenderText[] = [];
+        const elementFrames: RenderFrame[] = [];
 
         frame.innerItems = frame.innerItems.reduce((accum, item) => {
             if (item instanceof RenderFrame) {
-                // If this is frame, then go into this frame and wrap it's 
-                // elements into element frames.
+                // If this is frame, wrap it's inner items within an 
+                // element frame.
                 const objects = 
                     this.prepareFrames(graph, subgraphInfo, item, level + 1);
                 textObjects.push(...objects.textObjects);
@@ -545,29 +680,31 @@ export class LayoutEngine {
 
                 accum.push(item);
             } else if (item instanceof RenderComponent){
-                const instanceName = item.component.instanceName;
+                const { instanceName } = item.component;
 
+                // Only if not ignored already, then create the elements
+                // frame for the subgraph containing the instance.
                 if (ignoreItems.indexOf(instanceName) === -1) {
-                    // Only if not ignored already, then create the elements
-                    // frame for the subgraph containing the instance.
-                    const subgraph = subgraphInfo.find(item => {
-                        return item.components.indexOf(instanceName) !== -1;
+                    
+                    const withinSubgraph = subgraphInfo.find(subgraphInfo => {
+                        return subgraphInfo.components.indexOf(instanceName) !== -1;
                     });
 
-                    if (subgraph !== undefined) {
-                        const tmpFrame = new RenderFrame(new Frame(-2), 
+                    if (withinSubgraph !== undefined) {
+                        const tmpFrame = new RenderFrame(
+                            new Frame(FixedFrameIds.FrameIdNotUsed), 
                             RenderFrameType.Elements);
                         tmpFrame.subgraphId = instanceName;
                         tmpFrame.innerItems = 
-                            subgraph.components.map(instanceName => {
+                            withinSubgraph.components.map(instanceName => {
                                 const [, component,] = graph.node(instanceName);
                                 return component;
                             });
 
                         // Set the size of the element frame to be the size of 
                         // the subgraph
-                        tmpFrame.bounds = subgraph.bounds;
-                        ignoreItems.push(...subgraph.components);
+                        tmpFrame.bounds = withinSubgraph.bounds;
+                        ignoreItems.push(...withinSubgraph.components);
 
                         accum.push(tmpFrame);
                         elementFrames.push(tmpFrame);
@@ -580,9 +717,23 @@ export class LayoutEngine {
             return accum;
         }, [] as RenderFrame[]);
 
+        this.checkAddFrameTitle(frame, elementFrames, textObjects, level);
+
+        return {
+            elementFrames,
+            textObjects,
+        }
+    }
+
+    /** If frame type is container and a title is specified, then add 
+     * an element frame to contain the title text object.
+     */
+    private checkAddFrameTitle(frame: RenderFrame, 
+        elementFrames: RenderFrame[], textObjects: RenderText[], level: number): void {
+        
         // If the frame has a title specified, then this is added as an 
         // element frame.
-        if (frame.type === RenderFrameType.Container) {
+        if (frame.renderType === RenderFrameType.Container) {
             const frameObject = frame.frame;
 
             // Do not draw title if this is a sheet frame
@@ -593,7 +744,8 @@ export class LayoutEngine {
                     frameObject.parameters.get(FrameParamKeys.Title) as string;
                 
                 // Add the element frame containing the text item
-                const tmpFrame = new RenderFrame(new Frame(-2),
+                const tmpFrame = new RenderFrame(
+                    new Frame(FixedFrameIds.FrameIdNotUsed),
                     RenderFrameType.Elements);
 
                 // Mark this render frame as containing only the title element,
@@ -620,7 +772,7 @@ export class LayoutEngine {
                 textObject.x = numeric(0);
                 textObject.y = numeric(0);
 
-                // Add as first element
+                // Add as first element within the frame
                 frame.innerItems.splice(0, 0, tmpFrame);
 
                 this.printLevel(level, frame, 'added text', tmpFrame);
@@ -630,11 +782,6 @@ export class LayoutEngine {
                 // Add frame to the start
                 elementFrames.splice(0, 0, tmpFrame);
             }
-        }
-
-        return {
-            elementFrames,
-            textObjects,
         }
     }
 
@@ -658,249 +805,245 @@ export class LayoutEngine {
 
         // This will be used to catch all other components that are not explicitly
         // within a defined frame.
-        const baseRenderFrame = new RenderFrame(new Frame(-1));
+        const baseFrame = new RenderFrame(new Frame(FixedFrameIds.BaseFrame));
 
         // Tracks the current frame that is active as the sequence actions
         // are executed.
-        const frameStack: RenderFrame[] = [baseRenderFrame];
+        const frameStack: RenderFrame[] = [baseFrame];
         
         // Holds all frames that are encountered
-        const containerFrames: RenderFrame[] = [baseRenderFrame];
+        const containerFrames: RenderFrame[] = [baseFrame];
 
         // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
-        for (let i = 0; i < sequence.length; i++) {
-    
-            const action = sequence[i][0];
+        sequence.forEach((sequenceStep, index) => {
+            const action = sequenceStep[0];
             let tmpComponent: RenderComponent;
 
             // Component related actions
-            if (action === SequenceAction.At || action === SequenceAction.To) {
-                this.print(...sequence[i]);
+            switch(action) {
+                case SequenceAction.To:
+                case SequenceAction.At: {
+                    this.print(...sequenceStep);
 
-                // Size all elements first
-                const component = sequence[i][1] as ClassComponent;
-                const pin = sequence[i][2] as number;
+                    const [, component, pin] =
+                        sequenceStep as [string, ClassComponent, number];
 
-                const tmpInstanceName = component.instanceName;
-    
-                if (!graph.hasNode(tmpInstanceName)) {
-                    this.print('create instance', tmpInstanceName);
+                    const tmpInstanceName = component.instanceName;
 
-                    const { displayProp = null, 
-                        widthProp = null, heightProp = null} = component;
-                    
-                    let tmpSymbol: SymbolGraphic;
+                    if (!graph.hasNode(tmpInstanceName)) {
+                        this.print('create instance', tmpInstanceName);
 
-                    if (displayProp instanceof SymbolDrawing) {
-                        tmpSymbol = new SymbolPlaceholder(displayProp);
-                        tmpSymbol.drawing.logger = this.logger;
-                            
-                    }  else {
-                        const symbolPinDefinitions = generateLayoutPinDefinition(component);
+                        const { displayProp = null,
+                            widthProp = null, heightProp = null } = component;
 
-                        if (component.typeProp === ComponentTypes.module){
-                            tmpSymbol = new SymbolCustomModule(symbolPinDefinitions, 
-                                component.pinsMaxPositions);
+                        let tmpSymbol: SymbolGraphic;
+
+                        if (displayProp instanceof SymbolDrawing) {
+                            tmpSymbol = new SymbolPlaceholder(displayProp);
+                            tmpSymbol.drawing.logger = this.logger;
+
                         } else {
-                            tmpSymbol = new SymbolCustom(symbolPinDefinitions, 
-                                component.pinsMaxPositions);
+                            const symbolPinDefinitions = generateLayoutPinDefinition(component);
+
+                            if (component.typeProp === ComponentTypes.module) {
+                                tmpSymbol = new SymbolCustomModule(symbolPinDefinitions,
+                                    component.pinsMaxPositions);
+                            } else {
+                                tmpSymbol = new SymbolCustom(symbolPinDefinitions,
+                                    component.pinsMaxPositions);
+                            }
+                        }
+
+                        applyComponentParamsToSymbol(component, tmpSymbol);
+
+                        if (component.parameters.has(ParamKeys.angle)) {
+                            const value = (
+                                component.parameters.get(ParamKeys.angle) as NumericValue
+                            ).toNumber();
+
+                            tmpSymbol.angle = value;
+                        }
+
+                        if (component.parameters.has(ParamKeys.flipX)) {
+                            // either 1 or 0
+                            tmpSymbol.flipX =
+                                component.parameters.get(ParamKeys.flipX) as number;
+                        }
+
+                        if (component.parameters.has(ParamKeys.flipY)) {
+                            // either 1 or 0
+                            tmpSymbol.flipY =
+                                component.parameters.get(ParamKeys.flipY) as number;
+                        }
+
+                        if (tmpSymbol instanceof SymbolCustom) {
+                            if (widthProp) {
+                                tmpSymbol.bodyWidth = milsToMM(widthProp);
+                            }
+                            if (heightProp) {
+                                tmpSymbol.bodyHeight = milsToMM(heightProp);
+                            }
+                        }
+
+                        // Draw symbol in memory to determine the size/bounds.
+                        tmpSymbol.refreshDrawing();
+
+                        const { width: useWidth, height: useHeight } = tmpSymbol.size();
+
+                        tmpComponent = new RenderComponent(component, useWidth, useHeight);
+                        tmpComponent.symbol = tmpSymbol;
+
+                        // Record the sequence number (index of the array) to determine priority
+                        graph.setNode(tmpInstanceName, [RenderItemType.Component, tmpComponent, index]);
+
+                        // All components must belong within a frame.
+                        const currentFrame = frameStack[frameStack.length - 1];
+                        currentFrame && currentFrame.innerItems.push(tmpComponent);
+                    }
+
+                    if (action === SequenceAction.To && previousNode && previousPin) {
+                        this.setGraphEdge(graph, previousNode, tmpInstanceName,
+                            makeEdgeValue(previousNode, previousPin, tmpInstanceName, pin, index));
+                    }
+
+                    previousNode = tmpInstanceName
+                    previousPin = pin;
+                    break;
+                }
+
+                case SequenceAction.Wire: {
+                    // draw wires
+                    const [, wireId, wireSegments] =
+                        sequenceStep as [SequenceAction.Wire, number, WireSegment[]];
+
+                    const wire = new RenderWire(numeric(0), numeric(0), wireSegments);
+                    wire.id = wireId;
+                    let useNetName: string | null = null;
+
+                    if (previousNode !== null) {
+                        const [prevNodeType, prevNodeItem] = graph.node(previousNode);
+                        if (prevNodeType === RenderItemType.Component) {
+                            // Find the net of the wire
+                            const matchingItem = nets.find(([comp, pin]) => {
+                                return comp.instanceName === previousNode && pin === previousPin;
+                            });
+
+                            useNetName = matchingItem !== undefined ? matchingItem[2].name : null;
+
+                        } else if (prevNodeType === RenderItemType.Wire) {
+                            useNetName = (prevNodeItem as RenderWire).netName;
                         }
                     }
-    
-                    applyComponentParamsToSymbol(component, tmpSymbol);
-    
-                    // Set rotation of object
-                    let didSetAngle = false;
 
-                    if (component.parameters.has(ParamKeys.angle)) {
-                        didSetAngle = true;
-                        const value = (
-                            component.parameters.get(ParamKeys.angle) as NumericValue
-                        ).toNumber();
+                    wire.netName = useNetName!;
+                    const wireName = getWireName(wire.id);
 
-                        tmpSymbol.angle = value;
-                    }
-   
-                    if (component.parameters.has(ParamKeys.flipX)){
-                        // either 1 or 0
-                        tmpSymbol.flipX = 
-                            component.parameters.get(ParamKeys.flipX) as number; 
-                    }
-
-                    if (component.parameters.has(ParamKeys.flipY)){
-                        // either 1 or 0
-                        tmpSymbol.flipY = 
-                            component.parameters.get(ParamKeys.flipY) as number; 
-                    }
-
-                    if (tmpSymbol instanceof SymbolCustom) {
-                        if (widthProp) {
-                            tmpSymbol.bodyWidth = milsToMM(widthProp);
-                        }
-                        if (heightProp) {
-                            tmpSymbol.bodyHeight = milsToMM(heightProp);
-                        }
-                    }
-    
-                    if (!didSetAngle && component.parameters.has('_addDirection')){
-                        // If there is an _addDirection specified, then the angle
-                        // must be updated accordingly. If angle is already set,
-                        // then skip this.
-                        tmpSymbol.refreshDrawing(false);
-
-                        tmpSymbol.angle = calculateSymbolAngle(
-                            tmpSymbol,
-                            component.parameters.get('_addPin') as number,
-                            component.parameters.get('_addDirection') as string,
-                        );
-                    }
-
-                    // Draw symbol in memory to determine the size/bounds.
-                    tmpSymbol.refreshDrawing();
-    
-                    const { width: useWidth, height: useHeight } = tmpSymbol.size();
-
-                    tmpComponent = new RenderComponent(component, useWidth, useHeight);
-                    tmpComponent.symbol = tmpSymbol;
-    
                     // Record the sequence number to determine priority
-                    graph.setNode(tmpInstanceName, [RenderItemType.Component, tmpComponent, i]);
+                    graph.setNode(wireName, [RenderItemType.Wire, wire, index]);
 
-                    // All components must belong within a frame.
-                    const currentFrame = frameStack[frameStack.length-1];
-                    currentFrame && currentFrame.innerItems.push(tmpComponent);
-                }
-    
-                if (action === SequenceAction.To) {
-                    this.setGraphEdge(graph, previousNode, tmpInstanceName,
-                        makeEdgeValue(previousNode, previousPin, tmpInstanceName, pin, i));
-                }
-    
-                previousNode = tmpInstanceName
-                previousPin = pin;
-    
-            } else if (action === SequenceAction.Wire) {
-                // draw wires
-                const [, wireId, wireSegments] = 
-                    sequence[i] as [SequenceAction.Wire, number, WireSegment[]];
+                    // Connect previous node to pin:0 of the wire
+                    this.setGraphEdge(graph, previousNode, wireName,
+                        makeEdgeValue(previousNode, previousPin, wireName, 0, index));
 
-                const wire = new RenderWire(numeric(0), numeric(0), wireSegments);
-                wire.id = wireId;
-                let useNetName = null;
+                    previousNode = wireName;
+                    previousPin = 1;
 
-                if (previousNode !== null) {
-                    const [prevNodeType, prevNodeItem] = graph.node(previousNode);
-                    if (prevNodeType === RenderItemType.Component) {
-                        // Find the net of the wire
-                        const matchingItem = nets.find(([comp, pin]) => {
-                            return comp.instanceName === previousNode && pin === previousPin;
-                        });
-    
-                        useNetName = matchingItem !== undefined ? matchingItem[2].name : null;
-    
-                    } else if (prevNodeType === RenderItemType.Wire) {
-                        useNetName = (prevNodeItem as RenderWire).netName;
-                    }
-                }
-    
-                wire.netName = useNetName;
-                const wireName = getWireName(wire.id);
-    
-                // Record the sequence number to determine priority
-                graph.setNode(wireName, [RenderItemType.Wire, wire, i]);
-    
-                // Connect previous node to pin:0 of the wire
-                this.setGraphEdge(graph, previousNode, wireName, 
-                    makeEdgeValue(previousNode, previousPin, wireName, 0, i));
+                    // Only for debugging purposes
+                    const wireSegmentsInfo = wireSegments.map(item => {
+                        const tmp: {
+                            direction: string,
+                            value: number,
+                            valueXY?: [x: number, y: number],
+                            until?: [instanceName: string, pin: number]
+                        } = {
+                            direction: item.direction,
+                            value: item.value,
+                        };
 
-                previousNode = wireName;
-                previousPin = 1;
-                
-                const wireSegmentsInfo = wireSegments.map(item => {
-                    const tmp: {
-                        direction: string,
-                        value: number,
-                        valueXY?: [x: number, y: number],
-                        until?: [instanceName: string, pin: number]
-                    } = {
-                        direction: item.direction,
-                        value: item.value,
-                    };
+                        if (item.valueXY) {
+                            tmp.valueXY = item.valueXY;
+                        }
 
-                    if (item.valueXY) {
-                        tmp.valueXY = item.valueXY;
-                    }
+                        if (item.until) {
+                            tmp.until = [item.until[0].toString(), item.until[1]];
+                        }
 
-                    if (item.until) {
-                        tmp.until = [item.until[0].toString(), item.until[1]];
-                    }
+                        return tmp;
+                    });
 
-                    return tmp;
-                });
-
-                this.print(SequenceAction.Wire, wireId, 
-                    JSON.stringify(wireSegmentsInfo));
-                
-            } else if (action === SequenceAction.WireJump) {
-                this.print(...sequence[i]);
-                const wireId = sequence[i][1] as number;
-                const wireName = getWireName(wireId);
-
-                let wirePin = 1;
-
-                if (sequence[i].length === 3) {
-                    wirePin = sequence[i][2] as number;
+                    this.print(SequenceAction.Wire, wireId,
+                        JSON.stringify(wireSegmentsInfo));
+                    break;
                 }
 
-                previousNode = wireName;
-                previousPin = wirePin;              
-            } else if (action === SequenceAction.Frame){
-                const [, frameObject, frameAction] = sequence[i];
+                case SequenceAction.WireJump: {
+                    this.print(...sequenceStep);
+                    const wireId = sequenceStep[1] as number;
+                    const wireName = getWireName(wireId);
 
-                if (frameAction === FrameAction.Enter){
-                    const prevFrame = frameStack[frameStack.length-1];
+                    let wirePin = 1;
 
-                    const newFrame = new RenderFrame(frameObject);
-
-                    if (frameObject.parameters.has(FrameParamKeys.Direction)){
-                        newFrame.direction = 
-                            frameObject.parameters.get(FrameParamKeys.Direction);
+                    if (sequenceStep.length === 3) {
+                        wirePin = sequenceStep[2] as number;
                     }
 
-                    if (frameObject.parameters.has(FrameParamKeys.Padding)){
-                        newFrame.padding = 
-                            frameObject.parameters.get(FrameParamKeys.Padding);
-                    }
+                    previousNode = wireName;
+                    previousPin = wirePin;        
+                    break;
+                }
 
-                    if (frameObject.parameters.has(FrameParamKeys.Border)){
-                        newFrame.borderWidth = 
-                            frameObject.parameters.get(FrameParamKeys.Border);
-                    }
+                case SequenceAction.Frame: {
+                    const [, frameObject, frameAction] = sequenceStep;
 
-                    if (frameObject.parameters.has(FrameParamKeys.Width)) {
-                        newFrame.width =
-                            frameObject.parameters.get(FrameParamKeys.Width);
-                    }
+                    if (frameAction === FrameAction.Enter){
+                        const prevFrame = frameStack[frameStack.length-1];
 
-                    if (frameObject.parameters.has(FrameParamKeys.Height)) {
-                        newFrame.height =
-                            frameObject.parameters.get(FrameParamKeys.Height);
-                    }
+                        const newFrame = new RenderFrame(frameObject);
 
-                    containerFrames.push(newFrame);
-                    frameStack.push(newFrame);
+                        if (frameObject.parameters.has(FrameParamKeys.Direction)){
+                            newFrame.direction = 
+                                frameObject.parameters.get(FrameParamKeys.Direction);
+                        }
 
-                    // If the previous frame exists, then add the new frame
-                    // into the inner items of the previous frame. This allows
-                    // the frame hierarchy to be tracked.
-                    prevFrame && prevFrame.innerItems.push(newFrame);
+                        if (frameObject.parameters.has(FrameParamKeys.Padding)){
+                            newFrame.padding = milsToMM(
+                                frameObject.parameters.get(FrameParamKeys.Padding)
+                            );
+                        }
 
-                } else if (frameAction === FrameAction.Exit) {
-                    frameStack.pop();
+                        if (frameObject.parameters.has(FrameParamKeys.Border)){
+                            newFrame.borderWidth = 
+                                frameObject.parameters.get(FrameParamKeys.Border);
+                        }
+
+                        if (frameObject.parameters.has(FrameParamKeys.Width)) {
+                            newFrame.width = milsToMM(
+                                frameObject.parameters.get(FrameParamKeys.Width)
+                            );
+                        }
+
+                        if (frameObject.parameters.has(FrameParamKeys.Height)) {
+                            newFrame.height = milsToMM(
+                                frameObject.parameters.get(FrameParamKeys.Height)
+                            );
+                        }
+
+                        containerFrames.push(newFrame);
+                        frameStack.push(newFrame);
+
+                        // If the previous frame exists, then add the new frame
+                        // into the inner items of the previous frame. This allows
+                        // the frame hierarchy to be tracked.
+                        prevFrame && prevFrame.innerItems.push(newFrame);
+
+                    } else if (frameAction === FrameAction.Exit) {
+                        frameStack.pop();
+                    }   
+                    break;
                 }
             }
-        }
+        });
 
         return {
             graph,
@@ -908,18 +1051,17 @@ export class LayoutEngine {
         }
     }
 
-    setGraphEdge(graph: Graph, node1: string, node2: string,
+    private setGraphEdge(graph: Graph, node1: string, node2: string,
         edgeValue: EdgeValue): void {
         graph.setEdge(node1, node2, edgeValue);
     }
 
-    sizeSubGraphs(graph: Graph): SubGraphInfo[] {
-        
-        // Layouts out all nodes within a subgraph and determines the size
-        // of the subgraph.
-
+    /** Lays out nodes within a subgraph and determines the size of the subgraphs */
+    private sizeSubGraphs(graph: Graph): SubGraphInfo[] {
+        // Gets all the subgraphs within the circuit graph. Subgraphs are 
+        // standalone graphs.
         const subGraphs = alg.components(graph);
-        const subGraphsStarts = [];
+        const subGraphsStarts: string[] = [];
 
         this.print('===== placing subgraphs =====');
         this.print('number of subgraphs: ', subGraphs.length);
@@ -927,14 +1069,14 @@ export class LayoutEngine {
         const subgraphInfo: SubGraphInfo[] = [];
 
         // Find the starting point of the graph
-        subGraphs.forEach(innerGraph => {
+        subGraphs.forEach(subGraph => {
             // Find node with the lowest sequence number and used 
             // as the starting node
 
             let smallestNodeIdLevel = Number.POSITIVE_INFINITY;
-            let smallestNodeId: string | null = null;
+            let smallestNodeId = "";
 
-            innerGraph.forEach(nodeId => {
+            subGraph.forEach(nodeId => {
                 const [, , sequenceId] = graph.node(nodeId);
 
                 if (sequenceId < smallestNodeIdLevel) {
@@ -942,7 +1084,7 @@ export class LayoutEngine {
                     smallestNodeId = nodeId;
                 }
             });
-
+            
             subGraphsStarts.push(smallestNodeId);
         });
 
@@ -984,11 +1126,12 @@ export class LayoutEngine {
     }
 
 
-    walkAndPlaceGraph(graph: Graph, firstNodeId: string, 
+    /**
+     * Go through all edges in the main graph and for each edge that contains
+     * nodes within the subgraph, then try and place the nodes in the subgraph.
+     */
+    private walkAndPlaceGraph(graph: Graph, firstNodeId: string, 
         subgraphNodes: string[]): void {
-        // Go through all edges in the main graph and for each edge that contains
-        // nodes within the subgraph, then try and place the nodes in the subgraph.
-
         const allEdges = graph.edges();
 
         const subgraphEdges = allEdges.reduce((accum, edge) => {
@@ -1001,11 +1144,7 @@ export class LayoutEngine {
             return accum;
         }, [] as Edge[]);
 
-        if (this.placeSubgraphVersion === 1){
-            this.placeSubgraph(graph, firstNodeId, subgraphEdges);
-        } else if (this.placeSubgraphVersion === 2) {
-            this.placeSubgraphV2(graph, firstNodeId, subgraphEdges);
-        }
+        this.placeSubgraphV2(graph, firstNodeId, subgraphEdges);
     }
 
     placeSubgraphV2(graph:Graph, firstNodeId: string,
@@ -1274,86 +1413,6 @@ export class LayoutEngine {
 
         this.print('removed other origin');
         this.print('merge completed');
-    }
-
-
-    /**
-     * @deprecated
-     */
-    placeSubgraph(graph: Graph, firstNodeId: string,
-        subgraphEdges: Edge[]): void {
-
-        let firstNodePlaced = false;
-
-        subgraphEdges.forEach(edge => {
-            const [nodeId1, pin1, nodeId2, pin2]:
-                [string, number, string, number] = graph.edge(edge);
-
-            const [, node1]: [string, RenderItem] = graph.node(nodeId1);
-            const [, node2]: [string, RenderItem] = graph.node(nodeId2);
-
-            if (nodeId1 === firstNodeId && !firstNodePlaced) {
-                this.print('first node placed at origin');
-                this.placeNodeAtPosition(numeric(0), numeric(0), node1, pin1);
-                firstNodePlaced = true;
-                node1.isFloating = false;
-            }
-
-            let fixedNode: RenderItem;
-            let fixedNodePin: number;
-
-            let floatingNode: RenderItem;
-            let floatingNodePin: number;
-
-            this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
-                '[', node2, pin2, node2.isFloating, ']');
-
-            if (!node1.isFloating && node2.isFloating) {
-                fixedNode = node1;
-                fixedNodePin = pin1;
-
-                floatingNode = node2;
-                floatingNodePin = pin2;
-
-            } else if (node1.isFloating && !node2.isFloating) {
-                fixedNode = node2;
-                fixedNodePin = pin2;
-
-                floatingNode = node1;
-                floatingNodePin = pin1;
-
-            } else if (node1.isFloating && node2.isFloating) {
-                this.print('both nodes are floating', node1, 'pin', pin1,
-                    'and', node2, 'pin', pin2);
-                node1.floatingRelativeTo.push([pin1, nodeId2, pin2]);
-                node2.floatingRelativeTo.push([pin2, nodeId1, pin1]);
-            }
-
-            if (fixedNode && floatingNode){
-                this.print('place floating node', floatingNode, 'pin', floatingNodePin, 
-                    'to', fixedNode, 'pin', fixedNodePin);
-
-                const [x, y] = getNodePositionAtPin(fixedNode, fixedNodePin);
-                this.placeNodeAtPosition(x, y, floatingNode, floatingNodePin);
-                floatingNode.isFloating = false;
-
-                this.placeFloatingItems(graph, floatingNode);
-            }
-
-            [node1, node2].forEach(item => {
-                if (item instanceof RenderWire){
-
-                    if (item.isEndAutoLength()){
-                        const [instance, pin] = item.getEndAuto();
-                        const [, targetNode]:[string, RenderItem] = 
-                            graph.node(instance.instanceName);
-
-                        const [untilX, untilY] = getNodePositionAtPin(targetNode, pin);
-                        item.setEndAuto(untilX, untilY);
-                    }
-                } 
-            });
-        });
     }
 
     translateNodeBy(offsetX: number, offsetY: number, item: RenderItem): void {
@@ -1641,8 +1700,14 @@ export class RenderObject {
 
 
 export class RenderWire extends RenderObject {
+    /** Uniquely identifies each wire */
     id: number;
+
     segments: WireSegment[] = [];
+
+    /** Wire segments are flattened into the actual (x,y) positions that
+     * define the wire. The (x,y) positions are relative to the (x,y) position
+     * of the wire itself. */
     points:{x: number, y:number}[] = [];
 
     // Net name is used to determine if wires
@@ -1908,7 +1973,11 @@ export class RenderText extends RenderObject {
  * Frame that will be rendered. Can contain other frames and components.
  */
 export class RenderFrame extends RenderObject {
+    
+    /** Bounds of the render frame */
     bounds: BoundBox | null = null;
+
+    /** Holds the parameters of the frame that this RenderFRame is for */
     frame: Frame;
 
     /**
@@ -1917,8 +1986,10 @@ export class RenderFrame extends RenderObject {
      */
     innerItems: (RenderComponent | RenderFrame | RenderText)[] = [];
     
-    
+    /** x offset relative to the parent frame's origin */
     translateX = 0;
+
+    /** y offset relative to the parent frame's origin */
     translateY = 0;
 
     /** Frame inner padding (between frame border and inner elements) */
@@ -1935,12 +2006,15 @@ export class RenderFrame extends RenderObject {
     // If width and height are null, then frame size is determined
     // based on internal contents
 
-    width: number | null = null; // mils
-    height: number | null = null; // mils
+    width: NumericValue | null = null;  // units: mm
+    height: NumericValue | null = null; // units: mm
 
     subgraphId = "";
 
-    type: RenderFrameType;
+    /** Indicates if this RenderFrame is a container frame, or a frame that 
+     *   holds sub components/frames
+     */
+    renderType: RenderFrameType;
 
     /** If true, then frame only contains text for frame title. */
     containsTitle = false;
@@ -1948,14 +2022,14 @@ export class RenderFrame extends RenderObject {
     constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
         super();
         this.frame = frame;
-        this.type = type;
+        this.renderType = type;
     }
 
     toString(): string {
         let name = "";
-        if (this.type === RenderFrameType.Container) {
+        if (this.renderType === RenderFrameType.Container) {
             name = 'container_' + this.frame.frameId;
-        } else if (this.type === RenderFrameType.Elements) {
+        } else if (this.renderType === RenderFrameType.Elements) {
             name = 'elements_' + this.subgraphId;
         }
 
@@ -1964,7 +2038,13 @@ export class RenderFrame extends RenderObject {
     }
 }
 
+/** The RenderFrame type simplifies the frame layout process. Instead of 
+ * having to consider each inner item of the frame, all inner items are grouped
+ * into an element frame instead. The layout flow only needs to consider this
+ * element frame.
+ */
 export enum RenderFrameType {
+    /** Only holds element frames or containers */
     Container = 1,
 
     /** Holds subgraphs/frames/components, etc. */
@@ -2046,9 +2126,16 @@ enum RenderItemType {
     Component = 'component',
 }
 
+/** Holds information for a subgraph. 
+ * A subgraph cannot contain further subgraphs*/
 type SubGraphInfo = {
+    /** This is the starting node of the entire subgraph */
     firstNodeId: string;
+
+    /** Instance names of the components within this subgraph */
     components: string[];
+
+    /** Dimensions of the subgraph */
     bounds: BoundBox;
 }
 

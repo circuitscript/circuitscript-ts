@@ -19,6 +19,11 @@ export class Frame {
     }
 }
 
+export enum FixedFrameIds {
+    BaseFrame = -1,
+    FrameIdNotUsed = -2
+}
+
 export enum FrameParamKeys {
     Title = 'title',
     Direction = 'direction',
@@ -32,6 +37,11 @@ export enum FrameParamKeys {
 
     // Same parameter is used in 'document' and 'sheet(frame)' objects
     SheetType = 'sheet_type',
+
+    TitleAlign = 'title_align',
+
+    HorizontalAlign = 'align',
+    VerticalAlign = 'valign',
 
     SheetNumber = 'sheet_number',   // Current sheet number
     SheetTotal = 'sheet_total',     // Total number of sheets

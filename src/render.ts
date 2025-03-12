@@ -14,14 +14,14 @@ import {
 } from "./layout.js";
 import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
 import {
-    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, ParamKeys, RenderFlags, defaultFont, defaultGridSizeUnits,
+    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, ParamKeys, RenderFlags, defaultGridSizeUnits,
     defaultPageSpacingMM,
     defaultWireLineWidth, fontDisplayScale,
     junctionSize
 } from './globals.js';
 import { NumericValue } from './objects/ParamDefinition.js';
 import { BoundBox, combineMaps, getBoundsSize } from './utils.js';
-import { getPaperSize, milsToMM, PaperGridReferences } from './helpers.js';
+import { getPaperSize, milsToMM } from './helpers.js';
 import SVGtoPDF from 'svg-to-pdfkit';
 import { FrameParamKeys } from './objects/Frame.js';
 import { SymbolPlaceholder } from './draw_symbols.js';
@@ -337,9 +337,9 @@ function generateSVGChild(canvas: Svg | G,
             drawSheetFrameBorder(frameGroup, item);
         } else {
             if (borderWidth.toNumber() > 0) {
-                if (item.type === RenderFrameType.Container) {
+                if (item.renderType === RenderFrameType.Container) {
                     strokeColor = '#111';
-                } else if (item.type === RenderFrameType.Elements) {
+                } else if (item.renderType === RenderFrameType.Elements) {
                     strokeColor = '#aaa';
                     if (!RenderFlags.ShowElementFrames) {
                         return;

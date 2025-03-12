@@ -53,6 +53,9 @@ function hasRemainder(value: number, value2: number): number {
     return diff;
 }
 
+/** Given an input bounding box, returns a bounding box
+ *  such that all edges are aligned with the grid size provided.
+ */
 export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
 
     // These extra values force the bounds to be expanded if it is already

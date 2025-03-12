@@ -58,11 +58,16 @@ export class ExecutionScope {
     // Copies are the same component electrically, but different symbols.
     copyIDs: Map<string, number> = new Map();
 
-    // Determines how components are added/joined on the graph graphically.
-    // This is very important in "building" up the graph
-    // according to the user's order.
-    sequence: any[] = [];
-    
+    /** circuitscript code is converted into a sequence of smaller execution steps
+     * to determine how components are added/joined into the graph. This is important
+     * to ensure that the graph construction is done according to user's order.
+     * 
+     * This allows the implementation of the parser/visitor/executor engine to 
+     * be separate from the layout engine. The layout engine only needs to 
+     * parse the sequence to generate the desired circuit layout.
+     */
+    sequence: SequenceItem[] = [];
+
     constructor(scopeId: number) {
         this.scopeId = scopeId;
     }

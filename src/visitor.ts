@@ -1591,6 +1591,10 @@ export class ParserVisitor extends BaseVisitor {
         return netlist;
     }
 
+    /** 
+     * Returns the sequence of commands in the script and the final list of
+     * nets generated when executed.
+     */
     getGraph(): {sequence: any[], nets: ComponentPinNetPair[]} {
         const executor = this.getExecutor();
         const fullSequence = executor.scope.sequence;
