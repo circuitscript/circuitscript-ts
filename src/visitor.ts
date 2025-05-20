@@ -347,8 +347,8 @@ export class ParserVisitor extends BaseVisitor {
                     const [centerX, centerY, width, height] = positionParams as NumericValue[];
 
                     // Keep in original user-land units
-                    const newX = centerX.sub(width.div(2));
-                    const newY = centerY.sub(height.div(2));
+                    const newX = centerX.sub(width.half());
+                    const newY = centerY.sub(height.half());
                     usePositionParams = [newX, newY, width, height];
                 }
 

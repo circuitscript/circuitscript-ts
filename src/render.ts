@@ -19,7 +19,7 @@ import {
     defaultWireLineWidth, fontDisplayScale,
     junctionSize
 } from './globals.js';
-import { NumericValue } from './objects/ParamDefinition.js';
+import { numeric, NumericValue } from './objects/ParamDefinition.js';
 import { BoundBox, combineMaps, getBoundsSize } from './utils.js';
 import { getPaperSize, milsToMM } from './helpers.js';
 import SVGtoPDF from 'svg-to-pdfkit';
@@ -299,10 +299,16 @@ function generateSVGChild(canvas: Svg | G,
                 .fill('none');
         });
 
+        const halfJunctionSize = junctionSize.half();
+
         intersectPoints.forEach(point => {
-            const [x, y, count] = point;
-            mergedWireGroup.circle(junctionSize)
-                            .translate(x - junctionSize/2, y - junctionSize/2)
+            const [x, y, ] = point;
+
+            const translateX = numeric(x).sub(halfJunctionSize);
+            const translateY = numeric(y).sub(halfJunctionSize);
+
+            mergedWireGroup.circle(junctionSize.toNumber())
+                            .translate(translateX.toNumber(), translateY.toNumber())
                             .fill(ColorScheme.JunctionColor)
                             .stroke('none');
                             
@@ -385,18 +391,18 @@ function drawGrid(group: G,
     // If extend grid is true, then draw outside of the canvas size
     const extraValue = extendGrid ? 1 : 0;
 
-    const gridStartX = (Math.floor(xmin / gridSize) - extraValue) * gridSize;
-    const gridStartY = (Math.floor(ymin / gridSize) - extraValue) * gridSize;
+    const gridStartX = (numeric(Math.floor(xmin / gridSize)).sub(extraValue)).mul(gridSize);
+    const gridStartY = (numeric(Math.floor(ymin / gridSize)).sub(extraValue)).mul(gridSize);
 
     const gridEndX = extendGrid
-        ? (Math.ceil(xmax / gridSize) + extraValue) * gridSize
-        : (xmax - xmin);
+        ? (numeric(Math.ceil(xmax / gridSize)).add(extraValue)).mul(gridSize)
+        : (numeric(xmax).sub(xmin));
 
     const gridEndY = extendGrid
-        ? (Math.ceil(ymax / gridSize) + extraValue) * gridSize
-        : (ymax - ymin);
+        ? (numeric(Math.ceil(ymax / gridSize)).add(extraValue)).mul(gridSize)
+        : (numeric(ymax).sub(ymin));
 
-    const numCols = Math.floor((gridEndX - gridStartX) / gridSize)
+    const numCols = Math.floor(gridEndX.sub(gridStartX).div(gridSize).toNumber())
         + (extendGrid ? 1 : 0);
     // const numRows = Math.ceil((gridEndY - gridStartY) / gridSize);
 
@@ -407,21 +413,23 @@ function drawGrid(group: G,
         .stroke('none').fill('blue');
 
     const lines = [];
-    const smallOffset = milsToMM(3).toNumber();
+    const smallOffset = milsToMM(3);
 
-    const startY = gridStartY - smallOffset/2;
-    const endY = gridEndY + smallOffset;
+    const startY = gridStartY.sub(smallOffset.half());
+    const endY = gridEndY.add(smallOffset);
+
+    const numericGridSize = numeric(gridSize);
 
     for (let i = 0; i < numCols; i++) {
-        const startX = gridStartX + i * gridSize;
-        lines.push(`M ${startX} ${startY} L ${startX} ${endY}`);
+        const startX = gridStartX.add(numericGridSize.mul(i)).toNumber();
+        lines.push(`M ${startX} ${startY.toNumber()} L ${startX} ${endY.toNumber()}`);
     }
 
     const strokeSize = milsToMM(3);
     group.addClass('grid')
         .path(lines.join(" "))
         .attr({
-            'stroke-dasharray': `${strokeSize.toNumber()},${gridSize-strokeSize.toNumber()}`,
+            'stroke-dasharray': `${strokeSize.toNumber()},${numericGridSize.sub(strokeSize).toNumber()}`,
         })
         .stroke({
             width: strokeSize.toNumber(),

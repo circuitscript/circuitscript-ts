@@ -166,8 +166,8 @@ export abstract class SymbolGraphic {
         const originSize = milsToMM(10)
         group.circle(originSize.toNumber())
             .translate(
-                originSize.neg().div(2).toNumber(), 
-                originSize.neg().div(2).toNumber())
+                originSize.neg().half().toNumber(), 
+                originSize.neg().half().toNumber())
             .fill('red')
             .stroke('none');
 
@@ -946,8 +946,11 @@ export class SymbolCustom extends SymbolGraphic {
         // drawing.addSetFillColor(ColorScheme.BodyColor);
 
         drawing.addSetLineWidth(numeric(5));
-        drawing.addRectMM(numeric(0), numeric(0), bodyWidth, bodyHeight);
 
+        const xBody = bodyWidth.half().neg();
+        const yBody = bodyHeight.half().neg();
+
+        drawing.addRectMM(xBody, yBody, bodyWidth, bodyHeight);
         this.generateDrawingPins(drawing, bodyWidth, bodyHeight,
             {
                 left: leftPins, right: rightPins, top: topPins, bottom: bottomPins
@@ -982,14 +985,14 @@ export class SymbolCustom extends SymbolGraphic {
             top: topPins, bottom: bottomPins} = pins;
 
         // Setup the pins
-        const leftPinStart = bodyWidthMM.neg().div(2);
-        const rightPinStart = bodyWidthMM.div(2);
+        const leftPinStart = bodyWidthMM.neg().half();
+        const rightPinStart = bodyWidthMM.half();
 
-        const topPinStart = bodyHeightMM.neg().div(2);
-        const bottomPinStart = bodyHeightMM.div(2);
+        const topPinStart = bodyHeightMM.neg().half();
+        const bottomPinStart = bodyHeightMM.half();
 
-        const pinStartY = bodyHeightMM.neg().div(2);
-        const pinStartX = bodyWidthMM.neg().div(2);
+        const pinStartY = bodyHeightMM.neg().half();
+        const pinStartX = bodyWidthMM.neg().half();
 
         const tmpPinSpacing = this.pinSpacing.toNumber();
 
@@ -1092,8 +1095,8 @@ export class SymbolCustom extends SymbolGraphic {
 
         const instanceName = drawing.variables.get('refdes');
         instanceName && drawing.addLabel(
-            bodyWidthMM.neg().div(2), 
-            bodyHeightMM.neg().div(2).sub(milsToMM(20)
+            bodyWidthMM.neg().half(), 
+            bodyHeightMM.neg().half().sub(milsToMM(20)
         ), instanceName, {
             fontSize: numeric(CustomSymbolRefDesSize),
             anchor: HorizontalAlign.Left,
@@ -1105,8 +1108,8 @@ export class SymbolCustom extends SymbolGraphic {
             const labelValue = drawing.variables.get(key);
             if (labelValue !== undefined){
                 drawing.addLabel(
-                    bodyWidthMM.neg().div(2), 
-                    bodyHeightMM.div(2).add(milsToMM(20)), 
+                    bodyWidthMM.neg().half(), 
+                    bodyHeightMM.half().add(milsToMM(20)), 
                     labelValue, {
                     fontSize: numeric(CustomSymbolParamTextSize),
                     anchor: HorizontalAlign.Left,
@@ -1193,14 +1196,14 @@ export class SymbolCustomModule extends SymbolCustom {
         // Values should already be in mm
 
         // Setup the pins
-        const leftPinStart = bodyWidthMM.neg().div(2);
-        const rightPinStart = bodyWidthMM.div(2);
+        const leftPinStart = bodyWidthMM.neg().half();
+        const rightPinStart = bodyWidthMM.half();
 
-        const topPinStart = bodyHeightMM.neg().div(2);
-        const bottomPinStart = bodyHeightMM.div(2);
+        const topPinStart = bodyHeightMM.neg().half();
+        const bottomPinStart = bodyHeightMM.half();
 
-        const pinStartY = bodyHeightMM.neg().div(2);
-        const pinStartX = bodyWidthMM.neg().div(2);
+        const pinStartY = bodyHeightMM.neg().half();
+        const pinStartX = bodyWidthMM.neg().half();
 
         const tmpPinSpacing = this.pinSpacing.toNumber();
 
@@ -1443,10 +1446,10 @@ export class SymbolDrawing {
             endX, endY);
 
         const normLine = line.norm;
-        const dx1 = numeric(normLine.x).mul(width).div(2);
-        const dy1 = numeric(normLine.y).mul(width).div(2);
-        const dx2 = numeric(normLine.x).mul(width.neg()).div(2);
-        const dy2 = numeric(normLine.y).mul(width.neg()).div(2);
+        const dx1 = numeric(normLine.x).mul(width).half();
+        const dy1 = numeric(normLine.y).mul(width).half();
+        const dx2 = numeric(normLine.x).mul(width.neg()).half();
+        const dy2 = numeric(normLine.y).mul(width.neg()).half();
 
         this.items.push(
             Geometry.polygon([
@@ -1508,7 +1511,7 @@ export class SymbolDrawing {
         portType = PinTypes.Any, scaleX=1, angle=0): SymbolDrawing {
 
         // y will be the vertical center of the port
-        const height2 = height.div(2);
+        const height2 = height.half();
 
         let path: [x: NumericValue, y: NumericValue][] = [];
         const arrowSize = milsToMM(30);

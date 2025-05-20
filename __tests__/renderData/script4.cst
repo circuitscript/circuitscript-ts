@@ -7,7 +7,7 @@ def res_2(value):
     return create component:
         pins: 2
         display: create graphic (params):
-            rect: 0, 0, width, height
+            crect: 0, 0, width, height
             hline: 0, -100, 100
             vline: 0, 100, 100
             line: 0, 0, 100, 100
@@ -29,7 +29,7 @@ def componentA():
     return create component:
         pins: 3
         display: create graphic (params):
-            rect: 0, 0, width, height
+            crect: 0, 0, width, height
             label: params.refdes, -width/2, -height/2 - 10
 
             hpin: 1, -width/2 - 100, 0, 100

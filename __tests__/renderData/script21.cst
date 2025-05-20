@@ -11,7 +11,7 @@ def conn3x2():
     return create component:
         pins: 6
         display: create graphic (params):
-            rect: 0, 0, width, height
+            crect: 0, 0, width, height
 
             hpin: 1, "1", -width/2 - 100, -100,   100
             hpin: 3, "3", -width/2 - 100, 0,      100

@@ -64,7 +64,7 @@ def res(value):
     return create component:
         pins: 2
         display: create graphic (params):
-            rect: 0, 0, width, height
+            crect: 0, 0, width, height
             hpin: 1, -width/2 - 30, 0, 30
             hpin: 2, width/2 + 30, 0, -30
             label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left"
@@ -277,13 +277,14 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
 
             # outer rect 
             lineColor: "#cccccc"
-            rect: paper_width/2, paper_height/2, paper_width, paper_height
+            crect: paper_width/2, paper_height/2, paper_width, paper_height
 
             # inner rect
             lineColor: "#111111"
-            rect: paper_width/2, paper_height/2, inner_width, inner_height
+            crect: (paper_width/2, paper_height/2, 
+                    inner_width, inner_height, class="plot-area")
 
-            rect: (paper_width/2, paper_height/2, 
+            crect: (paper_width/2, paper_height/2, 
                     paper_width - 2 * margin_x + inner_frame_margin * 2, 
                     paper_height - 2 * margin_y  + inner_frame_margin * 2)
 
@@ -358,7 +359,10 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
                 anchor: "left"
                 vanchor: "bottom"
 
-            rect: title_block_x + title_block_width / 2, title_block_y + title_block_height / 2, title_block_width, title_block_height
+            crect: ( title_block_x + title_block_width / 2, 
+                    title_block_y + title_block_height / 2, 
+                    title_block_width, title_block_height,
+                    class="info-area")
 
         params:
             title: "Sheet title"

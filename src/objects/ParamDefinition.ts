@@ -84,6 +84,10 @@ export class NumericValue {
         );
     }
 
+    half(): NumericValue {
+        return this.div(2);
+    }
+
     mul(value: NumericValue | number): NumericValue {
         if (typeof value === 'number') {
             value = numeric(value);

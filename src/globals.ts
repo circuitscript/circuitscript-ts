@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { numeric } from "./objects/ParamDefinition";
+
 export enum GlobalNames {
     __root = '__root',
     symbol = 'symbol',
@@ -57,7 +59,7 @@ export const PxToMM = 0.2645833;
 export const portWidth = 20;
 export const portHeight = 2;
 
-export const defaultGridSizeUnits = MilsToMM * 100;
+export const defaultGridSizeUnits = numeric(MilsToMM).mul(100).toNumber();
 
 export const defaultZoomScale = 2.5; // Convert language units into output units
 
@@ -65,8 +67,8 @@ export const defaultZoomScale = 2.5; // Convert language units into output units
 // A font size of 10 (before applying scale), should fit around 50 mils
 export const fontDisplayScale = 0.032;
 
-export const defaultSymbolLineWidth = MilsToMM * 6;
-export const defaultWireLineWidth = MilsToMM * 6;
+export const defaultSymbolLineWidth = numeric(MilsToMM).mul(6).toNumber();
+export const defaultWireLineWidth = numeric(MilsToMM).mul(6).toNumber();
 
 export const defaultPinNameTextSize = 40;
 export const defaultPinIdTextSize = 30;
@@ -90,7 +92,7 @@ export const defaultFontBold = 'Arial';
 
 export const defaultFontSize = 10;
 
-export const junctionSize = MilsToMM * 20;
+export const junctionSize = numeric(MilsToMM).mul(20);
 
 export const PortArrowSize = MilsToMM * 50;
 export const PortPaddingHorizontal = MilsToMM * 10;

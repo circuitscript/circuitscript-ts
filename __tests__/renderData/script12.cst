@@ -6,7 +6,7 @@ def cmp():
         pins: 7
         type: "conn"
         display: create graphic (params):
-            rect -width/2, height/2, width, height
+            crect -width/2, height/2, width, height
             hpin 1, "", -width-100, 100,  100
             hpin 2, "", -width-100, 200,  100
             hpin 3, "", -width-100, 300,  100

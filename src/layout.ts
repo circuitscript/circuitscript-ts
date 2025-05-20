@@ -468,14 +468,9 @@ export class LayoutEngine {
             // If not sheet frame, then check if width and height is defined
             if (frame.width !== null) {
                 frameWidth = frame.width;
-            } else {
-                frameWidth = milsToMM(1e5);
             }
-
             if (frame.height !== null) {
                 frameHeight = frame.height;
-            } else {
-                frameHeight = milsToMM(1e5);
             }
         }
 
@@ -489,7 +484,7 @@ export class LayoutEngine {
         // This is used to determine position of the title in the frame.
         let widthForTitle: number;
 
-        if (frameWidth !== null) {
+        if (frameWidth.toNumber() !== 0) {
             widthForTitle = frameWidth.toNumber();
         } else if (titleFrameWidth > accumRowWidth) {
             widthForTitle = titleFrameWidth;
@@ -542,11 +537,12 @@ export class LayoutEngine {
                     let innerFrameY = offsetY.add(accumY);
 
                     let attempts = 0;
-                    let maxAttempts = 10;
+                    const maxAttempts = 10;
 
                     while (attempts < maxAttempts) { //Arbitrary end for now
                         const innerFrameX2 = innerFrameX.toNumber() + innerFrameWidth;
-                        const doesExceedFrameWidth = (innerFrameX2 > frameWidth.toNumber());
+                        const doesExceedFrameWidth = (frameWidth.toNumber() > 0 
+                            && innerFrameX2 > frameWidth.toNumber());
 
                         // Check if the frame overlaps with the avoid areas 
                         // (title/info frame), units is mm.
@@ -559,7 +555,7 @@ export class LayoutEngine {
                         const overlaps = avoidAreas.filter(area => areasOverlap(frameArea, area));
 
                         const doesOverlapAreasToAvoid = overlaps.length > 0;
-  
+
                         if (doesExceedFrameWidth || doesOverlapAreasToAvoid) {
                             // Exceeds the frame width, so go to the next line,
                             // restart from start of the line.
@@ -646,11 +642,11 @@ export class LayoutEngine {
             frameYMin = numeric(contentsBounds.ymin);
         }
 
-        if (frameWidth === null) {
+        if (frameWidth.toNumber() === 0) {
             frameWidth = numeric(contentsWidth);
         }
 
-        if (frameHeight === null) {
+        if (frameHeight.toNumber() === 0) {
             frameHeight = numeric(contentsHeight);
         }
 

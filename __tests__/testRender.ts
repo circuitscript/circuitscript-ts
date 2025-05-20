@@ -76,9 +76,10 @@ describe('Render tests', () => {
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
-        expect(svgOutput).toEqual(expectedSvgOutput);
+        // expect(svgOutput).toEqual(expectedSvgOutput);
 
-        // expect(svgOutput == expectedSvgOutput).toEqual(true);
+        // Do not spit out all the differences
+        expect(svgOutput === expectedSvgOutput).toEqual(true);
     });
     
     test('pdf output', async () => {
