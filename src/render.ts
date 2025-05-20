@@ -61,7 +61,7 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger): Sv
         let xOffset = 0;
         let yOffset = 0;
 
-        let sheetYOffset = 0;
+        let sheetYOffset = numeric(0);
 
         if (sheet.frame.frame) {
             logger.add('drawing frame');
@@ -80,36 +80,44 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger): Sv
                 // is the drawable area size
                 const frameRects = ExtractDrawingRects(frameComponent.displayProp) ?? [];
 
-                let originalWidthMM = 0;
-                let originalHeightMM = 0;
-                let widthMM = 0;
-                let heightMM = 0;
+                let originalWidthMM = numeric(0);
+                let originalHeightMM = numeric(0);
+                let widthMM = numeric(0);
+                let heightMM = numeric(0);
 
-                if (frameRects[0]) {
-                    originalWidthMM = milsToMM(frameRects[0].width).toNumber();
-                    originalHeightMM = milsToMM(frameRects[0].height).toNumber();
-                    logger.add('first frame size: ' + originalWidthMM + ' ' + originalHeightMM);
+                const paperRect = frameRects.find(
+                    item => item.className === 'paper-area');
+
+                const plotRect = frameRects.find(
+                    item => item.className === 'plot-area');
+
+                if (paperRect) {
+                    originalWidthMM = milsToMM(paperRect.width);
+                    originalHeightMM = milsToMM(paperRect.height);
+
+                    logger.add('first frame size: ' + originalWidthMM.toNumber()
+                        + ' ' + originalHeightMM.toNumber());
                 }
 
-                if (frameRects[1]) {
-                    widthMM = milsToMM(frameRects[1].width).toNumber();
-                    heightMM = milsToMM(frameRects[1].height).toNumber();
-                    logger.add('second frame size: ' + widthMM + ' ' + heightMM);
+                if (plotRect) {
+                    widthMM = milsToMM(plotRect.width);
+                    heightMM = milsToMM(plotRect.height);
+                    logger.add('second frame size: ' + widthMM.toNumber()
+                        + ' ' + heightMM.toNumber());
                 }
 
-                xOffset = (originalWidthMM - widthMM) / 2;
-                yOffset = (originalHeightMM - heightMM) / 2;
-
+                xOffset = (originalWidthMM.sub(widthMM)).half().toNumber();
+                yOffset = (originalHeightMM.sub(heightMM)).half().toNumber();
                 logger.add('offset', xOffset, yOffset);
 
                 // Space out sheets with a fixed space
-                sheetYOffset = index * (originalHeightMM + defaultPageSpacingMM);
+                sheetYOffset =  originalHeightMM.add(defaultPageSpacingMM).mul(index);
 
                 gridBounds = {
                     xmin: 0,
                     ymin: 0,
-                    xmax: widthMM,
-                    ymax: heightMM
+                    xmax: widthMM.toNumber(),
+                    ymax: heightMM.toNumber()
                 };
 
                 extendGrid = false;
@@ -126,7 +134,7 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger): Sv
             mergedWires, allFrames, textObjects, gridBounds, extendGrid, logger);
 
         sheetElements.translate(xOffset, yOffset);
-        sheetGroup.translate(0, sheetYOffset);    
+        sheetGroup.translate(0, sheetYOffset.toNumber());    
     });
 
     return canvas;

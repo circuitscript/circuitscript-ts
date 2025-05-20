@@ -447,7 +447,7 @@ export class LayoutEngine {
 
             // This is the title frame, keep out area for components
             const infoAreaRect = rects.filter(rect => {
-                return rect.className === 'info-area';
+                return rect.className === 'keepout-area';
             });
 
             infoAreaRect.forEach(area => {

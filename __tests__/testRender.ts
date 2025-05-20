@@ -67,7 +67,9 @@ describe('Render tests', () => {
         
         ['for command in graphics expr', 'script26.cst'],
         ['label angle check', 'script27.cst'],
-        ['component width and height prop', 'script28.cst']
+        ['component width and height prop', 'script28.cst'],
+
+        ['frame direction arrange row to next line', 'script29.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);

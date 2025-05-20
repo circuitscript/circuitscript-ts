@@ -509,7 +509,7 @@ export function milsToMM(value: NumericValue | number): NumericValue {
     }
 
     return resolveToNumericValue(
-        value.toBigNumber().mul(new Big(MilsToMM))
+        value.toBigNumber().mul(new Big(MilsToMM)).round(6)
     );
 }
 

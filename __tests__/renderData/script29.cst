@@ -1,0 +1,57 @@
+import lib
+document.sheet_type = sheet_A6()
+
+vcc = net("3v3")
+gnd = dgnd()
+
+def unit(val):
+    at vcc
+    wire right 100 add res(val)
+    wire right 100 down 100
+    to gnd
+
+sheet:
+    ..align = "left"
+    ..valign = "top"
+    ..direction = "row"
+    ..title = "Hello world"
+
+    unit(0)
+    unit(1)
+
+    at vcc
+    wire right 100 add res(1.5) wire down 500 to gnd
+
+    unit(2)
+    unit(3)
+    
+    at vcc
+    wire right 1000 add res(4)
+    wire right 300 down 100 to gnd
+
+    unit(5)
+    unit(6)
+
+    at vcc
+    wire right 100 add res(1.5) wire down 1200 to gnd
+
+    unit(7)
+    
+    unit(8)
+
+    unit(9)
+    unit(10)
+    unit(11)
+    unit(12)
+
+    unit(13)
+    unit(14)
+    unit(15)
+    unit(16)
+
+    at vcc 
+    wire right 200 down 100
+    to gnd
+
+    unit(18)
+    unit(19)

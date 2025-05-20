@@ -277,7 +277,8 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
 
             # outer rect 
             lineColor: "#cccccc"
-            crect: paper_width/2, paper_height/2, paper_width, paper_height
+            crect: (paper_width/2, paper_height/2, 
+                paper_width, paper_height, class="paper-area")
 
             # inner rect
             lineColor: "#111111"
@@ -359,10 +360,10 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
                 anchor: "left"
                 vanchor: "bottom"
 
-            crect: ( title_block_x + title_block_width / 2, 
+            crect: (title_block_x + title_block_width / 2, 
                     title_block_y + title_block_height / 2, 
                     title_block_width, title_block_height,
-                    class="info-area")
+                    class="keepout-area")
 
         params:
             title: "Sheet title"
