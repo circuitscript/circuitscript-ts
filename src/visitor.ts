@@ -338,7 +338,21 @@ export class ParserVisitor extends BaseVisitor {
                         return accum;
                     }, [] as any[]);
 
-                accum.push([commandName, positionParams, keywordParams, item]);
+                let useCommandName = commandName;
+                let usePositionParams = positionParams;
+
+                // Replace center-rects with normal rects
+                if (commandName === PlaceHolderCommands.crect) {
+                    useCommandName = PlaceHolderCommands.rect;
+                    const [centerX, centerY, width, height] = positionParams as NumericValue[];
+
+                    // Keep in original user-land units
+                    const newX = centerX.sub(width.div(2));
+                    const newY = centerY.sub(height.div(2));
+                    usePositionParams = [newX, newY, width, height];
+                }
+
+                accum.push([useCommandName, usePositionParams, keywordParams, item]);
             }
 
             return accum;
@@ -468,7 +482,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const blankParams: ParamDefinition[] = [];
         const props = {
-            arrange, width, height
+            arrange, width, height,
 
             /** Should behave like a normal component (resistor, cap, etc.), 
              * do not duplicate the module if referenced. */

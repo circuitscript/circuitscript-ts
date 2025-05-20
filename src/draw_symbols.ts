@@ -534,7 +534,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         let lineColor = "#333";
         let textColor = "#333";
-
+        
         commands.forEach(([commandName, positionParams, keywordParams, ctx]) => {
 
             // evaluate any declared references in the position and keywork params
@@ -866,7 +866,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
 export enum PlaceHolderCommands { 
     arc = 'arc',
     circle = 'circle',
-    rect = 'rect',
+    rect = 'rect',          // (x, y) with width and height
+    crect = 'crect',        // Rect defined from center (x, y)
     triangle = 'triangle',
     pin = 'pin',
     hpin = 'hpin',
@@ -1399,30 +1400,28 @@ export class SymbolDrawing {
         return this;
     }
 
-    addRect(centerX: NumericValue, centerY: NumericValue, 
+    addRect(x: NumericValue, y: NumericValue,
         width: NumericValue, height: NumericValue): SymbolDrawing {
-        
-        centerX = milsToMM(centerX);
-        centerY = milsToMM(centerY);
-        width = milsToMM(width);
-        height = milsToMM(height);
 
-        return this.addRectMM(centerX, centerY, width, height);
+        return this.addRectMM(
+            milsToMM(x), milsToMM(y),
+            milsToMM(width), milsToMM(height)
+        );
     }
 
-    addRectMM(centerX: NumericValue, centerY: NumericValue, 
+    addRectMM(x: NumericValue, y: NumericValue,
         width: NumericValue, height: NumericValue): SymbolDrawing {
-        
-        const width2 = width.div(2);
-        const height2 = height.div(2);
+
+        const x2 = x.add(width);
+        const y2 = y.add(height);
 
         this.items.push(
             Geometry.polygon([
-                [centerX.sub(width2), centerY.sub(height2)],
-                [centerX.add(width2), centerY.sub(height2)],
-                [centerX.add(width2), centerY.add(height2)],
-                [centerX.sub(width2), centerY.add(height2)],
-                [centerX.sub(width2), centerY.sub(height2)]
+                [x, y],
+                [x2, y],
+                [x2, y2],
+                [x, y2],
+                [x, y]
             ])
         );
 
