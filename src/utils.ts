@@ -28,6 +28,9 @@ export type BoundBox = {
     xmax: number, ymax: number,
 }
 
+export type BoundBox2 = 
+    [xmin: number, ymin: number, xmax: number, ymax: number];
+
 export function resizeBounds(bounds: BoundBox, value: number): BoundBox {
     return {
         xmin: bounds.xmin - value,
@@ -204,4 +207,30 @@ export function resolveToNumericValue(value: Big): NumericValue {
     }
 
     return new NumericValue(useValue, prefixPart * 3);
+}
+
+export function isPointWithinArea(
+    point: [x: number, y: number],
+    bounds: BoundBox2): boolean {
+
+    const [xPt, yPt] = point;
+    const [xmin, ymin, xmax, ymax] = bounds;
+
+    return (xPt > xmin && xPt < xmax && yPt > ymin && yPt < ymax);
+}
+
+export function areasOverlap(
+    area1: BoundBox2,
+    area2: BoundBox2
+): boolean {
+    const [xmin, ymin, xmax, ymax] = area1;
+    const pt1: [x: number, y: number] = [xmin, ymin];
+    const pt2: [x: number, y: number] = [xmin, ymax];
+    const pt3: [x: number, y: number] = [xmax, ymin];
+    const pt4: [x: number, y: number] = [xmax, ymax];
+
+    return isPointWithinArea(pt1, area2)
+        || isPointWithinArea(pt2, area2)
+        || isPointWithinArea(pt3, area2)
+        || isPointWithinArea(pt4, area2);
 }

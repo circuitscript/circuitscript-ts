@@ -19,7 +19,9 @@ import { Geometry, HorizontalAlign, VerticalAlign } from './geometry.js';
 import { Net } from './objects/Net.js';
 import { Logger } from './logger.js';
 import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
-import { BoundBox, combineMaps, getBoundsSize, printBounds, resizeBounds, resizeToNearestGrid, roundValue, toNearestGrid } from './utils.js';
+import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
+    printBounds, resizeBounds, resizeToNearestGrid, roundValue, 
+    toNearestGrid } from './utils.js';
 import { Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from './helpers.js';
@@ -340,11 +342,10 @@ export class LayoutEngine {
         const innerFrames = frame.innerItems as RenderFrame[];
         const gridSize = defaultGridSizeUnits;
 
-        let accumX = numeric(0);
-        let accumY = numeric(0);
+        const frameDirection = frame.direction;
 
         // This is used to determine the final bounds of this frame
-        const boundPoints: [x: NumericValue, y: NumericValue][] = [];
+        const boundPoints: [x: number, y: number][] = [];
 
         // First pass collects the size of all inner frames
         const frameSizes = innerFrames.map(innerFrame => {
@@ -382,7 +383,7 @@ export class LayoutEngine {
 
         const inRowShouldCenterInnerFrames = true;
 
-        if (frame.direction === FramePlotDirection.Row) {
+        if (frameDirection === FramePlotDirection.Row) {
 
             // When plot direction is row, then sum all inner frame widths. 
             accumRowWidth = frameSizes.reduce((accum, item, index) => {
@@ -403,15 +404,16 @@ export class LayoutEngine {
             accumRowWidth = maxWidth;
         }
 
-        let frameWidth: NumericValue | null = numeric(0);
-        let frameHeight: NumericValue | null = numeric(0);
+        let frameWidth: NumericValue = numeric(0);
+        let frameHeight: NumericValue = numeric(0);
 
         let frameXMin = numeric(0);
         let frameYMin = numeric(0);
 
         const frameParams = frame.frame.parameters;
 
-        // If frame component is specified, then center the contents within
+        const avoidAreas: BoundBox2[] = [];
+
         if (frameParams.has(FrameParamKeys.SheetType)) {
             const frameComponent = frameParams.get
                 (FrameParamKeys.SheetType) as ClassComponent;
@@ -426,23 +428,54 @@ export class LayoutEngine {
             // sheet (A4, A5, etc.). The second rect (rect[1]) is the dimensions
             // of the drawable area within the sheet.
             const rects = ExtractDrawingRects(frameDrawing);
-           
-            if (rects[1]) {
-                frameWidth = milsToMM(rects[1].width);
-                frameHeight = milsToMM(rects[1].height);
+
+            // The drawable area for components, etc.
+            const drawableRect = rects.find(rect => {
+                return rect.className === 'plot-area';
+            });
+
+            // This is needed to offset the drawing areas
+            let frameMinX = numeric(0);
+            let frameMinY = numeric(0);
+
+            if (drawableRect) {
+                frameMinX = milsToMM(drawableRect.x);
+                frameMinY = milsToMM(drawableRect.y);
+                frameWidth = milsToMM(drawableRect.width);
+                frameHeight = milsToMM(drawableRect.height);
             }
+
+            // This is the title frame, keep out area for components
+            const infoAreaRect = rects.filter(rect => {
+                return rect.className === 'info-area';
+            });
+
+            infoAreaRect.forEach(area => {
+                const x1 = area.x;
+                const y1 = area.y;
+                const x2 = area.x.add(area.width);
+                const y2 = area.y.add(area.height);
+
+                avoidAreas.push([
+                    milsToMM(x1).sub(frameMinX).toNumber(),
+                    milsToMM(y1).sub(frameMinY).toNumber(),
+                    milsToMM(x2).sub(frameMinX).toNumber(),
+                    milsToMM(y2).sub(frameMinY).toNumber(),
+                ]);
+            });
+
         } else {
             // If not sheet frame, then check if width and height is defined
             if (frame.width !== null) {
                 frameWidth = frame.width;
             } else {
-                frameWidth = null;
+                frameWidth = milsToMM(1e5);
             }
 
             if (frame.height !== null) {
                 frameHeight = frame.height;
             } else {
-                frameHeight = null;
+                frameHeight = milsToMM(1e5);
             }
         }
 
@@ -464,7 +497,7 @@ export class LayoutEngine {
             widthForTitle = accumRowWidth;
         }
         
-        if (frame.direction === FramePlotDirection.Row && 
+        if (frameDirection=== FramePlotDirection.Row && 
             inRowShouldCenterInnerFrames &&
             titleFrameWidth !== null && titleFrameWidth > accumRowWidth) {
             
@@ -478,8 +511,11 @@ export class LayoutEngine {
             title_align = frameParams.get(FrameParamKeys.TitleAlign) as HorizontalAlign;
         }
 
+        let accumX = numeric(0);
+        let accumY = numeric(0);
+
         // Second pass arranges the items and sets the height
-        innerFrames.forEach(innerFrame => {
+        innerFrames.forEach((innerFrame, index) => {
             // Align to nearest grid
             const { width: innerFrameWidth, height: innerFrameHeight }
                 = getBoundsSize(innerFrame.bounds!);
@@ -491,38 +527,98 @@ export class LayoutEngine {
                 accumY = accumY.add(innerFrameHeight).add(frame.gap);
 
             } else {
-                if (frame.direction === FramePlotDirection.Column) {
+                if (frameDirection === FramePlotDirection.Column) {
                     // Align to the center, but also to the nearest grid size.
                     innerFrame.x = offsetX.add(accumX).add(toNearestGrid(maxWidth / 2 - innerFrameWidth / 2, gridSize));
                     innerFrame.y = offsetY.add(accumY);
 
                     accumY = accumY.add(innerFrameHeight).add(frame.gap);
 
-                } else if (frame.direction === FramePlotDirection.Row) {
-                    innerFrame.x = offsetX.add(centeredOffsetX).add(accumX);
-                    innerFrame.y = offsetY.add(accumY); //+ toNearestGrid(maxHeight / 2 - frameHeight / 2, gridSize);
+                } else if (frameDirection === FramePlotDirection.Row) {
+
+                    // Placement of top left corner of the frame within the
+                    // parent frame.
+                    let innerFrameX = offsetX.add(centeredOffsetX).add(accumX);
+                    let innerFrameY = offsetY.add(accumY);
+
+                    let attempts = 0;
+                    let maxAttempts = 10;
+
+                    while (attempts < maxAttempts) { //Arbitrary end for now
+                        const innerFrameX2 = innerFrameX.toNumber() + innerFrameWidth;
+                        const doesExceedFrameWidth = (innerFrameX2 > frameWidth.toNumber());
+
+                        // Check if the frame overlaps with the avoid areas 
+                        // (title/info frame), units is mm.
+                        const tmpX1 = innerFrameX.toNumber();
+                        const tmpY1 = innerFrameY.toNumber();
+                        const tmpX2 = tmpX1 + innerFrameWidth;
+                        const tmpY2 = tmpY1 + innerFrameHeight;
+                        const frameArea: BoundBox2 = [tmpX1, tmpY1, tmpX2, tmpY2];
+
+                        const overlaps = avoidAreas.filter(area => areasOverlap(frameArea, area));
+
+                        const doesOverlapAreasToAvoid = overlaps.length > 0;
+  
+                        if (doesExceedFrameWidth || doesOverlapAreasToAvoid) {
+                            // Exceeds the frame width, so go to the next line,
+                            // restart from start of the line.
+                            innerFrameX = offsetX.add(centeredOffsetX);
+
+                            // Find largest bounds point so far
+                            const { ymax } = getBoundsFromPoints(boundPoints);
+
+                            // ymax already includes the yOffset, so it has to be
+                            // removed.
+                            const nextY = numeric(ymax).sub(offsetY).add(frame.gap);
+                            innerFrameY = offsetY.add(nextY);
+
+                            // Reset the accum to be on the next 'line'
+                            accumX = numeric(0);
+                            accumY = nextY;
+                            
+                            // Add the overlap area into the bounds, so ymax
+                            // will take it into account.
+                            overlaps.forEach(area => {
+                                // Add xmin, ymin and xmax, ymax
+                                boundPoints.push(
+                                    [area[0], area[1]],
+                                    [area[2], area[3]]
+                                )
+                            });
+                        } else {
+                            break;
+                        }
+
+                        attempts++;
+
+                        if (attempts > maxAttempts){
+                            throw "Failed to place inner frame";
+                        }
+                    }
+                   
+                    innerFrame.x = innerFrameX;
+                    innerFrame.y = innerFrameY;
 
                     accumX = accumX.add(innerFrameWidth).add(frame.gap);
                 }
             }
 
+            // Add both the min values and max values of the coordinates
             boundPoints.push(
-                [innerFrame.x, innerFrame.y],
-                [innerFrame.x.add(innerFrameWidth), innerFrame.y.add(innerFrameHeight)]
+                [
+                    innerFrame.x.toNumber(), 
+                    innerFrame.y.toNumber()],
+                [   
+                    innerFrame.x.add(innerFrameWidth).toNumber(), 
+                    innerFrame.y.add(innerFrameHeight).toNumber()]
             );
         });
 
         // Determine the bounds based on the points. The points should already
         // be aligned to the grid, add the frame padding to expand the bounds correctly.
 
-        const tmpBoundPoints = boundPoints.map(item => {
-            return [
-                item[0].toNumber(),
-                item[1].toNumber(),
-            ]
-        }) as [x: number, y: number][];
-
-        const contentsBounds = resizeBounds(getBoundsFromPoints(tmpBoundPoints),
+        const contentsBounds = resizeBounds(getBoundsFromPoints(boundPoints),
             frame.padding.toNumber());
 
         const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
@@ -558,7 +654,7 @@ export class LayoutEngine {
             frameHeight = numeric(contentsHeight);
         }
 
-        // Second pass: set the alignment of the title
+        // Third pass: set the alignment of the title
         const titleFrame = innerFrames.find(frame => {
             return frame.containsTitle;
         });
@@ -2105,14 +2201,27 @@ export function CalculatePinPositions(component: ClassComponent)
 }
 
 export function ExtractDrawingRects(drawing: SymbolDrawingCommands)
-    : { width: NumericValue, height: NumericValue }[] {
-    
+    : {
+        x: NumericValue, y: NumericValue, width: NumericValue,
+        height: NumericValue, className: string | undefined
+    }[] {
+
     return drawing.getCommands().filter(item => {
         return (item[0] === PlaceHolderCommands.rect);
     }).map(item => {
+        const map = item[2];
+        let className: string | undefined = undefined;
+        if (map.has('class')) {
+            className = map.get('class');
+        }
+
+        // Rect dimensions are in mils
         return {
+            x: item[1][0],
+            y: item[1][1],
             width: item[1][2],
             height: item[1][3],
+            className
         }
     });
 }
