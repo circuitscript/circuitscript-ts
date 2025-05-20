@@ -430,9 +430,8 @@ export class LayoutEngine {
             const rects = ExtractDrawingRects(frameDrawing);
 
             // The drawable area for components, etc.
-            const drawableRect = rects.find(rect => {
-                return rect.className === 'plot-area';
-            });
+            const drawableRect = rects.find(
+                rect => rect.className === 'plot-area');
 
             // This is needed to offset the drawing areas
             let frameMinX = numeric(0);
@@ -446,9 +445,8 @@ export class LayoutEngine {
             }
 
             // This is the title frame, keep out area for components
-            const infoAreaRect = rects.filter(rect => {
-                return rect.className === 'keepout-area';
-            });
+            const infoAreaRect = rects.filter(
+                rect => rect.className === 'keepout-area');
 
             infoAreaRect.forEach(area => {
                 const x1 = area.x;
@@ -515,6 +513,12 @@ export class LayoutEngine {
             const { width: innerFrameWidth, height: innerFrameHeight }
                 = getBoundsSize(innerFrame.bounds!);
 
+            let arrangeLineAttempts = 0;
+            const maxAttempts = 10;
+
+            let innerFrameX: NumericValue = numeric(0);
+            let innerFrameY: NumericValue = numeric(0);
+
             if (innerFrame.containsTitle) {
                 // Assume title is aligned to the left
                 innerFrame.x = offsetX.add(accumX);
@@ -524,8 +528,49 @@ export class LayoutEngine {
             } else {
                 if (frameDirection === FramePlotDirection.Column) {
                     // Align to the center, but also to the nearest grid size.
-                    innerFrame.x = offsetX.add(accumX).add(toNearestGrid(maxWidth / 2 - innerFrameWidth / 2, gridSize));
-                    innerFrame.y = offsetY.add(accumY);
+                    innerFrameX = offsetX.add(accumX);
+                    innerFrameY = offsetY.add(accumY);
+
+                    while (arrangeLineAttempts < maxAttempts) { //Arbitrary end for now
+                        const innerFrameY2 = innerFrameY.toNumber() + innerFrameHeight;
+                        const doesExceedFrameHeight = (frameHeight.toNumber() > 0 
+                            && innerFrameY2 > frameHeight.toNumber());
+
+                        // Find largest bounds point so far
+                        const { xmax } = getBoundsFromPoints(boundPoints);
+
+                        // Check if the frame overlaps with the avoid areas 
+                        // (title/info frame), units is mm.
+                        const tmpX1 = innerFrameX.toNumber();
+                        const tmpY1 = innerFrameY.toNumber();
+                        const tmpX2 = tmpX1 + innerFrameWidth;
+                        const tmpY2 = tmpY1 + innerFrameHeight;
+                        const frameArea: BoundBox2 = [tmpX1, tmpY1, tmpX2, tmpY2];
+
+                        const overlaps = avoidAreas.filter(area => areasOverlap(frameArea, area));
+
+                        const doesOverlapAreasToAvoid = overlaps.length > 0;
+
+                        if (doesExceedFrameHeight || doesOverlapAreasToAvoid){
+                            // Move back to the start of the vertical line
+                            innerFrameY = offsetY;
+
+                            const nextX = numeric(xmax).sub(offsetX).add(frame.gap);
+                            innerFrameX = offsetX.add(nextX);
+
+                            accumY = numeric(0);
+                            accumX = nextX;
+                        }
+
+                        arrangeLineAttempts++;
+
+                        if (arrangeLineAttempts > maxAttempts){
+                            throw "Failed to place inner frame";
+                        }
+                    }
+
+                    innerFrame.x = innerFrameX;
+                    innerFrame.y = innerFrameY;
 
                     accumY = accumY.add(innerFrameHeight).add(frame.gap);
 
@@ -533,13 +578,10 @@ export class LayoutEngine {
 
                     // Placement of top left corner of the frame within the
                     // parent frame.
-                    let innerFrameX = offsetX.add(centeredOffsetX).add(accumX);
-                    let innerFrameY = offsetY.add(accumY);
+                    innerFrameX = offsetX.add(centeredOffsetX).add(accumX);
+                    innerFrameY = offsetY.add(accumY);
 
-                    let attempts = 0;
-                    const maxAttempts = 10;
-
-                    while (attempts < maxAttempts) { //Arbitrary end for now
+                    while (arrangeLineAttempts < maxAttempts) { //Arbitrary end for now
                         const innerFrameX2 = innerFrameX.toNumber() + innerFrameWidth;
                         const doesExceedFrameWidth = (frameWidth.toNumber() > 0 
                             && innerFrameX2 > frameWidth.toNumber());
@@ -572,23 +614,13 @@ export class LayoutEngine {
                             // Reset the accum to be on the next 'line'
                             accumX = numeric(0);
                             accumY = nextY;
-                            
-                            // Add the overlap area into the bounds, so ymax
-                            // will take it into account.
-                            overlaps.forEach(area => {
-                                // Add xmin, ymin and xmax, ymax
-                                boundPoints.push(
-                                    [area[0], area[1]],
-                                    [area[2], area[3]]
-                                )
-                            });
                         } else {
                             break;
                         }
 
-                        attempts++;
+                        arrangeLineAttempts++;
 
-                        if (attempts > maxAttempts){
+                        if (arrangeLineAttempts > maxAttempts){
                             throw "Failed to place inner frame";
                         }
                     }

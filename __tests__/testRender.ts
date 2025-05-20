@@ -69,7 +69,8 @@ describe('Render tests', () => {
         ['label angle check', 'script27.cst'],
         ['component width and height prop', 'script28.cst'],
 
-        ['frame direction arrange row to next line', 'script29.cst']
+        ['frame direction arrange row to next line', 'script29.cst'],
+        ['frame direction arrange column to next line', 'script30.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);
@@ -140,6 +141,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('fe049d01349c6b3e024ba5452779fc8b');
+        expect(result).toEqual('38340eb02b3db26214846686c5c389ca');
     });
 });
