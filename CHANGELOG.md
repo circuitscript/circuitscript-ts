@@ -1,6 +1,24 @@
 # Changelog
 
-## [v0.1.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.1...v0.1.2)
+## [v0.1.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.2...v0.1.3)
+
+[24be729](https://gitlab.com/circuitscript/circuitscript-ts/commit/24be729e35be8d7c92619c5a5d03d953b300612f) cleanups
+
+[5667922](https://gitlab.com/circuitscript/circuitscript-ts/commit/56679228a691265bb4751a60136cce1a26990d6c) cleaned up output decimal places
+-  fixed tests
+
+[4a0c523](https://gitlab.com/circuitscript/circuitscript-ts/commit/4a0c5232208b60869219faee9b684d114bfd6095) initial flex box implementation for row
+-  added avoid area for frame info/title area
+
+[3f79b0c](https://gitlab.com/circuitscript/circuitscript-ts/commit/3f79b0cf91a1d0478b975d6edacb87ebe39520a9) added flex arrangement for column
+-  updated test
+
+[38f513d](https://gitlab.com/circuitscript/circuitscript-ts/commit/38f513de2db16605369f1171a7bb8b9ce125c632) updated keepout class name
+-  cleaned up decimal places output
+
+[020ae57](https://gitlab.com/circuitscript/circuitscript-ts/commit/020ae57d5a4c3fa6c5262429d17fec114c274f48) changed existing rect definition to crect (centered rect)
+
+## [v0.1.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.1...v0.1.2) - 2025-03-08
 
 [c54cd01](https://gitlab.com/circuitscript/circuitscript-ts/commit/c54cd013bcf5d3e043a1475222add5b24dc2fb4f) cleaned up at/to syntax
 
