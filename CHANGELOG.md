@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.2...v0.1.3)
+## [v0.1.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.3...v0.1.4)
+
+[eb1265c](https://gitlab.com/circuitscript/circuitscript-ts/commit/eb1265c36781276d39cc930e500baeaece568763) changed default frame layout direction
+
+## [v0.1.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.2...v0.1.3) - 2025-05-27
 
 [24be729](https://gitlab.com/circuitscript/circuitscript-ts/commit/24be729e35be8d7c92619c5a5d03d953b300612f) cleanups
 
