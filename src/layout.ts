@@ -2124,8 +2124,9 @@ export class RenderFrame extends RenderObject {
 
     borderWidth = numeric(5); //mils
 
-    /** Direction that frame elements are plotted */
-    direction = FramePlotDirection.Column;
+    /** Direction that frame elements are plotted. By default frame elements
+     * are plotted in a ROW (horizontal direction) */
+    direction = FramePlotDirection.Row;
 
     // If width and height are null, then frame size is determined
     // based on internal contents
