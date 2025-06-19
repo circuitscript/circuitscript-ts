@@ -6,6 +6,7 @@
  */
 
 import { Box, Dom, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
+import { Big } from 'big.js';
 
 import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './geometry.js';
 import { defaultFont } from './globals.js';
@@ -138,12 +139,15 @@ export function measureTextSize2(text: string, fontFamily: string,
         const { width, height } = textbox;
         tmpTextElement.remove();
 
+        const finalWidth = new Big(width).round(4).toNumber();
+        const finalHeight = new Big(height).round(4).toNumber();
+
         measureTextSizeCache[key] = {
-            width: Math.round(width * 100) / 100,
-            height: Math.round(height * 100) / 100,
+            width: finalWidth,
+            height: finalHeight,
             box: textbox,
         }
-
+        
         measureTextSizeCacheHits[key] = 0;
     }
 

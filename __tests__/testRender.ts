@@ -70,7 +70,9 @@ describe('Render tests', () => {
         ['component width and height prop', 'script28.cst'],
 
         ['frame direction arrange row to next line', 'script29.cst'],
-        ['frame direction arrange column to next line', 'script30.cst']
+        ['frame direction arrange column to next line', 'script30.cst'],
+
+        ['branch within function', 'script31.cst'],
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);
@@ -141,6 +143,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('91917780d73c66ed334cda6658079828');
+        expect(result).toEqual('4565b2b652a7dd7275a467daa5680bd6');
     });
 });

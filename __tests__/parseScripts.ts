@@ -37,6 +37,7 @@ to U2 pin 3
     ['/NET_1', 'U1', 2],
     ['/NET_1', 'U2', 1],
     ['/NET_2', 'U1', 10],
+    [ '/NET_2', '_branch.__.0', 1 ],
     ['/NET_2', 'U2', 5],
     ['/NET_2', 'U2', 3]
 ]);
@@ -71,6 +72,7 @@ to gnd
 `, [
     ['/XGND', 'gnd', 1],
     ['/XGND', 'J1', 1],
+    [ '/XGND', '_branch.__.0', 1 ],
     ['/XGND', 'J1', 3],
     ['/XGND', 'gnd:0', 1]
 ]);
@@ -100,6 +102,8 @@ add diode()
     ['/NET_1', 'diode_2.COMP_1', 1],
     ['/hello', 'label_0.COMP_1_hello', 1],
     ['/hello', 'label_0.COMP_1_hello:0', 1],
+    [ '/hello', '_branch.__.0', 1 ],
+    [ '/hello', '_branch.__.1', 1 ],
     ['/hello', 'diode_0.COMP_1', 1],
     ['/hello', 'diode_1.COMP_1', 2],
     ['/hello', 'diode_3.COMP_1', 1]
@@ -140,6 +144,7 @@ to midpt
     ['/GND', 'res_1.COMP_1_20k', 2],
     ['/out', 'midpt', 1],
     ['/out', 'res_0.COMP_1_20k', 2],
+    ['/out', '_branch.__.0', 1],
     ['/out', 'res_1.COMP_1_20k', 1],
     ['/out', 'midpt:0', 1],
     ['/out', 'midpt:1', 1],
@@ -206,9 +211,11 @@ divider(v5v, 10k, 20k, label("hello"))
     ['/GND', 'divider_0.gnd:0', 1],
     ['/GND', 'divider_0.res_1.COMP_1_20k', 2],
     ['/hello', 'label_0.COMP_1_hello', 1],
-    ['/hello', 'divider_0.label_0.COMP_1_hello:0', 1],
     ['/hello', 'divider_0.res_0.COMP_1_10k', 2],
+    ['/hello', 'divider_0._branch.divider_0.0', 1],
+    ['/hello', 'divider_0.label_0.COMP_1_hello:0', 1],
     ['/hello', 'divider_0.res_1.COMP_1_20k', 1]
+
 ]);
 
 export const inlineScript9 = new ScriptTest(`
@@ -253,41 +260,43 @@ frame:
     /div1 divider(v5v, 10k, 20k, "hello2")
     /div2 divider(v5v, 10k, 20k, "hello1")
 `, [
-    ['/5v', 'v5v', 1],
-    ['/5v', 'divider_0.v5v:0', 1],
-    ['/5v', 'divider_0.res_0.COMP_1_10k', 1],
-    ['/5v', 'divider_1.v5v:0', 1],
-    ['/5v', 'divider_1.res_4.COMP_1_10k', 1],
-    ['/GND', 'gnd', 1],
-    ['/GND', 'divider_0.gnd:0', 1],
-    ['/GND', 'divider_0.res_3.COMP_1_20k', 2],
-    ['/GND', 'divider_1.gnd:0', 1],
-    ['/GND', 'divider_1.res_7.COMP_1_20k', 2],
-    ['/div1/inner_name', 'divider_0.label_0.COMP_1_inner_name', 1],
-    ['/div1/inner_name', 'divider_0.label_0.COMP_1_inner_name:0', 1],
-    ['/div1/inner_name', 'divider_0.res_0.COMP_1_10k', 2],
-    ['/div1/inner_name', 'divider_0.res_1.COMP_1_100k', 1],
-    ['/div1/inner_name', 'divider_0.res_3.COMP_1_20k', 1],
-    ['/div2/inner_name', 'divider_1.label_3.COMP_1_inner_name', 1],
-    ['/div2/inner_name', 'divider_1.label_3.COMP_1_inner_name:0', 1],
-    ['/div2/inner_name', 'divider_1.res_4.COMP_1_10k', 2],
-    ['/div2/inner_name', 'divider_1.res_5.COMP_1_100k', 1],
-    ['/div2/inner_name', 'divider_1.res_7.COMP_1_20k', 1],
-    ['/global_name', 'net_0.COMP_1_global_name', 1],
-    ['/global_name', 'divider_0.label_1.COMP_1_global_name', 1],
-    ['/global_name', 'divider_0.label_1.COMP_1_global_name:0', 1],
-    ['/global_name', 'divider_0.res_1.COMP_1_100k', 2],
-    ['/global_name', 'divider_0.res_2.COMP_1_0', 1],
-    ['/global_name', 'divider_1.label_4.COMP_1_global_name', 1],
-    ['/global_name', 'divider_1.label_4.COMP_1_global_name:0', 1],
-    ['/global_name', 'divider_1.res_5.COMP_1_100k', 2],
-    ['/global_name', 'divider_1.res_6.COMP_1_0', 1],
-    ['/global_name_2', 'divider_0.label_2.COMP_1_global_name_2', 1],
-    ['/global_name_2', 'divider_0.label_2.COMP_1_global_name_2:0', 1],
-    ['/global_name_2', 'divider_0.res_2.COMP_1_0', 2],
-    ['/global_name_2', 'divider_1.label_5.COMP_1_global_name_2', 1],
-    ['/global_name_2', 'divider_1.label_5.COMP_1_global_name_2:0', 1],
-    ['/global_name_2', 'divider_1.res_6.COMP_1_0', 2]
+    [ '/5v', 'v5v', 1 ],
+    [ '/5v', 'divider_0.v5v:0', 1 ],
+    [ '/5v', 'divider_0.res_0.COMP_1_10k', 1 ],
+    [ '/5v', 'divider_1.v5v:0', 1 ],
+    [ '/5v', 'divider_1.res_4.COMP_1_10k', 1 ],
+    [ '/GND', 'gnd', 1 ],
+    [ '/GND', 'divider_0.gnd:0', 1 ],
+    [ '/GND', 'divider_0.res_3.COMP_1_20k', 2 ],
+    [ '/GND', 'divider_1.gnd:0', 1 ],
+    [ '/GND', 'divider_1.res_7.COMP_1_20k', 2 ],
+    [ '/div1/inner_name', 'divider_0.res_0.COMP_1_10k', 2 ],
+    [ '/div1/inner_name', 'divider_0._branch.divider_0.0', 1 ],
+    [ '/div1/inner_name', 'divider_0.label_0.COMP_1_inner_name', 1 ],
+    [ '/div1/inner_name', 'divider_0.label_0.COMP_1_inner_name:0', 1 ],
+    [ '/div1/inner_name', 'divider_0.res_1.COMP_1_100k', 1 ],
+    [ '/div1/inner_name', 'divider_0.res_3.COMP_1_20k', 1 ],
+    [ '/div2/inner_name', 'divider_1.res_4.COMP_1_10k', 2 ],
+    [ '/div2/inner_name', 'divider_1._branch.divider_1.0', 1 ],
+    [ '/div2/inner_name', 'divider_1.label_3.COMP_1_inner_name', 1 ],
+    [ '/div2/inner_name', 'divider_1.label_3.COMP_1_inner_name:0', 1 ],
+    [ '/div2/inner_name', 'divider_1.res_5.COMP_1_100k', 1 ],
+    [ '/div2/inner_name', 'divider_1.res_7.COMP_1_20k', 1 ],
+    [ '/global_name', 'net_0.COMP_1_global_name', 1 ],
+    [ '/global_name', 'divider_0.label_1.COMP_1_global_name', 1 ],
+    [ '/global_name', 'divider_0.label_1.COMP_1_global_name:0', 1 ],
+    [ '/global_name', 'divider_0.res_1.COMP_1_100k', 2 ],
+    [ '/global_name', 'divider_0.res_2.COMP_1_0', 1 ],
+    [ '/global_name', 'divider_1.label_4.COMP_1_global_name', 1 ],
+    [ '/global_name', 'divider_1.label_4.COMP_1_global_name:0', 1 ],
+    [ '/global_name', 'divider_1.res_5.COMP_1_100k', 2 ],
+    [ '/global_name', 'divider_1.res_6.COMP_1_0', 1 ],
+    [ '/global_name_2', 'divider_0.label_2.COMP_1_global_name_2', 1 ],
+    [ '/global_name_2', 'divider_0.label_2.COMP_1_global_name_2:0', 1 ],
+    [ '/global_name_2', 'divider_0.res_2.COMP_1_0', 2 ],
+    [ '/global_name_2', 'divider_1.label_5.COMP_1_global_name_2', 1 ],
+    [ '/global_name_2', 'divider_1.label_5.COMP_1_global_name_2:0', 1 ],
+    [ '/global_name_2', 'divider_1.res_6.COMP_1_0', 2 ]
 ]);
 
 export const inlineScript10 = new ScriptTest(`
@@ -353,56 +362,58 @@ wire down 40
 branch:
     /scope2 tmp1()
 `, [
-    ['/5V', 'v5v', 1],
-    ['/5V', 'v5v:0', 1],
-    ['/5V', 'tmp1_0.__root', 1],
-    ['/5V', 'tmp1_0.res_0.COMP_1_0', 1],
-    ['/5V', 'tmp1_1.__root', 1],
-    ['/5V', 'tmp1_1.res_4.COMP_1_0', 1],
-    ['/global_label', 'tmp1_0.label_1.COMP_1_global_label', 1],
-    ['/global_label', 'tmp1_0.label_1.COMP_1_global_label:0', 1],
-    ['/global_label', 'tmp1_0.res_1.COMP_1_0', 2],
-    ['/global_label', 'tmp1_0.res_2.COMP_1_0', 1],
-    ['/global_label', 'tmp1_1.label_4.COMP_1_global_label', 1],
-    ['/global_label', 'tmp1_1.label_4.COMP_1_global_label:0', 1],
-    ['/global_label', 'tmp1_1.res_5.COMP_1_0', 2],
-    ['/global_label', 'tmp1_1.res_6.COMP_1_0', 1],
-    ['/scope1/inner/NET_1', 'tmp2_0.__root', 1],
-    ['/scope1/inner/NET_1', 'tmp1_0.tmp2_0.res_3.COMP_1_0', 1],
-    ['/scope1/inner/NET_1', 'tmp1_0.res_2.COMP_1_0', 2],
-    [
-        '/scope1/inner/label_2',
-        'tmp1_0.tmp2_0.label_2.COMP_1_label_2',
-        1
-    ],
-    [
-        '/scope1/inner/label_2',
-        'tmp1_0.tmp2_0.label_2.COMP_1_label_2:0',
-        1
-    ],
-    ['/scope1/inner/label_2', 'tmp1_0.tmp2_0.res_3.COMP_1_0', 2],
-    ['/scope1/label_1', 'tmp1_0.label_0.COMP_1_label_1', 1],
-    ['/scope1/label_1', 'tmp1_0.label_0.COMP_1_label_1:0', 1],
-    ['/scope1/label_1', 'tmp1_0.res_0.COMP_1_0', 2],
-    ['/scope1/label_1', 'tmp1_0.res_1.COMP_1_0', 1],
-    ['/scope2/inner/NET_1', 'tmp2_1.__root', 1],
-    ['/scope2/inner/NET_1', 'tmp1_1.tmp2_1.res_7.COMP_1_0', 1],
-    ['/scope2/inner/NET_1', 'tmp1_1.res_6.COMP_1_0', 2],
-    [
-        '/scope2/inner/label_2',
-        'tmp1_1.tmp2_1.label_5.COMP_1_label_2',
-        1
-    ],
-    [
-        '/scope2/inner/label_2',
-        'tmp1_1.tmp2_1.label_5.COMP_1_label_2:0',
-        1
-    ],
-    ['/scope2/inner/label_2', 'tmp1_1.tmp2_1.res_7.COMP_1_0', 2],
-    ['/scope2/label_1', 'tmp1_1.label_3.COMP_1_label_1', 1],
-    ['/scope2/label_1', 'tmp1_1.label_3.COMP_1_label_1:0', 1],
-    ['/scope2/label_1', 'tmp1_1.res_4.COMP_1_0', 2],
-    ['/scope2/label_1', 'tmp1_1.res_5.COMP_1_0', 1]
+    [ '/5V', 'v5v', 1 ],
+  [ '/5V', 'v5v:0', 1 ],
+  [ '/5V', '_branch.__.0', 1 ],
+  [ '/5V', 'tmp1_0.__root', 1 ],
+  [ '/5V', 'tmp1_0.res_0.COMP_1_0', 1 ],
+  [ '/5V', '_branch.__.1', 1 ],
+  [ '/5V', 'tmp1_1.__root', 1 ],
+  [ '/5V', 'tmp1_1.res_4.COMP_1_0', 1 ],
+  [ '/global_label', 'tmp1_0.label_1.COMP_1_global_label', 1 ],
+  [ '/global_label', 'tmp1_0.label_1.COMP_1_global_label:0', 1 ],
+  [ '/global_label', 'tmp1_0.res_1.COMP_1_0', 2 ],
+  [ '/global_label', 'tmp1_0.res_2.COMP_1_0', 1 ],
+  [ '/global_label', 'tmp1_1.label_4.COMP_1_global_label', 1 ],
+  [ '/global_label', 'tmp1_1.label_4.COMP_1_global_label:0', 1 ],
+  [ '/global_label', 'tmp1_1.res_5.COMP_1_0', 2 ],
+  [ '/global_label', 'tmp1_1.res_6.COMP_1_0', 1 ],
+  [ '/scope1/inner/NET_1', 'tmp2_0.__root', 1 ],
+  [ '/scope1/inner/NET_1', 'tmp1_0.tmp2_0.res_3.COMP_1_0', 1 ],
+  [ '/scope1/inner/NET_1', 'tmp1_0.res_2.COMP_1_0', 2 ],
+  [
+    '/scope1/inner/label_2',
+    'tmp1_0.tmp2_0.label_2.COMP_1_label_2',
+    1
+  ],
+  [
+    '/scope1/inner/label_2',
+    'tmp1_0.tmp2_0.label_2.COMP_1_label_2:0',
+    1
+  ],
+  [ '/scope1/inner/label_2', 'tmp1_0.tmp2_0.res_3.COMP_1_0', 2 ],
+  [ '/scope1/label_1', 'tmp1_0.label_0.COMP_1_label_1', 1 ],
+  [ '/scope1/label_1', 'tmp1_0.label_0.COMP_1_label_1:0', 1 ],
+  [ '/scope1/label_1', 'tmp1_0.res_0.COMP_1_0', 2 ],
+  [ '/scope1/label_1', 'tmp1_0.res_1.COMP_1_0', 1 ],
+  [ '/scope2/inner/NET_1', 'tmp2_1.__root', 1 ],
+  [ '/scope2/inner/NET_1', 'tmp1_1.tmp2_1.res_7.COMP_1_0', 1 ],
+  [ '/scope2/inner/NET_1', 'tmp1_1.res_6.COMP_1_0', 2 ],
+  [
+    '/scope2/inner/label_2',
+    'tmp1_1.tmp2_1.label_5.COMP_1_label_2',
+    1
+  ],
+  [
+    '/scope2/inner/label_2',
+    'tmp1_1.tmp2_1.label_5.COMP_1_label_2:0',
+    1
+  ],
+  [ '/scope2/inner/label_2', 'tmp1_1.tmp2_1.res_7.COMP_1_0', 2 ],
+  [ '/scope2/label_1', 'tmp1_1.label_3.COMP_1_label_1', 1 ],
+  [ '/scope2/label_1', 'tmp1_1.label_3.COMP_1_label_1:0', 1 ],
+  [ '/scope2/label_1', 'tmp1_1.res_4.COMP_1_0', 2 ],
+  [ '/scope2/label_1', 'tmp1_1.res_5.COMP_1_0', 1 ]
 ]);
 
 export const inlineScript12 = new ScriptTest(`
@@ -529,12 +540,13 @@ to gnd`, [
     ['/GND', 'res_3.COMP_1_360', 2],
     ['/GND', 'gnd:2', 1],
     ['/GND', 'led_0.COMP_1_0603', 2],
-    ['/NET_1', 'res_0.COMP_1_360', 2],
-    ['/NET_1', '_point.__.0', 1],
-    ['/NET_1', 'res_1.COMP_1_360', 2],
-    ['/NET_1', 'res_2.COMP_1_360', 1],
-    ['/NET_1', 'res_3.COMP_1_360', 1],
-    ['/NET_1', 'led_0.COMP_1_0603', 1]
+    ['/NET_2', 'res_0.COMP_1_360', 2],
+    ['/NET_2', '_point.__.0', 1],
+    ['/NET_2', 'res_1.COMP_1_360', 2],
+    ['/NET_2', '_branch.__.1', 1],
+    ['/NET_2', 'res_2.COMP_1_360', 1],
+    ['/NET_2', 'res_3.COMP_1_360', 1],
+    ['/NET_2', 'led_0.COMP_1_0603', 1]
 ]);
 
 /*
@@ -877,7 +889,7 @@ print(a)
 export const script20_ = new ScriptTest(
     loadScriptFromFile('__tests__/renderData/script20.cst'),
     [
-        ['/GND', 'gnd', 1],
+        [ '/GND', 'gnd', 1 ],
         ['/GND', 'gnd:0', 1],
         ['/GND', 'tmp', 2],
         ['/GND', 'gnd:1', 1],
@@ -887,9 +899,10 @@ export const script20_ = new ScriptTest(
         ['/GND', '__._COMP_1_0.res_1.COMP_1_2k', 2],
         ['/NET_1', 'tmp', 5],
         ['/NET_1', 'res_3.COMP_1_5k', 1],
+        ['/NET_1', '__._COMP_1_0.res_0.COMP_1_1k', 2],
+        ['/NET_1', '__._COMP_1_0._branch.__._COMP_1_0.0', 1],
         ['/NET_1', '__._COMP_1_0.port_1.COMP_1_signal_e', 1],
         ['/NET_1', '__._COMP_1_0.port_1.COMP_1_signal_e:0', 1],
-        ['/NET_1', '__._COMP_1_0.res_0.COMP_1_1k', 2],
         ['/NET_1', '__._COMP_1_0.res_1.COMP_1_2k', 1],
         ['/VCC', 'vcc', 1],
         ['/VCC', 'vcc:0', 1],

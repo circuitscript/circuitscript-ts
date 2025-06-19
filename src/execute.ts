@@ -24,6 +24,7 @@ import { CalculatePinPositions } from './layout.js';
 import { UnitDimension } from './helpers.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
+import { getBlockTypeString } from './utils.js';
 
 /** Contains the current running state of the circuit graph */
 export class ExecutionContext {
@@ -575,8 +576,14 @@ export class ExecutionContext {
         // Create object to track all the inner blocks of 
         // the block group
 
-        if (blockType === BlockTypes.Point || blockType === BlockTypes.Parallel) {
-            const key = blockType === BlockTypes.Point ? 'point' : 'parallel';
+        if (blockType === BlockTypes.Point
+            || blockType === BlockTypes.Parallel
+            || blockType === BlockTypes.Branch) {
+
+            // For these block types, create a point so that it is easier to
+            // connect future components/wires.
+            
+            const key = getBlockTypeString(blockType);
             this.addPoint(`_${key}.${this.name}.${this.tmpPointId}`, false);
             this.tmpPointId += 1;
         }
@@ -689,7 +696,7 @@ export class ExecutionContext {
             if (blockIndex === 0) {
                 // First join block will determine the final join location
 
-                const pointIdName = (blockType === BlockTypes.Join) ? '_join' : '_parallel';
+                const pointIdName = '_' + getBlockTypeString(blockType);
 
                 // Add point to current location, start with _join keyword to
                 // indicate that this is a point for join keyword
@@ -894,8 +901,6 @@ export class ExecutionContext {
         const currentPin = this.scope.currentPin;
         const currentWireId = this.scope.currentWireId;
 
-        const gndCopyIdOffset = 0;
-
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
         const tmpNets = childScope.getNets();
@@ -907,8 +912,7 @@ export class ExecutionContext {
 
             // Do not add root and gnd components of child scope to the
             // parent scope
-            if (component === childScope.componentGnd || 
-                component === childScope.componentRoot){
+            if (component === childScope.componentRoot) {
                 continue;
             }
 
@@ -924,7 +928,7 @@ export class ExecutionContext {
             this.scope.setNet(component, pin, net);
         });
 
-        // If true, then then __root component of the child_scope will
+        // If true, then __root component of the child_scope will
         // be connected to the current component/pin of the parent
         const linkRootComponent = true;
 
@@ -933,7 +937,7 @@ export class ExecutionContext {
         if (linkRootComponent) {
             // Join the child_scope's __root net to the current component / pin
 
-            // Get the net of the root scope first
+            // Get the net of the child scope's root
             const netConnectedToRoot = childScope.getNet(tmpRoot, 1);
 
             if (netConnectedToRoot !== null){
@@ -953,6 +957,8 @@ export class ExecutionContext {
                     currentNet = tmpNet
                 }
 
+                // Force a lower priority, so that after merge the 
+                // parent scope will be used.
                 netConnectedToRoot.priority = currentNet.priority - 1;
 
                 // Connect current component to the root component, since the
@@ -987,7 +993,8 @@ export class ExecutionContext {
                 this.scope.sequence.push(
                     [SequenceAction.WireJump, jumpWireId, 1]
                 );
-            } else if (action === SequenceAction.At || action === SequenceAction.To) {
+
+            } else if (action === SequenceAction.At || action === SequenceAction.To) {    
                 this.scope.sequence.push(sequenceAction);
 
             } else if (action === SequenceAction.Frame){

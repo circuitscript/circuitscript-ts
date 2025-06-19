@@ -551,7 +551,7 @@ export class LayoutEngine {
 
                         const doesOverlapAreasToAvoid = overlaps.length > 0;
 
-                        if (doesExceedFrameHeight || doesOverlapAreasToAvoid){
+                        if (boundPoints.length > 0 && (doesExceedFrameHeight || doesOverlapAreasToAvoid)){
                             // Move back to the start of the vertical line
                             innerFrameY = offsetY;
 
@@ -598,7 +598,7 @@ export class LayoutEngine {
 
                         const doesOverlapAreasToAvoid = overlaps.length > 0;
 
-                        if (doesExceedFrameWidth || doesOverlapAreasToAvoid) {
+                        if (boundPoints.length > 0 && (doesExceedFrameWidth || doesOverlapAreasToAvoid)) {
                             // Exceeds the frame width, so go to the next line,
                             // restart from start of the line.
                             innerFrameX = offsetX.add(centeredOffsetX);

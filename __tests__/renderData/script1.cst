@@ -9,7 +9,7 @@ branch:
     wire down 100
     add res(10k) ..angle = 90
     ..place = (variant == "MainVariant")
-    wire down 20 to gnd
+    wire down 100 to gnd
 
 wire right 200
 branch:

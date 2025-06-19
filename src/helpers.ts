@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { readFileSync, writeFileSync, createWriteStream } from "fs";
+import { readFileSync, writeFileSync, createWriteStream, 
+    existsSync, mkdirSync } from "fs";
 import path from "path";
 
 import PDFDocument from "pdfkit";
@@ -15,7 +16,7 @@ import { LayoutEngine } from "./layout.js";
 import { SequenceAction } from "./objects/ExecutionScope.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
-import { resolveToNumericValue, SimpleStopwatch } from "./utils.js";
+import { resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
 import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
@@ -281,14 +282,22 @@ export function renderScript(scriptData: string, outputPath: string,
 
     if (dumpNets) {
         const nets = visitor.dumpNets();
-        // nets.forEach((item, index: number) => {
-        //     console.log(index, item.join(" | "));
-        // });
-        console.log(nets);
+        nets.forEach((item, index: number) => {
+            console.log(index, item.join(" | "));
+        });
+        // console.log(nets);
     }
 
-    dumpData && writeFileSync('dump/tree.lisp', tree.toStringTree(null, parser));
-    dumpData && writeFileSync('dump/raw-parser.txt', visitor.logger.dump());
+    const dumpDirectory = currentDirectory + '/dump/';
+
+    if (dumpData) {
+        if (!existsSync(dumpDirectory)) {
+            mkdirSync(dumpDirectory);
+        }
+    }
+
+    dumpData && writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));
+    dumpData && writeFileSync(dumpDirectory + 'raw-parser.txt', visitor.logger.dump());
 
     if (hasError || hasParseError) {
         console.log('Error while parsing');
@@ -313,34 +322,9 @@ export function renderScript(scriptData: string, outputPath: string,
     //     console.log(instance.pinNets);
     // }
 
-    const tmpSequence = sequence.map(item => {
-        const tmp = [...item];
-
-        const action = tmp[0];
-
-        if (action === SequenceAction.Wire) {
-            tmp[2] = tmp[2].map(item2 => {
-                const lengthValue = item2.value as UnitDimension;
-
-                const useValue = [item2.direction];
-                if (lengthValue !== null){
-                    useValue.push(lengthValue.value);
-                    useValue.push(lengthValue.type);
-                }
-
-                return useValue.join(",");
-            }).join(" ");
-        } else if (action === SequenceAction.Frame) {
-            tmp[1] = item[1].frameId;
-            
-        } else if (action !== SequenceAction.WireJump) {
-            tmp[1] = item[1].instanceName;
-        }
-
-        return tmp.join(" | ");
-    });
+    const tmpSequence = sequence.map(item => sequenceActionString(item));
     
-    dumpData && writeFileSync('dump/raw-sequence.txt', tmpSequence.join('\n'));
+    dumpData && writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
 
     let svgOutput = "";
 
@@ -382,7 +366,7 @@ export function renderScript(scriptData: string, outputPath: string,
 
         showStats && console.log('Layout took:', layoutTimer.lap());
 
-        dumpData && writeFileSync('dump/raw-layout.txt', layoutEngine.logger.dump());
+        dumpData && writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
 
         const generateSvgTimer = new SimpleStopwatch();
 
@@ -391,7 +375,7 @@ export function renderScript(scriptData: string, outputPath: string,
 
         showStats && console.log('Render took:', generateSvgTimer.lap());
 
-        dumpData && writeFileSync('dump/raw-render.txt', renderLogger.dump());
+        dumpData && writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
 
         svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
 

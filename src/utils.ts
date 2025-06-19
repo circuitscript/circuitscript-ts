@@ -10,6 +10,9 @@ import { ParserRuleContext } from "antlr4ng";
 import { SymbolDrawingCommands } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
 import { NumericValue } from "./objects/ParamDefinition";
+import { SequenceAction } from './objects/ExecutionScope';
+import { UnitDimension } from './helpers';
+import { BlockTypes } from './globals';
 
 export class SimpleStopwatch {
     startTime: Date;
@@ -233,4 +236,50 @@ export function areasOverlap(
         || isPointWithinArea(pt2, area2)
         || isPointWithinArea(pt3, area2)
         || isPointWithinArea(pt4, area2);
+}
+
+export function sequenceActionString(sequenceAction: SequenceAction): string {
+    const tmp = [...sequenceAction];
+    const action = tmp[0];
+
+    if (action === SequenceAction.Wire) {
+        tmp[2] = tmp[2].map(item2 => {
+            const lengthValue = item2.value as UnitDimension;
+
+            const useValue = [item2.direction];
+            if (lengthValue !== null){
+                useValue.push(lengthValue.value);
+                useValue.push(lengthValue.type);
+            }
+
+            return useValue.join(",");
+        }).join(" ");
+    } else if (action === SequenceAction.Frame) {
+        tmp[1] = sequenceAction[1].frameId;
+        
+    } else if (action !== SequenceAction.WireJump) {
+        tmp[1] = sequenceAction[1].instanceName;
+    }
+
+    return tmp.join(" | ");
+}
+
+export function getBlockTypeString(type: BlockTypes): string {
+    let returnValue = 'branch';
+    switch (type) {
+        case BlockTypes.Branch:
+            returnValue = 'branch';
+            break;
+        case BlockTypes.Join:
+            returnValue = 'join';
+            break;
+        case BlockTypes.Parallel:
+            returnValue = 'parallel';
+            break;
+        case BlockTypes.Point:
+            returnValue = 'point';
+            break;
+    }
+
+    return returnValue;
 }

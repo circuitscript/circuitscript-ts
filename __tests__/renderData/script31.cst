@@ -1,0 +1,16 @@
+import lib
+
+gnd = dgnd()
+v5v = supply("5V")
+
+def cap_gnd():
+    branch:
+        wire down 100
+
+frame:
+    at v5v
+    wire down 100
+    
+    cap_gnd()
+
+    wire right 300
