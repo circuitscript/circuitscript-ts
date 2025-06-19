@@ -1,9 +1,9 @@
 import lib
 
 def decoupling_cap(value):
-    wire down 20
+    wire down 100
     add cap(value)
-    wire down 20
+    wire down 100
     to gnd
 
 def conn1x4():
@@ -47,50 +47,49 @@ def power_conn():
     conn1 = conn1x4()
     at conn1:
         1: 
-            wire left 20 up 20
+            wire left 100 up 100
             to v12v
         2:
-            wire left 20
+            wire left 100
             branch:
-                wire down 20 right 20
+                wire down 100 right 100
                 to conn1 pin 3
-            wire left 20 down 20
+            wire left 100 down 100
             to gnd
         4:
-            wire down 40 left 20
+            wire down 200 left 100
             to v3v3
-            ..angle = -90
 
     return conn1
 
 def s1a_diode():
-    width = 20
-    height = 20
+    width = 100
+    height = 100
 
     # Diode is drawn horizontally
     #  -|>|-
     return create component:
         pins: 2
         type: "diode"
-        display: create graphic:
+        display: create graphic (params):
             path: ("M", width/2, -height/2, "L", width/2, height/2,
                    "M", -width/2, -height/2, "L", -width/2, height/2,
                    "L", width/2, 0, "L", -width/2, -height/2)
-            pin: 1, -width/2-20, 0, -width/2, 0     # anode
-            pin: 2, width/2 + 20, 0, width/2, 0     # cathode
-            label: "refdes", width/2 + 5, 5, "?", fontSize=10, anchor="left", vanchor="top"
+            pin: 1, -width/2-100, 0, -width/2, 0     # anode
+            pin: 2, width/2 + 100, 0, width/2, 0     # cathode
+            label: params.refdes, width/2 + 50, 25, fontSize=50, anchor="left", vanchor="top"
         params:
             footprint: "GardenRelay:S1A"
 
 
 def tmp_label(name):
-    wire left 100
+    wire left 300
     add label(name)
 
 def tmp_label_right(name):
-    wire right 20
-    add label(name)
-    wire right 40
+    wire right 100
+    add label(name) 
+    wire right 200
 
 def tps54227_block(inductor_component, upper_fb_resistor, lower_fb_resistor, 
     enable_label, output_label, inductor_footprint, place=true):
@@ -121,95 +120,98 @@ def tps54227_block(inductor_component, upper_fb_resistor, lower_fb_resistor,
 
         at tps54227:
             1:
-                wire left 20
-                add res(10k) pin 2
-                wire left 40
-                add label(enable_label)
-                wire left 20
-                to v12v left
+                point:
+                    at v12v
+                    wire right 100
+                    add res(10k)
+                    wire right 100
+                    add label(enable_label)
+                    wire right 300
+                    to point
 
             9:
-                wire left 20
-                branch:
-                    wire down 20 right 20
-                    to tps54227 pin 10
-                wire left 20 up 100 left 60
-                branch:
-                    decoupling_cap(100n, false)
-                wire left 40
-                branch:
-                    decoupling_cap(10u)
-                wire left 40
-                branch:
-                    decoupling_cap(10u)
+                point:
+                    at v12v
+                    wire down 100
+                    
+                    for i in range(0, 3):
+                        branch:
+                            decoupling_cap(100n, true)
+                        wire right 300
 
-                wire up 20
-                to v12v
+                    wire down 500 right 300
+
+                    branch:
+                        wire right 100
+                        to point
+                    wire down 100 right 100
+                    to tps54227 pin 10
 
             3: 
-                wire left 100 down 20
+                wire left 400 down 100
                 decoupling_cap(1u)
 
             4:
-                wire left 40
+                wire left 100
                 decoupling_cap(3300p)
             
             5: 
-                wire right 20 down 20
+                wire right 100 down 100
                 branch:
-                    wire left 20
+                    wire left 100
                     to tps54227 pin 11
-                wire down 20
+                wire down 300
                 to gnd
 
             6:
-                wire right 60
+                wire right 300
                 branch:
-                    wire down 20
-                    wire left 60
+                    wire down 100
+                    wire left 300
                     to tps54227 pin 7
-                wire right 40
+
+                wire right 200
                 add inductor_component
-                wire right 20
+                wire right 100
                 branch:
-                    wire down 20
-                    add res(upper_fb_resistor) down
-                    wire down 20
+                    wire down 100
+                    add res(upper_fb_resistor)
+                    wire down 100
                     branch:
-                        wire left 40
+                        wire left 200
                         wire auto_
                         to tps54227 pin 2
-                    wire down 20
+                    wire down 100
                     point fb_point
-                    wire down 20
-                    add res(lower_fb_resistor) down
+                    wire down 100
+                    add res(lower_fb_resistor)
+                    wire down 100
                     to gnd
-                wire right 60
+
+                wire right 200
                 branch:
-                    wire down 20
+                    wire down 100
                     add cap(10p)
                     ..place = false
 
                     wire auto
                     to fb_point
-                wire right 60
-                branch:
-                    decoupling_cap(22u)
-                wire right 60
-                branch:
-                    decoupling_cap(22u)
-                wire right 40 up 20
+
+                for i in range(0, 2):
+                    wire right 300
+                    branch:
+                        decoupling_cap(22u)
+
+                wire right 100 up 100
                 to supply(output_label)
 
             8:
-                wire right 20
+                wire right 100
                 add cap(100n)
                 ..angle = -90
-                wire right 20 down 20
+                wire right 100 down 100
                 to tps54227 pin 6
 
-
-    
 def main():
     barrel_jack = create component:
         pins:
@@ -227,25 +229,21 @@ def main():
 
         at barrel_jack:
             1:
-                wire right 20
-                branch:
-                    wire up 20
-                    add v12v
+                wire right 100
 
-                wire right 40
-                branch:
-                    decoupling_cap(10u)
+                for i in range(0, 4):
+                    wire right 300
+                    branch:
+                        decoupling_cap(10u)
 
-                wire right 40
+                wire right 100
                 branch:
-                    decoupling_cap(10u)
-
-                wire right 40
-                branch:
-                    decoupling_cap(10u)
+                    wire up 100
+                    to v12v
+                wire right 100
 
             2:
-                wire right 20 down 20
+                wire right 100 down 300
                 to gnd
 
         # create power connectors
@@ -256,18 +254,92 @@ def main():
 
         at J104:
             1:
-                wire left 20 up 20
+                wire left 100 up 100
                 to supply("5V#")
             2:
-                wire left 20
+                wire left 100
                 branch:
-                    wire down 20 right 20
+                    wire down 100 right 100
                     to J104 pin 3
-                wire left 20
-                to v5v left
+                    
+                wire left 100
+                to v5v
             4:
-                wire left 20 down 20    
+                wire left 100 down 100
                 to gnd
+
+    frame:
+        ..title = "ESP32 board connector"
+        ..direction = "column"
+
+        frame:
+            ..direction = "row"
+            ..border = 0
+
+            main_conn1 = conn1x11()
+            at main_conn1:
+                1: tmp_label("ADC1")
+                2: tmp_label("ADC2")
+                3: tmp_label("GPIO1")
+                4: tmp_label("GPIO2")
+                5: tmp_label("ADC3")
+                6: tmp_label("GPIO3")
+                7: tmp_label("ADC4")
+                8: tmp_label("GPIO4")
+                9: tmp_label("ADC8")
+                10:
+                    wire left 500 
+                    to gnd
+                11: tmp_label("ADC7") 
+
+            at conn1x11():
+                1: tmp_label_right("GPIO5")
+                2:  
+                    wire right 500 to gnd
+                3: tmp_label_right("GPIO6")
+                4: tmp_label_right("GPIO7")
+                5: tmp_label_right("GPIO8")
+                6: tmp_label_right("GPIO9")
+                7: tmp_label_right("GPIO10")
+                8: tmp_label_right("ADC5")
+                9: tmp_label_right("ADC6")
+                10: tmp_label_right("GPIO11")
+                11: tmp_label_right("GPIO12")
+
+        frame:
+            ..border=0
+
+            at conn1x2():
+                1: 
+                    wire left 500 
+                    to gnd
+                2: tmp_label("GPIO13")
+
+            at conn1x2():
+                1:
+                    wire left 200 up 200
+                    add v3v3
+                2:
+                    wire left 200
+                    add label("EN")
+
+            at conn1x4():
+                1: tmp_label("GPIO11")
+                2: tmp_label("GPIO12")
+                3: tmp_label("GPIO13")
+                4: 
+                    wire left 200
+                    to v5v
+
+            at conn1x4():
+                1: tmp_label("GPIO10")
+                2: tmp_label("GPIO9")
+                3:
+                    wire left 200
+                    to v3v3
+                4: 
+                    wire left 100 down 100
+                    to gnd
 
     ind_3u3 = ind(3.3u)
     ind_3u3.footprint = "GardenRelay:NR6020T3R3N"
@@ -281,87 +353,6 @@ def main():
     block2 = tps54227_block(ind_4u7, 124k, 22.1k, 
         "EN_5V", "5V#", "GardenRelay:NRS8030T4R7MJGJ")
 
-    frame:
-        ..title = "ESP32 board connector"
-        ..direction = "column"
-
-        frame:
-            ..direction = "row"
-            ..border = 0
-
-            at conn1x2():
-                1:
-                    wire left 40 up 40
-                    add v3v3
-                2:
-                    wire left 40
-                    add label("EN")
-
-            J105 = conn1x11()
-
-            at J105:
-                1: tmp_label("ADC1")
-                2: tmp_label("ADC2")
-                3: tmp_label("GPIO1")
-                4: tmp_label("GPIO2")
-                5: tmp_label("ADC3")
-                6: tmp_label("GPIO3")
-                7: tmp_label("ADC4")
-                8: tmp_label("GPIO4")
-                9: tmp_label("ADC8")
-                10:
-                    wire left 100 
-                    to gnd left
-                11: tmp_label("ADC7") 
-
-            J106 = conn1x2()
-
-            at J106:
-                1: 
-                    wire left 100 
-                    to gnd left
-                2: tmp_label("GPIO13")
-
-            J107 = conn1x11()
-
-            at J107:
-                1: tmp_label("GPIO5")
-                2: 
-                    wire left 100 
-                    to gnd left
-                3: tmp_label("GPIO6")
-                4: tmp_label("GPIO7")
-                5: tmp_label("GPIO8")
-                6: tmp_label("GPIO9")
-                7: tmp_label("GPIO10")
-                8: tmp_label("ADC5")
-                9: tmp_label("ADC6")
-                10: tmp_label("GPIO11")
-                11: tmp_label("GPIO12")
-
-        frame:
-            ..border = 0
-            
-            J109 = conn1x4()
-            at J109:
-                1: tmp_label("GPIO11")
-                2: tmp_label("GPIO12")
-                3: tmp_label("GPIO13")
-                4: 
-                    wire left 40 
-                    to v5v left
-
-            J110 = conn1x4()
-            at J110:
-                1: tmp_label("GPIO10")
-                2: tmp_label("GPIO9")
-                3:
-                    wire left 40 
-                    to v3v3 left
-                4: 
-                    wire left 20 down 20
-                    to gnd
-
 def mosfet():
     return create component:
         pins: 3
@@ -374,10 +365,10 @@ def mosfet():
 
 def decoupling_cap(value, place=true):
     branch:
-        wire down 20
+        wire down 100
         add cap(value)
         ..place = place
-        wire down 20
+        wire down 100
         to gnd
 
 def pump_block(enable_name, sense_out):
@@ -416,12 +407,17 @@ def pump_block(enable_name, sense_out):
             conn = conn1x5()
             at conn:
                 1:
-                    wire left 20 up 20
-                    to v12v
-                2: tmp_label("LOAD_SUPPLY")
+                    point:
+                        at v12v
+                        wire down 100 right 100 to point
+
+                2:  
+                    point:
+                        at label("LOAD_SUPPLY")
+                        wire right 500 to point
                 3: 
                     wire left 40
-                    to v5v left
+                    to v5v
                 4: tmp_label("CONN+")
                 5: tmp_label("CONN-")
 
@@ -431,72 +427,72 @@ def pump_block(enable_name, sense_out):
             ..padding = 0
 
             at label(enable_name)
-            wire right 40 
+            wire right 200
             branch:
-                wire down 20
-                add led("RED") down
-                wire down 20
-                add res(130) down
-                wire down 20 to gnd
-            wire right 40
+                wire down 100
+                add led("RED")
+                wire down 100
+                add res(130)
+                wire down 100 to gnd
+            wire right 200
             branch:
-                wire down 20
-                add res(1k) down
-                wire down 20
+                wire down 100
+                add res(1k)
+                wire down 100
                 to gnd
 
-            wire right 20
+            wire right 100
             add Q1 = mosfet()
             at Q1 pin 2 
-            wire right 20 down 20
+            wire right 100 down 100
             to gnd
 
             at v12v
-            wire down 20
+            wire down 100
             branch:
-                wire right 80
+                wire right 400
                 add relay pin 2
-            wire down 20
-            add s1a_diode() pin 2 down
-            wire down 20
+            wire down 100
+            add s1a_diode() pin 2
+            wire down 100
             branch:
-                wire right 40
+                wire right 200
                 wire auto
                 to relay pin 5
-            wire left 40 up 80 left 60
+            wire left 200 up 400 left 300
             to Q1 pin 3
 
             at relay:
                 4:
-                    wire right 20
+                    wire right 100
                     branch:
-                        wire up 100 right 140
+                        wire up 300 right 500
                         add label("SENSE+")
-                        wire right 60
-                    wire right 20
+                        wire right 300
+                    wire right 100
                     add res(0.05)
-                    wire right 20
+                    wire right 100
                     branch:
-                        wire up 80 right 20
+                        wire up 200 right 100
                         add label("SENSE-")
-                        wire right 60
-                    wire right 20
+                        wire right 300
+                    wire right 100
                     add label("LOAD_SUPPLY")
-                    wire right 80
+                    wire right 400
                 1:
-                    wire right 20
+                    wire right 100
                     branch:
-                        wire right 40
+                        wire right 200
                         add label("CONN+")
-                        wire right 40
-                    wire down 20
-                    add s1a_diode() pin 2 down
-                    wire down 20
+                        wire right 200
+                    wire down 100
+                    add s1a_diode() pin 2
+                    wire down 100
                     branch:
-                        wire right 40
+                        wire right 200
                         add label("CONN-")
-                        wire right 40
-                    wire down 20
+                        wire right 200
+                    wire down 100
                     to gnd  
 
         frame:
@@ -505,63 +501,94 @@ def pump_block(enable_name, sense_out):
             ..padding = 0
         
             at label("SENSE+")
-            wire right 40 
+            wire right 300 
             add res(1k)
-            wire right 20
+            wire right 100
             point tmp1
 
             branch:
-                wire right 40
+                wire right 200
                 to diff_amp pin 3
 
             at diff_amp:
                 2:
-                    wire right 20 up 20
+                    wire right 100 up 100
                     to v3v3
                 5:
-                    wire right 20 down 20
+                    wire right 100 down 100
                     to gnd
                 1: 
-                    wire right 40
+                    wire right 200
                     branch:
-                        wire up 100 left 40
+                        wire up 500 left 200
                         add res(20k) pin 2
                         wire auto_
                         to tmp1
 
-                    wire right 40
+                    wire right 200
                     decoupling_cap(100n)
-                    wire right 40
+                    wire right 200
                     add label(sense_out)
-                    wire right 40
+                    wire right 200
 
             at label("SENSE-")
-            wire right 40
+            wire right 300
             add res(1k)
-            wire right 20
+            wire right 100
             
             branch:
-                wire right 40
+                wire right 200
                 to diff_amp pin 4
 
-            wire down 20
-            add res(20k) down
-            wire down 20 left 20
-            to supply("Vbias") left
+            wire down 100
+            add res(20k)
+            wire down 100 left 100
+            to vbias
 
 # define global nets
 v12v = supply("12V")
 v3v3 = supply("3V3")
 v5v = supply("5V")
+vbias = supply("Vbias")
+
 gnd = dgnd()
 
-main()
+document.sheet_type = sheet_A4()
 
-/pump1 pump_block("GPIO1", "ADC1")
-/pump2 pump_block("GPIO2", "ADC2") 
-/pump3 pump_block("GPIO3", "ADC3")
-/pump4 pump_block("GPIO4", "ADC4")
-/pump5 pump_block("GPIO5", "ADC5")
-/pump6 pump_block("GPIO6", "ADC6")
-/pump7 pump_block("GPIO7", "ADC7")
-/pump8 pump_block("GPIO8", "ADC8")
+sheet:
+    ..valign = "top"
+    ..title = "Power connectors, DC-DC converters"
+    
+    main()
+
+    frame:
+        ..title = "Bias voltage for current measurement opamp"
+
+        at v3v3
+        wire down 100
+        add res(10k)
+        wire down 100
+        branch:
+            wire down 100
+            add res(1k)
+            wire down 100
+            to gnd
+
+        wire right 300 
+        branch:
+            wire down 100
+            add cap(100n)
+            wire down 100
+            to gnd
+        wire right 100 up 100
+        to vbias
+
+
+for i in range(0, 6):
+    index1 = (i * 2 + 1)
+    index2 = index1 + 1
+
+    sheet:
+        ..title = "GPIO control " + index1 + ", " + index2
+        /("pump" + index1) pump_block("GPIO" + index1, "ADC" + index1)
+        /("pump" + index2) pump_block("GPIO" + index2, "ADC" + index2)
