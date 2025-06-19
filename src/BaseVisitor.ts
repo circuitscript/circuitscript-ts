@@ -95,7 +95,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         // Add the document global object, this is used to set the page size
         this.startingContext.scope.variables.set(GlobalDocumentName, {});
         
-        this.setupPrintFunction(this.startingContext);
+        this.setupBuiltInFunctions(this.startingContext);
             
         this.executionStack = [this.startingContext];
         this.startingContext.resolveNet = 
@@ -111,7 +111,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.executionStack[this.executionStack.length - 1];
     }
 
-    protected setupPrintFunction(context: ExecutionContext): void {
+    protected setupBuiltInFunctions(context: ExecutionContext): void {
         linkBuiltInMethods(context, this);
     }
 
@@ -875,8 +875,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             currentExecutionContext.logger,
             parentContext
         );
-
-        this.setupPrintFunction(newExecutor);
 
         // Add the execution context to the end of the execution stack
         executionStack.push(newExecutor);

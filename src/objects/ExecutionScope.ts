@@ -46,11 +46,6 @@ export class ExecutionScope {
     currentWireId = -1;
     currentFrameId = -1;
 
-    netGnd: Net | null = null;
-
-    // This is the main gnd net of the circuit scope
-    componentGnd: ClassComponent | null = null;
-
     // This is the first component in the circuit scope
     componentRoot: ClassComponent | null = null;
     
