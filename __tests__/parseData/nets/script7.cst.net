@@ -1,0 +1,10 @@
+/5V | net-0.COMP-1-5V | 1
+/5V | tmp1-0.net-0.COMP-1-5V:0 | 1
+/5V | tmp1-0.res-0.COMP-1-10k | 1
+/5V | tmp1-1.net-0.COMP-1-5V:0 | 1
+/5V | tmp1-1.res-1.COMP-1-10k | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | tmp1-0.dgnd-0.COMP-1-GND:0 | 1
+/GND | tmp1-0.res-0.COMP-1-10k | 2
+/GND | tmp1-1.dgnd-0.COMP-1-GND:0 | 1
+/GND | tmp1-1.res-1.COMP-1-10k | 2

@@ -5,7 +5,4 @@
     "outDir": "./dist/esm",
     "target": "esnext"
   },
-  "include": [
-    "src"
-  ],
 }

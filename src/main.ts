@@ -35,6 +35,7 @@ export default async function main(): Promise<void> {
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
         .option('-s, --stats', 'Show stats during generation')
+        .option('-x, --skip-output', 'Skip output generation')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -107,7 +108,7 @@ export default async function main(): Promise<void> {
     const output = renderScript(scriptData, outputPath,
         scriptOptions);
 
-    if (outputPath === null && output){
+    if (outputPath === null && output && (options.skipOutput === undefined)){
         console.log(output);
     }
 

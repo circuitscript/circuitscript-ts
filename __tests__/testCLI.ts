@@ -26,6 +26,7 @@ describe('test cli program', () => {
   -n, --dump-nets                 Dump out net information
   -d, --dump-data                 Dump data during parsing
   -s, --stats                     Show stats during generation
+  -x, --skip-output               Skip output generation
   -h, --help                      display help for command`
 
         expect(result.includes(options)).toBe(true);

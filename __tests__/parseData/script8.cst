@@ -1,0 +1,22 @@
+import lib
+
+v5v = supply("5v")
+gnd = dgnd()
+
+def divider(power_net, r1, r2, output_net):
+    at power_net
+    wire down 20
+    add res(r1) angle:90
+    wire down 20
+
+    branch:
+        wire right 20
+        add output_net
+        wire right 20
+
+    wire down 20
+    add res(r2) angle:90
+    wire down 20
+    to gnd
+
+divider(v5v, 10k, 20k, label("hello"))

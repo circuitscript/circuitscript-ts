@@ -1,0 +1,33 @@
+import lib
+
+v5v = supply("5V")
+
+def tmp1():
+    wire right 20
+    add res(0)
+    wire right 20
+    add label("label_1")
+
+    wire right 40
+    add res(0)
+    add / label("global_label")
+
+    wire right 80
+    add res(0)
+    
+    +/inner tmp2()
+
+def tmp2():
+    wire right 20
+    add res(0)
+    add label("label_2")
+    wire right 40
+
+at v5v
+wire down 20
+branch:
+    /scope1 tmp1()
+
+wire down 40
+branch:
+    /scope2 tmp1()

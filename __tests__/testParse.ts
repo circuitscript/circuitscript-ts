@@ -5,13 +5,11 @@ import { ComponentPinNet } from '../src/objects/types.js';
 import { prepareSVGEnvironment } from '../src/sizing.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
-    inlineScript1, inlineScript10, inlineScript11, inlineScript12, inlineScript13, inlineScript14, inlineScript15, 
-    inlineScript16, inlineScript17, inlineScript18, inlineScript19, inlineScript2,
+    inlineScript17, inlineScript18, inlineScript19, 
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
-    inlineScript27, inlineScript28, inlineScript29, inlineScript3, inlineScript30, inlineScript31, inlineScript32, 
+    inlineScript27, inlineScript28, inlineScript29, inlineScript30, inlineScript31, inlineScript32, 
     inlineScript33, inlineScript34, inlineScript35, inlineScript36, inlineScript37, inlineScript38, inlineScript39, 
-    script20_, script21_,
-    inlineScript6, inlineScript7, inlineScript8, inlineScript9,
+    script21_,
     inlineScript40,
     inlineScript41,
     inlineScript42,
@@ -25,7 +23,8 @@ import {
     inlineScript50,
     inlineScript51,
     inlineScript52,
-    inlineScript53
+    inlineScript53,
+    inlineScriptTests
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -48,24 +47,7 @@ describe('test parsing', () => {
     }
 
 
-    test.each([
-        ["create component command", inlineScript1],
-        ["function to create component and branching", inlineScript2],
-        ["nested branching, add with pin selected", inlineScript3],
-        ["'at' and 'to' commands will clone net components", inlineScript6],
-        ["resolve instances in upper contexts", inlineScript7],
-        ["components in function parameters", inlineScript8],
-        ["resolve nets in local and upper contexts", inlineScript9],
-        ["assignment in at/to/add statement", inlineScript10],
-        ["net namespace local and global", inlineScript11],
-        ["create component with copy and is net", inlineScript12],
-        ["correct nets after function call and also `join` keyword", inlineScript13],
-        ["path with 'point' keyword", inlineScript14],
-        ["path with 'parallel' keyword", inlineScript15],
-        ["consecutive blocks with 'join' then 'point'", inlineScript16],
-        ['module nets', script20_]
-        
-    ])('parse script - %s', async (description, scriptTest) => {
+    test.each(inlineScriptTests)('parse script - %s', async (description, scriptTest) => {
 
         await prepareSVGEnvironment(null);
         

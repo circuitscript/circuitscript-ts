@@ -17,7 +17,8 @@ import { ParamKeys } from '../globals.js';
 
 export class ClassComponent {
 
-    /** A component has an instance_name to identify it */
+    /** A component has an instance_name to identify it. This is unique and
+     *  should not be changed. */
     instanceName: string;
 
     /** Maximum number of pins available on this component.
@@ -40,7 +41,7 @@ export class ClassComponent {
 
     /** Stores the largest position for each side of the component. This is needed
      * to calculate the component width and height. */
-    pinsMaxPositions: {[key: string]: number} = {};
+    pinsMaxPositions: Map<string, number> = new Map();
 
     // The cached values are used for easier comparison/equality check.
     _cachedPins: string;
@@ -272,6 +273,10 @@ export class ClassComponent {
 
         for (const [key, value] of this.pins) {
             component.pins.set(key, value);
+        }
+
+        for(const [key, value] of this.pinsMaxPositions){
+            component.pinsMaxPositions.set(key, value);
         }
 
         component.refreshCache();

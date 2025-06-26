@@ -1,0 +1,19 @@
+import lib
+
+at label("hello")
+wire right 40 
+
+branch:
+    wire down 40
+    
+    branch:
+        wire down 20
+        add diode() ..angle = 90
+
+    wire left 20
+    add diode() pin 2
+    wire left 20 down 20
+    add diode() ..angle = 90
+
+wire right 40
+add diode()

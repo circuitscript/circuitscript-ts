@@ -28,9 +28,10 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
 import { ParserRuleContext } from 'antlr4ng';
-import { GlobalDocumentName, ReferenceTypes } from './globals';
+import { DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals';
 import { linkBuiltInMethods } from './builtinMethods';
 import { resolveToNumericValue, throwWithContext } from './utils';
+import { SequenceAction } from './objects/ExecutionScope';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -86,20 +87,31 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         this.onErrorCallbackHandler = onErrorHandler;
 
         this.startingContext = new ExecutionContext(
-            '__',
-            '__.',
+            DoubleDelimiter1,
+            `${DoubleDelimiter1}.`,
             '/',
             0, 0, silent, 
             this.logger, null);
 
+        const scope = this.startingContext.scope;
+
+        // Start the sequence list with the cursor positioned at
+        // the root node.
+        scope.sequence.push([
+            SequenceAction.At, scope.componentRoot!, scope.currentPin!
+        ]);
+
         // Add the document global object, this is used to set the page size
-        this.startingContext.scope.variables.set(GlobalDocumentName, {});
+        scope.variables.set(GlobalDocumentName, {});
         
         this.setupBuiltInFunctions(this.startingContext);
             
         this.executionStack = [this.startingContext];
         this.startingContext.resolveNet = 
             this.createNetResolver(this.executionStack);
+
+        this.startingContext.resolveComponentPinNet = 
+            this.createComponentPinNetResolver(this.executionStack);
 
         this.silent = silent;
 
@@ -144,6 +156,24 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         return resolveNet;
     }
+    
+    createComponentPinNetResolver(executionStack: ExecutionContext[]):
+        (component: ClassComponent, pin: number) => Net | null {
+
+        return (component: ClassComponent, pin: number): Net | null => {
+            const reversed = [...executionStack].reverse();
+
+            for (let i = 0; i < reversed.length; i++) {
+                const context = reversed[i];
+                const net = context.scope.getNet(component, pin);
+                if (net !== null) {
+                    return net;
+                }
+            }
+
+            return null;
+        };
+    }
 
     log(...params: any[]): void {
         const indentOutput = ''.padStart(this.indentLevel * 4, '    ');
@@ -180,17 +210,12 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         if (trailers.length === 0) {
             if (value instanceof ClassComponent) {
-                // If value is a class component, then update the instance name
-                const instances = this.getExecutor().scope.instances;
-                const tmpComponent: ClassComponent = value;
+                const variables = this.getExecutor().scope.variables;
+                variables.set(reference.name!, value);
 
-                const oldName = tmpComponent.instanceName;
-
-                // Rename to new name
-                tmpComponent.instanceName = reference.name;
-
-                instances.delete(oldName);
-                instances.set(reference.name, tmpComponent);
+                this.getExecutor().scope.sequence.push(
+                    [SequenceAction.Assign, reference.name, value]
+                );
 
                 this.log2(
                     `assigned '${reference.name}' to ClassComponent`,

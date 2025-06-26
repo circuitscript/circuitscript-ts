@@ -1,0 +1,14 @@
+import lib
+gnd = dgnd()
+
+at v5v = supply("5V")
+wire down 20
+add R1 = res(10k) angle:90
+wire down 20
+add R2 = res(10k) angle:90
+wire down 20
+to C1 = cap(10n) angle:90
+
+at C1 pin 2
+wire down 20
+to gnd

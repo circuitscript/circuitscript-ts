@@ -1,0 +1,5 @@
+/XGND | dgnd-0.COMP-1-XGND | 1
+/XGND | power_input-0.COMP-1 | 1
+/XGND | -branch.--.0 | 1
+/XGND | power_input-0.COMP-1 | 3
+/XGND | dgnd-0.COMP-1-XGND:0 | 1

@@ -1,0 +1,11 @@
+/5v | supply-0.net-0.COMP-1-5v | 1
+/5v | divider-0.supply-0.net-0.COMP-1-5v:0 | 1
+/5v | divider-0.res-0.COMP-1-10k | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | divider-0.dgnd-0.COMP-1-GND:0 | 1
+/GND | divider-0.res-1.COMP-1-20k | 2
+/hello | label-0.COMP-1-hello | 1
+/hello | divider-0.res-0.COMP-1-10k | 2
+/hello | divider-0.-branch.divider-0.0 | 1
+/hello | divider-0.label-0.COMP-1-hello:0 | 1
+/hello | divider-0.res-1.COMP-1-20k | 1

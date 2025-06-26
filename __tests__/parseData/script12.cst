@@ -1,0 +1,8 @@
+my_net = create component:
+    pins: 1
+    copy: 1
+    type: "net"
+    params:
+        net_name: "hello"
+
+at my_net

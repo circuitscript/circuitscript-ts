@@ -1,0 +1,28 @@
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+def led_with_res():
+    add led("yellow") angle:180 pin 2
+    wire right 20
+    add res(1k)
+    wire right 20
+
+join:
+    at gnd angle:90
+    wire right 20
+    add label("TXLED")
+    wire right 60
+    led_with_res()
+
+join:
+    at gnd angle:90
+    wire right 20
+    add label("RXLED")
+    wire right 60
+    led_with_res()
+    wire up 100
+
+wire up 20
+to v5v

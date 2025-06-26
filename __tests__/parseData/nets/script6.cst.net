@@ -1,0 +1,15 @@
+/3v3 | net-0.COMP-1-3v3 | 1
+/3v3 | net-0.COMP-1-3v3:0 | 1
+/3v3 | res-0.COMP-1-20k | 1
+/3v3 | net-0.COMP-1-3v3:1 | 1
+/3v3 | res-2.COMP-1-10k | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | res-1.COMP-1-20k | 2
+/out | net-1.COMP-1-out | 1
+/out | res-0.COMP-1-20k | 2
+/out | -branch.--.0 | 1
+/out | res-1.COMP-1-20k | 1
+/out | net-1.COMP-1-out:0 | 1
+/out | net-1.COMP-1-out:1 | 1
+/out | res-2.COMP-1-10k | 2

@@ -913,9 +913,9 @@ export class SymbolCustom extends SymbolGraphic {
     _cacheTopPins: SymbolPinDefintion[] = [];
     _cacheBottomPins: SymbolPinDefintion[] = [];
 
-    pinMaxPositions: { [key: string]: number }
+    pinMaxPositions: Map<string, number>;
 
-    constructor(pinDefinition: SymbolPinDefintion[], pinMaxPositions: { [key: string]: number }) {
+    constructor(pinDefinition: SymbolPinDefintion[], pinMaxPositions: Map<string, number>) {
         super();
 
         // define the left and right pins only for now
@@ -1129,12 +1129,10 @@ export class SymbolCustom extends SymbolGraphic {
         const tmpPinSpacing = this.pinSpacing.toNumber();
         const tmpPinLength = this.pinLength.toNumber();
 
-        const {
-            [SymbolPinSide.Top]: maxTopPins,
-            [SymbolPinSide.Bottom]: maxBottomPins,
-            [SymbolPinSide.Left]: maxLeftPins,
-            [SymbolPinSide.Right]: maxRightPins
-        } = this.pinMaxPositions;
+        const maxTopPins = this.pinMaxPositions.get(SymbolPinSide.Top) as number;
+        const maxBottomPins = this.pinMaxPositions.get(SymbolPinSide.Bottom) as number;
+        const maxLeftPins = this.pinMaxPositions.get(SymbolPinSide.Left) as number;
+        const maxRightPins = this.pinMaxPositions.get(SymbolPinSide.Right) as number;
 
         const bodyWidthFromPins = numeric(
             (1 + Math.max(maxTopPins, maxBottomPins)) * tmpPinSpacing

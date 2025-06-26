@@ -1,0 +1,9 @@
+/NET-1 | diode-1.COMP-1 | 1
+/NET-1 | diode-2.COMP-1 | 1
+/hello | label-0.COMP-1-hello | 1
+/hello | label-0.COMP-1-hello:0 | 1
+/hello | -branch.--.0 | 1
+/hello | -branch.--.1 | 1
+/hello | diode-0.COMP-1 | 1
+/hello | diode-1.COMP-1 | 2
+/hello | diode-3.COMP-1 | 1

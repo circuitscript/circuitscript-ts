@@ -117,3 +117,42 @@ export function findItemByRefDes(instances: Map<string, ClassComponent>, typePro
 export function loadScriptFromFile(filePath: string): string {
     return readFileSync(filePath).toString();
 }
+
+export function loadRawNetFromFile(filePath: string): string {
+    return readFileSync(filePath).toString();
+}
+
+export class ScriptTest<T> {
+
+    script: string;
+    expected: T[];
+
+    constructor(script: string, expected: string | T[]) {
+        this.script = script;
+
+        if (typeof expected == "string") {
+            expected = parseNets(expected);
+        }
+
+        this.expected = expected;
+    }
+}
+
+export function parseNets(stringValue: string): [string, string, number][] {
+    stringValue = stringValue.trim();
+    const result = stringValue.split("\n").map(line => {
+        line = line.split('|').map(item => item.trim());
+        line[2] = Number(line[2]);
+        return line;
+    });
+
+    return result;
+}
+
+
+export function createParseTest(rootFolder: string, scriptName: string): ScriptTest<ComponentPinNet> {
+    return new ScriptTest<ComponentPinNet>(
+        loadScriptFromFile(`${rootFolder}/${scriptName}.cst`),
+        loadRawNetFromFile(`${rootFolder}/nets/${scriptName}.cst.net`)
+    );
+}

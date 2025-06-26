@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { BlockTypes, ComponentTypes, FrameType, GlobalNames, NoNetText, ParamKeys, 
+import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalNames, NoNetText, ParamKeys, 
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
 import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
@@ -54,6 +54,8 @@ export class ExecutionContext {
         found: boolean, net?: Net
     }) = null;
 
+    resolveComponentPinNet!: (component: ClassComponent, pin: number) => Net | null;
+
     /** If true, then do no evaluate further expressions. 
      * Used for function state control */
     stopFurtherExpressions = false;
@@ -96,18 +98,6 @@ export class ExecutionContext {
         this.scope.indentLevel = indentLevel;
 
         this.setupRoot();
-
-        if (name === '__') {
-            // Start the sequence list with the cursor positioned at
-            // the root node.
-            this.scope.sequence.push(
-                [
-                    SequenceAction.At,
-                    this.scope.componentRoot!,
-                    this.scope.currentPin!
-                ]
-            );
-        }
 
         this.silent = silent;
 
@@ -152,14 +142,14 @@ export class ExecutionContext {
     }
 
     getUniqueInstanceName(): string {
-        const tmpName = 'COMP_' + this.scope.unnamedCounter;
+        const tmpName = `COMP${Delimiter1}${this.scope.unnamedCounter}`;
         this.scope.unnamedCounter += 1;
 
         return tmpName;
     }
 
     private getUniqueNetName(): string {
-        const tmpName = 'NET_' + this.scope.netCounter;
+        const tmpName = `NET${Delimiter1}${this.scope.netCounter}`;
         this.scope.netCounter++;
         return tmpName;
     }
@@ -325,8 +315,9 @@ export class ExecutionContext {
             }
 
             // Assume net is on 1 pin for now
-            this.scope.setNet(component, 1, tmpNet);
-            this.log('set net', netName, 'component', component);
+            const defaultPin = 1;
+            this.scope.setNet(component, defaultPin, tmpNet);
+            this.log('set net', netName, 'component', component, defaultPin);
         }
 
         // Determine the side for each pin and update the
@@ -561,10 +552,22 @@ export class ExecutionContext {
             componentCopy);
         componentCopy.instanceName = cloneInstanceName;
 
+        const defaultPin = 1;
+
+        if(this.scope.getNet(component, defaultPin) === null){
+            // If component is not in the same scope, then need to 
+            // copy the net in the scope itself.
+            const foundNet = this.resolveComponentPinNet(component, defaultPin);
+            if (foundNet !== null){
+                this.log('found net in upper scopes', foundNet);
+                this.scope.setNet(component, defaultPin, foundNet);
+            }
+        }
+
         // Link pin of cloned component onto the same net
         this.linkComponentPinNet(
-            component, 1,
-            componentCopy, 1
+            component, defaultPin,
+            componentCopy, defaultPin
         );
 
         this.log('created clone of net component:', cloneInstanceName);
@@ -584,7 +587,7 @@ export class ExecutionContext {
             // connect future components/wires.
             
             const key = getBlockTypeString(blockType);
-            this.addPoint(`_${key}.${this.name}.${this.tmpPointId}`, false);
+            this.addPoint(`${Delimiter1}${key}.${this.name}.${this.tmpPointId}`, false);
             this.tmpPointId += 1;
         }
 
@@ -696,7 +699,7 @@ export class ExecutionContext {
             if (blockIndex === 0) {
                 // First join block will determine the final join location
 
-                const pointIdName = '_' + getBlockTypeString(blockType);
+                const pointIdName = `${Delimiter1}${getBlockTypeString(blockType)}`;
 
                 // Add point to current location, start with _join keyword to
                 // indicate that this is a point for join keyword
@@ -744,7 +747,7 @@ export class ExecutionContext {
             const { entered_at } = stackRef;
             const component: ClassComponent = entered_at[0];
 
-            if (component.instanceName.startsWith('_point.')) {
+            if (component.instanceName.startsWith(`${Delimiter1}point.`)) {
                 return entered_at;
             }
         }
@@ -1104,7 +1107,7 @@ export class ExecutionContext {
         }
 
         const useName = userDefined ? 'point.' + pointId : pointId;
-        const componentPoint = ClassComponent.simple(useName, 1, "point");
+        const componentPoint = ClassComponent.simple(useName, 1);
         componentPoint.displayProp = this.getPointSymbol();
         componentPoint.typeProp = ComponentTypes.net;
 
@@ -1301,20 +1304,17 @@ function isWireSegmentsEndAuto(segments:WireSegment[]): boolean {
 export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): 
     { 
         pins: PortSideItem[],
-        maxPositions: {
-            [key: string]: number
-        }
+        maxPositions: Map<string, number>
     } {
     // Takes the arrangeProps and determines how to arrange pins in the symbol.
 
     const result = [];
 
-    const maxPositions: { [key: string]: number } = {
-        [SymbolPinSide.Left]: 0,
-        [SymbolPinSide.Right]: 0,
-        [SymbolPinSide.Top]: 0,
-        [SymbolPinSide.Bottom]: 0,
-    };
+    const maxPositions: Map<string, number> = new Map();
+    maxPositions.set(SymbolPinSide.Left, 0);
+    maxPositions.set(SymbolPinSide.Right, 0);
+    maxPositions.set(SymbolPinSide.Top, 0);
+    maxPositions.set(SymbolPinSide.Bottom, 0);
 
     if (arrangeProps === null) {
         let counter = 0;
@@ -1336,8 +1336,8 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             return item.side === PortSide.EAST
         });
 
-        maxPositions[SymbolPinSide.Left] = leftSideItems.length;
-        maxPositions[SymbolPinSide.Right] = rightSideItems.length;
+        maxPositions.set(SymbolPinSide.Left, leftSideItems.length);
+        maxPositions.set(SymbolPinSide.Right, rightSideItems.length);
 
     } else {
         let counter = pins.size;
@@ -1390,7 +1390,7 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
                 }
             });
 
-            maxPositions[key] = position;
+            maxPositions.set(key, position);
         }
     }
     

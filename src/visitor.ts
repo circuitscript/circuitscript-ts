@@ -67,8 +67,11 @@ import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
-    ComponentPinNet, ComponentPinNetPair, DeclaredReference, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, FrameType, GlobalDocumentName, ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, WireAutoDirection } from './globals.js';
+    ComponentPinNet, ComponentPinNetPair, DeclaredReference, 
+    FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
+import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
+    ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
+    WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -230,7 +233,7 @@ export class ParserVisitor extends BaseVisitor {
                 appendValue = paramValue.value;
             }
 
-            instanceName += '_' + appendValue;
+            instanceName += `${Delimiter1}${appendValue}`;
         }
 
         const arrange = properties.has('arrange') ?
@@ -697,17 +700,16 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().log('expanding module `contains`')
 
         const executionStack = this.executionStack;
-        const resolveNet = this.createNetResolver(executionStack);
         const executor = this.getExecutor();
 
         const executionContextName = 
-            executor.namespace + "_"
+            executor.namespace + Delimiter1
             + component.instanceName
-            + '_' + component.moduleCounter;
+            + Delimiter1 + component.moduleCounter;
 
         const tmpNamespace = this.getNetNamespace(
             netNamespace,
-            "+/" + component.instanceName + "_" + component.moduleCounter
+            "+/" + component.instanceName + Delimiter1 + component.moduleCounter
         );
 
         const newExecutor = this.enterNewChildContext(
@@ -718,7 +720,8 @@ export class ParserVisitor extends BaseVisitor {
         );
 
         component.moduleCounter += 1;
-        newExecutor.resolveNet = resolveNet;
+        newExecutor.resolveNet = this.createNetResolver(executionStack);
+        newExecutor.resolveComponentPinNet = this.createComponentPinNetResolver(executionStack);
 
         // Create all the internal circuits of the module
         this.visit(component.moduleContainsExpressions);
@@ -985,14 +988,14 @@ export class ParserVisitor extends BaseVisitor {
         const functionCounter = { counter: 0 };
 
         const resolveNet = this.createNetResolver(this.executionStack);
+        const resolveComponentPinNet = this.createComponentPinNetResolver(this.executionStack);
 
         const __runFunc = (passedInParameters:CallableParameter[], 
             options: CFunctionOptions): [
             executionContext: ExecutionContext, 
             result: ComplexType | null] => {
 
-            const executionContextName = 
-                functionName + '_' + functionCounter['counter'];
+            const executionContextName = `${functionName}-${functionCounter['counter']}`;
 
             const newExecutor = this.enterNewChildContext(
                 executionStack,
@@ -1005,6 +1008,7 @@ export class ParserVisitor extends BaseVisitor {
 
             functionCounter['counter'] += 1;
             newExecutor.resolveNet = resolveNet;
+            newExecutor.resolveComponentPinNet = resolveComponentPinNet;
 
             const returnValue = this.runExpressions(newExecutor,
                 ctx.function_expr());

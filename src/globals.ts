@@ -7,8 +7,13 @@
 
 import { numeric } from "./objects/ParamDefinition";
 
+// Delimiter should not include chars that can be in instance name 
+// or in variable names.
+export const Delimiter1 = '-';
+export const DoubleDelimiter1 = `${Delimiter1}${Delimiter1}`;
+
 export enum GlobalNames {
-    __root = '__root',
+    __root = `${DoubleDelimiter1}root`,
     symbol = 'symbol',
 }
 

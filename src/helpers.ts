@@ -13,10 +13,9 @@ import PDFDocument from "pdfkit";
 
 import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
-import { SequenceAction } from "./objects/ExecutionScope.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
-import { resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
+import { generateDebugSequenceAction, resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
 import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
@@ -282,10 +281,7 @@ export function renderScript(scriptData: string, outputPath: string,
 
     if (dumpNets) {
         const nets = visitor.dumpNets();
-        nets.forEach((item, index: number) => {
-            console.log(index, item.join(" | "));
-        });
-        // console.log(nets);
+        nets.forEach(item => console.log(item.join(" | ")));
     }
 
     const dumpDirectory = currentDirectory + '/dump/';
@@ -322,7 +318,7 @@ export function renderScript(scriptData: string, outputPath: string,
     //     console.log(instance.pinNets);
     // }
 
-    const tmpSequence = sequence.map(item => sequenceActionString(item));
+    const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
     
     dumpData && writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
 

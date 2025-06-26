@@ -10,7 +10,7 @@ import { ParserRuleContext } from "antlr4ng";
 import { SymbolDrawingCommands } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
 import { NumericValue } from "./objects/ParamDefinition";
-import { SequenceAction } from './objects/ExecutionScope';
+import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope';
 import { UnitDimension } from './helpers';
 import { BlockTypes } from './globals';
 
@@ -256,12 +256,49 @@ export function sequenceActionString(sequenceAction: SequenceAction): string {
         }).join(" ");
     } else if (action === SequenceAction.Frame) {
         tmp[1] = sequenceAction[1].frameId;
-        
     } else if (action !== SequenceAction.WireJump) {
-        tmp[1] = sequenceAction[1].instanceName;
+        const [, component] = sequenceAction;
+        if (component instanceof ClassComponent){
+            tmp[1] = sequenceAction[1].instanceName;
+        }
     }
 
     return tmp.join(" | ");
+}
+
+export function generateDebugSequenceAction(sequence: SequenceItem[]): string[] {
+    const variableMapping = new Map<string, ClassComponent>();
+
+    // In the sequence, resolve assigned name to the components
+    return sequence.map(item => {
+        const returnResult = [...item];
+
+        const [action,] = item;
+        if (action === SequenceAction.Assign) {
+            const [, name, component] = item as SequenceActionAssign;
+            variableMapping.set(name, component);
+
+        } else {
+            if (action === SequenceAction.At || action === SequenceAction.To) {
+                const [, component,] = item as SequenceActionAtTo;
+
+                const foundIndex = Array.from(variableMapping.values()).findIndex(item2 => {
+                    if (component._copyFrom !== null) {
+                        return component._copyFrom === item2;
+                    }
+
+                    return component === item2;
+                });
+
+                if (foundIndex !== -1) {
+                    const name = Array.from(variableMapping.keys())[foundIndex];
+                    returnResult[1] = name + ':' + component._copyID;
+                }
+            }
+        }
+
+        return returnResult;
+    });
 }
 
 export function getBlockTypeString(type: BlockTypes): string {

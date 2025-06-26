@@ -24,6 +24,8 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         ['toMils', toMils],
         ['range', range],
         ['len', objectLength],
+        ['arrayPush', arrayPush],
+        ['arrayGet', arrayGet],
     ];
 
     builtIns.forEach(([functionName, functionImpl]) => {
@@ -96,6 +98,29 @@ function objectLength(obj: any[] | any): NumericValue {
             throw "Could not get length of object: " + obj;
         }
     }
+}
+
+function arrayPush(arrayObject: unknown[], valueToPush: unknown): unknown[] {
+    if (!Array.isArray(arrayObject)) {
+        throw "Invalid array object to push";
+    }
+    arrayObject.push(valueToPush);
+    return arrayObject;
+}
+
+function arrayGet(arrayObject: unknown[], index: number | NumericValue): any {
+    if (!Array.isArray(arrayObject)) {
+        throw "Invalid array object to get";
+    }
+
+    let useValue: number;
+    if (index instanceof NumericValue){
+        useValue = index.toNumber();
+    } else {
+        useValue = index;
+    }
+
+    return arrayObject[useValue];
 }
 
 function getPositionParams(params: CallableParameter[]): unknown[] {

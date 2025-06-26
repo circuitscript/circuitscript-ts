@@ -1,0 +1,35 @@
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+at v5v
+wire down 20
+add res(360) angle:90
+wire down 20
+
+point:
+    at v5v
+    wire down 20
+    add res(360) angle:90
+    wire down 20 
+
+    branch:
+        wire left 100
+        to point
+
+    wire down 20
+    add res(360) angle:90
+    wire down 20
+    to gnd
+
+    at point
+    wire right 200 down 20
+    add res(360) angle:90
+    wire down 20
+    to gnd
+
+wire down 20
+add led("red") angle:90
+wire down 40
+to gnd

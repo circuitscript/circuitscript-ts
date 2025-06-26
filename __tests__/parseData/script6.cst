@@ -1,0 +1,23 @@
+import lib
+
+vcc = net("3v3")
+midpt = net("out")
+gnd = dgnd()
+
+at vcc
+wire down 20
+add res(20k) angle:90
+wire down 20
+branch:
+    wire down 20
+    add res(20k) angle:90
+    wire down 20
+    to gnd
+wire right 60
+to midpt ..angle = 90
+
+at vcc
+wire down 20
+add res(10k) angle:90
+wire down 20 right 40 up 20
+to midpt

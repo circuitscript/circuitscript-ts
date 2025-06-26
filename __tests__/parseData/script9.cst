@@ -1,0 +1,40 @@
+import lib
+
+v5v = supply("5v")
+gnd = dgnd()
+
+net("global_name")
+
+def divider(power_net, r1, r2, net_name):
+    frame:
+        ..border = 0
+        
+        at power_net
+        wire down 20
+        add res(r1) angle:90
+        wire down 20
+
+        branch:
+            wire right 20
+            add label("inner_name")
+            wire right 60
+            add res(100k)
+            wire right 20
+            add / label("global_name")
+            wire right 40
+
+            add res(0)
+
+            add / label("global_name_2")
+
+        wire down 20
+        add res(r2) angle:90
+        wire down 20
+        to gnd
+
+frame:
+    ..border = 0
+    ..direction = "row"
+
+    /div1 divider(v5v, 10k, 20k, "hello2")
+    /div2 divider(v5v, 10k, 20k, "hello1")

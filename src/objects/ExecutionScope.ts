@@ -204,6 +204,8 @@ export enum SequenceAction {
 
     // Creates a new frame group
     Frame = 'frame',
+
+    Assign = 'assign',
 }
 
 export enum FrameAction {
@@ -217,9 +219,16 @@ export enum ActiveObject {
 }
 
 
+export type SequenceActionAtTo = [SequenceAction.To | SequenceAction.At, 
+    ClassComponent, pinId: number, LayoutDirection?, string?];
+export type SequenceActionWire = [SequenceAction.Wire, wireId: number, WireSegment[]];
+
+export type SequenceActionAssign = [SequenceAction.Assign, variable: string, ClassComponent];
+
 export type SequenceItem =
-    [SequenceAction.To | SequenceAction.At, ClassComponent, number, LayoutDirection?, string?]
-    | [SequenceAction.Wire, wireId: number, WireSegment[]]
+    SequenceActionAtTo
+    | SequenceActionWire
     | [SequenceAction.WireJump, wireId: number, pinId: number]
     | [SequenceAction.Frame, Frame, "enter" | "exit"]
+    | SequenceActionAssign
     ;

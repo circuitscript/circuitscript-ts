@@ -42,15 +42,15 @@ describe('export to kicad', () => {
                 {
                     "net":
                         [
-                            { "code": 1, "name": "/NET_2", "node": [{ "ref": "J1", "pin": "2", "pintype": "passive" }, { "ref": "R3", "pin": "1", "pintype": "passive" }] },
+                            { "code": 1, "name": "/NET-2", "node": [{ "ref": "J1", "pin": "2", "pintype": "passive" }, { "ref": "R3", "pin": "1", "pintype": "passive" }] },
                             { "code": 2, "name": "/5V", "node": [{ "ref": "C1", "pin": "1", "pintype": "passive" }, { "ref": "R1", "pin": "1", "pintype": "passive" }] },
                             { "code": 3, "name": "/GND", "node": [{ "ref": "C1", "pin": "2", "pintype": "passive" }, { "ref": "R2", "pin": "2", "pintype": "passive" }, { "ref": "R3", "pin": "2", "pintype": "passive" }] },
-                            { "code": 4, "name": "/NET_1", "node": [{ "ref": "R1", "pin": "2", "pintype": "passive" }, { "ref": "R2", "pin": "1", "pintype": "passive" }] }]
+                            { "code": 4, "name": "/NET-1", "node": [{ "ref": "R1", "pin": "2", "pintype": "passive" }, { "ref": "R2", "pin": "1", "pintype": "passive" }] }]
                 }
             });
 
         expect(missingFootprints).toStrictEqual([
-            { refdes: 'J1', instanceName: 'tmp' }
+            { refdes: 'J1', instanceName: 'COMP-1' }
         ]);
 
     });

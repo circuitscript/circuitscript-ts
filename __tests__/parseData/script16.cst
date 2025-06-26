@@ -1,0 +1,26 @@
+import lib
+
+v5v = supply("5V")
+gnd = dgnd()
+
+join:
+    at v5v
+    wire down 20
+    add res(1k) angle:90 
+    wire down 20
+
+join:
+    at v5v
+    wire down 20
+    add res(1k) angle:90
+    wire left 100
+
+point:
+    at v5v
+    wire right 20
+    add res(1k)
+    wire right 20
+    to point
+
+    wire down 20
+    to gnd

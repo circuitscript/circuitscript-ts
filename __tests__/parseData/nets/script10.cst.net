@@ -1,0 +1,10 @@
+/5V | supply-0.net-0.COMP-1-5V | 1
+/5V | supply-0.net-0.COMP-1-5V:0 | 1
+/5V | res-0.COMP-1-10k | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | cap-0.COMP-1-10n | 2
+/NET-1 | res-0.COMP-1-10k | 2
+/NET-1 | res-1.COMP-1-10k | 1
+/NET-2 | res-1.COMP-1-10k | 2
+/NET-2 | cap-0.COMP-1-10n | 1
