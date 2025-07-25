@@ -368,7 +368,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         }
 
-        this.log2(`atomId: ${atomId} ${currentReference}`);
+        // this.log2(`atomId: ${atomId} ${currentReference}`);
 
         if (ctx.parent instanceof ExpressionContext && !currentReference.found) {
             // If is an atom_expr and parent is just expression and no 

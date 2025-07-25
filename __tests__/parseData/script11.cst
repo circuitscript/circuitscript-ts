@@ -3,31 +3,31 @@ import lib
 v5v = supply("5V")
 
 def tmp1():
-    wire right 20
+    wire right 100
     add res(0)
-    wire right 20
+    wire right 100
     add label("label_1")
 
-    wire right 40
+    wire right 200
     add res(0)
     add / label("global_label")
 
-    wire right 80
+    wire right 400
     add res(0)
     
     +/inner tmp2()
 
 def tmp2():
-    wire right 20
+    wire right 100
     add res(0)
     add label("label_2")
-    wire right 40
+    wire right 200
 
 at v5v
-wire down 20
+wire down 100
 branch:
-    /scope1 tmp1()
+    /scope1 tmp1()  # defines that circuits called in tmp1() will be under the /scope1 net namespace
 
-wire down 40
+wire down 200
 branch:
-    /scope2 tmp1()
+    /scope2 tmp1()  # defines that circuits called in tmp1() will be under the /scope2 net namespace

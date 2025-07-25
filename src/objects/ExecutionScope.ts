@@ -91,6 +91,14 @@ export class ExecutionScope {
         return found ? found[2]: null;
     }
 
+    getNetWithNamespacePath(namespace: string, name: string): Net | null {
+        const found = this.nets.find(([, , net]) => {
+            return net.namespace === namespace && net.name === name
+        });
+
+        return found ? found[2] : null;
+    }
+
     hasNet(component: ClassComponent, pin: number): boolean {
         return this.findNet(component, pin) !== undefined;
     }

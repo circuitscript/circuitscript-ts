@@ -172,8 +172,8 @@ export class ExecutionContext {
         const net1 = this.scope.getNet(component1, component1Pin);
         const net2 = this.scope.getNet(component2, component2Pin);
 
-        this.log('link nets', component1, component1Pin, net1,
-            'to', component2, component2Pin, net2);
+        this.log('link nets', component1, component1Pin, net1, 'priority:' + net1?.priority,
+            'to', component2, component2Pin, net2, 'priority:' + net2?.priority);
 
         let returnNet: Net;
 
@@ -206,7 +206,7 @@ export class ExecutionContext {
             }
         }
 
-        this.log('final net after link: ', returnNet);
+        this.log('final net after link: ', returnNet, returnNet.priority);
 
         return returnNet!;
     }
@@ -390,8 +390,6 @@ export class ExecutionContext {
             addSequence: true
         });
 
-        this.printPoint();
-
         return this.getCurrentPoint();
     }
 
@@ -530,6 +528,8 @@ export class ExecutionContext {
     }
 
     copyComponent(component: ClassComponent): ClassComponent {
+        this.log('create clone of net component:', component);
+
         // This creates a clone from a given component
         let componentCopy: ClassComponent = null;
         
@@ -926,6 +926,23 @@ export class ExecutionContext {
             }
         }
 
+        // Get all unique nets in the scope
+        const childScopeUniqueNets = new Set<Net>(tmpNets.map(([,,net]) => net));
+
+        // Re-name nets that exist in the parent scope
+        childScopeUniqueNets.forEach(net => {
+            // If the same net exists, then rename it with a new unique name.
+            // Net with priority 0 are generated nets (not user-defined).
+            if (net.priority === 0 
+                && this.scope.getNetWithNamespacePath(net.namespace, net.name) !== null){
+                this.log('net namespace and name already used in parent scope', net);
+                
+                const newNetName = this.getUniqueNetName();
+                net.name = newNetName;
+                this.log('assigned new name: ', net);
+            }
+        });
+
         // Merge all nets into parent scope
         tmpNets.forEach(([component, pin, net]) => {
             this.scope.setNet(component, pin, net);
@@ -960,13 +977,8 @@ export class ExecutionContext {
                     currentNet = tmpNet
                 }
 
-                // Force a lower priority, so that after merge the 
-                // parent scope will be used.
-                netConnectedToRoot.priority = currentNet.priority - 1;
-
-                // Connect current component to the root component, since the
-                // net priority of the current component and pin is higher,
-                // then the root component's net will be merged in.
+                // Connect current component to the root component. The final
+                // net will depend on the priority.
                 this.toComponent(tmpRoot, 1);
             }
         }

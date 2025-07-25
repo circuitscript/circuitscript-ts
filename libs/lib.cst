@@ -15,18 +15,8 @@ def net(net_name):
             priority: 10
 
 def supply(net_name):
-    return create component:
-        pins: 1
-        copy: true
-        angle: -90
-        display: create graphic (params):
-            hline: -50, 0, 100
-            vpin: 1, 0, 50, -50, display_pin_id=false
-            label: params.net_name, 0, -15, fontSize=50, anchor="middle"
-        type: "net"
-        params:
-            net_name: net_name
-            priority: 20
+    net_obj = net(net_name)
+    return net_obj
 
 def label(value, anchor="left"):
     return create component:

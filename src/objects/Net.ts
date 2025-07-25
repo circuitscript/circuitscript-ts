@@ -16,7 +16,9 @@ export class Net {
     // the 'location' of global nets.
     namespace: string;
 
+    // If priority is 0, then this is NOT a user-defined net.
     priority: number;
+
     type: any;
 
     constructor(namespace: string, name: string, priority = 0, type: any = null) {
