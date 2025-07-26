@@ -1,6 +1,24 @@
 # Changelog
 
-## [v0.1.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.3...v0.1.4)
+## [v0.1.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.4...v0.1.5)
+
+[ddbb842](https://gitlab.com/circuitscript/circuitscript-ts/commit/ddbb842a1820b57edcf98fd4ef08fc78078c923b) added resolve for component pin net
+-  cleaned up delimiter
+-  fixed component clone missing parameter
+-  updated tests
+
+[bdf2700](https://gitlab.com/circuitscript/circuitscript-ts/commit/bdf27005711f64c5ca0032a68249c8178975a8a9) backup updated example
+
+[b5dab41](https://gitlab.com/circuitscript/circuitscript-ts/commit/b5dab41a2512cb351f06a3ff47b98de42be191a9) add point for branch blocks
+-  limit decimal places for text sizing
+-  updated tests
+-  minor layout fixes
+
+[4f232db](https://gitlab.com/circuitscript/circuitscript-ts/commit/4f232db2e0fbba19f7e0bd10808c67c78af053c8) backup
+
+[be11bef](https://gitlab.com/circuitscript/circuitscript-ts/commit/be11bef7f625dac92e8d08c2892b68e0e2f53d67) cleaned up builtin methods
+
+## [v0.1.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.3...v0.1.4) - 2025-05-28
 
 [eb1265c](https://gitlab.com/circuitscript/circuitscript-ts/commit/eb1265c36781276d39cc930e500baeaece568763) changed default frame layout direction
 
