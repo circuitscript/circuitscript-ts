@@ -118,18 +118,7 @@ export function roundValue(value: NumericValue): NumericValue {
 export function throwWithContext(context: ParserRuleContext, message: string): void {
     const startLine = context.start?.line;
     const startColumn = context.start?.column;
-    const startString = startLine + ":" + startColumn;
-
-    const stopLine = context.stop?.line;
-    const stopColumn = context.stop?.column;
-    let stopString = "";
-    if (startLine === stopLine) {
-        stopString = stopColumn?.toString();
-    } else {
-        stopString = stopLine + ":" + stopString;
-    }
-
-    throw `Parse exception at [${startString} - ${stopString}] : ${message}`;
+    throw new ParseError(message, startLine, startColumn);
 }
 
 export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
@@ -320,3 +309,56 @@ export function getBlockTypeString(type: BlockTypes): string {
 
     return returnValue;
 }
+
+/** Errors that occur within the lexing of tokens */
+export class ParseSyntaxError extends Error {
+
+    name = 'ParseSyntaxError';
+
+    message: string;
+    line: number;
+    column: number;
+    filePath: string;
+
+    constructor(message: string, line: number, column: number, filePath: string) {
+        super(message);
+        this.message = message
+        this.line = line;
+        this.column = column;
+        this.filePath = filePath;
+    }
+}
+
+/**
+ * Error class for parsing-related failures (i.e. actual execution of the code)
+ */
+export class ParseError extends Error {
+
+    name = 'ParseError';
+
+    public line?: number;
+    public column?: number;
+    public filePath?: string;
+
+    constructor(message: string, line?: number, column?: number, filePath?: string) {
+        super(message);
+        this.name = 'ParseError';
+        this.line = line;
+        this.column = column;
+        this.filePath = filePath;
+    }
+}
+/**
+ * Error class for rendering-related failures
+ */
+
+export class RenderError extends Error {
+    public stage?: string;
+
+    constructor(message: string, stage?: string) {
+        super(message);
+        this.name = 'RenderError';
+        this.stage = stage;
+    }
+}
+

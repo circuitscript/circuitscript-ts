@@ -15,8 +15,8 @@ import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
-import { generateDebugSequenceAction, resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
-import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
+import { generateDebugSequenceAction, ParseError, ParseSyntaxError, RenderError, resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
+import { ParserVisitor } from "./visitor.js";
 import { createContext } from "this-file";
 import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
 import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolveVisitor.js";
@@ -112,6 +112,7 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
                 console.log('Error while parsing: ', err);
                 hasParseError = true;
                 hasError = true;
+                throw new ParseError(`Error parsing semantic tokens in imported file: ${err}`);
             }
         } else {
             console.log('File does not exist');
@@ -217,6 +218,7 @@ export function validateScript(filePath: string, scriptData: string,
                 console.log('got an error while parsing tree: ', err);
                 hasParseError = true;
                 hasError = true;
+                throw new ParseError(`Error parsing validation in imported file: ${err}`);
             }
         } else {
             console.log('file does not exist!');
@@ -249,8 +251,12 @@ export function validateScript(filePath: string, scriptData: string,
     return visitorResolver;
 }
 
-export function renderScript(scriptData: string, outputPath: string,
-    options: ScriptOptions): string | null {
+export function renderScript(scriptData: string, outputPath: string | null,
+    options: ScriptOptions): {
+        svgOutput: string | null,
+        parseErrors: ParseError[],
+        syntaxErrors: ParseSyntaxError[],
+    } {
 
     const {
         currentDirectory = null,
@@ -259,20 +265,33 @@ export function renderScript(scriptData: string, outputPath: string,
         dumpData = false,
         showStats = false } = options;
 
-    const onErrorHandler: OnErrorCallback =
+    const parseErrors: ParseError[] = [];
+    const syntaxErrors: ParseSyntaxError[] = [];
+
+    const onParseErrorHandler: OnErrorCallback =
         (line: number, column: number, message: string, error: any) => {
-            if (error instanceof VisitorExecutionException) {
-                console.log('Error', line, column, message, error.errorMessage);
-            }
+            parseErrors.push(new ParseError(message, line, column));
         };
 
-    const visitor = new ParserVisitor(
-        true, onErrorHandler, currentDirectory, defaultLibsPath);
+    const onSyntaxErrorHandler: OnErrorCallback =
+        (line: number, column: number, message: string, error: any) => {
+            syntaxErrors.push(new ParseSyntaxError(message, line, column, ""));
+        };
+
+    const visitor = new ParserVisitor(true, 
+        onParseErrorHandler, onSyntaxErrorHandler,
+        currentDirectory, defaultLibsPath);
 
     visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
         : { hasError: boolean, hasParseError: boolean } => {
 
         const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
+        
+        // Raise exception if there are errors in imported files
+        if (hasError || hasParseError) {
+            throw new ParseError(`Error parsing imported file: ${filePath}`, undefined, undefined, filePath);
+        }
+        
         return { hasError, hasParseError };
     }
 
@@ -280,7 +299,6 @@ export function renderScript(scriptData: string, outputPath: string,
     visitor.log('done reading file');
 
     const { tree, parser,
-        hasParseError, hasError, 
         parserTimeTaken, 
         lexerTimeTaken } = parseFileWithVisitor(visitor, scriptData);
 
@@ -302,121 +320,142 @@ export function renderScript(scriptData: string, outputPath: string,
 
     dumpData && writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));
     dumpData && writeFileSync(dumpDirectory + 'raw-parser.txt', visitor.logger.dump());
-
-    if (hasError || hasParseError) {
-        console.log('Error while parsing');
-        return null;
-    }
-
-    const { frameComponent } = visitor.applySheetFrameComponent();
-
-    try {
-        visitor.annotateComponents();
-    } catch (err) {
-        console.log('Error during annotation: ', err);
-    }
-
-    // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
-
-    const { sequence, nets } = visitor.getGraph();
-
-    // const tmpInstances = visitor.getExecutor().scope.instances;
-    // for (const [instanceName, instance] of tmpInstances){
-    //     console.log(instanceName);
-    //     console.log(instance.pinNets);
-    // }
-
-    const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
     
-    dumpData && writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
-
     let svgOutput = "";
 
-    try {
-        let fileExtension: string | null = null;
-        let outputDefaultZoom = defaultZoomScale;
-
-        if (outputPath) {
-            fileExtension = path.extname(outputPath).substring(1);
-
-            if (fileExtension === "pdf") {
-                outputDefaultZoom = 1;
-            }
+    if (syntaxErrors.length === 0 && parseErrors.length === 0){
+        const { frameComponent } = visitor.applySheetFrameComponent();
+        try {
+            visitor.annotateComponents();
+        } catch (err) {
+            throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
         }
 
-        if (fileExtension === 'net') {
-            // Generate the kicad net list
-            const { tree: kicadNetList, missingFootprints }
-                = generateKiCADNetList(visitor.getNetList());
+        // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
-            missingFootprints.forEach(entry => {
-                console.log(
-                    `${entry.refdes} (${entry.instanceName}) does not have footprint`);
-            });
+        const { sequence, nets } = visitor.getGraph();
 
-            writeFileSync(outputPath, printTree(kicadNetList));
-            console.log('Generated file', outputPath);
+        // const tmpInstances = visitor.getExecutor().scope.instances;
+        // for (const [instanceName, instance] of tmpInstances){
+        //     console.log(instanceName);
+        //     console.log(instance.pinNets);
+        // }
 
-            // Quit here, since SVG output is not needed
-            return null;
-        }
+        const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
+        dumpData && writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
 
-        const layoutEngine = new LayoutEngine();
-        const layoutTimer = new SimpleStopwatch();
+        try {
+            let fileExtension: string | null = null;
+            let outputDefaultZoom = defaultZoomScale;
 
-        const sheetFrames = layoutEngine.runLayout(sequence, nets);
+            if (outputPath) {
+                fileExtension = path.extname(outputPath).substring(1);
 
-        layoutEngine.printWarnings();
-
-        showStats && console.log('Layout took:', layoutTimer.lap());
-
-        dumpData && writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
-
-        const generateSvgTimer = new SimpleStopwatch();
-
-        const renderLogger = new Logger();
-        const svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger);
-
-        showStats && console.log('Render took:', generateSvgTimer.lap());
-
-        dumpData && writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
-
-        svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
-
-        if (outputPath) {
-            if (fileExtension === 'svg') {
-                writeFileSync(outputPath, svgOutput);
-
-            } else if (fileExtension === 'pdf') {
-
-                let sheetSize = "A4";
-                let sheetSizeDefined = false;
-                if (frameComponent) {
-                    sheetSize = frameComponent.getParam(FrameParamKeys.PaperSize);
-                    sheetSizeDefined = true;
+                if (fileExtension === "pdf") {
+                    outputDefaultZoom = 1;
                 }
-
-                const doc = new PDFDocument({
-                    layout: 'landscape',
-                    size: sheetSize
-                });
-                const outputStream = createWriteStream(outputPath);
-
-                generatePdfOutput(doc, svgCanvas,
-                    sheetSize, sheetSizeDefined, outputDefaultZoom);
-
-                doc.pipe(outputStream);
-                doc.end();
-            } else {
-                throw "Invalid output format";
             }
-            console.log('Generated file', outputPath);
+
+            if (fileExtension === 'net') {
+                // Generate the kicad net list
+                const { tree: kicadNetList, missingFootprints }
+                    = generateKiCADNetList(visitor.getNetList());
+
+                missingFootprints.forEach(entry => {
+                    console.log(
+                        `${entry.refdes} (${entry.instanceName}) does not have footprint`);
+                });
+
+                writeFileSync(outputPath, printTree(kicadNetList));
+                console.log('Generated file', outputPath);
+
+                // Quit here, since SVG output is not needed
+                return null;
+            }
+
+            const layoutEngine = new LayoutEngine();
+            const layoutTimer = new SimpleStopwatch();
+
+            let sheetFrames;
+            try {
+                sheetFrames = layoutEngine.runLayout(sequence, nets);
+            } catch (err) {
+                throw new RenderError(`Error during layout generation: ${err}`, 'layout');
+            }
+
+            layoutEngine.printWarnings();
+
+            showStats && console.log('Layout took:', layoutTimer.lap());
+
+            dumpData && writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
+
+            const generateSvgTimer = new SimpleStopwatch();
+
+            const renderLogger = new Logger();
+            let svgCanvas;
+            try {
+                svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger);
+            } catch (err) {
+                throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
+            }
+
+            showStats && console.log('Render took:', generateSvgTimer.lap());
+
+            dumpData && writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
+
+            try {
+                svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
+            } catch (err) {
+                throw new RenderError(`Error generating SVG output: ${err}`, 'svg_output');
+            }
+
+            if (outputPath) {
+                if (fileExtension === 'svg') {
+                    try {
+                        writeFileSync(outputPath, svgOutput);
+                    } catch (err) {
+                        throw new RenderError(`Error writing SVG file: ${err}`, 'file_output');
+                    }
+
+                } else if (fileExtension === 'pdf') {
+
+                    let sheetSize = "A4";
+                    let sheetSizeDefined = false;
+                    if (frameComponent) {
+                        sheetSize = frameComponent.getParam(FrameParamKeys.PaperSize);
+                        sheetSizeDefined = true;
+                    }
+
+                    try {
+                        const doc = new PDFDocument({
+                            layout: 'landscape',
+                            size: sheetSize
+                        });
+                        const outputStream = createWriteStream(outputPath);
+
+                        generatePdfOutput(doc, svgCanvas,
+                            sheetSize, sheetSizeDefined, outputDefaultZoom);
+
+                        doc.pipe(outputStream);
+                        doc.end();
+                    } catch (err) {
+                        throw new RenderError(`Error generating PDF file: ${err}`, 'pdf_output');
+                    }
+                } else {
+                    throw new RenderError(`Invalid output format: ${fileExtension}`, 'file_output');
+                }
+                console.log('Generated file', outputPath);
+            }
+        } catch (err) {
+            throw new RenderError(`Error during rendering: ${err}`, 'output_generation');
         }
-    } catch (err) {
-        console.log('Error during render: ', err);
     }
 
-    return svgOutput;
+    return {
+        svgOutput, 
+        parseErrors,
+        syntaxErrors
+    }
 }
 
 export function detectJSModuleType(): JSModuleType {

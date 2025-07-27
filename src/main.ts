@@ -104,25 +104,42 @@ export default async function main(): Promise<void> {
         // This is the output path
         outputPath = args[1];
     }
-    
-    const output = renderScript(scriptData, outputPath,
-        scriptOptions);
 
-    if (outputPath === null && output && (options.skipOutput === undefined)){
+    const output = parseFile(scriptData, outputPath, scriptOptions);
+    
+    if (outputPath === null && output && (options.skipOutput === undefined)) {
         console.log(output);
     }
-
+    
     if (watchFileChanges) {
         watch(inputFilePath, event => {
             if (event === 'change') {
                 const scriptData = readFileSync(inputFilePath, 
                     {encoding: 'utf-8'});
 
-                renderScript(scriptData, outputPath, scriptOptions);
-                console.log('done');
+                parseFile(scriptData, outputPath, scriptOptions);
             }
         });
     }
+}
+
+function parseFile(scriptData: string, outputPath: string | null, scriptOptions): string | null {
+    const { svgOutput: output, parseErrors, syntaxErrors } =
+        renderScript(scriptData, outputPath, scriptOptions);
+
+    syntaxErrors.forEach((item, index) => {
+        console.log(`[${index}] SyntaxError at ${item.line}:${item.column} - ${item.message}`);
+    });
+
+    parseErrors.forEach((item, index) => {
+        console.log(`[${index}] ParseError at ${item.line}:${item.column} - ${item.message}`);
+    });
+
+    if (syntaxErrors.length > 0 || parseErrors.length > 0) {
+        console.log('Render failed due to syntax or parsing errors');
+    }
+
+    return output;
 }
 
 main();

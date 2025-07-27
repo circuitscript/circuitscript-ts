@@ -69,7 +69,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         PinTypes.Power,
     ];
 
-    onErrorCallbackHandler: OnErrorCallback | null = null;
+    onParseErrorHandler: OnErrorCallback | null = null;
+    onSyntaxErrorHandler: OnErrorCallback | null = null;
 
     onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string): 
         {hasError:boolean, hasParseError: boolean} => {
@@ -78,13 +79,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     }
 
     constructor(silent = false, 
-        onErrorHandler: OnErrorCallback | null = null,
+        onParseErrorHandler: OnErrorCallback | null = null,
+        onSyntaxErrorHandler: OnErrorCallback | null = null,
         currentDirectory: string | null,
         defaultLibsPath: string) {
         
         super();
         this.logger = new Logger();
-        this.onErrorCallbackHandler = onErrorHandler;
+        this.onParseErrorHandler = onParseErrorHandler;
+        this.onSyntaxErrorHandler = onSyntaxErrorHandler;
 
         this.startingContext = new ExecutionContext(
             DoubleDelimiter1,
@@ -708,7 +711,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
                 const importResult =
                     this.onImportFile(this, filePathUsed, fileData!,
-                        this.onErrorCallbackHandler);
+                        this.onParseErrorHandler);
 
                 hasError = importResult.hasError;
                 hasParseError = importResult.hasParseError;
