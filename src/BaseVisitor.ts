@@ -71,7 +71,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     onErrorCallbackHandler: OnErrorCallback | null = null;
 
-    onImportFile = (visitor: BaseVisitor, filePath:string): 
+    onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string): 
         {hasError:boolean, hasParseError: boolean} => {
         
         throw "Import file not implemented"
@@ -121,6 +121,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     getExecutor(): ExecutionContext {
         return this.executionStack[this.executionStack.length - 1];
+    }
+
+    getRootExecutor(): ExecutionContext {
+        return this.executionStack[0];
     }
 
     protected setupBuiltInFunctions(context: ExecutionContext): void {
@@ -551,9 +555,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 const tmpCtx = defaultValuesProvided[index - boundary];
                 this.visit(tmpCtx);
                 const defaultValue = this.getResult(tmpCtx);
-                return [idText, defaultValue];
+                return [idText, tmpCtx.start!, defaultValue];
             } else {
-            return [idText];
+            return [idText, id.getSymbol()];
             }
         });
 
@@ -676,9 +680,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         this.log('importing path:', tmpFilePath);
 
         let fileData: string | null = null;
+        let filePathUsed: string | null = null;
 
         try {
             fileData = readFileSync(tmpFilePath, { encoding: 'utf8' });
+            filePathUsed = tmpFilePath;
             pathExists = true;
         } catch (err) {
             pathExists = false;
@@ -689,6 +695,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             try {
                 const tmpFilePath2 = join(this.defaultLibsPath, name + ".cst");
                 fileData = readFileSync(tmpFilePath2, { encoding: 'utf8' });
+                filePathUsed = tmpFilePath2;
                 pathExists = true;
             } catch (err) {
                 pathExists = false;
@@ -700,7 +707,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 this.log('done reading imported file data');
 
                 const importResult =
-                    this.onImportFile(this, fileData!,
+                    this.onImportFile(this, filePathUsed, fileData!,
                         this.onErrorCallbackHandler);
 
                 hasError = importResult.hasError;
@@ -784,11 +791,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                     );
                 }
 
-            } else if (tmpFuncArg.length === 2) {
+            } else if (tmpFuncArg.length === 3) {
                 // Value was not provided to function, but a default 
                 // value is provided.
                 const variableName = tmpFuncArg[0];
-                const defaultValue = tmpFuncArg[1];
+                const defaultValue = tmpFuncArg[2];
                 executor.log(
                     'set variable in scope, var name: ',
                     variableName,

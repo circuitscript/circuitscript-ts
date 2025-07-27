@@ -311,7 +311,7 @@ def reset_button_block():
     wire right 100 to gnd
 
 
-def ferrite():
+def ferrite(value):
     width = 140
     height = 60
  

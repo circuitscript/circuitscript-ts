@@ -9,7 +9,7 @@
         "request": "launch",
         "name": "Launch Program",
         "program": "${workspaceFolder}/src/main.ts",
-        "args": ["-f", "examples/example1.cstx"],
+        "args": ["examples/example1.cst", "output.svg"],
         "outFiles": ["${workspaceFolder}/dist/cjs/**/*.js"]
       }
     ]

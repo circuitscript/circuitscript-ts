@@ -5,6 +5,17 @@ import { numeric, NumericValue } from "./objects/ParamDefinition";
 import { CallableParameter } from "./objects/types";
 import { resolveToNumericValue } from "./utils";
 
+const builtInMethods: [name: string, impl: (args: any) => any][] = [
+    ['enumerate', enumerate],
+    ['toMils', toMils],
+    ['range', range],
+    ['len', objectLength],
+    ['arrayPush', arrayPush],
+    ['arrayGet', arrayGet],
+];
+
+export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0]);
+
 export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisitor): void {
     context.createFunction('print', (params) => {
         const args = getPositionParams(params);
@@ -19,16 +30,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         return [visitor, printedValue];
     });
 
-    const builtIns: [name: string, impl: (args: any) => any][] = [
-        ['enumerate', enumerate],
-        ['toMils', toMils],
-        ['range', range],
-        ['len', objectLength],
-        ['arrayPush', arrayPush],
-        ['arrayGet', arrayGet],
-    ];
-
-    builtIns.forEach(([functionName, functionImpl]) => {
+    builtInMethods.forEach(([functionName, functionImpl]) => {
         context.createFunction(functionName, params => {
             const args = getPositionParams(params);
             const functionReturn = functionImpl(...args);

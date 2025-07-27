@@ -18,7 +18,8 @@ import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./rende
 import { generateDebugSequenceAction, resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor, VisitorExecutionException } from "./visitor.js";
 import { createContext } from "this-file";
-import { SymbolValidatorResolveVisitor, SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
+import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
+import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolveVisitor.js";
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
@@ -95,7 +96,7 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
 
     parser.removeErrorListeners();
 
-    visitor.onImportFile = (visitor: BaseVisitor, textData: string)
+    visitor.onImportFile = (visitor: BaseVisitor, filePath: string, textData: string)
         : { hasError: boolean, hasParseError: boolean } => {
 
         let hasError = false;
@@ -175,7 +176,7 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
     }
 }
 
-export function validateScript(scriptData: string,
+export function validateScript(filePath: string, scriptData: string,
     options: ScriptOptions): SymbolValidatorVisitor {
 
     const { parser } = prepareFile(scriptData);
@@ -194,8 +195,12 @@ export function validateScript(scriptData: string,
     const visitor = new SymbolValidatorVisitor(true, null, 
         currentDirectory, defaultLibsPath);
 
-    visitor.onImportFile = (visitor: BaseVisitor, textData: string)
+    visitor.enterFile(filePath);
+
+    visitor.onImportFile = (visitor: SymbolValidatorVisitor, filePath: string, textData: string)
         : { hasError: boolean, hasParseError: boolean } => {
+
+        visitor.enterFile(filePath);
 
         let hasError = false;
         let hasParseError = false;
@@ -206,6 +211,8 @@ export function validateScript(scriptData: string,
 
             try {
                 visitor.visit(tree);
+                visitor.exitFile();
+                
             } catch (err) {
                 console.log('got an error while parsing tree: ', err);
                 hasParseError = true;
@@ -229,6 +236,7 @@ export function validateScript(scriptData: string,
 
     const visitorResolver = new SymbolValidatorResolveVisitor(
         true, null, currentDirectory, defaultLibsPath);
+    visitorResolver.enterFile(filePath);
 
     // Use the existing symbol tree as the starting point
     visitorResolver.setSymbols(visitor.getSymbols());
@@ -261,7 +269,7 @@ export function renderScript(scriptData: string, outputPath: string,
     const visitor = new ParserVisitor(
         true, onErrorHandler, currentDirectory, defaultLibsPath);
 
-    visitor.onImportFile = (visitor: BaseVisitor, fileData: string)
+    visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
         : { hasError: boolean, hasParseError: boolean } => {
 
         const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);

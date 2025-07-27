@@ -50,7 +50,7 @@ export async function runScript(script: string): Promise<{
 
     const tree = parser.script();
 
-    visitor.onImportFile = (visitor: BaseVisitor, fileData: string,
+    visitor.onImportFile = (visitor: BaseVisitor, filePath: string, fileData: string,
         errorHandler: OnErrorCallback): { hasError: boolean, hasParseError: boolean } => {
         const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
         return { hasError, hasParseError };
@@ -80,6 +80,7 @@ export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
     const currentDirectory = dirname(scriptPath);
 
     return validateScript(
+        scriptPath,
         scriptData,
         {
             currentDirectory,

@@ -14,20 +14,66 @@ import { Function_def_exprContext, Create_component_exprContext,
     Import_exprContext,
     Function_args_exprContext,
     Function_call_exprContext,
-    Graphic_exprContext} from "./antlr/CircuitScriptParser";
+    GraphicCommandExprContext} from "./antlr/CircuitScriptParser";
 import { BaseVisitor, OnErrorCallback } from "./BaseVisitor";
+import { buildInMethodNamesList } from "./builtinMethods";
+import { SymbolValidatorContext } from "./globals";
 
+/**
+ * SemanticTokensVisitor - Language Server Protocol (LSP) Semantic Tokens Provider
+ * 
+ * This visitor extends BaseVisitor to provide semantic highlighting information for CircuitScript
+ * source code. It analyzes the Abstract Syntax Tree (AST) to generate semantic tokens that
+ * enable rich syntax highlighting in code editors and IDEs.
+ * 
+ * ## Purpose
+ * - Generate semantic token information for LSP-compatible editors
+ * - Provide context-aware syntax highlighting beyond basic lexical analysis
+ * - Support intelligent highlighting of variables, functions, parameters, properties
+ * - Enable better developer experience with CircuitScript code
+ * 
+ * ## Architecture
+ * - Extends BaseVisitor to leverage AST traversal infrastructure
+ * - Implements visitor methods for specific AST node types
+ * - Maps CircuitScript language constructs to semantic token types
+ * - Maintains position information for precise token highlighting
+ * 
+ * ## Token Types Supported
+ * - **Functions**: Function definitions and calls
+ * - **Variables**: Variable assignments and references
+ * - **Parameters**: Function parameter declarations
+ * - **Properties**: Component properties and graphic attributes
+ * - **Keywords**: Language keywords and operators
+ * - **Namespaces**: Import statements and module references
+ * 
+ * ## Integration
+ * Used by language servers and editor extensions to provide semantic highlighting
+ * for CircuitScript (.cst) files in development environments.
+ */
 export class SemanticTokensVisitor extends BaseVisitor {
-    /**
-     * Generates information about semantic tokens for syntax highlighting
-     */
 
+    /** Legacy token storage - maintained for compatibility */
     parsedTokens: IParsedToken[] = [];
+    
+    /** ANTLR lexer instance for token type resolution */
     lexer: CircuitScriptLexer;
+    
+    /** Original source script for text extraction */
     script: string;
 
+    /** Map of semantic tokens indexed by position (line_column) */
     semanticTokens: Map<string, IParsedToken> = new Map();
 
+    /**
+     * Constructs a new SemanticTokensVisitor instance
+     * 
+     * @param silent - Whether to suppress logging output
+     * @param onErrorHandler - Callback for handling parse/execution errors
+     * @param currentDirectory - Working directory for relative imports
+     * @param defaultsLibsPath - Path to default library files
+     * @param lexer - ANTLR lexer instance for token analysis
+     * @param script - Source script text for token text extraction
+     */
     constructor(silent = false,
         onErrorHandler: OnErrorCallback | null = null,
         currentDirectory: string | null,
@@ -41,6 +87,14 @@ export class SemanticTokensVisitor extends BaseVisitor {
         this.script = script;
     }
 
+    //
+    // AST Visitor Methods - Handle specific CircuitScript language constructs
+    //
+
+    /**
+     * Visits function argument declarations and marks them as parameter tokens
+     * Example: def myFunction(param1, param2): ...
+     */
     visitFunction_args_expr = (ctx: Function_args_exprContext): void => {
         const IDs = ctx.ID();
         IDs.map(id => {    
@@ -50,24 +104,39 @@ export class SemanticTokensVisitor extends BaseVisitor {
         });
     }
 
+    /**
+     * Visits function call expressions and marks the function name
+     * Example: myFunction(arg1, arg2)
+     */
     visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
-        this.addSemanticToken(ctx.ID(), [], 'function');
+        const modifiers = [];
+
+        if (buildInMethodNamesList.indexOf(ctx.ID().getText()) !== -1){
+            modifiers.push('defaultLibrary');
+        }
+
+        this.addSemanticToken(ctx.ID(), modifiers, 'function');
     }
 
+    /**
+     * Visits function definition expressions and creates new execution scope
+     * Handles both function name declaration and parameter processing
+     * Example: def myFunction(params): body
+     */
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
         const functionName = ctx.ID().getText();
 
+        // Mark function name as declaration
         this.addSemanticToken(ctx.ID(), ['declaration'], 'function');
 
-        // These are the defined arguments for the function
+        // Process function parameters
         const ctxFunctionArgsExpr = ctx.function_args_expr(); 
         if (ctxFunctionArgsExpr) {
             this.visit(ctxFunctionArgsExpr);
         }
         
-        // create a new scope and evalutate the functions
-        const executionContextName =
-            functionName + '_validate';
+        // Create new execution scope for function body validation
+        const executionContextName = functionName + SymbolValidatorContext;
             
         const newExecutor = this.enterNewChildContext(
             this.executionStack,
@@ -78,13 +147,17 @@ export class SemanticTokensVisitor extends BaseVisitor {
             []
         );
 
-        this.runExpressions(newExecutor,
-            ctx.function_expr());
+        // Visit function body expressions
+        this.runExpressions(newExecutor, ctx.function_expr());
 
-        // Leave the context
+        // Exit function scope
         this.executionStack.pop();
     }
 
+    /**
+     * Visits component creation expressions
+     * Example: U1 = create component: pins: 10
+     */
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
         this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
 
@@ -93,14 +166,21 @@ export class SemanticTokensVisitor extends BaseVisitor {
         });
     }
 
+    /**
+     * Visits graphic creation expressions
+     * Example: create graphic: circle center (0, 0) radius 5
+     */
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
         this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
 
-        ctx.graphic_expr().forEach(graphic_expr => {
-            this.visit(graphic_expr);
-        });
+        const graphicsExpressionsCtx = ctx.graphic_expressions_block();
+        this.visitResult(graphicsExpressionsCtx);
     }
 
+    /**
+     * Visits property key expressions in component/graphic definitions
+     * Handles ID, INTEGER_VALUE, and STRING_VALUE property keys
+     */
     visitProperty_key_expr = (ctx: Property_key_exprContext): void => {
         let useValue: TerminalNode | null = null;
         const ctxId = ctx.ID();
@@ -120,7 +200,11 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
     }
 
-    visitGraphic_expr = (ctx: Graphic_exprContext): void  => {
+    /**
+     * Visits graphic expressions for drawing commands
+     * Example: circle, rect, line, pin, etc.
+     */
+    visitGraphicCommandExpr = (ctx: GraphicCommandExprContext): void  => {
         let useValue: TerminalNode | null = null;
 
         const ctxId = ctx.ID();
@@ -137,6 +221,9 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * Visits value atom expressions - delegates to appropriate sub-expressions
+     */
     visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
         const ctxValueExpr = ctx.value_expr();
         const ctxAtomExpr = ctx.atom_expr();
@@ -148,32 +235,63 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * Visits assignment expressions
+     * Example: R1 = res(10k)
+     */
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
         this.visit(ctx.atom_expr());
         this.visit(ctx.data_expr());
     }
 
+    /**
+     * Visits atom expressions and identifies variable declarations in assignments
+     */
     visitAtom_expr = (ctx: Atom_exprContext): void => {
         if (ctx.parent instanceof Assignment_exprContext && ctx.ID(0)){
             this.addSemanticToken(ctx.ID(0)!, [], 'variable');
         }
     }
 
+    /**
+     * Visits import expressions and marks imported identifiers as namespaces
+     * Example: import myLibrary
+     */
     visitImport_expr = (ctx: Import_exprContext): void => {
-        // Do not handle the imported file...
+        // Mark imported identifier as namespace (don't process imported file)
         this.addSemanticToken(ctx.ID(), [], 'namespace');
     }
 
+    //
+    // Token Processing Methods
+    //
+
+    /**
+     * Adds a semantic token to the collection for a given AST node
+     * 
+     * @param node - ANTLR terminal node containing position and text information
+     * @param modifiers - Array of semantic modifiers (e.g., ['declaration', 'readonly'])
+     * @param tokenType - Override token type (uses lexer type if null)
+     */
     addSemanticToken(node: TerminalNode, modifiers: string[], tokenType: string | null = null): void {
         const parsedToken = this.parseToken(node, modifiers, tokenType);
         this.semanticTokens.set(parsedToken.line + "_" + parsedToken.column, parsedToken);
     }
 
+    /**
+     * Parses a terminal node into a semantic token with position and type information
+     * 
+     * @param node - ANTLR terminal node to parse
+     * @param modifiers - Semantic modifiers for the token
+     * @param tokenType - Optional token type override
+     * @returns Parsed token with all semantic information
+     */
     parseToken(node: TerminalNode, modifiers: string[], tokenType: string | null = null): IParsedToken {
         const token = node.symbol;
         let stringValue = "";
         let textPart = "";
 
+        // Resolve token type from lexer symbolic names
         if (this.lexer.symbolicNames[token.type] !== null && this.lexer.symbolicNames[token.type] !== undefined) {
             stringValue = this.lexer.symbolicNames[token.type];
             if (stringValue !== "NEWLINE") {
@@ -181,10 +299,14 @@ export class SemanticTokensVisitor extends BaseVisitor {
             } else {
                 textPart = token.text.length-1;
             }
-        } else if (this.lexer.literalNames[token.type] !== null && this.lexer.literalNames[token.type] !== undefined) {
+        } 
+        // Resolve token type from lexer literal names
+        else if (this.lexer.literalNames[token.type] !== null && this.lexer.literalNames[token.type] !== undefined) {
             stringValue = this.lexer.literalNames[token.type];
             textPart = this.script.substring(token.start, token.stop + 1);
-        } else {
+        } 
+        // Fallback to token text
+        else {
             stringValue = token._text;
         }
 
@@ -198,41 +320,77 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
     }
 
+    //
+    // Public API Methods
+    //
+
+    /**
+     * Debug method to dump all collected semantic tokens to console
+     */
     dumpTokens(){
         for(const [id, value] of this.semanticTokens){
             console.log(id, value);
         }
     }
 
+    /**
+     * Returns the map of collected semantic tokens
+     * @returns Map of semantic tokens indexed by position
+     */
     getTokens(){
         return this.semanticTokens;
     }
 
 }
 
+/**
+ * Interface representing a parsed semantic token with position and type information
+ * Used by Language Server Protocol (LSP) implementations for semantic highlighting
+ */
 export interface IParsedToken {
+    /** Line number in the source file (1-based) */
 	line: number;
+    
+    /** Column number in the source line (0-based) */
 	column: number;
+    
+    /** Length of the token in characters */
 	length: number;
+    
+    /** Semantic token type (function, variable, parameter, etc.) */
 	tokenType: string;
+    
+    /** Array of semantic modifiers (declaration, readonly, etc.) */
 	tokenModifiers: string[];
-    // vsTokenType: string | null;
 
+    /** The actual text content of the token */
     textValue: string,
 
+    /** File path (currently unused but part of interface) */
     path: string,
 }
 
+/**
+ * Utility function to prepare semantic tokens from raw ANTLR tokens
+ * Used for basic lexical token analysis without AST context
+ * 
+ * @param tokens - Array of ANTLR tokens from lexer
+ * @param lexer - CircuitScript lexer instance for type resolution
+ * @param script - Source script text for token text extraction
+ * @returns Array of parsed tokens with basic semantic information
+ */
 export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer, 
     script: string): IParsedToken[] {
     
     const parsedTokens: IParsedToken[] = [];
 
     tokens.forEach(item => {
+        // Skip EOF tokens
         if (item.type !== -1) {
             let stringValue = "";
             let textPart = "";
 
+            // Resolve token type from lexer symbolic names
             if (lexer.symbolicNames[item.type] !== null && lexer.symbolicNames[item.type] !== undefined) {
                 stringValue = lexer.symbolicNames[item.type];
                 if (stringValue !== "NEWLINE") {
@@ -240,13 +398,18 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
                 } else {
                     textPart = item.text.length - 1;
                 }
-            } else if (lexer.literalNames[item.type] !== null && lexer.literalNames[item.type] !== undefined) {
+            } 
+            // Resolve token type from lexer literal names
+            else if (lexer.literalNames[item.type] !== null && lexer.literalNames[item.type] !== undefined) {
                 stringValue = lexer.literalNames[item.type];
                 textPart = script.substring(item.start, item.stop + 1);
-            } else {
+            } 
+            // Fallback to token text
+            else {
                 stringValue = item._text;
             }
 
+            // Only add tokens with valid text content
             if (textPart !== 0 && textPart !== '') {
                 parsedTokens.push({
                     line: item.line,
@@ -257,32 +420,46 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
                     textValue: textPart,
                 });
             }
-
-            // console.log('line', item.line + ':' + item.column, `\t${stringValue} (${item.type})`.padEnd(30), textPart);
         }
     });
 
     return parsedTokens;
 }
 
+//
+// Token Classification Constants and Functions
+//
+
+/** CircuitScript language keywords for basic syntax highlighting */
 const languageKeywords = [
     'break', 'branch', 'create', 'component',
     'graphic', 'wire', 'pin', 'add', 'at', 'to',
     'point', 'join', 'parallel', 'return', 'def', 'import',
-    'true', 'false', 'nc', 'frame',
+    'true', 'false', 'nc', 'sheet', 'frame', 'if', 'for',
 ];
 
+/** Circuit graph construction operators for specialized highlighting */
 const operatorKeywords = [
     'at', 'to', 'wire', 'add', 'frame', 'join', 'parallel', 'point'
 ]
 
+/**
+ * Resolves ANTLR token type to semantic token type for syntax highlighting
+ * Maps lexer token types to semantic categories for editor highlighting
+ * 
+ * @param tokenType - ANTLR lexer token type name
+ * @returns Semantic token type string or null if not recognized
+ */
 function resolveTokenType(tokenType: string): string {
+    // Circuit graph construction operators get special treatment
     if (operatorKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
         return 'graphKeyword';
-
-    } else if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
+    } // General language keywords
+    else if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
         return 'keyword';
-    } else {
+    } 
+    // Specific token type mappings
+    else {
         switch (tokenType) {
             case 'INTEGER_VALUE':
             case 'NUMERIC_VALUE':
@@ -294,6 +471,7 @@ function resolveTokenType(tokenType: string): string {
             case 'ID':
                 return 'variable';
             case 'Define':
+            case 'BOOLEAN_VALUE':
                 return 'keyword';
             case 'COMMENT':
                 return 'comment';
@@ -303,6 +481,13 @@ function resolveTokenType(tokenType: string): string {
     }
 }
 
+/**
+ * Resolves token modifiers for semantic highlighting
+ * Currently returns empty array - could be extended for readonly, deprecated, etc.
+ * 
+ * @param tokenType - ANTLR lexer token type name
+ * @returns Array of semantic modifiers (currently empty)
+ */
 function resolveTokenModifiers(tokenType: string): string[] {
     return [];
 }

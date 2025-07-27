@@ -20,3 +20,4 @@ export * from './utils.js';
 export * from './visitor.js';
 export * from './sizing.js';
 export * from './objects/types.js';
+export * from './builtinMethods.js';

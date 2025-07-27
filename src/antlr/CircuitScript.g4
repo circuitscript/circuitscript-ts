@@ -218,7 +218,7 @@ create_module_expr: Create Module ':' NEWLINE INDENT (NEWLINE | property_expr | 
 // Remove the ':' in the future?
 nested_properties_inner: (NEWLINE INDENT (NEWLINE | property_expr)+ DEDENT);
 graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')' | nested_properties_inner)  # GraphicCommandExpr
-              | For ID (',' ID)* 'in' data_expr ':' graphic_expressions_block                                # GraphicForExpr
+              | For ID (',' ID)* 'in' data_expr ':' graphic_expressions_block                      # GraphicForExpr
               ;
 
 property_expr: property_key_expr ':' property_value_expr;

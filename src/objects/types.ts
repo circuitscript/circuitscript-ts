@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Token } from 'antlr4ng';
 import { ExecutionContext } from '../execute.js';
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
@@ -51,8 +52,9 @@ export type CallableParameter =
     ['keyword', key: string, value: ValueType] | 
     ['position', key: number, value: ValueType];
 
-export type FunctionDefinedParameter = [name: string, defaultValue: ValueType] 
-    | [name: string];
+export type FunctionDefinedParameter = 
+    [name: string, token: Token, defaultValue: ValueType] 
+    | [name: string, token: Token];
 
 
 export class UndeclaredReference {

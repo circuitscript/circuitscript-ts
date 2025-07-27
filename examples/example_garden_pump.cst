@@ -371,6 +371,191 @@ def decoupling_cap(value, place=true):
         wire down 100
         to gnd
 
+def pump_block_module(index):
+    enable_name = "GPIO" + index
+    sense_out = "ADC" + index
+
+    return create module:
+        width: 500
+        height: 300
+        ports:
+            left: "GPIO", "ADC"
+
+        contains:
+            relay = create component:
+                pins: 5
+                type: "relay"
+                arrange:
+                    left: 2, [1], 5
+                    right: 4,3,1
+                params:
+                    footprint: "GardenRelay:AZ943-1CH-12DEF"
+
+            diff_amp = create component:
+                pins: 
+                    1: "OUT"
+                    2: "V+"
+                    3: "+"
+                    4: "-"
+                    5: "V-"
+                type: "ic"
+                arrange:
+                    left: 3,[1], 4
+                    right: 2,1,5
+                params:
+                    footprint: "Package_TO_SOT_SMD:SOT-23-5"
+
+            frame:
+                ..title = "Pump control block (" + enable_name + ")"
+                ..direction = "row"
+                
+                frame:
+                    ..title = "Connector"
+                    ..border = 0
+                    ..padding = 0
+
+                    conn = conn1x5()
+                    at conn:
+                        1:
+                            point:
+                                at v12v
+                                wire down 100 right 100 to point
+
+                        2:  
+                            point:
+                                at label("LOAD_SUPPLY")
+                                wire right 500 to point
+                        3: 
+                            wire left 40
+                            to v5v
+                        4: tmp_label("CONN+")
+                        5: tmp_label("CONN-")
+
+                frame:
+                    ..title = "Relay control for " + enable_name
+                    ..border = 0
+                    ..padding = 0
+
+                    at port("GPIO", "input")
+
+                    wire right 200
+                    branch:
+                        wire down 100
+                        add led("RED")
+                        wire down 100
+                        add res(130)
+                        wire down 100 to gnd
+                    wire right 200
+                    branch:
+                        wire down 100
+                        add res(1k)
+                        wire down 100
+                        to gnd
+
+                    wire right 100
+                    add Q1 = mosfet()
+                    at Q1 pin 2 
+                    wire right 100 down 100
+                    to gnd
+
+                    at v12v
+                    wire down 100
+                    branch:
+                        wire right 400
+                        add relay pin 2
+                    wire down 100
+                    add s1a_diode() pin 2
+                    wire down 100
+                    branch:
+                        wire right 200
+                        wire auto
+                        to relay pin 5
+                    wire left 200 up 400 left 300
+                    to Q1 pin 3
+
+                    at relay:
+                        4:
+                            wire right 100
+                            branch:
+                                wire up 300 right 500
+                                add label("SENSE+")
+                                wire right 300
+                            wire right 100
+                            add res(0.05)
+                            wire right 100
+                            branch:
+                                wire up 200 right 100
+                                add label("SENSE-")
+                                wire right 300
+                            wire right 100
+                            add label("LOAD_SUPPLY")
+                            wire right 400
+                        1:
+                            wire right 100
+                            branch:
+                                wire right 200
+                                add label("CONN+")
+                                wire right 200
+                            wire down 100
+                            add s1a_diode() pin 2
+                            wire down 100
+                            branch:
+                                wire right 200
+                                add label("CONN-")
+                                wire right 200
+                            wire down 100
+                            to gnd  
+
+                frame:
+                    ..title = "Current sense for "+ sense_out
+                    ..border = 0
+                    ..padding = 0
+                
+                    at label("SENSE+")
+                    wire right 300 
+                    add res(1k)
+                    wire right 100
+                    point tmp1
+
+                    branch:
+                        wire right 200
+                        to diff_amp pin 3
+
+                    at diff_amp:
+                        2:
+                            wire right 100 up 100
+                            to v3v3
+                        5:
+                            wire right 100 down 100
+                            to gnd
+                        1: 
+                            wire right 200
+                            branch:
+                                wire up 500 left 200
+                                add res(20k) pin 2
+                                wire auto_
+                                to tmp1
+
+                            wire right 100
+                            decoupling_cap(100n)
+                            wire right 100
+                            to port("ADC", "output")
+
+                    at label("SENSE-")
+                    wire right 300
+                    add res(1k)
+                    wire right 100
+                    
+                    branch:
+                        wire right 200
+                        to diff_amp pin 4
+
+                    wire down 100
+                    add res(20k)
+                    wire down 100 left 100
+                    to vbias
+
+
 def pump_block(enable_name, sense_out):
     relay = create component:
         pins: 5
@@ -545,6 +730,22 @@ def pump_block(enable_name, sense_out):
             wire down 100 left 100
             to vbias
 
+def pump_block_module2():
+    return create module:
+        ports:
+            left: "GPIO", "ADC"
+        contains:
+            at port("GPIO", "input")
+            wire right 100 down 100
+            add res(10k)
+            wire down 100 to gnd
+
+            at port("ADC", "input")
+            wire right 100 down 100
+            add res(100k)
+            wire down 100 to gnd
+
+
 # define global nets
 v12v = supply("12V")
 v3v3 = supply("3V3")
@@ -553,42 +754,93 @@ vbias = supply("Vbias")
 
 gnd = dgnd()
 
-document.sheet_type = sheet_A4()
+document.sheet_type = sheet_A5()
+
+modules = []
+
+num_relays = 8
 
 sheet:
     ..valign = "top"
     ..title = "Power connectors, DC-DC converters"
     
-    main()
+    if false:
+        main()
 
-    frame:
-        ..title = "Bias voltage for current measurement opamp"
+    if false:
+        frame:
+            ..title = "Bias voltage for current measurement opamp"
 
-        at v3v3
-        wire down 100
-        add res(10k)
-        wire down 100
-        branch:
+            at v3v3
             wire down 100
-            add res(1k)
+            add res(10k)
             wire down 100
-            to gnd
+            branch:
+                wire down 100
+                add res(1k)
+                wire down 100
+                to gnd
 
-        wire right 300 
-        branch:
-            wire down 100
-            add cap(100n)
-            wire down 100
-            to gnd
-        wire right 100 up 100
-        to vbias
+            wire right 300 
+            branch:
+                wire down 100
+                add cap(100n)
+                wire down 100
+                to gnd
+            wire right 100 up 100
+            to vbias
+
+    main_conn1 = conn1x11()
+    at main_conn1:
+        3: tmp_label("GPIO1")
 
 
-for i in range(0, 6):
-    index1 = (i * 2 + 1)
-    index2 = index1 + 1
+    if true:
+        tmp = pump_block_module2()
 
+        at label("GPIO1")
+        wire right 300 to tmp pin "GPIO"
+
+        at label("ADC1")
+        wire right 300 to tmp pin "ADC"
+
+    at label("GPIO1")
+    wire down 100
+    add res(20k)
+    wire down 100 to gnd
+
+    if false:
+        tmp = pump_block_module(1)
+    
+        at label("GPIO1")
+        wire right 300 to tmp pin "GPIO"
+
+        at label("ADC1")
+        wire right 300 to tmp pin "ADC"
+
+        for i in range(0, num_relays):
+            tmp =  pump_block_module(i + 1) 
+
+            at label("GPIO" + (i+1))
+            wire right 300 to tmp pin "GPIO"
+
+            at label("ADC" + (i+1))
+            wire right 300 to tmp pin "ADC"
+
+            arrayPush(modules, tmp)
+
+if true:
     sheet:
-        ..title = "GPIO control " + index1 + ", " + index2
-        /("pump" + index1) pump_block("GPIO" + index1, "ADC" + index1)
-        /("pump" + index2) pump_block("GPIO" + index2, "ADC" + index2)
+        at tmp.contains
+
+if false:
+    for i in range(0, num_relays/2):  
+        sheet: 
+            ..title = "Control for GPIO " + (i*2+1) + " and " + (i*2 + 2)
+
+            # direct calling .contains does not work with the method
+            tmp = arrayGet(modules, i*2)
+            at tmp.contains
+
+            tmp = arrayGet(modules, i*2 + 1)
+            at tmp.contains
