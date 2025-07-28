@@ -109,15 +109,16 @@ export class SymbolTable {
      * error reporting. The AST node reference enables precise error
      * location reporting with line/column information.
      */
-    addUndefined(filePath: string, executionContext: ExecutionContext, id: string, node: TerminalNode): SymbolTableItem {
+    addUndefined(filePath: string, executionContext: ExecutionContext, 
+        id: string, token: Token): SymbolTableItem {
+        
         return this.add(
             filePath,
             executionContext,
             id,
             ParseSymbolType.Undefined,
-            {
-                node
-            }
+            {},
+            token
         );
     }
 
@@ -334,6 +335,8 @@ export type SymbolTableItemUndefined = {
     type: ParseSymbolType.Undefined;
     /** @brief Additional information including AST node reference */
     extra: SymbolTableItemExtra;
+
+    token: Token | null,
 }
 
 /**

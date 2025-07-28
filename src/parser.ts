@@ -88,7 +88,7 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
         e: RecognitionException | null): void {
 
         if (this.onErrorHandler) {
-            this.onErrorHandler(line, column, msg, e);
+            this.onErrorHandler((offendingSymbol as Token), msg, e);
         } else {
             console.log("Syntax error at line", line, ':', column, ' - ', msg);
         }

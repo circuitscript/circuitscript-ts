@@ -27,7 +27,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     Direction, 
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
-import { ParserRuleContext } from 'antlr4ng';
+import { ParserRuleContext, Token } from 'antlr4ng';
 import { DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals';
 import { linkBuiltInMethods } from './builtinMethods';
 import { resolveToNumericValue, throwWithContext } from './utils';
@@ -935,5 +935,5 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     }
 }
 
-export type OnErrorCallback = (line: number, column: number, 
-    message: string, e: any | undefined) => void;
+export type OnErrorCallback = 
+    (token: Token, message: string, e: any | undefined) => void;

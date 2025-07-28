@@ -128,11 +128,11 @@ function parseFile(scriptData: string, outputPath: string | null, scriptOptions)
         renderScript(scriptData, outputPath, scriptOptions);
 
     syntaxErrors.forEach((item, index) => {
-        console.log(`[${index}] SyntaxError at ${item.line}:${item.column} - ${item.message}`);
+        console.log(`[${index}] ${item}`);
     });
 
     parseErrors.forEach((item, index) => {
-        console.log(`[${index}] ParseError at ${item.line}:${item.column} - ${item.message}`);
+        console.log(`[${index}] ${item}`);
     });
 
     if (syntaxErrors.length > 0 || parseErrors.length > 0) {

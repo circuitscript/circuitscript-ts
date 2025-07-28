@@ -150,7 +150,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
                 if (foundContext === null) {
                     // Undefined symbol is found, save it too
                     tmpSymbol = this.symbolTable.addUndefined(
-                        this.getCurrentFile(), executor, atomId, atom);
+                        this.getCurrentFile(), executor, atomId, 
+                            atom.getSymbol());
                     this.log2('symbol not found: ' + atomId);
                 } else {
                     tmpSymbol = this.symbolTable.get(foundContext, atomId);
@@ -199,7 +200,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
         if (!pathExists) {
             this.symbolTable.addUndefined(
-                this.getCurrentFile(), this.getExecutor(), ID, ctx.ID());
+                this.getCurrentFile(), this.getExecutor(), ID, 
+                    ctx.ID().getSymbol());
         }
     };
 

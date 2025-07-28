@@ -6,7 +6,7 @@
  */
 import { Big } from 'big.js';
 
-import { ParserRuleContext } from "antlr4ng";
+import { ParserRuleContext, Token } from "antlr4ng";
 import { SymbolDrawingCommands } from "./draw_symbols";
 import { ClassComponent } from "./objects/ClassComponent";
 import { NumericValue } from "./objects/ParamDefinition";
@@ -116,9 +116,7 @@ export function roundValue(value: NumericValue): NumericValue {
 }
 
 export function throwWithContext(context: ParserRuleContext, message: string): void {
-    const startLine = context.start?.line;
-    const startColumn = context.start?.column;
-    throw new ParseError(message, startLine, startColumn);
+    throw new ParseError(message, context.start!);
 }
 
 export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
@@ -316,37 +314,35 @@ export class ParseSyntaxError extends Error {
     name = 'ParseSyntaxError';
 
     message: string;
-    line: number;
-    column: number;
-    filePath: string;
+    
+    token?: Token;
+    filePath?: string;
 
-    constructor(message: string, line: number, column: number, filePath: string) {
+    constructor(message: string, token?: Token, filePath?: string) {
         super(message);
-        this.message = message
-        this.line = line;
-        this.column = column;
+        this.message = message;
+
+        this.token = token;
         this.filePath = filePath;
+    }
+
+    toString(): string {
+        const parts = [this.name];
+        if (this.token){
+            const {line, column, start, stop} = this.token;
+            parts.push(` at ${line}:${column}`);
+        }
+
+        parts.push(`: ${this.message}`);
+        return parts.join('');
     }
 }
 
 /**
  * Error class for parsing-related failures (i.e. actual execution of the code)
  */
-export class ParseError extends Error {
-
+export class ParseError extends ParseSyntaxError {
     name = 'ParseError';
-
-    public line?: number;
-    public column?: number;
-    public filePath?: string;
-
-    constructor(message: string, line?: number, column?: number, filePath?: string) {
-        super(message);
-        this.name = 'ParseError';
-        this.line = line;
-        this.column = column;
-        this.filePath = filePath;
-    }
 }
 /**
  * Error class for rendering-related failures

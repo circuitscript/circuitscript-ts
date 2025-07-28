@@ -269,13 +269,13 @@ export function renderScript(scriptData: string, outputPath: string | null,
     const syntaxErrors: ParseSyntaxError[] = [];
 
     const onParseErrorHandler: OnErrorCallback =
-        (line: number, column: number, message: string, error: any) => {
-            parseErrors.push(new ParseError(message, line, column));
+        (token: Token, message: string, error: any) => {
+            parseErrors.push(new ParseError(message, token));
         };
 
     const onSyntaxErrorHandler: OnErrorCallback =
-        (line: number, column: number, message: string, error: any) => {
-            syntaxErrors.push(new ParseSyntaxError(message, line, column, ""));
+        (token: Token, message: string, error: any) => {
+            syntaxErrors.push(new ParseSyntaxError(message, token));
         };
 
     const visitor = new ParserVisitor(true, 
@@ -289,7 +289,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
         
         // Raise exception if there are errors in imported files
         if (hasError || hasParseError) {
-            throw new ParseError(`Error parsing imported file: ${filePath}`, undefined, undefined, filePath);
+            throw new ParseError(`Error parsing imported file: ${filePath}`, undefined, filePath);
         }
         
         return { hasError, hasParseError };
