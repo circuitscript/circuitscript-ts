@@ -44,6 +44,10 @@ export enum SymbolPinSide {
     Bottom = "bottom"
 }
 
+// Validate side key
+export const ValidPinSides: string[] = [
+    SymbolPinSide.Left, SymbolPinSide.Right, SymbolPinSide.Top, SymbolPinSide.Bottom];
+
 export enum LengthUnit {
     mm = 'mm',
     mils = 'mils',

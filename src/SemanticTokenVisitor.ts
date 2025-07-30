@@ -15,7 +15,7 @@ import { Function_def_exprContext, Create_component_exprContext,
     Function_args_exprContext,
     Function_call_exprContext,
     GraphicCommandExprContext} from "./antlr/CircuitScriptParser";
-import { BaseVisitor, OnErrorCallback } from "./BaseVisitor";
+import { BaseVisitor, OnErrorHandler } from "./BaseVisitor";
 import { buildInMethodNamesList } from "./builtinMethods";
 import { SymbolValidatorContext } from "./globals";
 
@@ -75,7 +75,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * @param script - Source script text for token text extraction
      */
     constructor(silent = false,
-        onErrorHandler: OnErrorCallback | null = null,
+        onErrorHandler: OnErrorHandler | null = null,
         currentDirectory: string | null,
         defaultsLibsPath: string,
         lexer: CircuitScriptLexer,

@@ -12,6 +12,21 @@ import { LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';
 import { ParserRuleContext } from 'antlr4ng';
+import { Property_key_exprContext } from '../antlr/CircuitScriptParser.js';
+
+/** 
+ * Handler when property key/value pairs are being parsed. This allows validation 
+ * to occur with the key/value pairs immediately and exceptions will have
+ * access to the relevant context/token info.
+ **/
+type OnPropertyHandler = (path: PropertyTreeKey[], value: any, valueContext:ParserRuleContext) => void;
+
+/** 
+Stores the path of the property tree, which can have nested properties.
+If the property tree contains an item in the array, then it have the word 'index'
+as the first item instead of the context.
+**/
+export type PropertyTreeKey = [ctx: ParserRuleContext, value: any] | ['index', number];
 
 export class ExecutionScope {
     scopeId: number;
@@ -26,6 +41,10 @@ export class ExecutionScope {
     symbols: Map<string, { type: ParseSymbolType }> = new Map();
 
     blockStack: Map<number, any> = new Map();
+
+    // Used to keep track of properties, nested properties, etc.
+    contextStack: ParserRuleContext[] = [];
+    onPropertyHandler: OnPropertyHandler[] = [];
 
     // Store references to the start of context/blocks that can 
     // have 'break' within the execution blocks
@@ -193,6 +212,44 @@ export class ExecutionScope {
         } else {
             this.currentPin = null;
         }
+    }
+
+    enterContext(context: ParserRuleContext): void {
+        this.contextStack.push(context);
+    }
+
+    exitContext(): ParserRuleContext {
+        return this.contextStack.pop()!;
+    }
+
+    findPropertyKeyTree(): PropertyTreeKey[] {
+        // Keep searching up the context stack to get the name
+        const keyNames = [];
+        
+        for(let i=this.contextStack.length-1; i>= 0;i--){
+            const ctx = this.contextStack[i];
+            if (ctx instanceof Property_key_exprContext){
+                keyNames.push([ctx, ctx.getText()]);
+            } else if (typeof ctx === 'number'){
+                keyNames.push(['index', ctx]);
+            }
+        }
+
+        return keyNames.reverse();
+    }
+
+    setOnPropertyHandler(handler:OnPropertyHandler):void{
+        this.onPropertyHandler.push(handler);
+    }
+
+    popOnPropertyHandler(): OnPropertyHandler {
+        return this.onPropertyHandler.pop()!;
+    }
+
+    triggerPropertyHandler(value: any, valueCtx:ParserRuleContext): void {
+        const lastHandler = this.onPropertyHandler[this.onPropertyHandler.length-1];
+        const propertyTree = this.findPropertyKeyTree();
+        lastHandler && lastHandler(propertyTree, value, valueCtx);
     }
 }
 

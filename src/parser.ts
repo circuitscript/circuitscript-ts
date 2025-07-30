@@ -10,13 +10,13 @@ import {
     ScriptContext} from './antlr/CircuitScriptParser.js';
 
 import { MainLexer } from './lexer.js';
-import { SimpleStopwatch } from './utils.js';
+import { RuntimeExecutionError, SimpleStopwatch } from './utils.js';
 import {
     ANTLRErrorListener, ATNConfigSet, ATNSimulator,
     BitSet, CharStream, CommonTokenStream, DFA, Parser,
     RecognitionException, Recognizer, Token
 } from 'antlr4ng';
-import { BaseVisitor, OnErrorCallback } from './BaseVisitor.js';
+import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 
 export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
     tree: ScriptContext,
@@ -26,10 +26,10 @@ export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
 } {
 
     const lexerErrorListener = new CircuitscriptParserErrorListener(
-        visitor.onSyntaxErrorHandler);
+        visitor.onErrorHandler);
 
     const parserErrorListener = new CircuitscriptParserErrorListener(
-        visitor.onParseErrorHandler);
+        visitor.onErrorHandler);
     
     const chars = CharStream.fromString(data);
 
@@ -54,12 +54,9 @@ export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
     } catch (error) {
         // Error is not handled by the ANTLR parsing code, since the
         // error will have cancelled subsequent parsing.
-        
-        // if (error instanceof ParseError) {
-        //     visitor.onParseErrorHandler(
-        //         error.line, error.column, error.message, error);
-        // }
-        console.log(error);
+        if (visitor.onErrorHandler && (error instanceof RuntimeExecutionError)){
+            visitor.onErrorHandler(error.message, null, error);
+        }
     }
 
     const parserTimeTaken = parserTimer.lap();
@@ -76,9 +73,9 @@ export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
 export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
 
     syntaxErrorCounter = 0;
-    onErrorHandler: OnErrorCallback | null = null;
+    onErrorHandler: OnErrorHandler | null = null;
 
-    constructor(onErrorHandler: OnErrorCallback | null = null) {
+    constructor(onErrorHandler: OnErrorHandler | null = null) {
         this.onErrorHandler = onErrorHandler;
     }
 
@@ -87,8 +84,8 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
         line: number, column: number, msg: string,
         e: RecognitionException | null): void {
 
-        if (this.onErrorHandler) {
-            this.onErrorHandler((offendingSymbol as Token), msg, e);
+        if (this.onErrorHandler && e) {
+            this.onErrorHandler(msg, e.ctx!, e);
         } else {
             console.log("Syntax error at line", line, ':', column, ' - ', msg);
         }

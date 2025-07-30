@@ -1328,6 +1328,8 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
     maxPositions.set(SymbolPinSide.Top, 0);
     maxPositions.set(SymbolPinSide.Bottom, 0);
 
+    // If arrangeProps are not defined, then follow this sequence to assign
+    // the pin positions.
     if (arrangeProps === null) {
         let counter = 0;
         for (const [pinId] of pins) {

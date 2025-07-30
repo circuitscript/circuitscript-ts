@@ -65,18 +65,19 @@ import {
 } from './objects/ParamDefinition.js';
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
-import { ExecutionScope } from './objects/ExecutionScope.js';
+import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, DeclaredReference, 
     FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
+    ValidPinSides, 
     WireAutoDirection } from './globals.js';
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
-import { getPortType } from './utils.js';
+import { BaseError, getPortType, RuntimeExecutionError } from './utils.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
 
@@ -147,7 +148,7 @@ export class ParserVisitor extends BaseVisitor {
             componentPin = this.visitResult(ctxDataExprWithAssigment);
 
         } else {
-            const component = this.getExecutor().scope.currentComponent!;
+            const component = this.getScope().currentComponent!;
             let pinId: PinId | null = null;
 
             const ctxPinSelectExpr = ctx.pin_select_expr();
@@ -209,8 +210,100 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
-        const properties = this.getPropertyExprList(ctx.property_expr());
+        const scope = this.getScope();
 
+        scope.setOnPropertyHandler((path:PropertyTreeKey[], value: any, ctx: ParserRuleContext) => {
+            // const pathText = path.map(item => item[1]);
+
+            if (path.length === 1){
+                const [, keyName] = path[0];
+
+                switch(keyName){
+                    case 'type':
+                        this.validateString(value, ctx);
+                        break;
+                    case 'angle':
+                    case 'width':
+                    case 'height':
+                        this.validateNumeric(value, ctx);
+                        break;
+
+                    case 'pins':
+                        if (!(value instanceof Map)){
+                            this.validateNumeric(value, ctx);
+                        }
+                        break;
+                    case 'copy':
+                        if (value instanceof NumericValue){
+                            this.validateNumeric(value, ctx);
+                        } else if (typeof value === 'boolean'){
+                            this.validateBoolean(value, ctx);
+                        } else {
+                            // All other types
+                            throw new RuntimeExecutionError("Invalid value for 'copy' property", ctx.start!, ctx.end!);
+                        }
+                        break;
+                }
+            } else {
+                const [, keyName] = path[0] as [ParserRuleContext, string];
+                if (keyName === 'arrange') {
+                    const [sideKeyCtx, sideKeyName] = path[1] as [ParserRuleContext, string];
+                    if (ValidPinSides.indexOf(sideKeyName) === -1) {
+                        throw new RuntimeExecutionError(`Invalid side ${sideKeyName} in arrange`, sideKeyCtx.start!, sideKeyCtx.stop!);
+                    } else {
+                        if (path.length > 2 && path[2][0] === 'index'){
+                            // Checking each element
+                            if (Array.isArray(value)) {
+                                const goodBlank = value.length === 1 &&
+                                    value[0] instanceof NumericValue;
+                                if (!goodBlank) {
+                                    throw new RuntimeExecutionError(`Invalid blank specifier`, ctx.start!, ctx.stop!);
+                                }
+                            } else {
+                                // Only allow numbers for now, next time will support ID names/strings
+                                if (!(value instanceof NumericValue)){
+                                    throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx.start!, ctx.stop!);
+                                }
+                            }
+                        }
+                    }
+                } else if (keyName === 'params'){
+                    const [, subKeyName] = path[1] as [ParserRuleContext, string];
+                    switch(subKeyName) {
+                        case 'mpn':
+                        case 'refdes':
+                        case 'footprint':
+                            this.validateString(value, ctx);
+                            break;
+                        case 'place':
+                            this.validateBoolean(value, ctx);
+                            break;
+                        
+                    }
+                } else if (keyName === 'pins'){
+                    if (path.length === 2){
+                        if (value.length === 2){
+                            const [pinType, ] = value;
+                            if (pinType instanceof UndeclaredReference){
+                                throw new RuntimeExecutionError(`Invalid pin type: ${pinType.reference.name}`, ctx.start!, ctx.end!);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        scope.enterContext(ctx);
+
+        ctx.property_expr().forEach(item => {
+            this.visitResult(item);
+        });
+
+        scope.exitContext();
+        scope.popOnPropertyHandler();
+
+        // Now parse here again
+        const properties = this.getPropertyExprList(ctx.property_expr());
         const pins: PinDefinition[] = this.parseCreateComponentPins(
             properties.get('pins'),
         );
@@ -267,10 +360,13 @@ export class ParserVisitor extends BaseVisitor {
             angle, followWireOrientation
         }
 
-        const createdComponent = this.getExecutor().createComponent(instanceName,
-            pins, params, props);
-
-        this.setResult(ctx, createdComponent);
+        try {
+            const createdComponent = this.getExecutor().createComponent(instanceName,
+                pins, params, props);
+            this.setResult(ctx, createdComponent);
+        } catch (error) {
+            this.throwWithContext(ctx, (error as BaseError).message)
+        }
     }
 
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
@@ -282,7 +378,7 @@ export class ParserVisitor extends BaseVisitor {
             paramIds.push(varName);
 
             // create blank object first, so that the reference exists
-            this.getExecutor().scope.variables.set(varName, {});
+            this.getScope().variables.set(varName, {});
         }
 
         const executor = this.getExecutor();
@@ -421,7 +517,7 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
                 useValueArray.forEach((value, index) => {
-                    this.getExecutor().scope.variables.set(
+                    this.getScope().variables.set(
                         forVariableNames[index], value);
                 });
 
@@ -530,8 +626,21 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperty_expr = (ctx: Property_exprContext): void => {
-        const keyName = this.visitResult(ctx.property_key_expr());
-        const value = this.visitResult(ctx.property_value_expr());
+        const ctxKey = ctx.property_key_expr();
+        const ctxValue = ctx.property_value_expr();
+
+        const scope = this.getScope();
+
+        this.getScope().enterContext(ctxKey);
+        this.getScope().enterContext(ctxValue);
+
+        const keyName = this.visitResult(ctxKey);
+        const value = this.visitResult(ctxValue);
+
+        scope.triggerPropertyHandler(value, ctxValue);
+
+        this.getScope().exitContext();
+        this.getScope().exitContext();
 
         if (value instanceof UndeclaredReference && (
             value.reference.parentValue === undefined
@@ -540,22 +649,28 @@ export class ParserVisitor extends BaseVisitor {
             throw value.throwMessage();
         }
 
-        const map = new Map<string, any>();
+        const map = new Map<string, unknown>();
         map.set(keyName, value);
-
         this.setResult(ctx, map);
     }
 
     visitSingle_line_property = (ctx: Single_line_propertyContext): void => {
+        this.getScope().enterContext(ctx);
+
         let value;
         if (ctx.data_expr().length === 1) {
             value = this.visitResult(ctx.data_expr(0)!);
         } else {
-            value = ctx.data_expr().map(item => {
-                return this.visitResult(item);
+            value = ctx.data_expr().map((item, index) => {
+                this.getScope().enterContext(index);
+                const result = this.visitResult(item);
+                this.getScope().triggerPropertyHandler(result, item);
+                this.getScope().exitContext();
+                return result;
             });
         }
 
+        this.getScope().exitContext();
         this.setResult(ctx, value);
     }
 
@@ -1135,6 +1250,10 @@ export class ParserVisitor extends BaseVisitor {
                 useValue = Number(ctxIntegerValue);
             } else if (ctxDataExpr) {
                 useValue = this.visitResult(ctxDataExpr);
+
+                if (useValue instanceof NumericValue){
+                    useValue = useValue.toNumber();
+                }
             }
 
             if (useValue !== null) {
@@ -1324,7 +1443,7 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
                 useValueArray.forEach((value, index) => {
-                    this.getExecutor().scope.variables.set(
+                    this.getScope().variables.set(
                         forVariableNames[index], value);
                 });
 
@@ -1528,15 +1647,15 @@ export class ParserVisitor extends BaseVisitor {
 
 
     printNets(): void {
-        this.getExecutor().scope.printNets();
+        this.getScope().printNets();
     }
 
     dumpNets(): ComponentPinNet[]  {
-        return this.getExecutor().scope.dumpNets();
+        return this.getScope().dumpNets();
     }
 
     dumpUniqueNets(): Net[] {
-        const nets = this.getExecutor().scope.getNets();
+        const nets = this.getScope().getNets();
         return nets.reduce((accum, [, , net]) => {
             accum.push(net);
             return accum;
@@ -1544,15 +1663,15 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     dumpVariables(): Map<string, any> {
-        return this.getExecutor().scope.variables;
+        return this.getScope().variables;
     }
 
     dumpInstances(): Map<string, ClassComponent> {
-        return this.getExecutor().scope.instances;
+        return this.getScope().instances;
     }
 
     dump2() {
-        const instances = this.getExecutor().scope.instances;
+        const instances = this.getScope().instances;
         const items = [];
 
         for (const [instanceName, instance] of instances) {
@@ -1561,7 +1680,7 @@ export class ParserVisitor extends BaseVisitor {
             }
 
             const pinNets = this.resolveNets(
-                this.getExecutor().scope,
+                this.getScope(),
                 instance,
             );
 
@@ -1584,10 +1703,10 @@ export class ParserVisitor extends BaseVisitor {
     getNetList(): NetListItem[] {
         const netlist: NetListItem[] = [];
 
-        const instances = this.getExecutor().scope.instances;
+        const instances = this.getScope().instances;
         for (const [instanceName, instance] of instances) {
             const pinNets = this.resolveNets(
-                this.getExecutor().scope,
+                this.getScope(),
                 instance,
             );
 
@@ -1640,7 +1759,7 @@ export class ParserVisitor extends BaseVisitor {
         this.log('===== annotate components =====');
 
         const annotater = new ComponentAnnotater();
-        const instances = this.getExecutor().scope.instances;
+        const instances = this.getScope().instances;
 
         const toAnnotate:ClassComponent[] = [];
 
@@ -1694,7 +1813,7 @@ export class ParserVisitor extends BaseVisitor {
     applySheetFrameComponent(): {
         frameComponent: ClassComponent | null
     } {
-        const baseScope = this.getExecutor().scope;
+        const baseScope = this.getScope();
         const document = baseScope.variables.get(GlobalDocumentName);
 
         let frameComponent: ClassComponent | null = null;

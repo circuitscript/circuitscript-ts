@@ -115,8 +115,19 @@ export function roundValue(value: NumericValue): NumericValue {
             value.toBigNumber().toFixed(7)));
 }
 
-export function throwWithContext(context: ParserRuleContext, message: string): void {
-    throw new ParseError(message, context.start!);
+export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
+    if (messageOrError instanceof BaseError){
+        throw messageOrError;
+    }
+    throwWithTokenRange(messageOrError as string, context.start!, context.stop!);
+}
+
+export function throwWithToken(message: string, token: Token): void {
+    throw new ParseError(message, token);
+}
+
+export function throwWithTokenRange(message: string, startToken: Token, endToken?: Token): void {
+    throw new ParseError(message, startToken, endToken);
 }
 
 export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
@@ -308,34 +319,47 @@ export function getBlockTypeString(type: BlockTypes): string {
     return returnValue;
 }
 
-/** Errors that occur within the lexing of tokens */
-export class ParseSyntaxError extends Error {
+export class BaseError extends Error {
 
-    name = 'ParseSyntaxError';
+    name = 'BaseError';
 
     message: string;
     
-    token?: Token;
+    startToken?: Token;
+    endToken?: Token;
     filePath?: string;
 
-    constructor(message: string, token?: Token, filePath?: string) {
+    constructor(message: string, startToken?: Token, endToken?: Token, filePath?: string) {
         super(message);
         this.message = message;
 
-        this.token = token;
+        this.startToken = startToken;
+        this.endToken = endToken;
         this.filePath = filePath;
     }
 
     toString(): string {
         const parts = [this.name];
-        if (this.token){
-            const {line, column, start, stop} = this.token;
-            parts.push(` at ${line}:${column}`);
+        if (this.startToken){
+            const {line, column} = this.startToken;
+            if (this.endToken && (this.endToken.line !== this.startToken.line || this.endToken.column !== this.startToken.column)) {
+                const endLine = this.endToken.line;
+                const endColumn = this.endToken.column + (this.endToken.stop - this.endToken.start);
+                parts.push(` at ${line}:${column}-${endLine}:${endColumn}`);
+            } else {
+                parts.push(` at ${line}:${column}`);
+            }
         }
 
         parts.push(`: ${this.message}`);
         return parts.join('');
     }
+}
+
+
+/** Errors that occur within the lexing of tokens */
+export class ParseSyntaxError extends BaseError {
+    name = 'ParseSyntaxError';
 }
 
 /**
@@ -344,10 +368,18 @@ export class ParseSyntaxError extends Error {
 export class ParseError extends ParseSyntaxError {
     name = 'ParseError';
 }
+
+/**
+ * Error class for runtime execution failures during visitor traversal
+ * These should halt execution immediately
+ */
+export class RuntimeExecutionError extends BaseError {
+    name = 'RuntimeExecutionError';
+}
+
 /**
  * Error class for rendering-related failures
  */
-
 export class RenderError extends Error {
     public stage?: string;
 

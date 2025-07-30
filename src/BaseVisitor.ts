@@ -27,11 +27,11 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     Direction, 
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
     ValueType } from "./objects/types";
-import { ParserRuleContext, Token } from 'antlr4ng';
+import { ParserRuleContext } from 'antlr4ng';
 import { DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals';
 import { linkBuiltInMethods } from './builtinMethods';
-import { resolveToNumericValue, throwWithContext } from './utils';
-import { SequenceAction } from './objects/ExecutionScope';
+import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils';
+import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {
@@ -69,25 +69,22 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         PinTypes.Power,
     ];
 
-    onParseErrorHandler: OnErrorCallback | null = null;
-    onSyntaxErrorHandler: OnErrorCallback | null = null;
+    onErrorHandler: OnErrorHandler | null = null;
 
-    onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string): 
+    onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string, onErrorHandler: OnErrorHandler): 
         {hasError:boolean, hasParseError: boolean} => {
         
         throw "Import file not implemented"
     }
 
     constructor(silent = false, 
-        onParseErrorHandler: OnErrorCallback | null = null,
-        onSyntaxErrorHandler: OnErrorCallback | null = null,
+        onErrorHandler: OnErrorHandler | null = null,
         currentDirectory: string | null,
         defaultLibsPath: string) {
         
         super();
         this.logger = new Logger();
-        this.onParseErrorHandler = onParseErrorHandler;
-        this.onSyntaxErrorHandler = onSyntaxErrorHandler;
+        this.onErrorHandler = onErrorHandler;
 
         this.startingContext = new ExecutionContext(
             DoubleDelimiter1,
@@ -124,6 +121,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     getExecutor(): ExecutionContext {
         return this.executionStack[this.executionStack.length - 1];
+    }
+
+    getScope(): ExecutionScope {
+        return this.getExecutor().scope;
     }
 
     getRootExecutor(): ExecutionContext {
@@ -711,7 +712,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
                 const importResult =
                     this.onImportFile(this, filePathUsed, fileData!,
-                        this.onParseErrorHandler);
+                        this.onErrorHandler);
 
                 hasError = importResult.hasError;
                 hasParseError = importResult.hasParseError;
@@ -930,10 +931,46 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return value.slice(1, value.length - 1);
     }
 
-    protected throwWithContext(context: ParserRuleContext, message: string): void {
-        throwWithContext(context, message);
+    protected throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
+        throwWithContext(context, messageOrError);
     }
+
+    protected validateType(value: any,
+        context: ParserRuleContext,
+        validateFunction: (value: any) => boolean,
+        expectedType: string): boolean {
+
+        if (value === undefined) {
+            return false;
+        }
+
+        const result = validateFunction(value);
+        if (!result) {
+            throw new RuntimeExecutionError(`Invalid ${expectedType}`, context.start!, context.stop!);
+        }
+
+        return result;
+    }
+
+    protected validateString(value: any, context: ParserRuleContext): void {
+        this.validateType(value, context, (val) => {
+            return typeof val === 'string';
+        }, 'string');
+    }
+
+    protected validateBoolean(value: any, context: ParserRuleContext): void {
+        this.validateType(value, context, (val) => {
+            return typeof val === 'boolean';
+        }, 'boolean');
+    }
+
+    protected validateNumeric(value: any, context: ParserRuleContext): void {
+        this.validateType(value, context, (val) => {
+            return (val instanceof NumericValue);
+        }, 'numeric value');
+    }
+
 }
 
-export type OnErrorCallback = 
-    (token: Token, message: string, e: any | undefined) => void;
+export type OnErrorHandler = 
+    (message: string, context: ParserRuleContext, e?: any) => void;

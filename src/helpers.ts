@@ -15,15 +15,16 @@ import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
-import { generateDebugSequenceAction, ParseError, ParseSyntaxError, RenderError, resolveToNumericValue, sequenceActionString, SimpleStopwatch } from "./utils.js";
+import { BaseError, generateDebugSequenceAction, ParseError, ParseSyntaxError, RenderError, resolveToNumericValue, RuntimeExecutionError, sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
+import { ParserRuleContext } from "antlr4ng";
 import { createContext } from "this-file";
 import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
 import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolveVisitor.js";
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
-import { BaseVisitor, OnErrorCallback } from "./BaseVisitor.js";
+import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
@@ -254,8 +255,7 @@ export function validateScript(filePath: string, scriptData: string,
 export function renderScript(scriptData: string, outputPath: string | null,
     options: ScriptOptions): {
         svgOutput: string | null,
-        parseErrors: ParseError[],
-        syntaxErrors: ParseSyntaxError[],
+        errors: BaseError[]
     } {
 
     const {
@@ -264,23 +264,21 @@ export function renderScript(scriptData: string, outputPath: string | null,
         dumpNets = false,
         dumpData = false,
         showStats = false } = options;
-
-    const parseErrors: ParseError[] = [];
-    const syntaxErrors: ParseSyntaxError[] = [];
-
-    const onParseErrorHandler: OnErrorCallback =
-        (token: Token, message: string, error: any) => {
-            parseErrors.push(new ParseError(message, token));
-        };
-
-    const onSyntaxErrorHandler: OnErrorCallback =
-        (token: Token, message: string, error: any) => {
-            syntaxErrors.push(new ParseSyntaxError(message, token));
+    
+    const errors: BaseError[] = [];
+    const onErrorHandler: OnErrorHandler =
+        (message: string, context: ParserRuleContext, error?: any) => {
+            if (error && error instanceof RuntimeExecutionError) {
+                errors.push(error);
+            } else if (error && error instanceof RecognitionException) {
+                errors.push(new ParseSyntaxError(message, context.start!, context.stop!));
+            } else {
+                errors.push(new ParseError(message, context.start!, context.stop!));
+            }
         };
 
     const visitor = new ParserVisitor(true, 
-        onParseErrorHandler, onSyntaxErrorHandler,
-        currentDirectory, defaultLibsPath);
+        onErrorHandler, currentDirectory, defaultLibsPath);
 
     visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
         : { hasError: boolean, hasParseError: boolean } => {
@@ -289,7 +287,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
         
         // Raise exception if there are errors in imported files
         if (hasError || hasParseError) {
-            throw new ParseError(`Error parsing imported file: ${filePath}`, undefined, filePath);
+            throw new ParseError(`Error parsing imported file: ${filePath}`, undefined, undefined, filePath);
         }
         
         return { hasError, hasParseError };
@@ -323,7 +321,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
     
     let svgOutput = "";
 
-    if (syntaxErrors.length === 0 && parseErrors.length === 0){
+    if (errors.length === 0){
         const { frameComponent } = visitor.applySheetFrameComponent();
         try {
             visitor.annotateComponents();
@@ -453,8 +451,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
 
     return {
         svgOutput, 
-        parseErrors,
-        syntaxErrors
+        errors
     }
 }
 

@@ -124,22 +124,22 @@ export default async function main(): Promise<void> {
 }
 
 function parseFile(scriptData: string, outputPath: string | null, scriptOptions): string | null {
-    const { svgOutput: output, parseErrors, syntaxErrors } =
-        renderScript(scriptData, outputPath, scriptOptions);
+    try {
+        const { svgOutput: output, errors } =
+            renderScript(scriptData, outputPath, scriptOptions);
 
-    syntaxErrors.forEach((item, index) => {
-        console.log(`[${index}] ${item}`);
-    });
+        errors.forEach((err, index) => {
+            console.log(`[${index}] ${err}`);
+        });
 
-    parseErrors.forEach((item, index) => {
-        console.log(`[${index}] ${item}`);
-    });
+        if (errors.length > 0) {
+            console.log('Render failed due to syntax or parsing errors');
+        }
 
-    if (syntaxErrors.length > 0 || parseErrors.length > 0) {
-        console.log('Render failed due to syntax or parsing errors');
+        return output;
+    } catch (error) {
+        console.error(`Unexpected Error: ${error}`);
     }
-
-    return output;
 }
 
 main();
