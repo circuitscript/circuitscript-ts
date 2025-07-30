@@ -27,16 +27,16 @@ let globalCreateSVGWindow: () => SVGWindow;
 
 export async function prepareSVGEnvironment(fontsPath: string | null): Promise<void> {    
     const moduleType = detectJSModuleType();
-    if (moduleType === JSModuleType.CommonJs){
-        const { config, createSVGWindow } = await import('svgdom');
+    // if (moduleType === JSModuleType.CommonJs || true){
+    const { config, createSVGWindow } = await import('svgdom');
 
-        globalCreateSVGWindow = createSVGWindow;
-        if (fontsPath !== null) {
-            await config.setFontDir(fontsPath)
-                .setFontFamilyMappings(supportedFonts)
-                .preloadFonts();
-        }
+    globalCreateSVGWindow = createSVGWindow;
+    if (fontsPath !== null) {
+        await config.setFontDir(fontsPath)
+            .setFontFamilyMappings(supportedFonts)
+            .preloadFonts();
     }
+    // }
 }
 
 export function getCreateSVGWindow(): () => SVGWindow {

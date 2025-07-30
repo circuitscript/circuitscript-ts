@@ -1,6 +1,6 @@
 import { TerminalNode, Token } from "antlr4ng";
-import { ExecutionContext } from "../execute";
-import { FunctionDefinedParameter, ParseSymbolType, ValueType } from "../objects/types";
+import { ExecutionContext } from "../execute.js";
+import { FunctionDefinedParameter, ParseSymbolType, ValueType } from "../objects/types.js";
 
 /**
  * @class SymbolTable

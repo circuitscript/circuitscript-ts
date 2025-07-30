@@ -1,6 +1,6 @@
 import { Token } from "antlr4ng";
-import { ComplexType, FunctionDefinedParameter } from "../objects/types";
-import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor";
+import { ComplexType, FunctionDefinedParameter } from "../objects/types.js";
+import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
 
 /**
  * @class SymbolValidatorResolveVisitor

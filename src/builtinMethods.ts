@@ -1,9 +1,9 @@
 import Big from "big.js";
-import { BaseVisitor } from "./BaseVisitor";
-import { ExecutionContext } from "./execute";
-import { numeric, NumericValue } from "./objects/ParamDefinition";
-import { CallableParameter } from "./objects/types";
-import { resolveToNumericValue } from "./utils";
+import { BaseVisitor } from "./BaseVisitor.js";
+import { ExecutionContext } from "./execute.js";
+import { numeric, NumericValue } from "./objects/ParamDefinition.js";
+import { CallableParameter } from "./objects/types.js";
+import { resolveToNumericValue } from "./utils.js";
 
 const builtInMethods: [name: string, impl: (args: any) => any][] = [
     ['enumerate', enumerate],

@@ -14,24 +14,24 @@ import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprC
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
-    Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser";
-import { CircuitScriptVisitor } from "./antlr/CircuitScriptVisitor";
-import { ExecutionContext } from "./execute";
-import { Logger } from "./logger";
-import { ClassComponent } from "./objects/ClassComponent";
-import { Net } from "./objects/Net";
-import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition";
-import { PinTypes } from "./objects/PinTypes";
+    Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
+import { CircuitScriptVisitor } from "./antlr/CircuitScriptVisitor.js";
+import { ExecutionContext } from "./execute.js";
+import { Logger } from "./logger.js";
+import { ClassComponent } from "./objects/ClassComponent.js";
+import { Net } from "./objects/Net.js";
+import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition.js";
+import { PinTypes } from "./objects/PinTypes.js";
 import { CallableParameter, CFunctionOptions, ComplexType, 
     DeclaredReference, 
     Direction, 
     FunctionDefinedParameter, ReferenceType, UndeclaredReference, 
-    ValueType } from "./objects/types";
+    ValueType } from "./objects/types.js";
 import { ParserRuleContext } from 'antlr4ng';
-import { DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals';
-import { linkBuiltInMethods } from './builtinMethods';
-import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils';
-import { ExecutionScope, SequenceAction } from './objects/ExecutionScope';
+import { DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals.js';
+import { linkBuiltInMethods } from './builtinMethods.js';
+import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
+import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
 
 
 export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceType | any> {

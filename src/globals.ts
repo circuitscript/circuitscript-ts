@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { numeric } from "./objects/ParamDefinition";
+import { numeric } from "./objects/ParamDefinition.js";
 
 // Delimiter should not include chars that can be in instance name 
 // or in variable names.

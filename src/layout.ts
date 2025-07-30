@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Graph, Edge, alg} from '@dagrejs/graphlib';
+// import {Graph, Edge, alg} from '@dagrejs/graphlib';
+
+import pkg from '@dagrejs/graphlib';
+const { Graph, alg } = pkg;
 
 import { SymbolCustom, SymbolDrawing, SymbolGraphic, 
     SymbolCustomModule, SymbolPinDefintion, SymbolPlaceholder, 

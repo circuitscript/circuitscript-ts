@@ -4,13 +4,13 @@ import { Import_exprContext, Assignment_exprContext, Atom_exprContext,
     MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext, 
     DataExprContext, Function_def_exprContext } from "src/antlr/CircuitScriptParser";
 
-import { buildInMethodNamesList } from "../builtinMethods";
-import { ExecutionContext } from "../execute";
-import { ComplexType, FunctionDefinedParameter, ParseSymbolType, ValueType } from "../objects/types";
-import { SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable";
-import { SymbolTable } from "./SymbolTable";
-import { BaseVisitor } from "../BaseVisitor";
-import { SymbolValidatorContext } from "../globals";
+import { buildInMethodNamesList } from "../builtinMethods.js";
+import { ExecutionContext } from "../execute.js";
+import { ComplexType, FunctionDefinedParameter, ParseSymbolType, ValueType } from "../objects/types.js";
+import { SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
+import { SymbolTable } from "./SymbolTable.js";
+import { BaseVisitor } from "../BaseVisitor.js";
+import { SymbolValidatorContext } from "../globals.js";
 
 /**
  * @class SymbolValidatorVisitor

@@ -6,7 +6,7 @@
  */
 
 import { TerminalNode, Token } from "antlr4ng";
-import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer";
+import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { Function_def_exprContext, Create_component_exprContext, 
     Create_graphic_exprContext, Atom_exprContext, Property_key_exprContext, 
     ValueAtomExprContext,
@@ -14,10 +14,10 @@ import { Function_def_exprContext, Create_component_exprContext,
     Import_exprContext,
     Function_args_exprContext,
     Function_call_exprContext,
-    GraphicCommandExprContext} from "./antlr/CircuitScriptParser";
-import { BaseVisitor, OnErrorHandler } from "./BaseVisitor";
-import { buildInMethodNamesList } from "./builtinMethods";
-import { SymbolValidatorContext } from "./globals";
+    GraphicCommandExprContext} from "./antlr/CircuitScriptParser.js";
+import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
+import { buildInMethodNamesList } from "./builtinMethods.js";
+import { SymbolValidatorContext } from "./globals.js";
 
 /**
  * SemanticTokensVisitor - Language Server Protocol (LSP) Semantic Tokens Provider

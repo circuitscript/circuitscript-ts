@@ -8,7 +8,7 @@
 import {
     getNumberExponential, getNumberExponentialText,
     resolveToNumericValue
-} from "../utils";
+} from "../utils.js";
 import { Big } from 'big.js';
 
 export class ParamDefinition {

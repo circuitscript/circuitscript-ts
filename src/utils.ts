@@ -7,12 +7,12 @@
 import { Big } from 'big.js';
 
 import { ParserRuleContext, Token } from "antlr4ng";
-import { SymbolDrawingCommands } from "./draw_symbols";
-import { ClassComponent } from "./objects/ClassComponent";
-import { NumericValue } from "./objects/ParamDefinition";
-import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope';
-import { UnitDimension } from './helpers';
-import { BlockTypes } from './globals';
+import { SymbolDrawingCommands } from "./draw_symbols.js";
+import { ClassComponent } from "./objects/ClassComponent.js";
+import { NumericValue } from "./objects/ParamDefinition.js";
+import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope.js';
+import { UnitDimension } from './helpers.js';
+import { BlockTypes } from './globals.js';
 
 export class SimpleStopwatch {
     startTime: Date;
