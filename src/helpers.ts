@@ -41,8 +41,6 @@ export enum JSModuleType {
 }
 
 export type ScriptOptions = {
-    currentDirectory: string | null, 
-    defaultLibsPath: string,
     dumpNets: boolean,
     dumpData: boolean,
     showStats: boolean,
@@ -80,13 +78,8 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
     const { parser, lexer, tokens } = prepareFile(scriptData);
     const tree = parser.script();
 
-    const {
-        currentDirectory = null,
-        defaultLibsPath,
-    } = options;
-
     const visitor = new SemanticTokensVisitor(true, null,
-        currentDirectory, defaultLibsPath, options.environment,
+        options.environment,
         lexer, scriptData,
     );
 
@@ -184,13 +177,8 @@ export function validateScript(filePath: string, scriptData: string,
 
     const tree = parser.script();
 
-    const {
-        currentDirectory = null,
-        defaultLibsPath,
-    } = options;
-
     const visitor = new SymbolValidatorVisitor(true, null, 
-        currentDirectory, defaultLibsPath, options.environment);
+        options.environment);
 
     visitor.enterFile(filePath);
 
@@ -233,7 +221,7 @@ export function validateScript(filePath: string, scriptData: string,
     symbolTable.clearUndefined();
 
     const visitorResolver = new SymbolValidatorResolveVisitor(
-        true, null, currentDirectory, defaultLibsPath, options.environment);
+        true, null, options.environment);
     visitorResolver.enterFile(filePath);
 
     // Use the existing symbol tree as the starting point
@@ -254,11 +242,11 @@ export function renderScript(scriptData: string, outputPath: string | null,
     } {
 
     const {
-        currentDirectory = null,
-        defaultLibsPath,
         dumpNets = false,
         dumpData = false,
-        showStats = false } = options;
+        showStats = false,
+        environment
+    } = options;
     
     const errors: BaseError[] = [];
     const onErrorHandler: OnErrorHandler =
@@ -273,7 +261,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
         };
 
     const visitor = new ParserVisitor(true, 
-        onErrorHandler, currentDirectory, defaultLibsPath, options.environment);
+        onErrorHandler, options.environment);
 
     visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
         : { hasError: boolean, hasParseError: boolean } => {
@@ -303,7 +291,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
         nets.forEach(item => console.log(item.join(" | ")));
     }
 
-    const dumpDirectory = currentDirectory + '/dump/';
+    const dumpDirectory = environment.getRelativeToCurrentDirectory('/dump/');
 
     if (dumpData) {
         if (!existsSync(dumpDirectory)) {
@@ -464,15 +452,37 @@ export function detectJSModuleType(): JSModuleType {
 // as the environment.
 export class NodeScriptEnvironment {
 
+    private useCurrentDirectoryPath: string | null = null;
+    private useDefaultLibsPath: string | null = null;
+
+    setCurrentDirectory(path: string): void {
+        this.useCurrentDirectoryPath = path;
+    }
+
+    setDefaultLibsPath(path: string): void {
+        this.useDefaultLibsPath = path;
+    }
+
     getPackageVersion(): string {
         return TOOL_VERSION;
     }
 
-    getCurrentPath(): { filePath: string } {
+    getCurrentDirectory(): string {
+        if (this.useCurrentDirectoryPath !== null) {
+            return this.useCurrentDirectoryPath;
+        }
+
         const { createContext } = require('this-file');
         const context = createContext();
-        const filename = context.filename;
-        return { filePath: filename };
+        return context.dirname;
+    }
+
+    getRelativeToCurrentDirectory(filePath: string): string {
+        return path.join(this.getCurrentDirectory(), filePath);
+    }
+
+    getRelativeToDefaultLibs(filePath: string): string {
+        return path.join(this.getDefaultLibsPath(), filePath);
     }
 
     /**
@@ -495,8 +505,7 @@ export class NodeScriptEnvironment {
      * @internal This is a private function used by other path utility functions
      */
     getToolsPath(): string {
-        const { filePath } = this.getCurrentPath();
-        return path.normalize(path.dirname(filePath) + '/../../');
+        return path.normalize(this.getCurrentDirectory() + '/../../');
     }
 
     getFontsPath(): string {
@@ -504,6 +513,10 @@ export class NodeScriptEnvironment {
     }
 
     getDefaultLibsPath(): string {
+        if (this.useDefaultLibsPath !== null) {
+            return this.useDefaultLibsPath;
+        }
+
         return path.normalize(this.getToolsPath() + "libs");
     }
 

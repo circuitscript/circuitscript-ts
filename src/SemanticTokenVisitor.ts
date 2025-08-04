@@ -70,20 +70,17 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * 
      * @param silent - Whether to suppress logging output
      * @param onErrorHandler - Callback for handling parse/execution errors
-     * @param currentDirectory - Working directory for relative imports
-     * @param defaultsLibsPath - Path to default library files
+     * @param environment - Environment abstraction for file system operations
      * @param lexer - ANTLR lexer instance for token analysis
      * @param script - Source script text for token text extraction
      */
     constructor(silent = false,
         onErrorHandler: OnErrorHandler | null = null,
-        currentDirectory: string | null,
-        defaultsLibsPath: string,
         environment: NodeScriptEnvironment,
         lexer: CircuitScriptLexer,
         script: string) {
 
-        super(silent, onErrorHandler, currentDirectory, defaultsLibsPath, environment);
+        super(silent, onErrorHandler, environment);
 
         this.lexer = lexer;
         this.script = script;

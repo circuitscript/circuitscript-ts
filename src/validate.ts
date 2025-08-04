@@ -22,7 +22,7 @@ import { SymbolTableItemDefined } from './validate/SymbolTable.js';
 
 export default async function validate(): Promise<void> {
     const env = new NodeScriptEnvironment();
-    const defaultLibsPath = env.getDefaultLibsPath(); 
+ 
     const version = env.getPackageVersion();
 
     program
@@ -51,7 +51,9 @@ export default async function validate(): Promise<void> {
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
 
-    let currentDirectory = options.currentDirectory ?? null;
+    if (options.currentDirectory){
+        env.setCurrentDirectory(options.currentDirectory);
+    }
 
     if (watchFileChanges) {
         console.log('watching for file changes...');
@@ -72,10 +74,6 @@ export default async function validate(): Promise<void> {
 
         if (existsSync(inputFilePath)) {
             scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
-
-            if (currentDirectory === null) {
-                currentDirectory = path.dirname(inputFilePath);
-            }
         } else {
             console.error("Error: File could not be found");
             return;
@@ -88,11 +86,10 @@ export default async function validate(): Promise<void> {
     }    
 
     const scriptOptions = {
-        currentDirectory,
-        defaultLibsPath,
         dumpNets, 
         dumpData,
         showStats: options.stats,
+        environment: env,
     }
 
     const visitor = validateScript(inputFilePath, scriptData, scriptOptions);

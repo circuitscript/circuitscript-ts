@@ -21,7 +21,7 @@ import { _id } from './export.js';
 
 export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();
-    const defaultLibsPath = env.getDefaultLibsPath(); 
+ 
     const version = env.getPackageVersion();
 
     program
@@ -55,8 +55,10 @@ export default async function main(): Promise<void> {
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
 
-    let currentDirectory = options.currentDirectory ?? null;
-
+    if (options.currentDirectory){
+        env.setCurrentDirectory(options.currentDirectory);
+    }
+    
     if (watchFileChanges) {
         console.log('watching for file changes...');
     }
@@ -76,10 +78,6 @@ export default async function main(): Promise<void> {
 
         if (env.existsSync(inputFilePath)) {
             scriptData = env.readFileSync(inputFilePath, { encoding: 'utf-8' });
-
-            if (currentDirectory === null) {
-                currentDirectory = path.dirname(inputFilePath);
-            }
         } else {
             console.error("Error: File could not be found");
             return;
@@ -92,8 +90,6 @@ export default async function main(): Promise<void> {
     }    
 
     const scriptOptions: ScriptOptions = {
-        currentDirectory,
-        defaultLibsPath,
         dumpNets, 
         dumpData,
         showStats: options.stats,

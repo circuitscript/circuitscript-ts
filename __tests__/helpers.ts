@@ -27,7 +27,9 @@ export async function runScript(script: string): Promise<{
     const scriptPath = "./examples/helpers.ts";
     const defaultLibsPath = "./libs";
 
-    const currentDirectory = dirname(scriptPath);
+    const env = new NodeScriptEnvironment();
+    env.setCurrentDirectory(dirname(scriptPath));
+    env.setDefaultLibsPath(defaultLibsPath);
 
     const errorHandler: OnErrorHandler =
         (message: string, context: ParserRuleContext, error: any) => {
@@ -35,11 +37,8 @@ export async function runScript(script: string): Promise<{
                 throw new ParseSyntaxError(message);
             }
         };
-
-    const env = new NodeScriptEnvironment();
-
-    const visitor = new ParserVisitor(true, errorHandler,
-        currentDirectory, defaultLibsPath, env);
+        
+    const visitor = new ParserVisitor(true, errorHandler, env);
 
     visitor.printToConsole = false; // do not clutter the console log
 
@@ -82,15 +81,16 @@ export async function runScript(script: string): Promise<{
 export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
     const scriptPath = "./examples/";
     const defaultLibsPath = "./libs";
-    const currentDirectory = dirname(scriptPath);
+
+    const environment = new NodeScriptEnvironment();
+    environment.setCurrentDirectory(dirname(scriptPath));
+    environment.setDefaultLibsPath(defaultLibsPath);
 
     return validateScript(
         scriptPath,
         scriptData,
         {
-            currentDirectory,
-            defaultLibsPath,
-            environment: new NodeScriptEnvironment(),
+            environment,
         }
     );
 }

@@ -47,9 +47,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     silent = false;
 
     logger: Logger;
-    
-    currentDirectory: string;
-    defaultLibsPath: string;
 
     printStream: string[] = [];
     printToConsole = true;
@@ -79,8 +76,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     constructor(silent = false, 
         onErrorHandler: OnErrorHandler | null = null,
-        currentDirectory: string | null,
-        defaultLibsPath: string,
         environment: NodeScriptEnvironment) {
         
         super();
@@ -116,9 +111,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             this.createComponentPinNetResolver(this.executionStack);
 
         this.silent = silent;
-
-        this.currentDirectory = currentDirectory!;
-        this.defaultLibsPath = defaultLibsPath;
     }
 
     getExecutor(): ExecutionContext {
@@ -682,7 +674,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         let hasParseError = false;
         let pathExists = false;
 
-        const tmpFilePath = join(this.currentDirectory!, name + ".cst");
+        const tmpFilePath = this.environment.getRelativeToCurrentDirectory(name + ".cst");
         this.log('importing path:', tmpFilePath);
 
         let fileData: string | null = null;
@@ -699,7 +691,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         if (!pathExists) {
             // if path does not exist, then search default libs path
             try {
-                const tmpFilePath2 = join(this.defaultLibsPath, name + ".cst");
+                const tmpFilePath2 = this.environment.getRelativeToDefaultLibs(name + ".cst");
                 fileData = this.environment.readFileSync(tmpFilePath2, { encoding: 'utf8' });
                 filePathUsed = tmpFilePath2;
                 pathExists = true;

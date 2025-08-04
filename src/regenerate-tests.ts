@@ -4,7 +4,6 @@ import { NodeScriptEnvironment, renderScript } from './helpers.js';
 const mainDir = './__tests__/renderData/';
 
 const env = new NodeScriptEnvironment();
-const defaultLibsPath = env.getDefaultLibsPath();
 
 async function regenerateTests(extra=""): Promise<string[]> {
     env.prepareSVGEnvironment();
@@ -23,9 +22,12 @@ async function regenerateTests(extra=""): Promise<string[]> {
         const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
         const outputPath = mainDir + 'svgs/' + file + extra + '.svg';
+        env.setCurrentDirectory(mainDir);
         renderScript(scriptData, outputPath, {
-            currentDirectory: mainDir,
-            defaultLibsPath,
+            dumpNets: false,
+            dumpData: false,
+            showStats: false,
+            environment: env,
         });
 
         console.log('generated ', outputPath);
