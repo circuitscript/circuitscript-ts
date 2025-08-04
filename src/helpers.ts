@@ -6,7 +6,9 @@
  */
 
 import { readFileSync, writeFileSync, createWriteStream, 
-    existsSync, mkdirSync } from "fs";
+    existsSync, mkdirSync, 
+    PathOrFileDescriptor,
+    PathLike} from "fs";
 import path from "path";
 
 import PDFDocument from "pdfkit";
@@ -18,7 +20,6 @@ import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./rende
 import { BaseError, generateDebugSequenceAction, ParseError, ParseSyntaxError, RenderError, resolveToNumericValue, RuntimeExecutionError, sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
 import { ParserRuleContext } from "antlr4ng";
-import { createContext } from "this-file";
 import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
 import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolveVisitor.js";
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
@@ -27,11 +28,13 @@ import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
-import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
+import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM, TOOL_VERSION } from "./globals.js";
 import { FrameParamKeys } from "./objects/Frame.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
 import Big from "big.js";
 import { Logger } from "./logger.js";
+import { createContext } from "this-file";
+import { prepareSVGEnvironment } from "./sizing.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -44,6 +47,8 @@ export type ScriptOptions = {
     dumpNets: boolean,
     dumpData: boolean,
     showStats: boolean,
+
+    environment: NodeScriptEnvironment,
 };
 
 export function prepareFile(textData: string): {
@@ -70,15 +75,6 @@ export function prepareFile(textData: string): {
     };
 }
 
-export function getScriptText(filePath: string): string | null {
-    try {
-        return readFileSync(filePath, { encoding: 'utf-8' });
-    } catch (err) {
-        // File does not exist
-        return null;
-    }
-}
-
 export function getSemanticTokens(scriptData: string, options: ScriptOptions)
     : { visitor: SemanticTokensVisitor, parsedTokens: IParsedToken[] } {
     
@@ -91,7 +87,7 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
     } = options;
 
     const visitor = new SemanticTokensVisitor(true, null,
-        currentDirectory, defaultLibsPath,
+        currentDirectory, defaultLibsPath, options.environment,
         lexer, scriptData,
     );
 
@@ -195,7 +191,7 @@ export function validateScript(filePath: string, scriptData: string,
     } = options;
 
     const visitor = new SymbolValidatorVisitor(true, null, 
-        currentDirectory, defaultLibsPath);
+        currentDirectory, defaultLibsPath, options.environment);
 
     visitor.enterFile(filePath);
 
@@ -238,7 +234,7 @@ export function validateScript(filePath: string, scriptData: string,
     symbolTable.clearUndefined();
 
     const visitorResolver = new SymbolValidatorResolveVisitor(
-        true, null, currentDirectory, defaultLibsPath);
+        true, null, currentDirectory, defaultLibsPath, options.environment);
     visitorResolver.enterFile(filePath);
 
     // Use the existing symbol tree as the starting point
@@ -278,7 +274,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
         };
 
     const visitor = new ParserVisitor(true, 
-        onErrorHandler, currentDirectory, defaultLibsPath);
+        onErrorHandler, currentDirectory, defaultLibsPath, options.environment);
 
     visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
         : { hasError: boolean, hasParseError: boolean } => {
@@ -465,33 +461,63 @@ export function detectJSModuleType(): JSModuleType {
     }
 }
 
-const context = createContext();
+// TODO: create an interface for this. Default is to use node 
+// as the environment.
+export class NodeScriptEnvironment {
 
-export function getCurrentPath(): { filePath: string } {
-    const filename = context.filename;
-    return { filePath: filename };
-}
+    getPackageVersion(): string {
+        return TOOL_VERSION;
+    }
 
-function getToolsPath(): string {
-    const { filePath } = getCurrentPath();
-    return path.normalize(path.dirname(filePath) + '/../../');
-}
+    getCurrentPath(): { filePath: string } {
+        const context = createContext();
+        const filename = context.filename;
+        return { filePath: filename };
+    }
 
-export function getFontsPath(): string {
-    const toolsPath = getToolsPath();
-    return path.normalize(toolsPath + "fonts");
-}
+    /**
+     * Gets the root tools directory path relative to the current file location.
+     * 
+     * This function calculates the base directory of the CircuitScript package by
+     * navigating up two levels from the current source file location. The tools path
+     * serves as the root directory containing package resources like fonts, libraries,
+     * and configuration files.
+     * 
+     * @returns {string} The normalized absolute path to the tools directory
+     * 
+     * @example
+     * // If current file is at /path/to/circuitscript/dist/src/helpers.js
+     * // Returns: /path/to/circuitscript/
+     * const toolsPath = getToolsPath();
+     * 
+     * @throws {Error} May throw if file system operations are not supported
+     * 
+     * @internal This is a private function used by other path utility functions
+     */
+    getToolsPath(): string {
+        const { filePath } = this.getCurrentPath();
+        return path.normalize(path.dirname(filePath) + '/../../');
+    }
 
-export function getDefaultLibsPath(): string {
-    const toolsPath = getToolsPath();
-    return path.normalize(toolsPath + "libs");
-}
+    getFontsPath(): string {
+        return path.normalize(this.getToolsPath() + "fonts");
+    }
 
-export function getPackageVersion(): string {
-    const packageJson = JSON.parse(
-        readFileSync(getToolsPath() + 'package.json').toString());
-    const {version} = packageJson;
-    return version;
+    getDefaultLibsPath(): string {
+        return path.normalize(this.getToolsPath() + "libs");
+    }
+
+    prepareSVGEnvironment(): Promise<void> {
+        return prepareSVGEnvironment(this.getFontsPath());
+    }
+
+    readFileSync(path: PathOrFileDescriptor, options): string {
+        return readFileSync(path, options);
+    }
+
+    existsSync(path: PathLike): ReturnType<typeof existsSync> {
+        return existsSync(path);
+    }
 }
 
 export class UnitDimension {

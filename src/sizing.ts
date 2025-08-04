@@ -11,7 +11,7 @@ import { Big } from 'big.js';
 import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './geometry.js';
 import { defaultFont } from './globals.js';
 import { SVGWindow } from 'svgdom';
-import { JSModuleType, detectJSModuleType } from './helpers.js';
+// import { JSModuleType, detectJSModuleType } from './helpers.js';
 
 let MainCanvas: Dom | null = null;
 
@@ -26,7 +26,7 @@ const supportedFonts = {
 let globalCreateSVGWindow: () => SVGWindow;
 
 export async function prepareSVGEnvironment(fontsPath: string | null): Promise<void> {    
-    const moduleType = detectJSModuleType();
+    // const moduleType = detectJSModuleType();
     // if (moduleType === JSModuleType.CommonJs || true){
     const { config, createSVGWindow } = await import('svgdom');
 

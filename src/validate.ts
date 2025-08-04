@@ -8,44 +8,35 @@
  */
 
 import { program } from 'commander';
-import figlet from 'figlet';
 import path from 'path';
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
-import { prepareSVGEnvironment } from './sizing.js';
-import { getCurrentPath, getScriptText, getSemanticTokens, 
-    validateScript } from './helpers.js';
+import { 
+    NodeScriptEnvironment, 
+    validateScript} from './helpers.js';
+import { _id } from './export.js';
+import { Token } from 'antlr4ng';
+import { ParseSymbolType } from './objects/types.js';
+import { SymbolTableItemDefined } from './validate/SymbolTable.js';
 
-
-export async function validate(): Promise<void> {
-    const { filePath } = getCurrentPath();
-    const toolSrcPath = filePath;
-
-    const toolDirectory = path.dirname(toolSrcPath) + '/../../';
-    const fontsPath = toolDirectory + '/fonts';
-    const defaultLibsPath = toolDirectory + '/libs'; 
-    
-    const packageJson = JSON.parse(readFileSync(toolDirectory + 'package.json').toString());;
-    const {version} = packageJson;
+export default async function validate(): Promise<void> {
+    const env = new NodeScriptEnvironment();
+    const defaultLibsPath = env.getDefaultLibsPath(); 
+    const version = env.getPackageVersion();
 
     program
-        .description('generate graphical output from circuitscript files')
+        .description('generate validation output circuitscript files')
         .version(version)
+        .argument('[input path]', 'Input path')
+        .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')
-        .option('-f, --input-file <path>', 'Input file')
-        .option('-o, --output <path>', 'Output path')
         .option('-c, --current-directory <path>', 'Set current directory')
-        .option('-k, --kicad-netlist <filename>', 'Create KiCad netlist')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
         .option('-s, --stats', 'Show stats during generation')
-        ;
-
-    program.addHelpText('before', figlet.textSync('circuitscript', {
-        font: 'Small Slant'
-    }));
+        .option('-x, --skip-output', 'Skip output generation');
 
     if (process.argv.length < 3){
         program.help();
@@ -54,12 +45,11 @@ export async function validate(): Promise<void> {
     program.parse();    
 
     const options = program.opts();
+    const args = program.args;
 
     const watchFileChanges = options.watch;
-    const outputPath = options.output ?? null;
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
-    const kicadNetlist = options.kicadNetlist;
 
     let currentDirectory = options.currentDirectory ?? null;
 
@@ -67,26 +57,34 @@ export async function validate(): Promise<void> {
         console.log('watching for file changes...');
     }
 
-    await prepareSVGEnvironment(fontsPath);
+    await env.prepareSVGEnvironment();
 
-    let inputFilePath: string = null;
+    let inputFilePath = "";
+
+    if (args.length > 2) {
+        console.log("Error: Extra arguments passed");
+        return;
+    }
 
     let scriptData: string;
-    if (options.input) {
+    if (args.length > 0 && args[0]) {
+        inputFilePath = args[0];
+
+        if (existsSync(inputFilePath)) {
+            scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
+
+            if (currentDirectory === null) {
+                currentDirectory = path.dirname(inputFilePath);
+            }
+        } else {
+            console.error("Error: File could not be found");
+            return;
+        }
+    } else if (options.input) {
         scriptData = options.input;
     } else {
-        inputFilePath = options.inputFile; // this should be provided
-        const tmpScriptData = getScriptText(inputFilePath);
-
-        if (tmpScriptData === null) {
-            throw "File does not exists";
-        }
-
-        scriptData = tmpScriptData;
-
-        if (currentDirectory === null) {
-            currentDirectory = path.dirname(inputFilePath);
-        }
+        console.error("Error: No input provided");
+        return;
     }    
 
     const scriptOptions = {
@@ -94,16 +92,31 @@ export async function validate(): Promise<void> {
         defaultLibsPath,
         dumpNets, 
         dumpData,
-        kicadNetlistPath: kicadNetlist,
         showStats: options.stats,
     }
-    
-    const visitor = validateScript(scriptData, scriptOptions);
-    // visitor.dumpSymbols();
 
-    const semanticTokensVisitor = getSemanticTokens(scriptData, scriptOptions);
+    const visitor = validateScript(inputFilePath, scriptData, scriptOptions);
+    const symbols = visitor.getSymbols().getSymbols();
 
+    symbols.forEach((value, key) => {
+        if (value.type !== ParseSymbolType.Undefined) {
+            value = value as SymbolTableItemDefined;
 
+            const token = (value.token as Token);
+            console.log(key, value.fileName, token !== null ? (token.line + ":" + token.column) : "");
+
+            value.instances.forEach(instance => {
+                console.log("    " + instance.line + ":" + instance.column+ " " + instance.start);
+            });
+        }
+    });
+
+    // const { parsedTokens} = getSemanticTokens(scriptData, scriptOptions);
+
+    // parsedTokens.forEach(item => {
+    //     const {line, column, tokenType, tokenModifiers, textValue} = item;
+    //     console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);
+    // });
 }
 
 validate();

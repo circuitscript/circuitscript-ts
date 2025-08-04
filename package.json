@@ -7,7 +7,7 @@
         "node": ">=16.0"
     },
     "main": "./dist/cjs/index.js",
-    "module": "./dist/esm/index.mjs",
+    "module": "./dist/esm/index.js",
     "types": "./dist/types/index.d.ts",
     "bin": {
         "circuitscript": "./dist/cjs/main.js"
@@ -15,7 +15,7 @@
     "exports": {
         ".": {
             "require": "./dist/cjs/index.js",
-            "import": "./dist/esm/index.mjs"
+            "import": "./dist/esm/index.js"
         }
     },
     "files": [
@@ -52,8 +52,8 @@
         "build": "npm run build:cjs || npm run build:esm",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:release:cjs": "tsc -p tsconfig.release.cjs.json",
-        "build:esm": "tsc -p tsconfig.esm.json || npm run rename:esm",
-        "build:release:esm": "tsc -p tsconfig.release.esm.json || npm run rename:esm",
+        "build:esm": "tsc -p tsconfig.esm.json",
+        "build:release:esm": "tsc -p tsconfig.release.esm.json",
         "rename:esm": "npx ts2mjs ./dist/esm && rm -rf ./dist/esm/*.js && rm -rf ./dist/esm/**/*.js",
         "build:watch": "tsc -w -p tsconfig.esm.json",
         "build:watch:cjs": "tsc -w -p tsconfig.cjs.json",
@@ -69,7 +69,7 @@
         "profile": "node --prof build/src/main.js examples/example_garden_pump.cst",
         "profile-flame": "node --prof-process --preprocess -j isolate*.log | flamebearer",
         "server": "node server.js",
-        "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server",
+        "pack-local": "npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript-` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-vscode/client; cp circuitscript-install.tgz ../circuitscript-vscode/server",
         "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js -p",
         "preversion": "npm run test",
         "version": "npm run changelog && git add CHANGELOG.md"

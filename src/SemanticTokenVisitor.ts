@@ -16,6 +16,7 @@ import { Function_def_exprContext, Create_component_exprContext,
     Function_call_exprContext,
     GraphicCommandExprContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
+import { NodeScriptEnvironment } from "./helpers.js";
 import { buildInMethodNamesList } from "./builtinMethods.js";
 import { SymbolValidatorContext } from "./globals.js";
 
@@ -78,10 +79,11 @@ export class SemanticTokensVisitor extends BaseVisitor {
         onErrorHandler: OnErrorHandler | null = null,
         currentDirectory: string | null,
         defaultsLibsPath: string,
+        environment: NodeScriptEnvironment,
         lexer: CircuitScriptLexer,
         script: string) {
 
-        super(silent, onErrorHandler, currentDirectory, defaultsLibsPath);
+        super(silent, onErrorHandler, currentDirectory, defaultsLibsPath, environment);
 
         this.lexer = lexer;
         this.script = script;

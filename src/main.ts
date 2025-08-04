@@ -12,17 +12,17 @@ import { program } from 'commander';
 import figlet from 'figlet';
 import path from 'path';
 
-import { readFileSync, watch, existsSync } from 'fs';
+import { watch } from 'fs';
 
-import { prepareSVGEnvironment } from './sizing.js';
-import { getDefaultLibsPath, getFontsPath, getPackageVersion, 
-    renderScript } from './helpers.js';
+import { NodeScriptEnvironment, 
+    renderScript, 
+    ScriptOptions} from './helpers.js';
 import { _id } from './export.js';
 
 export default async function main(): Promise<void> {
-    const fontsPath = getFontsPath();
-    const defaultLibsPath = getDefaultLibsPath(); 
-    const version = getPackageVersion();
+    const env = new NodeScriptEnvironment();
+    const defaultLibsPath = env.getDefaultLibsPath(); 
+    const version = env.getPackageVersion();
 
     program
         .description('generate graphical output from circuitscript files')
@@ -61,7 +61,7 @@ export default async function main(): Promise<void> {
         console.log('watching for file changes...');
     }
 
-    await prepareSVGEnvironment(fontsPath);
+    await env.prepareSVGEnvironment();
 
     let inputFilePath = "";
 
@@ -74,8 +74,8 @@ export default async function main(): Promise<void> {
     if (args.length > 0 && args[0]) {
         inputFilePath = args[0];
 
-        if (existsSync(inputFilePath)) {
-            scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
+        if (env.existsSync(inputFilePath)) {
+            scriptData = env.readFileSync(inputFilePath, { encoding: 'utf-8' });
 
             if (currentDirectory === null) {
                 currentDirectory = path.dirname(inputFilePath);
@@ -91,12 +91,13 @@ export default async function main(): Promise<void> {
         return;
     }    
 
-    const scriptOptions = {
+    const scriptOptions: ScriptOptions = {
         currentDirectory,
         defaultLibsPath,
         dumpNets, 
         dumpData,
         showStats: options.stats,
+        environment: env,
     }
 
     let outputPath: string | null = null;
@@ -114,7 +115,7 @@ export default async function main(): Promise<void> {
     if (watchFileChanges) {
         watch(inputFilePath, event => {
             if (event === 'change') {
-                const scriptData = readFileSync(inputFilePath, 
+                const scriptData = env.readFileSync(inputFilePath, 
                     {encoding: 'utf-8'});
 
                 parseFile(scriptData, outputPath, scriptOptions);

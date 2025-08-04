@@ -8,10 +8,11 @@ import { ComponentPinNet } from '../src/objects/types.js';
 import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser.js';
 import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { MainLexer } from '../src/lexer.js';
-import { CharStream, CommonTokenStream } from 'antlr4ng';
-import { BaseVisitor, OnErrorCallback } from '../src/BaseVisitor.js';
-import { validateScript } from '../src/helpers.js';
-import { SymbolValidatorVisitor } from '../src/SymbolValidatorVisitor.js';
+import { CharStream, CommonTokenStream, ParserRuleContext } from 'antlr4ng';
+import { BaseVisitor, OnErrorHandler } from '../src/BaseVisitor.js';
+import { NodeScriptEnvironment, validateScript } from '../src/helpers.js';
+import { SymbolValidatorVisitor } from '../src/validate/SymbolValidatorVisitor.js';
+import { ParseSyntaxError } from '../src/utils.js';
 
 export async function runScript(script: string): Promise<{
     visitor: ParserVisitor,
@@ -28,14 +29,18 @@ export async function runScript(script: string): Promise<{
 
     const currentDirectory = dirname(scriptPath);
 
-    const onErrorHandler: OnErrorCallback =
-    (line: number, column: number, message: string, error: any) => {
-        if (error instanceof VisitorExecutionException) {
-            console.log('Error', line, column, message, error.errorMessage);
-        }
-    };
+    const errorHandler: OnErrorHandler =
+        (message: string, context: ParserRuleContext, error: any) => {
+            if (error instanceof VisitorExecutionException) {
+                throw new ParseSyntaxError(message);
+            }
+        };
 
-    const visitor = new ParserVisitor(true, onErrorHandler, currentDirectory, defaultLibsPath);
+    const env = new NodeScriptEnvironment();
+
+    const visitor = new ParserVisitor(true, errorHandler,
+        currentDirectory, defaultLibsPath, env);
+
     visitor.printToConsole = false; // do not clutter the console log
 
     const parser = new CircuitScriptParser(tokens);
@@ -43,7 +48,7 @@ export async function runScript(script: string): Promise<{
     parser.removeErrorListeners();
 
     const errorListener = new CircuitscriptParserErrorListener(
-        visitor.onErrorCallbackHandler
+        visitor.onErrorHandler
     );
 
     parser.addErrorListener(errorListener);
@@ -51,7 +56,7 @@ export async function runScript(script: string): Promise<{
     const tree = parser.script();
 
     visitor.onImportFile = (visitor: BaseVisitor, filePath: string, fileData: string,
-        errorHandler: OnErrorCallback): { hasError: boolean, hasParseError: boolean } => {
+        errorHandler: OnErrorHandler): { hasError: boolean, hasParseError: boolean } => {
         const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
         return { hasError, hasParseError };
     }
@@ -84,7 +89,8 @@ export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
         scriptData,
         {
             currentDirectory,
-            defaultLibsPath
+            defaultLibsPath,
+            environment: new NodeScriptEnvironment(),
         }
     );
 }

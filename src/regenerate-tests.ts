@@ -1,14 +1,13 @@
 import fs from 'fs';
-import { getDefaultLibsPath, getFontsPath, renderScript } from './helpers.js';
-import { prepareSVGEnvironment } from './sizing.js';
+import { NodeScriptEnvironment, renderScript } from './helpers.js';
 
 const mainDir = './__tests__/renderData/';
 
-const fontsPath = getFontsPath();
-const defaultLibsPath = getDefaultLibsPath();
+const env = new NodeScriptEnvironment();
+const defaultLibsPath = env.getDefaultLibsPath();
 
 async function regenerateTests(extra=""): Promise<string[]> {
-    await prepareSVGEnvironment(fontsPath);
+    env.prepareSVGEnvironment();
 
     const cstFiles: string[] = [];
 

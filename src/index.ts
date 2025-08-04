@@ -21,3 +21,6 @@ export * from './visitor.js';
 export * from './sizing.js';
 export * from './objects/types.js';
 export * from './builtinMethods.js';
+export * from './validate/SymbolTable.js';
+export * from './validate/SymbolValidatorResolveVisitor.js';
+export * from './validate/SymbolValidatorVisitor.js';
