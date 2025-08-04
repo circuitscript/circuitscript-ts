@@ -33,7 +33,6 @@ import { FrameParamKeys } from "./objects/Frame.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
 import Big from "big.js";
 import { Logger } from "./logger.js";
-import { createContext } from "this-file";
 import { prepareSVGEnvironment } from "./sizing.js";
 
 export enum JSModuleType {
@@ -470,6 +469,7 @@ export class NodeScriptEnvironment {
     }
 
     getCurrentPath(): { filePath: string } {
+        const { createContext } = require('this-file');
         const context = createContext();
         const filename = context.filename;
         return { filePath: filename };

@@ -5,13 +5,14 @@ import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 import { CallableParameter } from "./objects/types.js";
 import { resolveToNumericValue } from "./utils.js";
 
-const builtInMethods: [name: string, impl: (args: any) => any][] = [
+const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
     ['toMils', toMils],
     ['range', range],
     ['len', objectLength],
     ['arrayPush', arrayPush],
     ['arrayGet', arrayGet],
+    ['print', null],
 ];
 
 export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0]);
@@ -31,11 +32,13 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
     });
 
     builtInMethods.forEach(([functionName, functionImpl]) => {
-        context.createFunction(functionName, params => {
-            const args = getPositionParams(params);
-            const functionReturn = functionImpl(...args);
-            return [visitor, functionReturn];
-        });
+        if (functionImpl !== null){
+            context.createFunction(functionName, params => {
+                const args = getPositionParams(params);
+                const functionReturn = functionImpl(...args);
+                return [visitor, functionReturn];
+            });
+        }
     });
 }
 
