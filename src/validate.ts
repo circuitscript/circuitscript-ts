@@ -13,6 +13,7 @@ import path from 'path';
 import { readFileSync, existsSync } from 'fs';
 
 import { 
+    getSemanticTokens,
     NodeScriptEnvironment, 
     validateScript} from './helpers.js';
 import { _id } from './export.js';
@@ -52,7 +53,7 @@ export default async function validate(): Promise<void> {
     const dumpData = options.dumpData;
 
     if (options.currentDirectory){
-        env.setCurrentDirectory(options.currentDirectory);
+        env.setModuleDirectory(options.currentDirectory);
     }
 
     if (watchFileChanges) {
@@ -108,12 +109,12 @@ export default async function validate(): Promise<void> {
         }
     });
 
-    // const { parsedTokens} = getSemanticTokens(scriptData, scriptOptions);
+    const { parsedTokens} = getSemanticTokens(scriptData, scriptOptions);
 
-    // parsedTokens.forEach(item => {
-    //     const {line, column, tokenType, tokenModifiers, textValue} = item;
-    //     console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);
-    // });
+    parsedTokens.forEach(item => {
+        const {line, column, tokenType, tokenModifiers, textValue} = item;
+        console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);
+    });
 }
 
 validate();

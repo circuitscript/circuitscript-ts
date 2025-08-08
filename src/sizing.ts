@@ -29,8 +29,8 @@ let globalCreateSVGWindow: () => SVGWindow;
 
 export async function prepareSVGEnvironment(fontsPath: string | null): Promise<void> {    
     try {
-        // Dynamic import for ESM-only svgdom package
-        const { config, createSVGWindow } = await import('svgdom');
+        // Use eval to prevent TypeScript from converting to require() in CJS build
+        const { config, createSVGWindow } = await eval('import("svgdom")');
 
         globalCreateSVGWindow = createSVGWindow;
         if (fontsPath !== null) {
