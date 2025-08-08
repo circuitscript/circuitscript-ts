@@ -10,7 +10,6 @@
 
 import { program } from 'commander';
 import figlet from 'figlet';
-import path from 'path';
 
 import { watch } from 'fs';
 
@@ -56,7 +55,7 @@ export default async function main(): Promise<void> {
     const dumpData = options.dumpData;
 
     if (options.currentDirectory){
-        env.setCurrentDirectory(options.currentDirectory);
+        throw "Parameter not supported yet";
     }
     
     if (watchFileChanges) {

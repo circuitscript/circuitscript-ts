@@ -291,7 +291,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
         nets.forEach(item => console.log(item.join(" | ")));
     }
 
-    const dumpDirectory = environment.getRelativeToCurrentDirectory('/dump/');
+    const dumpDirectory = environment.getRelativeToModule('/dump/');
 
     if (dumpData) {
         if (!existsSync(dumpDirectory)) {
@@ -452,11 +452,11 @@ export function detectJSModuleType(): JSModuleType {
 // as the environment.
 export class NodeScriptEnvironment {
 
-    private useCurrentDirectoryPath: string | null = null;
+    private useModuleDirectoryPath: string | null = null;
     private useDefaultLibsPath: string | null = null;
 
-    setCurrentDirectory(path: string): void {
-        this.useCurrentDirectoryPath = path;
+    setModuleDirectory(path: string): void {
+        this.useModuleDirectoryPath = path;
     }
 
     setDefaultLibsPath(path: string): void {
@@ -467,18 +467,37 @@ export class NodeScriptEnvironment {
         return TOOL_VERSION;
     }
 
-    getCurrentDirectory(): string {
-        if (this.useCurrentDirectoryPath !== null) {
-            return this.useCurrentDirectoryPath;
+    /**
+     * Returns the directory where the circuitscript executable is at. This
+     * path will be used to find the fonts/ and libs/ folders.
+     * @returns
+     */
+    getModuleDirectory(): string {
+        if (this.useModuleDirectoryPath !== null) {
+            return this.useModuleDirectoryPath;
         }
 
-        const { createContext } = require('this-file');
-        const context = createContext();
-        return context.dirname;
+        // Try CommonJS approach first
+        if (typeof __dirname !== 'undefined') {
+            return __dirname;
+        }
+
+        // For ESM environments, use stack trace to find current file location
+        const stackLine = new Error().stack?.split('\n')[1];
+        if (stackLine) {
+            // Look for file:// URLs (ESM) or regular paths (Jest/CJS)
+            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);
+            if (fileMatch) {
+                const filePath = fileMatch[1].replace('file://', '');
+                return path.dirname(filePath);
+            }
+        }
+
+        throw new RuntimeExecutionError("Failed to get current module directory");
     }
 
-    getRelativeToCurrentDirectory(filePath: string): string {
-        return path.join(this.getCurrentDirectory(), filePath);
+    getRelativeToModule(filePath: string): string {
+        return path.join(this.getModuleDirectory(), filePath);
     }
 
     getRelativeToDefaultLibs(filePath: string): string {
@@ -497,7 +516,7 @@ export class NodeScriptEnvironment {
      * 
      * @example
      * // If current file is at /path/to/circuitscript/dist/src/helpers.js
-     * // Returns: /path/to/circuitscript/
+     * // Returns: /path/to/circuitscript/dist
      * const toolsPath = getToolsPath();
      * 
      * @throws {Error} May throw if file system operations are not supported
@@ -505,7 +524,7 @@ export class NodeScriptEnvironment {
      * @internal This is a private function used by other path utility functions
      */
     getToolsPath(): string {
-        return path.normalize(this.getCurrentDirectory() + '/../../');
+        return path.normalize(this.getModuleDirectory() + '/../');
     }
 
     getFontsPath(): string {

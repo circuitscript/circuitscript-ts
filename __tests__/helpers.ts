@@ -24,12 +24,7 @@ export async function runScript(script: string): Promise<{
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 
-    const scriptPath = "./examples/helpers.ts";
-    const defaultLibsPath = "./libs";
-
     const env = new NodeScriptEnvironment();
-    env.setCurrentDirectory(dirname(scriptPath));
-    env.setDefaultLibsPath(defaultLibsPath);
 
     const errorHandler: OnErrorHandler =
         (message: string, context: ParserRuleContext, error: any) => {
@@ -80,11 +75,7 @@ export async function runScript(script: string): Promise<{
 
 export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
     const scriptPath = "./examples/";
-    const defaultLibsPath = "./libs";
-
     const environment = new NodeScriptEnvironment();
-    environment.setCurrentDirectory(dirname(scriptPath));
-    environment.setDefaultLibsPath(defaultLibsPath);
 
     return validateScript(
         scriptPath,

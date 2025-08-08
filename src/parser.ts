@@ -54,9 +54,13 @@ export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
     } catch (error) {
         // Error is not handled by the ANTLR parsing code, since the
         // error will have cancelled subsequent parsing.
-        if (visitor.onErrorHandler && (error instanceof RuntimeExecutionError)){
-            visitor.onErrorHandler(error.message, null, error);
-        }
+        if (visitor.onErrorHandler){
+            if(error instanceof RuntimeExecutionError){
+                visitor.onErrorHandler(error.message, null, error);
+            } else {
+                throw error;
+            }
+        } 
     }
 
     const parserTimeTaken = parserTimer.lap();

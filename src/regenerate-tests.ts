@@ -22,7 +22,7 @@ async function regenerateTests(extra=""): Promise<string[]> {
         const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
         const outputPath = mainDir + 'svgs/' + file + extra + '.svg';
-        env.setCurrentDirectory(mainDir);
+        env.setModuleDirectory(mainDir);
         renderScript(scriptData, outputPath, {
             dumpNets: false,
             dumpData: false,

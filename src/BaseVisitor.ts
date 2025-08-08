@@ -674,15 +674,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         let hasParseError = false;
         let pathExists = false;
 
-        const tmpFilePath = this.environment.getRelativeToCurrentDirectory(name + ".cst");
+        const tmpFilePath = this.environment.getRelativeToModule(name + ".cst");
         this.log('importing path:', tmpFilePath);
 
         let fileData: string | null = null;
         let filePathUsed: string | null = null;
 
         try {
-            fileData = this.environment.readFileSync(tmpFilePath, { encoding: 'utf8' });
             filePathUsed = tmpFilePath;
+            fileData = this.environment.readFileSync(tmpFilePath, { encoding: 'utf8' });
             pathExists = true;
         } catch (err) {
             pathExists = false;
@@ -692,8 +692,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             // if path does not exist, then search default libs path
             try {
                 const tmpFilePath2 = this.environment.getRelativeToDefaultLibs(name + ".cst");
-                fileData = this.environment.readFileSync(tmpFilePath2, { encoding: 'utf8' });
                 filePathUsed = tmpFilePath2;
+
+                fileData = this.environment.readFileSync(tmpFilePath2, { encoding: 'utf8' });
                 pathExists = true;
             } catch (err) {
                 pathExists = false;
@@ -719,7 +720,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         
         if (throwErrors && (hasError || hasParseError || !pathExists)) {
             if (!pathExists) {
-                errorMessage = `File does not exist: ${name}`
+                errorMessage = `File does not exist: ${name} (${filePathUsed})`
             } else {
                 errorMessage =  `Failed to import: ${name}`;
             }

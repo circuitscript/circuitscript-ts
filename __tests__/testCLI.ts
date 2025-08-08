@@ -1,17 +1,17 @@
 import { execSync } from 'child_process';
-import { textSync } from 'figlet';
+import figlet from 'figlet';
 import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 
 describe('test cli program', () => {
 
     const tmpFolder = '__tests__/tmp';
 
-    const baseCommand = 'node dist/cjs/main.js';
+    const baseCommand = 'node dist/esm/main.js';
 
     test('start program and display help', () => {
         const result = execSync(baseCommand).toString();
 
-        const circuitscriptText = textSync('circuitscript', {
+        const circuitscriptText = figlet.textSync('circuitscript', {
             font: 'Small Slant'
         });
 
