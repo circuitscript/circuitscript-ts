@@ -6,7 +6,10 @@ describe('test cli program', () => {
 
     const tmpFolder = '__tests__/tmp';
 
-    const baseCommand = 'node dist/esm/main.js';
+    const baseCommandESM = 'dist/esm/main.js';
+    const baseCommandCJS = 'dist/cjs/main.js';
+
+    const baseCommand = `node ${baseCommandESM}`;
 
     test('start program and display help', () => {
         const result = execSync(baseCommand).toString();
@@ -32,8 +35,11 @@ describe('test cli program', () => {
         expect(result.includes(options)).toBe(true);
     });
 
-    test('pass in file and output directly', () => {
-        const result = execSync(baseCommand + ' __tests__/renderData/script1.cst').toString();
+    test.each([
+        baseCommandESM,
+        baseCommandCJS
+    ])('pass in file and output directly: %s', (useCommand) => {
+        const result = execSync('node ' + useCommand + ' __tests__/renderData/script1.cst').toString();
         const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
         expect(result.trim()).toBe(expected);
     });
