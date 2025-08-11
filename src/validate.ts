@@ -23,6 +23,7 @@ import { SymbolTableItemDefined } from './validate/SymbolTable.js';
 
 export default async function validate(): Promise<void> {
     const env = new NodeScriptEnvironment();
+    NodeScriptEnvironment.setInstance(env);
  
     const version = env.getPackageVersion();
 

@@ -12,7 +12,7 @@ import {
     MergedWire, RenderComponent, RenderFrame,
     RenderFrameType, RenderJunction, RenderText, RenderWire, SheetFrame, getBounds
 } from "./layout.js";
-import { applyFontsToSVG, getCreateSVGWindow } from './sizing.js';
+import { applyFontsToSVG } from './sizing.js';
 import {
     ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, ParamKeys, RenderFlags, defaultGridSizeUnits,
     defaultPageSpacingMM,
@@ -21,7 +21,7 @@ import {
 } from './globals.js';
 import { numeric, NumericValue } from './objects/ParamDefinition.js';
 import { BoundBox, combineMaps, getBoundsSize } from './utils.js';
-import { getPaperSize, milsToMM } from './helpers.js';
+import { getPaperSize, milsToMM, NodeScriptEnvironment } from './helpers.js';
 import SVGtoPDF from 'svg-to-pdfkit';
 import { FrameParamKeys } from './objects/Frame.js';
 import { SymbolPlaceholder } from './draw_symbols.js';
@@ -29,7 +29,8 @@ import { ClassComponent } from './objects/ClassComponent.js';
 import { Logger } from './logger.js';
 
 function createSvgCanvas(): Svg {
-    const window = getCreateSVGWindow()();
+    const env = NodeScriptEnvironment.getInstance();
+    const window = env.createSVGWindow();
     const document = window.document;
 
     registerWindow(window, document);

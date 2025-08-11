@@ -25,6 +25,9 @@ export async function runScript(script: string): Promise<{
     const tokens = new CommonTokenStream(lexer);
 
     const env = new NodeScriptEnvironment();
+    NodeScriptEnvironment.setInstance(env);
+
+    await env.prepareSVGEnvironment();
 
     const errorHandler: OnErrorHandler =
         (message: string, context: ParserRuleContext, error: any) => {
@@ -76,6 +79,7 @@ export async function runScript(script: string): Promise<{
 export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
     const scriptPath = "./examples/";
     const environment = new NodeScriptEnvironment();
+    NodeScriptEnvironment.setInstance(environment);
 
     return validateScript(
         scriptPath,

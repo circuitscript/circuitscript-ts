@@ -4,6 +4,7 @@ import { NodeScriptEnvironment, renderScript } from './helpers.js';
 const mainDir = './__tests__/renderData/';
 
 const env = new NodeScriptEnvironment();
+NodeScriptEnvironment.setInstance(env);
 
 async function regenerateTests(extra=""): Promise<string[]> {
     env.prepareSVGEnvironment();

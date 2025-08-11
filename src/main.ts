@@ -20,7 +20,8 @@ import { _id } from './export.js';
 
 export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();
- 
+    NodeScriptEnvironment.setInstance(env);
+
     const version = env.getPackageVersion();
 
     program

@@ -1,13 +1,9 @@
 import { _id, generateKiCADNetList, SExpObject } from "../src/export";
-import { prepareSVGEnvironment } from "../src/sizing";
 import { runScript } from "./helpers";
 
 describe('export to kicad', () => {
 
     test('export kicad net list, catch missing footprints', async () => {
-        
-        await prepareSVGEnvironment(null);
-
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toBe(false);
 

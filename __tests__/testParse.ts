@@ -2,7 +2,6 @@
 
 import { LayoutEngine } from '../src/layout.js';
 import { ComponentPinNet } from '../src/objects/types.js';
-import { prepareSVGEnvironment } from '../src/sizing.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
     inlineScript17, inlineScript18, inlineScript19, 
@@ -48,9 +47,6 @@ describe('test parsing', () => {
 
 
     test.each(inlineScriptTests)('parse script - %s', async (description, scriptTest) => {
-
-        await prepareSVGEnvironment(null);
-        
         // Test only parsing, does not check the correctness of the 
         // parsed result!
 
@@ -338,7 +334,6 @@ print(---b)
     );
 
     test('wire auto failure case', async () => {
-        await prepareSVGEnvironment(null);
 
         const { hasError, visitor } = await runScript(script21_);
 

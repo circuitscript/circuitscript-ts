@@ -5,50 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Box, Dom, SVG, SVGTypeMapping, registerWindow } from '@svgdotjs/svg.js';
+import { Box, SVGTypeMapping } from '@svgdotjs/svg.js';
 import { Big } from 'big.js';
 
 import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './geometry.js';
 import { defaultFont } from './globals.js';
-
-// Dynamic type definition for svgdom since it's ESM-only
-type SVGWindow = any;
-
-
-let MainCanvas: Dom | null = null;
-
-const supportedFonts = { 
-    // 'Roboto': 'Roboto-Regular.ttf',
-    // 'Inter': 'Inter-Regular.ttf', 
-    // 'Inter-Bold': 'Inter-Bold.ttf',
-    // 'Open Sans': 'OpenSans-Regular.ttf',
-    'Arial': 'Arial.ttf',
-}
-
-let globalCreateSVGWindow: () => SVGWindow;
-
-export async function prepareSVGEnvironment(fontsPath: string | null): Promise<void> {    
-    try {
-        // Use eval to prevent TypeScript from converting to require() in CJS build
-        const { config, createSVGWindow } = await eval('import("svgdom")');
-
-        globalCreateSVGWindow = createSVGWindow;
-        if (fontsPath !== null) {
-            await config.setFontDir(fontsPath)
-                .setFontFamilyMappings(supportedFonts)
-                .preloadFonts();
-        }
-    } catch (error) {
-        throw new Error(`Failed to load svgdom ESM module: ${error}`);
-    }
-}
-
-export function getCreateSVGWindow(): () => SVGWindow {
-    if (globalCreateSVGWindow === undefined) {
-        throw "SVG environment is not set up yet";
-    }
-    return globalCreateSVGWindow;
-}
+import { NodeScriptEnvironment } from './helpers.js';
 
 export function applyFontsToSVG(canvas: SVGTypeMapping): void {
     // for (const fontName in supportedFonts) {
@@ -65,18 +27,16 @@ const measureTextSizeCache: {
 } = {};
 const measureTextSizeCacheHits: { [key: string]: number } = {};
 
-export function measureTextSize2(text: string, fontFamily: string,
+export function measureTextSize2(
+    text: string, fontFamily: string,
     fontSize: number, fontWeight = 'regular',
     anchor = HorizontalAlign.Left,
     vanchor = VerticalAlign.Bottom): { width: number, height: number, box: Box } {
 
+    const environment = NodeScriptEnvironment.getInstance();
+
     // Reuse the canvas, so no need to keep creating
-    if (MainCanvas === null) {
-        const window = getCreateSVGWindow()();
-        const { document } = window;
-        registerWindow(window, document);
-        MainCanvas = SVG(document.documentElement);
-    }
+    const mainCanvas = environment.getCanvasWindow();
 
     // Check if entry already exists in the cache
     const key = `${text}-${fontFamily}-${fontSize}-${fontWeight}-${anchor}-${vanchor}`;
@@ -112,7 +72,7 @@ export function measureTextSize2(text: string, fontFamily: string,
 
         fontFamily = defaultFont;
 
-        const tmpTextElement = MainCanvas!.text(text).font({
+        const tmpTextElement = mainCanvas.text(text).font({
             family: fontFamily,
             size: fontSize,
             anchor: useAnchor,

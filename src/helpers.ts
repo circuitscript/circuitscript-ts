@@ -13,6 +13,8 @@ import path from "path";
 
 import PDFDocument from "pdfkit";
 
+import { Dom, SVG, registerWindow } from '@svgdotjs/svg.js';
+
 import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { parseFileWithVisitor } from "./parser.js";
@@ -29,11 +31,13 @@ import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM, TOOL_VERSION } from "./globals.js";
+
+// Dynamic type definition for svgdom since it's ESM-only
+type SVGWindow = any;
 import { FrameParamKeys } from "./objects/Frame.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
 import Big from "big.js";
 import { Logger } from "./logger.js";
-import { prepareSVGEnvironment } from "./sizing.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -452,8 +456,27 @@ export function detectJSModuleType(): JSModuleType {
 // as the environment.
 export class NodeScriptEnvironment {
 
-    private useModuleDirectoryPath: string | null = null;
-    private useDefaultLibsPath: string | null = null;
+    // Maintain a global instance for ease of access
+    // TODO: in the future, this should be changed away from this singleton.
+    static _instance: NodeScriptEnvironment |null = null;
+
+    static setInstance(instance: NodeScriptEnvironment): void {
+        NodeScriptEnvironment._instance = instance;
+    }
+
+    static getInstance(): NodeScriptEnvironment {
+        return NodeScriptEnvironment._instance!;
+    }
+
+    protected useModuleDirectoryPath: string | null = null;
+    protected useDefaultLibsPath: string | null = null;
+    
+    protected globalCreateSVGWindow: (() => SVGWindow) | null = null;
+    
+    // Supported fonts for SVG rendering
+    protected supportedFonts = { 
+        'Arial': 'Arial.ttf',
+    };
 
     setModuleDirectory(path: string): void {
         this.useModuleDirectoryPath = path;
@@ -539,8 +562,52 @@ export class NodeScriptEnvironment {
         return path.normalize(this.getToolsPath() + "libs");
     }
 
+    /**
+     * Prepares the SVG environment by loading the svgdom ESM module and configuring fonts
+     */
+    private async prepareSVGEnvironmentInternal(fontsPath: string | null): Promise<void> {    
+        try {
+            // Use Function constructor to prevent TypeScript from converting to require() in CJS build
+            const dynamicImport = new Function('specifier', 'return import(specifier)');
+            const { config, createSVGWindow } = await dynamicImport('svgdom');
+
+            this.globalCreateSVGWindow = createSVGWindow;
+            if (fontsPath !== null) {
+                await config.setFontDir(fontsPath)
+                    .setFontFamilyMappings(this.supportedFonts)
+                    .preloadFonts();
+            }
+        } catch (error) {
+            throw new Error(`Failed to load svgdom ESM module: ${error}`);
+        }
+    }
+
+    /**
+     * Gets the SVG window creation function
+     */
+    createSVGWindow(): SVGWindow {
+        if (this.globalCreateSVGWindow === null) {
+            throw new Error("SVG environment is not set up yet. Call prepareSVGEnvironment() first.");
+        }
+        return this.globalCreateSVGWindow();
+    }
+
+    // Re-usable canvas for the text measurement
+    textMeasurementCanvas: Dom | undefined;
+
+    getCanvasWindow(): Dom {
+        if (this.textMeasurementCanvas === undefined) {
+            const window = this.createSVGWindow();
+            const { document } = window;
+            registerWindow(window, document);
+            this.textMeasurementCanvas = SVG(document.documentElement);
+        }
+
+        return this.textMeasurementCanvas!;
+    }
+
     prepareSVGEnvironment(): Promise<void> {
-        return prepareSVGEnvironment(this.getFontsPath());
+        return this.prepareSVGEnvironmentInternal(this.getFontsPath());
     }
 
     readFileSync(path: PathOrFileDescriptor, options): string {

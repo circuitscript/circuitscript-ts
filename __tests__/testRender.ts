@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import { LayoutEngine, SheetFrame } from "../src/layout.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render.js";
 import { runScript } from "./helpers.js";
-import { prepareSVGEnvironment } from '../src/sizing.js';
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 
@@ -14,9 +13,6 @@ const mainPath = '__tests__/renderData/';
 describe('Render tests', () => {
 
     async function renderCommon(scriptPath: string): Promise<SheetFrame[]> {
-        const fontsPath = "./fonts";
-        await prepareSVGEnvironment(fontsPath);
-
         const script = readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
         const { hasError, visitor } = await runScript(script);
         expect(hasError).toEqual(false);
