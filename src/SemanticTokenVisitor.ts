@@ -16,7 +16,7 @@ import { Function_def_exprContext, Create_component_exprContext,
     Function_call_exprContext,
     GraphicCommandExprContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
-import { NodeScriptEnvironment } from "./helpers.js";
+import { NodeScriptEnvironment } from "./environment.js";
 import { buildInMethodNamesList } from "./builtinMethods.js";
 import { SymbolValidatorContext } from "./globals.js";
 

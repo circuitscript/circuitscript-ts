@@ -10,7 +10,7 @@ import { Big } from 'big.js';
 
 import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './geometry.js';
 import { defaultFont } from './globals.js';
-import { NodeScriptEnvironment } from './helpers.js';
+import { NodeScriptEnvironment } from "./environment.js";
 
 export function applyFontsToSVG(canvas: SVGTypeMapping): void {
     // for (const fontName in supportedFonts) {

@@ -13,9 +13,9 @@ import figlet from 'figlet';
 
 import { watch } from 'fs';
 
-import { NodeScriptEnvironment, 
-    renderScript, 
+import { renderScript, 
     ScriptOptions} from './helpers.js';
+import { NodeScriptEnvironment } from "./environment.js";
 import { _id } from './export.js';
 
 export default async function main(): Promise<void> {

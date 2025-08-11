@@ -1,6 +1,4 @@
 import { readFileSync } from 'fs';
-import { dirname } from 'path';
-
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 
 import { ParserVisitor, VisitorExecutionException } from '../src/visitor.js';
@@ -10,9 +8,10 @@ import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { MainLexer } from '../src/lexer.js';
 import { CharStream, CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseVisitor, OnErrorHandler } from '../src/BaseVisitor.js';
-import { NodeScriptEnvironment, validateScript } from '../src/helpers.js';
+import { validateScript } from '../src/helpers.js';
 import { SymbolValidatorVisitor } from '../src/validate/SymbolValidatorVisitor.js';
 import { ParseSyntaxError } from '../src/utils.js';
+import { NodeScriptEnvironment } from '../src/environment.js';
 
 export async function runScript(script: string): Promise<{
     visitor: ParserVisitor,

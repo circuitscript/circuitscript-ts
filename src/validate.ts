@@ -14,8 +14,8 @@ import { readFileSync, existsSync } from 'fs';
 
 import { 
     getSemanticTokens,
-    NodeScriptEnvironment, 
     validateScript} from './helpers.js';
+import { NodeScriptEnvironment } from "./environment.js";
 import { _id } from './export.js';
 import { Token } from 'antlr4ng';
 import { ParseSymbolType } from './objects/types.js';

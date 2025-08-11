@@ -21,7 +21,8 @@ import {
 } from './globals.js';
 import { numeric, NumericValue } from './objects/ParamDefinition.js';
 import { BoundBox, combineMaps, getBoundsSize } from './utils.js';
-import { getPaperSize, milsToMM, NodeScriptEnvironment } from './helpers.js';
+import { getPaperSize, milsToMM } from './helpers.js';
+import { NodeScriptEnvironment } from "./environment.js";
 import SVGtoPDF from 'svg-to-pdfkit';
 import { FrameParamKeys } from './objects/Frame.js';
 import { SymbolPlaceholder } from './draw_symbols.js';

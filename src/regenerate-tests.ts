@@ -1,5 +1,6 @@
 import fs from 'fs';
-import { NodeScriptEnvironment, renderScript } from './helpers.js';
+import { renderScript } from './helpers.js';
+import { NodeScriptEnvironment } from "./environment.js";
 
 const mainDir = './__tests__/renderData/';
 
