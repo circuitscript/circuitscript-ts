@@ -10,7 +10,7 @@ import {
     ScriptContext} from './antlr/CircuitScriptParser.js';
 
 import { MainLexer } from './lexer.js';
-import { RuntimeExecutionError, SimpleStopwatch } from './utils.js';
+import { ParseError, ParseSyntaxError, RuntimeExecutionError, SimpleStopwatch } from './utils.js';
 import {
     ANTLRErrorListener, ATNConfigSet, ATNSimulator,
     BitSet, CharStream, CommonTokenStream, DFA, Parser,
@@ -18,12 +18,12 @@ import {
 } from 'antlr4ng';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 
-export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
+export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): Promise<{
     tree: ScriptContext,
     parser: CircuitScriptParser,
     hasError: boolean, hasParseError: boolean,
     parserTimeTaken: number, lexerTimeTaken: number
-} {
+}> {
 
     const lexerErrorListener = new CircuitscriptParserErrorListener(
         visitor.onErrorHandler);
@@ -50,7 +50,7 @@ export function parseFileWithVisitor(visitor: BaseVisitor, data: string): {
 
     const tree = parser.script();
     try {
-        visitor.visit(tree);
+        await visitor.visitAsync(tree);
     } catch (error) {
         // Error is not handled by the ANTLR parsing code, since the
         // error will have cancelled subsequent parsing.
@@ -91,6 +91,13 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
         if (this.onErrorHandler && e) {
             this.onErrorHandler(msg, e.ctx!, e);
         } else {
+
+            if (offendingSymbol && msg.match("extraneous input 'import' expecting")){
+                msg = "Invalid import statement";
+                throw new ParseSyntaxError("Invalid import statement",
+                    offendingSymbol);
+            }
+
             console.log("Syntax error at line", line, ':', column, ' - ', msg);
         }
 

@@ -8,7 +8,6 @@
  */
 
 import { program } from 'commander';
-import path from 'path';
 
 import { readFileSync, existsSync } from 'fs';
 
@@ -94,7 +93,7 @@ export default async function validate(): Promise<void> {
         environment: env,
     }
 
-    const visitor = validateScript(inputFilePath, scriptData, scriptOptions);
+    const visitor = await validateScript(inputFilePath, scriptData, scriptOptions);
     const symbols = visitor.getSymbols().getSymbols();
 
     symbols.forEach((value, key) => {
@@ -110,7 +109,7 @@ export default async function validate(): Promise<void> {
         }
     });
 
-    const { parsedTokens} = getSemanticTokens(scriptData, scriptOptions);
+    const { parsedTokens} = await getSemanticTokens(scriptData, scriptOptions);
 
     parsedTokens.forEach(item => {
         const {line, column, tokenType, tokenModifiers, textValue} = item;

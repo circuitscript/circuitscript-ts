@@ -66,7 +66,7 @@ DivideAssign:       '/=';
 MultiplyAssign:     '*=';
 ModulusAssign:      '%=';
 
-script: (expression | NEWLINE)+ EOF;
+script: (import_expr | NEWLINE)* (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
 expression: add_component_expr

@@ -51,16 +51,15 @@ export async function runScript(script: string): Promise<{
 
     const tree = parser.script();
 
-    visitor.onImportFile = (visitor: BaseVisitor, filePath: string, fileData: string,
-        errorHandler: OnErrorHandler): { hasError: boolean, hasParseError: boolean } => {
-        const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
+    visitor.onImportFile = async (visitor: BaseVisitor, filePath: string, fileData: string,
+        errorHandler: OnErrorHandler): Promise<{ hasError: boolean, hasParseError: boolean }> => {
+        const { hasError, hasParseError } = await parseFileWithVisitor(visitor, fileData);
         return { hasError, hasParseError };
     }
 
-
     let hasError = false;
     try {
-        visitor.visit(tree);
+        await visitor.visitAsync(tree);
     } catch (err) {
         // Error should be internally handled in visitor
         console.log(err);

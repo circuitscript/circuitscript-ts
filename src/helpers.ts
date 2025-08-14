@@ -74,8 +74,8 @@ export function prepareFile(textData: string): {
     };
 }
 
-export function getSemanticTokens(scriptData: string, options: ScriptOptions)
-    : { visitor: SemanticTokensVisitor, parsedTokens: IParsedToken[] } {
+export async function getSemanticTokens(scriptData: string, options: ScriptOptions)
+    : Promise<{ visitor: SemanticTokensVisitor, parsedTokens: IParsedToken[] }> {
     
     const { parser, lexer, tokens } = prepareFile(scriptData);
     const tree = parser.script();
@@ -87,8 +87,8 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
 
     parser.removeErrorListeners();
 
-    visitor.onImportFile = (visitor: BaseVisitor, filePath: string, textData: string)
-        : { hasError: boolean, hasParseError: boolean } => {
+    visitor.onImportFile = async (visitor: BaseVisitor, filePath: string, textData: string)
+        : Promise<{ hasError: boolean, hasParseError: boolean }> => {
 
         let hasError = false;
         let hasParseError = false;
@@ -115,7 +115,7 @@ export function getSemanticTokens(scriptData: string, options: ScriptOptions)
         }
     }
 
-    visitor.visit(tree);
+    await visitor.visitAsync(tree);
 
     const semanticTokens = visitor.getTokens();
 
@@ -168,8 +168,8 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
     }
 }
 
-export function validateScript(filePath: string, scriptData: string,
-    options: ScriptOptions): SymbolValidatorVisitor {
+export async function validateScript(filePath: string, scriptData: string,
+    options: ScriptOptions): Promise<SymbolValidatorVisitor> {
 
     const { parser } = prepareFile(scriptData);
     parser.removeErrorListeners();
@@ -184,8 +184,8 @@ export function validateScript(filePath: string, scriptData: string,
 
     visitor.enterFile(filePath);
 
-    visitor.onImportFile = (visitor: SymbolValidatorVisitor, filePath: string, textData: string)
-        : { hasError: boolean, hasParseError: boolean } => {
+    visitor.onImportFile = async (visitor: SymbolValidatorVisitor, filePath: string, textData: string)
+        : Promise<{ hasError: boolean, hasParseError: boolean }> => {
 
         visitor.enterFile(filePath);
 
@@ -197,7 +197,7 @@ export function validateScript(filePath: string, scriptData: string,
             const tree = parser.script();
 
             try {
-                visitor.visit(tree);
+                await visitor.visitAsync(tree);
                 visitor.exitFile();
                 
             } catch (err) {
@@ -217,8 +217,8 @@ export function validateScript(filePath: string, scriptData: string,
     }
 
     // First pass defines variables, functions
-    visitor.visit(tree);
-    
+    await visitor.visitAsync(tree);
+   
     const symbolTable = visitor.getSymbols();
     symbolTable.clearUndefined();
 
@@ -232,16 +232,16 @@ export function validateScript(filePath: string, scriptData: string,
     visitorResolver.onImportFile = visitor.onImportFile;
 
     // Second pass to resolve variables, functions
-    visitorResolver.visit(tree);
+    await visitorResolver.visitAsync(tree);
     
     return visitorResolver;
 }
 
-export function renderScript(scriptData: string, outputPath: string | null,
-    options: ScriptOptions): {
+export async function renderScript(scriptData: string, outputPath: string | null,
+    options: ScriptOptions): Promise<{
         svgOutput: string | null,
         errors: BaseError[]
-    } {
+    }> {
 
     const {
         dumpNets = false,
@@ -265,10 +265,10 @@ export function renderScript(scriptData: string, outputPath: string | null,
     const visitor = new ParserVisitor(true, 
         onErrorHandler, options.environment);
 
-    visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
-        : { hasError: boolean, hasParseError: boolean } => {
+    visitor.onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string)
+        : Promise<{ hasError: boolean, hasParseError: boolean }> => {
 
-        const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
+        const { hasError, hasParseError } = await parseFileWithVisitor(visitor, fileData);
         
         // Raise exception if there are errors in imported files
         if (hasError || hasParseError) {
@@ -283,7 +283,7 @@ export function renderScript(scriptData: string, outputPath: string | null,
 
     const { tree, parser,
         parserTimeTaken, 
-        lexerTimeTaken } = parseFileWithVisitor(visitor, scriptData);
+        lexerTimeTaken } = await parseFileWithVisitor(visitor, scriptData);
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);

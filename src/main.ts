@@ -76,8 +76,8 @@ export default async function main(): Promise<void> {
     if (args.length > 0 && args[0]) {
         inputFilePath = args[0];
 
-        if (env.existsSync(inputFilePath)) {
-            scriptData = env.readFileSync(inputFilePath, { encoding: 'utf-8' });
+        if ((await env.exists(inputFilePath))) {
+            scriptData = await env.readFile(inputFilePath, { encoding: 'utf-8' });
         } else {
             console.error("Error: File could not be found");
             return;
@@ -102,16 +102,16 @@ export default async function main(): Promise<void> {
         outputPath = args[1];
     }
 
-    const output = parseFile(scriptData, outputPath, scriptOptions);
+    const output = await parseFile(scriptData, outputPath, scriptOptions);
     
     if (outputPath === null && output && (options.skipOutput === undefined)) {
         console.log(output);
     }
     
     if (watchFileChanges) {
-        watch(inputFilePath, event => {
+        watch(inputFilePath, async event => {
             if (event === 'change') {
-                const scriptData = env.readFileSync(inputFilePath, 
+                const scriptData = await env.readFile(inputFilePath, 
                     {encoding: 'utf-8'});
 
                 parseFile(scriptData, outputPath, scriptOptions);
@@ -120,10 +120,10 @@ export default async function main(): Promise<void> {
     }
 }
 
-function parseFile(scriptData: string, outputPath: string | null, scriptOptions): string | null {
+async function parseFile(scriptData: string, outputPath: string | null, scriptOptions): Promise<string | null> {
     try {
         const { svgOutput: output, errors } =
-            renderScript(scriptData, outputPath, scriptOptions);
+            await renderScript(scriptData, outputPath, scriptOptions);
 
         errors.forEach((err, index) => {
             console.log(`[${index}] ${err}`);
@@ -137,6 +137,8 @@ function parseFile(scriptData: string, outputPath: string | null, scriptOptions)
     } catch (error) {
         console.error(`Unexpected Error: ${error}`);
     }
+
+    return null;
 }
 
 main();

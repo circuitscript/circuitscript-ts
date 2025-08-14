@@ -1,9 +1,10 @@
 import { Dom, registerWindow, SVG } from "@svgdotjs/svg.js";
-import { PathOrFileDescriptor, readFileSync, PathLike, existsSync } from "fs";
+import { PathOrFileDescriptor, PathLike } from "fs";
+import fs from 'fs';
 import path from "path";
-import { TOOL_VERSION } from "./globals";
-import { SVGWindow } from "./helpers";
-import { RuntimeExecutionError } from "./utils";
+import { TOOL_VERSION } from "./globals.js";
+import { SVGWindow } from "./helpers.js";
+import { RuntimeExecutionError } from "./utils.js";
 
 // TODO: create an interface for this. Default is to use node 
 // as the environment.
@@ -164,11 +165,16 @@ export class NodeScriptEnvironment {
         return this.prepareSVGEnvironmentInternal(this.getFontsPath());
     }
 
-    readFileSync(path: PathOrFileDescriptor, options): string {
-        return readFileSync(path, options);
+    async readFile(path: PathOrFileDescriptor, options): Promise<string> {
+        return fs.promises.readFile(path, options);
     }
 
-    existsSync(path: PathLike): ReturnType<typeof existsSync> {
-        return existsSync(path);
+    async exists(path: PathLike): Promise<boolean> {
+        try {
+            fs.promises.access(path, fs.constants.F_OK);
+            return true;
+        } catch (err){
+            return false;
+        }
     }
 }

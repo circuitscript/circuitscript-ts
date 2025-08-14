@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { join } from 'path';
 import { Big } from 'big.js';
 
 import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
@@ -68,8 +67,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     onErrorHandler: OnErrorHandler | null = null;
     environment: NodeScriptEnvironment;
 
-    onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string, onErrorHandler: OnErrorHandler): 
-        {hasError:boolean, hasParseError: boolean} => {
+    protected importedFiles:ImportFile[] = [];
+
+    onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string, onErrorHandler: OnErrorHandler): 
+        Promise<{hasError:boolean, hasParseError: boolean}> => {
         
         throw "Import file not implemented"
     }
@@ -194,11 +195,27 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         this.getExecutor().log(message);
     }
 
-    visitScript = (ctx: ScriptContext): void => {
-        this.log('===', 'start', '===');
-        const result = this.visitChildren(ctx);
-        this.log('===', 'end', '===');
+    async visitAsync(ctx: ParserRuleContext): Promise<void> {
+        const result = await ctx.accept(this);
         return result;
+    }
+
+    visitScript = async (ctx: ScriptContext): Promise<void> => {
+        this.log('===', 'start', '===');
+
+        // Parse all import statements at the start synce these might require
+        // async calls
+        const imports = ctx.import_expr();
+        for (let i = 0; i < imports.length; i++) {
+            const ctxImport = imports[i];
+            const ID = ctxImport.ID().toString();
+            await this.handleImportFile(ID, true, ctxImport);
+        }
+
+        const result = this.runExpressions(this.getExecutor(), ctx.expression());
+        this.setResult(ctx, result);
+
+        this.log('===', 'end', '===');
     }
 
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
@@ -584,10 +601,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
     }
 
     visitImport_expr = (ctx: Import_exprContext): void => {
-        const ID = ctx.ID().toString(); // filename
-        this.log('import', ID);
-        this.handleImportFile(ID, true, ctx);
-        this.log('done import', ID);
+        // Until a better solution is found, only allow import statements
+        // to be parsed at the start of the script.
+        throw new RuntimeExecutionError(
+            "Cannot parse imports here", ctx.start!, ctx.stop!);
     }
 
     visitFunction_return_expr = (ctx: Function_return_exprContext): void => {
@@ -662,13 +679,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.getResult(ctx);
     }
 
-    protected handleImportFile(name: string, 
-        throwErrors = true, ctx: ParserRuleContext | null =null): {
+    protected async handleImportFile(name: string,
+        throwErrors = true, ctx: ParserRuleContext | null = null): Promise<ImportFile> {
 
-        hasError: boolean,
-        hasParseError: boolean,
-        pathExists: boolean
-    } {
+        name = name.trim();
+        const importAlready = this.importedFiles.find(item => {
+            return item.id === name;
+        });
+
+        if (importAlready) {
+            return importAlready;
+        }
 
         let hasError = false;
         let hasParseError = false;
@@ -682,7 +703,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         try {
             filePathUsed = tmpFilePath;
-            fileData = this.environment.readFileSync(tmpFilePath, { encoding: 'utf8' });
+            fileData = await this.environment.readFile(tmpFilePath, { encoding: 'utf8' });
             pathExists = true;
         } catch (err) {
             pathExists = false;
@@ -694,7 +715,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
                 const tmpFilePath2 = this.environment.getRelativeToDefaultLibs(name + ".cst");
                 filePathUsed = tmpFilePath2;
 
-                fileData = this.environment.readFileSync(tmpFilePath2, { encoding: 'utf8' });
+                fileData = await this.environment.readFile(tmpFilePath2, { encoding: 'utf8' });
                 pathExists = true;
             } catch (err) {
                 pathExists = false;
@@ -705,15 +726,18 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             if (pathExists) {
                 this.log('done reading imported file data');
 
-                const importResult =
-                    this.onImportFile(this, filePathUsed, fileData!,
-                        this.onErrorHandler);
+                const importResult = await this.onImportFile(this, 
+                        filePathUsed, fileData!, this.onErrorHandler);
 
                 hasError = importResult.hasError;
                 hasParseError = importResult.hasParseError;
             }
         } catch (err) {
-            this.log('Failed to import file: ', err.message);
+            if (ctx != null) {
+                throw new RuntimeExecutionError("An error occurred while importing file", ctx.start!, ctx.stop!);
+            } else {
+                this.log('An error occurred while importing file:', err.message);
+            }
         }
 
         let errorMessage = null;
@@ -727,14 +751,20 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         }
 
         if (errorMessage !== null && ctx){
-            this.throwWithContext(ctx, errorMessage);
+            throw new RuntimeExecutionError(errorMessage, ctx.start!, ctx.end!);
         }
 
-        return {
+        // Keep track of already imported files
+        const newImportedFile: ImportFile = {
+            id: name.trim(),
             hasError,
             hasParseError,
             pathExists,
         }
+
+        this.importedFiles.push(newImportedFile);
+
+        return newImportedFile;
     }
 
     visitRoundedBracketsExpr = (ctx: RoundedBracketsExprContext):void => {
@@ -969,3 +999,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
 export type OnErrorHandler = 
     (message: string, context: ParserRuleContext, e?: any) => void;
+
+type ImportFile = {
+    id: string,
+    hasError: boolean,
+    hasParseError: boolean,
+    pathExists: boolean
+}
