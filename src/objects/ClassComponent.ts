@@ -52,6 +52,11 @@ export class ClassComponent {
     _copyID?: number = null;
     _copyFrom?: ClassComponent = null;
 
+    /** Used by point objects to indicate the actual ClassComponent that is
+     *  the currentComponent */
+    _pointLinkComponent?: ClassComponent;
+
+
     /** This determines how pins are arranged on the component/symbol. */
     arrangeProps: Map<string, NumericValue[]> | null = null;
 

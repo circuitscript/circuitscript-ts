@@ -10,19 +10,33 @@ describe('geometry merge wires test', () => {
         }
     }
 
+    function parseWires(wires:[x: number, y: number][][]){
+        return wires.map(points => {
+            return points.map(([x, y]) => {
+                return {
+                    x: numeric(x),
+                    y: numeric(y)
+                }
+            })
+        })
+    }
+
     test('wire connected end to end', () => {
 
-        const wire1 = [
-            makePoint(100, 100),
-            makePoint(200, 100),
-        ];
+        const wires = parseWires([
+            [   // Wire 1
+                [100, 100],
+                [200, 100],
+            ],
 
-        const wire2 = [
-            makePoint(200, 100),
-            makePoint(200, 120),
-        ];
+            [
+                // Wire 2
+                [200, 100],
+                [200, 120]
+            ]
+        ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
         expect(segments).toStrictEqual([
             [
                 [100, 100], [200, 100]
@@ -37,18 +51,20 @@ describe('geometry merge wires test', () => {
 
     test('wire connected at some point of wire 1', () => {
 
-        const wire1 = [
-            makePoint(100, 100),
-            makePoint(200, 100),
-        ];
+        const wires = parseWires([
+            [
+                // Wire 1
+                [100, 100],
+                [200, 100]
+            ],
+            [
+                // Wire 2,
+                [160, 100],
+                [160, 120],
+            ]
+        ]);
 
-        const wire2 = [
-            makePoint(160, 100),
-            makePoint(160, 120)
-        ];
-
-        const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
-
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
         expect(segments).toStrictEqual([
             [
                 [100, 100], [160, 100]
@@ -68,17 +84,18 @@ describe('geometry merge wires test', () => {
 
     test('wire connected at some point of wire 2', () => {
 
-        const wire1 = [
-            makePoint(100, 100),
-            makePoint(200, 100),
-        ];
+        const wires = parseWires([
+            [
+                // Wire 2
+                [160, 100], [160, 120],
+            ],
+            [
+                // Wire 1
+                [100, 100], [200, 100],
+            ]
+        ]);
 
-        const wire2 = [
-            makePoint(160, 100),
-            makePoint(160, 120),
-        ];
-
-        const { intersectPoints, segments } = Geometry.mergeWires([wire2, wire1]);
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
 
         expect(segments).toStrictEqual([
             [
@@ -99,17 +116,19 @@ describe('geometry merge wires test', () => {
 
     test('overlapping wires', () => {
 
-        const wire1 = [
-            makePoint(100, 100),
-            makePoint(140, 100)
-        ];
+        const wires = parseWires([
+            [
+                // Wire 1
+                [100, 100], [140, 100],
+            ],
 
-        const wire2 = [
-            makePoint(120, 100),
-            makePoint(160, 100),
-        ];
+            [
+                // Wire 2,
+                [120, 100], [160, 100]
+            ]
+        ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
 
         // No intersection points, because only have two segments
         // connected at each point.
@@ -125,18 +144,18 @@ describe('geometry merge wires test', () => {
     });
 
     test('reversed wires', () => {
+        const wires = parseWires([
+            [
+                // Wire 1
+                [100, 100], [140, 100],
+            ],
+            [
+                // Wire 2
+                [140, 100], [100, 100]
+            ]
+        ])
 
-        const wire1 = [
-            makePoint(100, 100),
-            makePoint(140, 100),
-        ];
-
-        const wire2 = [
-            makePoint(140, 100),
-            makePoint(100, 100),
-        ];
-
-        const { intersectPoints, segments } = Geometry.mergeWires([wire1, wire2]);
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
 
         expect(intersectPoints).toStrictEqual([]);
         expect(segments).toStrictEqual(
@@ -145,5 +164,47 @@ describe('geometry merge wires test', () => {
             ]
         );
     });
+
+    test('complex wires to force splitting and re-parsing wires', () => {
+        const wires = parseWires([
+            [
+                // Wire 1
+                [7.62, 10.16], [2.54, 10.16]
+            ],
+            [
+                // Wire 2
+                [2.54, 10.16], [2.54, 7.62],
+            ],
+            [
+                // Wire 3
+                [2.54, 7.62], [2.54, 5.08],
+            ],
+            [
+                // Wire 4
+                [2.54, 5.08], [7.62, 5.08]
+            ],
+            [
+                // Wire 5
+                [2.54, 5.08], [2.54, 2.54], [5.08, 2.54], [5.08, 7.62]
+            ]
+        ]);
+
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+
+        expect(intersectPoints).toStrictEqual([[2.54, 5.08, 3], [5.08, 5.08, 4]]);
+        expect(segments).toStrictEqual(
+            [
+                [[7.62, 10.16], [2.54, 10.16]],
+                [[2.54, 10.16], [2.54, 7.62]],
+                [[2.54, 7.62], [2.54, 5.08]],
+                [[2.54, 5.08], [5.08, 5.08]],
+                [[5.08, 5.08], [7.62, 5.08]],
+                [[2.54, 5.08], [2.54, 2.54]],
+                [[2.54, 2.54], [5.08, 2.54]],
+                [[5.08, 2.54], [5.08, 5.08]],
+                [[5.08, 5.08], [5.08, 7.62]]
+            ]
+        );
+    })
 
 });

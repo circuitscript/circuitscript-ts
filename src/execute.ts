@@ -24,7 +24,7 @@ import { CalculatePinPositions } from './layout.js';
 import { UnitDimension } from './helpers.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
-import { getBlockTypeString } from './utils.js';
+import { getBlockTypeString, RuntimeExecutionError } from './utils.js';
 
 /** Contains the current running state of the circuit graph */
 export class ExecutionContext {
@@ -404,7 +404,7 @@ export class ExecutionContext {
         const { addSequence = false } = options ?? {};
         
         if (!(component instanceof ClassComponent)){
-            throw "Not a valid component!";
+            throw new RuntimeExecutionError("Not a valid component!");
         }
 
         if (pinId === null) {
@@ -415,7 +415,7 @@ export class ExecutionContext {
                 pinId = component.getPin(pinId);
             } else {
                 console.trace();
-                throw (
+                throw new RuntimeExecutionError(
                     'Invalid pin number ' +
                     pinId +
                     ' in ' +
@@ -643,6 +643,8 @@ export class ExecutionContext {
 
         const { type: blockType } = stackRef;
 
+        const blockTypeName = getBlockTypeString(blockType);
+
         // Setup the state for the inner block at the given index
         stackRef['inner_blocks'].set(blockIndex, {
             last_net: null,
@@ -660,7 +662,7 @@ export class ExecutionContext {
             this.atComponent(component, pin, { addSequence: true });
         }
 
-        this.log(`enter inner block of type (${blockType}) >>>`);
+        this.log(`enter inner block of type (${blockTypeName}) >>>`);
 
         this.scope.indentLevel += 1;
     }
@@ -1120,8 +1122,17 @@ export class ExecutionContext {
 
         const useName = userDefined ? 'point.' + pointId : pointId;
         const componentPoint = ClassComponent.simple(useName, 1);
-        componentPoint.displayProp = this.getPointSymbol();
+        componentPoint.displayProp = this.getPointSymbol(useName);
         componentPoint.typeProp = ComponentTypes.net;
+
+        let usePointLinkComponent = null;
+        if (this.scope.currentComponent._pointLinkComponent) {
+            usePointLinkComponent = this.scope.currentComponent!._pointLinkComponent;
+        } else {
+            usePointLinkComponent = this.scope.currentComponent;
+        }
+
+        componentPoint._pointLinkComponent = usePointLinkComponent;
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });
@@ -1130,18 +1141,58 @@ export class ExecutionContext {
     }
 
     /** Provides the drawing commands for a point object on the canvas */
-    private getPointSymbol(): SymbolDrawingCommands {
-        return new SymbolDrawingCommands(() => {
-            return [
-                [PlaceHolderCommands.pin,
-                [numeric(1), numeric(0), numeric(0),
-                numeric(0), numeric(0)],
+    private getPointSymbol(name=""): SymbolDrawingCommands {
+
+        const commands = [
+            [PlaceHolderCommands.pin,
+            [numeric(1), numeric(0), numeric(0),
+            numeric(0), numeric(0)],
+            new Map([
+                ["display_pin_id", false]
+            ]),
+                null
+            ]
+        ];
+
+        if (false){
+            commands.push(...[
+                [PlaceHolderCommands.lineColor,
+                ["red"],
+                new Map(), null
+                ],
+
+                [PlaceHolderCommands.hline,
+                [numeric(-25), numeric(0), numeric(50)],
+                new Map(),
+                    null
+                ],
+
+                [PlaceHolderCommands.vline,
+                [numeric(0), numeric(-25), numeric(50)],
+                new Map(),
+                    null
+                ],
+
+                [PlaceHolderCommands.hline,
+                [numeric(0), numeric(0),
+                numeric(10)],
+
+                new Map([]), null
+                ],
+
+                [PlaceHolderCommands.text,
+                [],
                 new Map([
-                    ["display_pin_id", false]
+                    ["content", name],
+                    ["fontSize", numeric(10)],
                 ]),
                     null
                 ]
-            ]
+            ]);
+        }
+
+        return new SymbolDrawingCommands(() => {
+            return commands;
         });
     }
 

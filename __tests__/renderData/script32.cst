@@ -1,0 +1,18 @@
+# Test overlapping of wires, merging of wires and generating
+# correct intersection points.
+
+usb1 = create component:
+    pins: 6
+    
+at usb1 pin 6
+wire left 200
+branch:
+    wire up 100
+    branch:
+        wire up 100
+        branch:
+            wire auto
+            to pin 2
+        wire up 100 right 100 down 200
+        wire auto
+        to pin 4

@@ -180,6 +180,8 @@ export class LayoutEngine {
 
         const mergedWires: MergedWire[] = [];
 
+        const debugSegments = false;
+
         for (const [key, wires] of wireGroups) {
 
             // Create array of all wires with the same net name
@@ -192,17 +194,41 @@ export class LayoutEngine {
                 });
             });
 
-            const { intersectPoints, segments } = Geometry.mergeWires(allLines);
-            mergedWires.push({
-                netName: key,
-                segments,
-                intersectPoints,
-            });
+            
+            if (debugSegments) {
+                const tmpSegments = [];
+                allLines.forEach(wire => {
+                    for (let i = 1; i < wire.length; i++) {
+                        const pt1 = wire[i - 1];
+                        const pt2 = wire[i];
 
-            intersectPoints.forEach(([x, y]) => {
-                junctions.push(
-                    new RenderJunction(numeric(x), numeric(y)));
-            });
+                        tmpSegments.push([
+                            [pt1.x.toNumber(), pt1.y.toNumber()],
+                            [pt2.x.toNumber(), pt2.y.toNumber()],
+                        ]);
+                    }
+                });
+
+                // Wire segments are not merged and all segments (even overlaps)
+                // are kept.
+                mergedWires.push({
+                    netName: key,
+                    segments: tmpSegments,
+                    intersectPoints: [],
+                });
+            } else {
+                const { intersectPoints, segments } = Geometry.mergeWires(allLines);
+                mergedWires.push({
+                    netName: key,
+                    segments,
+                    intersectPoints,
+                });
+
+                intersectPoints.forEach(([x, y]) => {
+                    junctions.push(
+                        new RenderJunction(numeric(x), numeric(y)));
+                });
+            }
         }
 
         return {

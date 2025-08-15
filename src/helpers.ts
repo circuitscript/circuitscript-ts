@@ -296,6 +296,7 @@ export async function renderScript(scriptData: string, outputPath: string | null
     const dumpDirectory = environment.getRelativeToModule('/dump/');
 
     if (dumpData) {
+        console.log('Dump data to:', dumpDirectory);
         if (!existsSync(dumpDirectory)) {
             mkdirSync(dumpDirectory);
         }

@@ -620,8 +620,10 @@ export class Geometry {
                             replaceSegments(existingSegments, j, splitCurrentSegments);
                             replaceSegments(newSegments, k, splitNewSegments);
 
-                            // Decrement j, so that the segment is parsed again
+                            // Decrement j and break out of this loop, so that 
+                            // the segment is parsed again
                             j = Math.max(0, j-1);
+                            break;
                         }
                     }
                 }

@@ -128,9 +128,14 @@ export class ParserVisitor extends BaseVisitor {
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
         ctx.component_select_expr().forEach(item => {
             const [component, pin] = this.visitResult(item);
-            this.getExecutor().toComponent(component, pin, {
-                addSequence: true
-            });
+            
+            try {
+                this.getExecutor().toComponent(component, pin, {
+                    addSequence: true
+                });
+            } catch (err){
+                throw new RuntimeExecutionError(err.message, ctx.start!, ctx.stop!);
+            }
         });
         
         return this.getExecutor().getCurrentPoint();
@@ -148,7 +153,14 @@ export class ParserVisitor extends BaseVisitor {
             componentPin = this.visitResult(ctxDataExprWithAssigment);
 
         } else {
-            const component = this.getScope().currentComponent!;
+            let component = this.getScope().currentComponent!;
+
+            if (component._pointLinkComponent){
+                // If the point link component is defined, then use it instead.
+                // The current component is a point generated for path blocks.
+                component = component._pointLinkComponent;
+            }
+            
             let pinId: PinId | null = null;
 
             const ctxPinSelectExpr = ctx.pin_select_expr();

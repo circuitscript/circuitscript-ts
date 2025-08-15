@@ -1,0 +1,32 @@
+# Test multiple levels of branches and also ensures that
+# current active component is not changed by branching
+
+import lib 
+
+usb1 = create component:
+    pins: 6
+
+gnd = dgnd()
+
+at usb1:
+    1: 
+        wire right 300 down 100 add res(100)
+        wire down 100
+        to gnd
+    6:
+        wire left 200
+
+        branch:
+            wire up 100
+            branch:
+                wire right 100
+                branch:
+                    wire auto
+                    to pin 4    # this should reference usb1
+
+                wire down 300 right 100
+                wire auto_
+                to pin 5        # this should reference usb1
+
+            wire auto
+            to pin 2            # this should reference usb1
