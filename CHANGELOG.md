@@ -1,6 +1,98 @@
 # Changelog
 
-## [v0.1.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.4...v0.1.5)
+## [v0.1.6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.5...v0.1.6)
+
+[dab3980](https://gitlab.com/circuitscript/circuitscript-ts/commit/dab3980750c303bcd04f16ba797fe02d7f03f142)Refactor symbol validation architecture and enhance language server support
+- 
+- Major architectural improvements to the symbol validation system:
+- 
+- - **Modularize validation system**: Move SymbolValidatorVisitor to dedicated src/validate/ directory
+- - **Enhance semantic highlighting**: Improve LSP semantic tokens with built-in method detection
+- - **Improve symbol resolution**: Better handling of built-in functions and scope resolution
+- - **Add comprehensive documentation**: Document SemanticTokenVisitor and SymbolValidatorVisitor with Doxygen
+- - **Update test infrastructure**: Align test expectations with new validation architecture
+- - **Strengthen type safety**: Enhanced parameter handling in function definitions
+- 
+- These changes improve code organization, enhance language server capabilities, and provide
+- better developer experience for CircuitScript development tools.
+
+[133d0a4](https://gitlab.com/circuitscript/circuitscript-ts/commit/133d0a4343916028beb1725e3f895b5c58e45d36) used async methods for file import handling
+
+[786bf7c](https://gitlab.com/circuitscript/circuitscript-ts/commit/786bf7c8deffc8026385d976a4f76f99cc884a3d)Enhance error handling architecture with comprehensive token ranges and runtime validation
+- 
+- - Update BaseError and all error classes to support start/end token ranges for precise source location tracking
+- - Refactor OnErrorHandler signature to prioritize message and context parameters
+- - Introduce RuntimeExecutionError class with token-based constructor for immediate execution halt
+- - Enhance validation functions (validateString, validateBoolean, validateNumeric) to accept value-first parameter ordering
+- - Improve error propagation throughout parsing pipeline with consistent token range reporting
+- - Consolidate error handling in renderScript to return unified BaseError array
+- - Add comprehensive runtime validation to getPortSide method with detailed error context
+
+[4084ac4](https://gitlab.com/circuitscript/circuitscript-ts/commit/4084ac4982bace6f69b7b15631aeffe6afb8c05e) cleaned up error parsing
+
+[cc6d303](https://gitlab.com/circuitscript/circuitscript-ts/commit/cc6d303dfe43f11c98a54681bb8bca0ead5f5790) moved out script environment into another file
+
+[982044d](https://gitlab.com/circuitscript/circuitscript-ts/commit/982044d5c7025096e5ff3e54f2306085d1352cec)Implement async file operations and improve wire merging logic
+- 
+- - Update import handling to use async file operations in BaseVisitor
+- - Add visitAsync method and async import processing at script start
+- - Enhance wire merging algorithm with better intersection handling
+- - Add support for complex multi-wire merging scenarios
+- - Improve error reporting with RuntimeExecutionError consistency
+- - Add comprehensive test cases for wire overlapping and splitting
+- - Update geometry logic to handle complex wire intersections correctly
+- 
+- The async changes maintain compatibility while improving I/O performance.
+- Wire merging improvements fix visual artifacts in complex routing scenarios.
+
+[aa0bc62](https://gitlab.com/circuitscript/circuitscript-ts/commit/aa0bc62446885e75f80a4795697c21bcac9b4792)Refactor visitor architecture with environment abstraction for cross-platform compatibility
+- 
+- - Replace direct fs module usage with NodeScriptEnvironment abstraction in BaseVisitor
+- - Update all visitor constructors to accept environment parameter for file system operations
+- - Add NodeScriptEnvironment class with configurable file system methods and path resolution
+- - Enhance SemanticTokensVisitor and SymbolValidatorVisitor to support environment injection
+- - Enable browser and custom environment support through pluggable file system interface
+- - Maintain ESM import compatibility with .js extensions throughout codebase
+- - Consolidate path utilities and environment detection for better cross-platform support
+
+[1f59921](https://gitlab.com/circuitscript/circuitscript-ts/commit/1f59921c24dc43e873f4d3ff74c1cad202adb35f)Fix ESM/CJS dual module compatibility and environment abstraction
+- 
+-  Update svgdom to ESM-only version (0.1.22) with dynamic imports
+-  Configure Jest for ESM support with experimental VM modules
+-  Fix testCLI to use ESM build and correct figlet imports
+-  Implement stack trace-based directory resolution for cross-platform compatibility
+-  Refactor NodeScriptEnvironment to use module-relative paths instead of current directory
+-  Update build process to include asset copying and dual-format support
+-  Fix import resolution for built-in modules and default library paths
+
+[2206299](https://gitlab.com/circuitscript/circuitscript-ts/commit/22062993db98d6eb0cbf6d71c8145f295211575d)Refactor SVG environment management to use singleton pattern
+- 
+- - Move SVG window creation from global functions to NodeScriptEnvironment class
+- - Implement singleton pattern for NodeScriptEnvironment with getInstance() method
+- - Replace prepareSVGEnvironment and getCreateSVGWindow global functions with class methods
+- - Update all files to use environment singleton instead of direct function imports
+- - Consolidate text measurement canvas into environment class as reusable resource
+- - Remove redundant prepareSVGEnvironment calls from test files
+- - Maintain backward compatibility through environment setup in main entry points
+- 
+- This refactoring improves code organization by centralizing SVG-related functionality
+- within the environment class and ensures consistent SVG setup across the application.
+
+[db8f6c4](https://gitlab.com/circuitscript/circuitscript-ts/commit/db8f6c44e3e6ded1af96192e6ffcdb4d137d778f) moved current dir resolving and getting default libs path into script environment
+
+[2fe3623](https://gitlab.com/circuitscript/circuitscript-ts/commit/2fe36238f9c17a80fd4faf927abff2846685cebc) fixed import to work for esm
+
+[467857a](https://gitlab.com/circuitscript/circuitscript-ts/commit/467857a98931df1a20dd6505577f3f459e1c39bc) added token information to errors
+
+[2c880e3](https://gitlab.com/circuitscript/circuitscript-ts/commit/2c880e3c0770d361688301118bf2c6f3d937d2f5) changed import svgdom method to avoid cjs issues
+-  missed out validate update
+
+[d1eacef](https://gitlab.com/circuitscript/circuitscript-ts/commit/d1eacefc2e168f36002457fb4b3d94494bae9e09) added missed out print from built in methods list
+-  moved this-file package into method
+
+[456df37](https://gitlab.com/circuitscript/circuitscript-ts/commit/456df37c8a19dc8f758141d95ef7db5407740958) added test for both cjs and esm modules
+
+## [v0.1.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.4...v0.1.5) - 2025-07-26
 
 [ddbb842](https://gitlab.com/circuitscript/circuitscript-ts/commit/ddbb842a1820b57edcf98fd4ef08fc78078c923b) added resolve for component pin net
 -  cleaned up delimiter

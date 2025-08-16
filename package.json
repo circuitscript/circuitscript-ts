@@ -1,6 +1,6 @@
 {
     "name": "circuitscript",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Interpreter for the circuitscript language",
     "homepage": "https://circuitscript.net",
     "engines": {
@@ -57,7 +57,7 @@
         "rename:esm": "npx ts2mjs ./dist/esm && rm -rf ./dist/esm/*.js && rm -rf ./dist/esm/**/*.js",
         "build:watch": "tsc -w -p tsconfig.esm.json",
         "build:watch:cjs": "tsc -w -p tsconfig.cjs.json",
-        "build:release": "npm run clean && npm run build:release:cjs || npm run build:release:esm",
+        "build:release": "npm run clean && npm run copy-assets && npm run build:release:cjs || npm run build:release:esm",
         "prebuild": "npm run lint || true",
         "lint": "eslint . --ext .ts --ext .mts",
         "test": "node --experimental-vm-modules node_modules/.bin/jest",
