@@ -1,4 +1,4 @@
-image: node:18
+image: node:20.19.4
 
 # variables:
 #   ARTIFACT_DOWNLOAD_ATTEMPTS: 2 # Number of retries for restoring saved artifacts.
@@ -48,7 +48,13 @@ test_jest:
     - install
   script:
     - npm run build:release || true
-    - npm run test
+    - npm run test testCLI
+    - npm run test testExport
+    - npm run test testMergeWires
+    - npm run test testParse
+    - npm run test testRender
+    - npm run test testValidator
+    - npm run test testMathOps
   rules:
     - !reference [.common_rules, rules]
 
