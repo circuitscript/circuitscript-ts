@@ -63,7 +63,7 @@ export class LayoutEngine {
         sequence: SequenceItem[],
         nets: [ClassComponent, pin: number, net: Net][]
     ): SheetFrame[] {
-        const logNodesAndEdges = false;
+        const logNodesAndEdges = true;
     
         this.print('===== creating graph and populating with nodes =====');
         const {graph, containerFrames } = 
@@ -1300,10 +1300,11 @@ export class LayoutEngine {
         this.placeSubgraphV2(graph, firstNodeId, subgraphEdges);
     }
 
-    placeSubgraphV2(graph:Graph, firstNodeId: string,
+    private placeSubgraphV2(graph:Graph, firstNodeId: string,
         subgraphEdges: Edge[]): void {
-        
-        let firstNodePlaced = false;
+
+        // It is assumed that subgraph edges array is defined in the order
+        // that the edges should be added onto the graph.
 
         // In this strategy, isFloating is used to indicate if the node 
         // has an assigned position. This strategy builds up groups of nodes
@@ -1353,17 +1354,6 @@ export class LayoutEngine {
 
             const [, node1]: [string, RenderItem] = graph.node(nodeId1);
             const [, node2]: [string, RenderItem] = graph.node(nodeId2);
-
-            if (nodeId1 === firstNodeId && !firstNodePlaced) {
-                this.print('first node placed at origin');
-                this.placeNodeAtPosition(
-                    numeric(0), numeric(0), node1, pin1);
-                firstNodePlaced = true;
-                node1.isFloating = false;
-
-                originNodes.push(node1);
-                originNodeGroups.set(node1.toString(), [node1]);
-            }
 
             this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
                 '[', node2, pin2, node2.isFloating, ']');
@@ -1479,6 +1469,7 @@ export class LayoutEngine {
                 }
             });
 
+            this.print('----');
         });
     }
 
