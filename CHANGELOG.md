@@ -1,6 +1,17 @@
 # Changelog
 
-## [v0.1.6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.5...v0.1.6)
+## [v0.1.8](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.7...v0.1.8)
+
+[2c6e527](https://gitlab.com/circuitscript/circuitscript-ts/commit/2c6e5274f66165691f63587f82df1fd4c6179a64) fixed bug caused by re-definition of edge
+-  added test to catch edge replacement issue
+
+[66367bd](https://gitlab.com/circuitscript/circuitscript-ts/commit/66367bd83dcdab5cc8092ac112e8329124e86b24) fixed layout bug for first node
+
+## [v0.1.7](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.6...v0.1.7) - 2025-08-17
+
+[4af9e39](https://gitlab.com/circuitscript/circuitscript-ts/commit/4af9e39a1cfa3b239d77f277098e062657e21450) version bump
+
+## [v0.1.6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.5...v0.1.6) - 2025-08-17
 
 [dab3980](https://gitlab.com/circuitscript/circuitscript-ts/commit/dab3980750c303bcd04f16ba797fe02d7f03f142)Refactor symbol validation architecture and enhance language server support
 - 
@@ -82,6 +93,9 @@
 
 [2fe3623](https://gitlab.com/circuitscript/circuitscript-ts/commit/2fe36238f9c17a80fd4faf927abff2846685cebc) fixed import to work for esm
 
+[3ec5b6d](https://gitlab.com/circuitscript/circuitscript-ts/commit/3ec5b6dc649a105484d4a07d2f94750c01382247) patch build:release command
+-  version bump to 0.1.6
+
 [467857a](https://gitlab.com/circuitscript/circuitscript-ts/commit/467857a98931df1a20dd6505577f3f459e1c39bc) added token information to errors
 
 [2c880e3](https://gitlab.com/circuitscript/circuitscript-ts/commit/2c880e3c0770d361688301118bf2c6f3d937d2f5) changed import svgdom method to avoid cjs issues
@@ -91,6 +105,8 @@
 -  moved this-file package into method
 
 [456df37](https://gitlab.com/circuitscript/circuitscript-ts/commit/456df37c8a19dc8f758141d95ef7db5407740958) added test for both cjs and esm modules
+
+[97c6730](https://gitlab.com/circuitscript/circuitscript-ts/commit/97c673000be033acea09c40c09e5caa855b3bd1c) list out tests to avoid jest issue
 
 ## [v0.1.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.4...v0.1.5) - 2025-07-26
 
