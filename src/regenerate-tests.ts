@@ -7,8 +7,8 @@ const mainDir = './__tests__/renderData/';
 const env = new NodeScriptEnvironment();
 NodeScriptEnvironment.setInstance(env);
 
-async function regenerateTests(extra=""): Promise<string[]> {
-    env.prepareSVGEnvironment();
+async function regenerateTests(extra = ""): Promise<string[]> {
+    await env.prepareSVGEnvironment();
 
     const cstFiles: string[] = [];
 
@@ -19,21 +19,24 @@ async function regenerateTests(extra=""): Promise<string[]> {
         }
     });
 
-    cstFiles.forEach(file => {
+    for (let i = 0; i < cstFiles.length; i++) {
+        const file = cstFiles[i];
         const inputPath = mainDir + file;
         const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
         const outputPath = mainDir + 'svgs/' + file + extra + '.svg';
         env.setModuleDirectory(mainDir);
-        renderScript(scriptData, outputPath, {
+        env.setDefaultLibsPath(mainDir + '../../libs/');
+
+        await renderScript(scriptData, outputPath, {
             dumpNets: false,
             dumpData: false,
             showStats: false,
             environment: env,
         });
 
-        console.log('generated ', outputPath);
-    });
+        // console.log('generated ', outputPath);
+    }
 
     return cstFiles;
 }

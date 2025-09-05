@@ -96,6 +96,8 @@ export default async function validate(): Promise<void> {
     const visitor = await validateScript(inputFilePath, scriptData, scriptOptions);
     const symbols = visitor.getSymbols().getSymbols();
 
+    const undefinedSymbols = [];
+
     symbols.forEach((value, key) => {
         if (value.type !== ParseSymbolType.Undefined) {
             value = value as SymbolTableItemDefined;
@@ -106,6 +108,8 @@ export default async function validate(): Promise<void> {
             value.instances.forEach(instance => {
                 console.log("    " + instance.line + ":" + instance.column+ " " + instance.start);
             });
+        } else {
+            undefinedSymbols.push(value);
         }
     });
 
@@ -115,6 +119,22 @@ export default async function validate(): Promise<void> {
         const {line, column, tokenType, tokenModifiers, textValue} = item;
         console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);
     });
+
+    console.log('--- undefined ---');
+    undefinedSymbols.forEach(symbol => {
+        const {token} = symbol;
+        const info = {
+            start: {
+                line: (token?.line || 1),
+                character: token?.column || 0
+            },
+            end: {
+                line: (token?.line || 1),
+                character: (token?.column || 0) + ((token?.stop || 0) - (token?.start || 0) + 1)
+            }
+        }
+        console.log(token.text, info);
+    })
 }
 
 validate();

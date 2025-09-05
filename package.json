@@ -78,7 +78,7 @@
     "boilerplate_author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
     "license": "MIT",
     "dependencies": {
-        "@dagrejs/graphlib": "2.1.13",
+        "@dagrejs/graphlib": "^2.2.4",
         "@flatten-js/core": "1.5.5",
         "@svgdotjs/svg.js": "3.2.0",
         "antlr4ng": "^3.0.4",

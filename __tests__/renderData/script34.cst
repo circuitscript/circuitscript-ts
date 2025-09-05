@@ -1,0 +1,25 @@
+# Test that within the graph library used, that the edge node1--node2 
+# and node2--node1 are not the same. Otherwise setEdge(node2, node1) will
+# replace the previously defined setEdge(node1, node2). The final result should
+# be two edges and not one edge.
+
+import lib
+
+v3v3 = supply("3V3")
+gnd = dgnd()
+
+tmp = create component:
+    pins:
+        1: "A"
+        2: "B"
+
+    arrange:
+        left: 2, 1
+
+at tmp:
+    2:
+        # graph must be directed, otherwise if the pair of nodes are 
+        # reversed, it will replace the previous defined nodes.
+
+        wire left 100 down 100 auto
+        to pin 1

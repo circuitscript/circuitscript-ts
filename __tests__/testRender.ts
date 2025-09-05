@@ -71,7 +71,9 @@ describe('Render tests', () => {
         ['branch within function', 'script31.cst'],
         
         ['complex wire merging and intersections', 'script32.cst'],
-        ['maintain current component through multiple branch levels', 'script33.cst']
+        ['maintain current component through multiple branch levels', 'script33.cst'],
+
+        ['node1--node2 and node2--node1 should not be the same', 'script34.cst']
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);

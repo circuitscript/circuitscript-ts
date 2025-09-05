@@ -4,11 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
-// import {Graph, Edge, alg} from '@dagrejs/graphlib';
-
-import pkg from '@dagrejs/graphlib';
-const { Graph, alg } = pkg;
+import graphlib, { Graph, Edge } from '@dagrejs/graphlib';
+const { alg } = graphlib;
 
 import { SymbolCustom, SymbolDrawing, SymbolGraphic, 
     SymbolCustomModule, SymbolPinDefintion, SymbolPlaceholder, 
@@ -86,7 +83,7 @@ export class LayoutEngine {
             this.print('===== graph nodes =====');
             const nodes = graph.nodes();
             nodes.forEach(node => {
-                this.print(node, graph.node(node));
+                this.print(`name:${node}, value:${graph.node(node)}`);
             });
             this.print('===== end nodes =====');
             this.print('');
@@ -950,7 +947,10 @@ export class LayoutEngine {
         let previousPin: number | null = null;
 
         const graph = new Graph({
-            directed: false,
+            directed: true, // Set to true so that node1 -- node2 is 
+                            // not the same as node2 -- node1. Otherwise this
+                            // will replace the previously defined edge.
+
             compound: true, // Subgraphs supported
         });
 
@@ -987,8 +987,7 @@ export class LayoutEngine {
                     if (!graph.hasNode(tmpInstanceName)) {
                         this.print('create instance', tmpInstanceName);
 
-                        const { displayProp = null,
-                            widthProp = null, heightProp = null } = component;
+                        const { displayProp = null } = component;
 
                         let tmpSymbol: SymbolGraphic;
 
@@ -1009,36 +1008,7 @@ export class LayoutEngine {
                         }
 
                         applyComponentParamsToSymbol(component, tmpSymbol);
-
-                        if (component.parameters.has(ParamKeys.angle)) {
-                            const value = (
-                                component.parameters.get(ParamKeys.angle) as NumericValue
-                            ).toNumber();
-
-                            tmpSymbol.angle = value;
-                        }
-
-                        if (component.parameters.has(ParamKeys.flipX)) {
-                            // either 1 or 0
-                            tmpSymbol.flipX =
-                                component.parameters.get(ParamKeys.flipX) as number;
-                        }
-
-                        if (component.parameters.has(ParamKeys.flipY)) {
-                            // either 1 or 0
-                            tmpSymbol.flipY =
-                                component.parameters.get(ParamKeys.flipY) as number;
-                        }
-
-                        if (tmpSymbol instanceof SymbolCustom) {
-                            if (widthProp) {
-                                tmpSymbol.bodyWidth = milsToMM(widthProp);
-                            }
-                            if (heightProp) {
-                                tmpSymbol.bodyHeight = milsToMM(heightProp);
-                            }
-                        }
-
+                        
                         // Draw symbol in memory to determine the size/bounds.
                         tmpSymbol.refreshDrawing();
 
@@ -1206,7 +1176,11 @@ export class LayoutEngine {
 
     private setGraphEdge(graph: Graph, node1: string, node2: string,
         edgeValue: EdgeValue): void {
+        if (!graph.isDirected && graph.hasEdge(node1, node2)){
+            this.print(`Warning: edge already exists ${node1} ${node2}`);
+        }
         graph.setEdge(node1, node2, edgeValue);
+        this.print(`created edge: node1:${node1} node2:${node2} edgeValue:${edgeValue}`);
     }
 
     /** Lays out nodes within a subgraph and determines the size of the subgraphs */
@@ -1300,7 +1274,7 @@ export class LayoutEngine {
         this.placeSubgraphV2(graph, firstNodeId, subgraphEdges);
     }
 
-    private placeSubgraphV2(graph:Graph, firstNodeId: string,
+    private placeSubgraphV2(graph: Graph, firstNodeId: string,
         subgraphEdges: Edge[]): void {
 
         // It is assumed that subgraph edges array is defined in the order
@@ -1749,6 +1723,8 @@ function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefint
 
 export function applyComponentParamsToSymbol(component: ClassComponent,
     symbol: SymbolGraphic): void {
+
+    const { widthProp = null, heightProp = null } = component;
         
     const newMap = new Map(component.parameters);
     if (!newMap.has('refdes')) {
@@ -1756,6 +1732,36 @@ export function applyComponentParamsToSymbol(component: ClassComponent,
     }
 
     symbol.drawing.variables = newMap;
+
+    if (component.parameters.has(ParamKeys.angle)) {
+        const value = (
+            component.parameters.get(ParamKeys.angle) as NumericValue
+        ).toNumber();
+
+        symbol.angle = value;
+    }
+
+    if (component.parameters.has(ParamKeys.flipX)) {
+        // either 1 or 0
+        symbol.flipX =
+            component.parameters.get(ParamKeys.flipX) as number;
+    }
+
+    if (component.parameters.has(ParamKeys.flipY)) {
+        // either 1 or 0
+        symbol.flipY =
+            component.parameters.get(ParamKeys.flipY) as number;
+    }
+    
+    if (symbol instanceof SymbolCustom) {
+        if (widthProp) {
+            symbol.bodyWidth = milsToMM(widthProp);
+        }
+        if (heightProp) {
+            symbol.bodyHeight = milsToMM(heightProp);
+        }
+    }
+
 }
 
 function calculateSymbolAngle(symbol: SymbolGraphic,

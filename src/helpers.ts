@@ -256,7 +256,19 @@ export async function renderScript(scriptData: string, outputPath: string | null
             if (error && error instanceof RuntimeExecutionError) {
                 errors.push(error);
             } else if (error && error instanceof RecognitionException) {
-                errors.push(new ParseSyntaxError(message, context.start!, context.stop!));
+                if (context !== null){
+                    errors.push(new ParseSyntaxError(message, context.start!, context.stop!));
+                } else {
+                    if (error.recognizer){
+                        const recognizer = error.recognizer;
+                        errors.push(new ParseSyntaxError(message, {
+                            line: recognizer.currentTokenStartLine,
+                            column: recognizer.currentTokenColumn
+                        }));
+                    } else {
+                        errors.push(new ParseSyntaxError(message));
+                    }
+                }
             } else {
                 errors.push(new ParseError(message, context.start!, context.stop!));
             }
@@ -354,7 +366,10 @@ export async function renderScript(scriptData: string, outputPath: string | null
                 console.log('Generated file', outputPath);
 
                 // Quit here, since SVG output is not needed
-                return null;
+                return {
+                    svgOutput: null, 
+                    errors,
+                }
             }
 
             const layoutEngine = new LayoutEngine();

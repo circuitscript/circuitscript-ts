@@ -71,11 +71,7 @@ export function generateKiCADNetList(netlist: NetListItem[])
                 ])
             }
         } else {
-            if (instance.typeProp !== ComponentTypes.net &&  
-                instance.typeProp !== ComponentTypes.graphic &&
-                instance.typeProp !== null){
-                console.log('Skipping', instance.instanceName);
-            }
+            // console.log('Skipping', instance.instanceName);
         }
     });
 
