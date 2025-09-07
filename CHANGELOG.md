@@ -1,6 +1,11 @@
 # Changelog
 
-## [v0.1.8](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.7...v0.1.8)
+## [v0.1.9](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.8...v0.1.9)
+
+[9cc5283](https://gitlab.com/circuitscript/circuitscript-ts/commit/9cc52837f800c7cd564223bdb138ed8fda48a573) added more validations for create component pins and arrange properties
+-  added initial warnings handling
+
+## [v0.1.8](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.7...v0.1.8) - 2025-09-05
 
 [2c6e527](https://gitlab.com/circuitscript/circuitscript-ts/commit/2c6e5274f66165691f63587f82df1fd4c6179a64) fixed bug caused by re-definition of edge
 -  added test to catch edge replacement issue
