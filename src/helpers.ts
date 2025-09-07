@@ -16,7 +16,7 @@ import { generateKiCADNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
-import { BaseError, generateDebugSequenceAction, ParseError, ParseSyntaxError, RenderError, resolveToNumericValue, RuntimeExecutionError, sequenceActionString, SimpleStopwatch } from "./utils.js";
+import { BaseError, generateDebugSequenceAction, ParseError, ParseSyntaxError, printWarnings, RenderError, resolveToNumericValue, RuntimeExecutionError, sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
 import { ParserRuleContext } from "antlr4ng";
 import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
@@ -296,6 +296,8 @@ export async function renderScript(scriptData: string, outputPath: string | null
     const { tree, parser,
         parserTimeTaken, 
         lexerTimeTaken } = await parseFileWithVisitor(visitor, scriptData);
+
+    printWarnings(visitor.getWarnings());
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);

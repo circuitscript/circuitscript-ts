@@ -73,6 +73,7 @@ import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
     WireAutoDirection } from './globals.js';
+import { ExecutionWarning } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -134,7 +135,7 @@ export class ParserVisitor extends BaseVisitor {
                     addSequence: true
                 });
             } catch (err){
-                throw new RuntimeExecutionError(err.message, ctx.start!, ctx.stop!);
+                throw new RuntimeExecutionError(err.message, ctx);
             }
         });
         
@@ -224,6 +225,31 @@ export class ParserVisitor extends BaseVisitor {
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
         const scope = this.getScope();
 
+        const definedPinIds:number[] = []; // Store pin IDs defined
+        const arrangedPinIds:number[] = []; //Store pin IDs defined in arrange props
+
+        const checkPinExistsAndNotDuplicated = (pinId: number, ctx:ParserRuleContext): void => {
+            if (definedPinIds.indexOf(pinId) === -1) {
+                this.warnings.push({
+                    message: `Invalid pin ${pinId}`, ctx
+                });
+            }
+
+            if (arrangedPinIds.indexOf(pinId) !== -1) {
+                this.warnings.push({
+                    message: `Pin ${pinId} specified more than once`,
+                    ctx,
+                });
+            }
+
+            arrangedPinIds.push(pinId);
+        }
+
+        // Either `arrange` or `display` can be specified, but not both.
+        let didDefineArrangeProp = false;
+        let didDefineDisplayProp = false;
+
+        // Perform validation of the properties first to catch parsing errors.
         scope.setOnPropertyHandler((path:PropertyTreeKey[], value: any, ctx: ParserRuleContext) => {
             // const pathText = path.map(item => item[1]);
 
@@ -240,9 +266,31 @@ export class ParserVisitor extends BaseVisitor {
                         this.validateNumeric(value, ctx);
                         break;
 
+                    case 'display':
+                        if (didDefineArrangeProp){
+                            throw new RuntimeExecutionError("arrange property has already been defined", ctx);
+                        }
+                        didDefineDisplayProp = true;
+                        break;
+                    case 'arrange':
+                        if (didDefineDisplayProp){
+                            throw new RuntimeExecutionError("display property already defined", ctx);
+                        }
+                        didDefineArrangeProp = true;
+                        break;
+
                     case 'pins':
                         if (!(value instanceof Map)){
                             this.validateNumeric(value, ctx);
+
+                            // If a number is defined for the pins property, then
+                            // it indicates a running sequence of pins from 1-n.
+                            // Populate the definedPinIds with this running
+                            // sequence.
+                            const numPins = (value as NumericValue).toNumber();
+                            for (let i = 0; i < numPins; i++) {
+                                definedPinIds.push(i + 1);
+                            }
                         }
                         break;
                     case 'copy':
@@ -252,7 +300,7 @@ export class ParserVisitor extends BaseVisitor {
                             this.validateBoolean(value, ctx);
                         } else {
                             // All other types
-                            throw new RuntimeExecutionError("Invalid value for 'copy' property", ctx.start!, ctx.end!);
+                            throw new RuntimeExecutionError("Invalid value for 'copy' property", ctx);
                         }
                         break;
                 }
@@ -261,20 +309,27 @@ export class ParserVisitor extends BaseVisitor {
                 if (keyName === 'arrange') {
                     const [sideKeyCtx, sideKeyName] = path[1] as [ParserRuleContext, string];
                     if (ValidPinSides.indexOf(sideKeyName) === -1) {
-                        throw new RuntimeExecutionError(`Invalid side ${sideKeyName} in arrange`, sideKeyCtx.start!, sideKeyCtx.stop!);
+                        throw new RuntimeExecutionError(`Invalid side ${sideKeyName} in arrange`, sideKeyCtx);
                     } else {
-                        if (path.length > 2 && path[2][0] === 'index'){
+                        if (path.length === 2 && value instanceof NumericValue){
+                            // Where only a single pin is defined in the arrange.<side> key,
+                            // then the only value will be a numeric value
+                            checkPinExistsAndNotDuplicated(value.toNumber(), ctx);
+
+                        } else if (path.length > 2 && path[2][0] === 'index'){
                             // Checking each element
                             if (Array.isArray(value)) {
                                 const goodBlank = value.length === 1 &&
                                     value[0] instanceof NumericValue;
                                 if (!goodBlank) {
-                                    throw new RuntimeExecutionError(`Invalid blank specifier`, ctx.start!, ctx.stop!);
+                                    throw new RuntimeExecutionError(`Invalid blank specifier`, ctx);
                                 }
                             } else {
                                 // Only allow numbers for now, next time will support ID names/strings
                                 if (!(value instanceof NumericValue)){
-                                    throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx.start!, ctx.stop!);
+                                    throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx);
+                                } else {
+                                    checkPinExistsAndNotDuplicated(value.toNumber(), ctx);
                                 }
                             }
                         }
@@ -294,10 +349,15 @@ export class ParserVisitor extends BaseVisitor {
                     }
                 } else if (keyName === 'pins'){
                     if (path.length === 2){
-                        if (value.length === 2){
+
+                        const idName = path[1][1];  // The property key token
+                        definedPinIds.push(idName);
+
+                        if(value.length === 2){
+                            // Pin type is defined as the first item 
                             const [pinType, ] = value;
                             if (pinType instanceof UndeclaredReference){
-                                throw new RuntimeExecutionError(`Invalid pin type: ${pinType.reference.name}`, ctx.start!, ctx.end!);
+                                throw new RuntimeExecutionError(`Invalid pin type: ${pinType.reference.name}`, ctx);
                             }
                         }
                     }
@@ -649,7 +709,7 @@ export class ParserVisitor extends BaseVisitor {
         const keyName = this.visitResult(ctxKey);
         const value = this.visitResult(ctxValue);
 
-        scope.triggerPropertyHandler(value, ctxValue);
+        scope.triggerPropertyHandler(this, value, ctxValue);
 
         this.getScope().exitContext();
         this.getScope().exitContext();
@@ -676,7 +736,7 @@ export class ParserVisitor extends BaseVisitor {
             value = ctx.data_expr().map((item, index) => {
                 this.getScope().enterContext(index);
                 const result = this.visitResult(item);
-                this.getScope().triggerPropertyHandler(result, item);
+                this.getScope().triggerPropertyHandler(this, result, item);
                 this.getScope().exitContext();
                 return result;
             });
@@ -1523,60 +1583,64 @@ export class ParserVisitor extends BaseVisitor {
         const pins: PinDefinition[] = [];
 
         if (pinData instanceof NumericValue) {
+            // Convert to a map
+            const tmpMap = new Map<number, NumericValue>();
             const lastPin = pinData.toNumber();
             for (let i = 0; i < lastPin; i++) {
                 const pinId = i + 1;
-                pins.push(
-                    new PinDefinition(pinId, PinIdType.Int, pinId.toString()),
-                );
+                tmpMap.set(pinId, numeric(pinId));
             }
-        } else if (pinData instanceof Map) {
-            for (const [pinId, pinDef] of pinData) {
-                let pinIdType = PinIdType.Int;
-                let pinType = PinTypes.Any;
-                let pinName: string | null = null;
-                let altPinNames: string[] = [];
 
-                if (typeof pinId === 'string') {
-                    pinIdType = PinIdType.Str;
-                }
+            pinData = tmpMap;
+        }
 
-                if (Array.isArray(pinDef)) {
-                    const firstValue = pinDef[0];
+        pinData = pinData ?? [];
 
-                    // Check if firstValue matches a pin type
-                    if (firstValue.type
-                        && firstValue.type === ReferenceTypes.pinType
-                        && this.pinTypes.indexOf(firstValue.value) !== -1) {
-                        // First value matches a pin type
-                        pinType = firstValue.value;
-                        pinName = pinDef[1];
+        for (const [pinId, pinDef] of pinData) {
+            let pinIdType = PinIdType.Int;
+            let pinType = PinTypes.Any;
+            let pinName: string | null = null;
+            let altPinNames: string[] = [];
 
-                        if (pinDef.length > 2) {
-                            altPinNames = pinDef.slice(2);
-                        }
-                    } else {
-                        pinName = pinDef[0];
-                        if (pinDef.length > 1) {
-                            altPinNames = pinDef.slice(1);
-                        }
+            if (typeof pinId === 'string') {
+                pinIdType = PinIdType.Str;
+            }
+
+            if (Array.isArray(pinDef)) {
+                const firstValue = pinDef[0];
+
+                // Check if firstValue matches a pin type
+                if (firstValue.type
+                    && firstValue.type === ReferenceTypes.pinType
+                    && this.pinTypes.indexOf(firstValue.value) !== -1) {
+                    // First value matches a pin type
+                    pinType = firstValue.value;
+                    pinName = pinDef[1];
+
+                    if (pinDef.length > 2) {
+                        altPinNames = pinDef.slice(2);
                     }
                 } else {
-                    pinName = pinDef;
+                    pinName = pinDef[0];
+                    if (pinDef.length > 1) {
+                        altPinNames = pinDef.slice(1);
+                    }
                 }
-
-                this.log('pins', pinId, pinIdType, pinName, pinType, altPinNames);
-
-                pins.push(
-                    new PinDefinition(
-                        pinId,
-                        pinIdType,
-                        pinName,
-                        pinType,
-                        altPinNames,
-                    ),
-                );
+            } else {
+                pinName = pinDef;
             }
+
+            this.log('pins', pinId, pinIdType, pinName, pinType, altPinNames);
+
+            pins.push(
+                new PinDefinition(
+                    pinId,
+                    pinIdType,
+                    pinName,
+                    pinType,
+                    altPinNames,
+                ),
+            );
         }
 
         return pins;
@@ -1894,6 +1958,10 @@ export class ParserVisitor extends BaseVisitor {
         });
 
         return properties;
+    }
+
+    getWarnings(): ExecutionWarning[] {
+        return this.warnings;
     }
 }
 

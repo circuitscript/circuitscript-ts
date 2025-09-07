@@ -339,7 +339,6 @@ export class SemanticTokensVisitor extends BaseVisitor {
     getTokens(){
         return this.semanticTokens;
     }
-
 }
 
 /**

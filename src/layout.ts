@@ -1657,65 +1657,56 @@ function getWireName(wireId: number): string {
 
 type RenderItem = RenderComponent | RenderWire | RenderText;
 
+/**
+ * Generates the pin layout definition when arrangeProp is present.
+ * @param component
+ * @returns 
+ */
 function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
     const pins = component.pins;
     const symbolPinDefinitions: SymbolPinDefintion[] = [];
     const existingPinIds = Array.from(pins.keys());
 
-    if (component.arrangeProps === null) {
-        // Automatically split pins
-        for (let i = 0; i < existingPinIds.length; i++) {
-            const pinPosition = Math.floor(i/2);
-            const pin = pins.get(existingPinIds[i])!;
+    const arrangeProps = component.arrangeProps ?? [];
+    const addedPins: number[] = [];
+    for (const [key, items] of arrangeProps) {
 
-            symbolPinDefinitions.push({
-                side: (i % 2 === 0) ? SymbolPinSide.Left : SymbolPinSide.Right,
-                pinId: existingPinIds[i],
-                text: pin.name,
-                position: pinPosition,
-                pinType: pin.pinType,
-            })
+        let useItems: number[];
+        if (!Array.isArray(items)) {
+            useItems = [items];
+        } else {
+            // Do not mutate original array
+            useItems = [...items];
         }
-    } else {
-        const addedPins: number[] = [];
-        for (const [key, items] of component.arrangeProps) {
 
-            let useItems : number[];
-            if (!Array.isArray(items)) {
-                useItems = [items];
-            } else {
-                // Do not mutate original array
-                useItems = [...items];
+        useItems.forEach(pinId => {
+            if (pinId instanceof NumericValue) {
+                const pinIdValue = (pinId as NumericValue).toNumber();
+
+                // Only use the pin if it exists!
+                if (existingPinIds.indexOf(pinIdValue) !== -1) {
+                    const pin = pins.get(pinIdValue)!;
+                    symbolPinDefinitions.push({
+                        side: key,
+                        pinId: pinIdValue,
+                        text: pin.name,
+                        position: pin.position,
+                        pinType: pin.pinType,
+                    });
+                    addedPins.push(pinIdValue);
+                }
             }
-
-            useItems.forEach(pinId => {
-                if (pinId instanceof NumericValue){
-                    const pinIdValue = (pinId as NumericValue).toNumber();
-
-                    // Only use the pin if it exists!
-                    if (existingPinIds.indexOf(pinIdValue) !== -1) {
-                        const pin = pins.get(pinIdValue)!;
-                        symbolPinDefinitions.push({
-                            side: key,
-                            pinId: pinIdValue,
-                            text: pin.name,
-                            position: pin.position,
-                            pinType: pin.pinType,
-                        });
-                        addedPins.push(pinIdValue);
-                    }
-                }                
-            });
-        }
-        
-        // Make sure all existing pins are added, otherwise throw an error
-        const unplacedPins: number[] = existingPinIds.filter(pinId => {
-            return addedPins.indexOf(pinId) === -1;
         });
+    }
 
-        if (unplacedPins.length > 0){
-            throw "'arrange' property is defined, but not all pins are specified: " + unplacedPins.join(",");
-        }
+    // Make sure all existing pins are added, otherwise throw an error
+    const unplacedPins: number[] = existingPinIds.filter(pinId => {
+        return addedPins.indexOf(pinId) === -1;
+    });
+
+    if (unplacedPins.length > 0) {
+        component._unplacedPins = unplacedPins;
+        console.warn("Warning: There are unplaced pins: " + unplacedPins);
     }
 
     return symbolPinDefinitions;
@@ -2249,7 +2240,11 @@ export function CalculatePinPositions(component: ClassComponent)
     const pins = component.pins;
 
     pins.forEach((value: PinDefinition, key: number) => {
-        pinPositionMapping.set(key, tmpSymbol.pinPosition(key));
+        // If the component pin is unplaced (not in arrange prop), then do
+        // not determine it's position.
+        if (component._unplacedPins.indexOf(key) === -1){
+            pinPositionMapping.set(key, tmpSymbol.pinPosition(key));
+        }
     });
 
     return pinPositionMapping;

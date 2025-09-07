@@ -56,11 +56,17 @@ export class ClassComponent {
      *  the currentComponent */
     _pointLinkComponent?: ClassComponent;
 
+    // Stores pin IDs of pins that are not defined in the
+    // arrange property of the component.
+    _unplacedPins:number[] = [];
 
     /** This determines how pins are arranged on the component/symbol. */
     arrangeProps: Map<string, NumericValue[]> | null = null;
 
-    /** Used to identify what graphic to draw for this symbol */
+    /** Used to identify what graphic to draw for this symbol. This will also
+     * include pin placement as well. If `display` is defined, then it will 
+     * overwrite `arrange`
+     */
     displayProp: SymbolDrawingCommands | null = null;
 
     /** User-defined width for the component */

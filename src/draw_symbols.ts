@@ -18,7 +18,7 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
     VerticalAlignProp} from "./geometry.js";
 import { Logger } from "./logger.js";
 import { PinTypes } from "./objects/PinTypes.js";
-import { roundValue, throwWithContext } from "./utils.js";
+import { roundValue, RuntimeExecutionError, throwWithContext } from "./utils.js";
 import { DeclaredReference, UndeclaredReference } from "./objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
@@ -147,6 +147,10 @@ export abstract class SymbolGraphic {
     // Returns the port position, relative to the symbol origin
     pinPosition(id: number): { x: NumericValue; y: NumericValue; angle: NumericValue; } {
         const pin = this.drawing.getPinPosition(id);
+
+        if (pin === null){
+            throw new RuntimeExecutionError(`Could not determine pin ${id} position`);
+        }
 
         // Allow pin position values to be rounded to 4 d.p
         const [x, y] = pin.start;

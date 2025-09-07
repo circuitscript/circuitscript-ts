@@ -13,6 +13,7 @@ import { NumericValue } from "./objects/ParamDefinition.js";
 import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope.js';
 import { UnitDimension } from './helpers.js';
 import { BlockTypes } from './globals.js';
+import { ExecutionWarning } from './utils.js';
 
 export class SimpleStopwatch {
     startTime: Date;
@@ -329,26 +330,31 @@ export class BaseError extends Error {
     endToken?: Token;
     filePath?: string;
 
-    constructor(message: string, startToken?: Token, endToken?: Token, filePath?: string) {
+    constructor(message: string, startTokenOrCtx?: Token | ParserRuleContext, endToken?: Token, filePath?: string) {
         super(message);
         this.message = message;
 
-        this.startToken = startToken;
-        this.endToken = endToken;
+        if (startTokenOrCtx instanceof ParserRuleContext) {
+            this.startToken = startTokenOrCtx.start;
+            this.endToken = startTokenOrCtx.stop;
+        } else {
+            this.startToken = startTokenOrCtx;
+            this.endToken = endToken;
+        }
+
         this.filePath = filePath;
     }
 
     toString(): string {
         const parts = [this.name];
-        if (this.startToken){
-            const {line, column} = this.startToken;
-            if (this.endToken && (this.endToken.line !== this.startToken.line || this.endToken.column !== this.startToken.column)) {
-                const endLine = this.endToken.line;
-                const endColumn = this.endToken.column + (this.endToken.stop - this.endToken.start);
-                parts.push(` at ${line}:${column}-${endLine}:${endColumn}`);
-            } else {
-                parts.push(` at ${line}:${column}`);
-            }
+
+        const linePosition = getLinePositionAsString({
+            start: this.startToken,
+            stop: this.endToken
+        });
+
+        if(linePosition !== null){
+            parts.push(linePosition);
         }
 
         parts.push(`: ${this.message}`);
@@ -356,6 +362,29 @@ export class BaseError extends Error {
     }
 }
 
+export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
+    if(ctx === null || ctx === undefined){
+        return null;
+    }
+    
+    const startToken = ctx.start;
+    const endToken = ctx.stop;
+
+    let result: string | null = null;
+
+    if (startToken) {
+        const { line, column } = startToken;
+        if (endToken && (endToken.line !== startToken.line || endToken.column !== startToken.column)) {
+            const endLine = endToken.line;
+            const endColumn = endToken.column + (endToken.stop - endToken.start);
+            result = ` at ${line}:${column}-${endLine}:${endColumn}`;
+        } else {
+            result = ` at ${line}:${column}`;
+        }
+    }
+
+    return result;
+}
 
 /** Errors that occur within the lexing of tokens */
 export class ParseSyntaxError extends BaseError {
@@ -388,5 +417,36 @@ export class RenderError extends Error {
         this.name = 'RenderError';
         this.stage = stage;
     }
+}
+
+export type ExecutionWarning = {
+    message: string;
+    fileName?: string;
+    ctx?: ParserRuleContext;
+};
+
+export function printWarnings(warnings: ExecutionWarning[]): void {
+    const warningMessages: string[] = [];
+
+    warnings.forEach(item => {
+        const { message } = item;
+
+        const linePosition = getLinePositionAsString(item.ctx);
+
+        const parts = [message];
+
+        if (linePosition !== null) {
+            parts.push(linePosition);
+        }
+
+        const finalMessage = parts.join('');
+        if (warningMessages.indexOf(finalMessage) === -1) {
+            warningMessages.push(finalMessage);
+        }
+    });
+
+    warningMessages.forEach(message => {
+        console.log(`Warning: ${message}`);
+    });
 }
 

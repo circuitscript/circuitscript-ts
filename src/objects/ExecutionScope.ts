@@ -13,6 +13,7 @@ import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { Property_key_exprContext } from '../antlr/CircuitScriptParser.js';
+import { BaseVisitor } from 'src/BaseVisitor.js';
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 
@@ -222,15 +223,16 @@ export class ExecutionScope {
         return this.contextStack.pop()!;
     }
 
-    findPropertyKeyTree(): PropertyTreeKey[] {
+    private findPropertyKeyTree(visitor: BaseVisitor): PropertyTreeKey[] {
         // Keep searching up the context stack to get the name
-        const keyNames = [];
-        
-        for(let i=this.contextStack.length-1; i>= 0;i--){
+        const keyNames: PropertyTreeKey[] = [];
+
+        for (let i = this.contextStack.length - 1; i >= 0; i--) {
             const ctx = this.contextStack[i];
-            if (ctx instanceof Property_key_exprContext){
-                keyNames.push([ctx, ctx.getText()]);
-            } else if (typeof ctx === 'number'){
+            if (ctx instanceof Property_key_exprContext) {
+                const result = visitor.visitResult(ctx);
+                keyNames.push([ctx, result]);
+            } else if (typeof ctx === 'number') {
                 keyNames.push(['index', ctx]);
             }
         }
@@ -246,9 +248,11 @@ export class ExecutionScope {
         return this.onPropertyHandler.pop()!;
     }
 
-    triggerPropertyHandler(value: any, valueCtx:ParserRuleContext): void {
+    triggerPropertyHandler(visitor: BaseVisitor, value: any, 
+        valueCtx:ParserRuleContext): void {
+        
         const lastHandler = this.onPropertyHandler[this.onPropertyHandler.length-1];
-        const propertyTree = this.findPropertyKeyTree();
+        const propertyTree = this.findPropertyKeyTree(visitor);
         lastHandler && lastHandler(propertyTree, value, valueCtx);
     }
 }

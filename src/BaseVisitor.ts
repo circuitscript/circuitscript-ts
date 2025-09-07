@@ -27,6 +27,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     ValueType } from "./objects/types.js";
 import { ParserRuleContext } from 'antlr4ng';
 import { DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals.js';
+import { ExecutionWarning } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
 import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
@@ -69,6 +70,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
     protected importedFiles:ImportFile[] = [];
 
+    protected warnings:ExecutionWarning[] = [];
+
     onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string, onErrorHandler: OnErrorHandler): 
         Promise<{hasError:boolean, hasParseError: boolean}> => {
         
@@ -89,7 +92,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             `${DoubleDelimiter1}.`,
             '/',
             0, 0, silent, 
-            this.logger, null);
+            this.logger, 
+            this.warnings,
+            null);
 
         const scope = this.startingContext.scope;
 
@@ -604,7 +609,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         // Until a better solution is found, only allow import statements
         // to be parsed at the start of the script.
         throw new RuntimeExecutionError(
-            "Cannot parse imports here", ctx.start!, ctx.stop!);
+            "Cannot parse imports here", ctx);
     }
 
     visitFunction_return_expr = (ctx: Function_return_exprContext): void => {
@@ -674,7 +679,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         return this.resultData.get(ctx);
     }
 
-    protected visitResult(ctx: ParserRuleContext): any {
+    visitResult(ctx: ParserRuleContext): any {
         this.visit(ctx);
         return this.getResult(ctx);
     }
@@ -734,7 +739,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             }
         } catch (err) {
             if (ctx != null) {
-                throw new RuntimeExecutionError("An error occurred while importing file", ctx.start!, ctx.stop!);
+                throw new RuntimeExecutionError("An error occurred while importing file", ctx);
             } else {
                 this.log('An error occurred while importing file:', err.message);
             }
@@ -751,7 +756,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
         }
 
         if (errorMessage !== null && ctx){
-            throw new RuntimeExecutionError(errorMessage, ctx.start!, ctx.end!);
+            throw new RuntimeExecutionError(errorMessage, ctx);
         }
 
         // Keep track of already imported files
@@ -934,6 +939,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
             this.getExecutor().scope.indentLevel + 1,
             currentExecutionContext.silent,
             currentExecutionContext.logger,
+            currentExecutionContext.warnings,
             parentContext
         );
 
@@ -971,7 +977,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | ReferenceTyp
 
         const result = validateFunction(value);
         if (!result) {
-            throw new RuntimeExecutionError(`Invalid ${expectedType}`, context.start!, context.stop!);
+            throw new RuntimeExecutionError(`Invalid ${expectedType}`, context);
         }
 
         return result;

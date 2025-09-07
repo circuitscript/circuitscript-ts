@@ -8,6 +8,7 @@
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalNames, NoNetText, ParamKeys, 
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
+import { ExecutionWarning } from "./utils.js";
 import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction } from './objects/ExecutionScope.js';
@@ -76,6 +77,8 @@ export class ExecutionContext {
     // wire that it is connected to.
     componentAngleFollowsWire = true;
 
+    warnings: ExecutionWarning[] = [];
+
     constructor(
         name: string,
         namespace: string,
@@ -84,6 +87,7 @@ export class ExecutionContext {
         indentLevel = 0,
         silent = false,
         logger: Logger,
+        warnings: ExecutionWarning[],
 
         parent: ExecutionContext
     ) {
@@ -109,6 +113,15 @@ export class ExecutionContext {
         );
 
         this.parentContext = parent;
+        this.warnings = warnings;
+    }
+
+    logWarning(message: string, context?: ParserRuleContext, fileName?: string): void {
+        this.warnings.push({
+            message, 
+            ctx: context,
+            fileName,
+        })
     }
 
     log(...params: any[]): void {
@@ -267,7 +280,6 @@ export class ExecutionContext {
             component.pins.set(pin.id, pin);
         });
 
-        component.arrangeProps = props.arrange ?? null;
         component.displayProp = props.display ?? null;
         component.widthProp = props.width ?? null;
         component.heightProp = props.height ?? null;
@@ -283,6 +295,45 @@ export class ExecutionContext {
             }
         }
 
+        if (props.display === null && props.arrange === null) {
+            // If display is not defined and arrange is not defined, then
+            // automatically populate the arrange prop with a predefined pin
+            // arrangement.
+
+            const tmpArrangeLeft: NumericValue[] = [];
+            const tmpArrangeRight: NumericValue[] = [];
+
+            pins.forEach((pin, index) => {
+                const useArray = (index % 2 === 0) ? tmpArrangeLeft : tmpArrangeRight;
+                useArray.push(numeric(pin.id));
+            });
+
+            const arrangeProp = new Map<string, NumericValue[]>([
+                [SymbolPinSide.Left, tmpArrangeLeft],
+                [SymbolPinSide.Right, tmpArrangeRight]
+            ]);
+
+            props.arrange = arrangeProp;
+        }
+
+        // Remove duplicates from component.arrangeProps
+        if (props.arrange !== null){
+            component.arrangeProps = this.removeArrangePropDuplicates(props.arrange);
+            const arrangePropPins = this.getArrangePropPins(component.arrangeProps).map(item => {
+                return item.toNumber();
+            });
+
+            pins.forEach(pin => {
+                if (arrangePropPins.indexOf(pin.id) === -1){
+                    // Pin not found in the arrange props, show a warning
+                    this.logWarning(`Pin ${pin.id} is not specified in arrange property`);
+                }
+            });
+            
+        } else {
+            component.arrangeProps = null;
+        }
+        
         component.angleProp = useAngle ?? 0;
         component.followWireOrientationProp = props.followWireOrientation;
 
@@ -347,6 +398,73 @@ export class ExecutionContext {
         );
 
         return component;
+    }
+
+    private removeArrangePropDuplicates(arrangeProp: Map<string, NumericValue[]>): Map<string, NumericValue[]> {
+        const sides = [
+            SymbolPinSide.Left,
+            SymbolPinSide.Right,
+            SymbolPinSide.Top,
+            SymbolPinSide.Bottom
+        ];
+
+        const result = new Map();
+        const seenIds:number[] = [];
+
+        sides.forEach(side => {
+            let items = arrangeProp.get(side) ?? [];
+
+            // If there is only a single pin specified, then it will need
+            // to be wrapped in an array.
+            if (!Array.isArray(items)){
+                items = [items];
+            }
+
+            const uniqueItems: NumericValue[] = [];
+
+            items.forEach(item => {
+                // Only if numeric value, then check for duplicates
+                if (item instanceof NumericValue) {
+                    if (seenIds.indexOf(item.toNumber()) === -1) {
+                        seenIds.push(item.toNumber());
+                        uniqueItems.push(item);
+                    } else {
+                        this.logWarning(`Pin ${item.toNumber()} specified more than once in arrange property`);
+                    }
+                } else {
+                    // Otherwise if not numeric value, then probably
+                    // an array to indicate the blank values
+                    uniqueItems.push(item);
+                }
+            });
+
+            result.set(side, uniqueItems);
+        });
+
+        return result;
+    }
+
+    private getArrangePropPins(arrangeProps: Map<string, NumericValue[]>): NumericValue[] {
+        const pins: NumericValue[] = [];
+        const sides = [
+            SymbolPinSide.Left,
+            SymbolPinSide.Right,
+            SymbolPinSide.Top,
+            SymbolPinSide.Bottom
+        ];
+
+        sides.forEach(side => {
+            const items = arrangeProps.get(side);
+            if (items) {
+                items.forEach(item => {
+                    if (item instanceof NumericValue){
+                        pins.push(item);
+                    }
+                });
+            }
+        });
+
+        return pins;
     }
 
     printPoint(extra = ''): void {
