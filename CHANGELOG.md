@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.9](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.8...v0.1.9)
+## [v0.1.10](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.9...v0.1.10)
+
+[edd9e28](https://gitlab.com/circuitscript/circuitscript-ts/commit/edd9e2880781971b594fd20357f6a02a7feeaf37) added arraySet method
+
+## [v0.1.9](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.8...v0.1.9) - 2025-09-07
 
 [9cc5283](https://gitlab.com/circuitscript/circuitscript-ts/commit/9cc52837f800c7cd564223bdb138ed8fda48a573) added more validations for create component pins and arrange properties
 -  added initial warnings handling
