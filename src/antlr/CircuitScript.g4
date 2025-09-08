@@ -234,7 +234,7 @@ wire_expr: Wire wire_atom_expr*;
 
 array_expr: '[' (data_expr (',' data_expr)*)* ']';
 
-point_expr: Point ID;
+point_expr: Point (ID | data_expr);
 import_expr: Import ID;
 
 frame_expr: (Frame | Sheet) ':' expressions_block;

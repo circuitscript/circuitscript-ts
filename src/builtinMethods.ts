@@ -12,6 +12,7 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['len', objectLength],
     ['arrayPush', arrayPush],
     ['arrayGet', arrayGet],
+    ['arraySet', arraySet],
     ['print', null],
 ];
 
@@ -126,6 +127,22 @@ function arrayGet(arrayObject: unknown[], index: number | NumericValue): any {
     }
 
     return arrayObject[useValue];
+}
+
+function arraySet(arrayObject:unknown[], index: number|NumericValue, setValue: any): any {
+    if (!Array.isArray(arrayObject)) {
+        throw "Invalid array object";
+    }
+
+    let useValue: number;
+    if (index instanceof NumericValue){
+        useValue = index.toNumber();
+    } else {
+        useValue = index;
+    }
+
+    arrayObject[useValue] = setValue;
+    return arrayObject;
 }
 
 function getPositionParams(params: CallableParameter[]): unknown[] {

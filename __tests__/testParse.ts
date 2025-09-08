@@ -23,7 +23,8 @@ import {
     inlineScript51,
     inlineScript52,
     inlineScript53,
-    inlineScriptTests
+    inlineScriptTests,
+    inlineScript55
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -352,6 +353,10 @@ print(---b)
         }
 
         expect(errorMessage).toEqual("Wire auto length failed. Please specify a fixed wire length.");
+    });
+
+    test('test builtin methods', async() => {
+        await expectInlineScriptTest('test builtin methods', inlineScript55);
     });
 });
 

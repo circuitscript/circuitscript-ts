@@ -1348,8 +1348,23 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitPoint_expr = (ctx: Point_exprContext): ComponentPin => {
+        // Point can be defined either with an ID or a string.
         const ID = ctx.ID();
-        return this.getExecutor().addPoint(ID.getText());
+        const ctxData = ctx.data_expr();
+
+        let pointValue: string;
+        if (ctxData){
+            const resultValue = this.visitResult(ctxData);
+            if (typeof resultValue === 'string'){
+                pointValue = resultValue;
+            } else {
+                throw new RuntimeExecutionError('Invalid value for point');
+            }
+        } else if (ID){
+            pointValue = ID.getText();
+        }
+
+        return this.getExecutor().addPoint(pointValue);
     }
 
     visitProperty_set_expr = (ctx: Property_set_exprContext): void => {
