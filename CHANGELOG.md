@@ -1,6 +1,13 @@
 # Changelog
 
-## [v0.1.10](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.9...v0.1.10)
+## [v0.1.11](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.10...v0.1.11)
+
+[0b42fe6](https://gitlab.com/circuitscript/circuitscript-ts/commit/0b42fe6872eb8acce269815537984131cc4dfb97) added data expression parsing for pin selection
+-  updated circle rendering
+-  added tests
+-  fixed validation and semantic parsing language server
+
+## [v0.1.10](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.9...v0.1.10) - 2025-09-08
 
 [edd9e28](https://gitlab.com/circuitscript/circuitscript-ts/commit/edd9e2880781971b594fd20357f6a02a7feeaf37) added arraySet method
 
