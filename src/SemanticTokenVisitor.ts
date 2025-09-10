@@ -14,7 +14,8 @@ import { Function_def_exprContext, Create_component_exprContext,
     Import_exprContext,
     Function_args_exprContext,
     Function_call_exprContext,
-    GraphicCommandExprContext} from "./antlr/CircuitScriptParser.js";
+    GraphicCommandExprContext,
+    For_exprContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { buildInMethodNamesList } from "./builtinMethods.js";
@@ -261,6 +262,12 @@ export class SemanticTokensVisitor extends BaseVisitor {
         this.addSemanticToken(ctx.ID(), [], 'namespace');
     }
 
+    visitFor_expr = (ctx: For_exprContext): void => {
+        ctx.ID().forEach(item => {
+            this.addSemanticToken(item, [], 'variable');
+        });
+    }
+
     //
     // Token Processing Methods
     //
@@ -433,7 +440,7 @@ const languageKeywords = [
     'break', 'branch', 'create', 'component',
     'graphic', 'wire', 'pin', 'add', 'at', 'to',
     'point', 'join', 'parallel', 'return', 'def', 'import',
-    'true', 'false', 'nc', 'sheet', 'frame', 'if', 'for',
+    'true', 'false', 'nc', 'sheet', 'frame', 'if', 'else', 'for', 'in',
 ];
 
 /** Circuit graph construction operators for specialized highlighting */

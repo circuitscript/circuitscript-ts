@@ -1,0 +1,24 @@
+# Checks that text and number expressions works for pin selection
+import lib
+
+v3v3 = supply("3V3")
+gnd = dgnd()
+
+tmp = create component:
+    pins:
+        1: "A1"
+        2: "A2"
+        3: "A3"
+        4: "A4"
+        5: "A5"
+
+for i in [1, 3, 5]:
+    at tmp pin "A" + i
+    wire left 300
+    add label("SIG_" + i)
+
+for i in [2, 4]:
+    at tmp pin ("A" + i)
+    wire right 200
+    add label("SIG_" + i)
+    wire right 200

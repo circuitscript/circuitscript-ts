@@ -2,7 +2,8 @@ import { TerminalNode, Token } from "antlr4ng";
 import { Import_exprContext, Assignment_exprContext, Atom_exprContext, 
     Function_call_exprContext, ValueAtomExprContext, UnaryOperatorExprContext, 
     MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext, 
-    DataExprContext, Function_def_exprContext } from "src/antlr/CircuitScriptParser";
+    DataExprContext, Function_def_exprContext, 
+    For_exprContext} from "src/antlr/CircuitScriptParser";
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
@@ -429,6 +430,12 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         // Restore previous execution context
         this.executionStack.pop();
     };
+
+    visitFor_expr = (ctx: For_exprContext): void => {
+        ctx.ID().forEach(item => {
+            this.addSymbolVariable(item.getSymbol(), item.getText(), null);
+        });
+    }
 
     //
     // Public API Methods

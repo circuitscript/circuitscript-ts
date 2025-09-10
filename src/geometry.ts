@@ -404,8 +404,6 @@ export class Geometry {
         }
     }
 
-    static FullCircleRadians = 2 * Math.PI;
-
     static featuresToPath(items: Feature[], flipX: number, flipY: number): 
         { path: string, isClosedPolygon: boolean } {
 
@@ -425,24 +423,20 @@ export class Geometry {
                 const y = item.center.y;
                 const radius = item.r as number;
 
-                let useEndAngle = item.endAngle;
                 let extraEnd = '';
-                if (item.startAngle === 0 && item.endAngle === Geometry.FullCircleRadians){
-                    // detect as a circle and close the polygon
-                    useEndAngle = 359.9999 * Math.PI/ 180;
-                    isClosedPolygon = true;
-                    extraEnd = ' Z'; // close the circle
-                }
+
+                const { startAngle: useStartAngle,
+                    endAngle: useEndAngle } = item;
 
                 // Assume angle is clockwise for now
-                const startPoint = getArcPointRadians(x, y, radius, 
-                    item.startAngle);
-                
+                const startPoint = getArcPointRadians(x, y, radius,
+                    useStartAngle);
+
                 const endPoint = getArcPointRadians(x, y, radius,
                     useEndAngle);
 
                 let largeArcSweepFlag = 0;
-                if (useEndAngle - item.startAngle > Math.PI) {
+                if (useEndAngle - useStartAngle > Math.PI) {
                     largeArcSweepFlag = 1;
                 }
 

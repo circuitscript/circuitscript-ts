@@ -94,14 +94,15 @@ export class ParserVisitor extends BaseVisitor {
     visitPin_select_expr = (ctx: Pin_select_exprContext): void => {
         let value: PinId | null = null;
 
-        const ctxIntegerValue = ctx.INTEGER_VALUE();
-        const ctxStringValue = ctx.STRING_VALUE();
+        const ctxData = ctx.data_expr();
+        const result = this.visitResult(ctxData);
 
-        if (ctxIntegerValue) {
-            value = Number(ctxIntegerValue.getText());
-
-        } else if (ctxStringValue) {
-            value = this.prepareStringValue(ctxStringValue.getText());
+        if (result instanceof NumericValue){
+            value = result.toNumber();
+        } else if (typeof result === 'string'){
+            value = result;
+        } else {
+            throw new RuntimeExecutionError("Invalid value for pin", ctx);
         }
 
         this.setResult(ctx, value);

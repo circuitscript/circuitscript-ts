@@ -615,8 +615,11 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                 case PlaceHolderCommands.circle:
                     // circle params: center x, center y, radius
+                    // Circle consists of drawing two arcs of 180 degrees each
                     // @ts-ignore
-                    drawing.addArc(...positionParams, numeric(0), numeric(360));
+                    drawing.addArc(...positionParams, numeric(0), numeric(180));
+                    // @ts-ignore
+                    drawing.addArc(...positionParams, numeric(180), numeric(360));
                     break;
 
                 case PlaceHolderCommands.triangle:

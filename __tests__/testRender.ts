@@ -73,7 +73,12 @@ describe('Render tests', () => {
         ['complex wire merging and intersections', 'script32.cst'],
         ['maintain current component through multiple branch levels', 'script33.cst'],
 
-        ['node1--node2 and node2--node1 should not be the same', 'script34.cst']
+        ['node1--node2 and node2--node1 should not be the same', 'script34.cst'],
+
+        ['data expression parsing in pin selection', 'script36.cst'],
+        ['rendering circle in symbol', 'script37.cst']
+        // ['arrange prop with repeated pins and missing pins', 'script35.cst']
+
         
     ])('render - %s (%s)', async (title, scriptPath) => {
         const sheetFrames = await renderCommon(scriptPath);

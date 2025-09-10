@@ -733,21 +733,13 @@ export class CircuitScriptParser extends antlr.Parser {
     public pin_select_expr(): Pin_select_exprContext {
         let localContext = new Pin_select_exprContext(this.context, this.state);
         this.enterRule(localContext, 14, CircuitScriptParser.RULE_pin_select_expr);
-        let _la: number;
         try {
             this.enterOuterAlt(localContext, 1);
             {
             this.state = 202;
             this.match(CircuitScriptParser.Pin);
             this.state = 203;
-            _la = this.tokenStream.LA(1);
-            if(!(_la === 57 || _la === 60)) {
-            this.errorHandler.recoverInline(this);
-            }
-            else {
-                this.errorHandler.reportMatch(this);
-                this.consume();
-            }
+            this.data_expr(0);
             }
         }
         catch (re) {
@@ -3735,7 +3727,7 @@ export class CircuitScriptParser extends antlr.Parser {
         191,1,0,0,0,193,194,1,0,0,0,194,192,1,0,0,0,194,195,1,0,0,0,195,
         196,1,0,0,0,196,197,5,67,0,0,197,11,1,0,0,0,198,199,7,1,0,0,199,
         200,5,1,0,0,200,201,3,68,34,0,201,13,1,0,0,0,202,203,5,15,0,0,203,
-        204,7,2,0,0,204,15,1,0,0,0,205,206,5,56,0,0,206,209,5,1,0,0,207,
+        204,3,62,31,0,204,15,1,0,0,0,205,206,5,56,0,0,206,209,5,1,0,0,207,
         210,3,68,34,0,208,210,5,56,0,0,209,207,1,0,0,0,209,208,1,0,0,0,210,
         17,1,0,0,0,211,214,3,62,31,0,212,214,3,50,25,0,213,211,1,0,0,0,213,
         212,1,0,0,0,214,218,1,0,0,0,215,217,3,16,8,0,216,215,1,0,0,0,217,
@@ -4207,11 +4199,8 @@ export class Pin_select_exprContext extends antlr.ParserRuleContext {
     public Pin(): antlr.TerminalNode {
         return this.getToken(CircuitScriptParser.Pin, 0)!;
     }
-    public INTEGER_VALUE(): antlr.TerminalNode | null {
-        return this.getToken(CircuitScriptParser.INTEGER_VALUE, 0);
-    }
-    public STRING_VALUE(): antlr.TerminalNode | null {
-        return this.getToken(CircuitScriptParser.STRING_VALUE, 0);
+    public data_expr(): Data_exprContext {
+        return this.getRuleContext(0, Data_exprContext)!;
     }
     public override get ruleIndex(): number {
         return CircuitScriptParser.RULE_pin_select_expr;

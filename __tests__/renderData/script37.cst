@@ -1,0 +1,28 @@
+# Test that circle render is done properly
+import lib
+
+def push_button():
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            hpin: 1, 150, 0, -90
+            hpin: 2, -150, 0, 90
+            circle: 50, 0, 10
+            circle: -50, 0, 10
+
+            line: 60, -30, -60 , -30
+            vline: 0, -30, -50
+
+v3v = supply("3V")
+
+at v3v
+wire down 100
+branch:
+    wire left 100
+    add push_button()
+branch:
+    wire down 100
+    add push_button()
+branch:
+    wire right 100
+    add push_button()

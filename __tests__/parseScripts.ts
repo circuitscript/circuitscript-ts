@@ -465,7 +465,6 @@ print(arrayGet(tmp, 1))
 print(len(tmp))
 `, ['[1, 2, 3]', '3', '1', '100', '3']);
 
-
 const scriptPath = '__tests__/parseData';
 
 export const inlineScriptTests = [

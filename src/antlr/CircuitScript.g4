@@ -106,7 +106,7 @@ property_set_expr2:
 	atom_expr ':' NEWLINE INDENT (NEWLINE | assignment_expr2)+ DEDENT;
 assignment_expr2: (ID | INTEGER_VALUE) ':' value_expr;
 
-pin_select_expr: Pin (INTEGER_VALUE | STRING_VALUE);
+pin_select_expr: Pin data_expr;
 component_modifier_expr: ID ':' (value_expr | ID);
 
 data_expr_with_assignment: (data_expr | assignment_expr) component_modifier_expr* pin_select_expr?;
