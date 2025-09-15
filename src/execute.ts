@@ -923,8 +923,11 @@ export class ExecutionContext {
                 });
 
             } else {
-                const isVariable = context.scope.variables.has(idName);
-                const isComponentInstance = context.scope.instances.has(idName);
+                let isVariable = context.scope.variables.has(idName);
+
+                // TODO: idName will not resolve due to different naming
+                // format of instances
+                let isComponentInstance = context.scope.instances.has(idName);
 
                 if (isVariable || isComponentInstance) {
                     const scopeList = isVariable ? context.scope.variables
@@ -936,6 +939,13 @@ export class ExecutionContext {
                     if (trailers.length > 0) {
                         parentValue = useValue;
                         const trailersPath = trailers.join(".");
+
+                        // TODO: after merging both variables and instances, then 
+                        // this can be removed
+                        if (!isComponentInstance && (parentValue instanceof ClassComponent)){
+                            isComponentInstance = true;
+                            isVariable = false;
+                        }
 
                         if (isVariable){
                             useValue = parentValue[trailersPath];

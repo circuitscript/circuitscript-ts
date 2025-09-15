@@ -465,6 +465,22 @@ print(arrayGet(tmp, 1))
 print(len(tmp))
 `, ['[1, 2, 3]', '3', '1', '100', '3']);
 
+export const inlineScript56 = new ScriptTest(`
+# Test setting and getting component parameters
+tmp = create component:
+    pins: 2
+
+tmp.color = "red"
+print(tmp.color)
+
+tmp.prop123 = "hello"
+print(tmp.prop123)
+
+# test undefined parameter
+print(tmp.hello)
+
+`, ['red', 'hello', 'undefined']);
+
 const scriptPath = '__tests__/parseData';
 
 export const inlineScriptTests = [

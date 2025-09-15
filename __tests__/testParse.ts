@@ -1,5 +1,6 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
+import { A } from '@svgdotjs/svg.js';
 import { LayoutEngine } from '../src/layout.js';
 import { ComponentPinNet } from '../src/objects/types.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
@@ -24,7 +25,8 @@ import {
     inlineScript52,
     inlineScript53,
     inlineScriptTests,
-    inlineScript55
+    inlineScript55,
+    inlineScript56
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -357,6 +359,10 @@ print(---b)
 
     test('test builtin methods', async() => {
         await expectInlineScriptTest('test builtin methods', inlineScript55);
+    });
+
+    test('set component parameters', async () => {
+        await expectInlineScriptTest('test component parameters', inlineScript56);
     });
 });
 
