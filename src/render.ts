@@ -14,7 +14,8 @@ import {
 } from "./layout.js";
 import { applyFontsToSVG } from './sizing.js';
 import {
-    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, ParamKeys, RenderFlags, defaultGridSizeUnits,
+    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, MilsToMM, NetGraphicsParams, ParamKeys, 
+    RenderFlags, defaultGridSizeUnits,
     defaultPageSpacingMM,
     defaultWireLineWidth, fontDisplayScale,
     junctionSize
@@ -292,24 +293,67 @@ function generateSVGChild(canvas: Svg | G,
         });
     }
 
+    // Create group first so that the highlight graphics are below the wires.
+    const mergedWireHighlightGroup = canvas.group();
+
     const mergedWireGroup = canvas.group();
 
     // draw the merged wires
     mergedWires.forEach(tmpItem => {
-        const { segments, intersectPoints } = tmpItem;
+        const { segments, intersectPoints, net = null } = tmpItem;
+
+        let useJunctionColor = ColorScheme.JunctionColor;
+        let useColor = ColorScheme.WireColor;
+        let useLineWidth = defaultWireLineWidth;
+        let displayHighlight = false;
+        let displayHighlightColor: string | null = null;
+
+        if (net !== null) {
+            useColor = net.color ?? ColorScheme.WireColor;
+            useJunctionColor = net.color ?? ColorScheme.JunctionColor;
+            useLineWidth = net.lineWidth ?? defaultWireLineWidth;
+
+            if (net.highlight !== null) {
+                displayHighlight = true;
+                displayHighlightColor = net.highlight ?? null;
+            }
+        }
+
+        const pathItems:(string|number)[] = [];
+        const highlightExtraSize = 5 * MilsToMM;
 
         segments.forEach(segment => {
             const pt1 = segment[0];
             const pt2 = segment[1];
-            mergedWireGroup.line([pt1, pt2])
-                .stroke({ 
-                    width: defaultWireLineWidth, 
-                    color: ColorScheme.WireColor, 
-                    linecap: 'square' })
-                .fill('none');
+
+            pathItems.push(...[
+                'M', pt1[0], pt1[1],
+                'L', pt2[0], pt2[1]
+            ]);
         });
 
+        if (displayHighlight) {
+            mergedWireHighlightGroup.path(pathItems)
+                .stroke({
+                    width: useLineWidth + highlightExtraSize,
+                    color: displayHighlightColor,
+                    opacity: 0.3,
+                    linecap: 'square'
+                })
+                .fill('none');
+        }
+
+        mergedWireGroup.path(pathItems)
+            .stroke({ 
+                width: useLineWidth, 
+                color: useColor, 
+                linecap: 'square' })
+            .fill('none');
+
         const halfJunctionSize = junctionSize.half();
+
+        const highlightJunctionSize = numeric(junctionSize.toNumber() + highlightExtraSize);
+        const tmpHighlightExtraSize = highlightJunctionSize.half();
 
         intersectPoints.forEach(point => {
             const [x, y, ] = point;
@@ -317,10 +361,21 @@ function generateSVGChild(canvas: Svg | G,
             const translateX = numeric(x).sub(halfJunctionSize);
             const translateY = numeric(y).sub(halfJunctionSize);
 
+            if (displayHighlight && displayHighlightColor !== null){
+                const tmpTranslateX = numeric(x).sub(tmpHighlightExtraSize);
+                const tmpTranslateY = numeric(y).sub(tmpHighlightExtraSize);
+
+                mergedWireHighlightGroup.circle(highlightJunctionSize.toNumber())
+                    .translate(tmpTranslateX.toNumber(), tmpTranslateY.toNumber())
+                    .fill(displayHighlightColor)
+                    .opacity(0.3)
+                    .stroke('none');
+            }
+
             mergedWireGroup.circle(junctionSize.toNumber())
-                            .translate(translateX.toNumber(), translateY.toNumber())
-                            .fill(ColorScheme.JunctionColor)
-                            .stroke('none');
+                .translate(translateX.toNumber(), translateY.toNumber())
+                .fill(useJunctionColor)
+                .stroke('none');
                             
             // mergedWireGroup.text(count.toString())
             //                 .translate(x + 2, y + 2)

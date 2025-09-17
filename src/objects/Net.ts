@@ -21,6 +21,11 @@ export class Net {
 
     type: any;
 
+    // Store parameters like net color, wire thickness, highlight, etc.
+    params: Map<string, any> = new Map();
+
+    // private randomId: string;
+
     constructor(namespace: string, name: string, priority = 0, type: any = null) {
         if (namespace.indexOf(' ') !== -1){
             throw "Invalid net namespace provided";
@@ -37,6 +42,8 @@ export class Net {
         this.type = type;
 
         this.baseName = name;
+
+        // this.randomId = Math.random().toString();
     }
 
     toString(): string {

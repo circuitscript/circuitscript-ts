@@ -10,6 +10,8 @@ import { ExecutionContext } from '../execute.js';
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
 import { NumericValue, PercentageValue } from './ParamDefinition.js';
+import { ReferenceTypes } from '../globals.js';
+import { RuntimeExecutionError } from '../utils.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -56,11 +58,45 @@ export type FunctionDefinedParameter =
     [name: string, token: Token, defaultValue: ValueType] 
     | [name: string, token: Token];
 
+export class AnyReference {
+    found = false;
+    name?: string;
+
+    trailers: string[] = [];
+
+    type?: ReferenceTypes
+    value?: any;
+
+    parentValue?: any; // If trailers are available, then this holds the parent
+    // object of the trailers
+
+    constructor(refType: {
+        found: boolean;
+        name?: string;
+        trailers?: string[];
+        type?: ReferenceTypes;
+        value?: any;
+        parentValue?: any;
+    }) {
+
+        if (refType.value instanceof AnyReference){
+            throw new RuntimeExecutionError("Nested reference types!");
+        }
+
+        this.found = refType.found;
+        this.name = refType.name;
+        this.trailers = refType.trailers;
+        this.type = refType.type;
+        this.value = refType.value;
+        this.parentValue = refType.parentValue;
+    }
+}
+
 
 export class UndeclaredReference {
-    reference: ReferenceType;
+    reference: AnyReference;
 
-    constructor(reference: ReferenceType) {
+    constructor(reference: AnyReference) {
         this.reference = reference;
     }
 
@@ -82,25 +118,7 @@ export class UndeclaredReference {
     }
 }
 
-export class DeclaredReference {
-
-    found: boolean;
-    name?: string;
-    trailers?: string[];
-    type?: 'value' | 'instance' | 'variable';
-    value?: any;
-
-    parentValue?: any; // If trailers are available, then this holds the parent
-                       // object of the trailers
-
-    constructor(refType: ReferenceType) {
-        this.found = refType.found;
-        this.name = refType.name;
-        this.trailers = refType.trailers;
-        this.type = refType.type;
-        this.value = refType.value;
-        this.parentValue = refType.parentValue;
-    }
+export class DeclaredReference extends AnyReference {
 
     toString(): string {        
         return `[DeclaredReference name: ${this.name} trailers:${this.trailers} found: ${this.found}]`;
@@ -136,16 +154,6 @@ export class DeclaredReference {
         throw 'Could not find string value: ' + this;
     }
 }
-
-export type ReferenceType =
-    {
-        found: boolean,
-        name?: string,
-        trailers?: string[],
-        type?: 'value' | 'instance' | 'variable',
-        value?: any,
-        parentValue?: any,
-    };
 
 export enum ParseSymbolType {
     Variable = 'variable',

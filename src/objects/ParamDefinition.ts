@@ -7,6 +7,7 @@
 
 import {
     getNumberExponential, getNumberExponentialText,
+    isReference,
     resolveToNumericValue
 } from "../utils.js";
 import { Big } from 'big.js';
@@ -187,6 +188,8 @@ export class NumberOperator {
     prepare(value: number | NumberOperatorType): NumberOperatorType {
         if (typeof value === 'number') {
             return new WrappedNumber(value);
+        } else if (isReference(value)){
+            return value.value;
         } else {
             return value;
         }

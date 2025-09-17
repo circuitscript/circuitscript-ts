@@ -1,0 +1,45 @@
+# Test net graphical properties (color, lineWidth, highlight)
+# Multiple references to the same net name should modify the same net properties
+
+import lib
+v3v = supply("3V")
+v5 = supply("5V")
+
+gnd = dgnd()
+
+v3v.color = "blue"
+v3v.lineWidth = 5
+
+at v3v
+wire down 100
+branch:
+    wire right 300 down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+wire down 100
+add cap(100n)
+wire down 100
+to gnd
+
+at v3v
+wire down 100
+add res(1k)
+wire down 100
+to gnd
+
+# try to reassign
+v3v.color = "red"
+v3v.lineWidth = 1
+
+# use another supply instance with same net name
+another = supply("3V")
+another.color = "purple"
+another.lineWidth = 10
+another.highlight = "red"
+
+at v5
+wire down 100
+add cap(20n)
+wire down 100
+to gnd

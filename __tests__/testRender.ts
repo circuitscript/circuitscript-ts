@@ -76,7 +76,9 @@ describe('Render tests', () => {
         ['node1--node2 and node2--node1 should not be the same', 'script34.cst'],
 
         ['data expression parsing in pin selection', 'script36.cst'],
-        ['rendering circle in symbol', 'script37.cst']
+        ['rendering circle in symbol', 'script37.cst'],
+        ['net graphical properties, multi net component references same net', 'script38.cst']
+
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 
         
@@ -149,6 +151,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('4565b2b652a7dd7275a467daa5680bd6');
+        expect(result).toEqual('ba5fea5cee12a8d6edd2a995fd358ba3');
     });
 });

@@ -141,7 +141,7 @@ at_block_pin_expression_complex: expressions_block;
 break_keyword: Break;
 continue_keyword: Continue;
 
-assignment_expr:            atom_expr '=' data_expr;
+assignment_expr:            (atom_expr | function_call_expr) '=' data_expr;
 operator_assignment_expr:   atom_expr (AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;
 
 keyword_assignment_expr: ID '=' data_expr;

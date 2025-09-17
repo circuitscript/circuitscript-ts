@@ -3,7 +3,7 @@ import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 import { CallableParameter } from "./objects/types.js";
-import { resolveToNumericValue } from "./utils.js";
+import { prepareValue, resolveToNumericValue } from "./utils.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -21,7 +21,10 @@ export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0
 export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisitor): void {
     context.createFunction('print', (params) => {
         const args = getPositionParams(params);
-        const items = args.map(item => toString(item));
+        const items = args.map(item => {
+            const value = prepareValue(item);
+            return toString(value);
+        });
 
         if (visitor.printToConsole) {
             console.log('::', ...items);
@@ -94,6 +97,8 @@ function toMils(value: number | NumericValue): NumericValue {
 }
 
 function objectLength(obj: any[] | any): NumericValue {
+    obj = prepareValue(obj);
+
     if (Array.isArray(obj)){
         return numeric(obj.length);
     } else {

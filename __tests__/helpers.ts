@@ -142,7 +142,12 @@ export function parseNets(stringValue: string): [string, string, number][] {
     stringValue = stringValue.trim();
     const result = stringValue.split("\n").map(line => {
         line = line.split('|').map(item => item.trim());
-        line[2] = Number(line[2]);
+
+        const tmp = Number(line[2]);
+        if(!isNaN(tmp)){
+            line[2] = tmp;
+        }
+        
         return line;
     });
 

@@ -34,14 +34,78 @@ describe('export to kicad', () => {
 
         expect(tmpNets).toStrictEqual(
             {
-                "nets":
-                {
-                    "net":
-                        [
-                            { "code": 1, "name": "/NET-2", "node": [{ "ref": "J1", "pin": "2", "pintype": "passive" }, { "ref": "R3", "pin": "1", "pintype": "passive" }] },
-                            { "code": 2, "name": "/5V", "node": [{ "ref": "C1", "pin": "1", "pintype": "passive" }, { "ref": "R1", "pin": "1", "pintype": "passive" }] },
-                            { "code": 3, "name": "/GND", "node": [{ "ref": "C1", "pin": "2", "pintype": "passive" }, { "ref": "R2", "pin": "2", "pintype": "passive" }, { "ref": "R3", "pin": "2", "pintype": "passive" }] },
-                            { "code": 4, "name": "/NET-1", "node": [{ "ref": "R1", "pin": "2", "pintype": "passive" }, { "ref": "R2", "pin": "1", "pintype": "passive" }] }]
+                "nets": {
+                    "net": [
+                        {
+                            "code": 1,
+                            "name": "/NET-4",
+                            "node": [
+                                {
+                                    "ref": "J1",
+                                    "pin": "2",
+                                    "pintype": "passive"
+                                },
+                                {
+                                    "ref": "R3",
+                                    "pin": "1",
+                                    "pintype": "passive"
+                                }
+                            ]
+                        },
+                        {
+                            "code": 2,
+                            "name": "/5V",
+                            "node": [
+                                {
+                                    "ref": "C1",
+                                    "pin": "1",
+                                    "pintype": "passive"
+                                },
+                                {
+                                    "ref": "R1",
+                                    "pin": "1",
+                                    "pintype": "passive"
+                                }
+                            ]
+                        },
+                        {
+                            "code": 3,
+                            "name": "/GND",
+                            "node": [
+                                {
+                                    "ref": "C1",
+                                    "pin": "2",
+                                    "pintype": "passive"
+                                },
+                                {
+                                    "ref": "R2",
+                                    "pin": "2",
+                                    "pintype": "passive"
+                                },
+                                {
+                                    "ref": "R3",
+                                    "pin": "2",
+                                    "pintype": "passive"
+                                }
+                            ]
+                        },
+                        {
+                            "code": 4,
+                            "name": "/NET-2",
+                            "node": [
+                                {
+                                    "ref": "R1",
+                                    "pin": "2",
+                                    "pintype": "passive"
+                                },
+                                {
+                                    "ref": "R2",
+                                    "pin": "1",
+                                    "pintype": "passive"
+                                }
+                            ]
+                        }
+                    ]
                 }
             });
 
@@ -62,22 +126,22 @@ tmp = create component:
     pins: 4
 
 at v5v
-wire down 20
+wire down 100
 branch:
-    wire right 60 down 20
+    wire right 300 down 100
     add cap(100n)
-    wire down 20
+    wire down 100
     to gnd
-wire down 20
+wire down 100
 add res(10k) angle:90
-wire down 20
+wire down 100
 add res(20k) angle:90
-wire down 20
+wire down 100
 to gnd
 
 at tmp pin 2
-wire right 20 down 20
+wire right 100 down 100
 add res(1k) angle:90
-wire down 20 
+wire down 100
 to gnd
 `;

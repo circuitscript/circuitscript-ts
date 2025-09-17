@@ -185,6 +185,10 @@ export class ExecutionScope {
             console.log(netName.padEnd(10), '=>', instanceName, pin);
         });
     }
+
+    setVariable(name: string, value: any): void {
+        this.variables.set(name, value);
+    }
     
     setActive(type: ActiveObject, item: any): void {
         // Reset the state and ensure that only one of the 

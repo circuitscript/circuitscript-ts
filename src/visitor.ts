@@ -73,7 +73,7 @@ import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
     WireAutoDirection } from './globals.js';
-import { ExecutionWarning } from "./utils.js";
+import { ExecutionWarning, prepareValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -451,7 +451,7 @@ export class ParserVisitor extends BaseVisitor {
             paramIds.push(varName);
 
             // create blank object first, so that the reference exists
-            this.getScope().variables.set(varName, {});
+            this.getScope().setVariable(varName, {});
         }
 
         const executor = this.getExecutor();
@@ -467,7 +467,7 @@ export class ParserVisitor extends BaseVisitor {
                     obj[key] = value;
                 });
 
-                executor.scope.variables.set(paramIds[0], obj);
+                executor.scope.setVariable(paramIds[0], obj);
             }
 
             // Set to execution stack for running the callbacks, do not
@@ -576,7 +576,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitGraphicForExpr = (ctx: GraphicForExprContext): void => {
         const forVariableNames = ctx.ID().map(item => item.getText());
-        const listItems = this.visitResult(ctx.data_expr());
+        const listItems = prepareValue(this.visitResult(ctx.data_expr()));
 
         let keepLooping = true;
         let counter = 0;
@@ -590,7 +590,7 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
                 useValueArray.forEach((value, index) => {
-                    this.getScope().variables.set(
+                    this.getScope().setVariable(
                         forVariableNames[index], value);
                 });
 
@@ -791,6 +791,7 @@ export class ParserVisitor extends BaseVisitor {
 
         if (ctxDataExpr) {
             component = this.visitResult(ctxDataExpr);
+            component = prepareValue(component);
             componentCtx = ctxDataExpr;
 
             if (component === null || component === undefined) {
@@ -1515,7 +1516,8 @@ export class ParserVisitor extends BaseVisitor {
     visitFor_expr = (ctx: For_exprContext): void => {
         this.log('in for loop');
         const forVariableNames = ctx.ID().map(item => item.getText());
-        const listItems = this.visitResult(ctx.data_expr());
+        let listItems = this.visitResult(ctx.data_expr());
+        listItems = prepareValue(listItems);
 
         this.getExecutor().addBreakContext(ctx);
 
@@ -1531,7 +1533,7 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
                 useValueArray.forEach((value, index) => {
-                    this.getScope().variables.set(
+                    this.getScope().setVariable(
                         forVariableNames[index], value);
                 });
 

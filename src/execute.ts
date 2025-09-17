@@ -625,6 +625,16 @@ export class ExecutionContext {
 
         this.scope.setCurrent(component, usePinId);
 
+        // Check if there is an existing net, otherwise create the net
+        if (!this.scope.hasNet(component, pinId)) {
+            const tmpNet = new Net(
+                this.netNamespace,
+                this.getUniqueNetName()
+            );
+
+            this.scope.setNet(component, pinId, tmpNet);
+        }
+
         // If component is first referenced by this at command, then do not
         // allow it's orientation to be set by wires any more.
         // if (!component.didSetWireOrientationAngle) {
@@ -1026,13 +1036,14 @@ export class ExecutionContext {
     }
 
     mergeScope(childScope: ExecutionScope, namespace: string): void {
+        /**
+         * Merges a child scope (instances, nets) into the parent scope.
+         */
         this.log('-- merging scope to parent --');
 
         // Save these position first, because this needs to be restored
         // after the merge operation
-        const currentComponent = this.scope.currentComponent;
-        const currentPin = this.scope.currentPin;
-        const currentWireId = this.scope.currentWireId;
+        const {currentComponent, currentPin, currentWireId} = this.scope;
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
@@ -1059,7 +1070,7 @@ export class ExecutionContext {
         // Get all unique nets in the scope
         const childScopeUniqueNets = new Set<Net>(tmpNets.map(([,,net]) => net));
 
-        // Re-name nets that exist in the parent scope
+        // Re-name child scope nets that exist in the parent scope
         childScopeUniqueNets.forEach(net => {
             // If the same net exists, then rename it with a new unique name.
             // Net with priority 0 are generated nets (not user-defined).
@@ -1208,11 +1219,11 @@ export class ExecutionContext {
 
         this.scope.wires.push(new Wire(tmp));
 
-        const output = [];
+        const output: string[] = [];
         segments.forEach(item => {
 
             const tmpArray = item.map(item2 => {
-                if (item2 instanceof UnitDimension){
+                if (item2 instanceof UnitDimension) {
                     return item2.value;
                 } else {
                     return item2;
@@ -1234,7 +1245,7 @@ export class ExecutionContext {
         this.scope.currentComponent.pinWires.set(
             this.scope.currentPin, tmp
         );
-        
+
         if (!this.scope.currentComponent.didSetWireOrientationAngle) {
             this.applyComponentAngleFromWire(
                 this.scope.currentComponent,

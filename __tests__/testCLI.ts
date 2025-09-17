@@ -41,7 +41,8 @@ describe('test cli program', () => {
     ])('pass in file and output directly: %s', (useCommand) => {
         const result = execSync('node ' + useCommand + ' __tests__/renderData/script1.cst').toString();
         const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
-        expect(result.trim()).toBe(expected);
+        const isSimilar = result.trim() == expected;
+        expect(isSimilar).toEqual(true);
     });
 
     test.each([false, true])('pass in file and output file (with stats: %s)', (withStatsFlag: boolean) => {
@@ -61,7 +62,8 @@ describe('test cli program', () => {
         const outputFile = readFileSync(outputPath).toString();
         const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
 
-        expect(outputFile.trim()).toBe(expected.trim());
+        const isSimilar = outputFile.trim() == expected.trim();
+        expect(isSimilar).toEqual(true);
 
         expect(
             result.includes('Lexing took:') &&

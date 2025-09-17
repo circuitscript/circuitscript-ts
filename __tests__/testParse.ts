@@ -58,8 +58,12 @@ describe('test parsing', () => {
         const {hasError, componentPinNets} = await runScript(scriptTest.script);
 
         expect(hasError).toEqual(false);
-        expect(orderNets(componentPinNets))
-            .toStrictEqual(orderNets(scriptTest.expected));
+
+        const orderedNets = orderNets(componentPinNets);
+        const expectedOrderedNets = orderNets(scriptTest.expected);
+
+        expect(orderedNets)
+            .toStrictEqual(expectedOrderedNets);
     });
 
     test('component annotation', async () => {
@@ -247,6 +251,8 @@ R1.mpn = "res-12345"
 
         visitor.annotateComponents();
         const instances = visitor.dumpInstances();
+
+        // console.log('instances', instances);
 
         const item1 = findItem(instances, 'res', 'R1', 'numeric:20k');
         expect(item1.parameters.get('place')).toBe(false);

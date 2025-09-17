@@ -13,7 +13,8 @@ import { SymbolCustom, SymbolDrawing, SymbolGraphic,
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
 import { ComponentTypes, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
-    ParamKeys, SymbolPinSide, WireAutoDirection } from './globals.js';
+    NetGraphicsParams, 
+    ParamKeys, WireAutoDirection } from './globals.js';
 import { WireSegment } from './objects/Wire.js';
 import { Geometry, HorizontalAlign, VerticalAlign } from './geometry.js';
 import { Net } from './objects/Net.js';
@@ -22,7 +23,7 @@ import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from './obje
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
     printBounds, resizeBounds, resizeToNearestGrid, roundValue, 
     toNearestGrid } from './utils.js';
-import { Direction } from './objects/types.js';
+import { ComponentPinNetPair, Direction } from './objects/types.js';
 import { PinDefinition } from './objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from './helpers.js';
 import { numeric, NumericValue } from './objects/ParamDefinition.js';
@@ -58,14 +59,16 @@ export class LayoutEngine {
 
     runLayout(
         sequence: SequenceItem[],
-        nets: [ClassComponent, pin: number, net: Net][]
+        nets: ComponentPinNetPair[]
     ): SheetFrame[] {
         const logNodesAndEdges = true;
-    
+
+        const renderNets = this.collectRenderNets(nets);
+
         this.print('===== creating graph and populating with nodes =====');
-        const {graph, containerFrames } = 
+        const { graph, containerFrames } =
             this.generateLayoutGraph(sequence, nets);
-        
+
         this.print('===== done populating graph =====');
         this.print('');
 
@@ -103,7 +106,7 @@ export class LayoutEngine {
             });
         }
 
-        const {elementFrames} = 
+        const { elementFrames } =
             this.placeFrames(graph, subgraphInfo, containerFrames);
         const frameObjects = [...elementFrames, ...containerFrames];
 
@@ -134,7 +137,7 @@ export class LayoutEngine {
                 wireGroups.get(netName).push(wire);
             });
 
-            const { junctions, mergedWires } = this.findJunctions(wireGroups);
+            const { junctions, mergedWires } = this.findJunctions(wireGroups, renderNets);
 
             return {
                 frame: sheet,
@@ -143,11 +146,43 @@ export class LayoutEngine {
                 wires,
                 textObjects,
                 junctions,
-                mergedWires,
+                mergedWires
             }
         });
 
         return sheetFrameObjects;
+    }
+
+    private collectRenderNets(nets: ComponentPinNetPair[]): Map<string, RenderNet> {
+        // Find the unique nets and then convert the Net into a 
+        // RenderNet object.
+        const renderNets = new Map<string, RenderNet>();
+
+        const uniqueNets = new Set<Net>(nets.map(([,,net]) => net));
+        uniqueNets.forEach(net => {
+            const renderNet: RenderNet = {
+                netName: net.toString(),
+                net,
+            }
+
+            if (net.params.has(NetGraphicsParams.Color)) {
+                renderNet.color = net.params.get(NetGraphicsParams.Color);
+            }
+
+            if (net.params.has(NetGraphicsParams.LineWidth)) {
+                // In mils, convert to mm
+                const value = net.params.get(NetGraphicsParams.LineWidth);
+                renderNet.lineWidth = milsToMM(value).toNumber();
+            }
+
+            if (net.params.has(NetGraphicsParams.Highight)) {
+                renderNet.highlight = net.params.get(NetGraphicsParams.Highight);
+            }
+
+            renderNets.set(net.toString(), renderNet);
+        });
+
+        return renderNets;
     }
 
     private flattenFrameItems(frame: RenderFrame):
@@ -169,18 +204,18 @@ export class LayoutEngine {
         return items;
     }
 
-    private findJunctions(wireGroups: Map<string, RenderWire[]>): {
-        junctions: RenderJunction[],
-        mergedWires: MergedWire[],
-    } {
+    private findJunctions(wireGroups: Map<string, RenderWire[]>, 
+        nets: Map<string, RenderNet>): {
+            junctions: RenderJunction[],
+            mergedWires: MergedWire[],
+        } {
         const junctions: RenderJunction[] = [];
 
         const mergedWires: MergedWire[] = [];
 
         const debugSegments = false;
 
-        for (const [key, wires] of wireGroups) {
-
+        for (const [netName, wires] of wireGroups) {
             // Create array of all wires with the same net name
             const allLines = wires.map(wire => {
                 return wire.points.map(pt => {
@@ -190,6 +225,11 @@ export class LayoutEngine {
                     }
                 });
             });
+
+            let renderNet: RenderNet | null = null;
+            if (nets.has(netName)) {
+                renderNet = nets.get(netName)!;
+            }
 
             
             if (debugSegments) {
@@ -209,21 +249,23 @@ export class LayoutEngine {
                 // Wire segments are not merged and all segments (even overlaps)
                 // are kept.
                 mergedWires.push({
-                    netName: key,
+                    netName: netName,
                     segments: tmpSegments,
                     intersectPoints: [],
+                    net: renderNet,
                 });
             } else {
                 const { intersectPoints, segments } = Geometry.mergeWires(allLines);
                 mergedWires.push({
-                    netName: key,
+                    netName: netName,
                     segments,
                     intersectPoints,
+                    net: renderNet,
                 });
 
                 intersectPoints.forEach(([x, y]) => {
                     junctions.push(
-                        new RenderJunction(numeric(x), numeric(y)));
+                        new RenderJunction(numeric(x), numeric(y), renderNet));
                 });
             }
         }
@@ -1040,26 +1082,31 @@ export class LayoutEngine {
                     const [, wireId, wireSegments] =
                         sequenceStep as [SequenceAction.Wire, number, WireSegment[]];
 
-                    const wire = new RenderWire(numeric(0), numeric(0), wireSegments);
-                    wire.id = wireId;
-                    let useNetName: string | null = null;
+                    let useNet!: Net;
 
                     if (previousNode !== null) {
                         const [prevNodeType, prevNodeItem] = graph.node(previousNode);
                         if (prevNodeType === RenderItemType.Component) {
                             // Find the net of the wire
                             const matchingItem = nets.find(([comp, pin]) => {
-                                return comp.instanceName === previousNode && pin === previousPin;
+                                return comp.instanceName === previousNode 
+                                    && pin === previousPin;
                             });
 
-                            useNetName = matchingItem !== undefined ? matchingItem[2].name : null;
+                            if (matchingItem !== undefined){
+                                useNet = matchingItem[2];
+                            }
 
                         } else if (prevNodeType === RenderItemType.Wire) {
-                            useNetName = (prevNodeItem as RenderWire).netName;
+                            useNet = (prevNodeItem as RenderWire).net;
                         }
                     }
 
-                    wire.netName = useNetName!;
+                    const wire = new RenderWire(useNet, numeric(0), numeric(0), wireSegments);
+                    wire.id = wireId;
+
+                    wire.netName = useNet.toString();
+
                     const wireName = getWireName(wire.id);
 
                     // Record the sequence number to determine priority
@@ -1839,6 +1886,17 @@ export class RenderObject {
     floatingRelativeTo: [selfPin: number, nodeId: string, pin: number][] = [];
 }
 
+export type RenderNet = {
+    netName: string; // Net Name
+    net: Net;
+
+    color?: string;
+    lineWidth?: number;
+    highlight?: string; // Highlight color
+
+    highlightOpacity?: number;
+}
+
 
 export class RenderWire extends RenderObject {
     /** Uniquely identifies each wire */
@@ -1853,10 +1911,13 @@ export class RenderWire extends RenderObject {
 
     // Net name is used to determine if wires
     // can overlap
-    netName: string;
+    netName!: string;
 
-    constructor(x: NumericValue, y: NumericValue, segments: WireSegment[]) {
+    net: Net;
+
+    constructor(net: Net, x: NumericValue, y: NumericValue, segments: WireSegment[]) {
         super();
+        this.net = net;
         this.x = x;
         this.y = y;
         this.segments = segments;
@@ -2046,6 +2107,7 @@ export type MergedWire = {
     netName: string,
     segments: [x: number, y:number][][],
     intersectPoints: [x: number, y: number, count: number][],
+    net: RenderNet,
 }
 
 export class RenderComponent extends RenderObject {
@@ -2197,9 +2259,12 @@ export class RenderJunction {
     x: NumericValue;
     y: NumericValue;
 
-    constructor(x: NumericValue, y: NumericValue){
+    net: RenderNet;
+
+    constructor(x: NumericValue, y: NumericValue, net: RenderNet) {
         this.x = x;
         this.y = y;
+        this.net = net;
     }
 }
 

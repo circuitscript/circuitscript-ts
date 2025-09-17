@@ -13,7 +13,7 @@ import { NumericValue } from "./objects/ParamDefinition.js";
 import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope.js';
 import { UnitDimension } from './helpers.js';
 import { BlockTypes } from './globals.js';
-import { ExecutionWarning } from './utils.js';
+import { DeclaredReference, AnyReference } from './objects/types.js';
 
 export class SimpleStopwatch {
     startTime: Date;
@@ -450,3 +450,20 @@ export function printWarnings(warnings: ExecutionWarning[]): void {
     });
 }
 
+/**
+ * Unwraps the value if it is a reference
+ * @param value
+ * @returns 
+ */
+export function prepareValue(value: AnyReference | DeclaredReference | any): any {
+    if (isReference(value)) {
+        return value.value;
+    } else {
+        return value;
+    }
+}
+
+export function isReference(value: any): boolean {
+    return (value instanceof AnyReference || 
+            value instanceof DeclaredReference);
+}

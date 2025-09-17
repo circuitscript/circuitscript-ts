@@ -149,6 +149,12 @@ export enum BlockTypes {
     Point = 4,      // to this point
 }
 
+export enum NetGraphicsParams {
+    Color = 'color',
+    Highight = 'highlight',
+    LineWidth = 'lineWidth'
+}
+
 export enum FrameType {
     Frame = 1,
     Sheet = 2

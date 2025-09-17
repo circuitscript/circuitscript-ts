@@ -1,0 +1,21 @@
+# Checks that when pin is defined but not in the arrange prop, then the pin will
+# not be displayed. When the same
+import lib
+
+v3v3 = supply("3V3")
+gnd = dgnd()
+
+tmp = create component:
+    pins:
+        1: "A"
+        2: "B"
+        3: "C"
+        4: "D"
+        5: "E"
+
+    arrange:
+        right: 4,4,4,4,4,4
+        left: 1,2,4
+
+at tmp pin 1
+wire left 100
