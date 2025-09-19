@@ -1,6 +1,23 @@
 # Changelog
 
-## [v0.1.11](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.10...v0.1.11)
+## [v0.1.12](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.11...v0.1.12)
+
+[49f0620](https://gitlab.com/circuitscript/circuitscript-ts/commit/49f06200b6dee27ddad0a70700996f2c5b633b01) improved flexibility of path blocks
+-  missed out library name change
+
+[f08085e](https://gitlab.com/circuitscript/circuitscript-ts/commit/f08085ebc20a32d873c0460ecd5e980cfe6c55b4) added net graphic properties: colors
+-  improved LHS references
+-  updated tests
+
+[db29d56](https://gitlab.com/circuitscript/circuitscript-ts/commit/db29d563752d8f7d25ab25a113616d1c5c8ed930) changed lib.cst to std.cst
+
+[7f7cf84](https://gitlab.com/circuitscript/circuitscript-ts/commit/7f7cf84e42d72c8284de3d1b966741ccc552624f) fixed bug when setting component instance parameters
+-  added test
+
+[e00e764](https://gitlab.com/circuitscript/circuitscript-ts/commit/e00e7644920da801993f4c6036d4dcac74ccc562) when net params are accessed, access the global net params
+-  added test to verify setting of net params
+
+## [v0.1.11](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.10...v0.1.11) - 2025-09-10
 
 [0b42fe6](https://gitlab.com/circuitscript/circuitscript-ts/commit/0b42fe6872eb8acce269815537984131cc4dfb97) added data expression parsing for pin selection
 -  updated circle rendering
