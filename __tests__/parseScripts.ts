@@ -484,6 +484,15 @@ print(tmp.hello)
 
 `, ['"red"', '"hello"', 'undefined']);
 
+export const inlineScript57 = new ScriptTest(`
+import std
+tmp1 = net("3V3")
+tmp2 = net("3V3")
+
+tmp1.color = "blue"
+print(tmp2.color)
+`, ["\"blue\""]);
+
 const scriptPath = '__tests__/parseData';
 
 export const inlineScriptTests = [

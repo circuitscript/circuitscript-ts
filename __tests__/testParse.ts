@@ -26,7 +26,8 @@ import {
     inlineScript53,
     inlineScriptTests,
     inlineScript55,
-    inlineScript56
+    inlineScript56,
+    inlineScript57
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -369,6 +370,10 @@ print(---b)
 
     test('set component parameters', async () => {
         await expectInlineScriptTest('test component parameters', inlineScript56);
+    });
+
+    test('test setting of net params', async() => {
+        await expectInlineScriptTest('test setting of net params', inlineScript57);
     });
 });
 

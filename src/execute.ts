@@ -960,7 +960,20 @@ export class ExecutionContext {
                         if (isVariable){
                             useValue = parentValue[trailersPath];
                         } else if (isComponentInstance) {
-                            useValue = (parentValue as ClassComponent).parameters.get(trailersPath);
+                            // If is a net component, then try to access the 
+                            // the net instance used globally
+
+                            const tmpComponent = (parentValue as ClassComponent)
+                            if (tmpComponent.typeProp === ComponentTypes.net){
+                                const usedNet = this.scope.getNet(tmpComponent, 1);
+                                if (usedNet){
+                                    const trailerValue = trailers.join(".");
+                                    useValue = usedNet.params.get(trailerValue) ?? null;
+                                }
+
+                            } else {
+                                useValue = (parentValue as ClassComponent).parameters.get(trailersPath);
+                            }
                         }
                     }
 
