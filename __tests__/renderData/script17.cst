@@ -1,4 +1,4 @@
-import lib
+import std
 
 def solder_bridge():
     width = 100

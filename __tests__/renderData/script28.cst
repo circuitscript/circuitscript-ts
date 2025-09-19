@@ -1,6 +1,6 @@
 # Test component width and height prop
 
-import lib
+import std
 vcc = supply("VCC")
 gnd = dgnd()
 

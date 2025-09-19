@@ -1,4 +1,4 @@
-import lib
+import std
 
 def res_2(value):
     width = 140

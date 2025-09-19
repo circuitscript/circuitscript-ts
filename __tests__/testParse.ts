@@ -68,7 +68,7 @@ describe('test parsing', () => {
 
     test('component annotation', async () => {
         const { hasError, visitor } = await runScript(`
-import lib
+import std
 
 variant = "MainVariantX"
 gnd = dgnd()
@@ -109,7 +109,7 @@ branch:
     test('component annotation with custom type param', async () => {
 
         const script = `
-import lib
+import std
 
 v5v = supply("5V")
 gnd = dgnd()
@@ -145,7 +145,7 @@ to a2 pin 3
     test('component annotation with defined refdes', async () => {
 
         const script = `
-import lib
+import std
 
 v5v = supply("5V")
 gnd = dgnd()
@@ -199,7 +199,7 @@ print(test1(1,2,3))
         // Check that the double dot syntax works for 'place' parameter
 
         const script = `
-import lib
+import std
 gnd = dgnd()
 
 at net("5V")
@@ -231,7 +231,7 @@ to gnd
     test('instance assignment syntax', async () => {
 
         const script = `
-import lib
+import std
 gnd = dgnd()
 
 at supply("5V")
@@ -375,7 +375,7 @@ print(---b)
 // This tests that an error is generated at the right position for 
 // overlapping connections
 `
-import lib
+import std
 import { async } from '../src/sizing';
 v5v = supply("5v")
 gnd = dgnd()

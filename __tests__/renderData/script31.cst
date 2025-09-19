@@ -1,4 +1,4 @@
-import lib
+import std
 
 gnd = dgnd()
 v5v = supply("5V")

@@ -29,7 +29,7 @@ e = f
 
 const script2 = new ValidateScriptTest(
 `
-import lib
+import std
 
 v5v = supply("5v")
 gnd = dgnd()

@@ -284,7 +284,7 @@ const script20_ = new ScriptTest(
 );
 
 export const script21_ = `
-import lib
+import std
 
 vcc = supply("3v3")
 gnd = dgnd()

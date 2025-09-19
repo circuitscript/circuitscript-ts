@@ -1,4 +1,4 @@
-import lib
+import std
 
 document.sheet_type = sheet_A6()
 

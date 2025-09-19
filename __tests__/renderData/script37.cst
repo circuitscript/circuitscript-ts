@@ -1,5 +1,5 @@
 # Test that circle render is done properly
-import lib
+import std
 
 def push_button():
     return create component:
