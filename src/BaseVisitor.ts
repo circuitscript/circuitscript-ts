@@ -208,7 +208,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     visitScript = async (ctx: ScriptContext): Promise<void> => {
         this.log('===', 'start', '===');
 
-        // Parse all import statements at the start synce these might require
+        // Parse all import statements at the start since these might require
         // async calls
         const imports = ctx.import_expr();
         for (let i = 0; i < imports.length; i++) {
@@ -219,6 +219,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
         const result = this.runExpressions(this.getExecutor(), ctx.expression());
         this.setResult(ctx, result);
+
+        // If there are open blocks, then close them
+        this.getExecutor().closeAllBlocks();
 
         this.log('===', 'end', '===');
     }

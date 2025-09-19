@@ -5,9 +5,11 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 
 import { ScriptContext } from "./CircuitScriptParser.js";
 import { ExpressionContext } from "./CircuitScriptParser.js";
+import { Flow_expressionsContext } from "./CircuitScriptParser.js";
+import { Graph_expressionsContext } from "./CircuitScriptParser.js";
+import { Graph_linear_expressionContext } from "./CircuitScriptParser.js";
 import { Expressions_blockContext } from "./CircuitScriptParser.js";
-import { Path_blocksContext } from "./CircuitScriptParser.js";
-import { Path_block_innerContext } from "./CircuitScriptParser.js";
+import { Path_blockContext } from "./CircuitScriptParser.js";
 import { Property_set_expr2Context } from "./CircuitScriptParser.js";
 import { Assignment_expr2Context } from "./CircuitScriptParser.js";
 import { Pin_select_exprContext } from "./CircuitScriptParser.js";
@@ -102,23 +104,35 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      */
     visitExpression?: (ctx: ExpressionContext) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.flow_expressions`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFlow_expressions?: (ctx: Flow_expressionsContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.graph_expressions`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitGraph_expressions?: (ctx: Graph_expressionsContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.graph_linear_expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitGraph_linear_expression?: (ctx: Graph_linear_expressionContext) => Result;
+    /**
      * Visit a parse tree produced by `CircuitScriptParser.expressions_block`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitExpressions_block?: (ctx: Expressions_blockContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.path_blocks`.
+     * Visit a parse tree produced by `CircuitScriptParser.path_block`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitPath_blocks?: (ctx: Path_blocksContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.path_block_inner`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitPath_block_inner?: (ctx: Path_block_innerContext) => Result;
+    visitPath_block?: (ctx: Path_blockContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.property_set_expr2`.
      * @param ctx the parse tree

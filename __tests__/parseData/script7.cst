@@ -1,4 +1,4 @@
-import lib
+import std
 
 v5v = net("5V")
 gnd = dgnd()

@@ -14,7 +14,6 @@ import {
     At_block_pin_expression_simpleContext,
     At_component_exprContext,
     BinaryOperatorExprContext,
-    Path_blocksContext,
     Component_select_exprContext,
     Create_component_exprContext,
     Create_graphic_exprContext,
@@ -52,6 +51,8 @@ import {
     GraphicCommandExprContext,
     Graphic_expressions_blockContext,
     GraphicForExprContext,
+    Graph_expressionsContext,
+    Path_blockContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -180,47 +181,71 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, componentPin);
     }
 
-    visitPath_blocks = (ctx: Path_blocksContext): ComponentPin => {
-        const blocks = ctx.path_block_inner();
+    visitPath_block = (ctx: Path_blockContext): void => {
+        // Check if currently in a block
 
-        let blockIndex = 0; // Tracks the index of the block with the given type
-        let blockType = BlockTypes.Branch;
-        let prevBlockType: BlockTypes | null = null;
+        let blockType = BlockTypes.Branch; // default first
 
-        blocks.forEach((block, index) => {
-            if (block.Branch()) {
-                blockType = BlockTypes.Branch
-            } else if (block.Join()) {
-                blockType = BlockTypes.Join;
-            } else if (block.Parallel()) {
-                blockType = BlockTypes.Parallel;
-            } else if (block.Point()) {
-                blockType = BlockTypes.Point;
+        if (ctx.Branch()){
+            blockType = BlockTypes.Branch;
+        } else if (ctx.Join()){
+            blockType = BlockTypes.Join;
+        } else if (ctx.Parallel()){
+            blockType = BlockTypes.Parallel;
+        } else if (ctx.Point()){
+            blockType = BlockTypes.Point;
+        }
+
+        const scope = this.getScope();
+        const executor = this.getExecutor();
+        const indentLevel = scope.indentLevel;
+
+        if (scope.blockStack.has(indentLevel)){
+            const blockStackEntry = scope.blockStack.get(indentLevel)!;
+            if (blockStackEntry.type !== blockType){
+                // If the block type is not the same, then close the path blocks
+                executor.exitBlocks();
             }
+        }
 
-            // Check if the block type has changed. When the same block
-            // types are used in sequence, they are part of the same 'group'
-            // of blocks (i.e. they may share a certain common branch/join point)
-            if (prevBlockType !== blockType) {
-                if (index > 0) { 
-                    // If not the first block, then exit the group of blocks.
-                    this.getExecutor().exitBlocks();
-                }
+        if (!scope.blockStack.has(indentLevel)){
+            // If not exists, it means the block stack is currently not active,
+            // so create it
+            executor.enterBlocks(blockType);
+        }
 
-                this.getExecutor().enterBlocks(blockType);
-                blockIndex = 0; // Reset counter.
+        const blockStackEntry = scope.blockStack.get(indentLevel)!;
+        const { current_index } = blockStackEntry;
+
+        executor.enterBlock(current_index);
+        this.visit(ctx.expressions_block());
+        executor.exitBlock(current_index);
+
+        blockStackEntry.current_index++;
+    }
+
+    visitGraph_expressions = (ctx: Graph_expressionsContext): void => {
+        if (ctx.path_block() === null){
+            // If this is not a path block statement, then check if a block
+            // is currently open
+            const scope = this.getScope();
+            const indentLevel = scope.indentLevel;
+
+            if(scope.blockStack.has(indentLevel)){
+                this.getExecutor().exitBlocks();
             }
+        }
 
-            this.getExecutor().enterBlock(blockIndex);
-            this.visit(block);
-            this.getExecutor().exitBlock(blockIndex);
-            blockIndex += 1;
+        const ctxPathBlock = ctx.path_block();
+        const ctxNotPathBlock = ctx.graph_linear_expression();
 
-            prevBlockType = blockType;
-        });
+        if (ctxPathBlock){
+            this.visit(ctxPathBlock);
+        }
 
-        this.getExecutor().exitBlocks();
-        return this.getExecutor().getCurrentPoint();
+        if (ctxNotPathBlock){
+            this.visit(ctxNotPathBlock);
+        }
     }
 
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
@@ -1267,9 +1292,7 @@ export class ParserVisitor extends BaseVisitor {
 
         this.visit(ctx.at_component_expr());
 
-        const currentComponent = executor.scope.currentComponent;
-        const currentPin = executor.scope.currentPin;
-
+        const [currentComponent, currentPin] = executor.getCurrentPoint();        
         executor.scope.indentLevel += 1;
 
         ctx.at_block_expressions().forEach(expression => {
@@ -1279,8 +1302,7 @@ export class ParserVisitor extends BaseVisitor {
         executor.scope.indentLevel -= 1;
 
         // Once all done, then restore
-        executor.scope.currentComponent = currentComponent;
-        executor.scope.currentPin = currentPin;
+        executor.scope.setCurrent(currentComponent, currentPin);
 
         executor.log('leaving at block');
 

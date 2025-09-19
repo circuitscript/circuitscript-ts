@@ -1,0 +1,41 @@
+# Tests more complex path branching that is nested within a for loop
+
+import std
+
+v5v = supply("5V")
+gnd = dgnd()
+
+at v5v
+wire down 100
+
+# this is the initial point
+
+for i in range(0, 3):
+    parallel:
+        wire right (i * 800) down 100
+        add led("RED")
+        wire down 100
+
+        for j in range(0, 3):
+            branch:
+                wire right 200 right (j*200) down 100
+                add res(1k)
+                wire down 100
+                to gnd
+
+        wire down 100
+        add res(1k)
+        wire down 100
+
+        if i > 0:
+            wire auto
+        else:
+            wire down 300
+            
+parallel:
+    wire left 500 down 100
+    add cap(100n)
+    wire auto_
+
+wire down 100
+to gnd

@@ -721,12 +721,13 @@ export class ExecutionContext {
 
         this.scope.blockStack.set(this.scope.indentLevel, {
             // Tracks the position when the block is entered
-            entered_at: [
-                this.scope.currentComponent,
-                this.scope.currentPin,
+            start_point: [
+                this.scope.currentComponent!,
+                this.scope.currentPin!,
                 this.scope.currentWireId],
+            end_point: null,
             inner_blocks: new Map<number, any>(),
-            current_index: null,
+            current_index: 0,
             type: blockType,
         });
 
@@ -736,13 +737,13 @@ export class ExecutionContext {
     exitBlocks(): void {
         const stackRef = this.scope.blockStack.get(
             this.scope.indentLevel,
-        );
+        )!;
 
         const { type: blockType } = stackRef;
 
         if (blockType === BlockTypes.Join || blockType === BlockTypes.Parallel) {
             // Move to the end location of the first block
-            const { final_point: finalPoint } = stackRef;
+            const { end_point: finalPoint } = stackRef;
             const [component, pin, wireId] = finalPoint;
 
             this.scope.setCurrent(component, pin);
@@ -754,27 +755,33 @@ export class ExecutionContext {
                 ]);
             }
         } else if (blockType === BlockTypes.Point) {
-            const { entered_at: [component, pin,] } =
+            const { start_point: [component, pin,] } =
                 stackRef;
 
             // Preblock location should be a created point without any wires
             this.atComponent(component, pin, { addSequence: true });
         }
 
+        this.scope.blockStack.delete(this.scope.indentLevel);
         this.log('exit blocks');
+    }
+
+    closeAllBlocks(): void {
+        if (this.scope.blockStack.has(this.scope.indentLevel)) {
+            this.exitBlocks();
+        }
     }
 
     enterBlock(blockIndex: number): void {
         // Current net before any blocks is already stored in enterBlocks()
-        const stackRef = this.scope.blockStack.get(this.scope.indentLevel);
-        stackRef['block_index'] = blockIndex;
+        const stackRef = this.scope.blockStack.get(this.scope.indentLevel)!;
 
         const { type: blockType } = stackRef;
 
         const blockTypeName = getBlockTypeString(blockType);
 
         // Setup the state for the inner block at the given index
-        stackRef['inner_blocks'].set(blockIndex, {
+        stackRef.inner_blocks.set(blockIndex, {
             last_net: null,
             ignore_last_net: false,
         });
@@ -786,7 +793,7 @@ export class ExecutionContext {
 
         } else if (blockType === BlockTypes.Parallel) {
             // Move to starting point of the parallel blocks
-            const { entered_at: [component, pin,] } = stackRef;
+            const { start_point: [component, pin,] } = stackRef;
             this.atComponent(component, pin, { addSequence: true });
         }
 
@@ -796,18 +803,17 @@ export class ExecutionContext {
     }
 
     exitBlock(blockIndex: number): void {
-        const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1);
+        const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1)!;
         const { type: blockType } = stackRef;
 
         // Save the last net reference
-        const blockIndexRef = stackRef['inner_blocks'].get(blockIndex);
-        blockIndexRef['last_net'] = [
-            this.scope.currentComponent,
-            this.scope.currentPin,
+        const blockIndexRef = stackRef.inner_blocks.get(blockIndex)!;
+        blockIndexRef.last_net = [
+            this.scope.currentComponent!,
+            this.scope.currentPin!,
             this.scope.currentWireId
         ];
 
-        stackRef['block_index'] = null;
         this.scope.indentLevel -= 1;
 
         this.log('exit inner block <<<');
@@ -815,7 +821,7 @@ export class ExecutionContext {
         if (blockType === BlockTypes.Branch) {
 
             // Restore the latest entry in the branch stack
-            const { entered_at: [component, pin, wireId] } =
+            const { start_point: [component, pin, wireId] } =
                 stackRef;
 
             // Do not duplicate any net symbol since this is a branch
@@ -836,14 +842,14 @@ export class ExecutionContext {
                 this.addPoint(`${pointIdName}.${this.name}.${this.tmpPointId}`, false);
                 this.tmpPointId += 1;
 
-                stackRef['final_point'] = [
-                    this.scope.currentComponent,
-                    this.scope.currentPin,
+                stackRef.end_point = [
+                    this.scope.currentComponent!,
+                    this.scope.currentPin!,
                     this.scope.currentWireId
                 ];
 
             } else {
-                const { final_point: finalPoint } = stackRef;
+                const { end_point: finalPoint } = stackRef;
                 const [component, pin,] = finalPoint;
 
                 // Link the current component to the join component and join pin
@@ -873,12 +879,12 @@ export class ExecutionContext {
         this.log('get block point');
 
         for (let i = 0; i < this.scope.indentLevel; i++) {
-            const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1 - i);
-            const { entered_at } = stackRef;
-            const component: ClassComponent = entered_at[0];
+            const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1 - i)!;
+            const { start_point } = stackRef;
+            const component: ClassComponent = start_point[0];
 
             if (component.instanceName.startsWith(`${Delimiter1}point.`)) {
-                return entered_at;
+                return start_point;
             }
         }
 

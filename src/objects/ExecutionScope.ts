@@ -7,8 +7,9 @@
 
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
-import { CFunction, ComponentPinNet, ComponentPinNetPair, ParseSymbolType, ValueType } from './types.js';
-import { LayoutDirection } from '../globals.js';
+import { CFunction, ComponentPinNet, ComponentPinNetPair, ComponentPinWireId, 
+    ParseSymbolType, ValueType } from './types.js';
+import { BlockTypes, LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';
 import { ParserRuleContext } from 'antlr4ng';
@@ -41,7 +42,7 @@ export class ExecutionScope {
 
     symbols: Map<string, { type: ParseSymbolType }> = new Map();
 
-    blockStack: Map<number, any> = new Map();
+    blockStack: Map<number, BlockStackEntry> = new Map();
 
     // Used to keep track of properties, nested properties, etc.
     contextStack: ParserRuleContext[] = [];
@@ -305,3 +306,17 @@ export type SequenceItem =
     | [SequenceAction.Frame, Frame, "enter" | "exit"]
     | SequenceActionAssign
     ;
+
+
+export type InnerBlockStackEntry = {
+    last_net: ComponentPinWireId | null,
+    ignore_last_net: boolean
+}
+
+export type BlockStackEntry = {
+    start_point: ComponentPinWireId,
+    end_point: ComponentPinWireId | null,
+    inner_blocks: Map<number, InnerBlockStackEntry>,
+    current_index: number,
+    type: BlockTypes,
+}

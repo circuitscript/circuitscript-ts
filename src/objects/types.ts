@@ -37,6 +37,12 @@ export type ComponentPinNetPair = [
     net: Net
 ];
 
+export type ComponentPinWireId = [
+    component: ClassComponent,
+    pin: number,
+    wireId: number,
+]
+
 export type ComponentPin = [
     component: ClassComponent,
     pinId: number|string

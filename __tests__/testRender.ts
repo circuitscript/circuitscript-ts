@@ -77,7 +77,8 @@ describe('Render tests', () => {
 
         ['data expression parsing in pin selection', 'script36.cst'],
         ['rendering circle in symbol', 'script37.cst'],
-        ['net graphical properties, multi net component references same net', 'script38.cst']
+        ['net graphical properties, multi net component references same net', 'script38.cst'],
+        ['Path blocks nested within for loop', 'script39.cst'],
 
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 

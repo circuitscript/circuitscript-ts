@@ -69,38 +69,49 @@ ModulusAssign:      '%=';
 script: (import_expr | NEWLINE)* (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
-expression: add_component_expr
-		| to_component_expr
-        | at_component_expr
+expression: graph_expressions
+        | flow_expressions
         | assignment_expr
         | operator_assignment_expr
         | property_set_expr
         | property_set_expr2
         | double_dot_property_set_expr
-        | break_keyword
-        | continue_keyword
+
         | function_def_expr
         | function_call_expr
-        | wire_expr
         | import_expr
-        | frame_expr
         | atom_expr
-        
-        | at_block
-        | path_blocks
-        | point_expr
-
-        | if_expr
-        | while_expr
-        | for_expr
+        | frame_expr
         ;
+
+// Changes flow of the program
+flow_expressions: if_expr
+                    | while_expr
+                    | for_expr
+                    | break_keyword
+                    | continue_keyword
+                    ;
+
+// Adds nodes to the circuit graph
+graph_expressions:  graph_linear_expression
+                    | path_block
+                    ;
+
+graph_linear_expression: add_component_expr
+                    | to_component_expr
+                    | at_component_expr
+                    | at_block
+                    | wire_expr
+                    | point_expr
+                    ;
+
 
 expressions_block:
 	NEWLINE INDENT (NEWLINE | expression)+ DEDENT;
 
-path_blocks: path_block_inner+;
-path_block_inner:
+path_block:
 	(Branch | Join | Parallel | Point) ':' expressions_block;
+
 
 property_set_expr2:
 	atom_expr ':' NEWLINE INDENT (NEWLINE | assignment_expr2)+ DEDENT;
