@@ -70,7 +70,10 @@ export class AnyReference {
 
     trailers: string[] = [];
 
-    type?: ReferenceTypes
+    type?: ReferenceTypes;
+
+    // Stores the final value pointed by the reference (i.e. the actual
+    // value of an object property/param)
     value?: any;
 
     parentValue?: any; // If trailers are available, then this holds the parent

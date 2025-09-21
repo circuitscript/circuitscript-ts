@@ -74,7 +74,7 @@ import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
     WireAutoDirection } from './globals.js';
-import { ExecutionWarning, prepareValue } from "./utils.js";
+import { ExecutionWarning, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
 import { BaseVisitor } from './BaseVisitor.js';
@@ -601,7 +601,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitGraphicForExpr = (ctx: GraphicForExprContext): void => {
         const forVariableNames = ctx.ID().map(item => item.getText());
-        const listItems = prepareValue(this.visitResult(ctx.data_expr()));
+        const listItems = unwrapValue(this.visitResult(ctx.data_expr()));
 
         let keepLooping = true;
         let counter = 0;
@@ -816,7 +816,7 @@ export class ParserVisitor extends BaseVisitor {
 
         if (ctxDataExpr) {
             component = this.visitResult(ctxDataExpr);
-            component = prepareValue(component);
+            component = unwrapValue(component);
             componentCtx = ctxDataExpr;
 
             if (component === null || component === undefined) {
@@ -1539,7 +1539,7 @@ export class ParserVisitor extends BaseVisitor {
         this.log('in for loop');
         const forVariableNames = ctx.ID().map(item => item.getText());
         let listItems = this.visitResult(ctx.data_expr());
-        listItems = prepareValue(listItems);
+        listItems = unwrapValue(listItems);
 
         this.getExecutor().addBreakContext(ctx);
 

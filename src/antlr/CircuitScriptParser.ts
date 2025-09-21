@@ -326,77 +326,77 @@ export class CircuitScriptParser extends antlr.Parser {
                 this.enterOuterAlt(localContext, 2);
                 {
                 this.state = 148;
-                this.flow_expressions();
+                this.assignment_expr();
                 }
                 break;
             case 3:
                 this.enterOuterAlt(localContext, 3);
                 {
                 this.state = 149;
-                this.assignment_expr();
+                this.operator_assignment_expr();
                 }
                 break;
             case 4:
                 this.enterOuterAlt(localContext, 4);
                 {
                 this.state = 150;
-                this.operator_assignment_expr();
+                this.property_set_expr();
                 }
                 break;
             case 5:
                 this.enterOuterAlt(localContext, 5);
                 {
                 this.state = 151;
-                this.property_set_expr();
+                this.property_set_expr2();
                 }
                 break;
             case 6:
                 this.enterOuterAlt(localContext, 6);
                 {
                 this.state = 152;
-                this.property_set_expr2();
+                this.double_dot_property_set_expr();
                 }
                 break;
             case 7:
                 this.enterOuterAlt(localContext, 7);
                 {
                 this.state = 153;
-                this.double_dot_property_set_expr();
+                this.function_def_expr();
                 }
                 break;
             case 8:
                 this.enterOuterAlt(localContext, 8);
                 {
                 this.state = 154;
-                this.function_def_expr();
+                this.function_call_expr();
                 }
                 break;
             case 9:
                 this.enterOuterAlt(localContext, 9);
                 {
                 this.state = 155;
-                this.function_call_expr();
+                this.import_expr();
                 }
                 break;
             case 10:
                 this.enterOuterAlt(localContext, 10);
                 {
                 this.state = 156;
-                this.import_expr();
+                this.atom_expr();
                 }
                 break;
             case 11:
                 this.enterOuterAlt(localContext, 11);
                 {
                 this.state = 157;
-                this.atom_expr();
+                this.frame_expr();
                 }
                 break;
             case 12:
                 this.enterOuterAlt(localContext, 12);
                 {
                 this.state = 158;
-                this.frame_expr();
+                this.flow_expressions();
                 }
                 break;
             }
@@ -3770,10 +3770,10 @@ export class CircuitScriptParser extends antlr.Parser {
         0,0,0,136,134,1,0,0,0,136,137,1,0,0,0,137,141,1,0,0,0,138,136,1,
         0,0,0,139,142,3,2,1,0,140,142,5,64,0,0,141,139,1,0,0,0,141,140,1,
         0,0,0,142,143,1,0,0,0,143,141,1,0,0,0,143,144,1,0,0,0,144,145,1,
-        0,0,0,145,146,5,0,0,1,146,1,1,0,0,0,147,160,3,6,3,0,148,160,3,4,
-        2,0,149,160,3,54,27,0,150,160,3,56,28,0,151,160,3,62,31,0,152,160,
-        3,14,7,0,153,160,3,64,32,0,154,160,3,74,37,0,155,160,3,84,42,0,156,
-        160,3,118,59,0,157,160,3,80,40,0,158,160,3,120,60,0,159,147,1,0,
+        0,0,0,145,146,5,0,0,1,146,1,1,0,0,0,147,160,3,6,3,0,148,160,3,54,
+        27,0,149,160,3,56,28,0,150,160,3,62,31,0,151,160,3,14,7,0,152,160,
+        3,64,32,0,153,160,3,74,37,0,154,160,3,84,42,0,155,160,3,118,59,0,
+        156,160,3,80,40,0,157,160,3,120,60,0,158,160,3,4,2,0,159,147,1,0,
         0,0,159,148,1,0,0,0,159,149,1,0,0,0,159,150,1,0,0,0,159,151,1,0,
         0,0,159,152,1,0,0,0,159,153,1,0,0,0,159,154,1,0,0,0,159,155,1,0,
         0,0,159,156,1,0,0,0,159,157,1,0,0,0,159,158,1,0,0,0,160,3,1,0,0,
@@ -4015,9 +4015,6 @@ export class ExpressionContext extends antlr.ParserRuleContext {
     public graph_expressions(): Graph_expressionsContext | null {
         return this.getRuleContext(0, Graph_expressionsContext);
     }
-    public flow_expressions(): Flow_expressionsContext | null {
-        return this.getRuleContext(0, Flow_expressionsContext);
-    }
     public assignment_expr(): Assignment_exprContext | null {
         return this.getRuleContext(0, Assignment_exprContext);
     }
@@ -4047,6 +4044,9 @@ export class ExpressionContext extends antlr.ParserRuleContext {
     }
     public frame_expr(): Frame_exprContext | null {
         return this.getRuleContext(0, Frame_exprContext);
+    }
+    public flow_expressions(): Flow_expressionsContext | null {
+        return this.getRuleContext(0, Flow_expressionsContext);
     }
     public override get ruleIndex(): number {
         return CircuitScriptParser.RULE_expression;

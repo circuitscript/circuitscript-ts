@@ -70,7 +70,6 @@ script: (import_expr | NEWLINE)* (expression | NEWLINE)+ EOF;
 
 // These expressions are related to circuit building only
 expression: graph_expressions
-        | flow_expressions
         | assignment_expr
         | operator_assignment_expr
         | property_set_expr
@@ -82,6 +81,7 @@ expression: graph_expressions
         | import_expr
         | atom_expr
         | frame_expr
+        | flow_expressions
         ;
 
 // Changes flow of the program

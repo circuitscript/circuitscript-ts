@@ -15,7 +15,7 @@ import { ActiveObject, ExecutionScope, FrameAction,
 import { Net } from './objects/Net.js';
 import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
 import { PinDefinition, PortSide } from './objects/PinDefinition.js';
-import { CFunction, CFunctionResult, CallableParameter, ComponentPin, 
+import { AnyReference, CFunction, CFunctionResult, CallableParameter, ComponentPin, 
     DeclaredReference, 
     Direction } from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
@@ -922,6 +922,10 @@ export class ExecutionContext {
         return this.scope.functions.get(functionName);
     }
 
+    /**
+     * Resolves a variable, component instance, or function by searching through the execution stack.
+     * Searches from most recent to oldest execution context until a match is found.
+     */
     resolveVariable(executionStack: ExecutionContext[], idName: string, 
         trailers:string[] = []): DeclaredReference {
 
@@ -949,46 +953,25 @@ export class ExecutionContext {
                     const scopeList = isVariable ? context.scope.variables
                         : context.scope.instances;
 
-                    let parentValue = undefined;
-                    let useValue = scopeList.get(idName);
+                    const useValue = scopeList.get(idName);
 
-                    if (trailers.length > 0) {
-                        parentValue = useValue;
-                        const trailersPath = trailers.join(".");
-
-                        // TODO: after merging both variables and instances, then 
-                        // this can be removed
-                        if (!isComponentInstance && (parentValue instanceof ClassComponent)){
-                            isComponentInstance = true;
-                            isVariable = false;
-                        }
-
-                        if (isVariable){
-                            useValue = parentValue[trailersPath];
-                        } else if (isComponentInstance) {
-                            // If is a net component, then try to access the 
-                            // the net instance used globally
-
-                            const tmpComponent = (parentValue as ClassComponent)
-                            if (tmpComponent.typeProp === ComponentTypes.net){
-                                const usedNet = this.scope.getNet(tmpComponent, 1);
-                                if (usedNet){
-                                    const trailerValue = trailers.join(".");
-                                    useValue = usedNet.params.get(trailerValue) ?? null;
-                                }
-
-                            } else {
-                                useValue = (parentValue as ClassComponent).parameters.get(trailersPath);
-                            }
-                        }
+                    if (!isComponentInstance && (useValue instanceof ClassComponent)){
+                        isComponentInstance = true;
+                        isVariable = false;
                     }
+
+                    const tmpReference = this.resolveTrailers(
+                        isVariable ? ReferenceTypes.variable : ReferenceTypes.instance,
+                        useValue, 
+                        trailers
+                    );
 
                     return new DeclaredReference({
                         type: isVariable ? ReferenceTypes.variable
                             : ReferenceTypes.instance,
-                        found: (useValue !== undefined),
-                        parentValue,
-                        value: useValue,
+                        found: (tmpReference.value !== undefined),
+                        parentValue: tmpReference.parentValue,
+                        value: tmpReference.value,
                         name: idName,
                         trailers,
                     });
@@ -999,6 +982,49 @@ export class ExecutionContext {
         return new DeclaredReference({
             found: false,
             name: idName,
+        })
+    }
+
+    /**
+     * Resolves property access chains (dot notation) on variables and component instances.
+     * For variables, accesses properties directly. For component instances, resolves 
+     * parameters from the component's parameter map or associated net parameters.
+     */
+    resolveTrailers(type: ReferenceTypes, item: any, trailers: string[] = []): AnyReference {
+        let parentValue: any;
+        let useValue = item;
+
+        if (trailers.length > 0) {
+            parentValue = useValue;
+            const trailersPath = trailers.join(".");
+
+            if (type === ReferenceTypes.variable) {
+                useValue = parentValue[trailersPath];
+
+            } else if (type === ReferenceTypes.instance) {
+                // If is a net component, then try to access the 
+                // the net instance used globally
+
+                const tmpComponent = (parentValue as ClassComponent)
+                if (tmpComponent.typeProp === ComponentTypes.net) {
+                    const usedNet = this.scope.getNet(tmpComponent, 1);
+                    if (usedNet) {
+                        const trailerValue = trailers.join(".");
+                        useValue = usedNet.params.get(trailerValue) ?? null;
+                    }
+
+                } else {
+                    useValue = (parentValue as ClassComponent).parameters.get(trailersPath);
+                }
+            }
+        }
+
+        return new AnyReference({
+            found: true, // Always true, assumes that item is not undefined
+            type: type,
+            parentValue,
+            trailers,
+            value: useValue,
         })
     }
 

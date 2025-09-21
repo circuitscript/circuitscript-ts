@@ -3,7 +3,7 @@ import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 import { CallableParameter } from "./objects/types.js";
-import { prepareValue, resolveToNumericValue } from "./utils.js";
+import { unwrapValue, resolveToNumericValue, RuntimeExecutionError } from "./utils.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -22,8 +22,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
     context.createFunction('print', (params) => {
         const args = getPositionParams(params);
         const items = args.map(item => {
-            const value = prepareValue(item);
-            return toString(value);
+            return toString(unwrapValue(item));
         });
 
         if (visitor.printToConsole) {
@@ -97,7 +96,7 @@ function toMils(value: number | NumericValue): NumericValue {
 }
 
 function objectLength(obj: any[] | any): NumericValue {
-    obj = prepareValue(obj);
+    obj = unwrapValue(obj);
 
     if (Array.isArray(obj)){
         return numeric(obj.length);
@@ -129,6 +128,10 @@ function arrayGet(arrayObject: unknown[], index: number | NumericValue): any {
         useValue = index.toNumber();
     } else {
         useValue = index;
+    }
+
+    if (isNaN(useValue)){
+        throw new RuntimeExecutionError("Invalid index for arrayGet");
     }
 
     return arrayObject[useValue];

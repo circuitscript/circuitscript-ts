@@ -293,9 +293,18 @@ export async function renderScript(scriptData: string, outputPath: string | null
     visitor.log('reading file');
     visitor.log('done reading file');
 
+    const dumpDirectory = environment.getRelativeToModule('/dump/');
+
+    if (dumpData) {
+        console.log('Dump data to:', dumpDirectory);
+        if (!existsSync(dumpDirectory)) {
+            mkdirSync(dumpDirectory);
+        }
+    }
+
     const { tree, parser,
         parserTimeTaken, 
-        lexerTimeTaken } = await parseFileWithVisitor(visitor, scriptData);
+        lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData);
 
     printWarnings(visitor.getWarnings());
 
@@ -307,17 +316,12 @@ export async function renderScript(scriptData: string, outputPath: string | null
         nets.forEach(item => console.log(item.join(" | ")));
     }
 
-    const dumpDirectory = environment.getRelativeToModule('/dump/');
-
-    if (dumpData) {
-        console.log('Dump data to:', dumpDirectory);
-        if (!existsSync(dumpDirectory)) {
-            mkdirSync(dumpDirectory);
-        }
-    }
-
     dumpData && writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));
     dumpData && writeFileSync(dumpDirectory + 'raw-parser.txt', visitor.logger.dump());
+
+    if (throwError){
+        throw throwError;
+    }
     
     let svgOutput = "";
 

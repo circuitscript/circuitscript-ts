@@ -455,7 +455,7 @@ export function printWarnings(warnings: ExecutionWarning[]): void {
  * @param value
  * @returns 
  */
-export function prepareValue(value: AnyReference | DeclaredReference | any): any {
+export function unwrapValue(value: AnyReference | DeclaredReference | any): any {
     if (isReference(value)) {
         return value.value;
     } else {

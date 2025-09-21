@@ -22,7 +22,8 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
     tree: ScriptContext,
     parser: CircuitScriptParser,
     hasError: boolean, hasParseError: boolean,
-    parserTimeTaken: number, lexerTimeTaken: number
+    parserTimeTaken: number, lexerTimeTaken: number,
+    throwError: any,
 }> {
 
     const lexerErrorListener = new CircuitscriptParserErrorListener(
@@ -49,6 +50,9 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
     parser.addErrorListener(parserErrorListener);
 
     const tree = parser.script();
+
+    let throwError: any;
+
     try {
         await visitor.visitAsync(tree);
     } catch (error) {
@@ -58,7 +62,7 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
             if(error instanceof RuntimeExecutionError){
                 visitor.onErrorHandler(error.message, null, error);
             } else {
-                throw error;
+                throwError = error;
             }
         } 
     }
@@ -71,6 +75,7 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
         hasError: false,               // TODO: remove this?
         parserTimeTaken,
         lexerTimeTaken,
+        throwError
     };
 }
 

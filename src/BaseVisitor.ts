@@ -21,13 +21,12 @@ import { Net } from "./objects/Net.js";
 import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition.js";
 import { PinTypes } from "./objects/PinTypes.js";
 import { CallableParameter, CFunctionOptions, ComplexType, 
-    DeclaredReference, 
     Direction, 
     FunctionDefinedParameter, AnyReference, UndeclaredReference, 
-    ValueType } from "./objects/types.js";
+    ValueType} from "./objects/types.js";
 import { ParserRuleContext } from 'antlr4ng';
 import { ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals.js';
-import { ExecutionWarning, isReference, prepareValue } from "./utils.js";
+import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
 import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
@@ -53,9 +52,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     acceptedDirections = [Direction.Up, Direction.Down, 
         Direction.Right, Direction.Left];
-        
+    
+    // Store results before or after a visitor method is called.
     protected resultData = new Map<ParserRuleContext, any>;
-    protected paramData = new Map<ParserRuleContext, any>;
 
     pinTypesList: string[] = [
         PinTypes.Any,
@@ -228,21 +227,22 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
         const ctxAtom = ctx.atom_expr();
-        const ctxFuncCall = ctx.function_call_expr();
+        const ctxFuncCallRef = ctx.function_call_expr();
 
-        let leftSideReference: AnyReference;
+        let leftSideReference!: AnyReference;
 
         if (ctxAtom){
             leftSideReference = this.getReference(ctx.atom_expr()!);
-        } else if (ctxFuncCall){
+        } else if (ctxFuncCallRef){
             // If left side is function call, then the result must
             // be a reference
-            leftSideReference = this.visitResult(ctxFuncCall);
+
+            this.setResult(ctxFuncCallRef, {keepReference: true});
+            leftSideReference = this.visitResult(ctxFuncCallRef);
         }
 
-        const ctxDataExpr = ctx.data_expr();
-        const dataValue = this.visitResult(ctxDataExpr);
-        const rhsValue = prepareValue(dataValue);
+        const rhsCtxResult = this.visitResult(ctx.data_expr());
+        const rhsValue = unwrapValue(rhsCtxResult);
 
         const trailers = leftSideReference.trailers ?? [];
         
@@ -299,9 +299,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     visitOperator_assignment_expr = (ctx: Operator_assignment_exprContext): void => {
         const reference = this.getReference(ctx.atom_expr()!);
 
-        const ctxDataExpr = ctx.data_expr();
-        this.visit(ctxDataExpr);
-        const value = this.getResult(ctxDataExpr);
+        const value = this.visitResult(ctx.data_expr());
 
         if (!reference.found) {
             this.throwWithContext(ctx, 'Undefined reference: ' + reference.name);
@@ -444,14 +442,33 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     }
 
     visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
+        const ctxParams = this.getResult(ctx);
+
+        // If keepReference is true, then keep the reference that is returned
+        // after a function call. This reference may be used in the LHS of
+        // an assignment.
+        const {keepReference = false} = ctxParams ?? {};
+
+        this.handleFunctionCall(ctx);
+        if (!keepReference){
+            // Function returns a reference, extract the value and return it
+            const functionResultReference = this.getResult(ctx);
+            this.setResult(ctx, functionResultReference.value);
+        }
+    }
+
+    /**
+     * Executes the function and returns a reference to the result of the
+     * function. A reference is always returned.
+     */
+    private handleFunctionCall(ctx: Function_call_exprContext): void {
         const executor = this.getExecutor();
         const atomId = ctx.ID().getText();
         let passedNetNamespace = null; // Assumed empty by default
 
         const netNameSpaceExpr = ctx.net_namespace_expr();
         if (netNameSpaceExpr) {
-            this.visit(netNameSpaceExpr);
-            passedNetNamespace = this.getResult(netNameSpaceExpr);
+            passedNetNamespace = this.visitResult(netNameSpaceExpr);
         }
 
         let currentReference: AnyReference = executor.resolveVariable(
@@ -468,14 +485,12 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             currentReference.trailers = [];
 
             ctx.trailer_expr().forEach(item => {
-                const itemValue = item.getText();
                 if (item.OPEN_PAREN() && item.CLOSE_PAREN()) {
                     let parameters: CallableParameter[] = [];
 
                     const ctxParameters = item.parameters();
                     if (ctxParameters) {
-                        this.visit(ctxParameters);
-                        parameters = this.getResult(ctxParameters);
+                        parameters = this.visitResult(ctxParameters);
                     }
 
                     const useNetNamespace = this.getNetNamespace(
@@ -507,7 +522,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     }
 
                 } else {
-                    currentReference.trailers.push(itemValue);
+                    currentReference.trailers.push(item.ID()!.getText());
+
+                    // When trailers array is changed, then update the value 
+                    // held in the reference.
+                    currentReference = this.getExecutor().resolveTrailers(
+                        currentReference.type,
+                        (currentReference.parentValue !== undefined)
+                            ? currentReference.parentValue 
+                            : currentReference.value,
+                        currentReference.trailers
+                    )
                 }
             });
         }
@@ -574,12 +599,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         const ctxAtomExpr = ctx.atom_expr();
 
         if (ctxValueExpr) {
-            this.visit(ctxValueExpr);
-            value = this.getResult(ctxValueExpr);
+            value = this.visitResult(ctxValueExpr);
 
         } else if (ctxAtomExpr) {
-            this.visit(ctxAtomExpr);
-            const reference = this.getResult(ctxAtomExpr);
+            const reference = this.visitResult(ctxAtomExpr);
 
             if (!reference.found) {
                 value = new UndeclaredReference(reference);
@@ -695,16 +718,14 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     visitArray_expr = (ctx: Array_exprContext): void => {
         const array = ctx.data_expr().map(item => {
-            this.visit(item);
-            return this.getResult(item);
+            return this.visitResult(item);
         });
 
         this.setResult(ctx, array);
     }
 
     visitArrayExpr = (ctx: ArrayExprContext): void => {
-        this.visit(ctx.array_expr());
-        this.setResult(ctx, this.getResult(ctx.array_expr()));
+        this.setResult(ctx, this.visitResult(ctx.array_expr()));
     }
 
     protected setResult(ctx: ParserRuleContext, value: any): void {
@@ -826,7 +847,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
             if (i < passedInParameters.length) {
                 const tmpPassedInArgs = passedInParameters[i];
-                const argValue = prepareValue(tmpPassedInArgs[2]);
+                const argValue = unwrapValue(tmpPassedInArgs[2]);
 
                 if (tmpPassedInArgs[0] === 'position') {
                     // If value is passed in as function parameter, then
