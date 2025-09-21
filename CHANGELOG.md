@@ -1,6 +1,12 @@
 # Changelog
 
-## [v0.1.13](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.12...v0.1.13)
+## [v0.1.14](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.13...v0.1.14)
+
+[195886b](https://gitlab.com/circuitscript/circuitscript-ts/commit/195886bc14daeee0d1681dae60e46522a0277f96) fixed issue with closing path blocks
+-  renamed indentLevel to scopeLevel
+-  added test
+
+## [v0.1.13](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.12...v0.1.13) - 2025-09-21
 
 [8973952](https://gitlab.com/circuitscript/circuitscript-ts/commit/89739520b4aa81cb28d647c89bc80983afc29962) minor clean up to break and continue handling
 -  added test for function return value and reference
