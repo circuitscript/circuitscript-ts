@@ -1,6 +1,13 @@
 # Changelog
 
-## [v0.1.12](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.11...v0.1.12)
+## [v0.1.13](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.12...v0.1.13)
+
+[8973952](https://gitlab.com/circuitscript/circuitscript-ts/commit/89739520b4aa81cb28d647c89bc80983afc29962) minor clean up to break and continue handling
+-  added test for function return value and reference
+
+[bec9c73](https://gitlab.com/circuitscript/circuitscript-ts/commit/bec9c73164f9cff7d8750af63aedfe09f2f4e420) cleaned up function return references
+
+## [v0.1.12](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.11...v0.1.12) - 2025-09-19
 
 [49f0620](https://gitlab.com/circuitscript/circuitscript-ts/commit/49f06200b6dee27ddad0a70700996f2c5b633b01) improved flexibility of path blocks
 -  missed out library name change
