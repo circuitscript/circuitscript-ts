@@ -27,7 +27,8 @@ import {
     inlineScriptTests,
     inlineScript55,
     inlineScript56,
-    inlineScript57
+    inlineScript57,
+    inlineScript58
 } from './parseScripts.js';
 
 describe('test parsing', () => {
@@ -281,6 +282,12 @@ print(---b)
         expect(visitor.printStream).toStrictEqual(scriptTest.expected);
     }
 
+    async function testInlineScriptTest(description, scriptTest){
+        return test(description, async() => {
+            await expectInlineScriptTest(description, scriptTest);
+        });
+    }
+
     test.each([
         ["greater than case 1", inlineScript17],
         ["greater than case 2", inlineScript18],
@@ -339,6 +346,9 @@ print(---b)
         ['range function', inlineScript51],
         ['enumerate function', inlineScript52],
         ['enumerate function with `for` loop', inlineScript53]
+
+        // TODO add arrayPush, arrayGet, arraySet, etc.
+
     ])('built-in functions - %s',  async (description, scriptTest) => 
         await expectInlineScriptTest(description, scriptTest)
     );
@@ -364,17 +374,13 @@ print(---b)
         expect(errorMessage).toEqual("Wire auto length failed. Please specify a fixed wire length.");
     });
 
-    test('test builtin methods', async() => {
-        await expectInlineScriptTest('test builtin methods', inlineScript55);
-    });
+    testInlineScriptTest('test builtin methods', inlineScript55);
 
-    test('set component parameters', async () => {
-        await expectInlineScriptTest('test component parameters', inlineScript56);
-    });
+    testInlineScriptTest('test component parameters', inlineScript56);
 
-    test('test setting of net params', async() => {
-        await expectInlineScriptTest('test setting of net params', inlineScript57);
-    });
+    testInlineScriptTest('test setting of net params', inlineScript57);
+
+    testInlineScriptTest('test function return values and referenced values', inlineScript58);
 });
 
 // This tests that an error is generated at the right position for 

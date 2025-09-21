@@ -485,6 +485,7 @@ print(tmp.hello)
 `, ['"red"', '"hello"', 'undefined']);
 
 export const inlineScript57 = new ScriptTest(`
+# Test setting of global net parameters
 import std
 tmp1 = net("3V3")
 tmp2 = net("3V3")
@@ -492,6 +493,20 @@ tmp2 = net("3V3")
 tmp1.color = "blue"
 print(tmp2.color)
 `, ["\"blue\""]);
+
+
+export const inlineScript58 = new ScriptTest(`
+# Test function return values and references
+import std
+tmp1 = net("3V3")
+tmp1.color = "blue"
+print(tmp1.color)
+
+net("3V3").color = "red"
+print(tmp1.color)
+
+print(net("3V3").color)
+`, ['"blue"', '"red"', '"red"'])
 
 const scriptPath = '__tests__/parseData';
 

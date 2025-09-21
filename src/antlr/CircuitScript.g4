@@ -88,8 +88,8 @@ expression: graph_expressions
 flow_expressions: if_expr
                     | while_expr
                     | for_expr
-                    | break_keyword
-                    | continue_keyword
+                    | Break
+                    | Continue
                     ;
 
 // Adds nodes to the circuit graph
@@ -148,9 +148,6 @@ at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_blo
 
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
 at_block_pin_expression_complex: expressions_block;
-
-break_keyword: Break;
-continue_keyword: Continue;
 
 assignment_expr:            (atom_expr | function_call_expr) '=' data_expr;
 operator_assignment_expr:   atom_expr (AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;

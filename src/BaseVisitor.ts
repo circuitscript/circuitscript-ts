@@ -8,7 +8,7 @@
 import { Big } from 'big.js';
 
 import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
-    Break_keywordContext, Continue_keywordContext, ExpressionContext,  Function_args_exprContext, 
+    ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
@@ -686,34 +686,34 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         this.setResult(ctx, returnValue);
     }
 
-    visitBreak_keyword = (ctx: Break_keywordContext): void => {
-        // When the break keyword is encountered inside a branch, then leave the branch
-        // without storing the final state. If used, the break should be
-        // the last expression in the branch, any expressions after the break
-        // will be skipped
+    visitFlow_expressions = (ctx: Flow_expressionsContext): void => {
+        if (ctx.if_expr()) {
+            this.visit(ctx.if_expr()!);
+        } else if (ctx.while_expr()) {
+            this.visit(ctx.while_expr()!);
+        } else if (ctx.for_expr()) {
+            this.visit(ctx.for_expr()!);
+        } else if (ctx.Break() || ctx.Continue()) {
+            // When the `break` keyword is encountered inside a branch, then leave the branch
+            // without storing the final state. If used, the break should be
+            // the last expression in the branch, any expressions after the break
+            // will be skipped
 
-        // this.getExecutor().breakBranch();
-        // this.setResult(ctx, -1);
-
-        const breakContext = this.getExecutor().getBreakContext();
-        const currentResult = this.getResult(breakContext) ?? {};
-        this.setResult(breakContext, {
-            ...currentResult,
-            breakSignal: true
-        });
-    }
-
-    visitContinue_keyword = (ctx: Continue_keywordContext): void => {
-        const breakContext = this.getExecutor().getBreakContext();
-        const currentResult = this.getResult(breakContext) ?? {};
-        this.setResult(breakContext, {
-            ...currentResult,
-
-            // continue is similar to break, except the loop is not 
+            // `continue` is similar to break, except the loop is not 
             // completely stopped.
-            breakSignal: true,
-            continueSignal: true,
-        });
+
+            // this.getExecutor().breakBranch();
+            // this.setResult(ctx, -1);
+
+            const breakContext = this.getExecutor().getBreakContext();
+            const currentResult = this.getResult(breakContext) ?? {};
+
+            this.setResult(breakContext, {
+                ...currentResult,
+                breakSignal: true,
+                continueSignal: ctx.Continue() ? true : false
+            });
+        }
     }
 
     visitArray_expr = (ctx: Array_exprContext): void => {
