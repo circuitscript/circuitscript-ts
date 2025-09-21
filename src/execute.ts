@@ -84,7 +84,7 @@ export class ExecutionContext {
         namespace: string,
         netNamespace: string,
         executionLevel = 0,
-        indentLevel = 0,
+        scopeLevel = 0,
         silent = false,
         logger: Logger,
         warnings: ExecutionWarning[],
@@ -99,7 +99,7 @@ export class ExecutionContext {
         this.logger = logger;
 
         this.scope = ExecutionScope.create();
-        this.scope.indentLevel = indentLevel;
+        this.scope.scopeLevel = scopeLevel;
 
         this.setupRoot();
 
@@ -109,7 +109,7 @@ export class ExecutionContext {
             'create new execution context',
             this.namespace,
             this.name,
-            this.scope.indentLevel,
+            this.scope.scopeLevel,
         );
 
         this.parentContext = parent;
@@ -125,8 +125,8 @@ export class ExecutionContext {
     }
 
     log(...params: any[]): void {
-        const indentOutput = ''.padStart(this.scope.indentLevel * 4, '    ');
-        const indentLevelText = this.scope.indentLevel
+        const indentOutput = ''.padStart(this.scope.scopeLevel * 4, '    ');
+        const indentLevelText = this.scope.scopeLevel
             .toString()
             .padStart(3, ' ');
 
@@ -719,7 +719,7 @@ export class ExecutionContext {
             this.tmpPointId += 1;
         }
 
-        this.scope.blockStack.set(this.scope.indentLevel, {
+        this.scope.blockStack.set(this.scope.scopeLevel, {
             // Tracks the position when the block is entered
             start_point: [
                 this.scope.currentComponent!,
@@ -734,9 +734,13 @@ export class ExecutionContext {
         this.log('enter blocks');
     }
 
-    exitBlocks(): void {
+    exitBlocks(scopeLevel: number | null = null): void {
+        if (scopeLevel === null) {
+            scopeLevel = this.scope.scopeLevel;
+        }
+
         const stackRef = this.scope.blockStack.get(
-            this.scope.indentLevel,
+            scopeLevel,
         )!;
 
         const { type: blockType } = stackRef;
@@ -762,19 +766,22 @@ export class ExecutionContext {
             this.atComponent(component, pin, { addSequence: true });
         }
 
-        this.scope.blockStack.delete(this.scope.indentLevel);
+        this.scope.blockStack.delete(scopeLevel);
         this.log('exit blocks');
     }
 
-    closeAllBlocks(): void {
-        if (this.scope.blockStack.has(this.scope.indentLevel)) {
+    closeOpenPathBlocks(): void {
+        const scope = this.scope;
+        const scopeLevel = scope.scopeLevel;
+
+        if(scope.blockStack.has(scopeLevel)){
             this.exitBlocks();
         }
     }
 
     enterBlock(blockIndex: number): void {
         // Current net before any blocks is already stored in enterBlocks()
-        const stackRef = this.scope.blockStack.get(this.scope.indentLevel)!;
+        const stackRef = this.scope.blockStack.get(this.scope.scopeLevel)!;
 
         const { type: blockType } = stackRef;
 
@@ -799,11 +806,11 @@ export class ExecutionContext {
 
         this.log(`enter inner block of type (${blockTypeName}) >>>`);
 
-        this.scope.indentLevel += 1;
+        this.scope.scopeLevel += 1;
     }
 
     exitBlock(blockIndex: number): void {
-        const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1)!;
+        const stackRef = this.scope.blockStack.get(this.scope.scopeLevel - 1)!;
         const { type: blockType } = stackRef;
 
         // Save the last net reference
@@ -814,7 +821,7 @@ export class ExecutionContext {
             this.scope.currentWireId
         ];
 
-        this.scope.indentLevel -= 1;
+        this.scope.scopeLevel -= 1;
 
         this.log('exit inner block <<<');
 
@@ -878,8 +885,8 @@ export class ExecutionContext {
         // previous block stacks
         this.log('get block point');
 
-        for (let i = 0; i < this.scope.indentLevel; i++) {
-            const stackRef = this.scope.blockStack.get(this.scope.indentLevel - 1 - i)!;
+        for (let i = 0; i < this.scope.scopeLevel; i++) {
+            const stackRef = this.scope.blockStack.get(this.scope.scopeLevel - 1 - i)!;
             const { start_point } = stackRef;
             const component: ClassComponent = start_point[0];
 

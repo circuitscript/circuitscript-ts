@@ -220,7 +220,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         this.setResult(ctx, result);
 
         // If there are open blocks, then close them
-        this.getExecutor().closeAllBlocks();
+        this.getExecutor().closeOpenPathBlocks();
 
         this.log('===', 'end', '===');
     }
@@ -995,7 +995,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             executionContextNamespace,
             netNamespace,
             executionLevel + 1,
-            this.getExecutor().scope.indentLevel + 1,
+            this.getExecutor().scope.scopeLevel + 1,
             currentExecutionContext.silent,
             currentExecutionContext.logger,
             currentExecutionContext.warnings,

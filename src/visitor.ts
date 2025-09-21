@@ -198,23 +198,23 @@ export class ParserVisitor extends BaseVisitor {
 
         const scope = this.getScope();
         const executor = this.getExecutor();
-        const indentLevel = scope.indentLevel;
+        const scopeLevel = scope.scopeLevel;
 
-        if (scope.blockStack.has(indentLevel)){
-            const blockStackEntry = scope.blockStack.get(indentLevel)!;
+        if (scope.blockStack.has(scopeLevel)){
+            const blockStackEntry = scope.blockStack.get(scopeLevel)!;
             if (blockStackEntry.type !== blockType){
                 // If the block type is not the same, then close the path blocks
                 executor.exitBlocks();
             }
         }
 
-        if (!scope.blockStack.has(indentLevel)){
+        if (!scope.blockStack.has(scopeLevel)){
             // If not exists, it means the block stack is currently not active,
             // so create it
             executor.enterBlocks(blockType);
         }
 
-        const blockStackEntry = scope.blockStack.get(indentLevel)!;
+        const blockStackEntry = scope.blockStack.get(scopeLevel)!;
         const { current_index } = blockStackEntry;
 
         executor.enterBlock(current_index);
@@ -225,15 +225,11 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitGraph_expressions = (ctx: Graph_expressionsContext): void => {
+        this.getExecutor().log('graph expressions', this.getScope().scopeLevel);
         if (ctx.path_block() === null){
             // If this is not a path block statement, then check if a block
             // is currently open
-            const scope = this.getScope();
-            const indentLevel = scope.indentLevel;
-
-            if(scope.blockStack.has(indentLevel)){
-                this.getExecutor().exitBlocks();
-            }
+            this.getExecutor().closeOpenPathBlocks();
         }
 
         const ctxPathBlock = ctx.path_block();
@@ -1259,12 +1255,17 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): void => {
-        const atPin: number | string = this.visitResult(ctx.pin_select_expr2());
-
         const executor = this.getExecutor();
 
+        // Store the current location
         const [currentComponent, currentPin] = executor.getCurrentPoint();
 
+        // Close any opne path blocks. Depending on path block type, 
+        // this might change the current location, so the earlier statement
+        // saves the correct location within the `at` block.
+        executor.closeOpenPathBlocks(); 
+
+        const atPin: number | string = this.visitResult(ctx.pin_select_expr2());
         executor.atComponent(currentComponent, atPin, {
             addSequence: true
         });
@@ -1293,13 +1294,13 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctx.at_component_expr());
 
         const [currentComponent, currentPin] = executor.getCurrentPoint();        
-        executor.scope.indentLevel += 1;
+        executor.scope.scopeLevel += 1;
 
         ctx.at_block_expressions().forEach(expression => {
             this.visit(expression);
         });
 
-        executor.scope.indentLevel -= 1;
+        executor.scope.scopeLevel -= 1;
 
         // Once all done, then restore
         executor.scope.setCurrent(currentComponent, currentPin);

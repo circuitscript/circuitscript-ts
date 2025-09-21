@@ -55,7 +55,8 @@ export class ExecutionScope {
     wires: Wire[] = [];
     frames: Frame[] = [];
 
-    indentLevel = 0;
+    // Contains the current scope level/depth of execution.
+    scopeLevel = 0;
     netCounter = 1;
 
     /** Counter for unnamed components */

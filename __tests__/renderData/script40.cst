@@ -1,0 +1,18 @@
+# Test correct graph when `at` block contains `point` path block.
+tmp = create component:
+    pins: 3
+    arrange:
+        left: 1,3,2
+
+tmp1 = create component:
+    pins: 2
+
+at tmp: 
+    1:
+        point:
+            at tmp1 
+            wire right 500
+            to point
+    3:
+        wire left 100 auto
+        to pin 1
