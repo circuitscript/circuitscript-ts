@@ -74,10 +74,15 @@ describe('test cli program', () => {
     });
 
     test('generate pdf output', async () => {
-        const outputPdf = '__tests__/renderData/pdfs/script1.cst.pdf';
+        const folderPath = '__tests__/renderData/pdfs/';
+        const outputPdf = `${folderPath}script1.cst.pdf`;
 
         if (existsSync(outputPdf)) {
             unlinkSync(outputPdf);
+        }
+
+        if (!existsSync(folderPath)){
+            mkdirSync(folderPath);
         }
 
         execSync(baseCommand + ` __tests__/renderData/script1.cst ${outputPdf}`).toString();
