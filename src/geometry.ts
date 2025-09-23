@@ -12,6 +12,7 @@ import { Box } from '@svgdotjs/svg.js';
 import { numeric, NumericValue } from './objects/ParamDefinition.js';
 import { AllPinTypes, PinTypes } from './objects/PinTypes.js';
 import { roundValue } from './utils.js';
+import { SimplePoint } from './draw_symbols.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -112,7 +113,7 @@ export class Textbox extends Flatten.Polygon {
                 fontSize.mul(fontDisplayScale).toNumber(), 
                 fontWeight, anchor, vanchor);
 
-        let polygonCoords : [x:number, y:number][] = [];
+        let polygonCoords : SimplePoint[] = [];
 
         // This is used to offset the original anchor point
         let anchorOffsetX = 0;
@@ -125,7 +126,7 @@ export class Textbox extends Flatten.Polygon {
                 [box.x2, box.y2],
                 [box.x, box.y2],
                 [box.x, box.y],
-            ] as [x: number, y: number][];
+            ] as SimplePoint[];
 
         } else if (AllPinTypes.indexOf(portType) !== -1) {
             const paddingHorizontal = PortPaddingHorizontal;
@@ -501,7 +502,8 @@ export class Geometry {
 
     static mergeWires(wirePoints: { x: NumericValue, y: NumericValue }[][]): {
         intersectPoints: WirePointCount[],
-        segments: [x: number, y: number][][]
+        segments: SimplePoint[][],
+        lines: SimplePoint[][],
     } {
         // Merge wire segments to reduce overlaps and minimize segments
 
@@ -628,7 +630,7 @@ export class Geometry {
             }
         });
 
-        const trackWirePoints: [x: number, y: number][] = [];
+        const trackWirePoints: SimplePoint[] = [];
 
         existingSegments.forEach(segment => {
             trackWirePoints.push([segment.start.x, segment.start.y]);
@@ -660,16 +662,44 @@ export class Geometry {
         }, [] as WirePointCount[]);
 
         // Convert to just a simple array
-        const segments:[x: number, y:number][][] = existingSegments.map(segment => {
+        const segments:SimplePoint[][] = existingSegments.map(segment => {
             return [
                 [segment.start.x, segment.start.y],
                 [segment.end.x, segment.end.y]
             ]
         });
 
+        // Convert segments into continuous lines if the 2nd point in a 
+        // segment is the same as the 1st point of the next segment.
+        const lines: SimplePoint[][] = [];
+        let prevPoint!:SimplePoint;
+        let currentLine: SimplePoint[] = [];
+
+        segments.forEach((segment, index) => {
+            const [pt1, pt2] = segment;
+
+            // If first segment OR the prevPoint is not the same as pt1
+            if (index === 0 || (prevPoint[0] !== pt1[0] || prevPoint[1] !== pt1[1])) {
+                if (currentLine.length > 0) {
+                    lines.push(currentLine);
+                    currentLine = [];
+                }
+
+                currentLine.push([pt1[0], pt1[1]]);
+            }
+
+            currentLine.push(pt2);
+            prevPoint = pt2;
+        });
+
+        if (currentLine.length > 0) {
+            lines.push(currentLine);
+        }
+
         return {
             intersectPoints,
             segments,
+            lines,
         }
     }
 }
@@ -813,7 +843,7 @@ export enum VerticalAlignProp {
 // }
 
 function getArcPointRadians(centerX: number, centerY: number,
-    radius: number, angleRads: number): [x: number, y: number] {
+    radius: number, angleRads: number): SimplePoint {
 
     // X-axis is 0 degree and rotation clockwise is positive.
     const dx = Math.cos(angleRads);

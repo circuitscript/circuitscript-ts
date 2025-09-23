@@ -9,7 +9,8 @@ const { alg } = graphlib;
 
 import { SymbolCustom, SymbolDrawing, SymbolGraphic, 
     SymbolCustomModule, SymbolPinDefintion, SymbolPlaceholder, 
-    SymbolText, PlaceHolderCommands, SymbolDrawingCommands} from "./draw_symbols.js";
+    SymbolText, PlaceHolderCommands, SymbolDrawingCommands,
+    SimplePoint} from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameAction, SequenceAction, SequenceItem } from "./objects/ExecutionScope.js";
 import { ComponentTypes, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
@@ -175,8 +176,22 @@ export class LayoutEngine {
                 renderNet.lineWidth = milsToMM(value).toNumber();
             }
 
-            if (net.params.has(NetGraphicsParams.Highight)) {
-                renderNet.highlight = net.params.get(NetGraphicsParams.Highight);
+            if (net.params.has(NetGraphicsParams.Highlight)) {
+                renderNet.highlight = 
+                    net.params.get(NetGraphicsParams.Highlight);
+            }
+
+            if (net.params.has(NetGraphicsParams.HighlightWidth)) {
+                renderNet.highlightWidth =
+                    milsToMM(net.params.get(NetGraphicsParams.HighlightWidth))
+                        .toNumber();
+            }
+
+            if (net.params.has(NetGraphicsParams.HighlightOpacity)){
+                // 0 to 1
+                renderNet.highlightOpacity = 
+                    (net.params.get(NetGraphicsParams.HighlightOpacity) as NumericValue)
+                        .toNumber();
             }
 
             renderNets.set(net.toString(), renderNet);
@@ -255,12 +270,13 @@ export class LayoutEngine {
                     net: renderNet,
                 });
             } else {
-                const { intersectPoints, segments } = Geometry.mergeWires(allLines);
+                const { intersectPoints, segments, lines } = Geometry.mergeWires(allLines);
                 mergedWires.push({
                     netName: netName,
                     segments,
                     intersectPoints,
                     net: renderNet,
+                    lines,
                 });
 
                 intersectPoints.forEach(([x, y]) => {
@@ -1895,6 +1911,7 @@ export type RenderNet = {
     highlight?: string; // Highlight color
 
     highlightOpacity?: number;
+    highlightWidth?: number;
 }
 
 
@@ -2105,9 +2122,10 @@ export class RenderWire extends RenderObject {
 
 export type MergedWire = {
     netName: string,
-    segments: [x: number, y:number][][],
+    segments: SimplePoint[][],
     intersectPoints: [x: number, y: number, count: number][],
     net: RenderNet,
+    lines?: SimplePoint[][],
 }
 
 export class RenderComponent extends RenderObject {

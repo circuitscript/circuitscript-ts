@@ -300,13 +300,15 @@ function generateSVGChild(canvas: Svg | G,
 
     // draw the merged wires
     mergedWires.forEach(tmpItem => {
-        const { segments, intersectPoints, net = null } = tmpItem;
+        const { intersectPoints, net = null, lines = null } = tmpItem;
 
         let useJunctionColor = ColorScheme.JunctionColor;
         let useColor = ColorScheme.WireColor;
         let useLineWidth = defaultWireLineWidth;
         let displayHighlight = false;
         let displayHighlightColor: string | null = null;
+        let displayHighlightOpacity = 0.3;
+        let displayHighlightWidth = 5 * MilsToMM;
 
         if (net !== null) {
             useColor = net.color ?? ColorScheme.WireColor;
@@ -316,29 +318,34 @@ function generateSVGChild(canvas: Svg | G,
             if (net.highlight !== null) {
                 displayHighlight = true;
                 displayHighlightColor = net.highlight ?? null;
+
+                if (net.highlightOpacity !== undefined){
+                    displayHighlightOpacity = net.highlightOpacity;
+                }
+
+                if (net.highlightWidth !== undefined){
+                    displayHighlightWidth = net.highlightWidth;
+                }
             }
         }
 
         const pathItems:(string|number)[] = [];
-        const highlightExtraSize = 5 * MilsToMM;
 
-        segments.forEach(segment => {
-            const pt1 = segment[0];
-            const pt2 = segment[1];
-
-            pathItems.push(...[
-                'M', pt1[0], pt1[1],
-                'L', pt2[0], pt2[1]
-            ]);
+        const useLines = lines ?? [];
+        useLines.forEach(line => {
+            line.forEach((point, index) => {
+                const commandType = (index === 0) ? 'M' : 'L';
+                pathItems.push(...[commandType, point[0], point[1]]);
+            });
         });
 
         if (displayHighlight) {
             mergedWireHighlightGroup.path(pathItems)
                 .stroke({
-                    width: useLineWidth + highlightExtraSize,
+                    width: useLineWidth + displayHighlightWidth,
                     color: displayHighlightColor,
-                    opacity: 0.3,
-                    linecap: 'square'
+                    opacity: displayHighlightOpacity,
+                    linecap: 'butt'
                 })
                 .fill('none');
         }
@@ -347,12 +354,12 @@ function generateSVGChild(canvas: Svg | G,
             .stroke({ 
                 width: useLineWidth, 
                 color: useColor, 
-                linecap: 'square' })
+                linecap: 'butt' })
             .fill('none');
 
         const halfJunctionSize = junctionSize.half();
 
-        const highlightJunctionSize = numeric(junctionSize.toNumber() + highlightExtraSize);
+        const highlightJunctionSize = numeric(junctionSize.toNumber() + displayHighlightWidth);
         const tmpHighlightExtraSize = highlightJunctionSize.half();
 
         intersectPoints.forEach(point => {

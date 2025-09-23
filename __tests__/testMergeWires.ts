@@ -22,7 +22,6 @@ describe('geometry merge wires test', () => {
     }
 
     test('wire connected end to end', () => {
-
         const wires = parseWires([
             [   // Wire 1
                 [100, 100],
@@ -36,7 +35,7 @@ describe('geometry merge wires test', () => {
             ]
         ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
         expect(segments).toStrictEqual([
             [
                 [100, 100], [200, 100]
@@ -47,6 +46,10 @@ describe('geometry merge wires test', () => {
         ]);
 
         expect(intersectPoints).toStrictEqual([]);
+
+        expect(lines).toStrictEqual([
+            [[100, 100], [200, 100], [200, 120]]
+        ]);
     });
 
     test('wire connected at some point of wire 1', () => {
@@ -64,7 +67,7 @@ describe('geometry merge wires test', () => {
             ]
         ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
         expect(segments).toStrictEqual([
             [
                 [100, 100], [160, 100]
@@ -79,7 +82,14 @@ describe('geometry merge wires test', () => {
 
         expect(intersectPoints).toStrictEqual([
             [160, 100, 3],
-        ])
+        ]);
+
+        expect(lines).toStrictEqual(
+            [
+                [[100, 100], [160, 100], [200, 100]],
+                [[160, 100], [160, 120]]
+            ]
+        );
     });
 
     test('wire connected at some point of wire 2', () => {
@@ -95,7 +105,7 @@ describe('geometry merge wires test', () => {
             ]
         ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
 
         expect(segments).toStrictEqual([
             [
@@ -111,7 +121,12 @@ describe('geometry merge wires test', () => {
 
         expect(intersectPoints).toStrictEqual([
             [160, 100, 3],
-        ])
+        ]);
+
+        expect(lines).toStrictEqual([
+            [ [160, 100], [160, 120] ],
+            [ [100, 100], [160, 100], [200, 100]]
+        ]);
     });
 
     test('overlapping wires', () => {
@@ -128,7 +143,7 @@ describe('geometry merge wires test', () => {
             ]
         ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
 
         // No intersection points, because only have two segments
         // connected at each point.
@@ -141,6 +156,8 @@ describe('geometry merge wires test', () => {
                 [[140, 100], [160, 100]]
             ]
         );
+
+        // TODO: the segments could be re-ordered to form a single sine
     });
 
     test('reversed wires', () => {
@@ -155,7 +172,7 @@ describe('geometry merge wires test', () => {
             ]
         ])
 
-        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
 
         expect(intersectPoints).toStrictEqual([]);
         expect(segments).toStrictEqual(
@@ -163,6 +180,10 @@ describe('geometry merge wires test', () => {
                 [[100, 100], [140, 100]]
             ]
         );
+
+        expect(lines).toStrictEqual([
+            [[100, 100], [140, 100]]
+        ]);
     });
 
     test('complex wires to force splitting and re-parsing wires', () => {
@@ -189,7 +210,7 @@ describe('geometry merge wires test', () => {
             ]
         ]);
 
-        const { intersectPoints, segments } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
 
         expect(intersectPoints).toStrictEqual([[2.54, 5.08, 3], [5.08, 5.08, 4]]);
         expect(segments).toStrictEqual(
@@ -205,6 +226,24 @@ describe('geometry merge wires test', () => {
                 [[5.08, 5.08], [5.08, 7.62]]
             ]
         );
+
+        expect(lines).toStrictEqual([
+            [
+              [ 7.62, 10.16 ],
+              [ 2.54, 10.16 ],
+              [ 2.54, 7.62 ],
+              [ 2.54, 5.08 ],
+              [ 5.08, 5.08 ],
+              [ 7.62, 5.08 ]
+            ],
+            [
+              [ 2.54, 5.08 ],
+              [ 2.54, 2.54 ],
+              [ 5.08, 2.54 ],
+              [ 5.08, 5.08 ],
+              [ 5.08, 7.62 ]
+            ]
+          ])
     })
 
 });

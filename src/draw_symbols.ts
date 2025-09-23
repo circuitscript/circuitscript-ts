@@ -1844,7 +1844,7 @@ export class SymbolDrawingCommands extends SymbolDrawing {
     }
 }
 
-type SimplePoint = [x: number, y: number];
+export type SimplePoint = [x: number, y: number];
 
 type SymbolPinLayout = {
     pinId: number,

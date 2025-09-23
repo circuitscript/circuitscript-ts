@@ -151,8 +151,10 @@ export enum BlockTypes {
 
 export enum NetGraphicsParams {
     Color = 'color',
-    Highight = 'highlight',
-    LineWidth = 'lineWidth'
+    LineWidth = 'lineWidth',
+    Highlight = 'highlight',
+    HighlightWidth = 'highlightWidth',
+    HighlightOpacity = 'highlightOpacity',
 }
 
 export enum FrameType {

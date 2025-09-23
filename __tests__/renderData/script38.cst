@@ -37,6 +37,8 @@ another = supply("3V")
 another.color = "purple"
 another.lineWidth = 10
 another.highlight = "red"
+another.highlightWidth = 30
+another.highlightOpacity = 0.5
 
 at v5
 wire down 100
