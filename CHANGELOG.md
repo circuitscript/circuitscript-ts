@@ -1,6 +1,11 @@
 # Changelog
 
-## [v0.1.14](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.13...v0.1.14)
+## [v0.1.15](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.14...v0.1.15)
+
+[e1038e8](https://gitlab.com/circuitscript/circuitscript-ts/commit/e1038e8344b547c27207053376463452222ff989) updated merge wire code to generate lines besides segments
+-  updated tests
+
+## [v0.1.14](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.13...v0.1.14) - 2025-09-21
 
 [195886b](https://gitlab.com/circuitscript/circuitscript-ts/commit/195886bc14daeee0d1681dae60e46522a0277f96) fixed issue with closing path blocks
 -  renamed indentLevel to scopeLevel
