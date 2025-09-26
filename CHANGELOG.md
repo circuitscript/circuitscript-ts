@@ -1,9 +1,40 @@
 # Changelog
 
-## [v0.1.15](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.14...v0.1.15)
+## [v0.1.16](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.15...v0.1.16)
+
+[4139a40](https://gitlab.com/circuitscript/circuitscript-ts/commit/4139a406c229b758a9d03fedb074fd0d071c7bcb)Add array indexing support and enhance expression parsing
+- 
+- - Implement array indexing syntax with bracket notation (e.g., array[index])
+- - Add ArrayIndexExpr visitor method for array element access
+- - Enhance atom_expr parsing with trailer_expr2 for property and array access
+- - Improve assignment expressions to handle array index assignments
+- - Add comprehensive test cases for nested arrays and function calls
+- - Update ANTLR grammar to support bracket notation in expressions
+- - Fix trailer resolution for complex property chains and array access
+- - Add documentation for resolveTrailers and resolveVariable methods
+- 
+- The changes enable more sophisticated data manipulation with arrays and
+- nested structures while maintaining backward compatibility.
+
+[b0377a1](https://gitlab.com/circuitscript/circuitscript-ts/commit/b0377a1ffb1a6e98dad0be49c9dd765f8e133a75)Refactor layout engine by extracting graph generation logic
+- 
+- - Create new NetGraph class to handle layout graph generation
+- - Move graph creation logic from LayoutEngine to separate graph.ts module
+- - Update LayoutEngine constructor to accept Logger parameter
+- - Refactor generateLayoutGraph method to return graph and container frames
+- - Update test files to use new NetGraph + LayoutEngine pattern
+- - Improve separation of concerns between graph generation and layout
+- - Maintain existing functionality while improving code organization
+- 
+- This refactoring makes the codebase more modular and easier to test
+- by separating graph construction from layout computation.
+
+## [v0.1.15](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.14...v0.1.15) - 2025-09-23
 
 [e1038e8](https://gitlab.com/circuitscript/circuitscript-ts/commit/e1038e8344b547c27207053376463452222ff989) updated merge wire code to generate lines besides segments
 -  updated tests
+
+[7ceeb7b](https://gitlab.com/circuitscript/circuitscript-ts/commit/7ceeb7b1485969db9dd2e56304805e8737f5d2a3) fixed tests
 
 ## [v0.1.14](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.13...v0.1.14) - 2025-09-21
 
