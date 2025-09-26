@@ -494,7 +494,6 @@ tmp1.color = "blue"
 print(tmp2.color)
 `, ["\"blue\""]);
 
-
 export const inlineScript58 = new ScriptTest(`
 # Test function return values and references
 import std
@@ -506,7 +505,59 @@ net("3V3").color = "red"
 print(tmp1.color)
 
 print(net("3V3").color)
-`, ['"blue"', '"red"', '"red"'])
+`, ['"blue"', '"red"', '"red"']);
+
+export const inlineScript59 = new ScriptTest(`
+# Test array assignment and value, nested arrays
+a = [1, [2, [3, 4, 5], 6], 7]
+print(a)
+print(a[1][1][1])
+
+# update the value in the nested arrays
+a[1][1][1] = 10
+print(a)
+print(a[1][1][1])
+`, [
+    "[1, [2, [3, 4, 5], 6], 7]", 
+    "4", 
+    "[1, [2, [3, 10, 5], 6], 7]",
+    "10"
+]);
+
+export const inlineScript60 = new ScriptTest(`
+# Test multiple nested function calls
+def tmp3():
+    return 12
+
+def tmp2():
+    return tmp3
+
+def tmp1():
+    return tmp2
+    
+a = tmp1()()()
+print(a)    
+`, ['12']);
+
+export const inlineScript61 = new ScriptTest(`
+# Test nested function calls mixed with array indexing
+def tmp4():
+    return 100
+
+def tmp3():
+    return b
+
+def tmp2():
+    return tmp3
+
+def tmp1():
+    return tmp2
+
+b = [1,tmp4,3,4,5]
+c = tmp1()()()[1]()
+
+print(c)
+`, ['100']);
 
 const scriptPath = '__tests__/parseData';
 

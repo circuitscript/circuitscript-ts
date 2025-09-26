@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Token } from 'antlr4ng';
+import { ParserRuleContext, Token } from 'antlr4ng';
 import { ExecutionContext } from '../execute.js';
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
@@ -15,6 +15,24 @@ import { RuntimeExecutionError } from '../utils.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
+
+export class CFunctionEntry {
+    name: string;
+    execute: CFunction;
+    uniqueId?: string;
+    source?: ParserRuleContext;
+
+    constructor(name: string, execute: CFunction, source?: ParserRuleContext, uniqueId?: string) {
+        this.name = name;
+        this.execute = execute;
+        this.uniqueId = uniqueId;
+        this.source = source;
+    }
+
+    toString(): string {
+        return `[Function: ${this.name}]`;
+    }
+};
 
 export type CFunctionOptions = {
     netNamespace?: string
@@ -64,13 +82,22 @@ export type FunctionDefinedParameter =
     [name: string, token: Token, defaultValue: ValueType] 
     | [name: string, token: Token];
 
+/**
+ * Parent class for references to instances, variables, etc.
+ */
 export class AnyReference {
+
+    // If true, then the value pointed by value or by 
+    // (parentValue, value) exists within the current execution scope.
     found = false;
+
     name?: string;
 
-    trailers: string[] = [];
+    // Stores the access key to retrieve the value from `parentValue`, only used
+    // if `value` is a primitive and is a property of some object.
+    trailers: (string| ['index', number])[] = [];
 
-    type?: ReferenceTypes;
+    type: ReferenceTypes;
 
     // Stores the final value pointed by the reference (i.e. the actual
     // value of an object property/param)
@@ -79,33 +106,42 @@ export class AnyReference {
     parentValue?: any; // If trailers are available, then this holds the parent
     // object of the trailers
 
+    referenceName = 'AnyReference';
+
     constructor(refType: {
         found: boolean;
         name?: string;
-        trailers?: string[];
+        trailers?: (string| ['index', number])[];
         type?: ReferenceTypes;
         value?: any;
         parentValue?: any;
     }) {
 
-        if (refType.value instanceof AnyReference){
+        // Only allow function references to be nested.
+        if (refType.value instanceof AnyReference 
+            && refType.value.type !== ReferenceTypes.function){
             throw new RuntimeExecutionError("Nested reference types!");
         }
 
         this.found = refType.found;
         this.name = refType.name;
         this.trailers = refType.trailers;
-        this.type = refType.type;
+        this.type = refType.type ?? ReferenceTypes.unknown;
         this.value = refType.value;
         this.parentValue = refType.parentValue;
+    }
+
+    toString(): string {        
+        return `[${this.referenceName} name: ${this.name} trailers:${this.trailers} found: ${this.found}]`;
     }
 }
 
 
-export class UndeclaredReference {
+export class UndeclaredReference extends AnyReference {
     reference: AnyReference;
 
     constructor(reference: AnyReference) {
+        super(reference);
         this.reference = reference;
     }
 
@@ -127,11 +163,12 @@ export class UndeclaredReference {
     }
 }
 
+/**
+ * Reference that is explicitly declared by the user.
+ */
 export class DeclaredReference extends AnyReference {
 
-    toString(): string {        
-        return `[DeclaredReference name: ${this.name} trailers:${this.trailers} found: ${this.found}]`;
-    }
+    referenceName = 'DeclaredReference';
 
     toDisplayString(): string {
         let returnValue: any = undefined;

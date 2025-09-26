@@ -1,6 +1,5 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
-import { A } from '@svgdotjs/svg.js';
 import { LayoutEngine } from '../src/layout.js';
 import { ComponentPinNet } from '../src/objects/types.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
@@ -28,8 +27,23 @@ import {
     inlineScript55,
     inlineScript56,
     inlineScript57,
-    inlineScript58
+    inlineScript58,
+    inlineScript59,
+    inlineScript60,
+    inlineScript61
 } from './parseScripts.js';
+
+async function expectInlineScriptTest(description, scriptTest): Promise<void> {
+    const { hasError, visitor } = await runScript(scriptTest.script);
+    expect(hasError).toEqual(false);
+    expect(visitor.printStream).toStrictEqual(scriptTest.expected);
+}
+
+async function testInlineScriptTest(description, scriptTest){
+    return test(description, async() => {
+        await expectInlineScriptTest(description, scriptTest);
+    });
+}
 
 describe('test parsing', () => {
 
@@ -276,18 +290,6 @@ print(---b)
         expect(visitor.printStream).toStrictEqual(['20', '-20', '20', '-20']);
     });
 
-    async function expectInlineScriptTest(description, scriptTest): Promise<void> {
-        const { hasError, visitor } = await runScript(scriptTest.script);
-        expect(hasError).toEqual(false);
-        expect(visitor.printStream).toStrictEqual(scriptTest.expected);
-    }
-
-    async function testInlineScriptTest(description, scriptTest){
-        return test(description, async() => {
-            await expectInlineScriptTest(description, scriptTest);
-        });
-    }
-
     test.each([
         ["greater than case 1", inlineScript17],
         ["greater than case 2", inlineScript18],
@@ -381,6 +383,14 @@ print(---b)
     testInlineScriptTest('test setting of net params', inlineScript57);
 
     testInlineScriptTest('test function return values and referenced values', inlineScript58);
+});
+
+describe('atom expr and trailers tests', () => {
+    testInlineScriptTest('test nested array access (atom expr)', inlineScript59);
+
+    testInlineScriptTest('test nested function calls', inlineScript60);
+
+    testInlineScriptTest('test nested function calls mixed with array access', inlineScript61);
 });
 
 // This tests that an error is generated at the right position for 

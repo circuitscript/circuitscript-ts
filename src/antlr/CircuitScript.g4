@@ -173,6 +173,7 @@ data_expr:
     | create_module_expr                                #DataExpr
     | function_call_expr                                #FunctionCallExpr
     | array_expr                                        #ArrayExpr
+    | data_expr '[' data_expr ']'                       #ArrayIndexExpr
     ;           
 
 binary_operator: Equals 
@@ -201,11 +202,13 @@ function_args_expr:
     | ID '=' value_expr (',' ID '=' value_expr)*
     ;
 
-atom_expr: ID ('.' ID)*;
+atom_expr: ID trailer_expr2*;
 
-trailer_expr: '(' parameters? ')'
-        | '.' ID;
+trailer_expr: '(' parameters? ')' | trailer_expr2;
 
+trailer_expr2: '.' ID
+                | '[' data_expr ']';
+        
 function_call_expr: net_namespace_expr? ID trailer_expr+;
 
 net_namespace_expr: '+'? '/' data_expr?;

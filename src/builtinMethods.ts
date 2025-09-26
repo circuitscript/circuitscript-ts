@@ -2,7 +2,7 @@ import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
-import { CallableParameter } from "./objects/types.js";
+import { CallableParameter, CFunctionEntry } from "./objects/types.js";
 import { unwrapValue, resolveToNumericValue, RuntimeExecutionError } from "./utils.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
@@ -168,8 +168,15 @@ function toString(obj: any): string {
     } else if (obj instanceof NumericValue) {
         // Display as a big number string, instead of numeric value
         return obj.toBigNumber().toString();
+    } else if (obj instanceof CFunctionEntry){
+        return obj.toString();
+        
     } else {
-        if (obj.toDisplayString) {
+        if (obj === undefined){
+            return 'undefined'; 
+        } else if (obj === null){
+            return 'null';
+        } else if (obj.toDisplayString) {
             return obj.toDisplayString();
         } else if (obj.toString) {
             return obj.toString();

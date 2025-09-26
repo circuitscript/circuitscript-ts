@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalNames, NoNetText, ParamKeys, 
+import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalNames, 
+    NoNetText, ParamKeys, 
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
 import { ExecutionWarning } from "./utils.js";
@@ -15,9 +16,9 @@ import { ActiveObject, ExecutionScope, FrameAction,
 import { Net } from './objects/Net.js';
 import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
 import { PinDefinition, PortSide } from './objects/PinDefinition.js';
-import { AnyReference, CFunction, CFunctionResult, CallableParameter, ComponentPin, 
+import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
     DeclaredReference, 
-    Direction } from './objects/types.js';
+    Direction} from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
@@ -69,7 +70,7 @@ export class ExecutionContext {
 
     logger: Logger;
 
-    __functionCache = {};
+    __functionCache = new Map<string, CFunction>();
 
     parentContext: ExecutionContext;
 
@@ -915,9 +916,22 @@ export class ExecutionContext {
         return this.scope.breakStack[this.scope.breakStack.length-1];
     }
 
-    createFunction(functionName: string, __runFunc: CFunction): void {
-        this.scope.functions.set(functionName, __runFunc);
-        this.__functionCache[functionName] = __runFunc;
+    /**
+     * 
+     * @param functionName 
+     * @param uniqueId Used if the function does not have a defined name.
+     * @param __runFunc 
+     */
+    createFunction(functionName: string, __runFunc: CFunction, 
+        source?: ParserRuleContext, uniqueId?: string): void {
+
+        this.scope.functions.set(functionName, new CFunctionEntry(
+            functionName, __runFunc,
+            source,
+            uniqueId,
+        ));
+
+        this.__functionCache.set(functionName, __runFunc);
         this.log(`defined new function '${functionName}'`);
     }
 
@@ -925,8 +939,8 @@ export class ExecutionContext {
         return this.scope.functions.has(functionName);
     }
 
-    getFunction(functionName: string): CFunction {
-        return this.scope.functions.get(functionName);
+    getFunction(functionName: string): CFunctionEntry {
+        return this.scope.functions.get(functionName)!;
     }
 
     /**
@@ -934,7 +948,7 @@ export class ExecutionContext {
      * Searches from most recent to oldest execution context until a match is found.
      */
     resolveVariable(executionStack: ExecutionContext[], idName: string, 
-        trailers:string[] = []): DeclaredReference {
+        trailers:string[] = []): AnyReference {
 
         // this.print('resolve variable', idName);
         const reversed = [...executionStack].reverse();
@@ -989,13 +1003,15 @@ export class ExecutionContext {
         return new DeclaredReference({
             found: false,
             name: idName,
-        })
+        });
     }
 
     /**
      * Resolves property access chains (dot notation) on variables and component instances.
      * For variables, accesses properties directly. For component instances, resolves 
      * parameters from the component's parameter map or associated net parameters.
+     * 
+     * @param type - reference type for <item>
      */
     resolveTrailers(type: ReferenceTypes, item: any, trailers: string[] = []): AnyReference {
         let parentValue: any;
@@ -1019,15 +1035,20 @@ export class ExecutionContext {
                         const trailerValue = trailers.join(".");
                         useValue = usedNet.params.get(trailerValue) ?? null;
                     }
-
                 } else {
-                    useValue = (parentValue as ClassComponent).parameters.get(trailersPath);
+                    useValue = (parentValue as ClassComponent)
+                        .parameters.get(trailersPath);
                 }
             }
         }
 
+        let found = false;
+        if (parentValue !== undefined && useValue !== undefined){
+            found = true;
+        }
+
         return new AnyReference({
-            found: true, // Always true, assumes that item is not undefined
+            found, // Always true, assumes that item is not undefined
             type: type,
             parentValue,
             trailers,
@@ -1044,9 +1065,10 @@ export class ExecutionContext {
         let __runFunc: CFunction | null = null;
 
         // Function is not cached yet, so look for it
-        if (this.__functionCache[functionName] === undefined){
+        if (!this.__functionCache.has(functionName)){
             if (this.hasFunction(functionName)) {
-                __runFunc = this.getFunction(functionName);
+                const entry = this.getFunction(functionName);
+                __runFunc = entry.execute;
             }
     
             // If the function does not exist in the current execution context,
@@ -1058,17 +1080,18 @@ export class ExecutionContext {
                     this.resolveVariable(executionStack, functionName);
                 
                 if (tmpResolveResult.found) {
-                    __runFunc = tmpResolveResult.value;
+                    const entry = tmpResolveResult.value as CFunctionEntry;
+                    __runFunc = entry.execute;
                 } else {
                     throw `Invalid function ${functionName}`;
                 }
             }
             this.log('save function to cache:', functionName);
-            this.__functionCache[functionName] = __runFunc;
+            this.__functionCache.set(functionName, __runFunc!);
 
         } else {
             this.log('found function in cache:', functionName);
-            __runFunc = this.__functionCache[functionName];
+            __runFunc = this.__functionCache.get(functionName)!;
         }        
 
         if (__runFunc !== null) {

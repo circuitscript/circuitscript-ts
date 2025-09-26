@@ -67,7 +67,7 @@ import {
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
-import { CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
+import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, DeclaredReference, 
     FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
@@ -571,7 +571,9 @@ export class ParserVisitor extends BaseVisitor {
             const nestedKeyValues = this.visitResult(ctxNestedProperties);
 
             nestedKeyValues.forEach((value: any, key: any) => {
-                parameters.push(['keyword', key, value]);
+                // Values will be used by graphics command, so unwrap any
+                // references.
+                parameters.push(['keyword', key, unwrapValue(value)]);
             });
 
         } else {
@@ -803,45 +805,46 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitData_expr_with_assignment = (ctx: Data_expr_with_assignmentContext): void => {
-
-        let component: ComplexType = null;
-        let componentCtx: ParserRuleContext | null = null;
+        let dataResult: ComplexType = null;
+        let componentCtx!: ParserRuleContext;
 
         const ctxDataExpr = ctx.data_expr();
         const ctxAssignmentExpr = ctx.assignment_expr();
 
         if (ctxDataExpr) {
-            component = this.visitResult(ctxDataExpr);
-            component = unwrapValue(component);
+            dataResult = this.visitResult(ctxDataExpr);
             componentCtx = ctxDataExpr;
 
-            if (component === null || component === undefined) {
-                this.throwWithContext(ctxDataExpr, 
-                    "Could not find component: " + ctxDataExpr.getText());
-            }
-
         } else if (ctxAssignmentExpr) {
-            component = this.visitResult(ctxAssignmentExpr);
+            dataResult = this.visitResult(ctxAssignmentExpr);
             componentCtx = ctxAssignmentExpr;
         }
 
-        if (component instanceof ClassComponent
-            && component.copyProp) {
-            component = this.getExecutor().copyComponent(component);
-        }
-
-        if (component instanceof UndeclaredReference){
-            const {reference : {trailers = [], parentValue = null}} = component;
+        if (dataResult instanceof AnyReference){
+            const {trailers = [], parentValue = null} = dataResult;
             if (parentValue instanceof ClassComponent
                 && trailers.length > 0
                 && trailers[0] === ModuleContainsKeyword
             ) {
-                component = parentValue;
-                this.placeModuleContains(component as ModuleComponent);
+                dataResult = parentValue;
+                this.placeModuleContains(dataResult as ModuleComponent);
             }
         }
 
-        if (component && component instanceof ClassComponent) {
+        // Unwrap the reference, if it is a reference.
+        dataResult = unwrapValue(dataResult);
+
+        if (dataResult === null || dataResult === undefined) {
+            this.throwWithContext(componentCtx, 
+                "Could not find component: " + componentCtx.getText());
+        }
+
+        if (dataResult instanceof ClassComponent
+            && dataResult.copyProp) {
+            dataResult = this.getExecutor().copyComponent(dataResult);
+        }
+
+        if (dataResult && dataResult instanceof ClassComponent) {
             // get the modifiers for the component
             const modifiers = ctx.component_modifier_expr();
             modifiers.forEach(modifier => {
@@ -861,25 +864,25 @@ export class ParserVisitor extends BaseVisitor {
                 if (modifierText === ParamKeys.flip) {
                     const flipValue = result as string;
                     if (flipValue.indexOf('x') !== -1) {
-                        component.setParam(ParamKeys.flipX, 1);
+                        dataResult.setParam(ParamKeys.flipX, 1);
                         shouldIgnoreWireOrientation = true;
                     }
 
                     if (flipValue.indexOf('y') !== -1) {
-                        component.setParam(ParamKeys.flipY, 1);
+                        dataResult.setParam(ParamKeys.flipY, 1);
                         shouldIgnoreWireOrientation = true;
                     }
                 } else if (modifierText === ParamKeys.angle) {
-                    component.setParam(ParamKeys.angle, result as NumericValue);
+                    dataResult.setParam(ParamKeys.angle, result as NumericValue);
                     shouldIgnoreWireOrientation = true;
-                } else if (modifierText === 'anchor'){
-                    component.setParam('anchor', result as string);
+                } else if (modifierText === 'anchor') {
+                    dataResult.setParam('anchor', result as string);
                 }
 
                 if (shouldIgnoreWireOrientation) {
                     // User defined modifiers will overwrite the
                     // wire orientation
-                    component.useWireOrientationAngle = false;
+                    dataResult.useWireOrientationAngle = false;
                 }
             });
         }
@@ -890,10 +893,10 @@ export class ParserVisitor extends BaseVisitor {
         if (ctxPinSelectExpr) {
             pinValue = this.visitResult(ctxPinSelectExpr);
         } else {
-            if (component instanceof ClassComponent) {
-                pinValue = (component as ClassComponent).getDefaultPin();
+            if (dataResult instanceof ClassComponent) {
+                pinValue = (dataResult as ClassComponent).getDefaultPin();
             } else {
-                const undeclaredRef = (component as UndeclaredReference);
+                const undeclaredRef = (dataResult as UndeclaredReference);
                 this.throwWithContext(
                     componentCtx,
                     'Invalid component: ' + undeclaredRef.reference.name
@@ -901,7 +904,7 @@ export class ParserVisitor extends BaseVisitor {
             }
         }
 
-        this.setResult(ctx, [component, pinValue]);
+        this.setResult(ctx, [dataResult, pinValue]);
     }
 
     /** Creates a new context and execute the expressions within the module
@@ -1150,8 +1153,10 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitAdditionExpr = (ctx: AdditionExprContext): void => {
-        const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
-        const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
+        const value1 = unwrapValue(
+            this.resolveDataExpr<number>(ctx.data_expr(0)));
+        const value2 = unwrapValue(
+            this.resolveDataExpr<number>(ctx.data_expr(1)));
 
         if (ctx.Addition() && (typeof value1 === 'string' || typeof value2 === 'string')) {
             // String concatenation
@@ -1186,6 +1191,10 @@ export class ParserVisitor extends BaseVisitor {
 
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
         const functionName = ctx.ID().getText();
+        
+        // TODO: include the filepath
+        const uniqueFunctionID = '__._' + ctx.start!.line + '_' 
+            + ctx.start!.column + '_' + functionName + '_' + ctx.getText();
 
         // These are the defined arguments for the function
         let funcDefinedParameters: FunctionDefinedParameter[] = [];
@@ -1237,7 +1246,8 @@ export class ParserVisitor extends BaseVisitor {
             return [lastExecution, returnValue];
         };
 
-        this.getExecutor().createFunction(functionName, __runFunc);
+        this.getExecutor().createFunction(functionName, __runFunc, 
+            ctx, uniqueFunctionID);
     }
 
     visitPin_select_expr2 = (ctx: Pin_select_expr2Context): void => {

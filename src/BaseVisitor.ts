@@ -7,11 +7,12 @@
 
 import { Big } from 'big.js';
 
-import { Array_exprContext, ArrayExprContext, Assignment_exprContext, Atom_exprContext, 
+import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_exprContext, Atom_exprContext, 
     ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
+    Trailer_expr2Context, 
     Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptVisitor } from "./antlr/CircuitScriptVisitor.js";
 import { ExecutionContext } from "./execute.js";
@@ -25,7 +26,7 @@ import { CallableParameter, CFunctionOptions, ComplexType,
     FunctionDefinedParameter, AnyReference, UndeclaredReference, 
     ValueType} from "./objects/types.js";
 import { ParserRuleContext } from 'antlr4ng';
-import { ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes } from './globals.js';
+import { ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
 import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
@@ -195,6 +196,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         }
     }
 
+    /**
+     * Add to the executor log
+     */
     log2(message: string): void {
         this.getExecutor().log(message);
     }
@@ -230,39 +234,49 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         const ctxFuncCallRef = ctx.function_call_expr();
 
         let leftSideReference!: AnyReference;
+        let lhsCtx!: ParserRuleContext;
 
         if (ctxAtom){
             leftSideReference = this.getReference(ctx.atom_expr()!);
+            lhsCtx = ctxAtom;
         } else if (ctxFuncCallRef){
             // If left side is function call, then the result must
             // be a reference
-
             this.setResult(ctxFuncCallRef, {keepReference: true});
             leftSideReference = this.visitResult(ctxFuncCallRef);
+            lhsCtx = ctxFuncCallRef;
         }
 
-        const rhsCtxResult = this.visitResult(ctx.data_expr());
-        const rhsValue = unwrapValue(rhsCtxResult);
+        const rhsCtx = ctx.data_expr();
+        const rhsCtxResult = this.visitResult(rhsCtx);
 
+        if (isReference(rhsCtxResult) && !rhsCtxResult.found){
+            // The value does not exists
+            this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
+        }
+
+        const rhsValue = unwrapValue(rhsCtxResult);
         const trailers = leftSideReference.trailers ?? [];
         
         const sequenceParts: (string|any)[] = [];
 
         if (trailers.length === 0) {
-            if (rhsValue instanceof ClassComponent) {
-                this.getScope().setVariable(leftSideReference.name!, rhsValue);
-                sequenceParts.push(...['instance', leftSideReference.name, rhsValue]);
+            // No trailers, directly assign the reference name
+            this.getScope().setVariable(leftSideReference.name!, rhsValue);
 
+            let itemType = '';
+            if (rhsValue instanceof ClassComponent) {
+                itemType = ReferenceTypes.instance;
                 this.log2(
                     `assigned '${leftSideReference.name}' to ClassComponent`,
                 );
             } else {
-                // No trailers, directly assign the reference name
-                this.getScope().setVariable(leftSideReference.name, rhsValue);
+                itemType = ReferenceTypes.variable;
+                this.getScope().setVariable(leftSideReference.name!, rhsValue);
                 this.log2(`assigned variable ${leftSideReference.name} to ${rhsValue}`);
-
-                sequenceParts.push(...['variable', leftSideReference.name, rhsValue]);
             }
+
+            sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
         } else {
             if (leftSideReference.parentValue instanceof ClassComponent){
                 this.setInstanceParam(leftSideReference.parentValue, trailers, rhsValue);
@@ -280,8 +294,24 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 }
 
             } else if (leftSideReference.parentValue instanceof Object) {
-                leftSideReference.parentValue[trailers.join('.')] = rhsValue;
-                this.log2(`assigned object ${leftSideReference.parentValue} trailers: ${trailers} value: ${rhsValue}`)
+                // TODO: instanceof use AnyReference?
+
+                // Array access assignment
+                if (Array.isArray(trailers[0]) && trailers[0][0] === TrailerArrayIndex) {
+                    if (Array.isArray(leftSideReference.parentValue)) {
+                        const arrayIndexValue = trailers[0][1];
+                        leftSideReference.parentValue[arrayIndexValue] = rhsValue;
+
+                        this.log2(`assigned array index ${leftSideReference.parentValue} index: ${arrayIndexValue} value: ${rhsValue}`);
+
+                    } else {
+                        this.throwWithContext(lhsCtx, "Invalid array");
+                    }
+                } else {
+                    // Object access assignment
+                    leftSideReference.parentValue[trailers.join('.')] = rhsValue;
+                    this.log2(`assigned object ${leftSideReference.parentValue} trailers: ${trailers} value: ${rhsValue}`)
+                }
 
                 sequenceParts.push(...['variable', [leftSideReference.parentValue, trailers], rhsValue]);
             }
@@ -383,23 +413,56 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         return reference;
     }
 
+    visitTrailer_expr2 = (ctx: Trailer_expr2Context): void => {
+        // There should be some reference already set
+        const reference = this.getResult(ctx) as AnyReference;
+
+        const ctxID = ctx.ID();
+        const ctxDataExpr = ctx.data_expr();
+        
+        const useValue = reference.value;
+
+        let nextReference!: AnyReference;
+
+        if (ctxID){
+            // Extend the property in reference
+            reference.trailers.push(ctxID.getText());
+
+            nextReference = this.getExecutor().resolveTrailers(
+                reference.type, 
+                useValue,
+                reference.trailers
+            );
+
+        } else if (ctxDataExpr) {
+            const arrayIndex = this.visitResult(ctxDataExpr);
+            if (arrayIndex instanceof NumericValue){
+                const arrayIndexValue = arrayIndex.toNumber();
+                const foundValue = useValue[arrayIndexValue]; 
+
+                const refType = foundValue instanceof ClassComponent 
+                    ? ReferenceTypes.instance : ReferenceTypes.variable;
+
+                nextReference = new AnyReference({
+                    found: true,
+                    type: refType,
+                    value: foundValue,
+                    trailers: [[TrailerArrayIndex, arrayIndexValue]],
+                    parentValue: useValue
+                });
+            }
+        }
+        
+        this.setResult(ctx, nextReference);
+    }
+
     visitAtom_expr = (ctx: Atom_exprContext): void => {
         const executor = this.getExecutor();
 
         const firstId = ctx.ID(0)!;
         const atomId = firstId.getText();
-
+        
         let currentReference: AnyReference;
-
-        const idTrailers = [];
-        if (ctx.ID().length > 1) {
-            const idLength = ctx.ID().length;
-
-            for (let i = 1; i < idLength; i++) {
-                const tmpCtx = ctx.ID(i)!;
-                idTrailers.push(tmpCtx.getText());
-            }
-        }
 
         // Check if it is hardcoded values, like the pin types.
         if (this.pinTypesList.indexOf(atomId) !== -1) {
@@ -411,27 +474,20 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             });
         } else {
             currentReference = executor.resolveVariable(
-                this.executionStack, atomId, idTrailers);
+                this.executionStack, atomId);
         }
 
-        if (currentReference.found && currentReference.type === 'instance' && idTrailers.length === 0) {
-            const tmpComponent = currentReference.value as ClassComponent;
-
-            // Copy the nets into the local net
-            for (const [pinId, net] of tmpComponent.pinNets) {
-                executor.scope.setNet(tmpComponent, pinId, net);
+        if (currentReference !== undefined && currentReference.found) {
+            const trailersLength = ctx.trailer_expr2().length;
+            for (let i = 0; i < trailersLength; i++) {
+                const trailerCtx = ctx.trailer_expr2(i)!;
+                this.setResult(trailerCtx, currentReference);
+                currentReference = this.visitResult(trailerCtx);
             }
         }
-
-        // this.log2(`atomId: ${atomId} ${currentReference}`);
-
-        if (ctx.parent instanceof ExpressionContext && !currentReference.found) {
-            // If is an atom_expr and parent is just expression and no 
-            // reference was found.
-            this.throwWithContext(ctx, "Unknown symbol: " + atomId);
-        }
-
+        
         this.setResult(ctx, currentReference);
+        this.log2('atom resolved: ' + ctx.getText() + ' -> ' + currentReference);
     }
 
     visitFunctionCallExpr = (ctx: FunctionCallExprContext): void => {
@@ -486,6 +542,13 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
             ctx.trailer_expr().forEach(item => {
                 if (item.OPEN_PAREN() && item.CLOSE_PAREN()) {
+
+                    if (currentReference.type === ReferenceTypes.variable) {
+                        if (currentReference.value instanceof AnyReference && currentReference.value.type === ReferenceTypes.function) {
+                            currentReference = currentReference.value;
+                        }
+                    }
+
                     let parameters: CallableParameter[] = [];
 
                     const ctxParameters = item.parameters();
@@ -522,17 +585,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     }
 
                 } else {
-                    currentReference.trailers.push(item.ID()!.getText());
-
-                    // When trailers array is changed, then update the value 
-                    // held in the reference.
-                    currentReference = this.getExecutor().resolveTrailers(
-                        currentReference.type,
-                        (currentReference.parentValue !== undefined)
-                            ? currentReference.parentValue 
-                            : currentReference.value,
-                        currentReference.trailers
-                    )
+                    const ctxTrailer = item.trailer_expr2()!;
+                    this.setResult(ctxTrailer, currentReference); 
+                    currentReference = this.visitResult(ctxTrailer);
                 }
             });
         }
@@ -611,7 +666,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 if (reference.type && reference.type === ReferenceTypes.pinType) {
                     value = reference;
                 } else {
-                    if (reference.trailers && reference.trailers.length > 0) {
+                    if ((reference.trailers && reference.trailers.length > 0) 
+                        || reference.type === ReferenceTypes.function) {
+                        
                         value = reference;
                     } else {
                         value = reference.value;
@@ -651,14 +708,16 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
         const returnList: CallableParameter[] = [];
 
+        // Values are wrapped if they are a reference, and this method
+        // assumes that the values are to be used.
         dataExpressions.forEach((item, index) => {
-            const value = this.visitResult(item); 
-            returnList.push(['position', index, value]);
+            const value = this.visitResult(item);
+            returnList.push(['position', index, unwrapValue(value)]);
         });
 
         keywordAssignmentExpressions.forEach((item) => {
             const [key, value] = this.visitResult(item);
-            returnList.push(['keyword', key, value]);
+            returnList.push(['keyword', key, unwrapValue(value)]);
         });
 
         this.setResult(ctx, returnList);
@@ -675,10 +734,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         const executor = this.getExecutor();
 
         executor.log('return from function');
-
-        const ctxDataExpr = ctx.data_expr();
-        this.visit(ctxDataExpr)
-        const returnValue = this.getResult(ctxDataExpr);
+        const returnValue = this.visitResult(ctx.data_expr());
 
         executor.stopFurtherExpressions = true;
         executor.returnValue = returnValue;
@@ -726,6 +782,34 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     visitArrayExpr = (ctx: ArrayExprContext): void => {
         this.setResult(ctx, this.visitResult(ctx.array_expr()));
+    }
+
+    visitArrayIndexExpr = (ctx: ArrayIndexExprContext): void => {
+        const ctxArray = ctx.data_expr(0)!;
+        const ctxArrayIndex = ctx.data_expr(1)!;
+
+        const arrayItem = this.visitResult(ctxArray);
+
+        // This will be a numeric value, if it is a valid number.
+        const indexValue = this.visitResult(ctxArrayIndex);
+
+        if (!Array.isArray(arrayItem)) {
+            throw new RuntimeExecutionError("Invalid array", ctxArray);
+        }
+
+        if (!(indexValue instanceof NumericValue)) {
+            throw new RuntimeExecutionError("Invalid index value", ctxArrayIndex);
+        }
+
+        const indexValueNumber = indexValue.toNumber();
+
+        if (isNaN(indexValueNumber)) {
+            throw new RuntimeExecutionError("Invalid index value", ctxArrayIndex);
+        }
+
+        if (Array.isArray(arrayItem)) {
+            this.setResult(ctx, arrayItem[indexValueNumber]);
+        }
     }
 
     protected setResult(ctx: ParserRuleContext, value: any): void {

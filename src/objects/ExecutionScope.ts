@@ -7,7 +7,8 @@
 
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
-import { CFunction, ComponentPinNet, ComponentPinNetPair, ComponentPinWireId, 
+import { CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
+    ComponentPinWireId, 
     ParseSymbolType, ValueType } from './types.js';
 import { BlockTypes, LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
@@ -36,7 +37,7 @@ export class ExecutionScope {
 
     instances: Map<string, ClassComponent> = new Map();
 
-    functions: Map<string, CFunction> = new Map();
+    functions: Map<string, CFunctionEntry> = new Map();
 
     variables: Map<string, ValueType | ClassComponent> = new Map();
 
@@ -85,7 +86,7 @@ export class ExecutionScope {
      */
     sequence: SequenceItem[] = [];
 
-    constructor(scopeId: number) {
+    private constructor(scopeId: number) {
         this.scopeId = scopeId;
     }
 

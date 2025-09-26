@@ -140,6 +140,8 @@ export enum ReferenceTypes {
     variable = 'variable',
     instance = 'instance',
     pinType = 'pinType',
+
+    unknown = 'unknown',
 }
 
 export enum BlockTypes {
@@ -180,3 +182,5 @@ export const RenderFlags = {
 // Used to differentiate between the main execution context and
 // validation context (only used in editors)
 export const SymbolValidatorContext = '_sym';
+
+export const TrailerArrayIndex = 'index';
