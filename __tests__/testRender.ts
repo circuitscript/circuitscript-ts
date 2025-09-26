@@ -7,6 +7,7 @@ import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/
 import { runScript } from "./helpers.js";
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
+import { NetGraph } from '../src/graph.js';
 
 const mainPath = '__tests__/renderData/';
 
@@ -21,8 +22,14 @@ describe('Render tests', () => {
 
         const { sequence, nets } = visitor.getGraph();
 
-        const layoutEngine = new LayoutEngine();
-        return await layoutEngine.runLayout(sequence, nets);
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        const layoutEngine = new LayoutEngine(logger);
+
+        const { graph, containerFrames } =
+            graphEngine.generateLayoutGraph(sequence, nets);
+
+        return await layoutEngine.runLayout(graph, containerFrames, nets);
     }
 
     test.each([

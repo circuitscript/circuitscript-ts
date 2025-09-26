@@ -1,6 +1,8 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
+import { NetGraph } from '../src/graph.js';
 import { LayoutEngine } from '../src/layout.js';
+import { Logger } from '../src/logger.js';
 import { ComponentPinNet } from '../src/objects/types.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';
 import {
@@ -364,11 +366,16 @@ print(---b)
 
         const { sequence, nets } = visitor.getGraph();
 
-        const layoutEngine = new LayoutEngine();
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        const layoutEngine = new LayoutEngine(logger);
 
         let errorMessage = "";
         try {
-            await layoutEngine.runLayout(sequence, nets);
+            const {graph, containerFrames} = 
+                graphEngine.generateLayoutGraph(sequence, nets);
+
+            await layoutEngine.runLayout(graph, containerFrames, nets);
         } catch (err) {
             errorMessage = err;
         }

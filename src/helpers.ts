@@ -36,6 +36,7 @@ import { NumericValue } from "./objects/ParamDefinition.js";
 import Big from "big.js";
 import { Logger } from "./logger.js";
 import { NodeScriptEnvironment } from "./environment.js";
+import { NetGraph } from "./graph.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -378,12 +379,19 @@ export async function renderScript(scriptData: string, outputPath: string | null
                 }
             }
 
-            const layoutEngine = new LayoutEngine();
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            const layoutEngine = new LayoutEngine(logger);
             const layoutTimer = new SimpleStopwatch();
 
             let sheetFrames;
-            try {
-                sheetFrames = layoutEngine.runLayout(sequence, nets);
+            try {                
+                const {graph, containerFrames} = 
+                    graphEngine.generateLayoutGraph(sequence, nets);
+
+                sheetFrames = layoutEngine.runLayout(graph, 
+                    containerFrames, nets);
+                    
             } catch (err) {
                 throw new RenderError(`Error during layout generation: ${err}`, 'layout');
             }

@@ -1,0 +1,450 @@
+import { Edge, Graph } from "@dagrejs/graphlib";
+import { SymbolGraphic, SymbolDrawing, SymbolPlaceholder, SymbolCustomModule, 
+    SymbolCustom, SymbolPinDefintion } from "./draw_symbols.js";
+import { ComponentTypes } from "./globals.js";
+import { milsToMM } from "./helpers.js";
+import { RenderFrame, RenderComponent, applyComponentParamsToSymbol, 
+    RenderWire } from "./layout.js";
+import { ClassComponent } from "./objects/ClassComponent.js";
+import { SequenceItem, SequenceAction, FrameAction } from "./objects/ExecutionScope.js";
+import { Frame, FixedFrameIds, FrameParamKeys } from "./objects/Frame.js";
+import { Net } from "./objects/Net.js";
+import { numeric, NumericValue } from "./objects/ParamDefinition.js";
+import { WireSegment } from "./objects/Wire.js";
+import { Logger } from "./logger.js";
+import { ComponentPinNetPair } from "./objects/types.js";
+
+export class NetGraph {
+
+    logger: Logger;
+
+    constructor(logger: Logger) {
+        this.logger = logger;
+    }
+
+    /** Given the sequence of actions (generated from parser), return a 
+         * graph that links nodes (components and wires). */
+    generateLayoutGraph(sequence: SequenceItem[],
+        nets: [ClassComponent, pin: number, net: Net][]): {
+            graph: Graph,
+            containerFrames: RenderFrame[],
+        } {
+
+        this.print('===== creating graph and populating with nodes =====');
+
+        let previousNode: string | null = null;
+        let previousPin: number | null = null;
+
+        const graph = new Graph({
+            directed: true, // Set to true so that node1 -- node2 is 
+            // not the same as node2 -- node1. Otherwise this
+            // will replace the previously defined edge.
+
+            compound: true, // Subgraphs supported
+        });
+
+        this.print('sequence length:', sequence.length);
+
+        // This will be used to catch all other components that are not explicitly
+        // within a defined frame.
+        const baseFrame = new RenderFrame(new Frame(FixedFrameIds.BaseFrame));
+
+        // Tracks the current frame that is active as the sequence actions
+        // are executed.
+        const frameStack: RenderFrame[] = [baseFrame];
+
+        // Holds all frames that are encountered
+        const containerFrames: RenderFrame[] = [baseFrame];
+
+        // Based on the sequence steps create all the graph connections first and
+        // determine the size of all items
+        sequence.forEach((sequenceStep, index) => {
+            const action = sequenceStep[0];
+            let tmpComponent: RenderComponent;
+
+            // Component related actions
+            switch (action) {
+                case SequenceAction.To:
+                case SequenceAction.At: {
+                    this.print(...sequenceStep);
+
+                    const [, component, pin] =
+                        sequenceStep as [string, ClassComponent, number];
+
+                    const tmpInstanceName = component.instanceName;
+
+                    if (!graph.hasNode(tmpInstanceName)) {
+                        this.print('create instance', tmpInstanceName);
+
+                        const { displayProp = null } = component;
+
+                        let tmpSymbol: SymbolGraphic;
+
+                        if (displayProp instanceof SymbolDrawing) {
+                            tmpSymbol = new SymbolPlaceholder(displayProp);
+                            tmpSymbol.drawing.logger = this.logger;
+
+                        } else {
+                            const symbolPinDefinitions = generateLayoutPinDefinition(component);
+
+                            if (component.typeProp === ComponentTypes.module) {
+                                tmpSymbol = new SymbolCustomModule(symbolPinDefinitions,
+                                    component.pinsMaxPositions);
+                            } else {
+                                tmpSymbol = new SymbolCustom(symbolPinDefinitions,
+                                    component.pinsMaxPositions);
+                            }
+                        }
+
+                        applyComponentParamsToSymbol(component, tmpSymbol);
+
+                        // Draw symbol in memory to determine the size/bounds.
+                        tmpSymbol.refreshDrawing();
+
+                        const { width: useWidth, height: useHeight } = tmpSymbol.size();
+
+                        tmpComponent = new RenderComponent(component, useWidth, useHeight);
+                        tmpComponent.symbol = tmpSymbol;
+
+                        // Record the sequence number (index of the array) to determine priority
+                        graph.setNode(tmpInstanceName, [RenderItemType.Component, tmpComponent, index]);
+
+                        // All components must belong within a frame.
+                        const currentFrame = frameStack[frameStack.length - 1];
+                        currentFrame && currentFrame.innerItems.push(tmpComponent);
+                    }
+
+                    if (action === SequenceAction.To && previousNode && previousPin) {
+                        this.setGraphEdge(graph, previousNode, tmpInstanceName,
+                            makeEdgeValue(previousNode, previousPin, tmpInstanceName, pin, index));
+                    }
+
+                    previousNode = tmpInstanceName
+                    previousPin = pin;
+                    break;
+                }
+
+                case SequenceAction.Wire: {
+                    // draw wires
+                    const [, wireId, wireSegments] =
+                        sequenceStep as [SequenceAction.Wire, number, WireSegment[]];
+
+                    let useNet!: Net;
+
+                    if (previousNode !== null) {
+                        const [prevNodeType, prevNodeItem] = graph.node(previousNode);
+                        if (prevNodeType === RenderItemType.Component) {
+                            // Find the net of the wire
+                            const matchingItem = nets.find(([comp, pin]) => {
+                                return comp.instanceName === previousNode
+                                    && pin === previousPin;
+                            });
+
+                            if (matchingItem !== undefined) {
+                                useNet = matchingItem[2];
+                            }
+
+                        } else if (prevNodeType === RenderItemType.Wire) {
+                            useNet = (prevNodeItem as RenderWire).net;
+                        }
+                    }
+
+                    const wire = new RenderWire(useNet, numeric(0), numeric(0), wireSegments);
+                    wire.id = wireId;
+
+                    wire.netName = useNet.toString();
+
+                    const wireName = getWireName(wire.id);
+
+                    // Record the sequence number to determine priority
+                    graph.setNode(wireName, [RenderItemType.Wire, wire, index]);
+
+                    // Connect previous node to pin:0 of the wire
+                    this.setGraphEdge(graph, previousNode, wireName,
+                        makeEdgeValue(previousNode, previousPin, wireName, 0, index));
+
+                    previousNode = wireName;
+                    previousPin = 1;
+
+                    // Only for debugging purposes
+                    const wireSegmentsInfo = wireSegments.map(item => {
+                        const tmp: {
+                            direction: string,
+                            value: number,
+                            valueXY?: [x: number, y: number],
+                            until?: [instanceName: string, pin: number]
+                        } = {
+                            direction: item.direction,
+                            value: item.value,
+                        };
+
+                        if (item.valueXY) {
+                            tmp.valueXY = item.valueXY;
+                        }
+
+                        if (item.until) {
+                            tmp.until = [item.until[0].toString(), item.until[1]];
+                        }
+
+                        return tmp;
+                    });
+
+                    this.print(SequenceAction.Wire, wireId,
+                        JSON.stringify(wireSegmentsInfo));
+                    break;
+                }
+
+                case SequenceAction.WireJump: {
+                    this.print(...sequenceStep);
+                    const wireId = sequenceStep[1] as number;
+                    const wireName = getWireName(wireId);
+
+                    let wirePin = 1;
+
+                    if (sequenceStep.length === 3) {
+                        wirePin = sequenceStep[2] as number;
+                    }
+
+                    previousNode = wireName;
+                    previousPin = wirePin;
+                    break;
+                }
+
+                case SequenceAction.Frame: {
+                    const [, frameObject, frameAction] = sequenceStep;
+
+                    if (frameAction === FrameAction.Enter) {
+                        const prevFrame = frameStack[frameStack.length - 1];
+
+                        const newFrame = new RenderFrame(frameObject);
+
+                        if (frameObject.parameters.has(FrameParamKeys.Direction)) {
+                            newFrame.direction =
+                                frameObject.parameters.get(FrameParamKeys.Direction);
+                        }
+
+                        if (frameObject.parameters.has(FrameParamKeys.Padding)) {
+                            newFrame.padding = milsToMM(
+                                frameObject.parameters.get(FrameParamKeys.Padding)
+                            );
+                        }
+
+                        if (frameObject.parameters.has(FrameParamKeys.Border)) {
+                            newFrame.borderWidth =
+                                frameObject.parameters.get(FrameParamKeys.Border);
+                        }
+
+                        if (frameObject.parameters.has(FrameParamKeys.Width)) {
+                            newFrame.width = milsToMM(
+                                frameObject.parameters.get(FrameParamKeys.Width)
+                            );
+                        }
+
+                        if (frameObject.parameters.has(FrameParamKeys.Height)) {
+                            newFrame.height = milsToMM(
+                                frameObject.parameters.get(FrameParamKeys.Height)
+                            );
+                        }
+
+                        containerFrames.push(newFrame);
+                        frameStack.push(newFrame);
+
+                        // If the previous frame exists, then add the new frame
+                        // into the inner items of the previous frame. This allows
+                        // the frame hierarchy to be tracked.
+                        prevFrame && prevFrame.innerItems.push(newFrame);
+
+                    } else if (frameAction === FrameAction.Exit) {
+                        frameStack.pop();
+                    }
+                    break;
+                }
+            }
+        });
+
+        this.print('===== done populating graph =====');
+        this.print('');
+
+        const logNodesAndEdges = true;
+
+        if (logNodesAndEdges){
+            this.print('===== graph edges =====');
+            // dump all edges in the graph
+            const allEdges = graph.edges();
+            allEdges.forEach(edge => {
+                const [nodeId1, pin1, nodeId2, pin2] = graph.edge(edge);
+                this.print(nodeId1, 'pin', pin1, '-----', nodeId2, 'pin', pin2);
+            });
+            this.print('===== end edges =====');
+            this.print()
+
+            this.print('===== graph nodes =====');
+            const nodes = graph.nodes();
+            nodes.forEach(node => {
+                this.print(`name:${node}, value:${graph.node(node)}`);
+            });
+            this.print('===== end nodes =====');
+            this.print('');
+        }
+
+        return {
+            graph,
+            containerFrames,
+        }
+    }
+
+    private setGraphEdge(graph: Graph, node1: string, node2: string,
+        edgeValue: EdgeValue): void {
+        if (!graph.isDirected && graph.hasEdge(node1, node2)){
+            this.print(`Warning: edge already exists ${node1} ${node2}`);
+        }
+        graph.setEdge(node1, node2, edgeValue);
+        this.print(`created edge: node1:${node1} node2:${node2} edgeValue:${edgeValue}`);
+    }
+
+    protected print(...params: any[]): void {
+        this.logger.add(params.join(' '));
+    }
+
+    generateNetGraph(nets: ComponentPinNetPair[]): void {
+        const graph = new Graph({
+            directed: false
+        }); // Should only be one big graph
+
+        nets.forEach(item => {
+            const [component, pin, net] = item;
+
+            const netNodeName = this.getNetNodeName(net);
+            if (!graph.hasNode(netNodeName)){
+                graph.setNode(netNodeName, net);
+            }
+
+            const componentNodeName = this.getComponentName(component);
+            if (!graph.hasNode(componentNodeName)){
+                graph.setNode(componentNodeName, component);
+            }
+
+            graph.setEdge(netNodeName, componentNodeName, [component, pin, net]);
+        });
+    }
+
+    findNodePaths(graph: Graph, startNode: string, endNode: string, seenNodes:string[]=[]): string[][] {
+        const edges = graph.nodeEdges(startNode);
+        const paths:string[][] = [];
+
+        for (let i = 0; i < edges.length; i++) {
+            const edge = edges[i] as Edge;
+            const node1 = edge.v;
+            const node2 = edge.w;
+
+            let nextNode = "";
+            if (node1 === startNode) {
+                nextNode = node2;
+            } else {
+                nextNode = node1;
+            }
+
+            if (nextNode === endNode) {
+                // Stop!
+                paths.push([startNode, endNode]);
+                continue;
+
+            } else if (seenNodes.indexOf(nextNode) !== -1) {
+                // If seen before then go on to next
+                continue;
+            }
+
+            seenNodes.push(startNode);
+            const routes = this.findNodePaths(graph, nextNode, endNode, seenNodes);
+
+            for (let j = 0; j < routes.length; j++) {
+                paths.push([startNode, ...routes[j]]);
+            }
+        }
+
+        return paths;
+    }
+
+    private getNetNodeName(net: Net):string{
+        return 'net:' + net.toString();
+    }
+
+    private getComponentName(component: ClassComponent):string{
+        return 'component:' + component.instanceName;
+    }
+}
+
+type EdgeValue = [instance1: string, instancePin1: number, 
+    instance2: string, instancePin2: number, priority: number];
+
+function makeEdgeValue(instanceName1: string, instancePin1: number,
+    instanceName2: string, instancePin2: number, priority: number)
+    : EdgeValue {
+    return [instanceName1, instancePin1, instanceName2, instancePin2, priority];
+    // return `${instanceName1}:pin:${instancePin1} -- ${instanceName2}:pin:${instancePin2}`;
+}
+
+export function getWireName(wireId: number): string {
+    return 'wire:' + wireId;
+}
+
+/**
+ * Generates the pin layout definition when arrangeProp is present.
+ * @param component
+ * @returns 
+ */
+export function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
+    const pins = component.pins;
+    const symbolPinDefinitions: SymbolPinDefintion[] = [];
+    const existingPinIds = Array.from(pins.keys());
+
+    const arrangeProps = component.arrangeProps ?? [];
+    const addedPins: number[] = [];
+    for (const [key, items] of arrangeProps) {
+
+        let useItems: number[];
+        if (!Array.isArray(items)) {
+            useItems = [items];
+        } else {
+            // Do not mutate original array
+            useItems = [...items];
+        }
+
+        useItems.forEach(pinId => {
+            if (pinId instanceof NumericValue) {
+                const pinIdValue = (pinId as NumericValue).toNumber();
+
+                // Only use the pin if it exists!
+                if (existingPinIds.indexOf(pinIdValue) !== -1) {
+                    const pin = pins.get(pinIdValue)!;
+                    symbolPinDefinitions.push({
+                        side: key,
+                        pinId: pinIdValue,
+                        text: pin.name,
+                        position: pin.position,
+                        pinType: pin.pinType,
+                    });
+                    addedPins.push(pinIdValue);
+                }
+            }
+        });
+    }
+
+    // Make sure all existing pins are added, otherwise throw an error
+    const unplacedPins: number[] = existingPinIds.filter(pinId => {
+        return addedPins.indexOf(pinId) === -1;
+    });
+
+    if (unplacedPins.length > 0) {
+        component._unplacedPins = unplacedPins;
+        console.warn("Warning: There are unplaced pins: " + unplacedPins);
+    }
+
+    return symbolPinDefinitions;
+}
+
+
+export enum RenderItemType {
+    Wire = 'wire',
+    Component = 'component',
+}
