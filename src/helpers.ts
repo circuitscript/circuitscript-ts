@@ -384,6 +384,8 @@ export async function renderScript(scriptData: string, outputPath: string | null
             const layoutEngine = new LayoutEngine(logger);
             const layoutTimer = new SimpleStopwatch();
 
+            // graphEngine.generateNetGraph(nets);
+
             let sheetFrames;
             try {                
                 const {graph, containerFrames} = 

@@ -214,3 +214,15 @@ export enum Direction {
     Down = 'down',
     Up = 'up',
 }
+
+export enum TypeProps {
+    Net = 'net',
+
+    Resistor = 'res',
+    Capacitor = 'cap',
+}
+
+export enum NetTypes {
+    Any = 'any',
+    Source = 'source',
+}

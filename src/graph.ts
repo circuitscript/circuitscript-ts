@@ -12,7 +12,8 @@ import { Net } from "./objects/Net.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 import { WireSegment } from "./objects/Wire.js";
 import { Logger } from "./logger.js";
-import { ComponentPinNetPair } from "./objects/types.js";
+import { ComponentPinNetPair, NetTypes, TypeProps } from "./objects/types.js";
+import Matrix, { solve } from "ml-matrix";
 
 export class NetGraph {
 
@@ -307,25 +308,102 @@ export class NetGraph {
     }
 
     generateNetGraph(nets: ComponentPinNetPair[]): void {
-        const graph = new Graph({
-            directed: false
-        }); // Should only be one big graph
+        // Get all unique nets
+        const uniqueNets = new Set<Net>(nets.map(([,,net]) => net));
+        const components = new Set<ClassComponent>(nets.map(([component, , ]) => component));
 
-        nets.forEach(item => {
-            const [component, pin, net] = item;
+        const tmpNets = Array.from(uniqueNets);
 
-            const netNodeName = this.getNetNodeName(net);
-            if (!graph.hasNode(netNodeName)){
-                graph.setNode(netNodeName, net);
+        const gndNet = tmpNets.find(item => {
+            return item.toString() === '/GND';
+        })!;
+
+        const otherNets = tmpNets.filter(item => {
+            return item !== gndNet;
+        })
+        
+        const netsIndexed: Net[] = [];
+
+        // Set GND net as first item
+        if (gndNet){
+            netsIndexed.push(gndNet);
+        }
+
+        netsIndexed.push(...otherNets);
+
+        const netsLength = netsIndexed.length;
+        const conductanceMatrix = Matrix.zeros(netsLength, netsLength);
+
+        // Parse only resistors for now
+        components.forEach(item => {
+            if (item.typeProp === TypeProps.Resistor){
+                const net1 = item.pinNets.get(1)!;
+                const net2 = item.pinNets.get(2)!;
+
+                const net1Index = netsIndexed.indexOf(net1);
+                const net2Index = netsIndexed.indexOf(net2);
+
+                const resistance: NumericValue = item.parameters.get('value')!;
+                const resistanceValue = resistance.toNumber();
+
+                const conductanceValue = 1/resistanceValue;
+
+                const currentValue1 = conductanceMatrix.get(net1Index, net1Index);
+                const currentValue2 = conductanceMatrix.get(net2Index, net2Index);
+
+                const currentValue3 = conductanceMatrix.get(net1Index, net2Index);
+                const currentValue4 = conductanceMatrix.get(net2Index, net1Index);
+
+                conductanceMatrix.set(net1Index, net1Index, currentValue1 + conductanceValue);
+                conductanceMatrix.set(net2Index, net2Index, currentValue2 + conductanceValue);
+
+                conductanceMatrix.set(net1Index, net2Index, currentValue3 - conductanceValue);
+                conductanceMatrix.set(net2Index, net1Index, currentValue4 - conductanceValue);
             }
-
-            const componentNodeName = this.getComponentName(component);
-            if (!graph.hasNode(componentNodeName)){
-                graph.setNode(componentNodeName, component);
-            }
-
-            graph.setEdge(netNodeName, componentNodeName, [component, pin, net]);
         });
+
+        // Remove GND net from the conductance matrix, otherwise the 
+        // matrix is singular and will throw an error with solve()
+        if (gndNet){
+            conductanceMatrix.removeColumn(0);
+            conductanceMatrix.removeRow(0);
+        }
+
+        const netsWithoutGnd = netsIndexed.filter(net => {
+            return (net !== gndNet);
+        });
+
+        const netResistances = new Map<Net, number>();
+
+        try {
+            netsWithoutGnd.forEach((net, index) => {
+                // Ignore the GND net and only parse nets with type "source"
+                if (net.type === NetTypes.Source) {
+                    const currentVector = Matrix.zeros(netsWithoutGnd.length, 1);
+
+                    // Subtract 1 because of the GND net
+                    // Use a test current of 1A.
+                    currentVector.set(index, 0, 1);
+
+                    const solution = solve(conductanceMatrix, currentVector);
+
+                    for (let i = 0; i < solution.rows; i++) {
+                        const resValue = solution.get(i, 0);
+                        if (resValue > 0) {
+                            const targetNet = netsIndexed[i];
+                            netResistances.set(targetNet, resValue);
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            // Failed to solve matrix
+        }
+
+        return {
+            nets,
+            netResistances,
+        }
     }
 
     findNodePaths(graph: Graph, startNode: string, endNode: string, seenNodes:string[]=[]): string[][] {

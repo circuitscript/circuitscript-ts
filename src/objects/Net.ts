@@ -19,14 +19,14 @@ export class Net {
     // If priority is 0, then this is NOT a user-defined net.
     priority: number;
 
-    type: any;
+    type: string;
 
     // Store parameters like net color, wire thickness, highlight, etc.
     params: Map<string, any> = new Map();
 
     // private randomId: string;
 
-    constructor(namespace: string, name: string, priority = 0, type: any = null) {
+    constructor(namespace: string, name: string, priority = 0, type = 'any') {
         if (namespace.indexOf(' ') !== -1){
             throw "Invalid net namespace provided";
         }

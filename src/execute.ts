@@ -346,6 +346,7 @@ export class ExecutionContext {
         
         if (component.typeProp === ComponentTypes.net) {
             const netName = paramsMap.get(ParamKeys.net_name);
+            const netType = paramsMap.get(ParamKeys.net_type);
 
             let priority = 0;
             if (paramsMap.has(ParamKeys.priority)) {
@@ -357,11 +358,11 @@ export class ExecutionContext {
             let tmpNet: Net;
 
             if (result.found) {
-                tmpNet = result.net;
+                tmpNet = result.net!;
                 this.log('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
-                tmpNet = new Net(this.netNamespace, netName, priority);
+                tmpNet = new Net(this.netNamespace, netName, priority, netType);
                 this.log('net not found, added net instance', 
                     tmpNet.namespace, tmpNet.name);
             }

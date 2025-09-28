@@ -56,6 +56,7 @@ to gnd
 `, [
     [ '--.net', 'function' ],
     [ '--.net_sym.net_name', 'variable' ],
+    [ '--.net_sym.net_type', 'variable' ],
     [ '--.supply', 'function' ],
     [ '--.supply_sym.net_name', 'variable' ],
     [ '--.supply_sym.net_obj', 'variable' ],

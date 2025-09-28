@@ -24,6 +24,7 @@ export const NoNetText = 'NO_NET';
 export enum ParamKeys {
     priority = 'priority',
     net_name = 'net_name',
+    net_type = 'net_type',
 
     flip = 'flip',
     flipX = 'flipX',
