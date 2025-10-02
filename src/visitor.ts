@@ -93,20 +93,26 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitPin_select_expr = (ctx: Pin_select_exprContext): void => {
-        let value: PinId | null = null;
+        let pinId: PinId | null = null;
 
         const ctxData = ctx.data_expr();
         const result = this.visitResult(ctxData);
 
-        if (result instanceof NumericValue){
-            value = result.toNumber();
-        } else if (typeof result === 'string'){
-            value = result;
+        let pinValue: number | string;
+
+        if (result instanceof NumericValue) {
+            pinValue = result.toNumber();
+        } else if (typeof result === 'string') {
+            pinValue = result;
         } else {
-            throw new RuntimeExecutionError("Invalid value for pin", ctx);
+            throw new RuntimeExecutionError("Invalid select pin: " + result, ctx);
         }
 
-        this.setResult(ctx, value);
+        if (pinValue !== undefined) {
+            pinId = new PinId(pinValue);
+        }
+
+        this.setResult(ctx, pinId);
     }
 
     visitAdd_component_expr = (ctx: Add_component_exprContext): void => {
@@ -467,15 +473,10 @@ export class ParserVisitor extends BaseVisitor {
                     || commandValue === PlaceHolderCommands.hpin
                     || commandValue === PlaceHolderCommands.pin) {
 
-                    let id: PinId = command[1][0];
-                    if (command[1][0] instanceof NumericValue) {
-                        id = command[1][0].toNumber();
-                    }
+                    const id = PinId.from(command[1][0]);
 
-                    const pinType = (typeof id === 'number')
-                        ? PinIdType.Int : PinIdType.Str;
-                    const pinName = (typeof id === 'number')
-                        ? id.toString() : id;
+                    const pinType = id.getType();
+                    const pinName = id.toString();
 
                     // TODO: `pin` graphic commands should also allow pin 
                     // type to be set
@@ -1293,15 +1294,22 @@ export class ParserVisitor extends BaseVisitor {
     visitPin_select_expr2 = (ctx: Pin_select_expr2Context): void => {
         const ctxStringValue = ctx.STRING_VALUE();
         const ctxIntegerValue = ctx.INTEGER_VALUE();
-        let result: string| number | null = null;
+        let pinIdValue: string | number;
+        let pinId: PinId | null = null;
 
         if (ctxStringValue) {
-            result = this.prepareStringValue(ctxStringValue.getText());
+            pinIdValue = this.prepareStringValue(ctxStringValue.getText());
         } else if (ctxIntegerValue) {
-            result = Number(ctxIntegerValue.getText());
+            pinIdValue = Number(ctxIntegerValue.getText());
         }
 
-        this.setResult(ctx, result);
+        if (pinIdValue !== undefined) {
+            pinId = new PinId(pinIdValue);
+        } else {
+            throw new RuntimeExecutionError("Invalid select pin", ctx);
+        }
+
+        this.setResult(ctx, pinId);
     }
 
     visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): void => {
@@ -1310,12 +1318,12 @@ export class ParserVisitor extends BaseVisitor {
         // Store the current location
         const [currentComponent, currentPin] = executor.getCurrentPoint();
 
-        // Close any opne path blocks. Depending on path block type, 
+        // Close any open path blocks. Depending on path block type, 
         // this might change the current location, so the earlier statement
         // saves the correct location within the `at` block.
         executor.closeOpenPathBlocks(); 
 
-        const atPin: number | string = this.visitResult(ctx.pin_select_expr2());
+        const atPin: PinId = this.visitResult(ctx.pin_select_expr2());
         executor.atComponent(currentComponent, atPin, {
             addSequence: true
         });
@@ -1771,7 +1779,7 @@ export class ParserVisitor extends BaseVisitor {
                     if (Array.isArray(item)) {
                         return item;
                     } else {
-                        return numeric(nameToPinId.get(item) as number);
+                        return new PinId(nameToPinId.get(item) as number);
                     }
                 });
 
@@ -1907,7 +1915,7 @@ export class ParserVisitor extends BaseVisitor {
         // it as the first action in the sequence. Otherwise it will occupy
         // some space in the final graphical output.
         const tmpNet = executor.scope.getNet(
-            executor.scope.componentRoot!, 1
+            executor.scope.componentRoot!, new PinId(1)
         );
 
         const sequence = (tmpNet === null) 

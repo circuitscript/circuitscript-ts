@@ -12,6 +12,7 @@ import { Net } from './Net.js';
 import { NumericValue, PercentageValue } from './ParamDefinition.js';
 import { ReferenceTypes } from '../globals.js';
 import { RuntimeExecutionError } from '../utils.js';
+import { PinId } from './PinDefinition.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -51,7 +52,7 @@ export type ComponentPinNet = [
     // Need to improve name...
 export type ComponentPinNetPair = [
     component: ClassComponent,
-    pin: number,
+    pin: PinId,
     net: Net
 ];
 

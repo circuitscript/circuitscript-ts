@@ -16,6 +16,8 @@ import { Frame } from './Frame.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { Property_key_exprContext } from '../antlr/CircuitScriptParser.js';
 import { BaseVisitor } from 'src/BaseVisitor.js';
+import { PinId } from './PinDefinition.js';
+import { RuntimeExecutionError } from '../utils.js';
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 
@@ -99,10 +101,14 @@ export class ExecutionScope {
     }
 
     /** Returns the component pin net pair, if the component pin pair matches */
-    private findNet(component: ClassComponent, pin: number): ComponentPinNetPair | undefined {
+    private findNet(component: ClassComponent, pin: PinId): ComponentPinNetPair | undefined {
+        if (!(pin instanceof PinId)){
+            throw new RuntimeExecutionError('Invalid value for PinId: ' + pin);
+        }
+
         return this.nets.find(([tmpComponent, tmpPin]) => {
             // Use manual equality, much faster than using lodash
-            return tmpComponent.isEqual(component) && tmpPin === pin;
+            return tmpComponent.isEqual(component) &&  tmpPin.equals(pin);
         });
     }
 
@@ -122,18 +128,18 @@ export class ExecutionScope {
         return found ? found[2] : null;
     }
 
-    hasNet(component: ClassComponent, pin: number): boolean {
+    hasNet(component: ClassComponent, pin: PinId): boolean {
         return this.findNet(component, pin) !== undefined;
     }
 
     /** Returns net if found, otherwise returns null */
-    getNet(component: ClassComponent, pin: number): Net | null {
+    getNet(component: ClassComponent, pin: PinId): Net | null {
         const result = this.findNet(component, pin);
         return result ? result[2] : null;
     }
 
-    setNet(component: ClassComponent, pin: number, net: Net): void {
-        const pair = this.findNet(component, pin);
+    setNet(component: ClassComponent, pin: PinId, net: Net): void {
+        const pair = this.findNet(component, pin)!;
         const result = this.nets.indexOf(pair);
 
         if (result === -1) {
@@ -145,8 +151,8 @@ export class ExecutionScope {
         component.pinNets.set(pin, net);
     }
 
-    removeNet(component: ClassComponent, pin: number): void {
-        const pair = this.findNet(component, pin);
+    removeNet(component: ClassComponent, pin: PinId): void {
+        const pair = this.findNet(component, pin)!;
         const result = this.nets.indexOf(pair);
 
         if (result !== -1) {
@@ -178,7 +184,7 @@ export class ExecutionScope {
         });
 
         return sortedNet.map(([component, pin, net]) => {
-            return [net.toString(), component.instanceName, pin];
+            return [net.toString(), component.instanceName, pin.value];
         });
     }
 

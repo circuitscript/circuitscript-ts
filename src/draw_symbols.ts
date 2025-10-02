@@ -797,7 +797,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         // @ts-ignore
         if (positionParams[0] instanceof NumericValue){
-            positionParams[0] = positionParams[0].toNumber();
+            positionParams[0] = new PinId(positionParams[0].toNumber());
+        } else if (typeof positionParams[0] === 'number' || typeof positionParams[0] === 'string') {
+            positionParams[0] = new PinId(positionParams[0]);
         }
 
         drawing.addPinMM(...positionParams, lineColor);
@@ -857,7 +859,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 textColor: pinNameColor,
             });
 
-            const pinDisplayText = (typeof pinId === 'number') ? pinId.toString() : pinId;
+            const pinDisplayText = pinId.toString();
 
             // Draw pin Id
             displayPinId && drawing.addLabel(
@@ -1776,7 +1778,7 @@ export class SymbolDrawing {
             angle: NumericValue 
         } {
         const pin = this.pins.find(item => {
-            return item[0] === pinId;
+            return item[0].equals(pinId);
         });
 
         if (pin) {
@@ -1862,7 +1864,7 @@ type SymbolPinLayout = {
 
 export type SymbolPinDefintion = {
     side: string,
-    pinId: number,
+    pinId: PinId,
     text: string, // Display value at the pin
     position: number,
     pinType: PinTypes,

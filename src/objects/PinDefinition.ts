@@ -5,10 +5,61 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { RuntimeExecutionError } from '../utils.js';
 import { NumericValue } from './ParamDefinition.js';
 import { PinTypes } from './PinTypes.js';
 
-export type PinId = number | string;
+export class PinId {
+    private value: number | string;
+    private type: PinIdType;
+
+    constructor(value: number | string) {
+        if (typeof value !== 'string' && typeof value !== 'number'){
+            throw new RuntimeExecutionError("Invalid value for PinId: " + value);
+        }
+
+        this.value = value;
+        this.type = typeof value === 'number' ? PinIdType.Int : PinIdType.Str;
+    }
+
+    getValue(): number | string {
+        return this.value;
+    }
+
+    getType(): PinIdType {
+        return this.type;
+    }
+
+    isNumeric(): boolean {
+        return this.type === PinIdType.Int;
+    }
+
+    isString(): boolean {
+        return this.type === PinIdType.Str;
+    }
+
+    toString(): string {
+        return this.value.toString();
+    }
+
+    equals(other: PinId | number | string): boolean {
+        if (other instanceof PinId) {
+            return this.value === other.value;
+        }
+        return this.value === other;
+    }
+
+    static from(value: number | string | NumericValue): PinId {
+        if (value instanceof NumericValue) {
+            return new PinId(value.toNumber());
+        }
+        return new PinId(value);
+    }
+
+    static isPinIdType(value: number | string): boolean {
+        return (typeof value === 'number' || typeof value === 'string');
+    }
+}
 
 export class PinDefinition {
     id: PinId;
@@ -25,14 +76,14 @@ export class PinDefinition {
     position = -1;
 
     constructor(
-        id: PinId,
+        id: PinId | number | string,
         idType: PinIdType,
         name: string,
         pinType = PinTypes.Any,
         altNames = [],
     ) {
-        this.id = id;
-        this.idType = idType;
+        this.id = id instanceof PinId ? id : new PinId(id);
+        this.idType = this.id.getType();
 
         this.pinType = pinType;
 
@@ -57,13 +108,14 @@ export enum PortSide {
 }
 
 export function isPinId(item: any): boolean {
-    return (typeof item === 'number' || typeof item === 'string');
+    return item instanceof PinId || (typeof item === 'number' || typeof item === 'string');
 }
 
-export function getPinIdValue(item: any): PinId {
-    if (item instanceof NumericValue) {
-        return item.toNumber();
-    } else if (typeof item === 'string') {
-        return item;
-    }
+export function getPinDefinition(map: Map<PinId, PinDefinition>, id: PinId): PinDefinition {
+    const keys = Array.from(map.keys());
+
+    // Method is needed to ensure that the correct object is used as the key.
+    const tmpKey = keys.find(item => item.equals(id))!;
+
+    return map.get(tmpKey)!;
 }

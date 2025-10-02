@@ -56,7 +56,7 @@ export class ExecutionContext {
         found: boolean, net?: Net
     }) = null;
 
-    resolveComponentPinNet!: (component: ClassComponent, pin: number) => Net | null;
+    resolveComponentPinNet!: (component: ClassComponent, pin: PinId) => Net | null;
 
     /** If true, then do no evaluate further expressions. 
      * Used for function state control */
@@ -179,9 +179,9 @@ export class ExecutionContext {
     */
     private linkComponentPinNet(
         component1: ClassComponent,
-        component1Pin: number,
+        component1Pin: PinId,
         component2: ClassComponent,
-        component2Pin: number,
+        component2Pin: PinId,
     ): Net {
         const net1 = this.scope.getNet(component1, component1Pin);
         const net2 = this.scope.getNet(component2, component2Pin);
@@ -323,7 +323,7 @@ export class ExecutionContext {
             const arrangePropPins = this.getArrangePropPins(component.arrangeProps);
 
             pins.forEach(pin => {
-                if (arrangePropPins.indexOf(pin.id) === -1){
+                if (arrangePropPins.find(id => id.equals(pin.id)) === undefined){
                     // Pin not found in the arrange props, show a warning
                     this.logWarning(`Pin ${pin.id} is not specified in arrange property`);
                 }
@@ -366,7 +366,7 @@ export class ExecutionContext {
             }
 
             // Assume net is on 1 pin for now
-            const defaultPin = 1;
+            const defaultPin = new PinId(1);
             this.scope.setNet(component, defaultPin, tmpNet);
             this.log('set net', netName, 'component', component, defaultPin);
         }
@@ -377,11 +377,17 @@ export class ExecutionContext {
             getPortSide(component.pins, component.arrangeProps);
         
         component.pinsMaxPositions = maxPositions;
+
+        const pinIdKeys = Array.from(component.pins.keys());
+
         pinSides.forEach(({ pinId, side, position }) => {
-            if (component.pins.has(pinId)) {
-                const tmpPin = component.pins.get(pinId)!;
+            const matchedPinId = pinIdKeys.find(id => id.equals(pinId));
+            if (matchedPinId) {
+                const tmpPin = component.pins.get(matchedPinId)!;
                 tmpPin.side = side;
                 tmpPin.position = position;
+            } else {
+                throw 'Not found!';
             }
         });
         
@@ -416,23 +422,30 @@ export class ExecutionContext {
         sides.forEach(side => {
             let items = arrangeProp.get(side) ?? [];
 
-            // If not an array, then convert it into any array
+            // If there is only a single pin specified, then it will need
+            // to be wrapped in an array.
             if (!Array.isArray(items)){
                 items = [items];
             }
 
-            // If this is defined, convert the sides into numbers
+            // Convert items to PinId objects
             items = items.map(item => {
-                if (item instanceof NumericValue){
-                    return item.toNumber();
+                if (item instanceof NumericValue) {
+                    item = item.toNumber();
                 }
+
+                if (item instanceof PinId) {
+                    return item;
+                } else if (PinId.isPinIdType(item)) {
+                    return new PinId(item);
+                }
+
                 return item;
             });
 
             arrangeProp.set(side, items);
 
-            // If there is only a single pin specified, then it will need
-            // to be wrapped in an array.
+            
             if (!Array.isArray(items)) {
                 items = [items];
             }
@@ -440,13 +453,14 @@ export class ExecutionContext {
             const uniqueItems: PinId[] = [];
 
             items.forEach(item => {
-                // Only if numeric value, then check for duplicates
-                if (isPinId(item)) {
-                    if (seenIds.indexOf(item) === -1) {
+                // Only if valid PinId, then check for duplicates
+                if (item instanceof PinId) {
+                    const found = seenIds.find(id => id.equals(item));
+                    if (!found) {
                         seenIds.push(item);
                         uniqueItems.push(item);
                     } else {
-                        this.logWarning(`Pin ${item} specified more than once in arrange property`);
+                        this.logWarning(`Pin ${item.toString()} specified more than once in arrange property`);
                     }
                 } else {
                     // Otherwise if not numeric value, then probably
@@ -474,11 +488,7 @@ export class ExecutionContext {
             const items = arrangeProps.get(side);
             if (items) {
                 items.forEach(item => {
-                    if (item instanceof NumericValue){
-                        item = item.toNumber();
-                    }
-
-                    if (isPinId(item)){
+                    if (item instanceof PinId){
                         pins.push(item);
                     }
                 });
@@ -515,7 +525,7 @@ export class ExecutionContext {
         );
     }
 
-    addComponentExisting(component: ClassComponent, pin: number): ComponentPin {
+    addComponentExisting(component: ClassComponent, pin: PinId): ComponentPin {
         const nextPin = component.getNextPinAfter(pin);
 
         this.applyComponentAngleFromWire(component, pin);
@@ -625,7 +635,7 @@ export class ExecutionContext {
 
     atComponent(
         component: ClassComponent,
-        pinId: number | null,
+        pinId: PinId | null,
         options?: {
             addSequence?: boolean,
         }): ComponentPin {
@@ -633,7 +643,7 @@ export class ExecutionContext {
 
         const { addSequence = false } = options ?? {};
 
-        let usePinId: number;
+        let usePinId: PinId;
         if (pinId === null) {
             usePinId = component.getDefaultPin();
         } else {
@@ -701,7 +711,7 @@ export class ExecutionContext {
             componentCopy);
         componentCopy.instanceName = cloneInstanceName;
 
-        const defaultPin = 1;
+        const defaultPin = new PinId(1);
 
         if(this.scope.getNet(component, defaultPin) === null){
             // If component is not in the same scope, then need to 
@@ -1050,7 +1060,7 @@ export class ExecutionContext {
 
                 const tmpComponent = (parentValue as ClassComponent)
                 if (tmpComponent.typeProp === ComponentTypes.net) {
-                    const usedNet = this.scope.getNet(tmpComponent, 1);
+                    const usedNet = this.scope.getNet(tmpComponent, new PinId(1));
                     if (usedNet) {
                         const trailerValue = trailers.join(".");
                         useValue = usedNet.params.get(trailerValue) ?? null;
@@ -1194,7 +1204,7 @@ export class ExecutionContext {
             // Join the child_scope's __root net to the current component / pin
 
             // Get the net of the child scope's root
-            const netConnectedToRoot = childScope.getNet(tmpRoot, 1);
+            const netConnectedToRoot = childScope.getNet(tmpRoot!, new PinId(1));
 
             if (netConnectedToRoot !== null){
                 // Only if the child scope root component is connected 
@@ -1598,7 +1608,7 @@ function isWireSegmentsEndAuto(segments:WireSegment[]): boolean {
     return false;
 }
 
-export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null | Map<string, number[]>): 
+export function getPortSide(pins: Map<PinId, PinDefinition>, arrangeProps: null | Map<string, number[]>): 
     { 
         pins: PortSideItem[],
         maxPositions: Map<string, number>
@@ -1647,7 +1657,7 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
             if (!Array.isArray(items)){
                 useItems = [items];
             } else {
-                // Do no mutate original array
+                // Do not mutate original array
                 useItems = [...items];
             }
 
@@ -1674,16 +1684,9 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
                     // This is for blank spaces
                     position += (item[0] as NumericValue).toNumber();
                 } else {
-                    // Only use the pin if it exists!
-                    let itemValue: PinId;
-
-                    if(isPinId(item)){
-                        itemValue = item;
-                    }
-
-                    if (existingPinIds.indexOf(itemValue) !== -1) {
+                    if (existingPinIds.find(id => id.equals(item))) {
                         result.push({
-                            pinId: itemValue,
+                            pinId: item,
                             side: useSide,
                             position,
                             order: counter
@@ -1705,7 +1708,7 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
 }
 
 type PortSideItem = {
-    pinId: number,
+    pinId: PinId,
     side: string,
     order: number,
     position: number,

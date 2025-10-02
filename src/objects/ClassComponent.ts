@@ -14,6 +14,7 @@ import { WireSegment } from './Wire.js';
 import { ExecutionContext } from '../execute.js';
 import { NumericValue } from './ParamDefinition.js';
 import { ParamKeys } from '../globals.js';
+import { RuntimeExecutionError } from '../utils.js';
 
 export class ClassComponent {
 
@@ -34,7 +35,7 @@ export class ClassComponent {
     pins: Map<PinId, PinDefinition> = new Map();
 
     /** Maps pin indexes to the nets */
-    pinNets: Map<number, Net> = new Map();
+    pinNets: Map<PinId, Net> = new Map();
 
     /** Maps pin indexes to wire segments */
     pinWires: Map<number, WireSegment[]> = new Map();
@@ -58,7 +59,7 @@ export class ClassComponent {
 
     // Stores pin IDs of pins that are not defined in the
     // arrange property of the component.
-    _unplacedPins:number[] = [];
+    _unplacedPins:PinId[] = [];
 
     /** This determines how pins are arranged on the component/symbol. */
     arrangeProps: Map<string, PinId[]> | null = null;
@@ -117,7 +118,7 @@ export class ClassComponent {
         for (let i = 1; i < this.numPins + 1; i++) {
             const pinIndex = i;
             this.pins.set(
-                pinIndex,
+                new PinId(pinIndex),
                 new PinDefinition(
                     pinIndex,
                     PinIdType.Int,
@@ -138,44 +139,51 @@ export class ClassComponent {
         return pins[0];
     }
 
-    hasPin(pinId: number | string): boolean {
-        if (typeof pinId === 'number') {
-            return this.pins.has(pinId);
-        } else {
-            // assume is string
-            for (const [, pinDef] of this.pins) {
-                if (
-                    pinDef.name === pinId ||
-                    pinDef.altNames.indexOf(pinId) !== -1
-                ) {
-                    return true;
-                }
+    hasPin(pinId: PinId): boolean {
+        // Check if we have a pin that matches by ID value
+        for (const [pin, pinDef] of this.pins) {
+            if (pin.equals(pinId)) {
+                return true;
+            }
+            // Also check pin name and alt names for string matching
+            if (pinId.getType() === PinIdType.Str && (
+                pinDef.name === pinId.getValue() ||
+                pinDef.altNames.indexOf(pinId.getValue()) !== -1
+            )) {
+                return true;
             }
         }
-
         return false;
     }
 
-    getPin(pinId: number | string): PinId {
+    getPin(pinId: PinId): PinId {
         // Given a pinId, which is either a number of string,
-        // this returns the pin index in the component.
-        // If the pinId does not match, then a -1 is returned.
+        // this returns the matching PinId object in the component.
+        // If the pinId does not match, then null is returned.
 
-        if (typeof pinId === 'number') {
-            return pinId;
-        } else {
-            // assume is string
+        // First check for exact pin ID match
+        for (const [pin, ] of this.pins) {
+            if (pin.equals(pinId)) {
+                return pin;
+            }
+        }
+
+        // If string, also check pin name and alt names
+        if (pinId.getType() === PinIdType.Str) {
+            const pinIdStringValue = pinId.getValue() as string;
+
             for (const [pin, pinDef] of this.pins) {
                 if (
-                    pinDef.name === pinId ||
-                    pinDef.altNames.indexOf(pinId) !== -1
+                    pinDef.name === pinIdStringValue ||
+                    pinDef.altNames.indexOf(pinIdStringValue) !== -1
                 ) {
                     return pin;
                 }
             }
-
-            return -1;
         }
+
+        throw new RuntimeExecutionError(
+            `Could not find pin '${pinId}' on component '${this.instanceName}'`);
     }
 
     /**
@@ -184,13 +192,15 @@ export class ClassComponent {
      * @param pinIndex
      * @returns 
      */
-    getNextPinAfter(pinIndex: number): number {
-        if (pinIndex + 1 <= this.numPins) {
-            return pinIndex + 1;
+    getNextPinAfter(pinIndex: PinId): PinId {
+        const pins = Array.from(this.pins.keys());
+        pins.sort();
+
+        const index = pins.findIndex(tmp => tmp.equals(pinIndex));
+        if (index + 1 < pins.length) {
+            return pins[index + 1];
         } else {
-            // No more next pin, so just wrap around.
-            // Might not be the right behaviour...
-            return 1;
+            return this.getDefaultPin();
         }
     }
 

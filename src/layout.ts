@@ -1092,7 +1092,7 @@ export class LayoutEngine {
             const [, node1]: [string, RenderItem] = graph.node(firstNodeId);
 
             // By default align pin 1 to the grid
-            let defaultPin: PinId = 1;
+            let defaultPin = new PinId(1);
             if (node1 instanceof RenderComponent) {
                 defaultPin = node1.component.getDefaultPin();
             }

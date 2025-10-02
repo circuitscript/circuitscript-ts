@@ -14,7 +14,7 @@ import { WireSegment } from "./objects/Wire.js";
 import { Logger } from "./logger.js";
 import { ComponentPinNetPair, NetTypes, TypeProps } from "./objects/types.js";
 import Matrix, { solve } from "ml-matrix";
-import { isPinId } from "./objects/PinDefinition.js";
+import { getPinDefinition, PinId } from "./objects/PinDefinition.js";
 
 export class NetGraph {
 
@@ -27,7 +27,7 @@ export class NetGraph {
     /** Given the sequence of actions (generated from parser), return a 
          * graph that links nodes (components and wires). */
     generateLayoutGraph(sequence: SequenceItem[],
-        nets: [ClassComponent, pin: number, net: Net][]): {
+        nets: [ClassComponent, pin: PinId, net: Net][]): {
             graph: Graph,
             containerFrames: RenderFrame[],
         } {
@@ -139,7 +139,7 @@ export class NetGraph {
                             // Find the net of the wire
                             const matchingItem = nets.find(([comp, pin]) => {
                                 return comp.instanceName === previousNode
-                                    && pin === previousPin;
+                                    && pin.equals(previousPin);
                             });
 
                             if (matchingItem !== undefined) {
@@ -478,10 +478,10 @@ export function generateLayoutPinDefinition(component: ClassComponent): SymbolPi
     const existingPinIds = Array.from(pins.keys());
 
     const arrangeProps = component.arrangeProps ?? [];
-    const addedPins: number[] = [];
+    const addedPins: PinId[] = [];
     for (const [key, items] of arrangeProps) {
 
-        let useItems: number[];
+        let useItems: PinId[];
         if (!Array.isArray(items)) {
             useItems = [items];
         } else {
@@ -490,9 +490,10 @@ export function generateLayoutPinDefinition(component: ClassComponent): SymbolPi
         }
 
         useItems.forEach(pinId => {
-                // Only use the pin if it exists in the pins map.
-                if (isPinId(pinId) && existingPinIds.indexOf(pinId) !== -1) {
-                const pin = pins.get(pinId)!;
+            // Only use the pin if it exists in the pins map.
+            const existingPin = existingPinIds.find(pin => pin.equals(pinId));
+            if (existingPin) {
+                const pin = getPinDefinition(pins, existingPin);
                 symbolPinDefinitions.push({
                     side: key,
                     pinId: pinId,
@@ -506,8 +507,8 @@ export function generateLayoutPinDefinition(component: ClassComponent): SymbolPi
     }
 
     // Make sure all existing pins are added, otherwise throw an error
-    const unplacedPins: number[] = existingPinIds.filter(pinId => {
-        return addedPins.indexOf(pinId) === -1;
+    const unplacedPins: PinId[] = existingPinIds.filter(pinId => {
+        return addedPins.find(id => id.equals(pinId)) === undefined;
     });
 
     if (unplacedPins.length > 0) {
