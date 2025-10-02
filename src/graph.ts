@@ -14,6 +14,7 @@ import { WireSegment } from "./objects/Wire.js";
 import { Logger } from "./logger.js";
 import { ComponentPinNetPair, NetTypes, TypeProps } from "./objects/types.js";
 import Matrix, { solve } from "ml-matrix";
+import { isPinId } from "./objects/PinDefinition.js";
 
 export class NetGraph {
 
@@ -489,21 +490,17 @@ export function generateLayoutPinDefinition(component: ClassComponent): SymbolPi
         }
 
         useItems.forEach(pinId => {
-            if (pinId instanceof NumericValue) {
-                const pinIdValue = (pinId as NumericValue).toNumber();
-
-                // Only use the pin if it exists!
-                if (existingPinIds.indexOf(pinIdValue) !== -1) {
-                    const pin = pins.get(pinIdValue)!;
-                    symbolPinDefinitions.push({
-                        side: key,
-                        pinId: pinIdValue,
-                        text: pin.name,
-                        position: pin.position,
-                        pinType: pin.pinType,
-                    });
-                    addedPins.push(pinIdValue);
-                }
+                // Only use the pin if it exists in the pins map.
+                if (isPinId(pinId) && existingPinIds.indexOf(pinId) !== -1) {
+                const pin = pins.get(pinId)!;
+                symbolPinDefinitions.push({
+                    side: key,
+                    pinId: pinId,
+                    text: pin.name,
+                    position: pin.position,
+                    pinType: pin.pinType,
+                });
+                addedPins.push(pinId);
             }
         });
     }

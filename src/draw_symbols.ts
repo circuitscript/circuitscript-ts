@@ -22,6 +22,7 @@ import { roundValue, RuntimeExecutionError, throwWithContext } from "./utils.js"
 import { DeclaredReference, UndeclaredReference } from "./objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
+import { PinId } from "./objects/PinDefinition.js";
 
 
 /**
@@ -145,7 +146,7 @@ export abstract class SymbolGraphic {
     }
 
     // Returns the port position, relative to the symbol origin
-    pinPosition(id: number): { x: NumericValue; y: NumericValue; angle: NumericValue; } {
+    pinPosition(id: PinId): { x: NumericValue; y: NumericValue; angle: NumericValue; } {
         const pin = this.drawing.getPinPosition(id);
 
         if (pin === null){
@@ -795,6 +796,10 @@ export class SymbolPlaceholder extends SymbolGraphic {
         }
 
         // @ts-ignore
+        if (positionParams[0] instanceof NumericValue){
+            positionParams[0] = positionParams[0].toNumber();
+        }
+
         drawing.addPinMM(...positionParams, lineColor);
 
         // Add a label for the pinId and pinName
@@ -852,10 +857,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 textColor: pinNameColor,
             });
 
+            const pinDisplayText = (typeof pinId === 'number') ? pinId.toString() : pinId;
+
             // Draw pin Id
             displayPinId && drawing.addLabel(
                 endX.add(pinIdOffsetX), endY.add(pinIdOffsetY), 
-                pinId.toDisplayString(), {
+                pinDisplayText, {
                 fontSize: numeric(defaultPinIdTextSize),
                 anchor: pinIdAlignment,
                 vanchor: pinIdVAlignment,
@@ -1006,7 +1013,7 @@ export class SymbolCustom extends SymbolGraphic {
         leftPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), leftPinStart.sub(this.pinLength), pinY, 
+            drawing.addPinMM(pin.pinId, leftPinStart.sub(this.pinLength), pinY, 
                 leftPinStart, pinY, defaultLineColor);
 
             drawing.addLabel(leftPinStart.add(milsToMM(20)), 
@@ -1030,7 +1037,7 @@ export class SymbolCustom extends SymbolGraphic {
         rightPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), rightPinStart.add(this.pinLength), pinY, 
+            drawing.addPinMM(pin.pinId, rightPinStart.add(this.pinLength), pinY, 
                 rightPinStart, pinY, defaultLineColor);
 
             drawing.addLabel(rightPinStart.sub(milsToMM(20)), pinY, pin.text, {
@@ -1053,7 +1060,7 @@ export class SymbolCustom extends SymbolGraphic {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
 
-            drawing.addPinMM(numeric(pin.pinId), 
+            drawing.addPinMM(pin.pinId, 
                 pinX, topPinStart.sub(this.pinLength),
                 pinX, topPinStart, defaultLineColor);
 
@@ -1078,7 +1085,7 @@ export class SymbolCustom extends SymbolGraphic {
         bottomPins.forEach(pin => {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), 
+            drawing.addPinMM(pin.pinId, 
                 pinX, bottomPinStart.add(this.pinLength),
                 pinX, bottomPinStart, defaultLineColor);
 
@@ -1218,7 +1225,7 @@ export class SymbolCustomModule extends SymbolCustom {
         leftPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), leftPinStart.sub(this.pinLength), pinY,
+            drawing.addPinMM(pin.pinId, leftPinStart.sub(this.pinLength), pinY,
                 leftPinStart, pinY, defaultLineColor);
 
             drawing.addModulePort(leftPinStart, pinY, this.portWidth, this.portHeight, pin.pinType);
@@ -1234,7 +1241,7 @@ export class SymbolCustomModule extends SymbolCustom {
         rightPins.forEach(pin => {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), rightPinStart.add(this.pinLength), pinY,
+            drawing.addPinMM(pin.pinId, rightPinStart.add(this.pinLength), pinY,
                 rightPinStart, pinY, defaultLineColor);
 
             drawing.addModulePort(rightPinStart, pinY, this.portWidth, this.portHeight, pin.pinType, -1);
@@ -1250,7 +1257,7 @@ export class SymbolCustomModule extends SymbolCustom {
         topPins.forEach(pin => {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), 
+            drawing.addPinMM(pin.pinId, 
                 pinX, topPinStart.sub(this.pinLength), 
                 pinX, topPinStart, defaultLineColor);
 
@@ -1268,7 +1275,7 @@ export class SymbolCustomModule extends SymbolCustom {
         bottomPins.forEach(pin => {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(numeric(pin.pinId), 
+            drawing.addPinMM(pin.pinId, 
                 pinX, bottomPinStart, 
                 pinX, bottomPinStart.sub(this.pinLength), defaultLineColor);
 
@@ -1295,7 +1302,7 @@ export class SymbolDrawing {
     items: (Feature | GeometryProp)[] = [];
 
     // pinId, feature, angle
-    pins: [NumericValue, Feature, angle: NumericValue, lineColor: string][] = [];
+    pins: PinRenderInfo[] = [];
 
     angle = 0;
 
@@ -1334,17 +1341,7 @@ export class SymbolDrawing {
         return this;
     }
 
-    addPin(pinId: NumericValue, startX: NumericValue, startY: NumericValue,
-        endX: NumericValue, endY: NumericValue, lineColor: string): SymbolDrawing {
-        startX = milsToMM(startX);
-        startY = milsToMM(startY);
-        endX = milsToMM(endX);
-        endY = milsToMM(endY);
-
-        return this.addPinMM(pinId, startX, startY, endX, endY, lineColor);
-    }
-
-    addPinMM(pinId: NumericValue, startXMM: NumericValue, startYMM: NumericValue, 
+    addPinMM(pinId: PinId, startXMM: NumericValue, startYMM: NumericValue, 
         endXMM: NumericValue, endYMM: NumericValue, lineColor: string): SymbolDrawing {
         // Values should be in mm
 
@@ -1772,9 +1769,14 @@ export class SymbolDrawing {
         return Geometry.groupBounds(features);
     }
 
-    getPinPosition(pinId: number): { start: [x: NumericValue, y: NumericValue], end: [x: NumericValue, y: NumericValue], angle: NumericValue } {
+    getPinPosition(pinId: PinId): 
+        { 
+            start: [x: NumericValue, y: NumericValue], 
+            end: [x: NumericValue, y: NumericValue], 
+            angle: NumericValue 
+        } {
         const pin = this.pins.find(item => {
-            return item[0].toNumber() === pinId;
+            return item[0] === pinId;
         });
 
         if (pin) {
@@ -1808,7 +1810,7 @@ export type GraphicExprCommand = [commandName: string,
 export class SymbolDrawingCommands extends SymbolDrawing {
 
     id = "";
-    private commands: GraphicExprCommand[] = [];
+    protected commands: GraphicExprCommand[] = [];
 
     paramIds: string[] = [];    // For component reference when executing
                                 // graphic commands
@@ -1866,3 +1868,5 @@ export type SymbolPinDefintion = {
     pinType: PinTypes,
 }
 
+export type PinRenderInfo = 
+    [PinId, Feature, angle: NumericValue, lineColor: string];

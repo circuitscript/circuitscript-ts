@@ -1,0 +1,28 @@
+width = 140
+height = 60
+
+tmp = create component:
+    pins: 2
+    display: create graphic (params):
+        rect: -width/2, -100, width, 300
+        hpin: "A1", -width/2 - 30, 0, 30
+        hpin: "A3", -width/2 - 30, 100, 30
+        hpin: "A2", width/2 + 30, 0, -30
+        hpin: "A4", width/2 + 30, 100, -30
+
+at tmp
+wire left 100
+wire auto_
+to pin "A3"
+
+at tmp pin "A2"
+wire right 100
+branch:
+    wire auto
+    to pin "A4"
+
+wire down 300
+wire left 400
+
+wire auto
+to pin "A3"

@@ -217,9 +217,13 @@ export enum Direction {
 
 export enum TypeProps {
     Net = 'net',
+    Port = 'port',
+    Graphic = 'graphic',
 
     Resistor = 'res',
     Capacitor = 'cap',
+    Inductor = 'ind',
+    Diode = 'diode'
 }
 
 export enum NetTypes {

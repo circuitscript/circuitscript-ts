@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { NumericValue } from './ParamDefinition.js';
 import { PinTypes } from './PinTypes.js';
 
 export type PinId = number | string;
@@ -53,4 +54,16 @@ export enum PortSide {
     EAST = 'EAST',
     SOUTH = 'SOUTH',
     NORTH = 'NORTH'
+}
+
+export function isPinId(item: any): boolean {
+    return (typeof item === 'number' || typeof item === 'string');
+}
+
+export function getPinIdValue(item: any): PinId {
+    if (item instanceof NumericValue) {
+        return item.toNumber();
+    } else if (typeof item === 'string') {
+        return item;
+    }
 }

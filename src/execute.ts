@@ -15,7 +15,7 @@ import { ActiveObject, ExecutionScope, FrameAction,
     SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
 import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
-import { PinDefinition, PortSide } from './objects/PinDefinition.js';
+import { isPinId, PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
 import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
     DeclaredReference, 
     Direction} from './objects/types.js';
@@ -259,7 +259,7 @@ export class ExecutionContext {
         pins: PinDefinition[],
         params: ParamDefinition[],
         props: {
-            arrange?: Map<string, number[]>,
+            arrange?: Map<string, PinId[]>,
             display?: SymbolDrawingCommands,
             type?: string,
             width?: number,
@@ -270,7 +270,6 @@ export class ExecutionContext {
         },
         isModule = false
     ): ClassComponent {
-
         const className = isModule ? ModuleComponent : ClassComponent;
         const component: ClassComponent = new className(
             instanceName,
@@ -301,15 +300,16 @@ export class ExecutionContext {
             // automatically populate the arrange prop with a predefined pin
             // arrangement.
 
-            const tmpArrangeLeft: NumericValue[] = [];
-            const tmpArrangeRight: NumericValue[] = [];
+            const tmpArrangeLeft: PinId[] = [];
+            const tmpArrangeRight: PinId[] = [];
 
+            // TODO: pins should be sorted!
             pins.forEach((pin, index) => {
                 const useArray = (index % 2 === 0) ? tmpArrangeLeft : tmpArrangeRight;
-                useArray.push(numeric(pin.id));
+                useArray.push(pin.id);
             });
 
-            const arrangeProp = new Map<string, NumericValue[]>([
+            const arrangeProp = new Map<string, PinId[]>([
                 [SymbolPinSide.Left, tmpArrangeLeft],
                 [SymbolPinSide.Right, tmpArrangeRight]
             ]);
@@ -320,9 +320,7 @@ export class ExecutionContext {
         // Remove duplicates from component.arrangeProps
         if (props.arrange !== null){
             component.arrangeProps = this.removeArrangePropDuplicates(props.arrange);
-            const arrangePropPins = this.getArrangePropPins(component.arrangeProps).map(item => {
-                return item.toNumber();
-            });
+            const arrangePropPins = this.getArrangePropPins(component.arrangeProps);
 
             pins.forEach(pin => {
                 if (arrangePropPins.indexOf(pin.id) === -1){
@@ -402,7 +400,9 @@ export class ExecutionContext {
         return component;
     }
 
-    private removeArrangePropDuplicates(arrangeProp: Map<string, NumericValue[]>): Map<string, NumericValue[]> {
+    private removeArrangePropDuplicates(arrangeProp: Map<string, PinId[]>)
+        : Map<string, PinId[]> {
+        
         const sides = [
             SymbolPinSide.Left,
             SymbolPinSide.Right,
@@ -411,27 +411,42 @@ export class ExecutionContext {
         ];
 
         const result = new Map();
-        const seenIds:number[] = [];
+        const seenIds: PinId[] = [];
 
         sides.forEach(side => {
             let items = arrangeProp.get(side) ?? [];
 
-            // If there is only a single pin specified, then it will need
-            // to be wrapped in an array.
+            // If not an array, then convert it into any array
             if (!Array.isArray(items)){
                 items = [items];
             }
 
-            const uniqueItems: NumericValue[] = [];
+            // If this is defined, convert the sides into numbers
+            items = items.map(item => {
+                if (item instanceof NumericValue){
+                    return item.toNumber();
+                }
+                return item;
+            });
+
+            arrangeProp.set(side, items);
+
+            // If there is only a single pin specified, then it will need
+            // to be wrapped in an array.
+            if (!Array.isArray(items)) {
+                items = [items];
+            }
+
+            const uniqueItems: PinId[] = [];
 
             items.forEach(item => {
                 // Only if numeric value, then check for duplicates
-                if (item instanceof NumericValue) {
-                    if (seenIds.indexOf(item.toNumber()) === -1) {
-                        seenIds.push(item.toNumber());
+                if (isPinId(item)) {
+                    if (seenIds.indexOf(item) === -1) {
+                        seenIds.push(item);
                         uniqueItems.push(item);
                     } else {
-                        this.logWarning(`Pin ${item.toNumber()} specified more than once in arrange property`);
+                        this.logWarning(`Pin ${item} specified more than once in arrange property`);
                     }
                 } else {
                     // Otherwise if not numeric value, then probably
@@ -446,8 +461,8 @@ export class ExecutionContext {
         return result;
     }
 
-    private getArrangePropPins(arrangeProps: Map<string, NumericValue[]>): NumericValue[] {
-        const pins: NumericValue[] = [];
+    private getArrangePropPins(arrangeProps: Map<string, PinId[]>): PinId[] {
+        const pins: PinId[] = [];
         const sides = [
             SymbolPinSide.Left,
             SymbolPinSide.Right,
@@ -460,6 +475,10 @@ export class ExecutionContext {
             if (items) {
                 items.forEach(item => {
                     if (item instanceof NumericValue){
+                        item = item.toNumber();
+                    }
+
+                    if (isPinId(item)){
                         pins.push(item);
                     }
                 });
@@ -1656,7 +1675,12 @@ export function getPortSide(pins: Map<number, PinDefinition>, arrangeProps: null
                     position += (item[0] as NumericValue).toNumber();
                 } else {
                     // Only use the pin if it exists!
-                    const itemValue = (item as NumericValue).toNumber();
+                    let itemValue: PinId;
+
+                    if(isPinId(item)){
+                        itemValue = item;
+                    }
+
                     if (existingPinIds.indexOf(itemValue) !== -1) {
                         result.push({
                             pinId: itemValue,

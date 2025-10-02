@@ -24,7 +24,7 @@ import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize,
     printBounds, resizeBounds, resizeToNearestGrid, roundValue, 
     toNearestGrid } from './utils.js';
 import { ComponentPinNetPair, Direction } from './objects/types.js';
-import { PinDefinition } from './objects/PinDefinition.js';
+import { PinDefinition, PinId } from './objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from './helpers.js';
 import { numeric, NumericValue } from './objects/ParamDefinition.js';
 import { generateLayoutPinDefinition, getWireName, RenderItemType } from './graph.js';
@@ -1092,7 +1092,12 @@ export class LayoutEngine {
             const [, node1]: [string, RenderItem] = graph.node(firstNodeId);
 
             // By default align pin 1 to the grid
-            this.placeNodeAtPosition(numeric(0), numeric(0), node1, 1);
+            let defaultPin: PinId = 1;
+            if (node1 instanceof RenderComponent) {
+                defaultPin = node1.component.getDefaultPin();
+            }
+
+            this.placeNodeAtPosition(numeric(0), numeric(0), node1, defaultPin);
             return;
         }
 
@@ -1318,7 +1323,9 @@ export class LayoutEngine {
         item.y = item.y.add(offsetY);
     }
 
-    placeNodeAtPosition(fromX: NumericValue, fromY: NumericValue, item: RenderItem, pin: number, depth=0): void {
+    placeNodeAtPosition(fromX: NumericValue, fromY: NumericValue, 
+        item: RenderItem, pin: PinId, depth=0): void {
+        
         if (item instanceof RenderComponent){
             const pinPosition = item.symbol.pinPosition(pin);
             item.x = fromX.sub(pinPosition.x);

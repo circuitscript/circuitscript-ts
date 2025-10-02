@@ -14,7 +14,7 @@ import {
 } from "./layout.js";
 import { applyFontsToSVG } from './sizing.js';
 import {
-    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, MilsToMM, NetGraphicsParams, ParamKeys, 
+    ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, MilsToMM,ParamKeys, 
     RenderFlags, defaultGridSizeUnits,
     defaultPageSpacingMM,
     defaultWireLineWidth, fontDisplayScale,

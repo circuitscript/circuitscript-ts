@@ -69,7 +69,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, DeclaredReference, 
-    FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
+    FunctionDefinedParameter, TypeProps, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
@@ -348,10 +348,16 @@ export class ParserVisitor extends BaseVisitor {
                                 }
                             } else {
                                 // Only allow numbers for now, next time will support ID names/strings
-                                if (!(value instanceof NumericValue)){
+                                if (!(value instanceof NumericValue) && !(typeof value === 'string')){
                                     throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx);
                                 } else {
-                                    checkPinExistsAndNotDuplicated(value.toNumber(), ctx);
+                                    let useValue:any;
+                                    if (value instanceof NumericValue){
+                                        useValue = value.toNumber();
+                                    } else if (typeof value === 'string'){
+                                        useValue = value;
+                                    }
+                                    value && checkPinExistsAndNotDuplicated(useValue, ctx);
                                 }
                             }
                         }
@@ -398,9 +404,6 @@ export class ParserVisitor extends BaseVisitor {
 
         // Now parse here again
         const properties = this.getPropertyExprList(ctx.property_expr());
-        const pins: PinDefinition[] = this.parseCreateComponentPins(
-            properties.get('pins'),
-        );
 
         // Use a unique instance name in the context for now
         let instanceName = this.getExecutor().getUniqueInstanceName();
@@ -423,13 +426,13 @@ export class ParserVisitor extends BaseVisitor {
             instanceName += `${Delimiter1}${appendValue}`;
         }
 
-        const arrange = properties.has('arrange') ?
+        const arrangeProp = properties.has('arrange') ?
             properties.get('arrange') : null;
 
-        const display = properties.has('display') ?
-            properties.get('display') : null;
+        const displayProp = properties.has('display') ?
+            (properties.get('display') as SymbolDrawingCommands): null;
 
-        const type = properties.has('type') ?
+        const typeProp = properties.has('type') ?
             properties.get('type') : null;
 
         const copy = properties.has('copy') ?
@@ -449,8 +452,45 @@ export class ParserVisitor extends BaseVisitor {
         const followWireOrientation = properties.has('followWireOrientation') ?
             properties.get('followWireOrientation') : true;
 
+        let pins: PinDefinition[] = [];
+
+        if (displayProp !== null && arrangeProp === null
+            && typeProp !== TypeProps.Graphic) {
+            // If the display prop is set, then extract the pin information 
+            // from the graphic commands.
+            // `pins` prop will be ignored.
+
+            const drawCommands = displayProp!.getCommands();
+            drawCommands.forEach(command => {
+                const [commandValue,] = command;
+                if (commandValue === PlaceHolderCommands.vpin
+                    || commandValue === PlaceHolderCommands.hpin
+                    || commandValue === PlaceHolderCommands.pin) {
+
+                    let id: PinId = command[1][0];
+                    if (command[1][0] instanceof NumericValue) {
+                        id = command[1][0].toNumber();
+                    }
+
+                    const pinType = (typeof id === 'number')
+                        ? PinIdType.Int : PinIdType.Str;
+                    const pinName = (typeof id === 'number')
+                        ? id.toString() : id;
+
+                    // TODO: `pin` graphic commands should also allow pin 
+                    // type to be set
+                    pins.push(new PinDefinition(id, pinType,
+                        pinName, PinTypes.Any));
+                }
+            });
+        } else {
+            pins = this.parseCreateComponentPins(properties.get('pins'));
+        }
+
         const props = {
-            arrange, display, type, width, height, copy,
+            arrange: arrangeProp, 
+            display: displayProp, 
+            type: typeProp, width, height, copy,
             angle, followWireOrientation
         }
 

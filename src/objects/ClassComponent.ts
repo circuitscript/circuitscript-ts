@@ -31,7 +31,7 @@ export class ClassComponent {
     parameters: Map<string, number | string | NumericValue> = new Map();
 
     /** Maps pin indexes to the pin definition */
-    pins: Map<number, PinDefinition> = new Map();
+    pins: Map<PinId, PinDefinition> = new Map();
 
     /** Maps pin indexes to the nets */
     pinNets: Map<number, Net> = new Map();
@@ -61,7 +61,7 @@ export class ClassComponent {
     _unplacedPins:number[] = [];
 
     /** This determines how pins are arranged on the component/symbol. */
-    arrangeProps: Map<string, NumericValue[]> | null = null;
+    arrangeProps: Map<string, PinId[]> | null = null;
 
     /** Used to identify what graphic to draw for this symbol. This will also
      * include pin placement as well. If `display` is defined, then it will 
@@ -130,9 +130,12 @@ export class ClassComponent {
         this.refreshPinsCache();
     }
 
-    getDefaultPin(): number {
+    getDefaultPin(): PinId {
         // Return id of the default pin
-        return 1;
+        const pins = Array.from(this.pins.keys());
+        pins.sort();
+
+        return pins[0];
     }
 
     hasPin(pinId: number | string): boolean {
