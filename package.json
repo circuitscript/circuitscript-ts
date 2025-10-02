@@ -88,6 +88,7 @@
         "express": "^4.18.2",
         "figlet": "^1.7.0",
         "lodash": "^4.17.21",
+        "ml-matrix": "^6.12.1",
         "pdfkit": "^0.15.1",
         "svg-to-pdfkit": "^0.1.8",
         "svgdom": "^0.1.22",
