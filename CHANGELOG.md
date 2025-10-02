@@ -1,6 +1,40 @@
 # Changelog
 
-## [v0.1.16](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.15...v0.1.16)
+## [v0.1.17](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.16...v0.1.17)
+
+[0c2f122](https://gitlab.com/circuitscript/circuitscript-ts/commit/0c2f122fb3eb3d86bd915450bca91cf018012e90)Convert PinId from type to class for better type safety
+- 
+- - Replace PinId type union with PinId class containing value and type
+- - Add instance methods: getValue(), getType(), isNumeric(), isString(), toString(), equals()
+- - Add static methods: from() and isPinIdType() for convenient creation
+- - Update all PinId references throughout codebase to use class methods
+- - Enhance pin comparison logic to use equals() method instead of primitive equality
+- - Update ClassComponent pin methods to work with PinId objects
+- - Modify ExecutionScope to handle PinId objects in net operations
+- - Update symbol rendering to use PinId.toString() for display
+- - Add validation in PinId constructor for type safety
+- - Create getPinDefinition helper for Map&lt;PinId, PinDefinition&gt; lookups
+- 
+- This refactoring improves type safety and provides a more robust foundation
+- for pin identification while maintaining backward compatibility.
+
+[ef95969](https://gitlab.com/circuitscript/circuitscript-ts/commit/ef95969b20e6711cb29b546bf94666afeba9d59c)Add support for string-based pin IDs and enhance symbol rendering
+- 
+- - Implement PinId type supporting both string and numeric pin identifiers
+- - Update pin definition system to handle mixed pin ID types
+- - Enhance symbol drawing to render string pin IDs correctly
+- - Add new test cases for string pin IDs and custom graphics
+- - Update arrange prop handling to support string-based pins
+- - Improve pin positioning and display in custom symbols
+- - Add net_type parameter to std.cst net() function
+- - Fix pin ID conversion and display throughout the codebase
+- 
+- This enables more flexible component definitions with named pins
+- like "A1", "VCC", "GND" instead of just numeric identifiers.
+
+[b7d0114](https://gitlab.com/circuitscript/circuitscript-ts/commit/b7d0114d500affc2d91acb20f2d990fff306dcdd) added code for solving for resistances at nodes
+
+## [v0.1.16](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.15...v0.1.16) - 2025-09-26
 
 [4139a40](https://gitlab.com/circuitscript/circuitscript-ts/commit/4139a406c229b758a9d03fedb074fd0d071c7bcb)Add array indexing support and enhance expression parsing
 - 
