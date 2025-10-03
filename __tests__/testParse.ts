@@ -116,7 +116,6 @@ branch:
 `);
         expect(hasError).toEqual(false);
 
-        visitor.annotateComponents();
         const instances = visitor.dumpInstances();
 
         expect(findItem(instances, 'res', 'R1', 'numeric:10k')).not.toBeNull();
@@ -152,8 +151,6 @@ to a2 pin 3
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toEqual(false);
 
-        visitor.annotateComponents();
-
         const instances = visitor.dumpInstances();
 
         expect(findItemByRefDes(instances, 'X', 'X1')).not.toBeNull();
@@ -185,8 +182,6 @@ add res(40k)
 `
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toEqual(false);
-
-        visitor.annotateComponents();
 
         const instances = visitor.dumpInstances();
 
@@ -236,7 +231,6 @@ to gnd
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toEqual(false);
 
-        visitor.annotateComponents();
         const instances = visitor.dumpInstances();
 
         const item1 = findItem(instances, 'res', 'R1', 'numeric:10k');
@@ -267,7 +261,6 @@ R1.mpn = "res-12345"
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toEqual(false);
 
-        visitor.annotateComponents();
         const instances = visitor.dumpInstances();
 
         // console.log('instances', instances);
@@ -362,7 +355,6 @@ print(---b)
         const { hasError, visitor } = await runScript(script21_);
 
         expect(hasError).toEqual(false);
-        visitor.annotateComponents();
 
         const { sequence, nets } = visitor.getGraph();
 

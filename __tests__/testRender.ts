@@ -17,7 +17,7 @@ describe('Render tests', () => {
         const script = readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
         const { hasError, visitor } = await runScript(script);
         expect(hasError).toEqual(false);
-        visitor.annotateComponents();
+        
         visitor.applySheetFrameComponent();
 
         const { sequence, nets } = visitor.getGraph();

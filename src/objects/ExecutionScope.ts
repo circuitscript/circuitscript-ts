@@ -66,7 +66,7 @@ export class ExecutionScope {
     unnamedCounter = 1;
 
     currentComponent: ClassComponent | null = null;
-    currentPin: number | null = null;
+    currentPin: PinId | null = null;
 
     currentWireId = -1;
     currentFrameId = -1;
@@ -171,8 +171,8 @@ export class ExecutionScope {
             const netA = a[2];
             const netB = b[2];
 
-            const netAId = netA.namespace + netA.name;
-            const netBId = netB.namespace + b[2].name;
+            const netAId = netA.toString();
+            const netBId = netB.toString();
 
             if (netAId > netBId) {
                 return 1;
@@ -219,7 +219,7 @@ export class ExecutionScope {
     }
 
     /** Sets current insertion point in the scope */
-    setCurrent(component: ClassComponent | null, pin: number | null = null): void {
+    setCurrent(component: ClassComponent | null, pin: PinId | null = null): void {
         this.currentComponent = component;
         if (component !== null) {
             this.currentPin = (pin === null) ? component.getDefaultPin() : pin;

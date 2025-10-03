@@ -1929,7 +1929,7 @@ export class ParserVisitor extends BaseVisitor {
         };
     }
 
-    /** Performs annotation for components */
+    /** Performs annotation for components and rename nets */
     annotateComponents(): void {
         this.log('===== annotate components =====');
 
@@ -1979,8 +1979,44 @@ export class ParserVisitor extends BaseVisitor {
             }
         });
 
-        this.log('===== annotate done =====');
-        this.log('');
+        this.log('===== annotate components done =====');
+
+        this.log('===== rename nets =====');
+        this.renameNetsWithRefdes();
+        this.log('===== rename nets done =====');
+    }
+
+    /**
+     * Renames nets that have a priority of 0 (not directly defined by user) 
+     * based on the first component and component pin that it is connected to.
+     */
+    private renameNetsWithRefdes(): void {
+        const nets = this.getScope().getNets();
+        const seenNets:Net[] = [];
+
+        // Get all net names first
+        const uniqueNets = new Set<Net>(nets.map(([,,net]) => net));
+        const fullNetNames = Array.from(uniqueNets).map(item => item.toString());
+
+        nets.forEach(([component, pin, net]) => {
+            if (net.priority === 0 && seenNets.indexOf(net) === -1 
+                && component.typeProp !== TypeProps.Module
+                && component.typeProp !== TypeProps.Net) {
+                
+                // Update both names, since both are originally system
+                // created net names.
+                net.name = net.baseName = 
+                    `NET-(${component.assignedRefDes}-${pin.toString()})`;
+                
+                // If net already exists, this is an unhandled case, since it
+                if (fullNetNames.indexOf(net.toString()) !== -1) {
+                    throw new RuntimeExecutionError('Net renaming failed due to clash: ' + net);
+                }
+
+                seenNets.push(net);
+            }
+        });
+
     }
 
     /** Sets the frame component used for the document sheet type as the sheet

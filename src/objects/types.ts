@@ -64,7 +64,7 @@ export type ComponentPinWireId = [
 
 export type ComponentPin = [
     component: ClassComponent,
-    pinId: number|string
+    pinId: PinId
 ];
 
 export type ComplexType = ValueType 
@@ -220,11 +220,12 @@ export enum TypeProps {
     Net = 'net',
     Port = 'port',
     Graphic = 'graphic',
+    Module = 'module',
 
     Resistor = 'res',
     Capacitor = 'cap',
     Inductor = 'ind',
-    Diode = 'diode'
+    Diode = 'diode',
 }
 
 export enum NetTypes {

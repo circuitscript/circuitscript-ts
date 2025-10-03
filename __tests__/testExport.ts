@@ -7,8 +7,6 @@ describe('export to kicad', () => {
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toBe(false);
 
-        visitor.annotateComponents();
-
         const {tree: kicadNetList, missingFootprints} = generateKiCADNetList(visitor.getNetList());
 
         const sExp = new SExpObject(kicadNetList);
@@ -38,7 +36,7 @@ describe('export to kicad', () => {
                     "net": [
                         {
                             "code": 1,
-                            "name": "/NET-4",
+                            "name": "/NET-(J1-2)",
                             "node": [
                                 {
                                     "ref": "J1",
@@ -91,7 +89,7 @@ describe('export to kicad', () => {
                         },
                         {
                             "code": 4,
-                            "name": "/NET-2",
+                            "name": "/NET-(R1-2)",
                             "node": [
                                 {
                                     "ref": "R1",

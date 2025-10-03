@@ -312,6 +312,12 @@ export async function renderScript(scriptData: string, outputPath: string | null
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);
 
+    try {
+        visitor.annotateComponents();
+    } catch (err) {
+        throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
+    }
+
     if (dumpNets) {
         const nets = visitor.dumpNets();
         nets.forEach(item => console.log(item.join(" | ")));
@@ -328,11 +334,6 @@ export async function renderScript(scriptData: string, outputPath: string | null
 
     if (errors.length === 0){
         const { frameComponent } = visitor.applySheetFrameComponent();
-        try {
-            visitor.annotateComponents();
-        } catch (err) {
-            throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
-        }
 
         // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 

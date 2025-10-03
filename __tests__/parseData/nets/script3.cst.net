@@ -1,8 +1,8 @@
-/NET-1 | diode-0.COMP-1 | 2
-/NET-2 | diode-1.COMP-1 | 1
-/NET-2 | diode-2.COMP-1 | 1
-/NET-3 | diode-2.COMP-1 | 2
-/NET-4 | diode-3.COMP-1 | 2
+/NET-(D1-2) | diode-0.COMP-1 | 2
+/NET-(D2-1) | diode-1.COMP-1 | 1
+/NET-(D2-1) | diode-2.COMP-1 | 1
+/NET-(D3-2) | diode-2.COMP-1 | 2
+/NET-(D4-2) | diode-3.COMP-1 | 2
 /hello | label-0.COMP-1-hello | 1
 /hello | label-0.COMP-1-hello:0 | 1
 /hello | -branch.--.0 | 1

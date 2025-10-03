@@ -68,6 +68,8 @@ export async function runScript(script: string): Promise<{
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
+    visitor.annotateComponents();
+
     return {
         visitor, hasError,
         componentPinNets: visitor.dumpNets(),

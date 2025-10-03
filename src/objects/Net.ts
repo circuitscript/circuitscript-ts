@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { NetTypes } from "./types.js";
+
 export class Net {
 
     name: string;
@@ -19,14 +21,15 @@ export class Net {
     // If priority is 0, then this is NOT a user-defined net.
     priority: number;
 
-    type: string;
+    type: NetTypes;
 
     // Store parameters like net color, wire thickness, highlight, etc.
     params: Map<string, any> = new Map();
 
     // private randomId: string;
 
-    constructor(namespace: string, name: string, priority = 0, type = 'any') {
+    constructor(namespace: string, name: string, priority = 0, 
+        type = NetTypes.Any) {
         if (namespace.indexOf(' ') !== -1){
             throw "Invalid net namespace provided";
         }

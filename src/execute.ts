@@ -646,12 +646,11 @@ export class ExecutionContext {
         let usePinId: PinId;
         if (pinId === null) {
             usePinId = component.getDefaultPin();
+        } else if (component.hasPin(pinId)) {
+            usePinId = component.getPin(pinId);
         } else {
-            if (component.hasPin(pinId)) {
-                usePinId = component.getPin(pinId);
-            } else {
-                throw 'Invalid pin number ' + pinId + ' in ' + component;
-            }
+            throw new RuntimeExecutionError('Invalid pin number ' 
+                + pinId + ' in ' + component);
         }
 
         this.scope.setCurrent(component, usePinId);
