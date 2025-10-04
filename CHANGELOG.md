@@ -1,6 +1,28 @@
 # Changelog
 
-## [v0.1.17](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.16...v0.1.17)
+## [v0.1.18](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.17...v0.1.18)
+
+[e4372a5](https://gitlab.com/circuitscript/circuitscript-ts/commit/e4372a59a76d09e189bb813c65b524bc4cf0b2ab)Improve net naming with component reference designators
+- 
+- Refactored net naming system to automatically rename auto-generated nets
+- with descriptive names based on the first connected component and pin.
+- Nets with priority 0 (system-generated) are now named using the pattern
+- NET-(RefDes-PinId) for better readability in netlists and exports.
+- 
+- Also moved component annotation to occur before net operations in the
+- rendering pipeline for proper initialization ordering.
+
+[298dedd](https://gitlab.com/circuitscript/circuitscript-ts/commit/298dedd62599263d3f41048d4b3a5523055a00e5)Refactor output format handling with extensible handler pattern
+- 
+- Introduced ParseOutputHandler abstract class to support multiple output
+- formats through a plugin-like architecture. Extracted KiCad netlist
+- generation into KicadNetListOutputHandler and moved it to execute before
+- rendering. Split renderScript into renderScript and renderScriptCustom to
+- allow custom output handlers while maintaining backward compatibility.
+
+[9340843](https://gitlab.com/circuitscript/circuitscript-ts/commit/9340843b7eb0ab8403029738fbfe2e7d31897708) fixed minor issues for parse output handler
+
+## [v0.1.17](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.16...v0.1.17) - 2025-10-02
 
 [0c2f122](https://gitlab.com/circuitscript/circuitscript-ts/commit/0c2f122fb3eb3d86bd915450bca91cf018012e90)Convert PinId from type to class for better type safety
 - 
@@ -33,6 +55,8 @@
 - like "A1", "VCC", "GND" instead of just numeric identifiers.
 
 [b7d0114](https://gitlab.com/circuitscript/circuitscript-ts/commit/b7d0114d500affc2d91acb20f2d990fff306dcdd) added code for solving for resistances at nodes
+
+[6c24150](https://gitlab.com/circuitscript/circuitscript-ts/commit/6c24150593865284b94b1d5f966bee8c0421e13c) missed out ml-matrix package
 
 ## [v0.1.16](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.15...v0.1.16) - 2025-09-26
 
