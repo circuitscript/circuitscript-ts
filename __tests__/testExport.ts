@@ -1,15 +1,15 @@
-import { _id, generateKiCADNetList, SExpObject } from "../src/export";
+import { _id, generateKiCadNetList, SExpObject } from "../src/export";
 import { runScript } from "./helpers";
 
-describe('export to kicad', () => {
+describe('export to KiCad', () => {
 
-    test('export kicad net list, catch missing footprints', async () => {
+    test('export KiCad net list, catch missing footprints', async () => {
         const {hasError, visitor} = await runScript(script);
         expect(hasError).toBe(false);
 
-        const {tree: kicadNetList, missingFootprints} = generateKiCADNetList(visitor.getNetList());
+        const {tree: kiCadNetList, missingFootprints} = generateKiCadNetList(visitor.getNetList());
 
-        const sExp = new SExpObject(kicadNetList);
+        const sExp = new SExpObject(kiCadNetList);
 
         const components = new SExpObject(sExp.getWithId('components')!);
         const nets = new SExpObject(sExp.getWithId('nets')!);

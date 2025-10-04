@@ -12,7 +12,7 @@ import path from "path";
 import PDFDocument from "pdfkit";
 
 
-import { generateKiCADNetList, printTree } from "./export.js";
+import { generateKiCadNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "./render.js";
@@ -238,11 +238,23 @@ export async function validateScript(filePath: string, scriptData: string,
     return visitorResolver;
 }
 
+type RenderScriptReturn = {
+    svgOutput: string | null,
+    errors: BaseError[]
+};
+
 export async function renderScript(scriptData: string, outputPath: string | null,
-    options: ScriptOptions): Promise<{
-        svgOutput: string | null,
-        errors: BaseError[]
-    }> {
+    options: ScriptOptions): Promise<RenderScriptReturn> {
+
+    const parseHandlers = [
+        new KiCadNetListOutputHandler(),
+    ];
+
+    return renderScriptCustom(scriptData, outputPath, options, parseHandlers);
+}
+
+export async function renderScriptCustom(scriptData: string, outputPath: string | null,
+    options: ScriptOptions, parseHandlers: ParseOutputHandler[]): Promise<RenderScriptReturn> {
 
     const {
         dumpNets = false,
@@ -355,28 +367,19 @@ export async function renderScript(scriptData: string, outputPath: string | null
             if (outputPath) {
                 fileExtension = path.extname(outputPath).substring(1);
 
-                if (fileExtension === "pdf") {
-                    outputDefaultZoom = 1;
-                }
-            }
-
-            if (fileExtension === 'net') {
-                // Generate the kicad net list
-                const { tree: kicadNetList, missingFootprints }
-                    = generateKiCADNetList(visitor.getNetList());
-
-                missingFootprints.forEach(entry => {
-                    console.log(
-                        `${entry.refdes} (${entry.instanceName}) does not have footprint`);
-                });
-
-                writeFileSync(outputPath, printTree(kicadNetList));
-                console.log('Generated file', outputPath);
-
-                // Quit here, since SVG output is not needed
-                return {
-                    svgOutput: null, 
-                    errors,
+                for (let i = 0; i < parseHandlers.length; i++) {
+                    const handler = parseHandlers[i];
+                    if (handler.beforeRender) {
+                        const keepParsing = handler.parse(visitor,
+                            outputPath, fileExtension);
+    
+                        if (!keepParsing) {
+                            return {
+                                svgOutput: null,
+                                errors
+                            }
+                        }
+                    }
                 }
             }
 
@@ -420,6 +423,10 @@ export async function renderScript(scriptData: string, outputPath: string | null
             dumpData && writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
 
             try {
+                if (fileExtension === "pdf") {
+                    outputDefaultZoom = 1;
+                }
+
                 svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
             } catch (err) {
                 throw new RenderError(`Error generating SVG output: ${err}`, 'svg_output');
@@ -470,6 +477,46 @@ export async function renderScript(scriptData: string, outputPath: string | null
     return {
         svgOutput, 
         errors
+    }
+}
+
+/**
+ * Parse output handler class to handle different output formats after the 
+ * script parsing is completed.
+ */
+export abstract class ParseOutputHandler {
+
+    // If true, this output handler should be called before the render stage
+    beforeRender = false;
+
+    // If true, this output handler should be called after the render stage
+    afterRender = false;
+
+    abstract parse(visitor: ParserVisitor, outputPath: string, fileExtension: string): boolean;
+}
+
+export class KiCadNetListOutputHandler extends ParseOutputHandler {
+
+    beforeRender = true;
+
+    parse(visitor: ParserVisitor, outputPath: string, fileExtension: string): boolean {
+        // Generate the kicad net list
+
+        if (fileExtension === "net") {    
+            const { tree: kiCadNetList, missingFootprints }
+                = generateKiCadNetList(visitor.getNetList());
+
+            missingFootprints.forEach(entry => {
+                console.log(
+                    `${entry.refdes} (${entry.instanceName}) does not have footprint`);
+            });
+
+            writeFileSync(outputPath, printTree(kiCadNetList));
+            console.log('Generated file', outputPath);
+
+            return false;
+        }
+        return true;
     }
 }
 
