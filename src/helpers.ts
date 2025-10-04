@@ -366,18 +366,18 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
             if (outputPath) {
                 fileExtension = path.extname(outputPath).substring(1);
+            }
 
-                for (let i = 0; i < parseHandlers.length; i++) {
-                    const handler = parseHandlers[i];
-                    if (handler.beforeRender) {
-                        const keepParsing = handler.parse(visitor,
-                            outputPath, fileExtension);
-    
-                        if (!keepParsing) {
-                            return {
-                                svgOutput: null,
-                                errors
-                            }
+            for (let i = 0; i < parseHandlers.length; i++) {
+                const handler = parseHandlers[i];
+                if (handler.beforeRender) {
+                    const keepParsing = handler.parse(visitor,
+                        outputPath, fileExtension);
+
+                    if (!keepParsing) {
+                        return {
+                            svgOutput: null,
+                            errors
                         }
                     }
                 }
@@ -492,17 +492,17 @@ export abstract class ParseOutputHandler {
     // If true, this output handler should be called after the render stage
     afterRender = false;
 
-    abstract parse(visitor: ParserVisitor, outputPath: string, fileExtension: string): boolean;
+    abstract parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string | null): boolean;
 }
 
 export class KiCadNetListOutputHandler extends ParseOutputHandler {
 
     beforeRender = true;
 
-    parse(visitor: ParserVisitor, outputPath: string, fileExtension: string): boolean {
+    parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string| null): boolean {
         // Generate the kicad net list
 
-        if (fileExtension === "net") {    
+        if (outputPath !== null && fileExtension === "net") {    
             const { tree: kiCadNetList, missingFootprints }
                 = generateKiCadNetList(visitor.getNetList());
 

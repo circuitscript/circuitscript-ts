@@ -109,7 +109,8 @@ export function generateKiCadNetList(netlist: NetListItem[])
     };
 }
 
-export function printTree(tree: (IdObject | string)[] | string, level = 0): string {
+// TODO: fix type of tree
+export function printTree(tree: any, level = 0): string {
     const output = [];
 
     // If a single item, then just return the value
