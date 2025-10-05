@@ -118,14 +118,15 @@ def diode():
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
             vline: width/2, -height/2, height
-            hpin: 1, -width/2-100, 0, 100    # anode
-            hpin: 2, width/2 + 100, 0, -100  # cathode
+            hpin: 1, -width/2-100, 0, 100    # cathode
+            hpin: 2, width/2 + 100, 0, -100  # anode
             label: params.refdes, 0, -100, fontSize=50, anchor="middle", vanchor="top"
 
 def led(color):
     width = 100
     height = 100
 
+    # anode and cathode pin numbers follow KiCad
     return create component:
         pins:   
             1: "cathode"
@@ -138,14 +139,15 @@ def led(color):
                     "M", 130, 60, "L", 130, 90, "L", 100, 90)
             path: ("M", 120, 30, "L", 180, 90,
                     "M", 180, 60, "L", 180, 90, "L", 150, 90)
-            hpin: 1, -width/2-100, 0, 100    # anode
-            hpin: 2, width/2 + 100, 0, -100  # cathode
+            hpin: 1, width/2 + 100, 0, -100  # cathode
+            hpin: 2, -width/2-100, 0, 100    # anode
             label: params.refdes, 0, -100, fontSize=50, anchor="middle", vanchor="top"
             label: params.color, 0, 100, fontSize=40, anchor="middle", vanchor="bottom"
         params:
             size: "0603"
             color: color
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
+
 
 
 def cgnd():
@@ -217,6 +219,7 @@ def arrow_point():
 def no_connect(size=20):
     return create component:
         pins: 1
+        type: "graphic"
         display: create graphic:
             path: "M", -size, -size, "L", size, size
             path: "M", -size, size, "L", size, -size

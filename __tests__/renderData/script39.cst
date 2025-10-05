@@ -13,7 +13,7 @@ wire down 100
 for i in range(0, 3):
     parallel:
         wire right (i * 800) down 100
-        add led("RED")
+        add led("RED") pin 2
         wire down 100
 
         for j in range(0, 3):

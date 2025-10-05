@@ -32,6 +32,6 @@ point:
     to gnd
 
 wire down 100
-add led("red") angle:90
+add led("red") angle:90 pin 2
 wire down 100
 to gnd
