@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.18](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.17...v0.1.18)
+## [v0.1.19](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.18...v0.1.19)
+
+[3903ca0](https://gitlab.com/circuitscript/circuitscript-ts/commit/3903ca03d756855fdf81c1b8d4d77ca997f6c529) updated standard library to follow KiCad diode convention
+
+## [v0.1.18](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.17...v0.1.18) - 2025-10-04
 
 [e4372a5](https://gitlab.com/circuitscript/circuitscript-ts/commit/e4372a59a76d09e189bb813c65b524bc4cf0b2ab)Improve net naming with component reference designators
 - 
