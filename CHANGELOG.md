@@ -1,6 +1,11 @@
 # Changelog
 
-## [v0.1.19](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.18...v0.1.19)
+## [v0.1.20](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.19...v0.1.20)
+
+[305c0cb](https://gitlab.com/circuitscript/circuitscript-ts/commit/305c0cbdb22b9f29187388ca2b3ac1c1aca301f8) fixed bug where component is moved if connected outside of original frame
+-  added test
+
+## [v0.1.19](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.18...v0.1.19) - 2025-10-05
 
 [3903ca0](https://gitlab.com/circuitscript/circuitscript-ts/commit/3903ca03d756855fdf81c1b8d4d77ca997f6c529) updated standard library to follow KiCad diode convention
 
