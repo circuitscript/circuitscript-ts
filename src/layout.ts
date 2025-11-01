@@ -1850,6 +1850,8 @@ export class RenderText extends RenderObject {
  * Frame that will be rendered. Can contain other frames and components.
  */
 export class RenderFrame extends RenderObject {
+
+    static FrameIdCounter = 0;
     
     /** Bounds of the render frame */
     bounds: BoundBox | null = null;
@@ -1897,10 +1899,15 @@ export class RenderFrame extends RenderObject {
     /** If true, then frame only contains text for frame title. */
     containsTitle = false;
 
+    frameId: number;
+
     constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
         super();
         this.frame = frame;
         this.renderType = type;
+
+        this.frameId = RenderFrame.FrameIdCounter;
+        RenderFrame.FrameIdCounter++;
     }
 
     toString(): string {

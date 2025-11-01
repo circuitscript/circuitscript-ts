@@ -88,7 +88,8 @@ describe('Render tests', () => {
         ['Path blocks nested within for loop', 'script39.cst'],
         ['Test corrcet graph when `at` block contains `point` path block', 'script40.cst'],
         ['string and number Pin Ids for create component', 'script41.cst'],
-        ['extract PinIds from create component `display` prop', 'script42.cst']
+        ['extract PinIds from create component `display` prop', 'script42.cst'],
+        ['do not move non-copy component in frame', 'script43.cst'],
 
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 

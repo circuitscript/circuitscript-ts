@@ -1,0 +1,19 @@
+# When a component without the copy property is referenced outside of a frame,
+# do not move it. Instead, the other components will be indirectly added into
+# the frame.
+
+import std
+
+v3v3 = supply("3v3")
+gnd = dgnd()
+
+conn1 = create component:
+    pins: 6
+
+frame:
+    at conn1 pin 1
+    wire right 100 up 100 to v3v3
+
+at conn1 pin 5
+wire down 100
+to gnd

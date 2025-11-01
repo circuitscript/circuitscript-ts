@@ -58,6 +58,9 @@ export class NetGraph {
         // Holds all frames that are encountered
         const containerFrames: RenderFrame[] = [baseFrame];
 
+        // Maps nodes to the frames that are within
+        const nodeFrames = new Map<string, RenderFrame>();
+
         // Based on the sequence steps create all the graph connections first and
         // determine the size of all items
         sequence.forEach((sequenceStep, index) => {
@@ -74,6 +77,12 @@ export class NetGraph {
                         sequenceStep as [string, ClassComponent, number];
 
                     const tmpInstanceName = component.instanceName;
+
+                    // If 'at' action, then previous node/pin should be reset.
+                    if (action === SequenceAction.At){
+                        previousNode = null;
+                        previousPin = null;
+                    }
 
                     if (!graph.hasNode(tmpInstanceName)) {
                         this.print('create instance', tmpInstanceName);
@@ -112,8 +121,19 @@ export class NetGraph {
                         graph.setNode(tmpInstanceName, [RenderItemType.Component, tmpComponent, index]);
 
                         // All components must belong within a frame.
-                        const currentFrame = frameStack[frameStack.length - 1];
-                        currentFrame && currentFrame.innerItems.push(tmpComponent);
+                        let useFrame = frameStack[frameStack.length - 1];
+                        if (nodeFrames.has(previousNode)){
+                            const previousNodeFrame = nodeFrames.get(previousNode)!;
+                            if (previousNodeFrame !== useFrame){
+                                useFrame = previousNodeFrame;
+                            }
+                        }
+
+                        // The component may not be explicitly assigned within a frame, but 
+                        // indirectly assigned.. so this component should go within the frame too
+                        useFrame && useFrame.innerItems.push(tmpComponent);
+
+                        nodeFrames.set(tmpInstanceName, useFrame);
                     }
 
                     if (action === SequenceAction.To && previousNode && previousPin) {
@@ -161,6 +181,8 @@ export class NetGraph {
                     // Record the sequence number to determine priority
                     graph.setNode(wireName, [RenderItemType.Wire, wire, index]);
 
+                    let tmpPreviousNode = previousNode;
+
                     // Connect previous node to pin:0 of the wire
                     this.setGraphEdge(graph, previousNode, wireName,
                         makeEdgeValue(previousNode, previousPin, wireName, 0, index));
@@ -190,6 +212,19 @@ export class NetGraph {
 
                         return tmp;
                     });
+
+                    let useFrame = frameStack[frameStack.length - 1];
+                    // Get frame of previous ndoe
+                    if (nodeFrames.has(tmpPreviousNode)){
+                        const previousNodeFrame = nodeFrames.get(tmpPreviousNode);
+
+                        if (previousNodeFrame !== useFrame){
+                            // Force assignment to previous node frame!
+                            useFrame = previousNodeFrame;
+                        }
+                    }
+
+                    nodeFrames.set(wireName, useFrame);
 
                     this.print(SequenceAction.Wire, wireId,
                         JSON.stringify(wireSegmentsInfo));
