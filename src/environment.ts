@@ -28,6 +28,9 @@ export class NodeScriptEnvironment {
 
     protected globalCreateSVGWindow: (() => SVGWindow) | null = null;
 
+    // Cached package version
+    private cachedVersion: string | null = null;
+
     // Supported fonts for SVG rendering
     protected supportedFonts = {
         'Arial': 'Arial.ttf',
@@ -41,8 +44,29 @@ export class NodeScriptEnvironment {
         this.useDefaultLibsPath = path;
     }
 
+    /**
+     * Gets the package version from package.json.
+     * Reads and caches the version on first call for both CommonJS and ESM compatibility.
+     * @returns The version string from package.json
+     */
     getPackageVersion(): string {
-        return TOOL_VERSION;
+        if (this.cachedVersion !== null) {
+            return this.cachedVersion;
+        }
+
+        try {
+            // Locate package.json at the tools path (project root)
+            const packageJsonPath = path.join(this.getToolsPath(), '../', 'package.json');
+            const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
+            const packageJson = JSON.parse(packageJsonContent);
+
+            this.cachedVersion = packageJson.version || TOOL_VERSION;
+            return this.cachedVersion!;
+        } catch (error) {
+            // Fallback to hardcoded version if package.json cannot be read
+            console.warn('Failed to read version from package.json, using fallback version:', error);
+            return TOOL_VERSION;
+        }
     }
 
     /**
