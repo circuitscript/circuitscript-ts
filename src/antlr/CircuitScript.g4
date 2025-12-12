@@ -82,6 +82,7 @@ expression: graph_expressions
         | atom_expr
         | frame_expr
         | flow_expressions
+        | annotation_comment_expr
         ;
 
 // Changes flow of the program
@@ -140,8 +141,10 @@ at_to_multiple_line_expr: pin_select_expr2 ':' at_to_multiple_line_expr_to_pin (
 
 at_to_multiple_line_expr_to_pin: (INTEGER_VALUE | NOT_CONNECTED);
 
-at_block: at_component_expr ':' NEWLINE INDENT (NEWLINE | at_block_expressions) + DEDENT;
+at_block: at_block_header NEWLINE INDENT (NEWLINE | at_block_expressions) + DEDENT;
 at_block_expressions: expression | at_block_pin_expr;
+
+at_block_header: at_component_expr ':';
 
 // Expression to allow direct pin assignment
 at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_block_pin_expression_complex);
@@ -260,6 +263,9 @@ else_expr: Else ':' expressions_block;
 while_expr: While data_expr ':' expressions_block;
 for_expr: For ID (',' ID)* 'in' data_expr ':' expressions_block;
 
+ANNOTATION_START: '#=';
+annotation_comment_expr: ANNOTATION_START ID;
+
 OPEN_PAREN : '(' {this.openBrace();};
 CLOSE_PAREN : ')' {this.closeBrace();};
 
@@ -294,9 +300,11 @@ NEWLINE
 
  fragment SPACES
  : [ \t]+
- ;
+;
 
 // Follow python's comment symbol for now
-fragment COMMENT_FRAGMENT: '#' ~[\r\n\f]*;
+fragment COMMENT_FRAGMENT:
+	'#' ~[=\r\n\f] ~[\r\n\f]* // Don't match #=
+	| '#'; // Allow standalone #
 
 COMMENT: (WS | COMMENT_FRAGMENT) -> channel(2);

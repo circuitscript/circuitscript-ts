@@ -53,6 +53,8 @@ import {
     GraphicForExprContext,
     Graph_expressionsContext,
     Path_blockContext,
+    Annotation_comment_exprContext,
+    At_block_headerContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -82,6 +84,7 @@ import { ParserRuleContext } from 'antlr4ng';
 import { BaseError, getPortType, RuntimeExecutionError } from './utils.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
+import { ComponentAnnotater } from './ComponentAnnotater.js';
 
 export class ParserVisitor extends BaseVisitor {
 
@@ -123,6 +126,8 @@ export class ParserVisitor extends BaseVisitor {
             this.visitResult(ctx.data_expr_with_assignment());
 
         this.getExecutor().addComponentExisting(component, pinValue);
+
+        this.linkComponentToCtx(ctx, component);
     }
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
@@ -130,6 +135,8 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().atComponent(component, pin, {
             addSequence: true
         });
+
+        this.linkComponentToCtx(ctx, component);
 
         return this.getExecutor().getCurrentPoint();
     }
@@ -1345,11 +1352,27 @@ export class ParserVisitor extends BaseVisitor {
         executor.atComponent(currentComponent, currentPin);
     }
 
+    visitAt_block_header = (ctx: At_block_headerContext):void => {
+        // This is only used for adding refdes annotation.
+        // Extract the component link and attach it to this context instead, so
+        // that the insertion point for the comment will be correct (after
+        // the ':' character)
+
+        const ctxAtComponent = ctx.at_component_expr();
+        this.visit(ctxAtComponent);
+
+        const [currentComponent, ] = this.getExecutor().getCurrentPoint();  
+
+        this.componentCtxLinks.delete(ctxAtComponent);
+        this.componentCtxLinks.set(ctx, currentComponent);
+    }
+
     visitAt_block = (ctx: At_blockContext): void => {
         const executor = this.getExecutor();
         executor.log('entering at block');
 
-        this.visit(ctx.at_component_expr());
+        const ctxAtBlockComponent = ctx.at_block_header();
+        this.visit(ctxAtBlockComponent);
 
         const [currentComponent, currentPin] = executor.getCurrentPoint();        
         executor.scope.scopeLevel += 1;
@@ -1646,6 +1669,16 @@ export class ParserVisitor extends BaseVisitor {
         this.getExecutor().popBreakContext();
     }
 
+    /** Applies refdes to components using the comment annotation syntax */
+    visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
+        const refdesID = ctx.ID().getText();
+        const currentComponent = this.getScope().currentComponent;
+
+        if (currentComponent !== null) {
+            currentComponent.setParam('refdes', refdesID);
+        }
+    }
+    
     private resolveDataExpr<T>(data_expr: Data_exprContext | null): T {
         const value: T | UndeclaredReference = this.visitResult(data_expr!);
 
@@ -1929,13 +1962,12 @@ export class ParserVisitor extends BaseVisitor {
         };
     }
 
-    /** Performs annotation for components and rename nets */
+    /** Performs simple annotation for components and rename nets */
     annotateComponents(): void {
         this.log('===== annotate components =====');
 
         const annotater = new ComponentAnnotater();
         const instances = this.getScope().instances;
-
         const toAnnotate:ClassComponent[] = [];
 
         for (const [, instance] of instances) {
@@ -1949,8 +1981,8 @@ export class ParserVisitor extends BaseVisitor {
             if (instance.assignedRefDes === null) {
                 /** If component has a refdes parameter already defined, then
                  * use it for the final value as well. */
-                if (instance.parameters.has('refdes')) {
-                    const refdes = instance.parameters.get('refdes') as string;
+                if (instance.hasParam('refdes')) {
+                    const refdes = instance.getParam('refdes') as string;
 
                     if (refdes) {
                         instance.assignedRefDes = refdes;
@@ -2104,7 +2136,7 @@ export class ParserVisitor extends BaseVisitor {
 /**
  * Standard prefixes for components
  */
-const ComponentRefDesPrefixes: { [key: string]: string } = {
+export const ComponentRefDesPrefixes: { [key: string]: string } = {
     res: 'R',
     cap: 'C',
     ind: 'L',
@@ -2115,66 +2147,6 @@ const ComponentRefDesPrefixes: { [key: string]: string } = {
     ic: 'U',
 
     '?': '?',
-}
-
-/** Tracks annotations already assigned and determines refdes for components */
-class ComponentAnnotater {
-
-    counter:{[key: string]: number } = {};
-
-    existingRefDes: string[] = [];
-
-    constructor() {
-        // Refdes counting should all start at 1. e.g. R1, C1, etc.
-        for (const key in ComponentRefDesPrefixes) {
-            this.counter[key] = 1;
-        }
-    }
-
-    getAnnotation(type: string): string | null {
-
-        // If type is unknown, then allow it to define a new range
-        if (this.counter[type] === undefined && type.length <= 2) {
-            for (const [, value] of Object.entries(ComponentRefDesPrefixes)) {
-                if (value === type) {
-                    throw "Refdes prefix is already in use!";
-                }
-            }
-
-            if (ComponentRefDesPrefixes[type] === undefined) {
-                // Define new type and start counting
-                ComponentRefDesPrefixes[type] = type;
-                this.counter[type] = 1;
-            }
-        }
-
-        if (ComponentRefDesPrefixes[type] === undefined) {
-            return null;
-        }
-
-        let attempts = 100;
-        let proposedName = "";
-
-        while (attempts >= 0) {
-            proposedName = ComponentRefDesPrefixes[type] + this.counter[type];
-            this.counter[type]++;
-
-            if (this.existingRefDes.indexOf(proposedName) === -1) {
-                break;
-            }
-            attempts--;
-        }
-
-        if (attempts === 0) {
-            throw "Annotation failed!";
-        }
-
-        return proposedName;
-    }
-
-    trackRefDes(name: string): void {
-        this.existingRefDes.push(name);
-    }
 }
 
 export type NetListItem = {

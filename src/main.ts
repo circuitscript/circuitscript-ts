@@ -31,6 +31,8 @@ export default async function main(): Promise<void> {
         .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')
         .option('-c, --current-directory <path>', 'Set current directory')
+        .option('-u2, --update-file2', 'Created modified file when annotated')
+        .option('-u, --update-file', 'Update file when annotated')
         .option('-w, --watch', 'Watch for file changes')
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
@@ -89,11 +91,26 @@ export default async function main(): Promise<void> {
         return;
     }    
 
+    let updateFile = false;
+    let updateFile2 = false;
+
+    if (options.updateFile !== undefined){
+        updateFile = options.updateFile;
+    }
+
+    if (options.updateFile2 !== undefined){
+        updateFile2 = options.updateFile2;
+    }
+
     const scriptOptions: ScriptOptions = {
         dumpNets, 
         dumpData,
         showStats: options.stats,
         environment: env,
+
+        inputPath: inputFilePath,
+        updateFile,
+        updateFile2,
     }
 
     let outputPath: string | null = null;
@@ -120,7 +137,9 @@ export default async function main(): Promise<void> {
     }
 }
 
-async function parseFile(scriptData: string, outputPath: string | null, scriptOptions): Promise<string | null> {
+async function parseFile(scriptData: string, outputPath: string | null, 
+    scriptOptions: ScriptOptions): Promise<string | null> {
+        
     try {
         const { svgOutput: output, errors } =
             await renderScript(scriptData, outputPath, scriptOptions);

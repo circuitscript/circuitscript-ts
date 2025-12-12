@@ -25,6 +25,7 @@ import { At_to_multiple_line_exprContext } from "./CircuitScriptParser.js";
 import { At_to_multiple_line_expr_to_pinContext } from "./CircuitScriptParser.js";
 import { At_blockContext } from "./CircuitScriptParser.js";
 import { At_block_expressionsContext } from "./CircuitScriptParser.js";
+import { At_block_headerContext } from "./CircuitScriptParser.js";
 import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_simpleContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_complexContext } from "./CircuitScriptParser.js";
@@ -81,6 +82,7 @@ import { If_inner_exprContext } from "./CircuitScriptParser.js";
 import { Else_exprContext } from "./CircuitScriptParser.js";
 import { While_exprContext } from "./CircuitScriptParser.js";
 import { For_exprContext } from "./CircuitScriptParser.js";
+import { Annotation_comment_exprContext } from "./CircuitScriptParser.js";
 
 
 /**
@@ -223,6 +225,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitAt_block_expressions?: (ctx: At_block_expressionsContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.at_block_header`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAt_block_header?: (ctx: At_block_headerContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.at_block_pin_expr`.
      * @param ctx the parse tree
@@ -576,5 +584,11 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitFor_expr?: (ctx: For_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.annotation_comment_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAnnotation_comment_expr?: (ctx: Annotation_comment_exprContext) => Result;
 }
 

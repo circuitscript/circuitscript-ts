@@ -53,14 +53,22 @@ export class MainLexer extends CircuitScriptLexer {
                 return val.type !== CircuitScriptParser.EOF;
             });
             // First emit an extra line break that serves as the end of the statement.
-            this.emitToken(this.commonToken(CircuitScriptParser.NEWLINE, "\n"));
+
+            const fillerNewLine = this.commonToken(CircuitScriptParser.NEWLINE, "");
+            this.emitToken(fillerNewLine);
+
+            // Set this property to indicate that this token should be skipped
+            // during the refdes annotated output generation, because this 
+            // shouldn't have any text/char associated with it.
+            fillerNewLine.__skip = true;
+
             // Now emit as much DEDENT tokens as needed.
             while (this.indents.length) {
                 this.emitToken(this.createDedent());
                 this.indents.pop();
             }
             // Put the EOF back on the token stream.
-            this.emitToken(this.commonToken(CircuitScriptParser.EOF, "<EOF>"));
+            this.emitToken(this.commonToken(CircuitScriptParser.EOF, ""));
         }
         const next = super.nextToken();
         return this.tokens.length ? this.tokens.shift() : next;
@@ -74,19 +82,28 @@ export class MainLexer extends CircuitScriptLexer {
         return this.inputStream.index;
     }
 
-    commonToken(type: number, text: string): Token {
-        const stop = this.getCharIndex() - 1;
-        const start = text.length ? stop - text.length + 1 : stop;
-        const token = 
+    commonToken(type: number, text: string, start = -1, stop = -1): Token {
+        // If no start and stop provided, then try to infer based on the
+        // current char index and the length of the text.
+        if (start === -1 && stop === -1) {
+            stop = this.getCharIndex() - 1;
+            start = text.length ? stop - text.length + 1 : stop;
+        }
+
+        const token =
             CommonToken.fromSource(
                 [this, this.inputStream], type, 0, start, stop);
 
         let tokenTypeString: string | null = null;
 
         if (type === CircuitScriptParser.INDENT) {
-            tokenTypeString = "indent";
+            tokenTypeString = 'indent';
         } else if (type === CircuitScriptParser.DEDENT) {
-            tokenTypeString = "dedent";
+            tokenTypeString = 'dedent';
+        } else if (type === CircuitScriptParser.NEWLINE) {
+            tokenTypeString = 'newline';
+        } else if (type === CircuitScriptParser.EOF){
+            tokenTypeString = 'EOF';
         }
 
         if (tokenTypeString !== null) {
@@ -137,7 +154,12 @@ export class MainLexer extends CircuitScriptLexer {
             this.skip();
 
         } else {
-            this.emitToken(this.commonToken(CircuitScriptParser.NEWLINE, newLine));
+            // New line will be at the start
+            const start = this.getCharIndex() - this.text.length;
+            const stop = this.getCharIndex() - 1;
+
+            // The newline token should only be a single char token.
+            this.emitToken(this.commonToken(CircuitScriptParser.NEWLINE, newLine, start, start));
 
             const indent = this.getIndentationCount(spaces);
             const previous = this.indents.length ? this.indents[this.indents.length - 1] : 0;
@@ -147,7 +169,10 @@ export class MainLexer extends CircuitScriptLexer {
                 this.skip();
             } else if (indent > previous) {
                 this.indents.push(indent);
-                this.emitToken(this.commonToken(CircuitScriptParser.INDENT, spaces));
+                
+                // Offset by 1, because of the newline char
+                this.emitToken(this.commonToken(CircuitScriptParser.INDENT, 
+                    spaces, start + 1, stop));
             } else {
                 // Possibly emit more than 1 DEDENT token.
                 while (this.indents.length && this.indents[this.indents.length - 1] > indent) {

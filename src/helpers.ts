@@ -11,7 +11,6 @@ import path from "path";
 
 import PDFDocument from "pdfkit";
 
-
 import { generateKiCadNetList, printTree } from "./export.js";
 import { LayoutEngine } from "./layout.js";
 import { parseFileWithVisitor } from "./parser.js";
@@ -37,6 +36,7 @@ import Big from "big.js";
 import { Logger } from "./logger.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { NetGraph } from "./graph.js";
+import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -49,6 +49,9 @@ export type ScriptOptions = {
     showStats: boolean,
 
     environment: NodeScriptEnvironment,
+    inputPath?: string,
+    updateFile: boolean,    // If true, then replace the current file with annotated refdes in comments.
+    updateFile2: boolean,
 };
 
 export function prepareFile(textData: string): {
@@ -260,7 +263,11 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         dumpNets = false,
         dumpData = false,
         showStats = false,
-        environment
+        environment,
+
+        inputPath = null,
+        updateFile = false,
+        updateFile2 = false,
     } = options;
     
     const errors: BaseError[] = [];
@@ -315,7 +322,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         }
     }
 
-    const { tree, parser,
+    const { tree, parser, tokens,
         parserTimeTaken, 
         lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData);
 
@@ -328,6 +335,24 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         visitor.annotateComponents();
     } catch (err) {
         throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
+    }
+
+    const componentLinks = visitor.getComponentCtxLinks();
+    const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
+    await refdesVisitor.visitAsync(tree);
+
+    if (inputPath && (updateFile || updateFile2)){
+        // If this is specified, then use it to generated the annotated version
+        let usePath = inputPath;
+        if (updateFile2){
+            const dir = path.dirname(inputPath);
+            const ext = path.extname(inputPath);
+            const basename = path.basename(inputPath, ext);
+            usePath = path.join(dir, `${basename}.modified${ext}`);
+        }
+
+        // Write the annotated version
+        writeFileSync(usePath, refdesVisitor.getOutput());
     }
 
     if (dumpNets) {
@@ -492,14 +517,17 @@ export abstract class ParseOutputHandler {
     // If true, this output handler should be called after the render stage
     afterRender = false;
 
-    abstract parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string | null): boolean;
+    abstract parse(visitor: ParserVisitor, outputPath: string | null, 
+        fileExtension: string | null, extra: any| null): boolean;
 }
 
+/** Generates KiCAD compatible netlist. This netlist can be loaded into 
+ * KiCAD PCBView */
 export class KiCadNetListOutputHandler extends ParseOutputHandler {
 
-    beforeRender = true;
+    afterRender = true;
 
-    parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string| null): boolean {
+    parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string| null, extra: any = null): boolean {
         // Generate the kicad net list
 
         if (outputPath !== null && fileExtension === "net") {    

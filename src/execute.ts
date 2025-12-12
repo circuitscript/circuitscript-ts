@@ -1465,8 +1465,8 @@ export class ExecutionContext {
 
             // Check if instance exists
             if (this.scope.instances.has(idName)) {
-                const component = this.scope.instances.get(idName);
-                component.parameters.set(paramName, value);
+                const component = this.scope.instances.get(idName)!;
+                component.setParam(paramName, value);
 
             } else if (this.scope.variables.has(idName)) {
                 throw "Not implemented yet!";

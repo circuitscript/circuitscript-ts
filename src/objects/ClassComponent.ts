@@ -231,7 +231,7 @@ export class ClassComponent {
         if (this.parameters.has(key)) {
             return this.parameters.get(key) as T;
         } else {
-            throw 'Invalid parameter key';
+            throw 'Invalid parameter key: ' + key;
         }
     }
 

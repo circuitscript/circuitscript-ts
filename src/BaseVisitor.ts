@@ -58,6 +58,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     // Store results before or after a visitor method is called.
     protected resultData = new Map<ParserRuleContext, any>;
 
+    // Mapping of contexts to ClassComponent instances
+    protected componentCtxLinks = new Map<ParserRuleContext, ClassComponent>;
+
     pinTypesList: string[] = [
         PinTypes.Any,
         PinTypes.Input,
@@ -820,6 +823,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     protected getResult(ctx: ParserRuleContext): any {
         return this.resultData.get(ctx);
+    }
+
+    protected linkComponentToCtx(ctx: ParserRuleContext, 
+        instance: ClassComponent): void {
+        this.componentCtxLinks.set(ctx, instance);
+    }
+
+    getComponentCtxLinks(): Map<ParserRuleContext, ClassComponent>{
+        return this.componentCtxLinks;
     }
 
     visitResult(ctx: ParserRuleContext): any {

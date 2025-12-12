@@ -10,7 +10,7 @@ import {
     ScriptContext} from './antlr/CircuitScriptParser.js';
 
 import { MainLexer } from './lexer.js';
-import { ParseError, ParseSyntaxError, RuntimeExecutionError, SimpleStopwatch } from './utils.js';
+import { ParseSyntaxError, RuntimeExecutionError, SimpleStopwatch } from './utils.js';
 import {
     ANTLRErrorListener, ATNConfigSet, ATNSimulator,
     BitSet, CharStream, CommonTokenStream, DFA, Parser,
@@ -21,6 +21,7 @@ import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): Promise<{
     tree: ScriptContext,
     parser: CircuitScriptParser,
+    tokens: CommonTokenStream,
     hasError: boolean, hasParseError: boolean,
     parserTimeTaken: number, lexerTimeTaken: number,
     throwError: any,
@@ -71,6 +72,7 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
 
     return {
         tree, parser,
+        tokens,
         hasParseError: false,   // TODO: remove this?
         hasError: false,               // TODO: remove this?
         parserTimeTaken,
