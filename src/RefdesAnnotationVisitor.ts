@@ -8,7 +8,8 @@
 import { ParserRuleContext, Token, CommonTokenStream } from 'antlr4ng';
 import { Add_component_exprContext, At_block_headerContext, 
     At_component_exprContext, CircuitScriptParser, 
-    Function_def_exprContext, ScriptContext } from './antlr/CircuitScriptParser.js';
+    Function_def_exprContext, ScriptContext, 
+    To_component_exprContext} from './antlr/CircuitScriptParser.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 
@@ -82,6 +83,29 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     visitAt_block_header = (ctx: At_block_headerContext): void => {
         this.addRefdesAnnotationComment(ctx);
+    }
+
+    visitTo_component_expr = (ctx: To_component_exprContext): void => {
+        const allRefdes: string[] = [];
+
+        // Extract the refdes from the components that are part of the 
+        // 'to' list.
+        ctx.component_select_expr().forEach(item => {
+            if (this.componentCtxLinks.has(item)) {
+                const instance = this.componentCtxLinks.get(item)!;
+
+                if (!instance.hasParam('refdes') && instance.assignedRefDes) {
+                    allRefdes.push(instance.assignedRefDes);
+                }
+            }
+        });
+
+        if (allRefdes.length > 0) {
+            const originalText = this.getOriginalText(ctx);
+            const annotation = ' #= ' + allRefdes.join(',');
+
+            this.modifications.set(ctx, originalText + annotation);
+        }
     }
 
     addedRefdesAnnotations:string[] = [];

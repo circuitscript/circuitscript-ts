@@ -149,6 +149,10 @@ export class ParserVisitor extends BaseVisitor {
                 this.getExecutor().toComponent(component, pin, {
                     addSequence: true
                 });
+
+                // Link each item within the 'to' component list
+                this.linkComponentToCtx(item, component);
+                
             } catch (err){
                 throw new RuntimeExecutionError(err.message, ctx);
             }
