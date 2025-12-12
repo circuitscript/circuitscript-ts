@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ParserRuleContext } from 'antlr4ng';
 import { Expressions_blockContext } from 'src/antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from '../draw_symbols.js';
 import { Net } from './Net.js';
@@ -107,6 +108,16 @@ export class ClassComponent {
 
     /** Assigned refdes that is set for the component during the annotation step. */
     assignedRefDes: string | null = null;
+
+    // If set, then use the placeholder refdes extracted from refdes annotation 
+    // comment. This should be in the format <type>___. The number of '_' will 
+    // given an idea of the loop depth.
+    placeHolderRefDes: string|null = null;
+
+    // If set, then this component was created within a loop structure (for, 
+    // while, etc.). Stores the context and index within the loop structure. The
+    // component may be within more than one layer of loop.
+    loopStack:[ParserRuleContext, number][]|null = null;
 
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;

@@ -1589,12 +1589,20 @@ export class ParserVisitor extends BaseVisitor {
         let keepLooping = true;
 
         this.log('enter while loop');
-        this.getExecutor().addBreakContext(ctx);
+
+        const executor = this.getExecutor();
+        executor.addBreakContext(ctx);
+
+        let counter = 0;
 
         while (keepLooping) {
+            // Evaulate the while condition
             const result = this.visitResult(dataExpr);
 
             if (result) { // some truthy value
+
+                executor.setBreakContextIndex(counter);
+
                 this.visit(ctx.expressions_block());
                 keepLooping = true;
 
@@ -1612,6 +1620,8 @@ export class ParserVisitor extends BaseVisitor {
                         continueSignal: false
                     });
                 }
+
+                counter++;
             } else {
                 keepLooping = false;
             }
@@ -1627,7 +1637,8 @@ export class ParserVisitor extends BaseVisitor {
         let listItems = this.visitResult(ctx.data_expr());
         listItems = unwrapValue(listItems);
 
-        this.getExecutor().addBreakContext(ctx);
+        const executor = this.getExecutor();
+        executor.addBreakContext(ctx);
 
         let keepLooping = true;
         let counter = 0;
@@ -1644,6 +1655,8 @@ export class ParserVisitor extends BaseVisitor {
                     this.getScope().setVariable(
                         forVariableNames[index], value);
                 });
+
+                executor.setBreakContextIndex(counter);
 
                 this.visit(ctx.expressions_block());
                 keepLooping = true;
@@ -1670,7 +1683,7 @@ export class ParserVisitor extends BaseVisitor {
             }
         }
 
-        this.getExecutor().popBreakContext();
+        executor.popBreakContext();
     }
 
     /** Applies refdes to components using the comment annotation syntax */
@@ -1679,7 +1692,14 @@ export class ParserVisitor extends BaseVisitor {
         const currentComponent = this.getScope().currentComponent;
 
         if (currentComponent !== null) {
-            currentComponent.setParam('refdes', refdesID);
+            if (refdesID.indexOf('_') === -1){
+                // Normal refdes, not a placeholder refdes
+                currentComponent.setParam('refdes', refdesID);
+            } else {
+                // Store the placeholder refdes. In the annotation stage, this
+                // will be used.
+                currentComponent.placeHolderRefDes = refdesID;
+            }
         }
     }
     
@@ -1972,12 +1992,12 @@ export class ParserVisitor extends BaseVisitor {
 
         const annotater = new ComponentAnnotater();
         const instances = this.getScope().instances;
-        const toAnnotate:ClassComponent[] = [];
+        const toAnnotate: ClassComponent[] = [];
 
         for (const [, instance] of instances) {
             // Net and graphic components are skipped as they do not need
             // to be annotated
-            if (instance.typeProp === ComponentTypes.net 
+            if (instance.typeProp === ComponentTypes.net
                 || instance.typeProp == ComponentTypes.graphic) {
                 continue;
             }
@@ -2001,11 +2021,7 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         toAnnotate.forEach(instance => {
-            const useTypeProp = instance.typeProp ?? 'conn';
-            instance.typeProp === null 
-                && this.log('Instance has no type:', instance.instanceName, ' assuming connector');
-
-            const newRefDes = annotater.getAnnotation(useTypeProp);
+            const newRefDes = annotater.getAnnotation(instance);
 
             if (newRefDes !== null) {
                 instance.assignedRefDes = newRefDes;

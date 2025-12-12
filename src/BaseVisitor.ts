@@ -827,6 +827,22 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     protected linkComponentToCtx(ctx: ParserRuleContext, 
         instance: ClassComponent): void {
+        
+        // If this component is within a loop, then update the component's
+        // loop stack property.
+        const scope = this.getScope();
+        if (scope.breakStack.length > 0){
+            const executor = this.getExecutor();
+
+            const loopStack: [ParserRuleContext, number][] = [];
+            scope.breakStack.forEach(stackCtx => {
+                const loopIndex = executor.loopIndex.get(stackCtx)!;
+                loopStack.push([stackCtx, loopIndex]);
+            });
+
+            instance.loopStack = loopStack;
+        }
+
         this.componentCtxLinks.set(ctx, instance);
     }
 

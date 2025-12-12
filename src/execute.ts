@@ -80,6 +80,9 @@ export class ExecutionContext {
 
     warnings: ExecutionWarning[] = [];
 
+    // Stores the loopIndex for a given parser rule context.
+    loopIndex = new Map<ParserRuleContext, number>();
+
     constructor(
         name: string,
         namespace: string,
@@ -933,6 +936,16 @@ export class ExecutionContext {
     addBreakContext(ctx: ParserRuleContext): void {
         this.log('add break context');
         this.scope.breakStack.push(ctx);
+        this.loopIndex.set(ctx, 0); // Initialize to 0
+    }
+
+    setBreakContextIndex(index: number): void {
+        // If the break context is a looped structure (while, for), then this
+        // is used to indicate the current loop index within the structure
+        const latestCtx = this.scope.breakStack[this.scope.breakStack.length - 1];
+        if (latestCtx) {
+            this.loopIndex.set(latestCtx, index);
+        }
     }
 
     popBreakContext(): ParserRuleContext {

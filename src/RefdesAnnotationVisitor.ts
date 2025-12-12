@@ -119,14 +119,39 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             //
             // If component already has refdes annotation in comment, then it
             // will have the refdes param set, so this part will be skipped.
-            if (!instance.hasParam('refdes') && instance.assignedRefDes) {
+            if (!instance.hasParam('refdes') 
+                && instance.placeHolderRefDes === undefined 
+                && instance.assignedRefDes) {
+
+                let useRefDes = instance.assignedRefDes;
+
+                // If false, then the instance does not have a placeholder 
+                // refdes. Only components in a loop structure can have a 
+                // placeholder refdes.
+                let isPlaceholderRefdes = false;
+
+                if (instance.loopStack){
+                    // If instance is within a loop structure, then use a 
+                    // placeholder refdes instead
+                    isPlaceholderRefdes = true;
+
+                    const parts = instance.assignedRefDes.split('_');
+                    const tmpParts = parts.map((item, index) => {
+                        return (index > 0) ? '_' : item;
+                    });
+
+                    useRefDes = tmpParts.join('');
+                }
+
                 const originalText = this.getOriginalText(ctx);
-                const annotation = ' #= ' + instance.assignedRefDes;
+                const annotation = ' #= ' + useRefDes;
 
                 // Default behavior: append annotation at end
                 this.modifications.set(ctx, originalText + annotation);
 
-                if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1) {
+                if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1 
+                    && !isPlaceholderRefdes) {
+                
                     this.addedRefdesAnnotations.push(instance.assignedRefDes);
                 }
             }
