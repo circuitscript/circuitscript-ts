@@ -47,45 +47,57 @@ export class ComponentAnnotater {
         let prefix = ComponentRefDesPrefixes[type];
         let resultRefdes = '';
 
-        if (instance.loopStack) {
-            // If loopStack is defined, then the instance was created within
-            // a loop structure.
+        const { ctxReferences } = instance;
 
-            // Collect the indexes from the loopStack.
-            const loopIndexes = instance.loopStack.map(item => {
-                return item[1] + 1; // Change from 0-indexed to 1-indexed.
-            });
+        // Assume that the first usage of the component should determine
+        // whether the refdes is unique or indexed.
+        if (ctxReferences.length > 0) {
+            const firstReference = ctxReferences[0];
 
-            const lastCtx = instance.loopStack[instance.loopStack.length - 1][0];
+            // If the creationFlag is true, it means that the component was 
+            // created during that ctxReference.
+            const { loopStack, creationFlag } = firstReference;
 
-            // If the loop prefix has not been created before, then create it.
-            if (!this.loopContextPrefix.has(lastCtx)) {
+            if (loopStack.length > 0 && creationFlag) {
+                // If loopStack is defined, then the instance was created within
+                // a loop structure.
 
-                // Use the placeholder refdes if it was already defined.
-                if (instance.placeHolderRefDes) {
-                    // Remove the '_' to get the main refdes.
-                    prefix = instance.placeHolderRefDes.replace('_', '');
-                } else {
-                    // Otherwise, generate the main refdes based on the type.
-                    const { index: nextIndex, proposedName } = 
-                        this.getNextRefdesCounter(prefix, this.counter[type]);
-                    this.counter[type] = nextIndex;
-                    prefix = proposedName;
+                // Collect the indexes from the loopStack.
+                const loopIndexes = loopStack.map(item => {
+                    return item[1] + 1; // Change from 0-indexed to 1-indexed.
+                });
+
+                const lastCtx = loopStack[loopStack.length - 1][0];
+
+                // If the loop prefix has not been created before, then create it.
+                if (!this.loopContextPrefix.has(lastCtx)) {
+
+                    // Use the placeholder refdes if it was already defined.
+                    if (instance.placeHolderRefDes) {
+                        // Remove the '_' to get the main refdes.
+                        prefix = instance.placeHolderRefDes.replace('_', '');
+                    } else {
+                        // Otherwise, generate the main refdes based on the type.
+                        const { index: nextIndex, proposedName } =
+                            this.getNextRefdesCounter(prefix, this.counter[type]);
+                        this.counter[type] = nextIndex;
+                        prefix = proposedName;
+                    }
+
+                    this.existingRefDes.push(prefix);
+                    this.loopContextPrefix.set(lastCtx, prefix);
                 }
 
-                this.existingRefDes.push(prefix);
-                this.loopContextPrefix.set(lastCtx, prefix);
+                const prefixParts = [this.loopContextPrefix.get(lastCtx)!, ...loopIndexes];
+                resultRefdes = prefixParts.join('_');
+            } else {
+                const refdesCounter = this.getNextRefdesCounter(prefix, this.counter[type]);
+                this.counter[type] = refdesCounter.index;
+                resultRefdes = refdesCounter.proposedName;
             }
 
-            const prefixParts = [this.loopContextPrefix.get(lastCtx)!, ...loopIndexes];
-            resultRefdes = prefixParts.join('_');
-        } else {
-            const refdesCounter = this.getNextRefdesCounter(prefix, this.counter[type]);
-            this.counter[type] = refdesCounter.index;
-            resultRefdes = refdesCounter.proposedName;
+            return resultRefdes;
         }
-
-        return resultRefdes;
     }
 
     getNextRefdesCounter(prefix: string, startingIndex: number): { index: number, proposedName: string } {

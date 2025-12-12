@@ -114,10 +114,11 @@ export class ClassComponent {
     // given an idea of the loop depth.
     placeHolderRefDes: string|null = null;
 
-    // If set, then this component was created within a loop structure (for, 
-    // while, etc.). Stores the context and index within the loop structure. The
-    // component may be within more than one layer of loop.
-    loopStack:[ParserRuleContext, number][]|null = null;
+    // Store references to components in the context rules. If the context rule
+    // is within a loop structure (while, for, etc.), the loop index is also stored.
+    ctxReferences: CtxReference[] = [];
+
+    _creationIndex = -1; // Not defined yet.
 
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
@@ -332,4 +333,10 @@ export class ModuleComponent extends ClassComponent {
     /** Module is the same as a component, except the component pins are mapped
      * to ports that are defined within the module's inner circuits. */
     modulePinIdToPortMap?: Map<number, ClassComponent>;
+}
+
+export type CtxReference = {
+    ctx: ParserRuleContext,
+    loopStack: [ParserRuleContext, number][],
+    creationFlag: boolean,
 }

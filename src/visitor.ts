@@ -88,6 +88,9 @@ import { ComponentAnnotater } from './ComponentAnnotater.js';
 
 export class ParserVisitor extends BaseVisitor {
 
+    // Provides a numerical index when each component is created.
+    componentCreationIndex = 0;
+
     visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext): void => {
         const id = ctx.ID().getText();
         const value = this.visitResult(ctx.data_expr());
@@ -118,46 +121,75 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, pinId);
     }
 
+    trackNewComponentCreated = (callback: () => void): boolean => {
+        const preCreatedIndex = this.componentCreationIndex;
+
+        callback();
+
+        const postCreatedIndex = this.componentCreationIndex;
+
+        let creationFlag = false;
+        if (postCreatedIndex > preCreatedIndex){
+            // New component was created!
+            creationFlag = true;
+        }
+
+        return creationFlag;
+    }
+
     visitAdd_component_expr = (ctx: Add_component_exprContext): void => {
         // Besides component, can also add graphic objects
 
-        // The component is always the last item
-        const [component, pinValue] = 
-            this.visitResult(ctx.data_expr_with_assignment());
+        let refComponent: ClassComponent;
+        const creationFlag = this.trackNewComponentCreated(() => {
+            // The component is always the last item
+            const [component, pinValue] = 
+                this.visitResult(ctx.data_expr_with_assignment());
 
-        this.getExecutor().addComponentExisting(component, pinValue);
+            this.getExecutor().addComponentExisting(component, pinValue);
+            refComponent = component;
+        });
 
-        this.linkComponentToCtx(ctx, component);
+        this.linkComponentToCtx(ctx, refComponent!, creationFlag);
     }
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
-        const [component, pin] = this.visitResult(ctx.component_select_expr());
-        this.getExecutor().atComponent(component, pin, {
-            addSequence: true
+        let refComponent: ClassComponent;
+        const creationFlag = this.trackNewComponentCreated(() => {
+            const [component, pin] = this.visitResult(ctx.component_select_expr());
+            this.getExecutor().atComponent(component, pin, {
+                addSequence: true
+            });
+            
+            refComponent = component;
         });
 
-        this.linkComponentToCtx(ctx, component);
-
+        this.linkComponentToCtx(ctx, refComponent!, creationFlag);
         return this.getExecutor().getCurrentPoint();
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
         ctx.component_select_expr().forEach(item => {
-            const [component, pin] = this.visitResult(item);
-            
-            try {
-                this.getExecutor().toComponent(component, pin, {
-                    addSequence: true
-                });
 
-                // Link each item within the 'to' component list
-                this.linkComponentToCtx(item, component);
-                
-            } catch (err){
-                throw new RuntimeExecutionError(err.message, ctx);
-            }
+            let refComponent: ClassComponent;
+            const creationFlag = this.trackNewComponentCreated(() => {
+                const [component, pin] = this.visitResult(item);
+
+                try {
+                    this.getExecutor().toComponent(component, pin, {
+                        addSequence: true
+                    });
+
+                    refComponent = component;
+                } catch (err) {
+                    throw new RuntimeExecutionError(err.message, ctx);
+                }
+            });
+
+            // Link each item within the 'to' component list
+            this.linkComponentToCtx(item, refComponent!, creationFlag);
         });
-        
+
         return this.getExecutor().getCurrentPoint();
     }
 
@@ -510,6 +542,9 @@ export class ParserVisitor extends BaseVisitor {
             const createdComponent = this.getExecutor().createComponent(instanceName,
                 pins, params, props);
             this.setResult(ctx, createdComponent);
+
+            createdComponent._creationIndex = this.componentCreationIndex++;
+
         } catch (error) {
             this.throwWithContext(ctx, (error as BaseError).message)
         }

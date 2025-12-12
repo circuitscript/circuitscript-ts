@@ -58,7 +58,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     // Store results before or after a visitor method is called.
     protected resultData = new Map<ParserRuleContext, any>;
 
-    // Mapping of contexts to ClassComponent instances
+    // Mapping of contexts to ClassComponent instances. This is used for 
+    // refdes annotation comments.
     protected componentCtxLinks = new Map<ParserRuleContext, ClassComponent>;
 
     pinTypesList: string[] = [
@@ -826,22 +827,28 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     }
 
     protected linkComponentToCtx(ctx: ParserRuleContext, 
-        instance: ClassComponent): void {
+        instance: ClassComponent, creationFlag = true): void {
+        // If creationFlag is true, it indicates that the component was created
+        // within this ctx.
         
         // If this component is within a loop, then update the component's
         // loop stack property.
         const scope = this.getScope();
-        if (scope.breakStack.length > 0){
-            const executor = this.getExecutor();
+        const loopStack: [ParserRuleContext, number][] = [];
 
-            const loopStack: [ParserRuleContext, number][] = [];
+        if (scope.breakStack.length > 0){
+            const executor = this.getExecutor();    
             scope.breakStack.forEach(stackCtx => {
                 const loopIndex = executor.loopIndex.get(stackCtx)!;
                 loopStack.push([stackCtx, loopIndex]);
             });
-
-            instance.loopStack = loopStack;
         }
+
+        instance.ctxReferences.push({
+            ctx,
+            loopStack,
+            creationFlag
+        });
 
         this.componentCtxLinks.set(ctx, instance);
     }

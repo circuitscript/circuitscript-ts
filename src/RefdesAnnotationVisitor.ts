@@ -120,7 +120,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             // If component already has refdes annotation in comment, then it
             // will have the refdes param set, so this part will be skipped.
             if (!instance.hasParam('refdes') 
-                && instance.placeHolderRefDes === undefined 
+                && instance.placeHolderRefDes === null 
                 && instance.assignedRefDes) {
 
                 let useRefDes = instance.assignedRefDes;
@@ -130,29 +130,35 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                 // placeholder refdes.
                 let isPlaceholderRefdes = false;
 
-                if (instance.loopStack){
-                    // If instance is within a loop structure, then use a 
-                    // placeholder refdes instead
-                    isPlaceholderRefdes = true;
+                const { ctxReferences } = instance;
+                if (ctxReferences.length > 0) {
+                    const firstReference = ctxReferences[0];
+                    const { loopStack = [] } = firstReference;
 
-                    const parts = instance.assignedRefDes.split('_');
-                    const tmpParts = parts.map((item, index) => {
-                        return (index > 0) ? '_' : item;
-                    });
+                    if (loopStack.length > 0) {
+                        // If instance is within a loop structure, then use a 
+                        // placeholder refdes instead
+                        isPlaceholderRefdes = true;
 
-                    useRefDes = tmpParts.join('');
-                }
+                        const parts = instance.assignedRefDes.split('_');
+                        const tmpParts = parts.map((item, index) => {
+                            return (index > 0) ? '_' : item;
+                        });
 
-                const originalText = this.getOriginalText(ctx);
-                const annotation = ' #= ' + useRefDes;
+                        useRefDes = tmpParts.join('');
+                    }
 
-                // Default behavior: append annotation at end
-                this.modifications.set(ctx, originalText + annotation);
+                    const originalText = this.getOriginalText(ctx);
+                    const annotation = ' #= ' + useRefDes;
 
-                if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1 
-                    && !isPlaceholderRefdes) {
-                
-                    this.addedRefdesAnnotations.push(instance.assignedRefDes);
+                    // Default behavior: append annotation at end
+                    this.modifications.set(ctx, originalText + annotation);
+
+                    if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1
+                        && !isPlaceholderRefdes) {
+
+                        this.addedRefdesAnnotations.push(instance.assignedRefDes);
+                    }
                 }
             }
         }
