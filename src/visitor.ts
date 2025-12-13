@@ -1301,7 +1301,15 @@ export class ParserVisitor extends BaseVisitor {
             executionContext: ExecutionContext, 
             result: ComplexType | null] => {
 
-            const executionContextName = `${functionName}-${functionCounter['counter']}`;
+            // The function definition context is used, because this is the 
+            // part where the repetition starts, so the refdes needs to be
+            // indexed.
+            const executor = this.getExecutor();
+            executor.addBreakContext(ctx);
+            executor.setBreakContextIndex(options.functionCallIndex);
+
+            const functionCounterIndex = functionCounter['counter'];
+            const executionContextName = `${functionName}-${functionCounterIndex}`;
 
             const newExecutor = this.enterNewChildContext(
                 executionStack,
@@ -1324,10 +1332,29 @@ export class ParserVisitor extends BaseVisitor {
 
             // Merge what ever was created in the scope with the outer scope
             const nextLastExecution = executionStack[executionStack.length - 1];
-            nextLastExecution.mergeScope(
+            const mergedComponents = nextLastExecution.mergeScope(
                 lastExecution.scope,
-                executionContextName,
+                executionContextName
             );
+
+            const scope = this.getScope();
+            const indexedStack: [ParserRuleContext, number][] = [];
+            if (scope.breakStack.length > 0) {
+                const executor = this.getExecutor();
+                scope.breakStack.forEach(stackCtx => {
+                    const index = executor.indexedStack.get(stackCtx)!;
+                    indexedStack.push([stackCtx, index]);
+                });
+
+                mergedComponents.forEach(component => {
+                    // Need to update all the context links with the current breakStack
+                    component.ctxReferences.forEach(ref => {
+                        ref.indexedStack = [...indexedStack, ...ref.indexedStack];
+                    });
+                });
+            }
+
+            executor.popBreakContext();
 
             // Return the last execution context and the final return value of the function
             return [lastExecution, returnValue];

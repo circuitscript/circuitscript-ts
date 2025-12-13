@@ -80,8 +80,8 @@ export class ExecutionContext {
 
     warnings: ExecutionWarning[] = [];
 
-    // Stores the loopIndex for a given parser rule context.
-    loopIndex = new Map<ParserRuleContext, number>();
+    // Stores the index for a given parser rule context.
+    indexedStack = new Map<ParserRuleContext, number>();
 
     constructor(
         name: string,
@@ -936,15 +936,15 @@ export class ExecutionContext {
     addBreakContext(ctx: ParserRuleContext): void {
         this.log('add break context');
         this.scope.breakStack.push(ctx);
-        this.loopIndex.set(ctx, 0); // Initialize to 0
+        this.indexedStack.set(ctx, 0); // Initialize to 0
     }
 
     setBreakContextIndex(index: number): void {
-        // If the break context is a looped structure (while, for), then this
-        // is used to indicate the current loop index within the structure
+        // If the break context is a indexed structure (while, for, function), 
+        // then indicates the current index within the structure.
         const latestCtx = this.scope.breakStack[this.scope.breakStack.length - 1];
         if (latestCtx) {
-            this.loopIndex.set(latestCtx, index);
+            this.indexedStack.set(latestCtx, index);
         }
     }
 
@@ -1102,12 +1102,11 @@ export class ExecutionContext {
         functionName: string,
         functionParams: CallableParameter[],
         executionStack: ExecutionContext[],
-        netNamespace: string,
+        netNamespace: string
     ): CFunctionResult {
         let __runFunc: CFunction | null = null;
-
         // Function is not cached yet, so look for it
-        if (!this.__functionCache.has(functionName)){
+        if (!this.__functionCache.has(functionName)) {
             if (this.hasFunction(functionName)) {
                 const entry = this.getFunction(functionName);
                 __runFunc = entry.execute;
@@ -1137,12 +1136,26 @@ export class ExecutionContext {
         }        
 
         if (__runFunc !== null) {
+
+            // Get function usage call within the current scope. This is used
+            // to identify each unique function call, which is important for
+            // refdes assignment.
+            let functionCallIndex = -1;
+            if (!this.scope.functionCounter.has(__runFunc)){
+                this.scope.functionCounter.set(__runFunc, 0);
+                functionCallIndex = 0;
+            } else {
+                functionCallIndex = this.scope.functionCounter.get(__runFunc)!;
+            }
+
+            this.scope.functionCounter.set(__runFunc, functionCallIndex + 1);
+
             this.log(`call function '${functionName}'`);
             this.log(`net namespace: ${netNamespace}`);
 
             const functionResult = __runFunc(
                 functionParams,
-                { netNamespace });
+                { netNamespace, functionCallIndex });
 
             this.log(`done call function '${functionName}'`);
             
@@ -1152,7 +1165,7 @@ export class ExecutionContext {
         }
     }
 
-    mergeScope(childScope: ExecutionScope, namespace: string): void {
+    mergeScope(childScope: ExecutionScope, namespace: string): ClassComponent[] {
         /**
          * Merges a child scope (instances, nets) into the parent scope.
          */
@@ -1165,6 +1178,8 @@ export class ExecutionContext {
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
         const tmpNets = childScope.getNets();
+
+        const mergedInstances: ClassComponent[] = [];
 
         for (const [instanceName, component] of tmpInstances) {
             // Rename instance names with the addition of the namespace
@@ -1182,6 +1197,8 @@ export class ExecutionContext {
             } else {
                 throw "Invalid instance name to merge into parent scope!";
             }
+            
+            mergedInstances.push(component);
         }
 
         // Get all unique nets in the scope
@@ -1314,6 +1331,8 @@ export class ExecutionContext {
         }, []);
 
         this.log('-- done merging scope --');
+
+        return mergedInstances;
     }
 
     addWire(segments: [string, (number | UnitDimension)?][]): void {

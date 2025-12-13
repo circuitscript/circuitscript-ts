@@ -36,7 +36,10 @@ export class CFunctionEntry {
 };
 
 export type CFunctionOptions = {
-    netNamespace?: string
+    netNamespace?: string,
+
+    // The nth time that the function was called within the executing scope.
+    functionCallIndex: number,
 }
 
 export type CFunctionResult = [

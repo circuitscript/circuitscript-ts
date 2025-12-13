@@ -133,7 +133,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                 const { ctxReferences } = instance;
                 if (ctxReferences.length > 0) {
                     const firstReference = ctxReferences[0];
-                    const { loopStack = [] } = firstReference;
+                    const { indexedStack: loopStack = [] } = firstReference;
 
                     if (loopStack.length > 0) {
                         // If instance is within a loop structure, then use a 
@@ -169,7 +169,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     }
 
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
-        
+        this.runExpressions(this.getExecutor(), ctx.function_expr());
     };
 
     getOutput(): string {

@@ -336,7 +336,18 @@ export class ModuleComponent extends ClassComponent {
 }
 
 export type CtxReference = {
+    
+    // Rule context that uses/references the component.
     ctx: ParserRuleContext,
-    loopStack: [ParserRuleContext, number][],
+
+    // Stores the stack of the current execution stack and the corresponding
+    // index. For example, a loop rule context (while, for) will have the 
+    // current iteration index. For a function rule context, the current 
+    // number of invocation within the scope is used (i.e. the nth time the
+    // function is called).
+    indexedStack: [ParserRuleContext, number][],
+
+    // If true, then the component reference was created during the 
+    // execution of the rule.
     creationFlag: boolean,
 }

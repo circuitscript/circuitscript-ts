@@ -7,7 +7,7 @@
 
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
-import { CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
+import { CFunction, CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
     ComponentPinWireId, 
     ParseSymbolType, ValueType } from './types.js';
 import { BlockTypes, LayoutDirection } from '../globals.js';
@@ -40,6 +40,8 @@ export class ExecutionScope {
     instances: Map<string, ClassComponent> = new Map();
 
     functions: Map<string, CFunctionEntry> = new Map();
+
+    functionCounter = new Map<CFunction, number>();
 
     variables: Map<string, ValueType | ClassComponent> = new Map();
 

@@ -10,7 +10,7 @@ export class ComponentAnnotater {
 
     // Stores the loop-related context (while, for, etc.) to the refdes prefix 
     // that will be used for instances within the loop.
-    loopContextPrefix = new Map<ParserRuleContext, string>();
+    indexedContextPrefix = new Map<ParserRuleContext, string>();
 
     existingRefDes: string[] = [];
 
@@ -44,33 +44,33 @@ export class ComponentAnnotater {
             return null;
         }
 
-        let prefix = ComponentRefDesPrefixes[type];
+        let prefix = '';
         let resultRefdes = '';
 
         const { ctxReferences } = instance;
 
-        // Assume that the first usage of the component should determine
-        // whether the refdes is unique or indexed.
         if (ctxReferences.length > 0) {
+            // Assume that the first usage of the component should determine
+            // whether the refdes is unique or indexed.
             const firstReference = ctxReferences[0];
 
             // If the creationFlag is true, it means that the component was 
             // created during that ctxReference.
-            const { loopStack, creationFlag } = firstReference;
 
-            if (loopStack.length > 0 && creationFlag) {
-                // If loopStack is defined, then the instance was created within
-                // a loop structure.
+            // The context of the firstReference is used as the replication point.
+            const { ctx: useCtx, indexedStack, creationFlag } = firstReference;
 
-                // Collect the indexes from the loopStack.
-                const loopIndexes = loopStack.map(item => {
+            if (indexedStack.length > 0 && creationFlag) {
+                // If indexedStack is defined, then the instance was created within
+                // a indexing structure (loops or functions).
+
+                // Collect the indexes from the indexedStack.
+                const indexes = indexedStack.map(item => {
                     return item[1] + 1; // Change from 0-indexed to 1-indexed.
                 });
 
-                const lastCtx = loopStack[loopStack.length - 1][0];
-
-                // If the loop prefix has not been created before, then create it.
-                if (!this.loopContextPrefix.has(lastCtx)) {
+                // If the indexed prefix has not been created before, then create it.
+                if (!this.indexedContextPrefix.has(useCtx)) {
 
                     // Use the placeholder refdes if it was already defined.
                     if (instance.placeHolderRefDes) {
@@ -79,22 +79,35 @@ export class ComponentAnnotater {
                     } else {
                         // Otherwise, generate the main refdes based on the type.
                         const { index: nextIndex, proposedName } =
-                            this.getNextRefdesCounter(prefix, this.counter[type]);
+                            this.getNextRefdesCounter(
+                                ComponentRefDesPrefixes[type], this.counter[type]);
                         this.counter[type] = nextIndex;
                         prefix = proposedName;
                     }
 
+                    // Store the prefix so it should not be used further. This
+                    // is a normal refdes, not indexed.
                     this.existingRefDes.push(prefix);
-                    this.loopContextPrefix.set(lastCtx, prefix);
+                    this.indexedContextPrefix.set(useCtx, prefix);
                 }
 
-                const prefixParts = [this.loopContextPrefix.get(lastCtx)!, ...loopIndexes];
+                // Generate the indexed refdes based on the prefix and the indexes
+                const prefixParts = [this.indexedContextPrefix.get(useCtx)!, ...indexes];
                 resultRefdes = prefixParts.join('_');
+
+                if (this.existingRefDes.indexOf(resultRefdes) !== -1){
+                    console.log('Warning: Refdes already used:', resultRefdes);
+                }
+
             } else {
-                const refdesCounter = this.getNextRefdesCounter(prefix, this.counter[type]);
+                const refdesCounter = this.getNextRefdesCounter(
+                    ComponentRefDesPrefixes[type], this.counter[type]);
                 this.counter[type] = refdesCounter.index;
                 resultRefdes = refdesCounter.proposedName;
             }
+
+            // Track the refdes used.
+            this.existingRefDes.push(resultRefdes);
 
             return resultRefdes;
         }

@@ -565,7 +565,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     const useNetNamespace = this.getNetNamespace(
                         executor.netNamespace,
                         passedNetNamespace,
-                    )
+                    );
 
                     try {
                         const [, functionResult] =
@@ -834,19 +834,19 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         // If this component is within a loop, then update the component's
         // loop stack property.
         const scope = this.getScope();
-        const loopStack: [ParserRuleContext, number][] = [];
+        const indexedStack: [ParserRuleContext, number][] = [];
 
         if (scope.breakStack.length > 0){
             const executor = this.getExecutor();    
             scope.breakStack.forEach(stackCtx => {
-                const loopIndex = executor.loopIndex.get(stackCtx)!;
-                loopStack.push([stackCtx, loopIndex]);
+                const index = executor.indexedStack.get(stackCtx)!;
+                indexedStack.push([stackCtx, index]);
             });
         }
 
         instance.ctxReferences.push({
             ctx,
-            loopStack,
+            indexedStack,
             creationFlag
         });
 
