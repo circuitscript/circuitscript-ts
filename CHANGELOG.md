@@ -1,6 +1,74 @@
 # Changelog
 
-## [v0.1.20](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.19...v0.1.20)
+## [v0.1.21](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.20...v0.1.21)
+
+[382063e](https://gitlab.com/circuitscript/circuitscript-ts/commit/382063e080f4f09bd8a87abfa9626af01eacca8f)Add component reference designator (refdes) annotation system
+- 
+- Implemented a comprehensive refdes annotation system that:
+- - Tracks component annotations throughout the AST
+- - Links components to their parser contexts
+- - Automatically assigns refdes (R1, C1, etc.) to components without explicit refdes
+- - Adds annotation comments (#= R1) to source files preserving original formatting
+- - Extends grammar to support annotation comment expressions
+- - Added ComponentAnnotater class to manage refdes assignment
+- - Added RefdesAnnotationVisitor to modify source files with annotations
+- 
+- Changes include grammar modifications to support #= annotations and visitor pattern enhancements to track component-context relationships.
+
+[3d71576](https://gitlab.com/circuitscript/circuitscript-ts/commit/3d71576abc45d322ad83240e3f5b96da83656079)Improve refdes annotation tracking with component context references
+- 
+- Replace single loopStack property with comprehensive ctxReferences array
+- to track all component usage contexts. Add creationFlag to distinguish
+- component creation from subsequent references, fixing refdes generation
+- for components used both inside and outside loop structures.
+
+[b4f17bf](https://gitlab.com/circuitscript/circuitscript-ts/commit/b4f17bf64316fbf3e39891cf7c86adf278924118)Add automatic refdes annotation for components in loop structures
+- 
+- Implements smart reference designator (refdes) annotation for components
+- created within while and for loops. Components in loops now receive indexed
+- refdes labels (e.g., R1_1, R1_2) that track their position in the loop.
+- 
+- Key changes:
+- - Track loop context and iteration index in execution engine
+- - Store loop stack information in ClassComponent instances
+- - Generate indexed refdes with placeholder support for nested loops
+- - Update annotation visitor to handle placeholder refdes syntax
+
+[5e814bc](https://gitlab.com/circuitscript/circuitscript-ts/commit/5e814bcbf28d5d680d758f435af0fcc33bac93db)Extend refdes annotation to support function call indexing
+- 
+- Updates the component reference designator (refdes) annotation system to
+- track both loop iterations and function invocations. Renames loopStack to
+- indexedStack to better reflect its broader use for tracking execution
+- contexts including loops and function calls.
+- 
+- Key changes:
+- - Rename loopStack to indexedStack throughout the codebase
+- - Track function call count within scopes for refdes generation
+- - Update ComponentAnnotater to handle indexed refdes for both loops and functions
+- - Add functionCallIndex to CFunctionOptions for tracking invocation count
+- - Merge function scope components with proper indexed stack references
+
+[e05dc10](https://gitlab.com/circuitscript/circuitscript-ts/commit/e05dc1026d1374ac6af6908c3b797bf739e8c30e)Added tests for refdes annotation comment
+
+[13eeb23](https://gitlab.com/circuitscript/circuitscript-ts/commit/13eeb23216d88a49103a7522415917d553f604f0)Improve component indexing in refdes annotation system
+- 
+- Enhanced the reference designator annotation to properly index components
+- when instantiated within loops and function calls. Components now receive
+- sequential suffixes (e.g., R1_1, R1_2) to maintain unique identifiers while
+- preserving the base reference name. Updated net naming to reflect the new
+- component indexing scheme.
+- 
+- Changes include:
+- - Enhanced RefdesAnnotationVisitor with function call index tracking
+- - Improved component context reference tracking in helpers
+- - Updated test fixtures to reflect new naming conventions
+- - Refined CLI test expectations for indexed components
+
+[2ecdfa0](https://gitlab.com/circuitscript/circuitscript-ts/commit/2ecdfa040396f3f6e26b4485d9a4b999b251a7f9)Added support for parsing 'to' graph syntax for refdes annotation comment
+
+[a0fca4e](https://gitlab.com/circuitscript/circuitscript-ts/commit/a0fca4ee7f5b07cd1a9a0c4a2174e3dccd539dd8) fixed fetching of package version
+
+## [v0.1.20](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.19...v0.1.20) - 2025-11-01
 
 [305c0cb](https://gitlab.com/circuitscript/circuitscript-ts/commit/305c0cbdb22b9f29187388ca2b3ac1c1aca301f8) fixed bug where component is moved if connected outside of original frame
 -  added test
