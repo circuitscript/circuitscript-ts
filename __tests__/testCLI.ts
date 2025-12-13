@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import figlet from 'figlet';
 import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
+import { loadScriptFromFile } from './helpers';
 
 describe('test cli program', () => {
 
@@ -92,5 +93,18 @@ describe('test cli program', () => {
         // A new pdf file should be created. Another test will be used
         // to test if the pdf generated is correct.
         expect(existsSync(outputPdf)).toEqual(true);
+    });
+
+    // Test that the generated annotation files matches the expected results.
+    test.each([
+        ['script44'],
+        ['script45']
+    ])('test generated annotations - %s', async (scriptName: string) => {
+
+        execSync(baseCommand + ` __tests__/renderData/${scriptName}.cst -xj __tests__/cliTest/${scriptName}.annotated.cst`);
+
+        const annotatedFile = await loadScriptFromFile(`__tests__/cliTest/${scriptName}.annotated.cst`);
+        const expectedAnnotatedFile = await loadScriptFromFile(`__tests__/cliTest/${scriptName}.expected.annotated.cst`);
+        expect(expectedAnnotatedFile).toEqual(annotatedFile);
     });
 });
