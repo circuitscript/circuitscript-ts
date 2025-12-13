@@ -50,8 +50,13 @@ export type ScriptOptions = {
 
     environment: NodeScriptEnvironment,
     inputPath?: string,
-    updateFile: boolean,    // If true, then replace the current file with annotated refdes in comments.
-    updateFile2: boolean,
+
+    // If true, then replace the current file with annotated refdes in comments.
+    updateSource: boolean,    
+
+    // Contains file path to save annotated copy. If left as blank/null, then
+    // save to .annotated.cst file.
+    saveAnnotatedCopy: string | boolean,
 };
 
 export function prepareFile(textData: string): {
@@ -266,8 +271,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         environment,
 
         inputPath = null,
-        updateFile = false,
-        updateFile2 = false,
+        updateSource = false,
+        saveAnnotatedCopy = undefined,
     } = options;
     
     const errors: BaseError[] = [];
@@ -341,14 +346,16 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
     await refdesVisitor.visitAsync(tree);
 
-    if (inputPath && (updateFile || updateFile2)){
+    if (inputPath && (updateSource || saveAnnotatedCopy)){
         // If this is specified, then use it to generated the annotated version
         let usePath = inputPath;
-        if (updateFile2){
+        if (saveAnnotatedCopy === true){
             const dir = path.dirname(inputPath);
             const ext = path.extname(inputPath);
             const basename = path.basename(inputPath, ext);
-            usePath = path.join(dir, `${basename}.modified${ext}`);
+            usePath = path.join(dir, `${basename}.annotated${ext}`);
+        } else {
+            usePath = saveAnnotatedCopy as string;
         }
 
         // Write the annotated version

@@ -14,9 +14,9 @@
 /global_label | tmp1-1.label-4.COMP-1-global_label | 1
 /global_label | tmp1-1.label-4.COMP-1-global_label:0 | 1
 /global_label | tmp1-1.res-6.COMP-1-0 | 1
-/scope1/NET-(R3-2) | tmp1-0.res-2.COMP-1-0 | 2
-/scope1/NET-(R3-2) | tmp2-0.--root | 1
-/scope1/NET-(R3-2) | tmp1-0.tmp2-0.res-3.COMP-1-0 | 1
+/scope1/NET-(R3_1-2) | tmp1-0.res-2.COMP-1-0 | 2
+/scope1/NET-(R3_1-2) | tmp2-0.--root | 1
+/scope1/NET-(R3_1-2) | tmp1-0.tmp2-0.res-3.COMP-1-0 | 1
 /scope1/inner/label_2 | tmp1-0.tmp2-0.res-3.COMP-1-0 | 2
 /scope1/inner/label_2 | tmp1-0.tmp2-0.label-2.COMP-1-label_2 | 1
 /scope1/inner/label_2 | tmp1-0.tmp2-0.label-2.COMP-1-label_2:0 | 1
@@ -24,9 +24,9 @@
 /scope1/label_1 | tmp1-0.label-0.COMP-1-label_1 | 1
 /scope1/label_1 | tmp1-0.label-0.COMP-1-label_1:0 | 1
 /scope1/label_1 | tmp1-0.res-1.COMP-1-0 | 1
-/scope2/NET-(R7-2) | tmp1-1.res-6.COMP-1-0 | 2
-/scope2/NET-(R7-2) | tmp2-1.--root | 1
-/scope2/NET-(R7-2) | tmp1-1.tmp2-1.res-7.COMP-1-0 | 1
+/scope2/NET-(R3_2-2) | tmp1-1.res-6.COMP-1-0 | 2
+/scope2/NET-(R3_2-2) | tmp2-1.--root | 1
+/scope2/NET-(R3_2-2) | tmp1-1.tmp2-1.res-7.COMP-1-0 | 1
 /scope2/inner/label_2 | tmp1-1.tmp2-1.res-7.COMP-1-0 | 2
 /scope2/inner/label_2 | tmp1-1.tmp2-1.label-5.COMP-1-label_2 | 1
 /scope2/inner/label_2 | tmp1-1.tmp2-1.label-5.COMP-1-label_2:0 | 1

@@ -164,14 +164,18 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         }
     }
 
-    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
-        // Do nothing
-    }
-
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
         this.runExpressions(this.getExecutor(), ctx.function_expr());
     };
 
+    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
+        // Do nothing
+    }
+
+    visitParameters = (ctx: ParametersContext): void => {
+        // Do nothing;
+    }
+    
     getOutput(): string {
         return this.resultText;
     }

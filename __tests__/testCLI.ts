@@ -22,15 +22,17 @@ describe('test cli program', () => {
 
         const options =
             `Options:
-  -V, --version                   output the version number
-  -i, --input text <input text>   Input text directly
-  -c, --current-directory <path>  Set current directory
-  -w, --watch                     Watch for file changes
-  -n, --dump-nets                 Dump out net information
-  -d, --dump-data                 Dump data during parsing
-  -s, --stats                     Show stats during generation
-  -x, --skip-output               Skip output generation
-  -h, --help                      display help for command`
+  -V, --version                     output the version number
+  -i, --input text <input text>     Input text directly
+  -c, --current-directory <path>    Set current directory
+  -u, --update-source               Update source file with refdes annotation
+  -j, --annotated-path [file-path]  Save annotated source file at given path
+  -w, --watch                       Watch for file changes
+  -n, --dump-nets                   Dump out net information
+  -d, --dump-data                   Dump data during parsing
+  -s, --stats                       Show stats during generation
+  -x, --skip-output                 Skip output generation
+  -h, --help                        display help for command`
 
         expect(result.includes(options)).toBe(true);
     });
