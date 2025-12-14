@@ -98,7 +98,10 @@ describe('Render tests', () => {
         ['refdes number for repeated function calls', 'script48.cst'],
 
         // Refdes annotation parsing
-        ['refdes annotation parsing within for and while loop', 'script47.cst'],
+        ['refdes annotation parsing: script44.cst with changed refdes and annotations', 'script47.cst'],
+        ['refdes annotation parsing: script45.cst with changed refdes and annotations', 'script49.cst'],
+        ['refdes annotation parsing: script46.cst with changed refdes and annotations', 'script50.cst'],
+        ['refdes annotation parsing: script48.cst with changed refdes and annotations', 'script51.cst'],
 
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 

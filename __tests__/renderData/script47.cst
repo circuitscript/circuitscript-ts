@@ -1,4 +1,5 @@
-# Check refdes annotation is correctly loaded. Similar to script44.cst
+# Check refdes that is generated at the top-level and 
+# within loop structures. 
 
 import std
 
@@ -10,7 +11,7 @@ tmp = create component:
 
 at v5
 wire down 100
-add res(1k) #= R10
+add res(1k) #= R9
 
 wire down 100
 
@@ -20,14 +21,14 @@ for i in range(0, 3):
         add res(20k) #= R20_
         wire down 100
 
-        add res(10k)
+        add res(10k) #= R11_
         wire down 100
 
         k = 1
         while k < 3:
             branch:
                 wire left (k*200) down 200
-                add res(1k) #= R40__
+                add res(1k) #= R5_
                 wire down 100
                 to gnd
             k += 1
@@ -38,7 +39,7 @@ for i in range(0, 3):
         for j in range(0, 3):
             branch:
                 wire right (200 * j) down 100
-                add res(5k) #= R90__
+                add res(5k) #= R7_
                 wire down 100
 
                 to gnd

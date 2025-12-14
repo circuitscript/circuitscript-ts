@@ -18,27 +18,27 @@ tmp = create component:
 
 at v5
 wire down 100 right 100
-to tmp pin 1 #= J1
+to tmp pin 1 #= J4
 
 at tmp:
     "A":
         wire left 300 down 100
         branch:
             wire down 100
-            add res(10k) #= R1
+            add res(10k) #= R3
             wire down 100
             to gnd
             
         branch:
             wire left 300 down 100
-            add res(10k) #= R2
+            add res(10k) #= R9
             wire down 100
             to gnd
 
 at tmp:
     "E":
         wire right 300 down 100
-        add cap(100n) #= C1
+        add cap(100n) #= C2
         wire down 100
         to gnd
 

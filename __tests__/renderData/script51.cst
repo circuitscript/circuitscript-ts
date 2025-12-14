@@ -1,0 +1,25 @@
+# Check refdes that is generated correctly at the top-level 
+# within loop structures and functions.
+
+import std
+
+v5 = supply("5V")
+gnd = dgnd()
+
+def res_gnd():
+    wire down 100
+    add res(10k) #= R3_
+    wire down 100
+    to gnd
+
+at v5
+wire down 100
+
+for i in range(0, 5):
+    branch:
+        wire right (i * 600)
+        branch:
+            res_gnd()
+
+        wire right 200
+        res_gnd()

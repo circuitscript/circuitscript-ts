@@ -105,13 +105,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
         // Extract the refdes from the components that are part of the 
         // 'to' list.
-        ctx.component_select_expr().forEach(item => {
-            if (this.componentCtxLinks.has(item)) {
-                const instance = this.componentCtxLinks.get(item)!;
-
-                if (!instance.hasParam('refdes') && instance.assignedRefDes) {
-                    allRefdes.push(instance.assignedRefDes);
-                }
+        ctx.component_select_expr().forEach(itemCtx => {
+            const tmpRefdes = this.generateRefdesAnnotationComment(itemCtx);
+            if (tmpRefdes !== null){
+                allRefdes.push(tmpRefdes);
             }
         });
 
@@ -145,9 +142,14 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     addedRefdesAnnotations:string[] = [];
 
-    private addRefdesAnnotationComment(ctx: ParserRuleContext): void {
+    private generateRefdesAnnotationComment(ctx:ParserRuleContext): string | null {
         if (this.componentCtxLinks.has(ctx)) {
             const instance = this.componentCtxLinks.get(ctx)!;
+
+            // If the refdes annotation was already added, then do not
+            // add it again.
+            const alreadyHaveRefdesAnnotation = instance.assignedRefDes !== null ?
+                (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) !== -1) : false;
 
             // Only if the component does not have the refdes param, it means
             // that there was no explicit refdes assigned.
@@ -156,7 +158,8 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             // will have the refdes param set, so this part will be skipped.
             if (!instance.hasParam('refdes') 
                 && instance.placeHolderRefDes === null 
-                && instance.assignedRefDes) {
+                && instance.assignedRefDes
+                && !alreadyHaveRefdesAnnotation) {
 
                 let useRefDes = instance.assignedRefDes;
 
@@ -181,19 +184,28 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                         useRefDes = parts[0] + '_';
                     }
 
-                    const originalText = this.getOriginalText(ctx);
-                    const annotation = ' #= ' + useRefDes;
-
-                    // Default behavior: append annotation at end
-                    this.modifications.set(ctx, originalText + annotation);
-
                     if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1
                         && !isPlaceholderRefdes) {
 
                         this.addedRefdesAnnotations.push(instance.assignedRefDes);
                     }
+
+                    return useRefDes;
                 }
             }
+        }
+
+        return null;
+    }
+
+    private addRefdesAnnotationComment(ctx: ParserRuleContext): void {
+        const refdes = this.generateRefdesAnnotationComment(ctx);
+        if (refdes !== null) {
+            const originalText = this.getOriginalText(ctx);
+            const annotation = ' #= ' + refdes;
+
+            // Default behavior: append annotation at end
+            this.modifications.set(ctx, originalText + annotation);
         }
     }
 

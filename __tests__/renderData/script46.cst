@@ -35,6 +35,7 @@ at tmp:
             wire down 100
             to gnd
 
+at tmp:
     "E":
         wire right 300 down 100
         add cap(100n)
