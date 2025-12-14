@@ -1,6 +1,39 @@
 # Changelog
 
-## [v0.1.21](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.20...v0.1.21)
+## [v0.1.22](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.21...v0.1.22)
+
+[da35baa](https://gitlab.com/circuitscript/circuitscript-ts/commit/da35baab3e08c457ca65eb8f3cdaa593c7572a71)Added missing test files
+- Updated tests
+
+[39e77f1](https://gitlab.com/circuitscript/circuitscript-ts/commit/39e77f13581828470315b45b281aeab604fd2014)Add comprehensive refdes annotation tests for various scopes
+- 
+- This commit adds extensive test coverage for reference designator (refdes)
+- annotation behavior across different execution contexts:
+- 
+- - script49.cst: Tests refdes generation in functions and nested loops
+- - script50.cst: Tests refdes generation in 'at' blocks with multiple pins
+- - script51.cst: Tests refdes generation in loops calling functions
+- 
+- Updated existing tests (script46, script47) to verify correct behavior
+- when 'at' blocks are split and to ensure proper index tracking for
+- underscore-suffixed refdes annotations in loop and while constructs.
+
+[f583c32](https://gitlab.com/circuitscript/circuitscript-ts/commit/f583c32c456d16720fe30cde322ca4ffd1c5380d)Fix refdes annotation index handling and add comprehensive tests
+- 
+- Updated the refdes annotation system to correctly generate reference
+- designators for components within nested loops and function calls.
+- This ensures components get proper sequential numbering without
+- extraneous underscore characters.
+- 
+- Changes:
+- - Fixed refdes indexing logic in BaseVisitor, RefdesAnnotationVisitor,
+- and execute modules
+- - Updated expected test outputs to reflect correct refdes format
+- (R4_ instead of R4__, R4_1_1_1 instead of R4_1_1_1_)
+- - Added script48 test case verifying refdes generation at top-level
+- within loops and functions
+
+## [v0.1.21](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.20...v0.1.21) - 2025-12-13
 
 [382063e](https://gitlab.com/circuitscript/circuitscript-ts/commit/382063e080f4f09bd8a87abfa9626af01eacca8f)Add component reference designator (refdes) annotation system
 - 
