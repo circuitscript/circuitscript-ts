@@ -80,8 +80,11 @@ export class ExecutionContext {
 
     warnings: ExecutionWarning[] = [];
 
-    // Stores the index for a given parser rule context.
-    indexedStack = new Map<ParserRuleContext, number>();
+    // Stores the index for a given parser rule context
+    indexedStack = new Map<ParserRuleContext, {
+        index: number,
+        funcCallIndex: Map<ParserRuleContext, number>
+    }>();
 
     constructor(
         name: string,
@@ -933,10 +936,20 @@ export class ExecutionContext {
         return null;
     }
 
+    getParentBreakContext(): null | ParserRuleContext {
+        if (this.scope.breakStack.length > 0) {
+            return this.scope.breakStack[this.scope.breakStack.length - 1];
+        }
+        return null;
+    }
+
     addBreakContext(ctx: ParserRuleContext): void {
         this.log('add break context');
         this.scope.breakStack.push(ctx);
-        this.indexedStack.set(ctx, 0); // Initialize to 0
+        this.indexedStack.set(ctx, {
+            index: 0,
+            funcCallIndex: new Map(),
+        }); // Initialize to 0
     }
 
     setBreakContextIndex(index: number): void {
@@ -944,7 +957,27 @@ export class ExecutionContext {
         // then indicates the current index within the structure.
         const latestCtx = this.scope.breakStack[this.scope.breakStack.length - 1];
         if (latestCtx) {
-            this.indexedStack.set(latestCtx, index);
+            const current = this.indexedStack.get(latestCtx)!;
+            this.indexedStack.set(latestCtx, {
+                ...current,
+                index,
+            });
+        }
+    }
+
+    /** 
+     * This resets the function call counters within the latest breakContext. 
+     * It is easier to do this, rather than keep track of all the different 
+     * counters for different function contexts.
+     */
+    resetBreakContextFunctionCalls(): void {
+        const latestCtx = this.scope.breakStack[this.scope.breakStack.length - 1];
+        if (latestCtx) {
+            const current = this.indexedStack.get(latestCtx)!;
+            this.indexedStack.set(latestCtx, {
+                index: current.index,
+                funcCallIndex: new Map(), // Reset the function calls
+            });
         }
     }
 

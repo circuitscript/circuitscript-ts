@@ -18,7 +18,7 @@ wire down 100
 def tmp2(j):
     branch:
         wire right (200 * j) down 100
-        add res(5k) #= R4___
+        add res(5k) #= R4_
         wire down 100
 
         to gnd

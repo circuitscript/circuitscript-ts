@@ -95,6 +95,7 @@ describe('Render tests', () => {
         ['refdes within for and while loop', 'script44.cst'],
         ['refdes within functions', 'script45.cst'],
         ['refdes in at blocks', 'script46.cst'],
+        ['refdes number for repeated function calls', 'script48.cst'],
 
         // Refdes annotation parsing
         ['refdes annotation parsing within for and while loop', 'script47.cst'],

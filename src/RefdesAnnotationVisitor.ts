@@ -175,12 +175,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                         // placeholder refdes instead
                         isPlaceholderRefdes = true;
 
+                        // Placeholder refdes is indicated by the '_' after
+                        // the prefix.
                         const parts = instance.assignedRefDes.split('_');
-                        const tmpParts = parts.map((item, index) => {
-                            return (index > 0) ? '_' : item;
-                        });
-
-                        useRefDes = tmpParts.join('');
+                        useRefDes = parts[0] + '_';
                     }
 
                     const originalText = this.getOriginalText(ctx);

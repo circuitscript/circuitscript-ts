@@ -839,7 +839,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         if (scope.breakStack.length > 0){
             const executor = this.getExecutor();    
             scope.breakStack.forEach(stackCtx => {
-                const index = executor.indexedStack.get(stackCtx)!;
+                const entry = executor.indexedStack.get(stackCtx)!;
+                const { index } = entry;
                 indexedStack.push([stackCtx, index]);
             });
         }

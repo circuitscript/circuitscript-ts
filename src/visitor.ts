@@ -1305,8 +1305,32 @@ export class ParserVisitor extends BaseVisitor {
             // part where the repetition starts, so the refdes needs to be
             // indexed.
             const executor = this.getExecutor();
-            executor.addBreakContext(ctx);
-            executor.setBreakContextIndex(options.functionCallIndex);
+
+            const parentBreakContext = executor.getParentBreakContext();
+
+            executor.addBreakContext(ctx);            
+
+            let useIndex = -1;
+            if (parentBreakContext === null){
+                // If not in a break context, then use the function call index 
+                // within the current scope
+                useIndex = options.functionCallIndex;
+            } else {
+                // Otherwise use the function call index within the 
+                // parent context
+                const parentEntry = executor.indexedStack.get(parentBreakContext)!;
+                const { funcCallIndex } = parentEntry;
+                if (!funcCallIndex.has(ctx)) {
+                    funcCallIndex.set(ctx, 0);
+                    useIndex = 0;
+                } else {
+                    useIndex = funcCallIndex.get(ctx)! + 1;
+                    funcCallIndex.set(ctx, useIndex);
+                }
+            }
+
+            // Use the function call index within the current scope
+            executor.setBreakContextIndex(useIndex);
 
             const functionCounterIndex = functionCounter['counter'];
             const executionContextName = `${functionName}-${functionCounterIndex}`;
@@ -1342,7 +1366,8 @@ export class ParserVisitor extends BaseVisitor {
             if (scope.breakStack.length > 0) {
                 const executor = this.getExecutor();
                 scope.breakStack.forEach(stackCtx => {
-                    const index = executor.indexedStack.get(stackCtx)!;
+                    const entry = executor.indexedStack.get(stackCtx)!;
+                    const { index } = entry;
                     indexedStack.push([stackCtx, index]);
                 });
 
@@ -1665,6 +1690,9 @@ export class ParserVisitor extends BaseVisitor {
 
                 executor.setBreakContextIndex(counter);
 
+                // Reset counter for any function calls within
+                executor.resetBreakContextFunctionCalls();
+
                 this.visit(ctx.expressions_block());
                 keepLooping = true;
 
@@ -1719,6 +1747,9 @@ export class ParserVisitor extends BaseVisitor {
                 });
 
                 executor.setBreakContextIndex(counter);
+                
+                // Reset counter for any function calls within
+                executor.resetBreakContextFunctionCalls();
 
                 this.visit(ctx.expressions_block());
                 keepLooping = true;

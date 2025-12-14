@@ -28,7 +28,7 @@ for i in range(0, 3):
         while k < 3:
             branch:
                 wire left (k*200) down 200
-                add res(1k) #= R4__
+                add res(1k) #= R4_
                 wire down 100
                 to gnd
             k += 1
@@ -39,7 +39,7 @@ for i in range(0, 3):
         for j in range(0, 3):
             branch:
                 wire right (200 * j) down 100
-                add res(5k) #= R5__
+                add res(5k) #= R5_
                 wire down 100
 
                 to gnd
