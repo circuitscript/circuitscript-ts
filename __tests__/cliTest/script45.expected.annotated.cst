@@ -11,14 +11,14 @@ tmp = create component:
 
 at v5
 wire down 100
-add res(1k)
+add res(1k) #= R1
 
 wire down 100
 
 def tmp2(j):
     branch:
         wire right (200 * j) down 100
-        add res(5k)
+        add res(5k) #= R4___
         wire down 100
 
         to gnd
@@ -26,12 +26,12 @@ def tmp2(j):
 def tmp(i):
     branch:
         wire right (800 * i) down 100
-        add res(20k)
+        add res(20k) #= R2_
         wire down 100
 
         branch:
             wire left 200 down 200
-            add res(33k)
+            add res(33k) #= R3_
             wire down 100
             to gnd
 

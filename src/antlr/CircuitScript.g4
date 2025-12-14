@@ -144,7 +144,7 @@ at_to_multiple_line_expr_to_pin: (INTEGER_VALUE | NOT_CONNECTED);
 at_block: at_block_header NEWLINE INDENT (NEWLINE | at_block_expressions) + DEDENT;
 at_block_expressions: expression | at_block_pin_expr;
 
-at_block_header: at_component_expr ':';
+at_block_header: at_component_expr ':' annotation_comment_expr?;
 
 // Expression to allow direct pin assignment
 at_block_pin_expr: pin_select_expr2 ':' (at_block_pin_expression_simple | at_block_pin_expression_complex);

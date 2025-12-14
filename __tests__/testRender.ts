@@ -91,8 +91,13 @@ describe('Render tests', () => {
         ['extract PinIds from create component `display` prop', 'script42.cst'],
         ['do not move non-copy component in frame', 'script43.cst'],
 
-        ['refdes annotation within for and while loop', 'script44.cst'],
-        ['refdes annotation within functions', 'script45.cst']
+        // Refdes generation related
+        ['refdes within for and while loop', 'script44.cst'],
+        ['refdes within functions', 'script45.cst'],
+        ['refdes in at blocks', 'script46.cst'],
+
+        // Refdes annotation parsing
+        ['refdes annotation parsing within for and while loop', 'script47.cst'],
 
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 

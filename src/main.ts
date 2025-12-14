@@ -89,7 +89,7 @@ export default async function main(): Promise<void> {
     } else {
         console.error("Error: No input provided");
         return;
-    }    
+    }
 
     let updateSource = false;
     if (options.updateSource !== undefined){

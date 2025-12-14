@@ -7,8 +7,11 @@
 
 import { ParserRuleContext, Token, CommonTokenStream } from 'antlr4ng';
 import { Add_component_exprContext, At_block_headerContext, 
+    At_blockContext, 
     At_component_exprContext, CircuitScriptParser, 
-    Function_def_exprContext, ScriptContext, 
+    Component_select_exprContext, 
+    Frame_exprContext, 
+    Function_def_exprContext, Function_return_exprContext, ScriptContext, 
     To_component_exprContext} from './antlr/CircuitScriptParser.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ClassComponent } from './objects/ClassComponent.js';
@@ -81,8 +84,20 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         this.addRefdesAnnotationComment(ctx);
     }
 
+    visitComponent_select_expr = (ctx: Component_select_exprContext): void => {
+        this.addRefdesAnnotationComment(ctx);
+    }
+
     visitAt_block_header = (ctx: At_block_headerContext): void => {
         this.addRefdesAnnotationComment(ctx);
+    }
+    
+    visitAt_block = (ctx: At_blockContext):void => {
+        this.visit(ctx.at_block_header());
+
+        ctx.at_block_expressions().forEach(expression => {
+            this.visit(expression);
+        });
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): void => {
@@ -106,6 +121,26 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
             this.modifications.set(ctx, originalText + annotation);
         }
+    }
+
+    visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
+        this.runExpressions(this.getExecutor(), ctx.function_expr());
+    };
+
+    visitFunction_return_expr = (ctx: Function_return_exprContext): void => {
+        // Do nothing and don't signal the end.
+    }
+
+    visitFrame_expr = (ctx: Frame_exprContext): void  => {
+        this.visit(ctx.expressions_block());
+    }
+
+    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
+        // Do nothing
+    }
+
+    visitParameters = (ctx: ParametersContext): void => {
+        // Do nothing;
     }
 
     addedRefdesAnnotations:string[] = [];
@@ -164,18 +199,6 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         }
     }
 
-    visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
-        this.runExpressions(this.getExecutor(), ctx.function_expr());
-    };
-
-    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
-        // Do nothing
-    }
-
-    visitParameters = (ctx: ParametersContext): void => {
-        // Do nothing;
-    }
-    
     getOutput(): string {
         return this.resultText;
     }
@@ -239,8 +262,6 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                     }
                 }
             }
-
-           
 
             // No modification for this token - preserve exact source including whitespace
             // First, copy any whitespace between last position and this token

@@ -98,7 +98,8 @@ describe('test cli program', () => {
     // Test that the generated annotation files matches the expected results.
     test.each([
         ['script44'],
-        ['script45']
+        ['script45'],
+        ['script46'],
     ])('test generated annotations - %s', async (scriptName: string) => {
 
         execSync(baseCommand + ` __tests__/renderData/${scriptName}.cst -xj __tests__/cliTest/${scriptName}.annotated.cst`);

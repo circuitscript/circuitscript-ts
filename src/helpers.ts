@@ -345,8 +345,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     const componentLinks = visitor.getComponentCtxLinks();
     const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
     await refdesVisitor.visitAsync(tree);
-
-    if (inputPath && (updateSource || saveAnnotatedCopy)){
+    
+    if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)){
         // If this is specified, then use it to generated the annotated version
         let usePath = inputPath;
         if (saveAnnotatedCopy === true){
@@ -354,7 +354,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             const ext = path.extname(inputPath);
             const basename = path.basename(inputPath, ext);
             usePath = path.join(dir, `${basename}.annotated${ext}`);
-        } else {
+        } else if (typeof saveAnnotatedCopy === 'string'){
             usePath = saveAnnotatedCopy as string;
         }
 

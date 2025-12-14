@@ -1,0 +1,44 @@
+# Check refdes annotation is correctly loaded. Similar to script44.cst
+
+import std
+
+v5 = supply("5V")
+gnd = dgnd()
+
+tmp = create component:
+    pins: 3
+
+at v5
+wire down 100
+add res(1k) #= R10
+
+wire down 100
+
+for i in range(0, 3):
+    branch:
+        wire right (1000 * i) down 100
+        add res(20k) #= R20_
+        wire down 100
+
+        add res(10k)
+        wire down 100
+
+        k = 1
+        while k < 3:
+            branch:
+                wire left (k*200) down 200
+                add res(1k) #= R40__
+                wire down 100
+                to gnd
+            k += 1
+
+        wire down 100
+
+        # nested
+        for j in range(0, 3):
+            branch:
+                wire right (200 * j) down 100
+                add res(5k) #= R90__
+                wire down 100
+
+                to gnd

@@ -75,7 +75,7 @@ export class ComponentAnnotater {
                     // Use the placeholder refdes if it was already defined.
                     if (instance.placeHolderRefDes) {
                         // Remove the '_' to get the main refdes.
-                        prefix = instance.placeHolderRefDes.replace('_', '');
+                        prefix = instance.placeHolderRefDes.replaceAll('_', '');
                     } else {
                         // Otherwise, generate the main refdes based on the type.
                         const { index: nextIndex, proposedName } =
