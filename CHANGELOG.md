@@ -1,6 +1,17 @@
 # Changelog
 
-## [v0.1.22](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.21...v0.1.22)
+## [v0.1.23](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.22...v0.1.23)
+
+[9b9e0cf](https://gitlab.com/circuitscript/circuitscript-ts/commit/9b9e0cf4c821ba335b560049b83e0b8daed6db00)Support multiple refdes annotations in at block headers
+- 
+- Modified grammar to allow repeated annotation comments in at block headers,
+- enabling syntax like `at tmp: #= J1 #= J3`. Updated parser and visitor to
+- handle multiple annotations in at block context.
+- 
+- Added test case script52.cst to verify annotation generation within at blocks
+- including nested branches with multiple component instances.
+
+## [v0.1.22](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.21...v0.1.22) - 2025-12-14
 
 [da35baa](https://gitlab.com/circuitscript/circuitscript-ts/commit/da35baab3e08c457ca65eb8f3cdaa593c7572a71)Added missing test files
 - Updated tests
