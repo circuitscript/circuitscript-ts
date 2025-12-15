@@ -1,0 +1,32 @@
+# Test refdes generation is correct for at blocks.
+import std
+
+v5 = supply("5V")
+gnd = dgnd()
+
+tmp = create component:
+    pins: 
+        1: "A"
+        2: "B"
+        3: "C"
+        4: "D"
+        5: "E"
+        6: "F"
+    arrange:
+        left: 1,2,3
+        right: 4,5,6
+
+at tmp: #= J1 #= J3
+    "A":
+        wire left 300 down 100
+        branch:
+            wire down 100
+            add res(10k) #= R3 #= R99
+            wire down 100
+            to gnd
+            
+        branch:
+            wire left 300 down 100
+            add res(10k) #= R9
+            wire down 100
+            to gnd

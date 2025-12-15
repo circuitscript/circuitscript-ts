@@ -358,6 +358,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             usePath = saveAnnotatedCopy as string;
         }
 
+        console.log('Annotations saved to ' + usePath);
+
         // Write the annotated version
         writeFileSync(usePath, refdesVisitor.getOutput());
     }
@@ -532,9 +534,9 @@ export abstract class ParseOutputHandler {
  * KiCAD PCBView */
 export class KiCadNetListOutputHandler extends ParseOutputHandler {
 
-    afterRender = true;
+    beforeRender = true;
 
-    parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string| null, extra: any = null): boolean {
+    parse(visitor: ParserVisitor, outputPath: string | null, fileExtension: string| null): boolean {
         // Generate the kicad net list
 
         if (outputPath !== null && fileExtension === "net") {    

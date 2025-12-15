@@ -1456,6 +1456,11 @@ export class ParserVisitor extends BaseVisitor {
 
         this.componentCtxLinks.delete(ctxAtComponent);
         this.componentCtxLinks.set(ctx, currentComponent);
+
+        // Multiple annotation comments might be set.
+        ctx.annotation_comment_expr().forEach(ctx => {
+            this.visit(ctx);
+        });
     }
 
     visitAt_block = (ctx: At_blockContext): void => {
