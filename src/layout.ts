@@ -1332,7 +1332,7 @@ export class LayoutEngine {
             item.y = fromY.sub(pinPosition.y); 
 
         } else if (item instanceof RenderWire){
-            if (pin === 0) { // Start of the wire
+            if (pin.getValue() === 0) { // Start of the wire
                 item.x = fromX;
                 item.y = fromY;
             } else { // End of wire

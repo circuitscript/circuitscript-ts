@@ -185,10 +185,11 @@ export class NetGraph {
 
                     // Connect previous node to pin:0 of the wire
                     this.setGraphEdge(graph, previousNode, wireName,
-                        makeEdgeValue(previousNode, previousPin, wireName, 0, index));
+                        makeEdgeValue(previousNode, previousPin, 
+                            wireName, PinId.from(0), index));
 
                     previousNode = wireName;
-                    previousPin = 1;
+                    previousPin = PinId.from(1);
 
                     // Only for debugging purposes
                     const wireSegmentsInfo = wireSegments.map(item => {
@@ -243,7 +244,7 @@ export class NetGraph {
                     }
 
                     previousNode = wireName;
-                    previousPin = wirePin;
+                    previousPin = PinId.from(wirePin);
                     break;
                 }
 

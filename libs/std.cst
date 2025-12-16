@@ -148,8 +148,6 @@ def led(color):
             color: color
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
 
-
-
 def cgnd():
     net_name = "gnd"
     return create component:
@@ -224,6 +222,8 @@ def no_connect(size=20):
             path: "M", -size, -size, "L", size, size
             path: "M", -size, size, "L", size, -size
             pin: 1, 0, 0, 0, 0, display_pin_id=false
+        params:
+            no_connect: true
 
 def dnc(size=20):
     return no_connect(size)

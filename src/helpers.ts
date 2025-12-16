@@ -37,6 +37,9 @@ import { Logger } from "./logger.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { NetGraph } from "./graph.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
+import { RuleCheck_UnconnectedPins } from "./rules-check/unconnected-pins.js";
+import { ERC_Rules } from "./rules-check/rules.js";
+import { RuleCheck_NoConnectOnConnectedPin } from "./rules-check/no-connect-on-connected-pin.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -431,6 +434,24 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
                 sheetFrames = layoutEngine.runLayout(graph, 
                     containerFrames, nets);
+
+                const ruleCheckItems = [];
+                ruleCheckItems.push(
+                    ...RuleCheck_UnconnectedPins(graph),
+                    ...RuleCheck_NoConnectOnConnectedPin(graph, nets)
+                );
+
+                if (!true){
+                    ruleCheckItems.forEach(item => {
+                        if (item.type === ERC_Rules.UnconnectedPin){
+                            console.log(item.type, item.instanceName, item.pin);
+                        } else if (item.type === ERC_Rules.UnconnectedWire){
+                            console.log(item.type, item.instance);
+                        } else if (item.type === ERC_Rules.NoConnectOnConnectedPin){
+                            console.log(item.type, item.instanceName, item.pin);
+                        }
+                    });
+                }
                     
             } catch (err) {
                 throw new RenderError(`Error during layout generation: ${err}`, 'layout');

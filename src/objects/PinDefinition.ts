@@ -49,6 +49,19 @@ export class PinId {
         return this.value === other;
     }
 
+    /** 
+     * This value allows for easier comparison
+     */
+    getHashValue(): string {
+        if (this.type === PinIdType.Int) {
+            return 'int-' + this.value;
+        } else if (this.type === PinIdType.Str) {
+            return 'str-' + this.value;
+        }
+
+        return '';
+    }
+
     static from(value: number | string | NumericValue): PinId {
         if (value instanceof NumericValue) {
             return new PinId(value.toNumber());
