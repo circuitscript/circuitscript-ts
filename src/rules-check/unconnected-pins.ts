@@ -1,6 +1,6 @@
 import { Edge, Graph } from "@dagrejs/graphlib";
 import { RenderItemType } from "../graph.js";
-import { RenderComponent } from "../layout.js";
+import { RenderComponent, RenderWire } from "../layout.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { ERC_Rules } from "./rules.js";
 
@@ -9,7 +9,7 @@ import { ERC_Rules } from "./rules.js";
  * @param components
  * @param nets 
  */
-export function RuleCheck_UnconnectedPins(graph: Graph) {
+export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
     const items: any[] = [];
     const allNodes = graph.nodes();
 
@@ -28,10 +28,8 @@ export function RuleCheck_UnconnectedPins(graph: Graph) {
             edges.forEach(edge => {
                 const edgeInfo = graph.edge(edge.v, edge.w);
                 let pin!: PinId;
-
                 if (edge.v === instanceName) {
                     pin = edgeInfo[1];
-                    connectedPins.push(edgeInfo[1])
                 } else if (edge.w === instanceName) {
                     pin = edgeInfo[3];
                 }
@@ -46,20 +44,21 @@ export function RuleCheck_UnconnectedPins(graph: Graph) {
                     // Missing pin!
                     items.push({
                         type: ERC_Rules.UnconnectedPin,
-                        instanceName: component.instanceName,
+                        instance: component,
                         pin: pinId,
                     })
                 }
             });
         } else if (nodeInfo[0] === RenderItemType.Wire){
-            const renderWire = nodeInfo[1];
+            const renderWire = nodeInfo[1] as RenderWire;
             const edges = graph.nodeEdges(node) as Edge[];
 
             // If the wire only has 1 edge, then it is not connected anywhere else.
             if (edges.length < 2){
                 items.push({
                     type: ERC_Rules.UnconnectedWire,
-                    instance: renderWire
+                    wire: renderWire.wire,  // Reference the wire object 
+                                            //  that cause this issue.
                 })
             }
         }

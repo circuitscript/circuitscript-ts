@@ -38,7 +38,7 @@ export default async function main(): Promise<void> {
         .option('-d, --dump-data', 'Dump data during parsing')
         .option('-s, --stats', 'Show stats during generation')
         .option('-x, --skip-output', 'Skip output generation')
-        .option('-e, --erc', 'Enable electrical rule checking (ERC) output')
+        .option('-e, --erc', 'Enable ERC output')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {

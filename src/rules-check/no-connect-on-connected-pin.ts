@@ -1,5 +1,5 @@
 import { Edge, Graph } from "@dagrejs/graphlib";
-import { RenderItemType } from "../graph.js";
+import { GraphNodeInfo, RenderItemType } from "../graph.js";
 import { RenderComponent } from "../layout.js";
 import { ComponentPinNetPair } from "src/objects/types.js";
 import { Net } from "../objects/Net.js";
@@ -48,7 +48,7 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
     });
 
     allNodes.forEach(node => {
-        const nodeInfo = graph.node(node);
+        const nodeInfo = graph.node(node) as GraphNodeInfo;
         if (nodeInfo[0] === RenderItemType.Component) {
             const { component } = nodeInfo[1] as RenderComponent;
             if (component.hasParam('no_connect')) {
@@ -95,10 +95,17 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
                         });
 
                         if (remainingItems.length > 0) {
+                            const targetInfo = 
+                                graph.node(targetComponentName) as GraphNodeInfo;
+                            const tmpComponent = targetInfo[1] as RenderComponent;
+
                             items.push({
                                 type: ERC_Rules.NoConnectOnConnectedPin,
-                                instanceName: targetComponentName,
-                                pin: targetPin
+                                instance: component, // The no_connect component
+                                target: {
+                                    instance: tmpComponent.component,
+                                    pin: targetPin
+                                }
                             })
                         }
                     }

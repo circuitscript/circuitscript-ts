@@ -15,7 +15,7 @@ import { ClassComponent } from "./objects/ClassComponent.js";
 import { defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     NetGraphicsParams, 
     ParamKeys, WireAutoDirection } from './globals.js';
-import { WireSegment } from './objects/Wire.js';
+import { Wire, WireSegment } from './objects/Wire.js';
 import { Geometry, HorizontalAlign, VerticalAlign } from './geometry.js';
 import { Net } from './objects/Net.js';
 import { Logger } from './logger.js';
@@ -95,27 +95,28 @@ export class LayoutEngine {
         const sheetFrameObjects: SheetFrame[] = sheetFrames.map(sheet => {
             const items = this.flattenFrameItems(sheet);
             const components = items.filter(item => item instanceof RenderComponent);
-            const wires = items.filter(item => item instanceof RenderWire);
+            const renderWires = items.filter(item => item instanceof RenderWire);
             const textObjects = items.filter(item => item instanceof RenderText);
             const frames = items.filter(item => item instanceof RenderFrame);
 
-            const wireGroups = new Map<string, RenderWire[]>();
-            wires.forEach(wire => {
+            const renderWireGroups = new Map<string, RenderWire[]>();
+            renderWires.forEach(wire => {
                 const { netName } = wire;
-                if (!wireGroups.has(netName)) {
-                    wireGroups.set(netName, []);
+                if (!renderWireGroups.has(netName)) {
+                    renderWireGroups.set(netName, []);
                 }
 
-                wireGroups.get(netName).push(wire);
+                renderWireGroups.get(netName).push(wire);
             });
 
-            const { junctions, mergedWires } = this.findJunctions(wireGroups, renderNets);
+            const { junctions, mergedWires } = 
+                this.findJunctions(renderWireGroups, renderNets);
 
             return {
                 frame: sheet,
                 frames,
                 components,
-                wires,
+                wires: renderWires,
                 textObjects,
                 junctions,
                 mergedWires
@@ -190,7 +191,7 @@ export class LayoutEngine {
         return items;
     }
 
-    private findJunctions(wireGroups: Map<string, RenderWire[]>, 
+    private findJunctions(renderWireGroups: Map<string, RenderWire[]>, 
         nets: Map<string, RenderNet>): {
             junctions: RenderJunction[],
             mergedWires: MergedWire[],
@@ -201,9 +202,9 @@ export class LayoutEngine {
 
         const debugSegments = false;
 
-        for (const [netName, wires] of wireGroups) {
+        for (const [netName, renderWires] of renderWireGroups) {
             // Create array of all wires with the same net name
-            const allLines = wires.map(wire => {
+            const allLines = renderWires.map(wire => {
                 return wire.points.map(pt => {
                     return {
                         x: wire.x.add(pt.x),
@@ -1588,12 +1589,17 @@ export class RenderWire extends RenderObject {
 
     net: Net;
 
-    constructor(net: Net, x: NumericValue, y: NumericValue, segments: WireSegment[]) {
+    wire: Wire;
+
+    constructor(net: Net, x: NumericValue, y: NumericValue, 
+        segments: WireSegment[], wire: Wire) {
+        
         super();
         this.net = net;
         this.x = x;
         this.y = y;
         this.segments = segments;
+        this.wire = wire;
 
         this.refreshPoints();
     }

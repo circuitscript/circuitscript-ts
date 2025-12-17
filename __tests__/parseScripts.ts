@@ -246,8 +246,8 @@ print(a)
 const script20_ = new ScriptTest(
     loadScriptFromFile('__tests__/renderData/script20.cst'),`
 /GND | dgnd-0.COMP-1-GND | 1
-/GND | dgnd-0.COMP-1-GND:0 | 1
 /GND | COMP-1 | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
 /GND | res-3.COMP-1-5k | 2
 /GND | dgnd-0.COMP-1-GND:1 | 1
 /GND | --.-COMP-1-0.res-1.COMP-1-2k | 2
@@ -260,9 +260,6 @@ const script20_ = new ScriptTest(
 /NET-(R1-1) | --.-COMP-1-0.port-1.COMP-1-signal_e | 1
 /NET-(R1-1) | --.-COMP-1-0.port-1.COMP-1-signal_e:0 | 1
 /NET-(R1-1) | --.-COMP-1-0.res-1.COMP-1-2k | 1
-/NET-1 | COMP-1 | signal_c
-/NET-2 | COMP-1 | signal_e
-/NET-5 | COMP-1 | signal_d
 /VCC | supply-0.net-0.COMP-1-VCC | 1
 /VCC | supply-0.net-0.COMP-1-VCC:0 | 1
 /VCC | COMP-1 | 1
@@ -275,9 +272,9 @@ const script20_ = new ScriptTest(
 /input | --.-COMP-1-0.port-3.COMP-1-signal_b | 1
 /input | --.-COMP-1-0.port-3.COMP-1-signal_b:0 | 1
 /input | --.-COMP-1-0.res-2.COMP-1-3k | 1
+/output | COMP-1 | 3
 /output | label-1.COMP-1-output | 1
 /output | label-1.COMP-1-output:0 | 1
-/output | COMP-1 | 3
 /output | --.-COMP-1-0.res-2.COMP-1-3k | 2
 /output | --.-COMP-1-0.port-4.COMP-1-signal_d | 1
 /output | --.-COMP-1-0.port-4.COMP-1-signal_d:0 | 1`

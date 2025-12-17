@@ -11,9 +11,6 @@ import { Direction } from "./types.js";
 import { WireAutoDirection } from "src/globals.js";
 
 export class Wire {
-
-    // Should have some net info too 
-
     path: WireSegment[]
 
     constructor(path: WireSegment[]) {

@@ -305,14 +305,15 @@ export enum ActiveObject {
 
 export type SequenceActionAtTo = [SequenceAction.To | SequenceAction.At, 
     ClassComponent, pinId: number, LayoutDirection?, string?];
-export type SequenceActionWire = [SequenceAction.Wire, wireId: number, WireSegment[]];
+export type SequenceActionWire = [SequenceAction.Wire, wireId: number, 
+    WireSegment[], wire:Wire];
 
 export type SequenceActionAssign = [SequenceAction.Assign, variable: string, ClassComponent];
 
 export type SequenceItem =
     SequenceActionAtTo
     | SequenceActionWire
-    | [SequenceAction.WireJump, wireId: number, pinId: number]
+    | [SequenceAction.WireJump, wireId: number, pinId: PinId, wire: Wire]
     | [SequenceAction.Frame, Frame, "enter" | "exit"]
     | SequenceActionAssign
     ;

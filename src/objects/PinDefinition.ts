@@ -44,7 +44,8 @@ export class PinId {
 
     equals(other: PinId | number | string): boolean {
         if (other instanceof PinId) {
-            return this.value === other.value;
+            return this.value === other.value 
+                && this.getType() === other.getType();
         }
         return this.value === other;
     }

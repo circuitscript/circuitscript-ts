@@ -6,11 +6,10 @@ import { milsToMM } from "./helpers.js";
 import { RenderFrame, RenderComponent, applyComponentParamsToSymbol, 
     RenderWire } from "./layout.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { SequenceItem, SequenceAction, FrameAction } from "./objects/ExecutionScope.js";
+import { SequenceItem, SequenceAction, FrameAction, SequenceActionWire } from "./objects/ExecutionScope.js";
 import { Frame, FixedFrameIds, FrameParamKeys } from "./objects/Frame.js";
 import { Net } from "./objects/Net.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
-import { WireSegment } from "./objects/Wire.js";
 import { Logger } from "./logger.js";
 import { ComponentPinNetPair, NetTypes, TypeProps } from "./objects/types.js";
 import Matrix, { solve } from "ml-matrix";
@@ -148,10 +147,11 @@ export class NetGraph {
 
                 case SequenceAction.Wire: {
                     // draw wires
-                    const [, wireId, wireSegments] =
-                        sequenceStep as [SequenceAction.Wire, number, WireSegment[]];
+                    const [, wireId, , wire] =
+                        sequenceStep as SequenceActionWire;
 
                     let useNet!: Net;
+                    const wireSegments = wire.path;
 
                     if (previousNode !== null) {
                         const [prevNodeType, prevNodeItem] = graph.node(previousNode);
@@ -171,15 +171,15 @@ export class NetGraph {
                         }
                     }
 
-                    const wire = new RenderWire(useNet, numeric(0), numeric(0), wireSegments);
-                    wire.id = wireId;
+                    const renderWire = new RenderWire(useNet, numeric(0), 
+                        numeric(0), wireSegments, wire);
+                    renderWire.id = wireId;
+                    renderWire.netName = useNet.toString();
 
-                    wire.netName = useNet.toString();
-
-                    const wireName = getWireName(wire.id);
+                    const wireName = getWireName(renderWire.id);
 
                     // Record the sequence number to determine priority
-                    graph.setNode(wireName, [RenderItemType.Wire, wire, index]);
+                    graph.setNode(wireName, [RenderItemType.Wire, renderWire, index]);
 
                     let tmpPreviousNode = previousNode;
 
@@ -560,3 +560,9 @@ export enum RenderItemType {
     Wire = 'wire',
     Component = 'component',
 }
+
+export type GraphNodeInfo = [
+    type: RenderItemType,
+    item: RenderComponent | RenderWire,
+    index: number
+]

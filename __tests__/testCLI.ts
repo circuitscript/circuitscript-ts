@@ -18,7 +18,7 @@ describe('test cli program', () => {
         const circuitscriptText = figlet.textSync('circuitscript', {
             font: 'Small Slant'
         });
-
+        
         expect(result.includes(circuitscriptText)).toBe(true);
 
         const options =
@@ -33,6 +33,7 @@ describe('test cli program', () => {
   -d, --dump-data                   Dump data during parsing
   -s, --stats                       Show stats during generation
   -x, --skip-output                 Skip output generation
+  -e, --erc                         Enable ERC output
   -h, --help                        display help for command`
 
         expect(result.includes(options)).toBe(true);

@@ -118,6 +118,8 @@ export class ClassComponent {
     // is within a loop structure (while, for, etc.), the loop index is also stored.
     ctxReferences: CtxReference[] = [];
 
+    // Value to indicate when the component was created relative to other
+    // components.
     _creationIndex = -1; // Not defined yet.
 
     constructor(instanceName: string, numPins: number) {

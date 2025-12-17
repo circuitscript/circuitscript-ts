@@ -662,13 +662,13 @@ export class ExecutionContext {
         this.scope.setCurrent(component, usePinId);
 
         // Check if there is an existing net, otherwise create the net
-        if (!this.scope.hasNet(component, pinId)) {
+        if (!this.scope.hasNet(component, usePinId)) {
             const tmpNet = new Net(
                 this.netNamespace,
                 this.getUniqueNetName()
             );
 
-            this.scope.setNet(component, pinId, tmpNet);
+            this.scope.setNet(component, usePinId, tmpNet);
         }
 
         // If component is first referenced by this at command, then do not
@@ -872,7 +872,9 @@ export class ExecutionContext {
 
             if (wireId !== -1) {
                 // If previous node is a wire, then jump to END of wire
-                this.scope.sequence.push([SequenceAction.WireJump, wireId, 1]);
+                const wireObject = this.scope.wires[wireId];
+                this.scope.sequence.push([SequenceAction.WireJump, 
+                    wireId, PinId.from(1), wireObject]);
             }
         } else if (blockType === BlockTypes.Join || blockType === BlockTypes.Parallel) {
             if (blockIndex === 0) {
@@ -1302,10 +1304,11 @@ export class ExecutionContext {
 
             if (action === SequenceAction.Wire) {
                 // Need to have new IDs for wires
-                const [, innerWireId, segments] = sequenceAction;
+                const [, innerWireId, segments, wire] = sequenceAction;
 
                 this.scope.sequence.push(
-                    [SequenceAction.Wire, wireIdOffset + innerWireId, segments]
+                    [SequenceAction.Wire, wireIdOffset + innerWireId, 
+                        segments, wire]
                 );
 
                 this.scope.wires.push(new Wire(segments));
@@ -1313,8 +1316,10 @@ export class ExecutionContext {
             } else if (action === SequenceAction.WireJump) {
                 // Wire IDs in wire jumps need to be updated.
                 const jumpWireId = wireIdOffset + sequenceAction[1];
+                const wireObject = this.scope.wires[jumpWireId];
                 this.scope.sequence.push(
-                    [SequenceAction.WireJump, jumpWireId, 1]
+                    [SequenceAction.WireJump, jumpWireId, 
+                        PinId.from(1), wireObject]
                 );
 
             } else if (action === SequenceAction.At || action === SequenceAction.To) {    
@@ -1368,7 +1373,7 @@ export class ExecutionContext {
         return mergedInstances;
     }
 
-    addWire(segments: [string, (number | UnitDimension)?][]): void {
+    addWire(segments: [string, (number | UnitDimension)?][]): Wire {
 
         if (this.scope.currentComponent === null) {
             throw "No current component";
@@ -1385,8 +1390,8 @@ export class ExecutionContext {
 
         // This ID is used to identify/jump to wires later
         const wireId = this.scope.wires.length;
-
-        this.scope.wires.push(new Wire(tmp));
+        const newWire = new Wire(tmp);
+        this.scope.wires.push(newWire);
 
         const output: string[] = [];
         segments.forEach(item => {
@@ -1405,7 +1410,7 @@ export class ExecutionContext {
         this.log('add wire: ', output.join("|"));
 
         this.scope.setActive(ActiveObject.Wire, wireId);
-        this.scope.sequence.push([SequenceAction.Wire, wireId, tmp]);
+        this.scope.sequence.push([SequenceAction.Wire, wireId, tmp, newWire]);
 
         // if (this.scope.currentComponent.pinWires.has(this.scope.currentPin)) {
         //     throw "Component pin already connected to wire"
@@ -1421,6 +1426,8 @@ export class ExecutionContext {
                 this.scope.currentPin!, true);
             this.scope.currentComponent.didSetWireOrientationAngle = true;
         }
+        
+        return newWire;
     }
 
     addPoint(pointId: string, userDefined = true): ComponentPin {

@@ -85,11 +85,15 @@ import { BaseError, getPortType, RuntimeExecutionError } from './utils.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './ComponentAnnotater.js';
+import { Wire } from './objects/Wire.js';
 
 export class ParserVisitor extends BaseVisitor {
 
     // Provides a numerical index when each component is created.
     componentCreationIndex = 0;
+
+    // TODO: this should be in the scope object?
+    creationCtx = new Map<Wire | ClassComponent, ParserRuleContext>();
 
     visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext): void => {
         const id = ctx.ID().getText();
@@ -1546,7 +1550,8 @@ export class ParserVisitor extends BaseVisitor {
             return this.visitResult(wireSegment);
         });
 
-        this.getExecutor().addWire(segments);
+        const newWire = this.getExecutor().addWire(segments);
+        this.creationCtx.set(newWire, ctx);
     }
 
     visitPoint_expr = (ctx: Point_exprContext): ComponentPin => {
