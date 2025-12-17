@@ -59,7 +59,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     protected resultData = new Map<ParserRuleContext, any>;
 
     // Mapping of contexts to ClassComponent instances. This is used for 
-    // refdes annotation comments.
+    // refdes annotation comments and only graph related (at, to) rule contexts
+    // are tracked.
     protected componentCtxLinks = new Map<ParserRuleContext, ClassComponent>;
 
     pinTypesList: string[] = [

@@ -50,12 +50,13 @@ export type ScriptOptions = {
     dumpNets: boolean,
     dumpData: boolean,
     showStats: boolean,
+    enableErc: boolean,
 
     environment: NodeScriptEnvironment,
     inputPath?: string,
 
     // If true, then replace the current file with annotated refdes in comments.
-    updateSource: boolean,    
+    updateSource: boolean,
 
     // Contains file path to save annotated copy. If left as blank/null, then
     // save to .annotated.cst file.
@@ -271,6 +272,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         dumpNets = false,
         dumpData = false,
         showStats = false,
+        enableErc = false,
         environment,
 
         inputPath = null,
@@ -345,11 +347,13 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
     }
 
-    const componentLinks = visitor.getComponentCtxLinks();
-    const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
-    await refdesVisitor.visitAsync(tree);
-    
+    // Generate refdes annotation comments
     if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)){
+        const componentLinks = visitor.getComponentCtxLinks();
+        
+        const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
+        await refdesVisitor.visitAsync(tree);
+
         // If this is specified, then use it to generated the annotated version
         let usePath = inputPath;
         if (saveAnnotatedCopy === true){
@@ -432,22 +436,22 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                 const {graph, containerFrames} = 
                     graphEngine.generateLayoutGraph(sequence, nets);
 
-                sheetFrames = layoutEngine.runLayout(graph, 
+                sheetFrames = layoutEngine.runLayout(graph,
                     containerFrames, nets);
 
-                const ruleCheckItems = [];
-                ruleCheckItems.push(
-                    ...RuleCheck_UnconnectedPins(graph),
-                    ...RuleCheck_NoConnectOnConnectedPin(graph, nets)
-                );
+                if (enableErc) {
+                    const ruleCheckItems = [];
+                    ruleCheckItems.push(
+                        ...RuleCheck_UnconnectedPins(graph),
+                        ...RuleCheck_NoConnectOnConnectedPin(graph, nets)
+                    );
 
-                if (!true){
                     ruleCheckItems.forEach(item => {
-                        if (item.type === ERC_Rules.UnconnectedPin){
+                        if (item.type === ERC_Rules.UnconnectedPin) {
                             console.log(item.type, item.instanceName, item.pin);
-                        } else if (item.type === ERC_Rules.UnconnectedWire){
+                        } else if (item.type === ERC_Rules.UnconnectedWire) {
                             console.log(item.type, item.instance);
-                        } else if (item.type === ERC_Rules.NoConnectOnConnectedPin){
+                        } else if (item.type === ERC_Rules.NoConnectOnConnectedPin) {
                             console.log(item.type, item.instanceName, item.pin);
                         }
                     });

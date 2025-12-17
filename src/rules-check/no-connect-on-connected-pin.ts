@@ -11,7 +11,8 @@ import { ERC_Rules } from "./rules.js";
  * @param graph 
  * @returns 
  */
-export function RuleCheck_NoConnectOnConnectedPin(graph: Graph, nets: ComponentPinNetPair[]) {
+export function RuleCheck_NoConnectOnConnectedPin(graph: Graph, 
+    nets: ComponentPinNetPair[]) {
     // Find all the no connect pins
     const allNodes = graph.nodes();
 

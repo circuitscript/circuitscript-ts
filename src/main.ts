@@ -38,6 +38,7 @@ export default async function main(): Promise<void> {
         .option('-d, --dump-data', 'Dump data during parsing')
         .option('-s, --stats', 'Show stats during generation')
         .option('-x, --skip-output', 'Skip output generation')
+        .option('-e, --erc', 'Enable electrical rule checking (ERC) output')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -56,6 +57,7 @@ export default async function main(): Promise<void> {
     const watchFileChanges = options.watch;
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
+    const enableErc = options.erc;
 
     if (options.currentDirectory){
         throw "Parameter not supported yet";
@@ -102,11 +104,12 @@ export default async function main(): Promise<void> {
     }
     
     const scriptOptions: ScriptOptions = {
-        dumpNets, 
+        dumpNets,
         dumpData,
         showStats: options.stats,
+        enableErc,
         environment: env,
-        
+
         inputPath: inputFilePath,
         updateSource,
         saveAnnotatedCopy: saveAnnotatedCopyPath,
