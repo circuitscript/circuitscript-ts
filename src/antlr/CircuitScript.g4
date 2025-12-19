@@ -83,6 +83,7 @@ expression: graph_expressions
         | frame_expr
         | flow_expressions
         | annotation_comment_expr
+        | part_set_expr
         ;
 
 // Changes flow of the program
@@ -262,6 +263,17 @@ else_expr: Else ':' expressions_block;
 
 while_expr: While data_expr ':' expressions_block;
 for_expr: For ID (',' ID)* 'in' data_expr ':' expressions_block;
+
+part_set_expr: 'set' ':' data_expr (',' data_expr) ':' part_match_block;
+part_set_key: ID | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE;
+
+part_match_block: NEWLINE INDENT (NEWLINE | part_sub_expr)+ DEDENT;
+
+part_sub_expr: part_condition_expr | part_value_expr | part_condition_key_only_expr;
+
+part_condition_expr: key_id+=part_set_key ':' values+=data_expr (',' key_id+=part_set_key ':' values+=data_expr)* (',' id_only=part_set_key)*':' (part_match_block | (last_data+=data_expr (',' last_data+=data_expr)*));
+part_condition_key_only_expr: part_set_key ':' part_match_block;
+part_value_expr: part_set_key ':' data_expr (',' data_expr)*;
 
 ANNOTATION_START: '#=';
 annotation_comment_expr: ANNOTATION_START ID;

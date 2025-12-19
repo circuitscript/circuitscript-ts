@@ -140,7 +140,7 @@ export class NumericValue {
     }
 }
 
-export function numeric(value: number): NumericValue {
+export function numeric(value: number | string): NumericValue {
     return new NumericValue(value);
 }
 

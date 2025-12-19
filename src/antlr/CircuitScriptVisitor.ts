@@ -82,6 +82,13 @@ import { If_inner_exprContext } from "./CircuitScriptParser.js";
 import { Else_exprContext } from "./CircuitScriptParser.js";
 import { While_exprContext } from "./CircuitScriptParser.js";
 import { For_exprContext } from "./CircuitScriptParser.js";
+import { Part_set_exprContext } from "./CircuitScriptParser.js";
+import { Part_set_keyContext } from "./CircuitScriptParser.js";
+import { Part_match_blockContext } from "./CircuitScriptParser.js";
+import { Part_sub_exprContext } from "./CircuitScriptParser.js";
+import { Part_condition_exprContext } from "./CircuitScriptParser.js";
+import { Part_condition_key_only_exprContext } from "./CircuitScriptParser.js";
+import { Part_value_exprContext } from "./CircuitScriptParser.js";
 import { Annotation_comment_exprContext } from "./CircuitScriptParser.js";
 
 
@@ -584,6 +591,48 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitFor_expr?: (ctx: For_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_set_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_set_expr?: (ctx: Part_set_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_set_key`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_set_key?: (ctx: Part_set_keyContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_match_block`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_match_block?: (ctx: Part_match_blockContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_sub_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_sub_expr?: (ctx: Part_sub_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_condition_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_condition_expr?: (ctx: Part_condition_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_condition_key_only_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_condition_key_only_expr?: (ctx: Part_condition_key_only_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.part_value_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPart_value_expr?: (ctx: Part_value_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.annotation_comment_expr`.
      * @param ctx the parse tree

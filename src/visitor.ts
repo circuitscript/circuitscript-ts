@@ -55,6 +55,13 @@ import {
     Path_blockContext,
     Annotation_comment_exprContext,
     At_block_headerContext,
+    Part_set_exprContext,
+    Part_set_keyContext,
+    Part_match_blockContext,
+    Part_sub_exprContext,
+    Part_value_exprContext,
+    Part_condition_exprContext,
+    Part_condition_key_only_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -86,6 +93,7 @@ import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './ComponentAnnotater.js';
 import { Wire } from './objects/Wire.js';
+import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
 
 export class ParserVisitor extends BaseVisitor {
 
@@ -1806,6 +1814,152 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
     
+    visitPart_set_expr = (ctx: Part_set_exprContext): void => {
+        // The initial set expression captures the param keys to be updated
+        // and follows with the matching condition blocks.
+        const paramKeys = ctx.data_expr().map(ctx => {
+            return this.visitResult(ctx) as string;
+        });
+
+        const partConditionTree = this.visitResult(ctx.part_match_block());
+
+        // Flatten this tree
+        const flattenedTree = flattenConditionNodes(partConditionTree);
+        const partConditions = extractPartConditions(flattenedTree);
+
+        // Get all components
+        const instances = this.getScope().getInstances();
+        applyPartConditions(instances, paramKeys, partConditions);
+    }
+
+    visitPart_match_block = (ctx: Part_match_blockContext): void => {
+        const results = ctx.part_sub_expr().map(ctxExpr => {
+            return this.visitResult(ctxExpr);
+        });
+
+        this.setResult(ctx, results);
+    }
+
+    visitPart_sub_expr = (ctx: Part_sub_exprContext): void => {
+        const ctxForm1 = ctx.part_condition_expr();
+        const ctxForm2 = ctx.part_condition_key_only_expr();
+        const ctxForm3 = ctx.part_value_expr();
+
+        let result: unknown;
+        if (ctxForm1) {
+            result = this.visitResult(ctxForm1);
+        } else if (ctxForm2) {
+            result = this.visitResult(ctxForm2);
+        } else if (ctxForm3) {
+            result = this.visitResult(ctxForm3);
+        }
+
+        this.setResult(ctx, result);
+    }
+
+    visitPart_set_key = (ctx: Part_set_keyContext): void => {
+        // The key for each condition/matcher in the condition tree.
+        const ctxID = ctx.ID();
+        const ctxNumericValue = ctx.NUMERIC_VALUE();
+        const ctxStringValue = ctx.STRING_VALUE();
+
+        let useType = '';
+        let useValue: any;
+
+        if (ctxID) {
+            useType = 'ID';
+            useValue = ctxID.getText();
+        } else if (ctxNumericValue) {
+            useType = 'NUMERIC_VALUE';
+            useValue = numeric(ctxNumericValue.getText());
+        } else if (ctxStringValue) {
+            useType = 'STRING_VALUE';
+            useValue = this.prepareStringValue(ctxStringValue.getText());
+        }
+
+        this.setResult(ctx, {
+            type: useType,
+            value: useValue
+        });
+    }
+
+    visitPart_value_expr = (ctx: Part_value_exprContext): void => {
+        const key = this.visitResult(ctx.part_set_key());
+        const values = ctx.data_expr().map(ctxData => {
+            return this.visitResult(ctxData);
+        });
+
+        this.setResult(ctx, { key, endValue: values });
+    }
+
+    visitPart_condition_expr = (ctx: Part_condition_exprContext): void => {
+        const allKeys = ctx._key_id.map(ctx => {
+            return this.visitResult(ctx);
+        });
+
+        const allValues = ctx._values.map(ctx => {
+            return this.visitResult(ctx);
+        })
+
+        // If there is a match block children, then it should be set to
+        // the children of the deepest node
+        let deepestChildren: ConditionNode[] = [];
+        const ctxPartMatchBlock = ctx.part_match_block();
+        if (ctxPartMatchBlock) {
+            deepestChildren = this.visitResult(ctxPartMatchBlock);
+        }
+
+        // If the expression ends with value(s), instead of the part match block
+        let lastValue = undefined;
+        if (ctx._last_data.length > 0){
+            lastValue = ctx._last_data.map(ctxData => {
+                return this.visitResult(ctxData); 
+            });
+        }
+
+        // If the expression ends with a key, instead of complete key-value pairs.
+        if (ctx._id_only){
+            // If this is set, this should be the inner most value.
+            allKeys.push(this.visitResult(ctx._id_only));
+
+            // Add place holder value.
+            allValues.push(undefined);
+        }
+
+        // Reverse they key-value pairs so that the first one in code becomes
+        // the outer-most item.
+        const reversedKeys = [...allKeys].reverse();
+        const reversedValues = [...allValues].reverse();
+
+        // Parse from the inner most item first (at index 0).
+        let tmpKeyValues: ConditionNode;
+        reversedKeys.forEach((key, index) => {
+            const node: ConditionNode = {
+                key,
+                values: (reversedValues[index] !== undefined) ? [reversedValues[index]]: undefined,
+                children: (index === 0) ? deepestChildren : [tmpKeyValues],
+            };
+
+            if (index === 0 && lastValue !== undefined){
+                node.endValue = lastValue;
+            }
+
+            tmpKeyValues = node;
+        });
+
+        this.setResult(ctx, tmpKeyValues);
+    }
+
+    visitPart_condition_key_only_expr = (ctx: Part_condition_key_only_exprContext): void => {
+        const key = this.visitResult(ctx.part_set_key());
+        const children = this.visitResult(ctx.part_match_block());
+
+        this.setResult(ctx, {
+            key,
+            children,
+        });
+    }
+
     private resolveDataExpr<T>(data_expr: Data_exprContext | null): T {
         const value: T | UndeclaredReference = this.visitResult(data_expr!);
 

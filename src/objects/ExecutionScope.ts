@@ -270,6 +270,10 @@ export class ExecutionScope {
         const propertyTree = this.findPropertyKeyTree(visitor);
         lastHandler && lastHandler(propertyTree, value, valueCtx);
     }
+    
+    getInstances(): ClassComponent[] {
+        return Array.from(this.instances.values());
+    }
 }
 
 export enum SequenceAction {
