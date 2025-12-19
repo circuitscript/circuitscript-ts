@@ -139,10 +139,10 @@ export function partMatchesConditions(instance: ClassComponent, partConditions: 
 
                     if (typeof compareValue === "string") {
                         return (compareValue !== paramValue);
-                    } else if (typeof compareValue === 'object') {
-                        if (compareValue instanceof NumericValue) {
-                            return !compareValue.eq(paramValue as NumericValue);
-                        }
+                    } else if (compareValue instanceof NumericValue) {
+                        return !compareValue.eq(paramValue as NumericValue);
+                    } else if (typeof compareValue === 'number'){
+                        return compareValue !== paramValue;
                     }
                 }
             }

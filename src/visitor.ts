@@ -1860,6 +1860,7 @@ export class ParserVisitor extends BaseVisitor {
     visitPart_set_key = (ctx: Part_set_keyContext): void => {
         // The key for each condition/matcher in the condition tree.
         const ctxID = ctx.ID();
+        const ctxIntegerValue = ctx.INTEGER_VALUE();
         const ctxNumericValue = ctx.NUMERIC_VALUE();
         const ctxStringValue = ctx.STRING_VALUE();
 
@@ -1869,6 +1870,9 @@ export class ParserVisitor extends BaseVisitor {
         if (ctxID) {
             useType = 'ID';
             useValue = ctxID.getText();
+        } else if (ctxIntegerValue){
+            useType = 'number',
+            useValue = Number(ctxIntegerValue.getText());
         } else if (ctxNumericValue) {
             useType = 'NUMERIC_VALUE';
             useValue = numeric(ctxNumericValue.getText());

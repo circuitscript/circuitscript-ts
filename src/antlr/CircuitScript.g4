@@ -264,8 +264,8 @@ else_expr: Else ':' expressions_block;
 while_expr: While data_expr ':' expressions_block;
 for_expr: For ID (',' ID)* 'in' data_expr ':' expressions_block;
 
-part_set_expr: 'set' ':' data_expr (',' data_expr) ':' part_match_block;
-part_set_key: ID | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE;
+part_set_expr: 'set' ':' data_expr (',' data_expr)* ':' part_match_block;
+part_set_key: ID | INTEGER_VALUE | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE;
 
 part_match_block: NEWLINE INDENT (NEWLINE | part_sub_expr)+ DEDENT;
 
