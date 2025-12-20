@@ -1027,7 +1027,7 @@ export class ExecutionContext {
     resolveVariable(executionStack: ExecutionContext[], idName: string, 
         trailers:string[] = []): AnyReference {
 
-        // this.print('resolve variable', idName);
+        // this.log('resolve variable name:', idName, 'trailers:', trailers);
         const reversed = [...executionStack].reverse();
 
         for (let i = 0; i < reversed.length; i++) {
@@ -1068,7 +1068,7 @@ export class ExecutionContext {
                         type: isVariable ? ReferenceTypes.variable
                             : ReferenceTypes.instance,
                         found: (tmpReference.value !== undefined),
-                        parentValue: tmpReference.parentValue,
+                        rootValue: tmpReference.rootValue,
                         value: tmpReference.value,
                         name: idName,
                         trailers,
@@ -1091,21 +1091,24 @@ export class ExecutionContext {
      * @param type - reference type for <item>
      */
     resolveTrailers(type: ReferenceTypes, item: any, trailers: string[] = []): AnyReference {
-        let parentValue: any;
+        let rootValue: any;
         let useValue = item;
 
         if (trailers.length > 0) {
-            parentValue = useValue;
+            rootValue = useValue;
             const trailersPath = trailers.join(".");
 
             if (type === ReferenceTypes.variable) {
-                useValue = parentValue[trailersPath];
+                useValue = rootValue;
+                trailers.forEach(trailerPath => {
+                    useValue = useValue[trailerPath];
+                });
 
             } else if (type === ReferenceTypes.instance) {
                 // If is a net component, then try to access the 
                 // the net instance used globally
 
-                const tmpComponent = (parentValue as ClassComponent)
+                const tmpComponent = (rootValue as ClassComponent)
                 if (tmpComponent.typeProp === ComponentTypes.net) {
                     const usedNet = this.scope.getNet(tmpComponent, new PinId(1));
                     if (usedNet) {
@@ -1113,24 +1116,25 @@ export class ExecutionContext {
                         useValue = usedNet.params.get(trailerValue) ?? null;
                     }
                 } else {
-                    useValue = (parentValue as ClassComponent)
+                    useValue = (rootValue as ClassComponent)
                         .parameters.get(trailersPath);
                 }
             }
         }
 
         let found = false;
-        if (parentValue !== undefined && useValue !== undefined){
+        if (rootValue !== undefined && useValue !== undefined){
             found = true;
         }
 
         return new AnyReference({
             found, // Always true, assumes that item is not undefined
             type: type,
-            parentValue,
+            rootValue,
             trailers,
+            trailerIndex: trailers.length,
             value: useValue,
-        })
+        });
     }
 
     callFunction(

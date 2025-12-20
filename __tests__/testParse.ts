@@ -32,7 +32,8 @@ import {
     inlineScript58,
     inlineScript59,
     inlineScript60,
-    inlineScript61
+    inlineScript61,
+    inlineScript62
 } from './parseScripts.js';
 
 async function expectInlineScriptTest(description, scriptTest): Promise<void> {
@@ -390,6 +391,8 @@ describe('atom expr and trailers tests', () => {
     testInlineScriptTest('test nested function calls', inlineScript60);
 
     testInlineScriptTest('test nested function calls mixed with array access', inlineScript61);
+
+    testInlineScriptTest('test nested objects in variables', inlineScript62);
 });
 
 // This tests that an error is generated at the right position for 

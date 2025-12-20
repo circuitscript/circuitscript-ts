@@ -97,9 +97,13 @@ export class AnyReference {
 
     name?: string;
 
-    // Stores the access key to retrieve the value from `parentValue`, only used
+    // Stores the access key to retrieve the value from `rootValue`, only used
     // if `value` is a primitive and is a property of some object.
     trailers: (string| ['index', number])[] = [];
+
+    // This indicates the depth within an object, relative to the 
+    // rootValue/parentValue.
+    trailerIndex = -1;
 
     type: ReferenceTypes;
 
@@ -107,7 +111,9 @@ export class AnyReference {
     // value of an object property/param)
     value?: any;
 
-    parentValue?: any; // If trailers are available, then this holds the parent
+    // Nested objects will hold this rootValue reference and this value should be present within
+    // the scope's variables property.
+    rootValue?: any; // If trailers are available, then this holds the parent
     // object of the trailers
 
     referenceName = 'AnyReference';
@@ -116,9 +122,10 @@ export class AnyReference {
         found: boolean;
         name?: string;
         trailers?: (string| ['index', number])[];
+        trailerIndex: number,
         type?: ReferenceTypes;
         value?: any;
-        parentValue?: any;
+        rootValue?: any;
     }) {
 
         // Only allow function references to be nested.
@@ -129,10 +136,13 @@ export class AnyReference {
 
         this.found = refType.found;
         this.name = refType.name;
+        
         this.trailers = refType.trailers;
+        this.trailerIndex = refType.trailerIndex;
+
         this.type = refType.type ?? ReferenceTypes.unknown;
         this.value = refType.value;
-        this.parentValue = refType.parentValue;
+        this.rootValue = refType.rootValue;
     }
 
     toString(): string {        
@@ -177,13 +187,13 @@ export class DeclaredReference extends AnyReference {
     toDisplayString(): string {
         let returnValue: any = undefined;
 
-        if (this.parentValue) {
+        if (this.rootValue) {
             // Have trailers
             const trailersString = this.trailers.join(".");
             if (this.type === 'instance') {
-                returnValue = (this.parentValue as ClassComponent).parameters.get(trailersString);
+                returnValue = (this.rootValue as ClassComponent).parameters.get(trailersString);
             } else if (this.type === 'variable') {
-                returnValue = this.parentValue[trailersString];
+                returnValue = this.rootValue[trailersString];
             }
         } else {
             returnValue = this.value;

@@ -556,6 +556,16 @@ c = tmp1()()()[1]()
 print(c)
 `, ['100']);
 
+export const inlineScript62 = new ScriptTest(`
+# Test nested objects within variables.
+document.bom.columns = ["a", "b", "c"]
+print(document.bom)
+print(document.bom.columns)
+`, [
+    '{"columns":["a","b","c"]}',
+    '["a", "b", "c"]',
+]);
+
 const scriptPath = '__tests__/parseData';
 
 export const inlineScriptTests = [

@@ -39,6 +39,7 @@ export default async function main(): Promise<void> {
         .option('-s, --stats', 'Show stats during generation')
         .option('-x, --skip-output', 'Skip output generation')
         .option('-e, --erc', 'Enable ERC output')
+        .option('-b, --bom [output-path]', 'Generate Bill of Materials in csv format')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -58,6 +59,8 @@ export default async function main(): Promise<void> {
     const dumpNets = options.dumpNets;
     const dumpData = options.dumpData;
     const enableErc = options.erc;
+    const enableBom = options.bom !== undefined;
+    let bomOutputPath = options.bom;
 
     if (options.currentDirectory){
         throw "Parameter not supported yet";
@@ -102,12 +105,23 @@ export default async function main(): Promise<void> {
     if (options.annotatedPath !== undefined){
         saveAnnotatedCopyPath = options.annotatedPath;
     }
-    
+
+    // Generate default BOM output path if not specified
+    if (enableBom && (bomOutputPath === true || bomOutputPath === undefined)) {
+        if (inputFilePath) {
+            bomOutputPath = inputFilePath + '.bom.csv';
+        } else {
+            bomOutputPath = 'output.bom.csv';
+        }
+    }
+
     const scriptOptions: ScriptOptions = {
         dumpNets,
         dumpData,
         showStats: options.stats,
         enableErc,
+        enableBom,
+        bomOutputPath,
         environment: env,
 
         inputPath: inputFilePath,

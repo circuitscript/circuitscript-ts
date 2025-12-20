@@ -34,6 +34,7 @@ describe('test cli program', () => {
   -s, --stats                       Show stats during generation
   -x, --skip-output                 Skip output generation
   -e, --erc                         Enable ERC output
+  -b, --bom [output-path]           Generate Bill of Materials in csv format
   -h, --help                        display help for command`
 
         expect(result.includes(options)).toBe(true);

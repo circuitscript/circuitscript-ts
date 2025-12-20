@@ -838,7 +838,7 @@ export class ParserVisitor extends BaseVisitor {
         this.getScope().exitContext();
 
         if (value instanceof UndeclaredReference && (
-            value.reference.parentValue === undefined
+            value.reference.rootValue === undefined
             && value.reference.value === undefined
         )) {
             throw value.throwMessage();
@@ -920,12 +920,12 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         if (dataResult instanceof AnyReference){
-            const {trailers = [], parentValue = null} = dataResult;
-            if (parentValue instanceof ClassComponent
+            const {trailers = [], rootValue = null} = dataResult;
+            if (rootValue instanceof ClassComponent
                 && trailers.length > 0
                 && trailers[0] === ModuleContainsKeyword
             ) {
-                dataResult = parentValue;
+                dataResult = rootValue;
                 this.placeModuleContains(dataResult as ModuleComponent);
             }
         }

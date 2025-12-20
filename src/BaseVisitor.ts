@@ -111,7 +111,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         ]);
 
         // Add the document global object, this is used to set the page size
-        scope.setVariable(GlobalDocumentName, {});
+        scope.setVariable(GlobalDocumentName, {
+            'bom': {},  // Store bom configuration
+        });
         
         this.setupBuiltInFunctions(this.startingContext);
             
@@ -284,43 +286,53 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
             sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
         } else {
-            if (leftSideReference.parentValue instanceof ClassComponent){
-                this.setInstanceParam(leftSideReference.parentValue, trailers, rhsValue);
-                this.log2(`assigned component param ${leftSideReference.parentValue} trailers: ${trailers} value: ${rhsValue}`);
+            if (leftSideReference.rootValue instanceof ClassComponent){
+                this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
+                this.log2(`assigned component param ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`);
 
-                sequenceParts.push(...['instance', [leftSideReference.parentValue, trailers], rhsValue]);
+                sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
 
-                if (leftSideReference.parentValue.typeProp === ComponentTypes.net) {
+                if (leftSideReference.rootValue.typeProp === ComponentTypes.net) {
                     // if a net component, there is onl 1 pin
                     const net = this.getScope().getNet(
-                        leftSideReference.parentValue, new PinId(1));
+                        leftSideReference.rootValue, new PinId(1));
                     if (net) {
                         const trailerValue = trailers.join(".");
                         net.params.set(trailerValue, rhsValue);
                     }
                 }
 
-            } else if (leftSideReference.parentValue instanceof Object) {
+            } else if (leftSideReference.rootValue instanceof Object) {
                 // TODO: instanceof use AnyReference?
 
                 // Array access assignment
                 if (Array.isArray(trailers[0]) && trailers[0][0] === TrailerArrayIndex) {
-                    if (Array.isArray(leftSideReference.parentValue)) {
+                    if (Array.isArray(leftSideReference.rootValue)) {
                         const arrayIndexValue = trailers[0][1];
-                        leftSideReference.parentValue[arrayIndexValue] = rhsValue;
+                        leftSideReference.rootValue[arrayIndexValue] = rhsValue;
 
-                        this.log2(`assigned array index ${leftSideReference.parentValue} index: ${arrayIndexValue} value: ${rhsValue}`);
+                        this.log2(`assigned array index ${leftSideReference.rootValue} index: ${arrayIndexValue} value: ${rhsValue}`);
 
                     } else {
                         this.throwWithContext(lhsCtx, "Invalid array");
                     }
                 } else {
                     // Object access assignment
-                    leftSideReference.parentValue[trailers.join('.')] = rhsValue;
-                    this.log2(`assigned object ${leftSideReference.parentValue} trailers: ${trailers} value: ${rhsValue}`)
+
+                    // Expand the object first
+                    let expandedValue = leftSideReference.rootValue;
+                    
+                    // Skip the last trailer
+                    trailers.slice(0, -1).forEach(trailer => {
+                        expandedValue = expandedValue[trailer];
+                    });
+                    const lastTrailer = trailers.slice(-1)[0];
+
+                    expandedValue[lastTrailer] = rhsValue;
+                    this.log2(`assigned object ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`)
                 }
 
-                sequenceParts.push(...['variable', [leftSideReference.parentValue, trailers], rhsValue]);
+                sequenceParts.push(...['variable', [leftSideReference.rootValue, trailers], rhsValue]);
             }
         }
 
@@ -410,7 +422,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         const { trailers = [] } = reference;
 
         const undefinedParentWithTrailers = trailers.length > 0
-            && reference.parentValue === undefined;
+            && reference.rootValue === undefined;
 
         if (undefinedParentWithTrailers) {
             this.throwWithContext(ctx, 
@@ -435,11 +447,18 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             // Extend the property in reference
             reference.trailers.push(ctxID.getText());
 
+            const useRootValue = reference.rootValue ?? reference.value;
+            const useTrailerIndex = reference.trailerIndex ?? 0;
+
             nextReference = this.getExecutor().resolveTrailers(
                 reference.type, 
-                useValue,
+                useRootValue,
                 reference.trailers
             );
+
+            nextReference.name = 
+                [reference.name, 
+                    ...reference.trailers.slice(useTrailerIndex)].join('.');
 
         } else if (ctxDataExpr) {
             const arrayIndex = this.visitResult(ctxDataExpr);
@@ -455,7 +474,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     type: refType,
                     value: foundValue,
                     trailers: [[TrailerArrayIndex, arrayIndexValue]],
-                    parentValue: useValue
+                    rootValue: useValue
                 });
             }
         }
@@ -480,17 +499,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 type: ReferenceTypes.pinType,
             });
         } else {
+            this.log('resolve variable ctx: ' + ctx.getText(), 'atomId', atomId);
             currentReference = executor.resolveVariable(
                 this.executionStack, atomId);
+            this.log('reference:', currentReference.name, 'found:', currentReference.found);
         }
 
         if (currentReference !== undefined && currentReference.found) {
-            const trailersLength = ctx.trailer_expr2().length;
-            for (let i = 0; i < trailersLength; i++) {
-                const trailerCtx = ctx.trailer_expr2(i)!;
-                this.setResult(trailerCtx, currentReference);
-                currentReference = this.visitResult(trailerCtx);
-            }
+            ctx.trailer_expr2().forEach(ctxTrailer => {
+                this.setResult(ctxTrailer, currentReference);
+                currentReference = this.visitResult(ctxTrailer);
+            });
         }
         
         this.setResult(ctx, currentReference);

@@ -179,7 +179,11 @@ function toString(obj: any): string {
         } else if (obj.toDisplayString) {
             return obj.toDisplayString();
         } else if (obj.toString) {
-            return obj.toString();
+            if (typeof obj === 'object'){
+                return JSON.stringify(obj);
+            } else {
+                return obj.toString();
+            }
         } else {
             throw "Could not create string from object: " + obj;
         }

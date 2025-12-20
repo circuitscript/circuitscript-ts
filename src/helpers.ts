@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { writeFileSync, createWriteStream, 
+import { writeFileSync, createWriteStream,
     existsSync, mkdirSync} from "fs";
 import path from "path";
 
@@ -38,6 +38,7 @@ import { NodeScriptEnvironment } from "./environment.js";
 import { NetGraph } from "./graph.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
+import { generateBom, saveBomOutputCsv } from "./BomGeneration.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -49,6 +50,8 @@ export type ScriptOptions = {
     dumpData: boolean,
     showStats: boolean,
     enableErc: boolean,
+    enableBom: boolean,
+    bomOutputPath?: string,
 
     environment: NodeScriptEnvironment,
     inputPath?: string,
@@ -271,6 +274,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         dumpData = false,
         showStats = false,
         enableErc = false,
+        enableBom = false,
+        bomOutputPath = undefined,
         environment,
 
         inputPath = null,
@@ -395,6 +400,15 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         //     console.log(instanceName);
         //     console.log(instance.pinNets);
         // }
+
+        if (enableBom && bomOutputPath) {
+            const documentVariable = visitor.getScope().variables.get('document')!;
+            const bomConfig = documentVariable.bom;
+            const bomData = generateBom(bomConfig, visitor.getScope().getInstances());
+
+            await saveBomOutputCsv(bomData, bomOutputPath);
+            console.log('Generated BOM file', bomOutputPath);
+        }
 
         const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
         dumpData && writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));

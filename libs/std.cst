@@ -65,6 +65,7 @@ def res(value):
             value: value
             size: "0402"
             footprint: "Resistor_SMD:R_0402_1005Metric"
+            description: "RES {value} OHM {size}"
 
 def cap(value):
     width = 120
@@ -146,7 +147,9 @@ def led(color):
         params:
             size: "0603"
             color: color
+            value: color
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
+            description: "LED {color} {size}"
 
 def cgnd():
     net_name = "gnd"
@@ -425,3 +428,4 @@ def sheet_A6(revision="V1"):
     return tmp_sheet
 
 document.sheet_type = sheet_A4()
+document.bom.columns = ["refdes", "mpn", "manufacturer", "footprint"]
