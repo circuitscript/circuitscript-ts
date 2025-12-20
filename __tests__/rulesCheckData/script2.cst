@@ -1,0 +1,22 @@
+import std
+
+v5 = supply("5V")
+gnd = dgnd()
+
+at v5
+wire down 100
+
+branch:
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+wire right 300 
+branch:
+    wire down 100
+    add res(10k)
+
+    wire down 100
+
+wire right 300

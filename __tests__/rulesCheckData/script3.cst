@@ -1,0 +1,35 @@
+import std
+
+v5 = supply("5V")
+gnd = dgnd()
+
+tmp = create component:
+    pins: 6
+    arrange:
+        left: 1,2,3
+        right: 4,5,6
+
+at v5
+wire down 100 right 100
+to tmp pin 1
+
+at tmp:
+    2:
+        wire left 100 up 100
+        to tmp pin 1
+    5: 
+        wire right 100 down 100
+        to tmp pin 6
+    4:
+        add no_connect()
+        wire right 300 down 100 
+        add cap(100n)
+        wire down 100
+        to gnd
+
+    3:
+        wire left 100 down 100
+        to gnd
+    6:
+        wire right 100 down 100
+        to gnd

@@ -1,0 +1,42 @@
+[
+    {
+        "start": {
+            "line": 14,
+            "column": 3
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin 2 for component"
+    },
+    {
+        "start": {
+            "line": 14,
+            "column": 3
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin 3 for component"
+    },
+    {
+        "start": {
+            "line": 14,
+            "column": 3
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin 4 for component"
+    },
+    {
+        "start": {
+            "line": 14,
+            "column": 3
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin 5 for component"
+    },
+    {
+        "start": {
+            "line": 14,
+            "column": 3
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin 6 for component"
+    }
+]

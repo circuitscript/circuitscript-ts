@@ -2,35 +2,14 @@ import { createReadStream, createWriteStream, existsSync, readFileSync, unlinkSy
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
-import { LayoutEngine, SheetFrame } from "../src/layout.js";
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render.js";
-import { runScript } from "./helpers.js";
+import { renderCommon } from "./helpers.js";
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
-import { NetGraph } from '../src/graph.js';
 
 const mainPath = '__tests__/renderData/';
 
 describe('Render tests', () => {
-
-    async function renderCommon(scriptPath: string): Promise<SheetFrame[]> {
-        const script = readFileSync(mainPath + scriptPath, { encoding: 'utf8' });
-        const { hasError, visitor } = await runScript(script);
-        expect(hasError).toEqual(false);
-        
-        visitor.applySheetFrameComponent();
-
-        const { sequence, nets } = visitor.getGraph();
-
-        const logger = new Logger();
-        const graphEngine = new NetGraph(logger);
-        const layoutEngine = new LayoutEngine(logger);
-
-        const { graph, containerFrames } =
-            graphEngine.generateLayoutGraph(sequence, nets);
-
-        return await layoutEngine.runLayout(graph, containerFrames, nets);
-    }
 
     test.each([
         ['variant and branch rendering', 'script1.cst'],
@@ -108,7 +87,7 @@ describe('Render tests', () => {
 
         
     ])('render - %s (%s)', async (title, scriptPath) => {
-        const sheetFrames = await renderCommon(scriptPath);
+        const { sheetFrames } = await renderCommon(mainPath + scriptPath);
 
         const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
@@ -130,7 +109,7 @@ describe('Render tests', () => {
         }
 
         // First, generate the PDF
-        const sheetFrames = await renderCommon(scriptPath);
+        const { sheetFrames } = await renderCommon(mainPath + scriptPath);
         const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
 
         // Full ISO time string is given, because the CI server might

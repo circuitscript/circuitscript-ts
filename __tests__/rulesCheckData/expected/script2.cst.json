@@ -1,0 +1,18 @@
+[
+    {
+        "start": {
+            "line": 20,
+            "column": 4
+        },
+        "type": "UNCONNECTED-WIRE",
+        "message": "Unconnected wire end"
+    },
+    {
+        "start": {
+            "line": 22,
+            "column": 0
+        },
+        "type": "UNCONNECTED-WIRE",
+        "message": "Unconnected wire end"
+    }
+]

@@ -16,8 +16,14 @@ export enum ERC_Rules {
     NoConnectOnConnectedPin = 'NO-CONNECT-ON-CONNECTED-PIN'
 }
 
+export type ERCReportItem = {
+    start: Token,
+    type: ERC_Rules,
+    message: string,
+}
+
 export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
-    nets: ComponentPinNetPair[]) {
+    nets: ComponentPinNetPair[]): ERCReportItem[] {
     const ruleCheckItems = [];
     const creationCtx = visitor.creationCtx;
 
@@ -26,7 +32,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         ...RuleCheck_NoConnectOnConnectedPin(graph, nets)
     );
 
-    const reportItems: { start: Token, type: ERC_Rules, message: string }[] = [];
+    const reportItems: ERCReportItem[] = [];
 
     ruleCheckItems.forEach(item => {
         const { type } = item;
@@ -74,18 +80,12 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         }
     });
 
-    // Sort the report items
+    // Sort the report items based on file position.
     const sortedReport = reportItems.toSorted((a, b) => {
         return a.start.start - b.start.start;
     });
 
-    if (sortedReport.length > 0) {
-        console.log(`ERC found ${sortedReport.length} items:`);
-
-        sortedReport.forEach((item, index) => {
-            console.log(`${(index + 1).toString().padStart(3)}. line ${item.start.line}, column ${item.start.column}: ${item.type} - ${item.message}`);
-        });
-    }
+    return sortedReport;
 }
 
 function getComponentFirstCtxToken(instance: ClassComponent): Token | null {

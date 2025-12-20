@@ -444,17 +444,25 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             // graphEngine.generateNetGraph(nets);
 
             let sheetFrames;
-            try {                
-                const {graph, containerFrames} = 
+            try {
+                const { graph, containerFrames } =
                     graphEngine.generateLayoutGraph(sequence, nets);
 
                 sheetFrames = layoutEngine.runLayout(graph,
                     containerFrames, nets);
 
                 if (enableErc) {
-                    EvaluateERCRules(visitor, graph, nets);
+                    const ercResults = EvaluateERCRules(visitor, graph, nets);
+
+                    if (ercResults.length > 0) {
+                        console.log(`ERC found ${ercResults.length} items:`);
+
+                        ercResults.forEach((item, index) => {
+                            console.log(`${(index + 1).toString().padStart(3)}. line ${item.start.line}, column ${item.start.column}: ${item.type} - ${item.message}`);
+                        });
+                    }
                 }
-                    
+
             } catch (err) {
                 throw new RenderError(`Error during layout generation: ${err}`, 'layout');
             }

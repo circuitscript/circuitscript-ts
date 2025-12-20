@@ -12,6 +12,10 @@ import { validateScript } from '../src/helpers.js';
 import { SymbolValidatorVisitor } from '../src/validate/SymbolValidatorVisitor.js';
 import { ParseSyntaxError } from '../src/utils.js';
 import { NodeScriptEnvironment } from '../src/environment.js';
+import { LayoutEngine, SheetFrame } from '../src/layout.js';
+import { NetGraph } from '../src/graph.js';
+import { Logger } from '../src/logger.js';
+import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 
 export async function runScript(script: string): Promise<{
     visitor: ParserVisitor,
@@ -162,4 +166,40 @@ export function createParseTest(rootFolder: string, scriptName: string): ScriptT
         loadScriptFromFile(`${rootFolder}/${scriptName}.cst`),
         loadRawNetFromFile(`${rootFolder}/nets/${scriptName}.cst.net`)
     );
+}
+
+type RenderCommonOptions = {
+    runErc: boolean
+}
+
+export async function renderCommon(scriptPath: string, options?: RenderCommonOptions):
+    Promise<{ sheetFrames: SheetFrame[], ercResults: ERCReportItem[] }> {
+
+    const script = readFileSync(scriptPath, { encoding: 'utf8' });
+    const { hasError, visitor } = await runScript(script);
+    expect(hasError).toEqual(false);
+
+    visitor.applySheetFrameComponent();
+
+    const { sequence, nets } = visitor.getGraph();
+
+    const logger = new Logger();
+    const graphEngine = new NetGraph(logger);
+    const layoutEngine = new LayoutEngine(logger);
+
+    const { graph, containerFrames } =
+        graphEngine.generateLayoutGraph(sequence, nets);
+
+    const sheetFrames = 
+        await layoutEngine.runLayout(graph, containerFrames, nets);
+
+    options = options ?? {};
+    const {runErc = false} = options;
+
+    const ercResults = runErc ? EvaluateERCRules(visitor, graph, nets) : [];
+
+    return {
+        sheetFrames,
+        ercResults,
+    }
 }

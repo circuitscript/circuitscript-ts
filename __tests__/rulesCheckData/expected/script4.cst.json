@@ -1,0 +1,26 @@
+[
+    {
+        "start": {
+            "line": 14,
+            "column": 3
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin 5 for component"
+    },
+    {
+        "start": {
+            "line": 18,
+            "column": 8
+        },
+        "type": "UNCONNECTED-WIRE",
+        "message": "Unconnected wire end"
+    },
+    {
+        "start": {
+            "line": 20,
+            "column": 8
+        },
+        "type": "NO-CONNECT-ON-CONNECTED-PIN",
+        "message": "No connect on connected pin"
+    }
+]
