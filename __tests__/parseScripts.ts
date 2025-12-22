@@ -244,7 +244,7 @@ print(a)
 `, ['4']);
 
 const script20_ = new ScriptTest(
-    loadScriptFromFile('__tests__/renderData/script20.cst'),`
+    loadScriptFromFile('__tests__/testData/renderData/script20.cst'),`
 /GND | dgnd-0.COMP-1-GND | 1
 /GND | COMP-1 | 2
 /GND | dgnd-0.COMP-1-GND:0 | 1
@@ -566,7 +566,7 @@ print(document.bom.columns)
     '["a", "b", "c"]',
 ]);
 
-const scriptPath = '__tests__/parseData';
+const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [
     ["create component command", createParseTest(scriptPath, 'script1')],

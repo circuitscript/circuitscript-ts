@@ -1,0 +1,55 @@
+import std
+
+document.bom.columns = ["refdes", "value", "lcsc"]
+document.bom.group_by = ["lcsc"]
+
+v5 = supply("5V")
+gnd = dgnd()
+
+at v5
+wire down 100
+branch:
+    wire down 100
+    add res(1k)
+    wire down 100
+    to gnd
+
+wire down 100
+add res(5.1k)
+wire down 100
+to gnd
+
+at v5
+wire down 100
+add res(5.1k)
+wire down 100
+to gnd
+
+at v5
+wire down 100
+add res(3.3k)
+wire down 100
+to gnd
+
+at v5
+wire down 100
+branch:
+    add res(20k)
+    wire down 100
+    to gnd
+wire right 300 down 100
+add cap(100n)
+wire down 100
+to gnd
+
+set: "lcsc":
+    type: "res", size: "0402", value:
+        20k: "PART-RES-20K", "MAKER1"
+        30k: "PART-RES-30K", "MAKER2"
+        1.2k: "PART-RES-1.2K", "MAKER2"
+    type: "cap", size: "0402", value: 
+        1u: "PART-CAP-1U", "MAKER3"
+        100n: "PART-CAP-100N", "MAKER3"
+    type: "res", size: "0402", value:
+        1k: "PART-RES-1K", "MAKER1"
+        5.1k: "PART-RES-5.1K", "MAKER4"

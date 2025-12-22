@@ -7,7 +7,7 @@ import { renderCommon } from "./helpers.js";
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 
-const mainPath = '__tests__/renderData/';
+const mainPath = '__tests__/testData/renderData/';
 
 describe('Render tests', () => {
 

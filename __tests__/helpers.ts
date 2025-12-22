@@ -16,6 +16,7 @@ import { LayoutEngine, SheetFrame } from '../src/layout.js';
 import { NetGraph } from '../src/graph.js';
 import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
+import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
 
 export async function runScript(script: string): Promise<{
     visitor: ParserVisitor,
@@ -169,11 +170,20 @@ export function createParseTest(rootFolder: string, scriptName: string): ScriptT
 }
 
 type RenderCommonOptions = {
-    runErc: boolean
+    runErc?: boolean,
+    generateBom?: boolean,
+    bomConfig?: {
+        columns: string[],
+        group_by: string[],
+    }
 }
 
 export async function renderCommon(scriptPath: string, options?: RenderCommonOptions):
-    Promise<{ sheetFrames: SheetFrame[], ercResults: ERCReportItem[] }> {
+    Promise<{ 
+        sheetFrames: SheetFrame[], 
+        ercResults: ERCReportItem[],
+        bomCsvOutput: string[][], 
+    }> {
 
     const script = readFileSync(scriptPath, { encoding: 'utf8' });
     const { hasError, visitor } = await runScript(script);
@@ -194,12 +204,33 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         await layoutEngine.runLayout(graph, containerFrames, nets);
 
     options = options ?? {};
-    const {runErc = false} = options;
+    const {runErc = false, generateBom: generateBomOption = false} = options;
 
     const ercResults = runErc ? EvaluateERCRules(visitor, graph, nets) : [];
+
+    let bomCsvOutput:string[][] = [];
+    if (generateBomOption){
+        const bomData = generateBom(options.bomConfig, visitor.getScope().getInstances());
+        bomCsvOutput = generateBomCSV(bomData);
+    }
 
     return {
         sheetFrames,
         ercResults,
+        bomCsvOutput
     }
+}
+
+export function expectJsonOutput(inputString: string, targetPath: string): void {
+    const expectedJsonString = readFileSync(targetPath, { encoding: 'utf8' });
+            
+    // Parse the JSON again, so that later when stringified the format
+    // is minimal.
+    const expectedJson = JSON.parse(expectedJsonString);
+
+    if (JSON.stringify (expectedJson) !== inputString){
+        console.log(inputString);
+    }
+
+    expect(JSON.stringify(expectedJson)).toEqual(inputString);
 }

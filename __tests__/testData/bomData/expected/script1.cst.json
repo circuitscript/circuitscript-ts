@@ -1,0 +1,38 @@
+[
+    [
+        "Refdes",
+        "Description",
+        "Mpn",
+        "Manufacturer"
+    ],
+    [
+        "R1",
+        "RES 1k OHM 0402",
+        "PART-RES-1K",
+        "MAKER1"
+    ],
+    [
+        "R2, R3",
+        "RES 5.1k OHM 0402",
+        "PART-RES-5.1K",
+        "MAKER4"
+    ],
+    [
+        "R4",
+        "RES 3.3k OHM 0402",
+        "",
+        ""
+    ],
+    [
+        "R5",
+        "RES 20k OHM 0402",
+        "PART-RES-20K",
+        "MAKER1"
+    ],
+    [
+        "C1",
+        "",
+        "PART-CAP-100N",
+        "MAKER3"
+    ]
+]

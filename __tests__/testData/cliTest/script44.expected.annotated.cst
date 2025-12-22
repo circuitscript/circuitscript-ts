@@ -1,0 +1,45 @@
+# Check refdes that is generated at the top-level and 
+# within loop structures.
+
+import std
+
+v5 = supply("5V")
+gnd = dgnd()
+
+tmp = create component:
+    pins: 3
+
+at v5
+wire down 100
+add res(1k) #= R1
+
+wire down 100
+
+for i in range(0, 3):
+    branch:
+        wire right (1000 * i) down 100
+        add res(20k) #= R2_
+        wire down 100
+
+        add res(10k) #= R3_
+        wire down 100
+
+        k = 1
+        while k < 3:
+            branch:
+                wire left (k*200) down 200
+                add res(1k) #= R4_
+                wire down 100
+                to gnd
+            k += 1
+
+        wire down 100
+
+        # nested
+        for j in range(0, 3):
+            branch:
+                wire right (200 * j) down 100
+                add res(5k) #= R5_
+                wire down 100
+
+                to gnd

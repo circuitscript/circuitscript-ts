@@ -38,7 +38,7 @@ import { NodeScriptEnvironment } from "./environment.js";
 import { NetGraph } from "./graph.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
-import { generateBom, saveBomOutputCsv } from "./BomGeneration.js";
+import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -406,7 +406,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             const bomConfig = documentVariable.bom;
             const bomData = generateBom(bomConfig, visitor.getScope().getInstances());
 
-            await saveBomOutputCsv(bomData, bomOutputPath);
+            const bomCsvOutput = generateBomCSV(bomData);
+            await saveBomOutputCsv(bomCsvOutput, bomOutputPath);
             console.log('Generated BOM file', bomOutputPath);
         }
 

@@ -4,8 +4,9 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import { loadScriptFromFile } from './helpers';
 
 describe('test cli program', () => {
-
     const tmpFolder = '__tests__/tmp';
+    const mainPath = '__tests__/testData/cliTest/';
+    const renderPath = '__tests__/testData/renderData/';
 
     const baseCommandESM = 'dist/esm/main.js';
     const baseCommandCJS = 'dist/cjs/main.js';
@@ -44,8 +45,8 @@ describe('test cli program', () => {
         baseCommandESM,
         baseCommandCJS
     ])('pass in file and output directly: %s', (useCommand) => {
-        const result = execSync('node ' + useCommand + ' __tests__/renderData/script1.cst').toString();
-        const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
+        const result = execSync('node ' + useCommand + ` ${renderPath}script1.cst`).toString();
+        const expected = readFileSync(`${renderPath}svgs/script1.cst.svg`).toString();
         const isSimilar = result.trim() == expected;
         expect(isSimilar).toEqual(true);
     });
@@ -62,10 +63,10 @@ describe('test cli program', () => {
 
         const statsFlag = withStatsFlag ? ' -s ' : '';
 
-        const result = execSync(`${baseCommand} __tests__/renderData/script1.cst ${outputPath} ${statsFlag}`).toString();
+        const result = execSync(`${baseCommand} ${renderPath}script1.cst ${outputPath} ${statsFlag}`).toString();
 
         const outputFile = readFileSync(outputPath).toString();
-        const expected = readFileSync('__tests__/renderData/svgs/script1.cst.svg').toString();
+        const expected = readFileSync(`${renderPath}svgs/script1.cst.svg`).toString();
 
         const isSimilar = outputFile.trim() == expected.trim();
         expect(isSimilar).toEqual(true);
@@ -79,7 +80,7 @@ describe('test cli program', () => {
     });
 
     test('generate pdf output', async () => {
-        const folderPath = '__tests__/renderData/pdfs/';
+        const folderPath = `${renderPath}pdfs/`;
         const outputPdf = `${folderPath}script1.cst.pdf`;
 
         if (existsSync(outputPdf)) {
@@ -90,7 +91,7 @@ describe('test cli program', () => {
             mkdirSync(folderPath);
         }
 
-        execSync(baseCommand + ` __tests__/renderData/script1.cst ${outputPdf}`).toString();
+        execSync(baseCommand + ` ${renderPath}script1.cst ${outputPdf}`).toString();
 
         // A new pdf file should be created. Another test will be used
         // to test if the pdf generated is correct.
@@ -103,11 +104,11 @@ describe('test cli program', () => {
         ['script45'],
         ['script46'],
     ])('test generated annotations - %s', async (scriptName: string) => {
+        
+        execSync(baseCommand + ` ${renderPath}${scriptName}.cst -xj ${mainPath}${scriptName}.annotated.cst`);
 
-        execSync(baseCommand + ` __tests__/renderData/${scriptName}.cst -xj __tests__/cliTest/${scriptName}.annotated.cst`);
-
-        const annotatedFile = await loadScriptFromFile(`__tests__/cliTest/${scriptName}.annotated.cst`);
-        const expectedAnnotatedFile = await loadScriptFromFile(`__tests__/cliTest/${scriptName}.expected.annotated.cst`);
+        const annotatedFile = await loadScriptFromFile(`${mainPath}${scriptName}.annotated.cst`);
+        const expectedAnnotatedFile = await loadScriptFromFile(`${mainPath}${scriptName}.expected.annotated.cst`);
         expect(expectedAnnotatedFile).toEqual(annotatedFile);
     });
 });

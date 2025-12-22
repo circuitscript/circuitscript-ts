@@ -93,7 +93,7 @@ export function groupComponents(bomConfig: BomConfig, bomComponents: Record<stri
  */
 function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComponent[]): Record<string, unknown>[] {
     const { columns = [] } = bomConfig;
-    console.log('Generating BOM with columns: ' + columns.join(', '));
+    // console.log('Generating BOM with columns: ' + columns.join(', '));
 
     const resultRows: Record<string, unknown>[] = [];
 
@@ -148,48 +148,57 @@ function resolveValuesInTemplate(instance: ClassComponent, templateString: strin
     });
 }
 
-export async function saveBomOutputCsv(bomData: Record<string, GroupEntry>[], filePath: string): Promise<void> {
+export function generateBomCSV(bomData: Record<string, GroupEntry>[]): string[][] {
+    // extract headers from the first record
+    const useHeaders: string[] = [];
+    const rows:string[][] = [];
+
+    if (bomData.length > 0) {
+        const [firstRow] = bomData;
+        for (const key in firstRow) {
+            if (key.startsWith('.')) {
+                continue;
+            }
+            // Capitalize the first char
+            const useKey = key[0].toUpperCase() + key.substring(1);
+            useHeaders.push(useKey);
+        }
+    }
+
+    rows.push(useHeaders);
+
+    const keys: string[] = [];
+    if (bomData.length > 0) {
+        for (const key in bomData[0]) {
+            if (key.startsWith('.')) {
+                continue;
+            }
+
+            keys.push(key);
+        }
+    }
+
+    bomData.forEach(row => {
+        const result = keys.map(key => {
+            return row[key];
+        });
+
+        rows.push(result);
+    });
+
+    return rows;
+}
+
+export async function saveBomOutputCsv(bomCsvOutput: string[][], filePath: string): Promise<void> {
     return new Promise(resolve => {
         const outputStream = fs.createWriteStream(filePath);
-
-        // extract headers from the first record
-        let useHeaders:boolean | string[] = [];
-        if (bomData.length > 0){
-            const [firstRow] = bomData;
-            for(const key in firstRow){
-                if (key.startsWith('.')){
-                    continue;
-                }
-                // Capitalize the first char
-                const useKey = key[0].toUpperCase() + key.substring(1);
-                useHeaders.push(useKey);
-            }
-        } else {
-            useHeaders = true;
-        }
-
-        const csvStream = csv.format({ headers: useHeaders });
+        const csvStream = csv.format();
         csvStream.pipe(outputStream).on("finish", () => {
             resolve();
         });
 
-        const keys: string[] = [];
-        if (bomData.length > 0){
-            for(const key in bomData[0]){
-                if (key.startsWith('.')){
-                    continue;
-                }
-
-                keys.push(key);
-            }
-        }
-
-        bomData.forEach(row => {
-            const result = keys.map(key => {
-                return row[key];
-            });
-
-            csvStream.write(result);
+        bomCsvOutput.forEach(row => {
+            csvStream.write(row);
         });
 
         csvStream.end();

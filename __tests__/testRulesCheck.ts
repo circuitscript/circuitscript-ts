@@ -1,8 +1,7 @@
-import { readFileSync } from "fs";
 import { ERCReportItem } from "../src/rules-check/rules";
-import { renderCommon } from "./helpers";
+import { expectJsonOutput, renderCommon } from "./helpers";
 
-const mainPath = '__tests__/rulesCheckData/';
+const mainPath = '__tests__/testData/rulesCheckData/';
 
 describe('ERC rules', () => {
 
@@ -27,19 +26,9 @@ describe('ERC rules', () => {
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);
-        const simplifiedJson = JSON.stringify(simplified);
+        const jsonString = JSON.stringify(simplified);
 
-        const expectedJsonString = readFileSync(`${mainPath}expected/${scriptPath}.json`, { encoding: 'utf8' });
-        
-        // Parse the JSON again, so that later when stringified the format
-        // is minimal.
-        const expectedJson = JSON.parse(expectedJsonString);
-
-        if (JSON.stringify (expectedJson) !== simplifiedJson){
-            console.log(simplifiedJson);
-        }
-
-        expect(JSON.stringify(expectedJson)).toEqual(simplifiedJson);
+        expectJsonOutput(jsonString, `${mainPath}expected/${scriptPath}.json`);
     });
 
 });
