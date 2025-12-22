@@ -1,6 +1,82 @@
 # Changelog
 
-## [v0.1.23](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.22...v0.1.23)
+## [v0.1.24](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.23...v0.1.24)
+
+[f8aefae](https://gitlab.com/circuitscript/circuitscript-ts/commit/f8aefae17ffc72703f388c49a03aa3ebf18bad75)Add component matching system with conditional parameter assignment
+- 
+- Introduces a new component matching framework that allows conditional parameter assignment based on component properties. This includes:
+- - New ComponentMatchConditions module with condition tree structures
+- - Grammar support for 'set' expressions with nested condition blocks
+- - Visitor implementation to process part_set_expr and build condition trees
+- - ExecutionScope enhancements to handle component matching logic
+- - ParamDefinition extensions to support NumericValue comparisons
+- 
+- This feature enables declarative parameter assignment based on component type and existing parameter values, providing more flexible component configuration.
+
+[a951fb8](https://gitlab.com/circuitscript/circuitscript-ts/commit/a951fb8f8e14a35720101e4cc090e6dff07bb624)Reorganize test structure and add BOM generation tests
+- 
+- Restructure test data files:
+- - Move all test data files into __tests__/testData/ directory hierarchy
+- - Organize by test type (parseData, renderData, cliTest, rulesCheckData, bomData)
+- - Update all test file paths to reference new structure
+- 
+- Add BOM generation test suite:
+- - Create testBOM.ts with configurable column and grouping tests
+- - Add test scripts (script1.cst, script2.cst) with expected JSON outputs
+- - Extend helpers.ts with BOM generation support and JSON comparison utilities
+- 
+- Update test infrastructure:
+- - Add expectJsonOutput() helper for JSON test validation
+- - Extend renderCommon() with optional BOM generation
+- - Update package dependencies for BOM functionality
+
+[c8bccac](https://gitlab.com/circuitscript/circuitscript-ts/commit/c8bccacdeba922fa892ba8bc7c12f73d5d41fbb8)Fixed handling for integer value
+
+[cd8dbe3](https://gitlab.com/circuitscript/circuitscript-ts/commit/cd8dbe3b618564b6fe9626a6062260077b06c810)Add Bill of Materials (BOM) generation feature
+- 
+- Implements comprehensive BOM generation system with support for configurable columns,
+- component grouping, and CSV export. Users can now generate BOMs from CircuitScript
+- schematics using the --bom flag.
+- 
+- Key changes:
+- - Add BomGeneration module with CSV export functionality
+- - Implement nested object property assignment for BOM configuration
+- - Add document.bom.columns configuration in standard library
+- - Support template strings in component descriptions with parameter substitution
+- - Fix object property resolution to handle deeply nested assignments
+- - Add --bom CLI flag with optional output path specification
+- - Include component descriptions in standard library (resistors, LEDs)
+- - Improve object toString() handling with JSON serialization fallback
+- 
+- Technical improvements:
+- - Enhance trailer resolution in BaseVisitor for nested object access
+- - Fix reference resolution to properly handle rootValue vs parentValue
+- - Add trailerIndex tracking for nested property access
+- - Update AnyReference type to support nested object traversal
+
+[e68fc99](https://gitlab.com/circuitscript/circuitscript-ts/commit/e68fc99cde3cdba1c852aa0e4dd77429b064a974)Added tests for ERC rules
+
+[41ae916](https://gitlab.com/circuitscript/circuitscript-ts/commit/41ae91680e4e3f61f7553efcd8c4e3727a683134)Improve ERC reporting with source location tracking and context
+- 
+- Enhances electrical rule checking (ERC) by adding source location tracking for components and wires, enabling precise error reporting. The system now shows line and column numbers when reporting unconnected pins and wires, making it easier to identify and fix issues. Also refactors wire handling to include wire objects in the sequence for better context tracking.
+
+[ae1be9e](https://gitlab.com/circuitscript/circuitscript-ts/commit/ae1be9e20c0acd6b43457ae5d632eb241b79b0d7)Add electrical rule checking system with unconnected pin detection
+- 
+- Implements ERC (Electrical Rule Check) framework to validate schematic connectivity:
+- - Detect unconnected component pins and wire segments
+- - Validate no-connect symbols are not placed on connected nets
+- - Add PinId hash value method for improved comparison operations
+- - Integrate rule checks into layout rendering pipeline
+- 
+- Updates graph edge handling to consistently use PinId types instead of raw numbers, improving type safety across wire routing logic.
+
+[0ca1166](https://gitlab.com/circuitscript/circuitscript-ts/commit/0ca11666ac60c9f84ced4682672fa3fd54de8009)Make electrical rule checking optional via --erc flag
+- 
+- Add command-line option to enable/disable ERC output, improving developer
+- experience by reducing noise during normal development. Also improve code
+- comments and documentation for component context tracking.
+
+## [v0.1.23](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.22...v0.1.23) - 2025-12-15
 
 [9b9e0cf](https://gitlab.com/circuitscript/circuitscript-ts/commit/9b9e0cf4c821ba335b560049b83e0b8daed6db00)Support multiple refdes annotations in at block headers
 - 
