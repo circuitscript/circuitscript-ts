@@ -50,19 +50,20 @@ export type ScriptOptions = {
     dumpNets: boolean,
     dumpData: boolean,
     showStats: boolean,
-    enableErc: boolean,
-    enableBom: boolean,
-    bomOutputPath?: string,
-
     environment: NodeScriptEnvironment,
+
     inputPath?: string,
 
+    enableErc?: boolean,
+    enableBom?: boolean,
+    bomOutputPath?: string,
+    
     // If true, then replace the current file with annotated refdes in comments.
-    updateSource: boolean,
+    updateSource?: boolean,
 
     // Contains file path to save annotated copy. If left as blank/null, then
     // save to .annotated.cst file.
-    saveAnnotatedCopy: string | boolean,
+    saveAnnotatedCopy?: string | boolean,
 };
 
 export function prepareFile(textData: string): {
