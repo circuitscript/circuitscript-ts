@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.25](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.24...v0.1.25)
+## [v0.1.26](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.25...v0.1.26)
+
+[e6e90b0](https://gitlab.com/circuitscript/circuitscript-ts/commit/e6e90b0989605da9771e89b68d9333b1870474c9) export RefdesAnnotationVisitor
+
+## [v0.1.25](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.24...v0.1.25) - 2025-12-28
 
 [c6ce406](https://gitlab.com/circuitscript/circuitscript-ts/commit/c6ce40620eb6997e6e3080531bf00cc8a3823aa1) extracted out default annotation handling
 
