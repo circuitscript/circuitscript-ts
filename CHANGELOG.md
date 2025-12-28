@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.27](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.26...v0.1.27)
+## [v0.1.28](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.27...v0.1.28)
+
+[f898fbd](https://gitlab.com/circuitscript/circuitscript-ts/commit/f898fbd18bc7b0961d324f3bf840221ed565a936) fixed semantic token parsing
+
+## [v0.1.27](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.26...v0.1.27) - 2025-12-28
 
 [9835373](https://gitlab.com/circuitscript/circuitscript-ts/commit/9835373f9b6a1dbbfa82ebdc6077749289bec400) minor type fix
 
