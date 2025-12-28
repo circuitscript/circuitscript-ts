@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.26](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.25...v0.1.26)
+## [v0.1.27](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.26...v0.1.27)
+
+[9835373](https://gitlab.com/circuitscript/circuitscript-ts/commit/9835373f9b6a1dbbfa82ebdc6077749289bec400) minor type fix
+
+## [v0.1.26](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.25...v0.1.26) - 2025-12-28
 
 [e6e90b0](https://gitlab.com/circuitscript/circuitscript-ts/commit/e6e90b0989605da9771e89b68d9333b1870474c9) export RefdesAnnotationVisitor
 
