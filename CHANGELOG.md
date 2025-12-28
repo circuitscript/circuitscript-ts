@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.24](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.23...v0.1.24)
+## [v0.1.25](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.24...v0.1.25)
+
+[c6ce406](https://gitlab.com/circuitscript/circuitscript-ts/commit/c6ce40620eb6997e6e3080531bf00cc8a3823aa1) extracted out default annotation handling
+
+## [v0.1.24](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.23...v0.1.24) - 2025-12-22
 
 [f8aefae](https://gitlab.com/circuitscript/circuitscript-ts/commit/f8aefae17ffc72703f388c49a03aa3ebf18bad75)Add component matching system with conditional parameter assignment
 - 
