@@ -25,3 +25,4 @@ export * from './validate/SymbolTable.js';
 export * from './validate/SymbolValidatorResolveVisitor.js';
 export * from './validate/SymbolValidatorVisitor.js';
 export * from './environment.js';
+export * from './RefdesAnnotationVisitor.js';
