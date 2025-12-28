@@ -22,7 +22,7 @@ import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
 import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolveVisitor.js";
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
-import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
+import { CircuitScriptParser, ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
@@ -39,6 +39,7 @@ import { NetGraph } from "./graph.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
+import { ClassComponent } from "./objects/ClassComponent.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -256,6 +257,40 @@ type RenderScriptReturn = {
     errors: BaseError[]
 };
 
+async function DefaultPostAnnotationCallback(options: ScriptOptions,
+    scriptData: string,
+    tree: ScriptContext,
+    tokens: CommonTokenStream,
+    componentLinks: Map<ParserRuleContext, ClassComponent>): Promise<void> {
+    const {
+        inputPath = null,
+        updateSource = false,
+        saveAnnotatedCopy = undefined,
+    } = options;
+
+    // Generate refdes annotation comments
+    if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)) {
+        const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
+        await refdesVisitor.visitAsync(tree);
+
+        // If this is specified, then use it to generated the annotated version
+        let usePath = inputPath;
+        if (saveAnnotatedCopy === true) {
+            const dir = path.dirname(inputPath);
+            const ext = path.extname(inputPath);
+            const basename = path.basename(inputPath, ext);
+            usePath = path.join(dir, `${basename}.annotated${ext}`);
+        } else if (typeof saveAnnotatedCopy === 'string') {
+            usePath = saveAnnotatedCopy as string;
+        }
+
+        console.log('Annotations saved to ' + usePath);
+
+        // Write the annotated version
+        writeFileSync(usePath, refdesVisitor.getOutput());
+    }
+}
+
 export async function renderScript(scriptData: string, outputPath: string | null,
     options: ScriptOptions): Promise<RenderScriptReturn> {
 
@@ -263,11 +298,22 @@ export async function renderScript(scriptData: string, outputPath: string | null
         new KiCadNetListOutputHandler(),
     ];
 
-    return renderScriptCustom(scriptData, outputPath, options, parseHandlers);
+    return renderScriptCustom(scriptData, outputPath, options, parseHandlers, 
+        [DefaultPostAnnotationCallback]);
 }
 
+// TODO: have a unifying way to hook callbacks into different parts of the render flow.
 export async function renderScriptCustom(scriptData: string, outputPath: string | null,
-    options: ScriptOptions, parseHandlers: ParseOutputHandler[]): Promise<RenderScriptReturn> {
+    options: ScriptOptions, parseHandlers: ParseOutputHandler[],
+
+    postAnnotationCallbacks: (
+        (options: ScriptOptions, 
+            scriptData: string,
+            tree: ScriptContext,
+            tokens:CommonTokenStream, 
+            componentLinks:Map<ParserRuleContext, ClassComponent> ) => void)[]
+
+): Promise<RenderScriptReturn> {
 
     const {
         dumpNets = false,
@@ -276,11 +322,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         enableErc = false,
         enableBom = false,
         bomOutputPath = undefined,
-        environment,
-
-        inputPath = null,
-        updateSource = false,
-        saveAnnotatedCopy = undefined,
+        environment
     } = options;
     
     const errors: BaseError[] = [];
@@ -350,30 +392,11 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
     }
 
-    // Generate refdes annotation comments
-    if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)){
-        const componentLinks = visitor.getComponentCtxLinks();
-        
-        const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
-        await refdesVisitor.visitAsync(tree);
-
-        // If this is specified, then use it to generated the annotated version
-        let usePath = inputPath;
-        if (saveAnnotatedCopy === true){
-            const dir = path.dirname(inputPath);
-            const ext = path.extname(inputPath);
-            const basename = path.basename(inputPath, ext);
-            usePath = path.join(dir, `${basename}.annotated${ext}`);
-        } else if (typeof saveAnnotatedCopy === 'string'){
-            usePath = saveAnnotatedCopy as string;
-        }
-
-        console.log('Annotations saved to ' + usePath);
-
-        // Write the annotated version
-        writeFileSync(usePath, refdesVisitor.getOutput());
+    const componentLinks = visitor.getComponentCtxLinks();
+    for (let i = 0; i < postAnnotationCallbacks.length; i++) {
+        await postAnnotationCallbacks[i](options, scriptData, tree, tokens, componentLinks);
     }
-
+    
     if (dumpNets) {
         const nets = visitor.dumpNets();
         nets.forEach(item => console.log(item.join(" | ")));
