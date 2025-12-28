@@ -15,7 +15,9 @@ import { Function_def_exprContext, Create_component_exprContext,
     Function_args_exprContext,
     Function_call_exprContext,
     GraphicCommandExprContext,
-    For_exprContext} from "./antlr/CircuitScriptParser.js";
+    For_exprContext,
+    Annotation_comment_exprContext,
+    ScriptContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { buildInMethodNamesList } from "./builtinMethods.js";
@@ -90,6 +92,22 @@ export class SemanticTokensVisitor extends BaseVisitor {
     //
     // AST Visitor Methods - Handle specific CircuitScript language constructs
     //
+
+    visitScript = async (ctx: ScriptContext): Promise<void> => {
+        this.log('===', 'start', '===');
+
+        ctx.import_expr().forEach(ctxImport => {
+            this.visit(ctxImport);
+        });
+
+        const result = this.runExpressions(this.getExecutor(), ctx.expression());
+        this.setResult(ctx, result);
+
+        // If there are open blocks, then close them
+        this.getExecutor().closeOpenPathBlocks();
+
+        this.log('===', 'end', '===');
+    }
 
     /**
      * Visits function argument declarations and marks them as parameter tokens
@@ -268,6 +286,11 @@ export class SemanticTokensVisitor extends BaseVisitor {
         });
     }
 
+    visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
+        this.addSemanticToken(ctx.ANNOTATION_START(), [], 'comment');
+        this.addSemanticToken(ctx.ID(), [], 'comment');
+    } 
+
     //
     // Token Processing Methods
     //
@@ -281,9 +304,9 @@ export class SemanticTokensVisitor extends BaseVisitor {
      */
     addSemanticToken(node: TerminalNode, modifiers: string[], tokenType: string | null = null): void {
         const parsedToken = this.parseToken(node, modifiers, tokenType);
-        this.semanticTokens.set(parsedToken.line + "_" + parsedToken.column, parsedToken);
+        this.semanticTokens.set(`${parsedToken.line}_${parsedToken.column}_${parsedToken.length}`, parsedToken);
     }
-
+    
     /**
      * Parses a terminal node into a semantic token with position and type information
      * 

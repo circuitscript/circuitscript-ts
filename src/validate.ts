@@ -98,6 +98,7 @@ export default async function validate(): Promise<void> {
 
     const undefinedSymbols = [];
 
+    console.log('----- symbols -----');
     symbols.forEach((value, key) => {
         if (value.type !== ParseSymbolType.Undefined) {
             value = value as SymbolTableItemDefined;
@@ -113,8 +114,10 @@ export default async function validate(): Promise<void> {
         }
     });
 
+    console.log('----- tokens -----');
     const { parsedTokens} = await getSemanticTokens(scriptData, scriptOptions);
 
+    console.log('----- dump tokens -----')
     parsedTokens.forEach(item => {
         const {line, column, tokenType, tokenModifiers, textValue} = item;
         console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);

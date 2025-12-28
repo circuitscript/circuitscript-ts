@@ -139,7 +139,7 @@ export async function getSemanticTokens(scriptData: string, options: ScriptOptio
     const parsedTokens = prepareTokens(tokens.getTokens(), lexer, scriptData);
     const finalParsedTokens:IParsedToken[] = [];
     parsedTokens.forEach(token => {
-        const location = `${token.line}_${token.column}`;
+        const location = `${token.line}_${token.column}_${token.length}`;
         if (semanticTokens.has(location)){
             finalParsedTokens.push(
                 semanticTokens.get(location)!);
