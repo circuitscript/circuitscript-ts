@@ -1,0 +1,24 @@
+import std
+
+v5v = supply("5v")
+gnd = dgnd()
+
+#tmp = 100
+
+at gnd
+wire up tmp right tmp
+to D1 = led("GREEN") angle:180 pin 2
+at D1 pin 1
+wire right 20 up 20
+to v5v
+
+at v5v
+wire down 20 right 20
+add led("RED")
+wire right 20 down 20
+to gnd
+
+#wire down 20 
+#add led("GREEN")
+#wire down 20
+#to gnd
