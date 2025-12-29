@@ -1,6 +1,16 @@
 # Changelog
 
-## [v0.1.28](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.27...v0.1.28)
+## [v0.1.29](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.28...v0.1.29)
+
+[6f30f71](https://gitlab.com/circuitscript/circuitscript-ts/commit/6f30f71c7ea44a933cb2e2aa2b7aa1c561d3fe34)Fix import path resolution and improve environment tracking
+- 
+- - Change import resolution from module-relative to file-relative paths
+- - Add current file tracking to environment system
+- - Add environment debug logging in BaseVisitor
+- - Fix semantic token parsing for operator assignments and imports
+- - Add default net name generation for unnamed nets
+
+## [v0.1.28](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.27...v0.1.28) - 2025-12-28
 
 [f898fbd](https://gitlab.com/circuitscript/circuitscript-ts/commit/f898fbd18bc7b0961d324f3bf840221ed565a936) fixed semantic token parsing
 
