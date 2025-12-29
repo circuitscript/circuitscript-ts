@@ -15,10 +15,11 @@ import { ActiveObject, ExecutionScope, FrameAction,
     SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
 import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
-import { isPinId, PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
+import { PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
 import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
     DeclaredReference, 
-    Direction} from './objects/types.js';
+    Direction,
+    NetTypes} from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
@@ -349,8 +350,11 @@ export class ExecutionContext {
         });
         
         if (component.typeProp === ComponentTypes.net) {
-            const netName = paramsMap.get(ParamKeys.net_name);
-            const netType = paramsMap.get(ParamKeys.net_type);
+            // If the net name is not defined, then generate a unique net name
+            const netName = paramsMap.get(ParamKeys.net_name) ?? this.getUniqueNetName();
+
+            // If net type not defined, use any as default.
+            const netType = paramsMap.get(ParamKeys.net_type) ?? NetTypes.Any;
 
             let priority = 0;
             if (paramsMap.has(ParamKeys.priority)) {

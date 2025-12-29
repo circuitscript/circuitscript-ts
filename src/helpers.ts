@@ -322,6 +322,9 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         showStats = false,
         enableErc = false,
         enableBom = false,
+
+        inputPath = '',
+
         bomOutputPath = undefined,
         environment
     } = options;
@@ -350,8 +353,10 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             }
         };
 
+    environment.setCurrentFile(inputPath);
+
     const visitor = new ParserVisitor(true, 
-        onErrorHandler, options.environment);
+        onErrorHandler, environment);
 
     visitor.onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string)
         : Promise<{ hasError: boolean, hasParseError: boolean }> => {

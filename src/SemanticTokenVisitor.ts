@@ -17,7 +17,8 @@ import { Function_def_exprContext, Create_component_exprContext,
     GraphicCommandExprContext,
     For_exprContext,
     Annotation_comment_exprContext,
-    ScriptContext} from "./antlr/CircuitScriptParser.js";
+    ScriptContext,
+    Operator_assignment_exprContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { buildInMethodNamesList } from "./builtinMethods.js";
@@ -271,6 +272,11 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
     }
 
+    visitOperator_assignment_expr = (ctx: Operator_assignment_exprContext): void => {
+        this.visit(ctx.atom_expr());
+        this.visit(ctx.data_expr());
+    }
+
     /**
      * Visits import expressions and marks imported identifiers as namespaces
      * Example: import myLibrary
@@ -284,6 +290,9 @@ export class SemanticTokensVisitor extends BaseVisitor {
         ctx.ID().forEach(item => {
             this.addSemanticToken(item, [], 'variable');
         });
+
+        this.visit(ctx.data_expr());
+        this.visit(ctx.expressions_block());
     }
 
     visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {

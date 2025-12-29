@@ -23,8 +23,14 @@ export class NodeScriptEnvironment {
         return NodeScriptEnvironment._instance!;
     }
 
+    // If set by user/system.
     protected useModuleDirectoryPath: string | null = null;
+
+    // If set by the user/system.
     protected useDefaultLibsPath: string | null = null;
+
+    // The current executing file.
+    protected currentFile = '';
 
     protected globalCreateSVGWindow: (() => SVGWindow) | null = null;
 
@@ -72,6 +78,9 @@ export class NodeScriptEnvironment {
     /**
      * Returns the directory where the circuitscript executable is at. This
      * path will be used to find the fonts/ and libs/ folders.
+     * 
+     * For esm, this should be the dist/esm folder. 
+     * For cjs, this should be the dist/cjs folder.
      * @returns
      */
     getModuleDirectory(): string {
@@ -107,23 +116,7 @@ export class NodeScriptEnvironment {
     }
 
     /**
-     * Gets the root tools directory path relative to the current file location.
-     *
-     * This function calculates the base directory of the CircuitScript package by
-     * navigating up two levels from the current source file location. The tools path
-     * serves as the root directory containing package resources like fonts, libraries,
-     * and configuration files.
-     *
-     * @returns {string} The normalized absolute path to the tools directory
-     *
-     * @example
-     * // If current file is at /path/to/circuitscript/dist/src/helpers.js
-     * // Returns: /path/to/circuitscript/dist
-     * const toolsPath = getToolsPath();
-     *
-     * @throws {Error} May throw if file system operations are not supported
-     *
-     * @internal This is a private function used by other path utility functions
+     * Returns the tool path directory, this should be the dist/ folder.
      */
     getToolsPath(): string {
         return path.normalize(this.getModuleDirectory() + '/../');
@@ -191,6 +184,27 @@ export class NodeScriptEnvironment {
 
     async readFile(path: PathOrFileDescriptor, options): Promise<string> {
         return fs.promises.readFile(path, options);
+    }
+
+    getAbsolutePath(filePath: string): string {
+        return path.resolve(filePath);
+    }
+
+    getDirPath(filePath: string): string {
+        return path.dirname(path.resolve(filePath));
+    }
+
+    setCurrentFile(filePath: string): string {
+        this.currentFile = this.getAbsolutePath(filePath);
+        return this.currentFile;
+    }
+
+    getCurrentFile(): string {
+        return this.currentFile!;
+    }
+
+    getRelativeToCurrentFolder(filePath: string): string {
+        return path.join(this.getDirPath(this.currentFile!), filePath);
     }
 
     async exists(path: PathLike): Promise<boolean> {

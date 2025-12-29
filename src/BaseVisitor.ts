@@ -89,9 +89,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         environment: NodeScriptEnvironment) {
         
         super();
+        this.silent = silent;
         this.logger = new Logger();
         this.onErrorHandler = onErrorHandler;
         this.environment = environment;
+
+        // Dump the environment information
+        this.log('-- Environment --');
+        this.log('Module directory: ' + environment.getModuleDirectory());
+        this.log('Default libs path: ' + environment.getDefaultLibsPath());
+        this.log('Current file: ' + environment.getCurrentFile());
+        this.log('-----------------');
 
         this.startingContext = new ExecutionContext(
             DoubleDelimiter1,
@@ -899,7 +907,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         let hasParseError = false;
         let pathExists = false;
 
-        const tmpFilePath = this.environment.getRelativeToModule(name + ".cst");
+        const tmpFilePath = this.environment.getRelativeToCurrentFolder(name + ".cst");
         this.log('importing path:', tmpFilePath);
 
         let fileData: string | null = null;
@@ -910,6 +918,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             fileData = await this.environment.readFile(tmpFilePath, { encoding: 'utf8' });
             pathExists = true;
         } catch (err) {
+            this.log('failed to read file');
             pathExists = false;
         }
 
@@ -917,11 +926,13 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             // if path does not exist, then search default libs path
             try {
                 const tmpFilePath2 = this.environment.getRelativeToDefaultLibs(name + ".cst");
+                this.log('checking default libs: ' + tmpFilePath2);
                 filePathUsed = tmpFilePath2;
 
                 fileData = await this.environment.readFile(tmpFilePath2, { encoding: 'utf8' });
                 pathExists = true;
             } catch (err) {
+                this.log('failed to read file');
                 pathExists = false;
             }
         }
