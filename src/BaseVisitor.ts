@@ -94,13 +94,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         this.onErrorHandler = onErrorHandler;
         this.environment = environment;
 
-        // Dump the environment information
-        this.log('-- Environment --');
-        this.log('Module directory: ' + environment.getModuleDirectory());
-        this.log('Default libs path: ' + environment.getDefaultLibsPath());
-        this.log('Current file: ' + environment.getCurrentFile());
-        this.log('-----------------');
-
         this.startingContext = new ExecutionContext(
             DoubleDelimiter1,
             `${DoubleDelimiter1}.`,

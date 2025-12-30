@@ -86,7 +86,7 @@ import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
 import { ExecutionWarning, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
-import { BaseVisitor } from './BaseVisitor.js';
+import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { BaseError, getPortType, RuntimeExecutionError } from './utils.js';
 import { UnitDimension } from './helpers.js';
@@ -94,8 +94,25 @@ import { FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './ComponentAnnotater.js';
 import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
+import { NodeScriptEnvironment } from './environment.js';
 
 export class ParserVisitor extends BaseVisitor {
+
+    constructor(silent = false, 
+            onErrorHandler: OnErrorHandler | null = null,
+            environment: NodeScriptEnvironment){
+        super(silent, onErrorHandler, environment);
+
+        // Dump the environment information
+        if (environment){
+            this.log('-- Environment --');
+            this.log('Module directory: ' + environment.getModuleDirectory());
+            this.log('Default libs path: ' + environment.getDefaultLibsPath());
+            this.log('Current file: ' + environment.getCurrentFile());
+            this.log('-----------------');
+        }
+    }
+
 
     // Provides a numerical index when each component is created.
     componentCreationIndex = 0;
