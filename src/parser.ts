@@ -53,6 +53,8 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
     const tree = parser.script();
 
     let throwError: any;
+    let hasError = false;
+    let hasParseError = false;
 
     try {
         await visitor.visitAsync(tree);
@@ -66,6 +68,9 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
                 throwError = error;
             }
         } 
+
+        hasError = true;
+        hasParseError = true;
     }
 
     const parserTimeTaken = parserTimer.lap();
@@ -73,8 +78,8 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
     return {
         tree, parser,
         tokens,
-        hasParseError: false,   // TODO: remove this?
-        hasError: false,               // TODO: remove this?
+        hasParseError,
+        hasError,
         parserTimeTaken,
         lexerTimeTaken,
         throwError

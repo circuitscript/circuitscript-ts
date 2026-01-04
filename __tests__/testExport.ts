@@ -115,7 +115,7 @@ describe('export to KiCad', () => {
 });
 
 const script = `
-import std
+from std import *
 
 v5v = supply("5V")
 gnd = dgnd()

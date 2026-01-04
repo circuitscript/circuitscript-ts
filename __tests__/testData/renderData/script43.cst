@@ -2,7 +2,7 @@
 # do not move it. Instead, the other components will be indirectly added into
 # the frame.
 
-import std
+from std import *
 
 v3v3 = supply("3v3")
 gnd = dgnd()

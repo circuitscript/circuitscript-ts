@@ -1,4 +1,4 @@
-import std
+from std import *
 
 vcc = net("3v3")
 midpt = net("out")

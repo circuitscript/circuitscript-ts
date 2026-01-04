@@ -2,6 +2,8 @@ import { Dom, registerWindow, SVG } from "@svgdotjs/svg.js";
 import { PathOrFileDescriptor, PathLike } from "fs";
 import fs from 'fs';
 import path from "path";
+import CryptoJs from "crypto-js";
+
 import { TOOL_VERSION } from "./globals.js";
 import { SVGWindow } from "./helpers.js";
 import { RuntimeExecutionError } from "./utils.js";
@@ -214,5 +216,9 @@ export class NodeScriptEnvironment {
         } catch (err){
             return false;
         }
+    }
+
+    hashStringSHA256(value: string): string {
+        return CryptoJs.SHA256(value).toString();
     }
 }

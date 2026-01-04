@@ -361,11 +361,17 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     visitor.onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string)
         : Promise<{ hasError: boolean, hasParseError: boolean }> => {
 
-        const { hasError, hasParseError } = await parseFileWithVisitor(visitor, fileData);
+        const { hasError, hasParseError, throwError } = await parseFileWithVisitor(visitor, fileData);
         
         // Raise exception if there are errors in imported files
         if (hasError || hasParseError) {
-            throw new ParseError(`Error parsing imported file: ${filePath}`, undefined, undefined, filePath);
+
+            let importErrorMsg = "";
+            if (throwError){
+                importErrorMsg = ": " + throwError.message;
+            }
+
+            throw new ParseError(`Error parsing imported file: ${filePath}${importErrorMsg}`, undefined, undefined, filePath);
         }
         
         return { hasError, hasParseError };

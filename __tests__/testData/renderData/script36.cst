@@ -1,5 +1,5 @@
 # Checks that text and number expressions works for pin selection
-import std
+from std import *
 
 v3v3 = supply("3V3")
 gnd = dgnd()

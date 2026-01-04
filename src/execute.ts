@@ -19,6 +19,8 @@ import { PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
 import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
     DeclaredReference, 
     Direction,
+    ImportFunctionHandling,
+    ImportedModule,
     NetTypes} from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
@@ -113,13 +115,7 @@ export class ExecutionContext {
 
         this.silent = silent;
 
-        this.log(
-            'create new execution context',
-            this.namespace,
-            this.name,
-            this.scope.scopeLevel,
-        );
-
+        this.log(`create new execution context, namespace: ${this.namespace}, name: ${this.name}, level: ${this.scope.scopeLevel}`);
         this.parentContext = parent;
         this.warnings = warnings;
     }
@@ -999,21 +995,23 @@ export class ExecutionContext {
 
     /**
      * 
+     * @param namespace Used to determine where (which module) function was defined
      * @param functionName 
      * @param uniqueId Used if the function does not have a defined name.
      * @param __runFunc 
      */
-    createFunction(functionName: string, __runFunc: CFunction, 
+    createFunction(namespace: string, functionName: string, __runFunc: CFunction,
         source?: ParserRuleContext, uniqueId?: string): void {
 
-        this.scope.functions.set(functionName, new CFunctionEntry(
-            functionName, __runFunc,
+        const functionPath = `${namespace}${functionName}`;
+        this.scope.functions.set(functionPath, new CFunctionEntry(
+            namespace, functionName, __runFunc,
             source,
             uniqueId,
         ));
 
-        this.__functionCache.set(functionName, __runFunc);
-        this.log(`defined new function '${functionName}'`);
+        this.__functionCache.set(functionPath, __runFunc);
+        this.log(`defined new function: ${functionPath}`);
     }
 
     hasFunction(functionName: string): boolean {
@@ -1031,46 +1029,88 @@ export class ExecutionContext {
     resolveVariable(executionStack: ExecutionContext[], idName: string, 
         trailers:string[] = []): AnyReference {
 
-        // this.log('resolve variable name:', idName, 'trailers:', trailers);
+        this.log('resolve variable name:', idName, 'trailers:', trailers);
         const reversed = [...executionStack].reverse();
 
         for (let i = 0; i < reversed.length; i++) {
             const context = reversed[i];
-            if (context.hasFunction(idName)) {
+            const functionPath = `${context.namespace}${idName}`;
+            if (context.hasFunction(functionPath)) {
                 return new DeclaredReference({
                     found: true,
-                    value: context.getFunction(idName),
+                    value: context.getFunction(functionPath),
                     type: ReferenceTypes.function,
                     name: idName,
                 });
 
             } else {
+
+                // Go through all modules and check if the id matches any
+                // functions within the module.
+                const modules = Array.from(context.scope.modules.values());
+                for (let j = 0; j < modules.length; j++) {
+                    const module = modules[j];
+                    if (module.importHandlingFlag === ImportFunctionHandling.AllMergeIntoNamespace ||
+                        module.importHandlingFlag === ImportFunctionHandling.SpecificMergeIntoNamespace
+                    ) {
+                        const moduleContext = module.context;
+                        const functionPath = `${moduleContext.namespace}${idName}`;
+                        if (module.context.hasFunction(functionPath)) {
+                            return new DeclaredReference({
+                                found: true,
+                                rootValue: module,
+                                value: module.context.getFunction(functionPath),
+                                type: ReferenceTypes.function,
+                                name: idName,
+                                trailerIndex: 1,
+                                trailers: [idName],
+                            });
+                        }
+                    }
+                }
+
+                // Check if the idName is a module name
+                let isModule = false;
+                if (context.scope.modules.has(idName)) {
+                    const module = context.scope.modules.get(idName)!;
+                    if (module.importHandlingFlag === ImportFunctionHandling.AllWithNamespace) {
+                        // Only if this flag is set, then allow using the
+                        // module/namespace.
+                        isModule = true;
+                    }
+                }
+
                 let isVariable = context.scope.variables.has(idName);
 
                 // TODO: idName will not resolve due to different naming
                 // format of instances
                 let isComponentInstance = context.scope.instances.has(idName);
 
-                if (isVariable || isComponentInstance) {
-                    const scopeList = isVariable ? context.scope.variables
-                        : context.scope.instances;
+                if (isModule || isVariable || isComponentInstance) {                    
+
+                    const scopeList = 
+                        isModule ? context.scope.modules :
+                        (isVariable ? context.scope.variables : context.scope.instances);
 
                     const useValue = scopeList.get(idName);
-
+                    
                     if (!isComponentInstance && (useValue instanceof ClassComponent)){
                         isComponentInstance = true;
                         isVariable = false;
                     }
 
+                    const referenceType = 
+                        isModule ? ReferenceTypes.module :
+                        (isVariable ? ReferenceTypes.variable: ReferenceTypes.instance);
+                        
                     const tmpReference = this.resolveTrailers(
-                        isVariable ? ReferenceTypes.variable : ReferenceTypes.instance,
+                        referenceType,
                         useValue, 
                         trailers
                     );
 
                     return new DeclaredReference({
-                        type: isVariable ? ReferenceTypes.variable
-                            : ReferenceTypes.instance,
+                        type: referenceType,
                         found: (tmpReference.value !== undefined),
                         rootValue: tmpReference.rootValue,
                         value: tmpReference.value,
@@ -1078,7 +1118,7 @@ export class ExecutionContext {
                         trailers,
                     });
                 }
-            } 
+            }
         }
 
         return new DeclaredReference({
@@ -1102,38 +1142,63 @@ export class ExecutionContext {
             rootValue = useValue;
             const trailersPath = trailers.join(".");
 
-            if (type === ReferenceTypes.variable) {
-                useValue = rootValue;
-                trailers.forEach(trailerPath => {
-                    useValue = useValue[trailerPath];
-                });
+            switch(type){
+                case ReferenceTypes.variable:
+                    useValue = rootValue;
+                    trailers.forEach(trailerPath => {
+                        useValue = useValue[trailerPath];
+                    });
+                    break;
+                    
+                case ReferenceTypes.instance: {
+                    // If is a net component, then try to access the 
+                    // the net instance used globally
 
-            } else if (type === ReferenceTypes.instance) {
-                // If is a net component, then try to access the 
-                // the net instance used globally
-
-                const tmpComponent = (rootValue as ClassComponent)
-                if (tmpComponent.typeProp === ComponentTypes.net) {
-                    const usedNet = this.scope.getNet(tmpComponent, new PinId(1));
-                    if (usedNet) {
-                        const trailerValue = trailers.join(".");
-                        useValue = usedNet.params.get(trailerValue) ?? null;
+                    const tmpComponent = (rootValue as ClassComponent)
+                    if (tmpComponent.typeProp === ComponentTypes.net) {
+                        const usedNet = this.scope.getNet(tmpComponent, new PinId(1));
+                        if (usedNet) {
+                            const trailerValue = trailers.join(".");
+                            useValue = usedNet.params.get(trailerValue) ?? null;
+                        }
+                    } else {
+                        useValue = (rootValue as ClassComponent)
+                            .parameters.get(trailersPath);
                     }
-                } else {
-                    useValue = (rootValue as ClassComponent)
-                        .parameters.get(trailersPath);
+                    break;
+                }
+
+                case ReferenceTypes.module: {
+                    const funcName = trailers[0];
+                    const module = rootValue as ImportedModule;
+
+                    const functionPath = `${module.moduleNamespace}${funcName}`;
+                    if (module.context.hasFunction(functionPath)){
+                        const foundFunc = module.context.getFunction(functionPath);
+
+                        return new AnyReference({
+                            found: true,
+                            type: ReferenceTypes.function,
+                            rootValue,
+                            trailers,
+                            trailerIndex: trailers.length,
+                            value: foundFunc, 
+                        });
+                    }
+
+                    break;
                 }
             }
         }
 
         let found = false;
-        if (rootValue !== undefined && useValue !== undefined){
+        if (useValue !== undefined){
             found = true;
-        }
+        } 
 
         return new AnyReference({
             found, // Always true, assumes that item is not undefined
-            type: type,
+            type,
             rootValue,
             trailers,
             trailerIndex: trailers.length,
@@ -1142,44 +1207,51 @@ export class ExecutionContext {
     }
 
     callFunction(
-        functionName: string,
+        functionReference: AnyReference,
         functionParams: CallableParameter[],
         executionStack: ExecutionContext[],
         netNamespace: string
     ): CFunctionResult {
-        let __runFunc: CFunction | null = null;
-        // Function is not cached yet, so look for it
-        if (!this.__functionCache.has(functionName)) {
-            if (this.hasFunction(functionName)) {
-                const entry = this.getFunction(functionName);
-                __runFunc = entry.execute;
-            }
-    
-            // If the function does not exist in the current execution context,
-            // then try to search in the upper execution context
-            if (__runFunc === null) {
-                this.log(`searching for function ${functionName} in upper context`)
-                
-                const tmpResolveResult = 
-                    this.resolveVariable(executionStack, functionName);
-                
-                if (tmpResolveResult.found) {
-                    const entry = tmpResolveResult.value as CFunctionEntry;
-                    __runFunc = entry.execute;
-                } else {
-                    throw `Invalid function ${functionName}`;
-                }
-            }
-            this.log('save function to cache:', functionName);
-            this.__functionCache.set(functionName, __runFunc!);
 
-        } else {
-            this.log('found function in cache:', functionName);
-            __runFunc = this.__functionCache.get(functionName)!;
-        }        
+        const functionEntry = functionReference.value as CFunctionEntry;
+        const { name: functionName,
+            execute: __runFunc } = functionEntry;
+
+        // TODO: function caching disabled for now, not sure if caching is 
+        // actually useful at this point.
+        // let __runFunc: CFunction | null = null;
+        // // Function is not cached yet, so look for it
+        // if (!this.__functionCache.has(functionName)) {
+        //     if (this.hasFunction(functionName)) {
+        //         const entry = this.getFunction(functionName);
+        //         __runFunc = entry.execute;
+        //     }
+    
+        //     // If the function does not exist in the current execution context,
+        //     // then try to search in the upper execution context
+        //     if (__runFunc === null) {
+        //         this.log(`searching for function ${functionName} in upper context`);
+
+        //         const tmpResolveResult = 
+        //             this.resolveVariable(executionStack, functionName);
+                
+        //         if (tmpResolveResult.found) {
+        //             const entry = tmpResolveResult.value as CFunctionEntry;
+        //             __runFunc = entry.execute;
+        //         } else {
+        //             this.log(`Could not find function: ${functionName}`);
+        //             throw `Could not find function ${functionName}`;
+        //         }
+        //     }
+        //     this.log('save function to cache:', functionName);
+        //     this.__functionCache.set(functionName, __runFunc!);
+
+        // } else {
+        //     this.log('found function in cache:', functionName);
+        //     __runFunc = this.__functionCache.get(functionName)!;
+        // }        
 
         if (__runFunc !== null) {
-
             // Get function usage call within the current scope. This is used
             // to identify each unique function call, which is important for
             // refdes assignment.
@@ -1204,6 +1276,7 @@ export class ExecutionContext {
             
             return functionResult;
         } else {
+            this.log(`Invalid function: ${functionName}`);
             throw `Invalid function '${functionName}'`;
         }
     }
@@ -1226,7 +1299,10 @@ export class ExecutionContext {
 
         for (const [instanceName, component] of tmpInstances) {
             // Rename instance names with the addition of the namespace
-            const newInstanceName = `${namespace}.${instanceName}`;
+
+            // If namespace is not blank string, then append it, otherwise
+            // keep the exisiting instanceName.
+            const newInstanceName = namespace !== "" ? `${namespace}.${instanceName}`: instanceName;
             component.instanceName = newInstanceName;
 
             // Do not add root and gnd components of child scope to the

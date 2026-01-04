@@ -1,171 +1,483 @@
 [
     [
-        "--.net",
+        "--.std.net",
         "function"
     ],
     [
-        "--.net_sym.net_name",
+        "--.std.net_sym.net_name",
         "variable"
     ],
     [
-        "--.net_sym.net_type",
+        "--.std.net_sym.net_type",
         "variable"
+    ],
+    [
+        "--.std.supply",
+        "function"
+    ],
+    [
+        "--.std.supply_sym.net_name",
+        "variable"
+    ],
+    [
+        "--.std.supply_sym.net_obj",
+        "variable"
+    ],
+    [
+        "--.std.label",
+        "function"
+    ],
+    [
+        "--.std.label_sym.value",
+        "variable"
+    ],
+    [
+        "--.std.label_sym.anchor",
+        "variable"
+    ],
+    [
+        "--.std.port",
+        "function"
+    ],
+    [
+        "--.std.port_sym.value",
+        "variable"
+    ],
+    [
+        "--.std.port_sym.portType",
+        "variable"
+    ],
+    [
+        "--.std.res",
+        "function"
+    ],
+    [
+        "--.std.res_sym.value",
+        "variable"
+    ],
+    [
+        "--.std.res_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.res_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.cap",
+        "function"
+    ],
+    [
+        "--.std.cap_sym.value",
+        "variable"
+    ],
+    [
+        "--.std.cap_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.cap_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.ind",
+        "function"
+    ],
+    [
+        "--.std.ind_sym.value",
+        "variable"
+    ],
+    [
+        "--.std.ind_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.ind_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.diode",
+        "function"
+    ],
+    [
+        "--.std.diode_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.diode_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.led",
+        "function"
+    ],
+    [
+        "--.std.led_sym.color",
+        "variable"
+    ],
+    [
+        "--.std.led_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.led_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.cgnd",
+        "function"
+    ],
+    [
+        "--.std.cgnd_sym.net_name",
+        "variable"
+    ],
+    [
+        "--.std.dgnd",
+        "function"
+    ],
+    [
+        "--.std.dgnd_sym.net_name",
+        "variable"
+    ],
+    [
+        "--.std.dgnd_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.dgnd_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.text",
+        "function"
+    ],
+    [
+        "--.std.text_sym.value",
+        "variable"
+    ],
+    [
+        "--.std.text_sym.offsetX",
+        "variable"
+    ],
+    [
+        "--.std.text_sym.offsetY",
+        "variable"
+    ],
+    [
+        "--.std.text_sym.fontSize",
+        "variable"
+    ],
+    [
+        "--.std.marker_point",
+        "function"
+    ],
+    [
+        "--.std.arrow_point",
+        "function"
+    ],
+    [
+        "--.std.no_connect",
+        "function"
+    ],
+    [
+        "--.std.no_connect_sym.size",
+        "variable"
+    ],
+    [
+        "--.std.dnc",
+        "function"
+    ],
+    [
+        "--.std.dnc_sym.size",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator",
+        "function"
+    ],
+    [
+        "--.std.sheet_generator_sym.paper_size_name",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.margin_x",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.margin_y",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.col_display_value",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.row_display_value",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.inner_frame_margin",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.horizontal_1",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.horizontal_2",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.vertical_1",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.vertical_2",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.inner_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.inner_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.tmp_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.tmp_y",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.tmp_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.tmp_x",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.fontSize",
+        "variable"
+    ],
+    [
+        "--.len",
+        "function"
+    ],
+    [
+        "--.std.sheet_generator_sym.num_columns",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.num_rows",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.ratio_x",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.ratio_y",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.title_block_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.title_block_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.title_block_x",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.title_block_y",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.title_block_x2",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.title_block_y2",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A1",
+        "function"
+    ],
+    [
+        "--.toMils",
+        "function"
+    ],
+    [
+        "--.std.sheet_A1_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A1_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A1_sym.margin",
+        "variable"
+    ],
+    [
+        "--.range",
+        "function"
+    ],
+    [
+        "--.std.sheet_A2",
+        "function"
+    ],
+    [
+        "--.std.sheet_A2_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A2_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A2_sym.margin",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A3",
+        "function"
+    ],
+    [
+        "--.std.sheet_A3_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A3_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A3_sym.margin",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A4",
+        "function"
+    ],
+    [
+        "--.std.sheet_A4_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A4_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A4_sym.margin",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A5",
+        "function"
+    ],
+    [
+        "--.std.sheet_A5_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A5_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A5_sym.margin",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A6",
+        "function"
+    ],
+    [
+        "--.std.sheet_A6_sym.revision",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A6_sym.paper_width",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A6_sym.paper_height",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A6_sym.margin",
+        "variable"
+    ],
+    [
+        "--.std.sheet_A6_sym.tmp_sheet",
+        "variable"
+    ],
+    [
+        "--.std.document",
+        "variable"
+    ],
+    [
+        "--.net",
+        "function"
     ],
     [
         "--.supply",
         "function"
     ],
     [
-        "--.supply_sym.net_name",
-        "variable"
-    ],
-    [
-        "--.supply_sym.net_obj",
-        "variable"
-    ],
-    [
         "--.label",
         "function"
-    ],
-    [
-        "--.label_sym.value",
-        "variable"
-    ],
-    [
-        "--.label_sym.anchor",
-        "variable"
     ],
     [
         "--.port",
         "function"
     ],
     [
-        "--.port_sym.value",
-        "variable"
-    ],
-    [
-        "--.port_sym.portType",
-        "variable"
-    ],
-    [
         "--.res",
         "function"
-    ],
-    [
-        "--.res_sym.value",
-        "variable"
-    ],
-    [
-        "--.res_sym.width",
-        "variable"
-    ],
-    [
-        "--.res_sym.height",
-        "variable"
     ],
     [
         "--.cap",
         "function"
     ],
     [
-        "--.cap_sym.value",
-        "variable"
-    ],
-    [
-        "--.cap_sym.width",
-        "variable"
-    ],
-    [
-        "--.cap_sym.height",
-        "variable"
-    ],
-    [
         "--.ind",
         "function"
-    ],
-    [
-        "--.ind_sym.value",
-        "variable"
-    ],
-    [
-        "--.ind_sym.width",
-        "variable"
-    ],
-    [
-        "--.ind_sym.height",
-        "variable"
     ],
     [
         "--.diode",
         "function"
     ],
     [
-        "--.diode_sym.width",
-        "variable"
-    ],
-    [
-        "--.diode_sym.height",
-        "variable"
-    ],
-    [
         "--.led",
         "function"
-    ],
-    [
-        "--.led_sym.color",
-        "variable"
-    ],
-    [
-        "--.led_sym.width",
-        "variable"
-    ],
-    [
-        "--.led_sym.height",
-        "variable"
     ],
     [
         "--.cgnd",
         "function"
     ],
     [
-        "--.cgnd_sym.net_name",
-        "variable"
-    ],
-    [
         "--.dgnd",
         "function"
     ],
     [
-        "--.dgnd_sym.net_name",
-        "variable"
-    ],
-    [
-        "--.dgnd_sym.height",
-        "variable"
-    ],
-    [
-        "--.dgnd_sym.width",
-        "variable"
-    ],
-    [
         "--.text",
         "function"
-    ],
-    [
-        "--.text_sym.value",
-        "variable"
-    ],
-    [
-        "--.text_sym.offsetX",
-        "variable"
-    ],
-    [
-        "--.text_sym.offsetY",
-        "variable"
-    ],
-    [
-        "--.text_sym.fontSize",
-        "variable"
     ],
     [
         "--.marker_point",
@@ -180,163 +492,15 @@
         "function"
     ],
     [
-        "--.no_connect_sym.size",
-        "variable"
-    ],
-    [
         "--.dnc",
         "function"
-    ],
-    [
-        "--.dnc_sym.size",
-        "variable"
     ],
     [
         "--.sheet_generator",
         "function"
     ],
     [
-        "--.sheet_generator_sym.paper_size_name",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.margin_x",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.margin_y",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.col_display_value",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.row_display_value",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.inner_frame_margin",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.horizontal_1",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.horizontal_2",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.vertical_1",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.vertical_2",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.inner_width",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.inner_height",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.tmp_height",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.tmp_y",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.tmp_width",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.tmp_x",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.fontSize",
-        "variable"
-    ],
-    [
-        "--.len",
-        "function"
-    ],
-    [
-        "--.sheet_generator_sym.num_columns",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.num_rows",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.ratio_x",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.ratio_y",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.title_block_width",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.title_block_height",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.title_block_x",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.title_block_y",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.title_block_x2",
-        "variable"
-    ],
-    [
-        "--.sheet_generator_sym.title_block_y2",
-        "variable"
-    ],
-    [
         "--.sheet_A1",
-        "function"
-    ],
-    [
-        "--.toMils",
-        "function"
-    ],
-    [
-        "--.sheet_A1_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_A1_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_A1_sym.margin",
-        "variable"
-    ],
-    [
-        "--.range",
         "function"
     ],
     [
@@ -344,92 +508,20 @@
         "function"
     ],
     [
-        "--.sheet_A2_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_A2_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_A2_sym.margin",
-        "variable"
-    ],
-    [
         "--.sheet_A3",
         "function"
-    ],
-    [
-        "--.sheet_A3_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_A3_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_A3_sym.margin",
-        "variable"
     ],
     [
         "--.sheet_A4",
         "function"
     ],
     [
-        "--.sheet_A4_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_A4_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_A4_sym.margin",
-        "variable"
-    ],
-    [
         "--.sheet_A5",
         "function"
     ],
     [
-        "--.sheet_A5_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_A5_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_A5_sym.margin",
-        "variable"
-    ],
-    [
         "--.sheet_A6",
         "function"
-    ],
-    [
-        "--.sheet_A6_sym.revision",
-        "variable"
-    ],
-    [
-        "--.sheet_A6_sym.paper_width",
-        "variable"
-    ],
-    [
-        "--.sheet_A6_sym.paper_height",
-        "variable"
-    ],
-    [
-        "--.sheet_A6_sym.margin",
-        "variable"
-    ],
-    [
-        "--.sheet_A6_sym.tmp_sheet",
-        "variable"
-    ],
-    [
-        "--.document",
-        "variable"
     ],
     [
         "--.v5v",

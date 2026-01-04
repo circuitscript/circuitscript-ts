@@ -1041,7 +1041,7 @@ export class ParserVisitor extends BaseVisitor {
             "+/" + component.instanceName + Delimiter1 + component.moduleCounter
         );
 
-        const newExecutor = this.enterNewChildContext(
+        this.enterNewChildContext(
             executionStack,
             executor,
             executionContextName,
@@ -1049,8 +1049,6 @@ export class ParserVisitor extends BaseVisitor {
         );
 
         component.moduleCounter += 1;
-        newExecutor.resolveNet = this.createNetResolver(executionStack);
-        newExecutor.resolveComponentPinNet = this.createComponentPinNetResolver(executionStack);
 
         // Create all the internal circuits of the module
         this.visit(component.moduleContainsExpressions);
@@ -1310,7 +1308,7 @@ export class ParserVisitor extends BaseVisitor {
         
         // TODO: include the filepath
         const uniqueFunctionID = '__._' + ctx.start!.line + '_' 
-            + ctx.start!.column + '_' + functionName + '_' + ctx.getText();
+            + ctx.start!.column + '_' + functionName + '_' + this.environment.hashStringSHA256(ctx.getText());
 
         // These are the defined arguments for the function
         let funcDefinedParameters: FunctionDefinedParameter[] = [];
@@ -1335,86 +1333,35 @@ export class ParserVisitor extends BaseVisitor {
             // indexed.
             const executor = this.getExecutor();
 
-            const parentBreakContext = executor.getParentBreakContext();
-
-            executor.addBreakContext(ctx);            
-
-            let useIndex = -1;
-            if (parentBreakContext === null){
-                // If not in a break context, then use the function call index 
-                // within the current scope
-                useIndex = options.functionCallIndex;
-            } else {
-                // Otherwise use the function call index within the 
-                // parent context
-                const parentEntry = executor.indexedStack.get(parentBreakContext)!;
-                const { funcCallIndex } = parentEntry;
-                if (!funcCallIndex.has(ctx)) {
-                    funcCallIndex.set(ctx, 0);
-                    useIndex = 0;
-                } else {
-                    useIndex = funcCallIndex.get(ctx)! + 1;
-                    funcCallIndex.set(ctx, useIndex);
-                }
-            }
-
-            // Use the function call index within the current scope
-            executor.setBreakContextIndex(useIndex);
 
             const functionCounterIndex = functionCounter['counter'];
-            const executionContextName = `${functionName}-${functionCounterIndex}`;
-
-            const newExecutor = this.enterNewChildContext(
-                executionStack,
-                this.getExecutor(),
-                executionContextName,
-                options,
-                funcDefinedParameters,
-                passedInParameters
-            );
-
             functionCounter['counter'] += 1;
+            
+            const executionContextName = `${functionName}-${functionCounterIndex}`;
+        
+            const newExecutor = this.handleEnterContext(executor, executionStack, 
+                executionContextName, ctx, options, 
+                funcDefinedParameters, passedInParameters);
+
+            // TODO: check if need to overwrite this.
             newExecutor.resolveNet = resolveNet;
             newExecutor.resolveComponentPinNet = resolveComponentPinNet;
 
             const returnValue = this.runExpressions(newExecutor,
                 ctx.function_expr());
-
+            
             // Function execution is completed, get the last executor
-            const lastExecution = executionStack.pop()!;
-
-            // Merge what ever was created in the scope with the outer scope
-            const nextLastExecution = executionStack[executionStack.length - 1];
-            const mergedComponents = nextLastExecution.mergeScope(
-                lastExecution.scope,
+            const lastExecution = this.handlePopContext(executor,
+                executionStack,
                 executionContextName
             );
-
-            const scope = this.getScope();
-            const indexedStack: [ParserRuleContext, number][] = [];
-            if (scope.breakStack.length > 0) {
-                const executor = this.getExecutor();
-                scope.breakStack.forEach(stackCtx => {
-                    const entry = executor.indexedStack.get(stackCtx)!;
-                    const { index } = entry;
-                    indexedStack.push([stackCtx, index]);
-                });
-
-                mergedComponents.forEach(component => {
-                    // Need to update all the context links with the current breakStack
-                    component.ctxReferences.forEach(ref => {
-                        ref.indexedStack = [...indexedStack, ...ref.indexedStack];
-                    });
-                });
-            }
-
-            executor.popBreakContext();
 
             // Return the last execution context and the final return value of the function
             return [lastExecution, returnValue];
         };
 
-        this.getExecutor().createFunction(functionName, __runFunc, 
+        this.getExecutor().createFunction(
+            this.getExecutor().namespace, functionName, __runFunc, 
             ctx, uniqueFunctionID);
     }
 

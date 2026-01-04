@@ -281,7 +281,7 @@ const script20_ = new ScriptTest(
 );
 
 export const script21_ = `
-import std
+from std import *
 
 vcc = supply("3v3")
 gnd = dgnd()
@@ -483,7 +483,7 @@ print(tmp.hello)
 
 export const inlineScript57 = new ScriptTest(`
 # Test setting of global net parameters
-import std
+from std import *
 tmp1 = net("3V3")
 tmp2 = net("3V3")
 
@@ -493,7 +493,7 @@ print(tmp2.color)
 
 export const inlineScript58 = new ScriptTest(`
 # Test function return values and references
-import std
+from std import *
 tmp1 = net("3V3")
 tmp1.color = "blue"
 print(tmp1.color)

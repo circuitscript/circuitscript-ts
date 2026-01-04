@@ -10,7 +10,8 @@ import { Big } from 'big.js';
 import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_exprContext, Atom_exprContext, 
     ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
-    FunctionCallExprContext, Import_exprContext, Operator_assignment_exprContext, 
+    FunctionCallExprContext, Import_all_simpleContext, Import_exprContext, 
+    Import_simpleContext, Import_specificContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
     Trailer_expr2Context, 
     Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
@@ -21,12 +22,15 @@ import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition.js";
 import { PinTypes } from "./objects/PinTypes.js";
-import { CallableParameter, CFunctionOptions, ComplexType, 
+import { CallableParameter, ComplexType, 
     Direction, 
     FunctionDefinedParameter, AnyReference, UndeclaredReference, 
-    ValueType} from "./objects/types.js";
+    ValueType,
+    ImportedModule,
+    NewContextOptions,
+    ImportFunctionHandling as ImportFunctionHandling} from "./objects/types.js";
 import { ParserRuleContext } from 'antlr4ng';
-import { ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes, TrailerArrayIndex } from './globals.js';
+import { BaseNamespace, ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
 import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
@@ -40,7 +44,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     // Contains the methods here, so that it is function based instead
     // of just lambdas/callbacks...
 
-    indentLevel = 0;
     startingContext: ExecutionContext;
     executionStack: ExecutionContext[];
 
@@ -51,6 +54,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     printStream: string[] = [];
     printToConsole = true;
+    
+    allowParseImports = false;
 
     acceptedDirections = [Direction.Up, Direction.Down, 
         Direction.Right, Direction.Left];
@@ -96,7 +101,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
         this.startingContext = new ExecutionContext(
             DoubleDelimiter1,
-            `${DoubleDelimiter1}.`,
+            BaseNamespace,
             '/',
             0, 0, silent, 
             this.logger, 
@@ -193,8 +198,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     }
 
     log(...params: any[]): void {
-        const indentOutput = ''.padStart(this.indentLevel * 4, '    ');
-        const indentLevelText = this.indentLevel.toString().padStart(3, ' ');
+        const indentLevel = this.getScope().scopeLevel;
+
+        const indentOutput = ''.padStart(indentLevel * 4, '    ');
+        const indentLevelText = indentLevel.toString().padStart(3, ' ');
 
         const args = ['[' + indentLevelText + ']', indentOutput, ...params];
         
@@ -220,14 +227,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     visitScript = async (ctx: ScriptContext): Promise<void> => {
         this.log('===', 'start', '===');
 
+        this.allowParseImports = true;
+
         // Parse all import statements at the start since these might require
         // async calls
-        const imports = ctx.import_expr();
-        for (let i = 0; i < imports.length; i++) {
-            const ctxImport = imports[i];
-            const ID = ctxImport.ID().toString();
-            await this.handleImportFile(ID, true, ctxImport);
+        for (const ctxImport of ctx.import_expr()) {
+            await this.visit(ctxImport);
         }
+
+        this.allowParseImports = false;
 
         const result = this.runExpressions(this.getExecutor(), ctx.expression());
         this.setResult(ctx, result);
@@ -236,6 +244,34 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         this.getExecutor().closeOpenPathBlocks();
 
         this.log('===', 'end', '===');
+    }
+
+    private async importCommon(ctx: Import_simpleContext | Import_all_simpleContext | Import_specificContext,
+        handling: ImportFunctionHandling): Promise<void> {
+        const specificImports: string[] = [];
+        if (ctx instanceof Import_specificContext) {
+            const tmpSpecificImports = ctx._funcNames.map(item => {
+                return item.text!;
+            });
+
+            specificImports.push(...tmpSpecificImports);
+        }
+
+        const id = ctx._moduleName!.text!;
+        await this.handleImportFile(id, handling, true, ctx, specificImports);
+    } 
+
+
+    visitImport_simple = async (ctx: Import_simpleContext): Promise<void> => {
+        await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
+    }
+
+    visitImport_all_simple = async (ctx: Import_all_simpleContext): Promise<void> => {
+        await this.importCommon(ctx, ImportFunctionHandling.AllMergeIntoNamespace);
+    }
+
+    visitImport_specific = async (ctx: Import_specificContext): Promise<void> => {
+        await this.importCommon(ctx, ImportFunctionHandling.SpecificMergeIntoNamespace);
     }
 
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
@@ -554,6 +590,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             passedNetNamespace = this.visitResult(netNameSpaceExpr);
         }
 
+        // Resolve the rootValue first, without any trailers. The trailers
+        // parsing will be done later.
         let currentReference: AnyReference = executor.resolveVariable(
             this.executionStack, atomId);
 
@@ -561,8 +599,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             // Resolve all elements in the trailer expression list
 
             if (!currentReference.found) {
+                this.log(`could not resolve function: ${atomId}`);
                 this.throwWithContext(ctx,
-                    "Unknown function name: " + atomId);
+                    "could not resolve function: " + atomId);
             }
 
             currentReference.trailers = [];
@@ -589,12 +628,49 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     );
 
                     try {
+                        const isModuleFunction = currentReference.rootValue 
+                            && currentReference.rootValue instanceof ImportedModule;
+
+                        if (isModuleFunction){
+
+                            this.log('create new module context');
+
+                            // Restore the module context
+                            const importedModule = currentReference.rootValue as ImportedModule;
+                            const importedModuleContext = importedModule.context;
+
+                            const newExecutor = this.handleEnterContext(
+                                this.getExecutor(),
+                                this.executionStack,
+                                importedModuleContext.name,
+                                ctx,
+                                {
+                                    netNamespace: executor.netNamespace,
+                                    namespace: importedModule.moduleNamespace
+                                }, [], [],
+                                false
+                            );
+
+                            this.log('copy module context scope');
+                            importedModuleContext.scope.copyTo(newExecutor.scope);
+                        }
+
                         const [, functionResult] =
                             executor.callFunction(
-                                currentReference.name,
+                                currentReference,
                                 parameters,
                                 this.executionStack,
                                 useNetNamespace);
+
+                        if (isModuleFunction){
+                            this.log('pop module context scope');
+                            this.handlePopContext(
+                                this.getExecutor(),
+                                this.executionStack,
+                                "",
+                                false
+                            )
+                        }
 
                         if (isReference(functionResult)){
                             currentReference = functionResult;
@@ -612,6 +688,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     }
 
                 } else {
+                    // Expand the reference by going through the trailers
                     const ctxTrailer = item.trailer_expr2()!;
                     this.setResult(ctxTrailer, currentReference); 
                     currentReference = this.visitResult(ctxTrailer);
@@ -620,6 +697,112 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         }
 
         this.setResult(ctx, currentReference);
+    }
+
+    /**
+     * Reusable method to enter a new child context.
+     * @param executor 
+     * @param executionStack 
+     * @param contextName 
+     * @param ctx 
+     * @param options 
+     * @param funcDefinedParameters 
+     * @param passedInParameters 
+     * @param isBreakContext If true, then the new context is a break context (can be disrupted by break/return keyword). This is also used to determine indexing for refdes annotations.
+     * @returns 
+     */
+    protected handleEnterContext(executor: ExecutionContext,
+        executionStack: ExecutionContext[],
+        contextName: string,
+        ctx: ParserRuleContext,
+        options: NewContextOptions,
+        funcDefinedParameters: FunctionDefinedParameter[],
+        passedInParameters: CallableParameter[],
+        isBreakContext = true
+    ): ExecutionContext {
+
+        if (isBreakContext) {
+            const parentBreakContext = executor.getParentBreakContext();
+            executor.addBreakContext(ctx);
+
+            let useIndex = -1;
+            if (parentBreakContext === null) {
+                // If not in a break context, then use the function call index 
+                // within the current scope
+                useIndex = options.functionCallIndex;
+            } else {
+                // Otherwise use the function call index within the 
+                // parent context
+                const parentEntry = executor.indexedStack.get(parentBreakContext)!;
+                const { funcCallIndex } = parentEntry;
+                if (!funcCallIndex.has(ctx)) {
+                    funcCallIndex.set(ctx, 0);
+                    useIndex = 0;
+                } else {
+                    useIndex = funcCallIndex.get(ctx)! + 1;
+                    funcCallIndex.set(ctx, useIndex);
+                }
+            }
+
+            // Use the function call index within the current scope
+            executor.setBreakContextIndex(useIndex);
+        }
+
+        return this.enterNewChildContext(
+            executionStack,
+            executor,
+            contextName,
+            options,
+            funcDefinedParameters,
+            passedInParameters
+        );
+    }
+
+    /**
+     * Reusable method to handle leaving/closing a new child context.
+     * @param executor 
+     * @param executionStack 
+     * @param namespaceExtension 
+     * @param isBreakContext See definition from handleEnterContext
+     * @returns 
+     */
+    protected handlePopContext(executor: ExecutionContext,
+        executionStack: ExecutionContext[],
+        namespaceExtension: string,
+        isBreakContext = true): ExecutionContext {
+
+        const poppedContext = executionStack.pop()!;
+
+        // Merge what ever was created in the scope with the outer scope
+        const nextLastExecution = executionStack[executionStack.length - 1];
+        const mergedComponents = nextLastExecution.mergeScope(
+            poppedContext.scope,
+            namespaceExtension
+        );
+
+        if (isBreakContext) {
+            const scope = this.getScope();
+            const indexedStack: [ParserRuleContext, number][] = [];
+            if (scope.breakStack.length > 0) {
+                const executor = this.getExecutor();
+                scope.breakStack.forEach(stackCtx => {
+                    const entry = executor.indexedStack.get(stackCtx)!;
+                    const { index } = entry;
+                    indexedStack.push([stackCtx, index]);
+                });
+
+                mergedComponents.forEach(component => {
+                    // Need to update all the context links with the current breakStack
+                    component.ctxReferences.forEach(ref => {
+                        ref.indexedStack = [...indexedStack, ...ref.indexedStack];
+                    });
+                });
+            }
+
+            executor.popBreakContext();
+        }
+
+        return poppedContext;
     }
 
     visitValue_expr = (ctx: Value_exprContext): void => {
@@ -884,8 +1067,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         return this.getResult(ctx);
     }
 
-    protected async handleImportFile(name: string,
-        throwErrors = true, ctx: ParserRuleContext | null = null): Promise<ImportFile> {
+    protected async handleImportFile(name: string, 
+        importHandling: ImportFunctionHandling,
+        throwErrors = true, ctx: ParserRuleContext | null = null, 
+        specificImports: string[] = []): Promise<ImportFile> {
 
         name = name.trim();
         const importAlready = this.importedFiles.find(item => {
@@ -915,6 +1100,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             pathExists = false;
         }
 
+        let importedModule: ImportedModule;
+
         if (!pathExists) {
             // if path does not exist, then search default libs path
             try {
@@ -931,18 +1118,54 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         }
 
         try {
-            if (pathExists) {
+            if (pathExists && filePathUsed) {
                 this.log('done reading imported file data');
+
+                const executionStack = this.executionStack;
+                const executor = this.getExecutor();
+
+                const executionContextName = name;
+                const netNamespace = executor.netNamespace;
+                const moduleNamespace = `${BaseNamespace}${name}.`;
+
+                // Create a new context, so that it is easier to track the
+                // functions that were created within the imported module.
+                this.enterNewChildContext(
+                    executionStack,
+                    executor,
+                    executionContextName,
+                    { 
+                        netNamespace,
+                        namespace: moduleNamespace,
+                    }, [], []);
 
                 const importResult = await this.onImportFile(this, 
                         filePathUsed, fileData!, this.onErrorHandler);
 
                 hasError = importResult.hasError;
                 hasParseError = importResult.hasParseError;
+
+                const importContext = executionStack.pop()!;
+
+                this.log(`import handling flag: ${importHandling}`);
+                importedModule = new ImportedModule(name, 
+                    moduleNamespace,
+                    filePathUsed,
+                    importContext, importHandling, specificImports);
+
+                if (specificImports.length > 0){
+                    this.log('specific import: ' + specificImports.join(', '));
+                }
+
+                const scope = this.getScope();
+                
+                // Add the imported module into the scope.
+                scope.modules.set(name, importedModule);
             }
         } catch (err) {
             if (ctx != null) {
-                throw new RuntimeExecutionError("An error occurred while importing file", ctx);
+                throw err;
+                // throw new RuntimeExecutionError("An error occurred while importing file", ctx);
             } else {
                 this.log('An error occurred while importing file:', err.message);
             }
@@ -968,7 +1191,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             hasError,
             hasParseError,
             pathExists,
-        }
+            importedModule: importedModule!
+        };
 
         this.importedFiles.push(newImportedFile);
 
@@ -1121,11 +1345,14 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     protected enterNewChildContext(executionStack: ExecutionContext[],
         parentContext: ExecutionContext,
         executionContextName: string,
-        options: CFunctionOptions,
+        options: NewContextOptions,
         funcDefinedParameters: FunctionDefinedParameter[],
         passedInParameters: CallableParameter[]
     ): ExecutionContext {
-        const { netNamespace = "" } = options;
+        const { 
+            netNamespace = "",
+            namespace = null,
+        } = options;
 
         // Create a new execution context, so that the commands are executed only
         // within this context. Components and nets will be local to this context for now.
@@ -1133,7 +1360,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             executionStack[executionStack.length - 1];
         const executionLevel = currentExecutionContext.executionLevel;
 
-        const executionContextNamespace = currentExecutionContext.namespace
+        const executionContextNamespace = namespace ?? currentExecutionContext.namespace
             + executionContextName + ".";
 
         const newExecutor = new ExecutionContext(
@@ -1159,6 +1386,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             passedInParameters,
             newExecutor
         );
+
+        newExecutor.resolveNet = this.createNetResolver(executionStack);
+        newExecutor.resolveComponentPinNet = 
+            this.createComponentPinNetResolver(executionStack);
 
         return newExecutor;
     }
@@ -1215,5 +1446,6 @@ type ImportFile = {
     id: string,
     hasError: boolean,
     hasParseError: boolean,
-    pathExists: boolean
+    pathExists: boolean,
+    importedModule: ImportedModule
 }

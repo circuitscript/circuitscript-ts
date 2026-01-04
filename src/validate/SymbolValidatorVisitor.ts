@@ -1,17 +1,20 @@
 import { TerminalNode, Token } from "antlr4ng";
-import { Import_exprContext, Assignment_exprContext, Atom_exprContext, 
+import { Assignment_exprContext, Atom_exprContext, 
     Function_call_exprContext, ValueAtomExprContext, UnaryOperatorExprContext, 
     MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext, 
     DataExprContext, Function_def_exprContext, 
-    For_exprContext} from "src/antlr/CircuitScriptParser";
+    For_exprContext,
+    Import_simpleContext,
+    Import_all_simpleContext,
+    Import_specificContext} from "../antlr/CircuitScriptParser.js";
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
-import { ComplexType, FunctionDefinedParameter, ParseSymbolType, ValueType } from "../objects/types.js";
-import { SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
+import { ComplexType, FunctionDefinedParameter, ImportedModule, ImportFunctionHandling, ParseSymbolType, ValueType } from "../objects/types.js";
+import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
 import { SymbolTable } from "./SymbolTable.js";
 import { BaseVisitor } from "../BaseVisitor.js";
-import { SymbolValidatorContext } from "../globals.js";
+import { BaseNamespace, SymbolValidatorContext } from "../globals.js";
 
 /**
  * @class SymbolValidatorVisitor
@@ -185,26 +188,88 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     //
     // AST Visitor Methods - Symbol table construction and validation
     //
-    /**
-     * @brief Visits import expressions and validates imported file existence
-     * @param ctx Import expression context containing filename
-     *
-     * @details
-     * Validates that imported files exist and are accessible. Adds undefined
-     * symbol entries for missing imports to enable error reporting.
-     *
-     * Example: `import myLibrary`
-     */
-    visitImport_expr = (ctx: Import_exprContext): void => {
-        const ID = ctx.ID().toString(); // filename
-        const { pathExists } = this.handleImportFile(ID, false, ctx);
+    
+    private async importCommon(ctx: Import_simpleContext | Import_all_simpleContext | Import_specificContext,
+        handling: ImportFunctionHandling): Promise<void> {
+
+        const specifiedImports: string[] = [];
+
+        if (ctx instanceof Import_specificContext) {
+            const tmpImports = ctx._funcNames.map(item => {
+                return item.text!;
+            });
+            specifiedImports.push(...tmpImports);
+        }
+
+        const id = ctx._moduleName!.text!;
+        const { pathExists, importedModule } =
+            await this.handleImportFile(id, handling,
+                true, ctx, specifiedImports);
 
         if (!pathExists) {
             this.symbolTable.addUndefined(
-                this.getCurrentFile(), this.getExecutor(), ID, 
-                    ctx.ID().getSymbol());
+                this.getCurrentFile(), this.getExecutor(), id,
+                ctx._moduleName!);
+        } else {
+            this.applyModuleImports(importedModule);
         }
-    };
+    }
+
+    visitImport_simple = async (ctx: Import_simpleContext): Promise<void> => {
+        await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
+    }
+
+    visitImport_all_simple = async (ctx: Import_all_simpleContext): Promise<void> => {
+        await this.importCommon(ctx, ImportFunctionHandling.AllMergeIntoNamespace);
+    }
+
+    visitImport_specific = async (ctx: Import_specificContext): Promise<void> => {
+        await this.importCommon(ctx, ImportFunctionHandling.SpecificMergeIntoNamespace);
+    }
+
+    /**
+     * Add module function imports into the symbolTable based on the import handling.
+     * @param module
+     */
+    private applyModuleImports(module: ImportedModule): void {
+        const { importHandlingFlag: importHandling, specifiedImports } = module;
+
+        const addedSymbols: [key:string, symbol: SymbolTableItemDefined][] = [];
+
+        const executor = this.getExecutor();
+
+        const symbolTable = this.symbolTable.getSymbols();
+        symbolTable.forEach((value, key) => {
+            if (value.type === ParseSymbolType.Function) {
+                const definedSymbol = (value as SymbolTableItemDefined);
+                // The symbol is part of the module
+                if (definedSymbol.fileName === module.moduleFilePath) {
+
+                    const addSymbolToNamespace = importHandling === ImportFunctionHandling.AllMergeIntoNamespace
+                        || (
+                            importHandling === ImportFunctionHandling.SpecificMergeIntoNamespace
+                            && specifiedImports.indexOf(definedSymbol.id) !== -1
+                        );
+
+                    if (addSymbolToNamespace) {
+                        const funcPath = `${BaseNamespace}${definedSymbol.id}`;
+
+                        // Clone symbol and update the context, so that it is 
+                        // not the import context, but the main
+                        const tmpSymbol = cloneSymbol(value);
+                        tmpSymbol.context = executor;
+
+                        addedSymbols.push([funcPath, tmpSymbol]);
+                    }
+                }
+            }
+        });
+
+        addedSymbols.forEach(item => {
+            const [key, value] = item;
+            symbolTable.set(key, value);
+        });
+    }
 
     /**
      * @brief Visits assignment expressions and adds variables to symbol table

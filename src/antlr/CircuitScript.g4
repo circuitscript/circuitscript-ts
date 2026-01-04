@@ -32,6 +32,7 @@ Parallel:   'parallel';
 Return:     'return';
 Define:     'def';
 Import:     'import';
+From:       'from';
 
 For:        'for';
 In:         'in';
@@ -250,7 +251,10 @@ wire_expr: Wire wire_atom_expr*;
 array_expr: '[' (data_expr (',' data_expr)*)* ']';
 
 point_expr: Point (ID | data_expr);
-import_expr: Import ID;
+import_expr: Import moduleName=ID                                             # import_simple
+      | From moduleName=ID Import '*'                                         # import_all_simple
+      | From moduleName=ID Import funcNames+=ID (',' funcNames+=ID)*          # import_specific
+      ;
 
 frame_expr: (Frame | Sheet) ':' expressions_block;
 

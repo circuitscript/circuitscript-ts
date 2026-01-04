@@ -1,6 +1,6 @@
 # Tests more complex path branching that is nested within a for loop
 
-import std
+from std import *
 
 v5v = supply("5V")
 gnd = dgnd()

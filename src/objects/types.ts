@@ -18,13 +18,29 @@ export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
 
 export class CFunctionEntry {
+    
+    // Function name, without namespace/module
     name: string;
+
+    // This may change depending on how the function is imported.
+    namespace: string;
+
+    // Holds the original namespace/module of the function entry and does not change.
+    originalNamespace: string;
+
     execute: CFunction;
+
     uniqueId?: string;
     source?: ParserRuleContext;
 
-    constructor(name: string, execute: CFunction, source?: ParserRuleContext, uniqueId?: string) {
+    constructor(namespace: string, name: string, 
+        execute: CFunction, source?: ParserRuleContext, 
+        uniqueId?: string) {
+        
         this.name = name;
+        this.namespace = namespace;
+        this.originalNamespace = namespace;
+
         this.execute = execute;
         this.uniqueId = uniqueId;
         this.source = source;
@@ -37,6 +53,14 @@ export class CFunctionEntry {
 
 export type CFunctionOptions = {
     netNamespace?: string,
+
+    // The nth time that the function was called within the executing scope.
+    functionCallIndex: number,
+}
+
+export type NewContextOptions = {
+    netNamespace?: string,
+    namespace?: string,
 
     // The nth time that the function was called within the executing scope.
     functionCallIndex: number,
@@ -244,4 +268,43 @@ export enum TypeProps {
 export enum NetTypes {
     Any = 'any',
     Source = 'source',
+}
+
+export class ImportedModule {
+    moduleName: string;
+
+    context: ExecutionContext;
+
+    importHandlingFlag: ImportFunctionHandling;
+    specifiedImports: string[];
+    moduleNamespace: string;
+    moduleFilePath: string;
+
+    constructor(moduleName: string, moduleNamespace: string, 
+        moduleFilePath: string,
+        context: ExecutionContext, 
+        flag: ImportFunctionHandling, specifiedImports: string[]){
+        
+        this.moduleName = moduleName;
+        this.moduleNamespace = moduleNamespace;
+        this.moduleFilePath = moduleFilePath;
+        
+        this.context = context;
+        this.importHandlingFlag = flag;
+
+        this.specifiedImports = specifiedImports;
+    }
+}
+
+/**
+ * Determines handling of functions within the import/module.
+ */
+export enum ImportFunctionHandling {
+    // Module namespace is needed to reference the function.
+    AllWithNamespace = 'all-with-namespace',
+
+    // Module namespace is no longer needed to reference the function. Function
+    // should be in the current namespace.
+    AllMergeIntoNamespace = 'all-merge-into-namespace',
+    SpecificMergeIntoNamespace = 'specific-merge-into-namespace',
 }

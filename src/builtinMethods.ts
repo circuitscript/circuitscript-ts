@@ -2,8 +2,9 @@ import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
-import { CallableParameter, CFunctionEntry } from "./objects/types.js";
+import { CallableParameter, CFunctionEntry, ImportedModule } from "./objects/types.js";
 import { unwrapValue, resolveToNumericValue, RuntimeExecutionError } from "./utils.js";
+import { BaseNamespace } from "./globals.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -19,7 +20,7 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
 export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0]);
 
 export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisitor): void {
-    context.createFunction('print', (params) => {
+    context.createFunction(BaseNamespace, 'print', (params) => {
         const args = getPositionParams(params);
         const items = args.map(item => {
             return toString(unwrapValue(item));
@@ -36,7 +37,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
 
     builtInMethods.forEach(([functionName, functionImpl]) => {
         if (functionImpl !== null){
-            context.createFunction(functionName, params => {
+            context.createFunction(BaseNamespace, functionName, params => {
                 const args = getPositionParams(params);
                 const functionReturn = functionImpl(...args);
                 return [visitor, functionReturn];
@@ -170,7 +171,9 @@ function toString(obj: any): string {
         return obj.toBigNumber().toString();
     } else if (obj instanceof CFunctionEntry){
         return obj.toString();
-        
+    } else if (obj instanceof ImportedModule){
+        return `[module: ${obj.moduleName}]`;
+                
     } else {
         if (obj === undefined){
             return 'undefined'; 

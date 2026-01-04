@@ -9,6 +9,7 @@ import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
 import { CFunction, CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
     ComponentPinWireId, 
+    ImportedModule, 
     ParseSymbolType, ValueType } from './types.js';
 import { BlockTypes, LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
@@ -46,6 +47,9 @@ export class ExecutionScope {
     variables: Map<string, ValueType | ClassComponent> = new Map();
 
     symbols: Map<string, { type: ParseSymbolType }> = new Map();
+
+    // Modules are imported files that contain functions, etc.
+    modules: Map<string, ImportedModule> = new Map();
 
     blockStack: Map<number, BlockStackEntry> = new Map();
 
@@ -273,6 +277,17 @@ export class ExecutionScope {
     
     getInstances(): ClassComponent[] {
         return Array.from(this.instances.values());
+    }
+
+    copyTo(scope: ExecutionScope): void {
+        // Copies functions, variables to the provided scope
+        this.functions.forEach((value, key) => {
+            scope.functions.set(key, value);
+        });
+
+        this.variables.forEach((value, key) => {
+            scope.variables.set(key, value);
+        });
     }
 }
 

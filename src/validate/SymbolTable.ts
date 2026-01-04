@@ -311,6 +311,12 @@ export class SymbolTable {
     }
 }
 
+export function cloneSymbol(symbol: SymbolTableItemDefined): SymbolTableItemDefined {
+    return {
+        ...symbol
+    }
+}
+
 export type SymbolTableItemDefined = {
     /** @brief Symbol identifier name */
     id: string;

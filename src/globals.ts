@@ -14,6 +14,9 @@ export const TOOL_VERSION = '0.1.5';
 export const Delimiter1 = '-';
 export const DoubleDelimiter1 = `${Delimiter1}${Delimiter1}`;
 
+// Root/starting namespace
+export const BaseNamespace = `${DoubleDelimiter1}.`;
+
 export enum GlobalNames {
     __root = `${DoubleDelimiter1}root`,
     symbol = 'symbol',
@@ -141,7 +144,8 @@ export enum ReferenceTypes {
     variable = 'variable',
     instance = 'instance',
     pinType = 'pinType',
-
+    module = 'module',
+    
     unknown = 'unknown',
 }
 

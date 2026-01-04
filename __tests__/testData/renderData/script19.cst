@@ -1,4 +1,4 @@
-import std
+from std import *
 
 vcc = supply("VCC")
 gnd = dgnd()

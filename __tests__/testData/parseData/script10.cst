@@ -1,4 +1,4 @@
-import std
+from std import *
 gnd = dgnd()
 
 at v5v = supply("5V")

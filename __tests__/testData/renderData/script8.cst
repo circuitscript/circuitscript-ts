@@ -1,6 +1,6 @@
 # Test `point` keyword
 
-import std
+from std import *
 
 v5v = supply("5V")
 gnd = dgnd()

@@ -1,4 +1,4 @@
-import std
+from std import *
 
 tmp = create component:
     pins: 5
