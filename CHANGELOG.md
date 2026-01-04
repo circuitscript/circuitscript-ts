@@ -1,6 +1,21 @@
 # Changelog
 
-## [v0.1.29](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.28...v0.1.29)
+## [v0.1.30](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.29...v0.1.30)
+
+[2f92b18](https://gitlab.com/circuitscript/circuitscript-ts/commit/2f92b183b244eb93638e73cf5d5572a27fbe6538)Update import syntax to enable specific and wildcard imports
+- 
+- Changes the CircuitScript import syntax to use Python-style wildcard imports.
+- Updates grammar, parser, visitor, and all test files to support the new syntax.
+
+[0db0f3c](https://gitlab.com/circuitscript/circuitscript-ts/commit/0db0f3c46485f53adac61093344b1e4237eef911)Cleaned up validation tests
+
+[c76bc61](https://gitlab.com/circuitscript/circuitscript-ts/commit/c76bc61be4c247376bb521634723a12f4d7645a0)Add comprehensive test coverage for import functionality
+- 
+- This commit enhances the test infrastructure to support import path resolution and adds extensive test cases for the new import features. Changes include test helper improvements to properly track script file paths during execution, plus new test files covering various import scenarios (module imports, specific imports, wildcard imports, and combinations).
+
+[5ca064a](https://gitlab.com/circuitscript/circuitscript-ts/commit/5ca064ac5440bb870c2347519120b3e12ee3768e)Fixed environment logging bug
+
+## [v0.1.29](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.28...v0.1.29) - 2025-12-29
 
 [6f30f71](https://gitlab.com/circuitscript/circuitscript-ts/commit/6f30f71c7ea44a933cb2e2aa2b7aa1c561d3fe34)Fix import path resolution and improve environment tracking
 - 
