@@ -1051,7 +1051,8 @@ export class ExecutionContext {
                 for (let j = 0; j < modules.length; j++) {
                     const module = modules[j];
                     if (module.importHandlingFlag === ImportFunctionHandling.AllMergeIntoNamespace ||
-                        module.importHandlingFlag === ImportFunctionHandling.SpecificMergeIntoNamespace
+                        (module.importHandlingFlag === ImportFunctionHandling.SpecificMergeIntoNamespace
+                            && module.specifiedImports.indexOf(idName) !== -1)
                     ) {
                         const moduleContext = module.context;
                         const functionPath = `${moduleContext.namespace}${idName}`;

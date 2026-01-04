@@ -1,0 +1,12 @@
+# Test repeated imports with wildcard import
+from import4 import comp1
+from import4 import comp2
+from import4 import *
+
+at comp1()
+wire right 100
+to comp2()
+
+at comp1()
+wire right 100
+to comp3()

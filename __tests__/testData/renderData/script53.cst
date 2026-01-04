@@ -1,0 +1,23 @@
+# Test different import syntax
+
+import import1
+from import2 import tmp_component
+from import4 import *
+
+tmp = import1.my_component()
+tmp2 = tmp_component()
+
+at tmp
+
+wire left 100
+
+to tmp2
+
+at tmp pin 2
+wire right 100
+branch:
+    wire right 200
+    to comp1()
+
+wire down 500 right 200
+to comp2() 

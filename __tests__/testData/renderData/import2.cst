@@ -1,0 +1,9 @@
+from import3 import yet_another_component
+
+def my_other_component():
+    return create component:
+        type: "ic"
+        pins: 2
+
+def tmp_component():
+    return yet_another_component()

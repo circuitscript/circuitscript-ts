@@ -18,12 +18,11 @@ import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
 
-export async function runScript(script: string): Promise<{
+export async function runScript(script: string, scriptPath?: string): Promise<{
     visitor: ParserVisitor,
     hasError: boolean,
     componentPinNets: ComponentPinNet[]
 }> {
-
     const chars = CharStream.fromString(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -32,6 +31,11 @@ export async function runScript(script: string): Promise<{
     NodeScriptEnvironment.setInstance(env);
 
     await env.prepareSVGEnvironment();
+
+    // Important for resolving imports
+    if (scriptPath){
+        env.setCurrentFile(scriptPath);
+    }
 
     const errorHandler: OnErrorHandler =
         (message: string, context: ParserRuleContext, error: any) => {
@@ -186,7 +190,7 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     }> {
 
     const script = readFileSync(scriptPath, { encoding: 'utf8' });
-    const { hasError, visitor } = await runScript(script);
+    const { hasError, visitor } = await runScript(script, scriptPath);
     expect(hasError).toEqual(false);
 
     visitor.applySheetFrameComponent();

@@ -1,0 +1,7 @@
+# Test repeated specific imports
+from import4 import comp1
+from import4 import comp2
+
+at comp1()
+wire right 100
+to comp2()

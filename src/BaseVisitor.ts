@@ -1078,6 +1078,41 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         });
 
         if (importAlready) {
+            const tmpImportedModule = importAlready.importedModule;
+
+            const alreadyImportedFlag = tmpImportedModule.importHandlingFlag;
+            const isMergedNamespace = alreadyImportedFlag === ImportFunctionHandling.AllMergeIntoNamespace
+                || alreadyImportedFlag === ImportFunctionHandling.SpecificMergeIntoNamespace;
+            
+            const invalidImportCondition1 =
+                alreadyImportedFlag === ImportFunctionHandling.AllWithNamespace &&
+                importHandling !== ImportFunctionHandling.AllWithNamespace;
+
+            const invalidImportCondition2 = 
+                alreadyImportedFlag !== ImportFunctionHandling.AllWithNamespace &&
+                importHandling === ImportFunctionHandling.AllWithNamespace;
+
+            if (invalidImportCondition1 || invalidImportCondition2){
+                throw new RuntimeExecutionError(`Namespace import and wildcard/specific imports cannot be mixed: ${name}`, ctx);
+            }
+
+            if (isMergedNamespace) {
+                // Combined the specific imports
+                if (alreadyImportedFlag === ImportFunctionHandling.AllMergeIntoNamespace) {
+                    // Do nothing, because all already merged into the namespace
+                } else if (alreadyImportedFlag === ImportFunctionHandling.SpecificMergeIntoNamespace && importHandling === ImportFunctionHandling.AllMergeIntoNamespace) {
+                    // The incoming import is to merge all, so update the module to merge all instead.
+                    tmpImportedModule.specifiedImports = [];
+                    tmpImportedModule.importHandlingFlag = ImportFunctionHandling.AllMergeIntoNamespace;
+                    
+                } else if (alreadyImportedFlag === ImportFunctionHandling.SpecificMergeIntoNamespace && importHandling === ImportFunctionHandling.SpecificMergeIntoNamespace) {
+                    // Combine both specific impors together
+                    tmpImportedModule.specifiedImports.push(
+                        ...specificImports
+                    )
+                }
+            }
+
             return importAlready;
         }
 
@@ -1161,6 +1196,11 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 
                 // Add the imported module into the scope.
                 scope.modules.set(name, importedModule);
+
+                // Add all modules that were imported within the imported modules itself
+                importedModule.context.scope.modules.forEach((module, key) => {
+                    scope.modules.set(key, module);
+                });
             }
         } catch (err) {
             if (ctx != null) {

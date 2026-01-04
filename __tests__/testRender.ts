@@ -83,6 +83,11 @@ describe('Render tests', () => {
         ['refdes annotation parsing: script48.cst with changed refdes and annotations', 'script51.cst'],
         ['refdes annotation parsing with repeated annotations', 'script52.cst'],
 
+        // import syntax forms
+        ['import syntax forms', 'script53.cst'],
+        ['repeated specific imports', 'script54.cst'],
+        ['specific imports followed by wildcard import', 'script55.cst']
+
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 
         

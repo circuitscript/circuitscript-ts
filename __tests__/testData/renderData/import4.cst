@@ -1,0 +1,11 @@
+def comp1():
+    return create component:
+        pins: 4
+
+def comp2():
+    return create component:
+        pins: 5
+
+def comp3():
+    return create component:
+        pins: 6

@@ -1,0 +1,4 @@
+def yet_another_component():
+    return create component:
+        type: "conn"
+        pins: 3
