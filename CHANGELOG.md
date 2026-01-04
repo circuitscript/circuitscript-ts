@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.30](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.29...v0.1.30)
+## [v0.1.31](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.30...v0.1.31)
+
+[e6b83b0](https://gitlab.com/circuitscript/circuitscript-ts/commit/e6b83b04e139ad3388ada430f1980f6c4fe54b83)Fixed build script
+
+## [v0.1.30](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.29...v0.1.30) - 2026-01-04
 
 [2f92b18](https://gitlab.com/circuitscript/circuitscript-ts/commit/2f92b183b244eb93638e73cf5d5572a27fbe6538)Update import syntax to enable specific and wildcard imports
 - 
