@@ -53,7 +53,7 @@ test_jest:
     - npm run test testMergeWires
     - npm run test testParse
     - npm run test testRender
-    - npm run test testValidator
+    - npm run test testValidate
     - npm run test testMathOps
   rules:
     - !reference [.common_rules, rules]
