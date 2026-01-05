@@ -78,6 +78,7 @@ import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_simpleContext } from "./CircuitScriptParser.js";
 import { Import_all_simpleContext } from "./CircuitScriptParser.js";
 import { Import_specificContext } from "./CircuitScriptParser.js";
+import { Import_annotation_exprContext } from "./CircuitScriptParser.js";
 import { Frame_exprContext } from "./CircuitScriptParser.js";
 import { If_exprContext } from "./CircuitScriptParser.js";
 import { If_inner_exprContext } from "./CircuitScriptParser.js";
@@ -572,6 +573,12 @@ export class CircuitScriptVisitor<Result> extends AbstractParseTreeVisitor<Resul
      * @return the visitor result
      */
     visitImport_specific?: (ctx: Import_specificContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.import_annotation_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitImport_annotation_expr?: (ctx: Import_annotation_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.frame_expr`.
      * @param ctx the parse tree

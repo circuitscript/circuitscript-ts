@@ -53,20 +53,6 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     /** @brief Symbol table maintaining all variables, functions, and undefined references */
     symbolTable = new SymbolTable();
 
-    filePathStack: string[] = [];
-
-    enterFile(filePath: string): void {
-        this.filePathStack.push(filePath);
-    }
-
-    exitFile(): void {
-        this.filePathStack.pop();
-    }
-
-    getCurrentFile(): string {
-        return this.filePathStack[this.filePathStack.length - 1];
-    }
-
     /**
      * @brief Adds a variable symbol to the symbol table in the specified execution context
      *

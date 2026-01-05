@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ParserRuleContext, Token } from 'antlr4ng';
+import { CommonTokenStream, ParserRuleContext, Token } from 'antlr4ng';
 import { ExecutionContext } from '../execute.js';
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
@@ -13,6 +13,7 @@ import { NumericValue, PercentageValue } from './ParamDefinition.js';
 import { ReferenceTypes } from '../globals.js';
 import { RuntimeExecutionError } from '../utils.js';
 import { PinId } from './PinDefinition.js';
+import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -280,8 +281,15 @@ export class ImportedModule {
     moduleNamespace: string;
     moduleFilePath: string;
 
+    enableRefdesAnnotation = false;
+
+    // These are needed for the refdes annotation stage.
+    tree: ScriptContext;
+    tokens: CommonTokenStream;
+
     constructor(moduleName: string, moduleNamespace: string, 
         moduleFilePath: string,
+        tree: ScriptContext, tokens: CommonTokenStream,
         context: ExecutionContext, 
         flag: ImportFunctionHandling, specifiedImports: string[]){
         
@@ -289,6 +297,9 @@ export class ImportedModule {
         this.moduleNamespace = moduleNamespace;
         this.moduleFilePath = moduleFilePath;
         
+        this.tree = tree;
+        this.tokens = tokens;
+
         this.context = context;
         this.importHandlingFlag = flag;
 

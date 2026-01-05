@@ -352,4 +352,7 @@ export type CtxReference = {
     // If true, then the component reference was created during the 
     // execution of the rule.
     creationFlag: boolean,
+
+    // Identify filepath of this ctx reference.
+    filePath: string,
 }

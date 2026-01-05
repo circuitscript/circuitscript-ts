@@ -29,7 +29,7 @@ import { CallableParameter, ComplexType,
     ImportedModule,
     NewContextOptions,
     ImportFunctionHandling as ImportFunctionHandling} from "./objects/types.js";
-import { ParserRuleContext } from 'antlr4ng';
+import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseNamespace, ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
@@ -46,6 +46,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
     startingContext: ExecutionContext;
     executionStack: ExecutionContext[];
+    
+    // Used to determine the current file being parsed.
+    filePathStack: string[] = [];
 
     // If true, then do not print out anything
     silent = false;
@@ -84,7 +87,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     protected warnings:ExecutionWarning[] = [];
 
     onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string, onErrorHandler: OnErrorHandler): 
-        Promise<{hasError:boolean, hasParseError: boolean}> => {
+        Promise<ImportFileResult> => {
         
         throw "Import file not implemented"
     }
@@ -258,7 +261,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         }
 
         const id = ctx._moduleName!.text!;
-        await this.handleImportFile(id, handling, true, ctx, specificImports);
+        const importedFile = await this.handleImportFile(id, handling, true, ctx, specificImports);
+
+        const ctxImportAnnotation = ctx.import_annotation_expr();
+        if (ctxImportAnnotation) {
+            const textValue = ctxImportAnnotation.getText().replace('#=', '');
+            if (textValue === 'annotate') {
+                importedFile.importedModule.enableRefdesAnnotation = true;
+            }
+        }
     } 
 
 
@@ -1052,7 +1063,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         instance.ctxReferences.push({
             ctx,
             indexedStack,
-            creationFlag
+            creationFlag,
+            filePath: this.getCurrentFile(),
         });
 
         this.componentCtxLinks.set(ctx, instance);
@@ -1183,9 +1195,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 const importContext = executionStack.pop()!;
 
                 this.log(`import handling flag: ${importHandling}`);
-                importedModule = new ImportedModule(name, 
+                importedModule = new ImportedModule(name,
                     moduleNamespace,
                     filePathUsed,
+                    importResult.tree, importResult.tokens,
                     importContext, importHandling, specificImports);
 
                 if (specificImports.length > 0){
@@ -1477,6 +1490,19 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         }, 'numeric value');
     }
 
+    enterFile(filePath: string): void {
+        this.log(`enter file: ${filePath}`);
+        this.filePathStack.push(filePath);
+    }
+
+    exitFile(): void {
+        this.log(`exit file: ${this.getCurrentFile()}`);
+        this.filePathStack.pop();
+    }
+
+    getCurrentFile(): string {
+        return this.filePathStack[this.filePathStack.length - 1];
+    }
 }
 
 export type OnErrorHandler = 
@@ -1488,4 +1514,11 @@ type ImportFile = {
     hasParseError: boolean,
     pathExists: boolean,
     importedModule: ImportedModule
+}
+
+export type ImportFileResult = {
+    hasError: boolean;
+    hasParseError: boolean;
+    tree: ScriptContext;
+    tokens: CommonTokenStream
 }

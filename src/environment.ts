@@ -1,5 +1,5 @@
 import { Dom, registerWindow, SVG } from "@svgdotjs/svg.js";
-import { PathOrFileDescriptor, PathLike } from "fs";
+import { PathOrFileDescriptor, PathLike, writeFileSync } from "fs";
 import fs from 'fs';
 import path from "path";
 import CryptoJs from "crypto-js";
@@ -186,6 +186,10 @@ export class NodeScriptEnvironment {
 
     async readFile(path: PathOrFileDescriptor, options): Promise<string> {
         return fs.promises.readFile(path, options);
+    }
+
+    writeFileSync(path: PathOrFileDescriptor, data: string): void {
+        return writeFileSync(path, data);
     }
 
     getAbsolutePath(filePath: string): string {

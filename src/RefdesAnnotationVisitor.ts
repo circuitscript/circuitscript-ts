@@ -66,8 +66,8 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
      * Main method to generate output with all modifications applied
      */
     visitScript = async (ctx: ScriptContext): Promise<void> => {
-        const result = this.runExpressions(this.getExecutor(), ctx.expression());
-        this.setResult(ctx, result);
+        // Imports do not need to be handled.
+        this.runExpressions(this.getExecutor(), ctx.expression());
 
         // If there are open blocks, then close them
         this.getExecutor().closeOpenPathBlocks();

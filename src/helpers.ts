@@ -23,7 +23,7 @@ import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolve
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser, ScriptContext } from "./antlr/CircuitScriptParser.js";
-import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
+import { BaseVisitor, ImportFileResult, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
@@ -40,6 +40,7 @@ import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
+import { ImportedModule } from "./objects/types.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -104,7 +105,7 @@ export async function getSemanticTokens(scriptData: string, options: ScriptOptio
     parser.removeErrorListeners();
 
     visitor.onImportFile = async (visitor: BaseVisitor, filePath: string, textData: string)
-        : Promise<{ hasError: boolean, hasParseError: boolean }> => {
+        : Promise<ImportFileResult> => {
 
         let hasError = false;
         let hasParseError = false;
@@ -201,7 +202,7 @@ export async function validateScript(filePath: string, scriptData: string,
     visitor.enterFile(filePath);
 
     visitor.onImportFile = async (visitor: SymbolValidatorVisitor, filePath: string, textData: string)
-        : Promise<{ hasError: boolean, hasParseError: boolean }> => {
+        : Promise<ImportFileResult> => {
 
         visitor.enterFile(filePath);
 
@@ -262,7 +263,10 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
     scriptData: string,
     tree: ScriptContext,
     tokens: CommonTokenStream,
-    componentLinks: Map<ParserRuleContext, ClassComponent>): Promise<void> {
+    componentLinks: Map<ParserRuleContext, ClassComponent>,
+    importedModules: ImportedModule[],
+    environment: NodeScriptEnvironment
+): Promise<void> {
     const {
         inputPath = null,
         updateSource = false,
@@ -271,25 +275,74 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
     // Generate refdes annotation comments
     if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)) {
-        const refdesVisitor = new RefdesAnnotationVisitor(true, scriptData, tokens, componentLinks);
-        await refdesVisitor.visitAsync(tree);
+        
+        // The main file should be annotated.
+        const annotatedFiles: AnnotatedFile[] = [{
+            isMainFile: true,
+            scriptData,
+            tokens,
+            tree,
+            filePath: inputPath,
+        }];
 
-        // If this is specified, then use it to generated the annotated version
-        let usePath = inputPath;
-        if (saveAnnotatedCopy === true) {
-            const dir = path.dirname(inputPath);
-            const ext = path.extname(inputPath);
-            const basename = path.basename(inputPath, ext);
-            usePath = path.join(dir, `${basename}.annotated${ext}`);
-        } else if (typeof saveAnnotatedCopy === 'string') {
-            usePath = saveAnnotatedCopy as string;
+        // For the imported modules, check if refdes annotation is enabled.
+        for (const module of importedModules) {
+            if (module.enableRefdesAnnotation) {
+                const { moduleFilePath, moduleName,
+                    tokens: moduleTokens, tree: moduleTree } = module;
+                const moduleScriptData = await environment.readFile(moduleFilePath, { encoding: 'utf8' });
+
+                annotatedFiles.push({
+                    tokens: moduleTokens,
+                    tree: moduleTree,
+                    filePath: moduleFilePath,
+                    scriptData: moduleScriptData,
+                    moduleName,
+                });
+            }
         }
 
-        console.log('Annotations saved to ' + usePath);
+        for (const item of annotatedFiles) {
+            const { scriptData, tokens, tree, filePath, moduleName,
+                isMainFile = false } = item;
 
-        // Write the annotated version
-        writeFileSync(usePath, refdesVisitor.getOutput());
+            const tmpVisitor = new RefdesAnnotationVisitor(true,
+                scriptData, tokens, componentLinks);
+
+            await tmpVisitor.visit(tree);
+
+            let usePath = filePath;
+
+            // What path to save to for module files??
+            if (isMainFile && saveAnnotatedCopy === true) {
+                const dir = path.dirname(filePath);
+                const ext = path.extname(filePath);
+                const basename = path.basename(filePath, ext);
+                usePath = path.join(dir, `${basename}.annotated${ext}`);
+            } else if (isMainFile && typeof saveAnnotatedCopy === 'string') {
+                usePath = saveAnnotatedCopy as string;
+            }
+
+            environment.writeFileSync(
+                usePath, tmpVisitor.getOutput());
+
+            let display = 'Annotations'
+            if (moduleName) {
+                display += ` for module ${moduleName}`
+            }
+
+            console.log(`${display} saved to ${usePath}`);
+        }
     }
+}
+
+type AnnotatedFile = {
+    isMainFile?: boolean,
+    tokens: CommonTokenStream,
+    tree: ScriptContext,
+    filePath: string,
+    scriptData: string,
+    moduleName?: string,
 }
 
 export async function renderScript(scriptData: string, outputPath: string | null,
@@ -312,7 +365,9 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             scriptData: string,
             tree: ScriptContext,
             tokens:CommonTokenStream, 
-            componentLinks:Map<ParserRuleContext, ClassComponent> ) => void)[]
+            componentLinks:Map<ParserRuleContext, ClassComponent>,
+            importedModule: ImportedModule[],
+            environment: NodeScriptEnvironment) => void)[]
 
 ): Promise<RenderScriptReturn> {
 
@@ -359,10 +414,15 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         onErrorHandler, environment);
 
     visitor.onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string)
-        : Promise<{ hasError: boolean, hasParseError: boolean }> => {
+        : Promise<ImportFileResult> => {
 
-        const { hasError, hasParseError, throwError } = await parseFileWithVisitor(visitor, fileData);
+        visitor.enterFile(filePath);
+
+        const { hasError, hasParseError, throwError, tree, tokens } = 
+            await parseFileWithVisitor(visitor, fileData);
         
+        visitor.exitFile();
+
         // Raise exception if there are errors in imported files
         if (hasError || hasParseError) {
 
@@ -374,7 +434,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             throw new ParseError(`Error parsing imported file: ${filePath}${importErrorMsg}`, undefined, undefined, filePath);
         }
         
-        return { hasError, hasParseError };
+        return { hasError, hasParseError, tree, tokens};
     }
 
     visitor.log('reading file');
@@ -387,6 +447,11 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         if (!existsSync(dumpDirectory)) {
             mkdirSync(dumpDirectory);
         }
+    }
+
+    if (inputPath !== '') {
+        // Set input path as the first file.
+        visitor.enterFile(inputPath);
     }
 
     const { tree, parser, tokens,
@@ -405,8 +470,10 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     }
 
     const componentLinks = visitor.getComponentCtxLinks();
+    const importedModules = Array.from(visitor.getScope().modules.values());
     for (let i = 0; i < postAnnotationCallbacks.length; i++) {
-        await postAnnotationCallbacks[i](options, scriptData, tree, tokens, componentLinks);
+        await postAnnotationCallbacks[i](options, scriptData, tree, 
+            tokens, componentLinks, importedModules, environment);
     }
     
     if (dumpNets) {
