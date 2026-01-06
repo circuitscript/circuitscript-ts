@@ -92,6 +92,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         throw "Import file not implemented"
     }
 
+    // Stores refdes file annotation keys to the refdes output
+    refdesFileAnnotations = new Map<string, string>();
+
     constructor(silent = false, 
         onErrorHandler: OnErrorHandler | null = null,
         environment: NodeScriptEnvironment) {
@@ -266,12 +269,14 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         const ctxImportAnnotation = ctx.import_annotation_expr();
         if (ctxImportAnnotation) {
             const textValue = ctxImportAnnotation.getText().replace('#=', '');
+            const {importedModule} = importedFile;
             if (textValue === 'annotate') {
-                importedFile.importedModule.enableRefdesAnnotation = true;
+                importedModule.enableRefdesAnnotation = true;
+            } else if (textValue === 'annotate-external') {
+                importedModule.enableRefdesAnnotationFile = true;
             }
         }
     } 
-
 
     visitImport_simple = async (ctx: Import_simpleContext): Promise<void> => {
         await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
@@ -650,6 +655,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                             const importedModule = currentReference.rootValue as ImportedModule;
                             const importedModuleContext = importedModule.context;
 
+                            // When executing module function, update the
+                            // active filepath.
+                            this.enterFile(importedModule.moduleFilePath);
+
                             const newExecutor = this.handleEnterContext(
                                 this.getExecutor(),
                                 this.executionStack,
@@ -680,7 +689,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                                 this.executionStack,
                                 "",
                                 false
-                            )
+                            );
+
+                            this.exitFile();
                         }
 
                         if (isReference(functionResult)){
@@ -1214,6 +1225,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 importedModule.context.scope.modules.forEach((module, key) => {
                     scope.modules.set(key, module);
                 });
+
+                await this.checkModuleHasRefdesFile(filePathUsed);
             }
         } catch (err) {
             if (ctx != null) {
@@ -1250,6 +1263,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         this.importedFiles.push(newImportedFile);
 
         return newImportedFile;
+    }
+
+    async checkModuleHasRefdesFile(filePath: string): Promise<void>{
+        return;
+    }
+
+    getRefdesFileAnnotation(filePath:string, startLine:number, startColumn:number, 
+        stopLine:number, stopColumn:number):string {
+        return `${filePath}:${startLine}:${startColumn}:${stopLine}:${stopColumn}`
     }
 
     visitRoundedBracketsExpr = (ctx: RoundedBracketsExprContext):void => {

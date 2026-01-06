@@ -114,6 +114,10 @@ export class ClassComponent {
     // given an idea of the loop depth.
     placeHolderRefDes: string|null = null;
 
+    // If true, then during the annotation output stage, this will 
+    // force the refdes to be saved to the external file.
+    forceSaveRefdesAnnotation = false;
+
     // Store references to components in the context rules. If the context rule
     // is within a loop structure (while, for, etc.), the loop index is also stored.
     ctxReferences: CtxReference[] = [];

@@ -26,7 +26,7 @@ import { CircuitScriptParser, ScriptContext } from "./antlr/CircuitScriptParser.
 import { BaseVisitor, ImportFileResult, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
-import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
+import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM, RefdesFileSuffix } from "./globals.js";
 
 // Dynamic type definition for svgdom since it's ESM-only
 export type SVGWindow = any;
@@ -283,21 +283,32 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
             tokens,
             tree,
             filePath: inputPath,
+            outputType: RefdesOutputType.WithSource
         }];
 
         // For the imported modules, check if refdes annotation is enabled.
         for (const module of importedModules) {
+
+            let outputType = RefdesOutputType.None;
             if (module.enableRefdesAnnotation) {
+                outputType = RefdesOutputType.WithSource;
+            } else if (module.enableRefdesAnnotationFile) {
+                outputType = RefdesOutputType.CreateExternalFile;
+            }
+
+            if (outputType !== RefdesOutputType.None) {
                 const { moduleFilePath, moduleName,
                     tokens: moduleTokens, tree: moduleTree } = module;
-                const moduleScriptData = await environment.readFile(moduleFilePath, { encoding: 'utf8' });
-
+                const moduleScriptData = await environment.readFile(
+                    moduleFilePath, { encoding: 'utf8' });
+                
                 annotatedFiles.push({
                     tokens: moduleTokens,
                     tree: moduleTree,
                     filePath: moduleFilePath,
                     scriptData: moduleScriptData,
                     moduleName,
+                    outputType
                 });
             }
         }
@@ -315,18 +326,39 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
             // What path to save to for module files??
             if (isMainFile && saveAnnotatedCopy === true) {
-                const dir = path.dirname(filePath);
-                const ext = path.extname(filePath);
-                const basename = path.basename(filePath, ext);
-                usePath = path.join(dir, `${basename}.annotated${ext}`);
+                const dir = environment.dirname(filePath);
+                const ext = environment.extname(filePath);
+                const basename = environment.basename(filePath, ext);
+                usePath = environment.join(dir, `${basename}.annotated${ext}`);
             } else if (isMainFile && typeof saveAnnotatedCopy === 'string') {
                 usePath = saveAnnotatedCopy as string;
             }
 
-            environment.writeFileSync(
-                usePath, tmpVisitor.getOutput());
+            if (item.outputType === RefdesOutputType.WithSource){
+                environment.writeFileSync(
+                    usePath, tmpVisitor.getOutput());
+            } else if (item.outputType === RefdesOutputType.CreateExternalFile){
+                // If external file, then save to the save path, but with an extension.
+                const dir = environment.dirname(usePath);
+                const ext = environment.extname(usePath);
+                const basename = environment.basename(filePath, ext);
+                usePath = environment.join(dir, `${basename}${RefdesFileSuffix}`);
 
-            let display = 'Annotations'
+                const output = tmpVisitor.getOutputForExternalRefdesFile();
+                const jsonFile = {
+                    format: 'v1',
+                    module: moduleName,
+                    file: filePath,
+                    items: output,
+                }
+
+                environment.writeFileSync(
+                    usePath,
+                    JSON.stringify(jsonFile, null, 4)
+                )
+            }
+
+            let display = 'Refdes annotations'
             if (moduleName) {
                 display += ` for module ${moduleName}`
             }
@@ -343,6 +375,18 @@ type AnnotatedFile = {
     filePath: string,
     scriptData: string,
     moduleName?: string,
+
+    outputType: RefdesOutputType,
+}
+
+enum RefdesOutputType {
+    None = 'none',
+
+    // Comment refdes annotations are added to the target source file.
+    WithSource = 'with-source',
+
+    // External file is used to store the refdes annotations.
+    CreateExternalFile = 'create-external-file'
 }
 
 export async function renderScript(scriptData: string, outputPath: string | null,

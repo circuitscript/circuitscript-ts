@@ -29,7 +29,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     private sourceText: string;
     private tokenStream: CommonTokenStream;
-    private modifications: Map<ParserRuleContext, string> = new Map();
+    private modifications: Map<ParserRuleContext, RefdesModification> = new Map();
 
     resultText = '';
 
@@ -114,9 +114,12 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
         if (allRefdes.length > 0) {
             const originalText = this.getOriginalText(ctx);
-            const annotation = ' #= ' + allRefdes.join(',');
+            // const annotation = ' #= ' + allRefdes.join(',');
 
-            this.modifications.set(ctx, originalText + annotation);
+            this.modifications.set(ctx, {
+                originalText,
+                refdes: allRefdes,
+            });
         }
     }
 
@@ -151,15 +154,16 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             const alreadyHaveRefdesAnnotation = instance.assignedRefDes !== null ?
                 (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) !== -1) : false;
 
+            const { forceSaveRefdesAnnotation: forceSaveRefdes } = instance;
+
             // Only if the component does not have the refdes param, it means
             // that there was no explicit refdes assigned.
             //
             // If component already has refdes annotation in comment, then it
             // will have the refdes param set, so this part will be skipped.
-            if (!instance.hasParam('refdes') 
+            if (!alreadyHaveRefdesAnnotation && (forceSaveRefdes || (!instance.hasParam('refdes') 
                 && instance.placeHolderRefDes === null 
-                && instance.assignedRefDes
-                && !alreadyHaveRefdesAnnotation) {
+                && instance.assignedRefDes))) {
 
                 let useRefDes = instance.assignedRefDes;
 
@@ -202,15 +206,28 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         const refdes = this.generateRefdesAnnotationComment(ctx);
         if (refdes !== null) {
             const originalText = this.getOriginalText(ctx);
-            const annotation = ' #= ' + refdes;
 
             // Default behavior: append annotation at end
-            this.modifications.set(ctx, originalText + annotation);
+            this.modifications.set(ctx, {
+                originalText,
+                refdes: [refdes]
+            });
         }
     }
 
     getOutput(): string {
         return this.resultText;
+    }
+
+    getOutputForExternalRefdesFile(): string[] {
+        const result: string[] = [];
+        this.modifications.forEach((modification, ctx) => {
+            const { line: startLine, column: startColumn } = ctx.start!;
+            const { line: stopLine, column: stopColumn } = ctx.stop!;
+            const joinedRefdes = modification.refdes.join(',');
+            result.push(`${startLine}:${startColumn}:${stopLine}:${stopColumn}:${joinedRefdes}`);
+        });
+        return result;
     }
 
     /**
@@ -262,7 +279,9 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                     // Check if modified
                     if (this.modifications.has(ctx)) {
                         // Add the replacement text
-                        output.push(this.modifications.get(ctx)!);
+
+                        output.push(this.generateReplacementText(
+                            this.modifications.get(ctx)!));
                         // Mark all tokens in this context as processed
                         this.markTokensAsProcessed(ctx, processedTokens);
                         if (ctx.stop) {
@@ -349,4 +368,14 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             console.log(...message);
         }
     }
+
+    private generateReplacementText(modification: RefdesModification): string {
+        const joinedRefdes = modification.refdes.join(', ');
+        return `${modification.originalText} #= ${joinedRefdes}`;
+    }
+}
+
+type RefdesModification = {
+    originalText: string,
+    refdes: string[],
 }

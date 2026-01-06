@@ -283,6 +283,9 @@ export class ImportedModule {
 
     enableRefdesAnnotation = false;
 
+    // If true, generate the external refdes json file.
+    enableRefdesAnnotationFile = false;
+
     // These are needed for the refdes annotation stage.
     tree: ScriptContext;
     tokens: CommonTokenStream;

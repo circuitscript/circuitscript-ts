@@ -184,7 +184,8 @@ export class NodeScriptEnvironment {
         return this.prepareSVGEnvironmentInternal(this.getFontsPath());
     }
 
-    async readFile(path: PathOrFileDescriptor, options): Promise<string> {
+    async readFile(path: PathOrFileDescriptor, options?): Promise<string> {
+        options = options ?? {encoding: 'utf8'};
         return fs.promises.readFile(path, options);
     }
 
@@ -215,7 +216,7 @@ export class NodeScriptEnvironment {
 
     async exists(path: PathLike): Promise<boolean> {
         try {
-            fs.promises.access(path, fs.constants.F_OK);
+            await fs.promises.access(path, fs.constants.F_OK);
             return true;
         } catch (err){
             return false;
@@ -224,5 +225,21 @@ export class NodeScriptEnvironment {
 
     hashStringSHA256(value: string): string {
         return CryptoJs.SHA256(value).toString();
+    }
+
+    dirname(filePath: string): string {
+        return path.dirname(filePath);
+    }
+
+    extname(filePath: string): string {
+        return path.extname(filePath);
+    }
+
+    basename(filePath: string, ext: string): string {
+        return path.basename(filePath, ext);
+    }
+
+    join(...paths: string[]): string {
+        return path.join(...paths);
     }
 }

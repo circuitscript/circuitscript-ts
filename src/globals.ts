@@ -17,6 +17,8 @@ export const DoubleDelimiter1 = `${Delimiter1}${Delimiter1}`;
 // Root/starting namespace
 export const BaseNamespace = `${DoubleDelimiter1}.`;
 
+export const RefdesFileSuffix = '.refdes.json';
+
 export enum GlobalNames {
     __root = `${DoubleDelimiter1}root`,
     symbol = 'symbol',

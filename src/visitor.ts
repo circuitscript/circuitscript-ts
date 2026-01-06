@@ -80,7 +80,7 @@ import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, Compone
     ComponentPinNet, ComponentPinNetPair, DeclaredReference, 
     FunctionDefinedParameter, TypeProps, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
-    ModuleContainsKeyword, NoNetText, ParamKeys, ReferenceTypes, SymbolPinSide, 
+    ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
     WireAutoDirection } from './globals.js';
 import { ExecutionWarning, unwrapValue } from "./utils.js";
@@ -319,6 +319,28 @@ export class ParserVisitor extends BaseVisitor {
 
         if (ctxNotPathBlock){
             this.visit(ctxNotPathBlock);
+        }
+
+        // For each graph expression, check if there is a refdes file annotation.
+        if (ctx.start && ctx.stop) {
+            const startToken = ctx.start;
+            const stopToken = ctx.stop;
+
+            const annotationKey = this.getRefdesFileAnnotation(
+                this.getCurrentFile(),
+                startToken.line, startToken.column,
+                stopToken.line, stopToken.column
+            );
+
+            if (this.refdesFileAnnotations.has(annotationKey)) {
+                let refdesValue = this.refdesFileAnnotations.get(annotationKey)!;
+                
+                // Only use the first value for now.
+                refdesValue = refdesValue.split(',')[0];
+
+                // Force the refdes value to be saved during annotation.
+                this.setCurrentComponentRefdes(refdesValue, true);
+            }
         }
     }
 
@@ -1761,21 +1783,26 @@ export class ParserVisitor extends BaseVisitor {
         executor.popBreakContext();
     }
 
-    /** Applies refdes to components using the comment annotation syntax */
-    visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
-        const refdesID = ctx.ID().getText();
+    private setCurrentComponentRefdes(refdesValue: string, forceSave = false): void {
         const currentComponent = this.getScope().currentComponent;
 
         if (currentComponent !== null) {
-            if (refdesID.indexOf('_') === -1){
+            if (refdesValue.indexOf('_') === -1) {
                 // Normal refdes, not a placeholder refdes
-                currentComponent.setParam('refdes', refdesID);
+                currentComponent.setParam('refdes', refdesValue);
             } else {
                 // Store the placeholder refdes. In the annotation stage, this
                 // will be used.
-                currentComponent.placeHolderRefDes = refdesID;
+                currentComponent.placeHolderRefDes = refdesValue;
             }
+            currentComponent.forceSaveRefdesAnnotation = forceSave;
         }
+    }
+
+    /** Applies refdes to components using the comment annotation syntax */
+    visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
+        const refdesID = ctx.ID().getText();
+        this.setCurrentComponentRefdes(refdesID);
     }
     
     visitPart_set_expr = (ctx: Part_set_exprContext): void => {
@@ -1926,6 +1953,34 @@ export class ParserVisitor extends BaseVisitor {
             key,
             children,
         });
+    }
+
+    async checkModuleHasRefdesFile(filePath: string): Promise<void> {
+        // Checks if the given import has an refdes json file.
+        const dir = this.environment.dirname(filePath);
+        const ext = this.environment.extname(filePath);
+        const basename = this.environment.basename(filePath, ext);
+        const annotatedFilePath = this.environment.join(dir, `${basename}${RefdesFileSuffix}`);
+
+        const exists = await this.environment.exists(annotatedFilePath);
+        if (exists) {
+            // Load the file and extract the annotations
+            const fileData = await this.environment.readFile(annotatedFilePath);
+            const jsonData = JSON.parse(fileData);
+            const { file, items } = jsonData;
+
+            items.forEach(item => {
+                const parts = item.split(':');
+                const refdes = parts[4]; // Might contain multiple refdes
+                const key = this.getRefdesFileAnnotation(file,
+                    Number(parts[0]),
+                    Number(parts[1]),
+                    Number(parts[2]),
+                    Number(parts[3]));
+
+                this.refdesFileAnnotations.set(key, refdes);
+            });
+        }
     }
 
     private resolveDataExpr<T>(data_expr: Data_exprContext | null): T {
