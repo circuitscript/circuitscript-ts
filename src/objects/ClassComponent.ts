@@ -14,13 +14,102 @@ import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
 import { ExecutionContext } from '../execute.js';
 import { NumericValue } from './ParamDefinition.js';
-import { ParamKeys } from '../globals.js';
+import { DefaultComponentUnit, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from '../utils.js';
+
+export class ComponentUnit {
+    parent: ClassComponent;
+    unitId: string;
+
+    public get instanceName(): string {
+        return `${this.parent.instanceName},${this.unitId}`; 
+    }
+
+    /** Maximum number of pins available on this component.
+     * Pin number starts from 1. */
+    numPins: number;
+
+    /** Maps pin indexes to the pin definition */
+    pins: Map<PinId, PinDefinition> = new Map();
+
+    /** Stores the largest position for each side of the component. This is needed
+     * to calculate the component width and height. */
+    pinsMaxPositions: Map<string, number> = new Map();
+
+    /** This determines how pins are arranged on the component/symbol. */
+    arrangeProps: Map<string, PinId[]> | null = null;
+
+    /** Used to identify what graphic to draw for this symbol. This will also
+     * include pin placement as well. If `display` is defined, then it will
+     * overwrite `arrange`
+     */
+    displayProp: SymbolDrawingCommands | null = null;
+
+    /** User-defined width for the component */
+    widthProp: number | null = null;
+
+    /** User-defined height for component */
+    heightProp: number | null = null;
+
+    /** The angle that the graphical symbol is drawing with.
+    * For example, a horizontal resistor will have an angle of 0.
+    * A vertical capacitor will have an angle of 90. */
+    angleProp = 0;
+
+    /** User-defined value. If set to true, then the component's angle follows
+     * the connected wire orientation. For all components, this is the default. */
+    followWireOrientationProp = true;
+
+    // Stores pin IDs of pins that are not defined in the
+    // arrange property of the component.
+    _unplacedPins:PinId[] = [];
+
+    constructor(unitId: string, parent: ClassComponent) {
+        this.unitId = unitId;
+        this.parent = parent;
+    }
+
+    clone(): ComponentUnit {
+        const unit = new ComponentUnit(this.unitId, this.parent);
+
+        unit.numPins = this.numPins;
+        unit.angleProp = this.angleProp;
+        unit.followWireOrientationProp = this.followWireOrientationProp;
+        unit.widthProp = this.widthProp;
+        unit.heightProp = this.heightProp;
+
+        if (this.displayProp instanceof SymbolDrawingCommands) {
+            unit.displayProp = this.displayProp.clone();
+        }
+
+        if (this.arrangeProps !== null) {
+            unit.arrangeProps = new Map(this.arrangeProps);
+        }
+
+        for (const [key, value] of this.pins) {
+            unit.pins.set(key, value);
+        }
+
+        for (const [key, value] of this.pinsMaxPositions) {
+            unit.pinsMaxPositions.set(key, value);
+        }
+
+        unit._unplacedPins = [...this._unplacedPins];
+
+        return unit;
+    }
+}
 
 export class ClassComponent {
 
     /** A component has an instance_name to identify it. This is unique and
-     *  should not be changed. */
+     *  should not be changed. The instance name can be changed based on the
+     * context/scope that the component was first defined in. 
+     * 
+     * '.' - used to separate different contexts/namespaces
+     * ':' - used to denote clones/copies
+     * ',' - used to denote units
+     * */
     instanceName: string;
 
     /** Maximum number of pins available on this component.
@@ -45,6 +134,9 @@ export class ClassComponent {
      * to calculate the component width and height. */
     pinsMaxPositions: Map<string, number> = new Map();
 
+    /** Array of component units for multi-unit components */
+    units: ComponentUnit[] = [];
+
     // The cached values are used for easier comparison/equality check.
     _cachedPins: string;
     _cachedParams: string;
@@ -58,6 +150,7 @@ export class ClassComponent {
      *  the currentComponent */
     _pointLinkComponent?: ClassComponent;
 
+    /** @deprecated */
     // Stores pin IDs of pins that are not defined in the
     // arrange property of the component.
     _unplacedPins:PinId[] = [];
@@ -321,8 +414,38 @@ export class ClassComponent {
             component.pinsMaxPositions.set(key, value);
         }
 
+        // Clone the units as well
+        component.units = this.units.map(unit => {
+            const tmpUnit = unit.clone();
+            tmpUnit.parent = component;
+            return tmpUnit;
+        });
+
         component.refreshCache();
         return component;
+    }
+
+    // Component is composed of units.
+    getUnit(unitId = DefaultComponentUnit): ComponentUnit {
+        return this.units.find(item => {
+            return item.unitId === unitId;
+        })!;
+    }
+
+    addDefaultUnit(): void {
+        const tmpUnit = new ComponentUnit(DefaultComponentUnit, this);
+        tmpUnit.pins = this.pins;
+        tmpUnit.numPins = this.numPins;
+        tmpUnit.pinsMaxPositions = this.pinsMaxPositions;
+        tmpUnit.arrangeProps = this.arrangeProps;
+        tmpUnit.displayProp = this.displayProp;
+        tmpUnit.widthProp = this.widthProp;
+        tmpUnit.heightProp = this.heightProp;
+        tmpUnit.angleProp = this.angleProp;
+        tmpUnit.followWireOrientationProp = 
+            this.followWireOrientationProp;
+
+        this.units.push(tmpUnit);
     }
 }
 

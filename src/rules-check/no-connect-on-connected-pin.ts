@@ -43,8 +43,10 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
         ]);
 
         netComponentPins.set(net, items);
+
+        const unit = component.getUnit();
         pinMapping.set(makeComponentPinHash(
-            component.instanceName, pin), net);
+            unit.instanceName, pin), net);
     });
 
     allNodes.forEach(node => {
@@ -52,7 +54,7 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
         if (nodeInfo[0] === RenderItemType.Component) {
             const { component } = nodeInfo[1] as RenderComponent;
             if (component.hasParam('no_connect')) {
-                const instanceName = component.instanceName;
+                const instanceName = component.getUnit().instanceName;
                 const edges = graph.nodeEdges(node) as Edge[];
 
                 const otherNodes: string[] = [];

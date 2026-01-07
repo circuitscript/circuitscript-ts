@@ -12,7 +12,7 @@ import { SymbolCustom, SymbolDrawing, SymbolGraphic,
     SymbolText, PlaceHolderCommands, SymbolDrawingCommands,
     SimplePoint} from "./draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
+import { DefaultComponentUnit, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     NetGraphicsParams, 
     ParamKeys, WireAutoDirection } from './globals.js';
 import { Wire, WireSegment } from './objects/Wire.js';
@@ -859,7 +859,7 @@ export class LayoutEngine {
 
                 accum.push(item);
             } else if (item instanceof RenderComponent){
-                const { instanceName } = item.component;
+                const { instanceName } = item.component.getUnit();
 
                 // Only if not ignored already, then create the elements
                 // frame for the subgraph containing the instance.
@@ -1204,7 +1204,9 @@ export class LayoutEngine {
 
             [node1, node2].forEach(item => {
                 if (item instanceof RenderWire && item.isEndAutoLength()) {
-                    const [instance, pin] = item.getEndAuto();
+                    const [component, pin] = item.getEndAuto();
+                    const instance = component.getUnit();
+                    
                     const [, targetNode]: [string, RenderItem] =
                         graph.node(instance.instanceName);
 
@@ -1790,10 +1792,13 @@ export type MergedWire = {
     lines?: SimplePoint[][],
 }
 
+// TODO: change to RenderComponentUnit.
 export class RenderComponent extends RenderObject {
     // Holds the render information of the component (position)
 
     component: ClassComponent;
+    unitId = DefaultComponentUnit;
+
     symbol: SymbolGraphic;
 
     width: number;
@@ -1801,9 +1806,11 @@ export class RenderComponent extends RenderObject {
 
     displaySymbol: string | null = null;
 
-    constructor(component: ClassComponent, width: number, height: number) {
+    constructor(component: ClassComponent, unitId: string, width: number, height: number) {
         super();
         this.component = component;
+        this.unitId = unitId;
+
         this.width = width;
         this.height = height;
     }

@@ -21,7 +21,7 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
             // Find all edges connected to this node/component
             const edges = graph.nodeEdges(node) as Edge[];
 
-            const instanceName = component.instanceName;
+            const instanceName = component.getUnit().instanceName;
             const connectedPins: string[] = [];
 
             // Either side of the edge must be the component

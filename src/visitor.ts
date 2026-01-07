@@ -347,151 +347,8 @@ export class ParserVisitor extends BaseVisitor {
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
         const scope = this.getScope();
 
-        const definedPinIds:number[] = []; // Store pin IDs defined
-        const arrangedPinIds:number[] = []; //Store pin IDs defined in arrange props
-
-        const checkPinExistsAndNotDuplicated = (pinId: number, ctx:ParserRuleContext): void => {
-            if (definedPinIds.indexOf(pinId) === -1) {
-                this.warnings.push({
-                    message: `Invalid pin ${pinId}`, ctx
-                });
-            }
-
-            if (arrangedPinIds.indexOf(pinId) !== -1) {
-                this.warnings.push({
-                    message: `Pin ${pinId} specified more than once`,
-                    ctx,
-                });
-            }
-
-            arrangedPinIds.push(pinId);
-        }
-
-        // Either `arrange` or `display` can be specified, but not both.
-        let didDefineArrangeProp = false;
-        let didDefineDisplayProp = false;
-
         // Perform validation of the properties first to catch parsing errors.
-        scope.setOnPropertyHandler((path:PropertyTreeKey[], value: any, ctx: ParserRuleContext) => {
-            // const pathText = path.map(item => item[1]);
-
-            if (path.length === 1){
-                const [, keyName] = path[0];
-
-                switch(keyName){
-                    case 'type':
-                        this.validateString(value, ctx);
-                        break;
-                    case 'angle':
-                    case 'width':
-                    case 'height':
-                        this.validateNumeric(value, ctx);
-                        break;
-
-                    case 'display':
-                        if (didDefineArrangeProp){
-                            throw new RuntimeExecutionError("arrange property has already been defined", ctx);
-                        }
-                        didDefineDisplayProp = true;
-                        break;
-                    case 'arrange':
-                        if (didDefineDisplayProp){
-                            throw new RuntimeExecutionError("display property already defined", ctx);
-                        }
-                        didDefineArrangeProp = true;
-                        break;
-
-                    case 'pins':
-                        if (!(value instanceof Map)){
-                            this.validateNumeric(value, ctx);
-
-                            // If a number is defined for the pins property, then
-                            // it indicates a running sequence of pins from 1-n.
-                            // Populate the definedPinIds with this running
-                            // sequence.
-                            const numPins = (value as NumericValue).toNumber();
-                            for (let i = 0; i < numPins; i++) {
-                                definedPinIds.push(i + 1);
-                            }
-                        }
-                        break;
-                    case 'copy':
-                        if (value instanceof NumericValue){
-                            this.validateNumeric(value, ctx);
-                        } else if (typeof value === 'boolean'){
-                            this.validateBoolean(value, ctx);
-                        } else {
-                            // All other types
-                            throw new RuntimeExecutionError("Invalid value for 'copy' property", ctx);
-                        }
-                        break;
-                }
-            } else {
-                const [, keyName] = path[0] as [ParserRuleContext, string];
-                if (keyName === 'arrange') {
-                    const [sideKeyCtx, sideKeyName] = path[1] as [ParserRuleContext, string];
-                    if (ValidPinSides.indexOf(sideKeyName) === -1) {
-                        throw new RuntimeExecutionError(`Invalid side ${sideKeyName} in arrange`, sideKeyCtx);
-                    } else {
-                        if (path.length === 2 && value instanceof NumericValue){
-                            // Where only a single pin is defined in the arrange.<side> key,
-                            // then the only value will be a numeric value
-                            checkPinExistsAndNotDuplicated(value.toNumber(), ctx);
-
-                        } else if (path.length > 2 && path[2][0] === 'index'){
-                            // Checking each element
-                            if (Array.isArray(value)) {
-                                const goodBlank = value.length === 1 &&
-                                    value[0] instanceof NumericValue;
-                                if (!goodBlank) {
-                                    throw new RuntimeExecutionError(`Invalid blank specifier`, ctx);
-                                }
-                            } else {
-                                // Only allow numbers for now, next time will support ID names/strings
-                                if (!(value instanceof NumericValue) && !(typeof value === 'string')){
-                                    throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx);
-                                } else {
-                                    let useValue:any;
-                                    if (value instanceof NumericValue){
-                                        useValue = value.toNumber();
-                                    } else if (typeof value === 'string'){
-                                        useValue = value;
-                                    }
-                                    value && checkPinExistsAndNotDuplicated(useValue, ctx);
-                                }
-                            }
-                        }
-                    }
-                } else if (keyName === 'params'){
-                    const [, subKeyName] = path[1] as [ParserRuleContext, string];
-                    switch(subKeyName) {
-                        case 'mpn':
-                        case 'refdes':
-                        case 'footprint':
-                            this.validateString(value, ctx);
-                            break;
-                        case 'place':
-                            this.validateBoolean(value, ctx);
-                            break;
-                        
-                    }
-                } else if (keyName === 'pins'){
-                    if (path.length === 2){
-
-                        const idName = path[1][1];  // The property key token
-                        definedPinIds.push(idName);
-
-                        if(value.length === 2){
-                            // Pin type is defined as the first item 
-                            const [pinType, ] = value;
-                            if (pinType instanceof UndeclaredReference){
-                                throw new RuntimeExecutionError(`Invalid pin type: ${pinType.reference.name}`, ctx);
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        scope.setOnPropertyHandler(this.createComponentPropertyValidator());
 
         scope.enterContext(ctx);
 
@@ -513,8 +370,8 @@ export class ParserVisitor extends BaseVisitor {
             this.parseCreateComponentParams(propParams);
 
         if (params.length > 0) {
-            // Always append the first value
-            // to the generated name.
+            // Append the first value to the generated name to add a bit more
+            // description/context.
             const firstParam = params[0];
             const paramValue = firstParam.paramValue;
             let appendValue = paramValue.toString();
@@ -526,31 +383,20 @@ export class ParserVisitor extends BaseVisitor {
             instanceName += `${Delimiter1}${appendValue}`;
         }
 
-        const arrangeProp = properties.has('arrange') ?
-            properties.get('arrange') : null;
+        const typeProp = properties.get('type') ?? null;
+        const copy = properties.get('copy') ?? false;
 
-        const displayProp = properties.has('display') ?
-            (properties.get('display') as SymbolDrawingCommands): null;
-
-        const typeProp = properties.has('type') ?
-            properties.get('type') : null;
-
-        const copy = properties.has('copy') ?
-            properties.get('copy') : false;
-
-        const width = properties.has('width') ?
-            properties.get('width') : null;
-
-        const height = properties.has('height') ?
-            properties.get('height') : null;
+        // These properties might apply per-unit.
+        const arrangeProp = properties.get('arrange') ?? null;
+        const displayProp = (properties.get('display') as SymbolDrawingCommands) ?? null;
+        const width = properties.get('width') ?? null;
+        const height = properties.get('height') ?? null;
 
         // This angle refers to the orientation that the graphic of the 
         // component is draw with.
-        const angle = properties.has(ParamKeys.angle) ?
-            properties.get(ParamKeys.angle) : null;
+        const angle = properties.get(ParamKeys.angle) ?? null;
 
-        const followWireOrientation = properties.has('followWireOrientation') ?
-            properties.get('followWireOrientation') : true;
+        const followWireOrientation = properties.get('followWireOrientation') ?? true;
 
         let pins: PinDefinition[] = [];
 
@@ -598,6 +444,154 @@ export class ParserVisitor extends BaseVisitor {
 
         } catch (error) {
             this.throwWithContext(ctx, (error as BaseError).message)
+        }
+    }
+
+    // Creates a validator for the component property definition.
+    private createComponentPropertyValidator(): ((path: PropertyTreeKey[], value: any, ctx: ParserRuleContext) => void) {
+        const definedPinIds: number[] = []; // Store pin IDs defined
+        const arrangedPinIds: number[] = []; //Store pin IDs defined in arrange props
+
+        // Either `arrange` or `display` can be specified, but not both.
+        let didDefineArrangeProp = false;
+        let didDefineDisplayProp = false;
+
+        const checkPinExistsAndNotDuplicated = (pinId: number, ctx: ParserRuleContext): void => {
+            if (definedPinIds.indexOf(pinId) === -1) {
+                this.warnings.push({
+                    message: `Invalid pin ${pinId}`, ctx
+                });
+            }
+
+            if (arrangedPinIds.indexOf(pinId) !== -1) {
+                this.warnings.push({
+                    message: `Pin ${pinId} specified more than once`,
+                    ctx,
+                });
+            }
+
+            arrangedPinIds.push(pinId);
+        }
+
+        return (path: PropertyTreeKey[], value: any, ctx: ParserRuleContext) => {
+            // const pathText = path.map(item => item[1]);
+
+            if (path.length === 1) {
+                const [, keyName] = path[0];
+
+                switch (keyName) {
+                    case 'type':
+                        this.validateString(value, ctx);
+                        break;
+                    case 'angle':
+                    case 'width':
+                    case 'height':
+                        this.validateNumeric(value, ctx);
+                        break;
+
+                    case 'display':
+                        if (didDefineArrangeProp) {
+                            throw new RuntimeExecutionError("arrange property has already been defined", ctx);
+                        }
+                        didDefineDisplayProp = true;
+                        break;
+                    case 'arrange':
+                        if (didDefineDisplayProp) {
+                            throw new RuntimeExecutionError("display property already defined", ctx);
+                        }
+                        didDefineArrangeProp = true;
+                        break;
+
+                    case 'pins':
+                        if (!(value instanceof Map)) {
+                            this.validateNumeric(value, ctx);
+
+                            // If a number is defined for the pins property, then
+                            // it indicates a running sequence of pins from 1-n.
+                            // Populate the definedPinIds with this running
+                            // sequence.
+                            const numPins = (value as NumericValue).toNumber();
+                            for (let i = 0; i < numPins; i++) {
+                                definedPinIds.push(i + 1);
+                            }
+                        }
+                        break;
+                    case 'copy':
+                        if (value instanceof NumericValue) {
+                            this.validateNumeric(value, ctx);
+                        } else if (typeof value === 'boolean') {
+                            this.validateBoolean(value, ctx);
+                        } else {
+                            // All other types
+                            throw new RuntimeExecutionError("Invalid value for 'copy' property", ctx);
+                        }
+                        break;
+                }
+            } else {
+                const [, keyName] = path[0] as [ParserRuleContext, string];
+                if (keyName === 'arrange') {
+                    const [sideKeyCtx, sideKeyName] = path[1] as [ParserRuleContext, string];
+                    if (ValidPinSides.indexOf(sideKeyName) === -1) {
+                        throw new RuntimeExecutionError(`Invalid side ${sideKeyName} in arrange`, sideKeyCtx);
+                    } else {
+                        if (path.length === 2 && value instanceof NumericValue) {
+                            // Where only a single pin is defined in the arrange.<side> key,
+                            // then the only value will be a numeric value
+                            checkPinExistsAndNotDuplicated(value.toNumber(), ctx);
+
+                        } else if (path.length > 2 && path[2][0] === 'index') {
+                            // Checking each element
+                            if (Array.isArray(value)) {
+                                const goodBlank = value.length === 1 &&
+                                    value[0] instanceof NumericValue;
+                                if (!goodBlank) {
+                                    throw new RuntimeExecutionError(`Invalid blank specifier`, ctx);
+                                }
+                            } else {
+                                // Only allow numbers for now, next time will support ID names/strings
+                                if (!(value instanceof NumericValue) && !(typeof value === 'string')) {
+                                    throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx);
+                                } else {
+                                    let useValue: any;
+                                    if (value instanceof NumericValue) {
+                                        useValue = value.toNumber();
+                                    } else if (typeof value === 'string') {
+                                        useValue = value;
+                                    }
+                                    value && checkPinExistsAndNotDuplicated(useValue, ctx);
+                                }
+                            }
+                        }
+                    }
+                } else if (keyName === 'params') {
+                    const [, subKeyName] = path[1] as [ParserRuleContext, string];
+                    switch (subKeyName) {
+                        case 'mpn':
+                        case 'refdes':
+                        case 'footprint':
+                            this.validateString(value, ctx);
+                            break;
+                        case 'place':
+                            this.validateBoolean(value, ctx);
+                            break;
+
+                    }
+                } else if (keyName === 'pins') {
+                    if (path.length === 2) {
+
+                        const idName = path[1][1];  // The property key token
+                        definedPinIds.push(idName);
+
+                        if (value.length === 2) {
+                            // Pin type is defined as the first item 
+                            const [pinType,] = value;
+                            if (pinType instanceof UndeclaredReference) {
+                                throw new RuntimeExecutionError(`Invalid pin type: ${pinType.reference.name}`, ctx);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

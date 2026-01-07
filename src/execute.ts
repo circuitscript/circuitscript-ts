@@ -151,6 +151,7 @@ export class ExecutionContext {
             GlobalNames.__root, 1);
         componentRoot.typeProp = ComponentTypes.net;
         componentRoot.displayProp = this.getPointSymbol();
+        componentRoot.addDefaultUnit();
 
         this.scope.instances.set(GlobalNames.__root, componentRoot);
 
@@ -408,6 +409,7 @@ export class ExecutionContext {
             instanceName,
             '[' + pinsOutput.join(', ') + ']',
         );
+        component.addDefaultUnit();
 
         return component;
     }
@@ -1533,6 +1535,7 @@ export class ExecutionContext {
         }
 
         componentPoint._pointLinkComponent = usePointLinkComponent;
+        componentPoint.addDefaultUnit();
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });

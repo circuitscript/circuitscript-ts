@@ -1,11 +1,11 @@
 import { Edge, Graph } from "@dagrejs/graphlib";
 import { SymbolGraphic, SymbolDrawing, SymbolPlaceholder, SymbolCustomModule, 
     SymbolCustom, SymbolPinDefintion } from "./draw_symbols.js";
-import { ComponentTypes } from "./globals.js";
+import { ComponentTypes, DefaultComponentUnit } from "./globals.js";
 import { milsToMM } from "./helpers.js";
 import { RenderFrame, RenderComponent, applyComponentParamsToSymbol, 
     RenderWire } from "./layout.js";
-import { ClassComponent } from "./objects/ClassComponent.js";
+import { ClassComponent, ComponentUnit } from "./objects/ClassComponent.js";
 import { SequenceItem, SequenceAction, FrameAction, SequenceActionWire } from "./objects/ExecutionScope.js";
 import { Frame, FixedFrameIds, FrameParamKeys } from "./objects/Frame.js";
 import { Net } from "./objects/Net.js";
@@ -72,10 +72,12 @@ export class NetGraph {
                 case SequenceAction.At: {
                     this.print(...sequenceStep);
 
+                    // The pin number can be used to resolve the unitId.
                     const [, component, pin] =
                         sequenceStep as [string, ClassComponent, number];
 
-                    const tmpInstanceName = component.instanceName;
+                    const targetUnit = component.getUnit();
+                    const tmpInstanceName = targetUnit.instanceName;
 
                     // If 'at' action, then previous node/pin should be reset.
                     if (action === SequenceAction.At){
@@ -86,7 +88,7 @@ export class NetGraph {
                     if (!graph.hasNode(tmpInstanceName)) {
                         this.print('create instance', tmpInstanceName);
 
-                        const { displayProp = null } = component;
+                        const { displayProp = null } = targetUnit;
 
                         let tmpSymbol: SymbolGraphic;
 
@@ -95,17 +97,19 @@ export class NetGraph {
                             tmpSymbol.drawing.logger = this.logger;
 
                         } else {
-                            const symbolPinDefinitions = generateLayoutPinDefinition(component);
+                            const symbolPinDefinitions = generateLayoutPinDefinition(targetUnit);
 
                             if (component.typeProp === ComponentTypes.module) {
                                 tmpSymbol = new SymbolCustomModule(symbolPinDefinitions,
-                                    component.pinsMaxPositions);
+                                    targetUnit.pinsMaxPositions);
                             } else {
                                 tmpSymbol = new SymbolCustom(symbolPinDefinitions,
-                                    component.pinsMaxPositions);
+                                    targetUnit.pinsMaxPositions);
                             }
                         }
 
+                        // TODO: change this to take the params from the
+                        // component unit.
                         applyComponentParamsToSymbol(component, tmpSymbol);
 
                         // Draw symbol in memory to determine the size/bounds.
@@ -113,7 +117,9 @@ export class NetGraph {
 
                         const { width: useWidth, height: useHeight } = tmpSymbol.size();
 
-                        tmpComponent = new RenderComponent(component, useWidth, useHeight);
+                        const unitId = DefaultComponentUnit; // Assume default for now.
+                        tmpComponent = new RenderComponent(component, unitId, 
+                            useWidth, useHeight);
                         tmpComponent.symbol = tmpSymbol;
 
                         // Record the sequence number (index of the array) to determine priority
@@ -158,7 +164,9 @@ export class NetGraph {
                         if (prevNodeType === RenderItemType.Component) {
                             // Find the net of the wire
                             const matchingItem = nets.find(([comp, pin]) => {
-                                return comp.instanceName === previousNode
+                                // Assume first unit
+                                const unit = comp.getUnit();
+                                return unit.instanceName === previousNode
                                     && pin.equals(previousPin);
                             });
 
@@ -508,12 +516,12 @@ export function getWireName(wireId: number): string {
  * @param component
  * @returns 
  */
-export function generateLayoutPinDefinition(component: ClassComponent): SymbolPinDefintion[] {
-    const pins = component.pins;
+export function generateLayoutPinDefinition(componentUnit: ComponentUnit): SymbolPinDefintion[] {
+    const pins = componentUnit.pins;
     const symbolPinDefinitions: SymbolPinDefintion[] = [];
     const existingPinIds = Array.from(pins.keys());
 
-    const arrangeProps = component.arrangeProps ?? [];
+    const arrangeProps = componentUnit.arrangeProps ?? [];
     const addedPins: PinId[] = [];
     for (const [key, items] of arrangeProps) {
 
@@ -548,7 +556,7 @@ export function generateLayoutPinDefinition(component: ClassComponent): SymbolPi
     });
 
     if (unplacedPins.length > 0) {
-        component._unplacedPins = unplacedPins;
+        componentUnit._unplacedPins = unplacedPins;
         console.warn("Warning: There are unplaced pins: " + unplacedPins);
     }
 

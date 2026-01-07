@@ -191,3 +191,5 @@ export const RenderFlags = {
 export const SymbolValidatorContext = '_sym';
 
 export const TrailerArrayIndex = 'index';
+
+export const DefaultComponentUnit = '__default';
