@@ -12,8 +12,9 @@ import { Net } from './Net.js';
 import { NumericValue, PercentageValue } from './ParamDefinition.js';
 import { ReferenceTypes } from '../globals.js';
 import { RuntimeExecutionError } from '../utils.js';
-import { PinId } from './PinDefinition.js';
+import { PinDefinition, PinId } from './PinDefinition.js';
 import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
+import { SymbolDrawingCommands } from 'src/draw_symbols.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -321,4 +322,16 @@ export enum ImportFunctionHandling {
     // should be in the current namespace.
     AllMergeIntoNamespace = 'all-merge-into-namespace',
     SpecificMergeIntoNamespace = 'specific-merge-into-namespace',
+}
+
+export type ComponentUnitDefinition = {
+    width: number | null,
+    height: number | null,
+    angle: number | null,
+    followWireOrientation: boolean | null,
+
+    pins: PinDefinition[],
+
+    display: SymbolDrawingCommands | null,
+    arrange: any | null,
 }

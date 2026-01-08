@@ -110,7 +110,7 @@ export class NetGraph {
 
                         // TODO: change this to take the params from the
                         // component unit.
-                        applyComponentParamsToSymbol(component, tmpSymbol);
+                        applyComponentParamsToSymbol(targetUnit, tmpSymbol);
 
                         // Draw symbol in memory to determine the size/bounds.
                         tmpSymbol.refreshDrawing();

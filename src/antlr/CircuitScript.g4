@@ -237,7 +237,7 @@ graphic_expr: command=(ID | Pin) ':'? (parameters | '(' parameters ')' | nested_
               | For ID (',' ID)* 'in' data_expr ':' graphic_expressions_block                      # GraphicForExpr
               ;
 
-property_expr: property_key_expr ':' property_value_expr;
+property_expr: property_key_expr extra=STRING_VALUE* ':' property_value_expr;
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;
 property_value_expr: nested_properties_inner        # nested_properties
                     | data_expr (',' data_expr)*    # single_line_property

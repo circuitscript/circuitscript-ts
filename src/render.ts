@@ -75,13 +75,15 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger): Sv
 
             if (frameComponent) {
 
-                if (frameComponent.displayProp === null) {
+                const frameComponentUnit = frameComponent.getUnit();
+
+                if (frameComponentUnit.displayProp === null) {
                     throw 'Invalid graphic object for sheet frame';
                 }
 
                 // First rect in the component is the paper size, 2nd rect
                 // is the drawable area size
-                const frameRects = ExtractDrawingRects(frameComponent.displayProp) ?? [];
+                const frameRects = ExtractDrawingRects(frameComponentUnit.displayProp) ?? [];
 
                 let originalWidthMM = numeric(0);
                 let originalHeightMM = numeric(0);
@@ -512,8 +514,12 @@ function drawGrid(group: G,
 function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
     const frameParams = frame.frame.parameters;
     if (frameParams.has(FrameParamKeys.SheetType)) {
-        const frameComponent = frameParams.get(FrameParamKeys.SheetType);
-        const { displayProp = null } = frameComponent ?? {}
+        const frameComponent: ClassComponent = frameParams.get(FrameParamKeys.SheetType);
+
+        // Get default unit in frame.
+        const frameComponentUnit = frameComponent.getUnit();
+
+        const { displayProp = null } = frameComponentUnit ?? {}
 
         if (displayProp) {
             const sheetFrameGroup = frameGroup.group();

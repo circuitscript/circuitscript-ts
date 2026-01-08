@@ -25,12 +25,19 @@ export class ComponentUnit {
         return `${this.parent.instanceName},${this.unitId}`; 
     }
 
+    /** Component unit parameters in a map. These parameters may be defined by 
+     * user code. 
+     * */
+    parameters: Map<string, number | string | NumericValue> = new Map();
+
     /** Maximum number of pins available on this component.
      * Pin number starts from 1. */
     numPins: number;
 
     /** Maps pin indexes to the pin definition */
     pins: Map<PinId, PinDefinition> = new Map();
+
+    pinsFlat: PinDefinition[] = [];
 
     /** Stores the largest position for each side of the component. This is needed
      * to calculate the component width and height. */
@@ -60,6 +67,17 @@ export class ComponentUnit {
      * the connected wire orientation. For all components, this is the default. */
     followWireOrientationProp = true;
 
+    /** The angle/orientation of the wire that is connected */
+    wireOrientationAngle = 0;
+
+    /** If true, the wire orientation was used to set the angle
+    * of the component. If flip or angle modifiers are set, those values
+    * will have priority over the wire orientation angle. */
+    useWireOrientationAngle = true;
+
+    /** If true, the wire orientation angle was already set before. */
+    didSetWireOrientationAngle = false;
+
     // Stores pin IDs of pins that are not defined in the
     // arrange property of the component.
     _unplacedPins:PinId[] = [];
@@ -74,7 +92,7 @@ export class ComponentUnit {
 
         unit.numPins = this.numPins;
         unit.angleProp = this.angleProp;
-        unit.followWireOrientationProp = this.followWireOrientationProp;
+        
         unit.widthProp = this.widthProp;
         unit.heightProp = this.heightProp;
 
@@ -90,14 +108,84 @@ export class ComponentUnit {
             unit.pins.set(key, value);
         }
 
+        unit.pinsFlat = [...this.pinsFlat];
+
         for (const [key, value] of this.pinsMaxPositions) {
             unit.pinsMaxPositions.set(key, value);
         }
 
         unit._unplacedPins = [...this._unplacedPins];
 
+        unit.followWireOrientationProp = this.followWireOrientationProp;
+        unit.wireOrientationAngle = this.wireOrientationAngle;
+        unit.useWireOrientationAngle = this.useWireOrientationAngle;
+        unit.didSetWireOrientationAngle = this.didSetWireOrientationAngle;
+
         return unit;
     }
+
+    setParam(key: string, value: number | string | NumericValue): void {
+        this.parameters.set(key, value);
+    }
+
+    isEqual(other: ComponentUnit): boolean {
+        if (this === other) return true;
+
+        if (this.unitId !== other.unitId) return false;
+        if (this.numPins !== other.numPins) return false;
+        if (this.angleProp !== other.angleProp) return false;
+        if (this.widthProp !== other.widthProp) return false;
+        if (this.heightProp !== other.heightProp) return false;
+        if (this.followWireOrientationProp !== other.followWireOrientationProp) return false;
+        if (this.wireOrientationAngle !== other.wireOrientationAngle) return false;
+        if (this.useWireOrientationAngle !== other.useWireOrientationAngle) return false;
+        if (this.didSetWireOrientationAngle !== other.didSetWireOrientationAngle) return false;
+
+        // Compare displayProp
+        if (this.displayProp === null && other.displayProp !== null) return false;
+        if (this.displayProp !== null && other.displayProp === null) return false;
+        if (this.displayProp !== null && other.displayProp !== null && !this.displayProp.eq(other.displayProp)) return false;
+
+        // Compare arrangeProps
+        if (this.arrangeProps === null && other.arrangeProps !== null) return false;
+        if (this.arrangeProps !== null && other.arrangeProps === null) return false;
+        if (this.arrangeProps !== null && other.arrangeProps !== null) {
+            if (this.arrangeProps.size !== other.arrangeProps.size) return false;
+            for (const [key, value] of this.arrangeProps) {
+                const otherValue = other.arrangeProps.get(key);
+                if (!otherValue || value.length !== otherValue.length) return false;
+                for (let i = 0; i < value.length; i++) {
+                    if (!value[i].equals(otherValue[i])) return false;
+                }
+            }
+        }
+
+        // Compare parameters
+        if (this.parameters.size !== other.parameters.size) return false;
+        for (const [key, value] of this.parameters) {
+            if (!other.parameters.has(key) || other.parameters.get(key) !== value) return false;
+        }
+
+        // Compare pins
+        if (this.pins.size !== other.pins.size) return false;
+        for (const [key, value] of this.pins) {
+            let found = false;
+            for (const [otherKey, otherValue] of other.pins) {
+                if (key.equals(otherKey) && value === otherValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+
+        if (this.parent !== other.parent) {
+            return false;
+        }
+
+        return true;
+    }
+
 }
 
 export class ClassComponent {
@@ -155,21 +243,6 @@ export class ClassComponent {
     // arrange property of the component.
     _unplacedPins:PinId[] = [];
 
-    /** This determines how pins are arranged on the component/symbol. */
-    arrangeProps: Map<string, PinId[]> | null = null;
-
-    /** Used to identify what graphic to draw for this symbol. This will also
-     * include pin placement as well. If `display` is defined, then it will 
-     * overwrite `arrange`
-     */
-    displayProp: SymbolDrawingCommands | null = null;
-
-    /** User-defined width for the component */
-    widthProp: number | null = null;
-    
-    /** User-defined height for component */
-    heightProp: number | null = null;
-
     /** User-defined type prop for the component. The type is important to 
      * provide additionality functionality to the component.
     */
@@ -178,26 +251,6 @@ export class ClassComponent {
     /** If true, then this component is copied upon reference. 
      * Used for nets, supply, gnd, labels */
     copyProp = false;
-
-    /** The angle that the graphical symbol is drawing with.
-    * For example, a horizontal resistor will have an angle of 0.
-    * A vertical capacitor will have an angle of 90. */
-    angleProp = 0;
-
-    /** User-defined value. If set to true, then the component's angle follows 
-     * the connected wire orientation. For all components, this is the default. */
-    followWireOrientationProp = true;
-
-    /** The angle/orientation of the wire that is connected */
-    wireOrientationAngle = 0;
-
-    /** If true, the wire orientation was used to set the angle
-    * of the component. If flip or angle modifiers are set, those values
-    * will have priority over the wire orientation angle. */
-    useWireOrientationAngle = true;
-
-    /** If true, the wire orientation angle was already set before. */
-    didSetWireOrientationAngle = false;
 
     /** Assigned refdes that is set for the component during the annotation step. */
     assignedRefDes: string | null = null;
@@ -360,21 +413,29 @@ export class ClassComponent {
     }
 
     isEqual(other: ClassComponent): boolean {
+        if (this === other) return true;
+
         // Use manual comparison as this is faster than lodash.
         // Make sure that all important props are added.
-        return this.instanceName === other.instanceName 
-            && this.numPins === other.numPins
-            && this._copyID === other._copyID
-            && this.arrangeProps === other.arrangeProps
-            && (
-                (this.displayProp === null && other.displayProp === null)
-                ||
-                (this.displayProp !== null && other.displayProp !== null && this.displayProp.eq(other.displayProp))
-            ) 
-            && this.widthProp === other.widthProp
-            && this.typeProp === other.typeProp
-            && this._cachedPins === other._cachedPins
-            && this._cachedParams === other._cachedParams;
+        if (this.instanceName !== other.instanceName) return false;
+        if (this._copyID !== other._copyID) return false;
+
+        if (this.typeProp !== other.typeProp) return false;
+        if (this._cachedPins !== other._cachedPins) return false;
+        if (this._cachedParams !== other._cachedParams) return false;
+
+        // Check if units are the same
+        for (let i = 0; i < this.units.length; i++) {
+            if (other.units[i] === undefined) {
+                return false;
+            }
+
+            if (!other.units[i].isEqual(this.units[i])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     clone(): ClassComponent {
@@ -383,20 +444,7 @@ export class ClassComponent {
             this.instanceName, this.numPins);
 
         component._copyID = this._copyID;
-        component.arrangeProps = this.arrangeProps;
-        component.widthProp = this.widthProp;
         component.typeProp = this.typeProp;
-
-        component.angleProp = this.angleProp;
-        component.followWireOrientationProp = this.followWireOrientationProp;
-        component.useWireOrientationAngle = this.useWireOrientationAngle;
-
-        if (this.displayProp instanceof SymbolDrawingCommands) {
-            // Do a proper clone, otherwise, cloned objects will share the 
-            // same drawing object.
-            component.displayProp =
-                (this.displayProp as SymbolDrawingCommands).clone();
-        }
 
         for (const [key, value] of this.parameters) {
             if (key === ParamKeys.flipX || key === ParamKeys.flipY || key === ParamKeys.angle) {
@@ -425,25 +473,26 @@ export class ClassComponent {
         return component;
     }
 
-    // Component is composed of units.
-    getUnit(unitId = DefaultComponentUnit): ComponentUnit {
-        return this.units.find(item => {
-            return item.unitId === unitId;
-        })!;
+    // Component is composed of units and should have at least one.
+    getUnit(unitId: string | null = null): ComponentUnit {
+        if (unitId === null) {
+            return this.units[0];
+        } else {
+            return this.units.find(item => {
+                return item.unitId === unitId;
+            })!;
+        }
     }
 
-    addDefaultUnit(): void {
+    addDefaultUnit(displayProp: SymbolDrawingCommands): void {
         const tmpUnit = new ComponentUnit(DefaultComponentUnit, this);
         tmpUnit.pins = this.pins;
         tmpUnit.numPins = this.numPins;
-        tmpUnit.pinsMaxPositions = this.pinsMaxPositions;
-        tmpUnit.arrangeProps = this.arrangeProps;
-        tmpUnit.displayProp = this.displayProp;
-        tmpUnit.widthProp = this.widthProp;
-        tmpUnit.heightProp = this.heightProp;
-        tmpUnit.angleProp = this.angleProp;
-        tmpUnit.followWireOrientationProp = 
-            this.followWireOrientationProp;
+        tmpUnit.pinsMaxPositions = new Map();
+
+        tmpUnit.displayProp = displayProp;
+        tmpUnit.angleProp = 0;
+        tmpUnit.followWireOrientationProp = true;
 
         this.units.push(tmpUnit);
     }

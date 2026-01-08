@@ -77,7 +77,7 @@ import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
-    ComponentPinNet, ComponentPinNetPair, DeclaredReference, 
+    ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     FunctionDefinedParameter, TypeProps, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
@@ -386,27 +386,46 @@ export class ParserVisitor extends BaseVisitor {
         const typeProp = properties.get('type') ?? null;
         const copy = properties.get('copy') ?? false;
 
-        // These properties might apply per-unit.
-        const arrangeProp = properties.get('arrange') ?? null;
-        const displayProp = (properties.get('display') as SymbolDrawingCommands) ?? null;
-        const width = properties.get('width') ?? null;
-        const height = properties.get('height') ?? null;
+        const unitProperties = this.extractComponentUnitProperties(properties, 
+            typeProp);
 
-        // This angle refers to the orientation that the graphic of the 
-        // component is draw with.
-        const angle = properties.get(ParamKeys.angle) ?? null;
+        const props = {
+            type: typeProp,
+            copy,
 
-        const followWireOrientation = properties.get('followWireOrientation') ?? true;
+            units: unitProperties
+        };
+
+        try {
+            const createdComponent = this.getExecutor().createComponent(instanceName,
+                [], params, props);
+                
+            this.setResult(ctx, createdComponent);
+
+            createdComponent._creationIndex = this.componentCreationIndex++;
+
+        } catch (error) {
+            this.throwWithContext(ctx, (error as BaseError).message)
+        }
+    }
+
+    private getComponentUnitDefinition(props: Map<string, unknown>, typeProp: string | null = null): ComponentUnitDefinition {
+        const width = props.get('width') ?? null;
+        const height = props.get('height') ?? null;
+        const followWireOrientation = props.get('followWireOrientation') ?? true;
+
+        const arrange = props.get('arrange') ?? null;
+        const display = (props.get('display') as SymbolDrawingCommands) ?? null;
 
         let pins: PinDefinition[] = [];
 
-        if (displayProp !== null && arrangeProp === null
-            && typeProp !== TypeProps.Graphic) {
+        // Assume not a graphic component.
+        if (display !== null && arrange === null && typeProp !== TypeProps.Graphic) {
             // If the display prop is set, then extract the pin information 
             // from the graphic commands.
             // `pins` prop will be ignored.
 
-            const drawCommands = displayProp!.getCommands();
+            const drawCommands = display!.getCommands();
             drawCommands.forEach(command => {
                 const [commandValue,] = command;
                 if (commandValue === PlaceHolderCommands.vpin
@@ -425,26 +444,37 @@ export class ParserVisitor extends BaseVisitor {
                 }
             });
         } else {
-            pins = this.parseCreateComponentPins(properties.get('pins'));
+            pins = this.parseCreateComponentPins(props.get('pins')!);
         }
 
-        const props = {
-            arrange: arrangeProp, 
-            display: displayProp, 
-            type: typeProp, width, height, copy,
-            angle, followWireOrientation
+        const angle = props.get(ParamKeys.angle) ?? null;
+
+        return {
+            width, 
+            height,
+            angle,
+            followWireOrientation,
+
+            display, arrange,
+            pins,
+        }
+    }
+
+    private extractComponentUnitProperties(properties: Map<string, any>, typeProp: string | null = null): [string, ComponentUnitDefinition][] {
+        const unitsProperties: [string, any][] = [];
+        for (const [key, value] of properties) {
+            if (key.split(':')[0] === 'unit') {
+                unitsProperties.push([key,
+                    this.getComponentUnitDefinition(value, typeProp)]);
+            }
         }
 
-        try {
-            const createdComponent = this.getExecutor().createComponent(instanceName,
-                pins, params, props);
-            this.setResult(ctx, createdComponent);
-
-            createdComponent._creationIndex = this.componentCreationIndex++;
-
-        } catch (error) {
-            this.throwWithContext(ctx, (error as BaseError).message)
+        if (unitsProperties.length === 0) {
+            unitsProperties.push(['unit',
+                this.getComponentUnitDefinition(properties, typeProp)]);
         }
+
+        return unitsProperties;
     }
 
     // Creates a validator for the component property definition.
@@ -801,28 +831,27 @@ export class ParserVisitor extends BaseVisitor {
             modulePorts, nameToPinId
         );
 
-        const width = properties.has('width') ?
-            properties.get('width') : null;
+        const unitProperties = this.extractComponentUnitProperties(properties, 
+            TypeProps.Module);
 
-        const height = properties.has('height') ?
-            properties.get('height') : null;
+        const firstUnitDef = unitProperties[0][1];
+        firstUnitDef.pins = tmpPorts;
+        firstUnitDef.arrange = arrange;
 
         const blankParams: ParamDefinition[] = [];
         const props = {
-            arrange, width, height,
-
             /** Should behave like a normal component (resistor, cap, etc.), 
              * do not duplicate the module if referenced. */
             copy: false,
 
-            followWireOrientation: true,
+            units: unitProperties,
         };
 
         const moduleInstanceName = this.getExecutor().getUniqueInstanceName();
         const moduleComponent = this.getExecutor().createComponent(
             moduleInstanceName, tmpPorts, blankParams, props, true) as ModuleComponent;
 
-        moduleComponent.typeProp = ComponentTypes.module;
+        moduleComponent.typeProp = TypeProps.Module;
 
         const ctxPropertyBlock = ctx.property_block_expr();
         if (ctxPropertyBlock) {
@@ -856,6 +885,11 @@ export class ParserVisitor extends BaseVisitor {
     visitProperty_expr = (ctx: Property_exprContext): void => {
         const ctxKey = ctx.property_key_expr();
         const ctxValue = ctx.property_value_expr();
+
+        const extraValue = ctx._extra;
+        if (extraValue) {
+            console.log('extra', extraValue.text);
+        }
 
         const scope = this.getScope();
 
@@ -977,7 +1011,9 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         if (dataResult && dataResult instanceof ClassComponent) {
-            // get the modifiers for the component
+            // Modifiers will only affect the default component unit.
+            const defaultUnit = dataResult.getUnit();
+
             const modifiers = ctx.component_modifier_expr();
             modifiers.forEach(modifier => {
                 const modifierText = modifier.ID(0)!.getText();
@@ -996,25 +1032,26 @@ export class ParserVisitor extends BaseVisitor {
                 if (modifierText === ParamKeys.flip) {
                     const flipValue = result as string;
                     if (flipValue.indexOf('x') !== -1) {
-                        dataResult.setParam(ParamKeys.flipX, 1);
+                        defaultUnit.setParam(ParamKeys.flipX, 1);
                         shouldIgnoreWireOrientation = true;
                     }
 
                     if (flipValue.indexOf('y') !== -1) {
-                        dataResult.setParam(ParamKeys.flipY, 1);
+                        defaultUnit.setParam(ParamKeys.flipY, 1);
                         shouldIgnoreWireOrientation = true;
                     }
                 } else if (modifierText === ParamKeys.angle) {
-                    dataResult.setParam(ParamKeys.angle, result as NumericValue);
+                    defaultUnit.setParam(ParamKeys.angle, result as NumericValue);
                     shouldIgnoreWireOrientation = true;
                 } else if (modifierText === 'anchor') {
+                    // Do not apply to the component unit, but to component itself.
                     dataResult.setParam('anchor', result as string);
                 }
 
                 if (shouldIgnoreWireOrientation) {
                     // User defined modifiers will overwrite the
                     // wire orientation
-                    dataResult.useWireOrientationAngle = false;
+                    defaultUnit.useWireOrientationAngle = false;
                 }
             });
         }
@@ -2410,11 +2447,23 @@ export class ParserVisitor extends BaseVisitor {
     private getPropertyExprList(items: Property_exprContext[]): Map<string, unknown> {
         const properties = new Map<string, unknown>();
 
+        // For duplicated keys, track a counter value with the key.
+        const keyCounter = new Map<string, number>();
+
         items.forEach((item) => {
             const result: Map<string, unknown> = this.visitResult(item); // Map should be returned
             
             for (const [key, value] of result) {
-                properties.set(key, value);
+                let useKey = key;
+
+                const counterValue = keyCounter.get(key) ?? 0;
+                keyCounter.set(key, counterValue + 1);
+
+                if (counterValue > 0){
+                    useKey = key + ':' + counterValue;
+                }
+
+                properties.set(useKey, value);
             }
         });
 

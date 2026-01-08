@@ -10,13 +10,14 @@ import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalNames,
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
 import { ExecutionWarning } from "./utils.js";
-import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
+import { ClassComponent, ComponentUnit, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
 import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
 import { PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
 import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
+    ComponentUnitDefinition, 
     DeclaredReference, 
     Direction,
     ImportFunctionHandling,
@@ -150,8 +151,7 @@ export class ExecutionContext {
         const componentRoot = ClassComponent.simple(
             GlobalNames.__root, 1);
         componentRoot.typeProp = ComponentTypes.net;
-        componentRoot.displayProp = this.getPointSymbol();
-        componentRoot.addDefaultUnit();
+        componentRoot.addDefaultUnit(this.getPointSymbol());
 
         this.scope.instances.set(GlobalNames.__root, componentRoot);
 
@@ -271,10 +271,14 @@ export class ExecutionContext {
             copy: boolean,
             angle?: NumericValue,
             followWireOrientation: boolean,
+
+            units: [string, ComponentUnitDefinition][],
         },
         isModule = false
     ): ClassComponent {
         const className = isModule ? ModuleComponent : ClassComponent;
+        pins = this.extractPinsFromUnits(props.units);
+
         const component: ClassComponent = new className(
             instanceName,
             pins.length
@@ -284,61 +288,9 @@ export class ExecutionContext {
             component.pins.set(pin.id, pin);
         });
 
-        component.displayProp = props.display ?? null;
-        component.widthProp = props.width ?? null;
-        component.heightProp = props.height ?? null;
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
 
-        let useAngle = null;
-        if (props.angle) {
-            // Make sure it is within 0 to 360
-            useAngle = props.angle.toNumber() % 360;
-            if (useAngle < 0) {
-                useAngle += 360;
-            }
-        }
-
-        if (props.display === null && props.arrange === null) {
-            // If display is not defined and arrange is not defined, then
-            // automatically populate the arrange prop with a predefined pin
-            // arrangement.
-
-            const tmpArrangeLeft: PinId[] = [];
-            const tmpArrangeRight: PinId[] = [];
-
-            // TODO: pins should be sorted!
-            pins.forEach((pin, index) => {
-                const useArray = (index % 2 === 0) ? tmpArrangeLeft : tmpArrangeRight;
-                useArray.push(pin.id);
-            });
-
-            const arrangeProp = new Map<string, PinId[]>([
-                [SymbolPinSide.Left, tmpArrangeLeft],
-                [SymbolPinSide.Right, tmpArrangeRight]
-            ]);
-
-            props.arrange = arrangeProp;
-        }
-
-        // Remove duplicates from component.arrangeProps
-        if (props.arrange !== null){
-            component.arrangeProps = this.removeArrangePropDuplicates(props.arrange);
-            const arrangePropPins = this.getArrangePropPins(component.arrangeProps);
-
-            pins.forEach(pin => {
-                if (arrangePropPins.find(id => id.equals(pin.id)) === undefined){
-                    // Pin not found in the arrange props, show a warning
-                    this.logWarning(`Pin ${pin.id} is not specified in arrange property`);
-                }
-            });
-            
-        } else {
-            component.arrangeProps = null;
-        }
-        
-        component.angleProp = useAngle ?? 0;
-        component.followWireOrientationProp = props.followWireOrientation;
 
         const paramsMap = new Map<string, any>();
         params.forEach((param) => {
@@ -377,26 +329,6 @@ export class ExecutionContext {
             this.scope.setNet(component, defaultPin, tmpNet);
             this.log('set net', netName, 'component', component, defaultPin);
         }
-
-        // Determine the side for each pin and update the
-        // pin definition
-        const { pins: pinSides, maxPositions } = 
-            getPortSide(component.pins, component.arrangeProps);
-        
-        component.pinsMaxPositions = maxPositions;
-
-        const pinIdKeys = Array.from(component.pins.keys());
-
-        pinSides.forEach(({ pinId, side, position }) => {
-            const matchedPinId = pinIdKeys.find(id => id.equals(pinId));
-            if (matchedPinId) {
-                const tmpPin = component.pins.get(matchedPinId)!;
-                tmpPin.side = side;
-                tmpPin.position = position;
-            } else {
-                throw 'Not found!';
-            }
-        });
         
         this.scope.instances.set(instanceName, component);
 
@@ -409,9 +341,118 @@ export class ExecutionContext {
             instanceName,
             '[' + pinsOutput.join(', ') + ']',
         );
-        component.addDefaultUnit();
+
+        component.units = this.generateUnits(props.units, component);
 
         return component;
+    }
+
+    private extractPinsFromUnits(units: [key: string, ComponentUnitDefinition][]): PinDefinition[] {
+        const pins: PinDefinition[] = [];
+        units.forEach(([, definition]) => {
+            pins.push(...definition.pins);
+        });
+        return pins;
+    }
+
+    private generateUnits(units:[key:string, ComponentUnitDefinition][], parent: ClassComponent): ComponentUnit[] {
+        return units.map(([key, unitDef]) => {
+
+            unitDef = {...unitDef}; // Generate a copy
+
+            let useAngle = null;
+            const { pins } = unitDef;
+
+            const pinsMap = new Map<PinId, PinDefinition>();
+            pins.forEach(pin => {
+                pinsMap.set(pin.id, pin);
+            });
+
+            if (unitDef.angle) {
+                // Make sure it is within 0 to 360
+                useAngle = unitDef.angle.toNumber() % 360;
+                if (useAngle < 0) {
+                    useAngle += 360;
+                }
+            }
+
+            if (unitDef.display === null && unitDef.arrange === null) {
+                // If display is not defined and arrange is not defined, then
+                // automatically populate the arrange prop with a predefined pin
+                // arrangement.
+
+                const tmpArrangeLeft: PinId[] = [];
+                const tmpArrangeRight: PinId[] = [];
+
+                // TODO: pins should be sorted!
+                pins.forEach((pin, index) => {
+                    const useArray = (index % 2 === 0) ? tmpArrangeLeft : tmpArrangeRight;
+                    useArray.push(pin.id);
+                });
+
+                const arrangeProp = new Map<string, PinId[]>([
+                    [SymbolPinSide.Left, tmpArrangeLeft],
+                    [SymbolPinSide.Right, tmpArrangeRight]
+                ]);
+
+                unitDef.arrange = arrangeProp;
+            }
+
+            // Remove duplicates from component.arrangeProps
+            if (unitDef.arrange !== null){
+                unitDef.arrange = this.removeArrangePropDuplicates(unitDef.arrange);
+                const arrangePropPins = this.getArrangePropPins(unitDef.arrange);
+
+                pins.forEach(pin => {
+                    if (arrangePropPins.find(id => id.equals(pin.id)) === undefined){
+                        // Pin not found in the arrange props, show a warning
+                        this.logWarning(`Pin ${pin.id} is not specified in arrange property`);
+                    }
+                });
+                
+            } else {
+                unitDef.arrange = null;
+            }
+            
+            unitDef.angle = useAngle ?? 0;
+
+            // Determine the side for each pin and update the
+            // pin definition
+            const {pins: pinSides, maxPositions} = 
+                getPortSide(pinsMap, unitDef.arrange);
+
+            const pinIdKeys = Array.from(pinsMap.keys());
+
+            pinSides.forEach(({ pinId, side, position }) => {
+                const matchedPinId = pinIdKeys.find(id => id.equals(pinId));
+                if (matchedPinId) {
+                    const tmpPin = pinsMap.get(matchedPinId)!;
+                    tmpPin.side = side;
+                    tmpPin.position = position;
+                } else {
+                    throw 'Not found!';
+                }
+            });
+
+            const componentUnit = new ComponentUnit(key, parent);
+
+            componentUnit.widthProp = unitDef.width;
+            componentUnit.heightProp = unitDef.height;
+            componentUnit.angleProp = unitDef.angle;
+            componentUnit.followWireOrientationProp = unitDef.followWireOrientation;
+
+            componentUnit.pins = pinsMap;
+            componentUnit.pinsFlat = pins;
+            
+            componentUnit.numPins = unitDef.pins.length;
+
+            componentUnit.pinsMaxPositions = maxPositions;
+
+            componentUnit.displayProp = unitDef.display;
+            componentUnit.arrangeProps = unitDef.arrange;
+
+            return componentUnit;
+        });
     }
 
     private removeArrangePropDuplicates(arrangeProp: Map<string, PinId[]>)
@@ -1507,11 +1548,13 @@ export class ExecutionContext {
             this.scope.currentPin, tmp
         );
 
-        if (!this.scope.currentComponent.didSetWireOrientationAngle) {
+        const currentUnit = this.scope.currentComponent.getUnit();
+
+        if (!currentUnit.didSetWireOrientationAngle) {
             this.applyComponentAngleFromWire(
                 this.scope.currentComponent,
                 this.scope.currentPin!, true);
-            this.scope.currentComponent.didSetWireOrientationAngle = true;
+            currentUnit.didSetWireOrientationAngle = true;
         }
         
         return newWire;
@@ -1524,7 +1567,6 @@ export class ExecutionContext {
 
         const useName = userDefined ? 'point.' + pointId : pointId;
         const componentPoint = ClassComponent.simple(useName, 1);
-        componentPoint.displayProp = this.getPointSymbol(useName);
         componentPoint.typeProp = ComponentTypes.net;
 
         let usePointLinkComponent = null;
@@ -1535,7 +1577,7 @@ export class ExecutionContext {
         }
 
         componentPoint._pointLinkComponent = usePointLinkComponent;
-        componentPoint.addDefaultUnit();
+        componentPoint.addDefaultUnit(this.getPointSymbol(useName));
 
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });
@@ -1628,6 +1670,17 @@ export class ExecutionContext {
                 const component = this.scope.instances.get(idName)!;
                 component.setParam(paramName, value);
 
+                const unitModifiers = [
+                    ParamKeys.angle,
+                    ParamKeys.flip,
+                    ParamKeys.flipX,
+                    ParamKeys.flipY,
+                ];
+
+                if (unitModifiers.indexOf(paramName) !== -1){
+                    component.getUnit().setParam(paramName, value);
+                }
+
             } else if (this.scope.variables.has(idName)) {
                 throw "Not implemented yet!";
             } else {
@@ -1642,10 +1695,12 @@ export class ExecutionContext {
         // is set to true, then use the first segment and also flip the
         // wire direction that is used.
 
+        const targetUnit = component.getUnit()!;
+
         if (this.componentAngleFollowsWire 
-            && component.followWireOrientationProp 
-            && component.useWireOrientationAngle
-            && !component.didSetWireOrientationAngle
+            && targetUnit.followWireOrientationProp 
+            && targetUnit.useWireOrientationAngle
+            && !targetUnit.didSetWireOrientationAngle
             && this.scope.currentWireId !== -1) {
 
             const currentWire = this.scope.wires[this.scope.currentWireId];
@@ -1655,14 +1710,14 @@ export class ExecutionContext {
                 useSegment = currentWire.path[0];
             }
 
-            // Graphical symbol of component is drawn to determine the 
+            // Graphical symbol of component unit is drawn to determine the 
             // pin positions.
-            const pinPositions = CalculatePinPositions(component);
+            const pinPositions = CalculatePinPositions(targetUnit);
 
             if (pinPositions.has(pin)){
                 const connectedPinPos = pinPositions.get(pin)!;
 
-                // This is the final angle that the component will have
+                // This is the final angle that the component unit will have
                 let targetAngle: number | null = null;
 
                 let useDirection = useSegment.direction;
@@ -1701,8 +1756,8 @@ export class ExecutionContext {
                     return;
                 }
             
-                this.log('set component angle from wire, target angle:', targetAngle,
-                    ', component angle:', component.angleProp, 'pin angle:',
+                this.log('set component unit angle from wire, target angle:', targetAngle,
+                    ', component unit angle:', targetUnit.angleProp, 'pin angle:',
                     connectedPinPos.angle);
 
                 let useAngle = (targetAngle - connectedPinPos.angle.toNumber()) % 360;
@@ -1712,20 +1767,20 @@ export class ExecutionContext {
 
                 if (useAngle === 90) {
                     // Just rotate the component
-                    component.setParam(ParamKeys.angle, numeric(90));
+                    targetUnit.setParam(ParamKeys.angle, numeric(90));
                 } else if (useAngle === 180) {
-                    if (component.angleProp === 0 || component.angleProp === 180) {
-                        component.setParam(ParamKeys.flipX, 1);
-                    } else if (component.angleProp === 90 || component.angleProp === 270) {
-                        component.setParam(ParamKeys.flipY, 1);
+                    if (targetUnit.angleProp === 0 || targetUnit.angleProp === 180) {
+                        targetUnit.setParam(ParamKeys.flipX, 1);
+                    } else if (targetUnit.angleProp === 90 || targetUnit.angleProp === 270) {
+                        targetUnit.setParam(ParamKeys.flipY, 1);
                     }
 
                 } else if (useAngle === 270) {
-                    component.setParam(ParamKeys.angle, numeric(270));
+                    targetUnit.setParam(ParamKeys.angle, numeric(270));
                 }
 
-                component.wireOrientationAngle = useAngle;
-                component.didSetWireOrientationAngle = true;     
+                targetUnit.wireOrientationAngle = useAngle;
+                targetUnit.didSetWireOrientationAngle = true;     
             }
         }
     }

@@ -93,7 +93,8 @@ export function getBoundsSize(bounds: BoundBox): {width: number, height: number}
 }
 
 export function getPortType(component: ClassComponent): string | null {
-    const drawingCommands = component.displayProp as SymbolDrawingCommands;
+    const targetUnit = component.getUnit();
+    const drawingCommands = targetUnit.displayProp as SymbolDrawingCommands;
     let foundPinType: string | null = null;
 
     const commands = drawingCommands.getCommands();

@@ -11,7 +11,7 @@ import { SymbolCustom, SymbolDrawing, SymbolGraphic,
     SymbolPlaceholder, 
     SymbolText, PlaceHolderCommands, SymbolDrawingCommands,
     SimplePoint} from "./draw_symbols.js";
-import { ClassComponent } from "./objects/ClassComponent.js";
+import { ClassComponent, ComponentUnit } from "./objects/ClassComponent.js";
 import { DefaultComponentUnit, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     NetGraphicsParams, 
     ParamKeys, WireAutoDirection } from './globals.js';
@@ -473,7 +473,8 @@ export class LayoutEngine {
             const frameComponent = frameParams.get
                 (FrameParamKeys.SheetType) as ClassComponent;
 
-            const frameDrawing = (frameComponent.displayProp as SymbolDrawingCommands);
+            const frameComponentUnit = frameComponent.getUnit();
+            const frameDrawing = (frameComponentUnit.displayProp as SymbolDrawingCommands);
 
             // Variables may be accessible by the drawing itself
             frameDrawing.variables = combineMaps(frameComponent.parameters,
@@ -1434,36 +1435,51 @@ function getNeighbours(graph: Graph, nodeIds: string[]): [from: string, to: stri
 type RenderItem = RenderComponent | RenderWire | RenderText;
 
 
-export function applyComponentParamsToSymbol(component: ClassComponent,
+export function applyComponentParamsToSymbol(componentUnit: ComponentUnit,
     symbol: SymbolGraphic): void {
 
-    const { widthProp = null, heightProp = null } = component;
-        
-    const newMap = new Map(component.parameters);
-    if (!newMap.has('refdes')) {
-        newMap.set('refdes', component.assignedRefDes ?? "?");
-    }
+    const { widthProp = null, heightProp = null } = componentUnit;
+    
+    const newMap = new Map(componentUnit.parameters);
 
+    const ignoreParams = [
+        ParamKeys.angle,
+        ParamKeys.flip,
+        ParamKeys.flipX,
+        ParamKeys.flipY,
+    ];
+
+    const parentParams = componentUnit.parent.parameters;
+    parentParams.forEach((value, key) => {
+        // copy all params except for certain params;
+        if (ignoreParams.indexOf(key) === -1){
+            newMap.set(key, value);
+        }
+    });
+
+    if (!newMap.has('refdes')) {
+        newMap.set('refdes', componentUnit.parent.assignedRefDes ?? "?");
+    }
     symbol.drawing.variables = newMap;
 
-    if (component.parameters.has(ParamKeys.angle)) {
+    if (componentUnit.parameters.has(ParamKeys.angle)) {
         const value = (
-            component.parameters.get(ParamKeys.angle) as NumericValue
+            componentUnit.parameters.get(ParamKeys.angle) as NumericValue
         ).toNumber();
 
         symbol.angle = value;
     }
 
-    if (component.parameters.has(ParamKeys.flipX)) {
+    if (componentUnit.parameters.has(ParamKeys.flipX)) {
         // either 1 or 0
         symbol.flipX =
-            component.parameters.get(ParamKeys.flipX) as number;
+            componentUnit.parameters.get(ParamKeys.flipX) as number;
     }
 
-    if (component.parameters.has(ParamKeys.flipY)) {
+    if (componentUnit.parameters.has(ParamKeys.flipY)) {
         // either 1 or 0
         symbol.flipY =
-            component.parameters.get(ParamKeys.flipY) as number;
+            componentUnit.parameters.get(ParamKeys.flipY) as number;
     }
     
     if (symbol instanceof SymbolCustom) {
@@ -1975,33 +1991,33 @@ export type SheetFrame = {
     mergedWires: MergedWire[],
 }
 
-export function CalculatePinPositions(component: ClassComponent)
+export function CalculatePinPositions(unit: ComponentUnit)
     : Map<number, { x: NumericValue; y: NumericValue; angle: NumericValue; }> {
 
     const pinPositionMapping = new Map<number, { x: NumericValue; y: NumericValue; angle: NumericValue; }>();
 
     let tmpSymbol: SymbolGraphic;
-    if (component.displayProp !== null
-        && component.displayProp instanceof SymbolDrawing) {
+    if (unit.displayProp !== null
+        && unit.displayProp instanceof SymbolDrawing) {
 
-        tmpSymbol = new SymbolPlaceholder(component.displayProp);
+        tmpSymbol = new SymbolPlaceholder(unit.displayProp);
 
     } else {
-        const symbolPinDefinitions = generateLayoutPinDefinition(component);
+        const symbolPinDefinitions = generateLayoutPinDefinition(unit);
         tmpSymbol = new SymbolCustom(symbolPinDefinitions, 
-            component.pinsMaxPositions);
+            unit.pinsMaxPositions);
     }
 
     // Force a render of the symbol
-    applyComponentParamsToSymbol(component, tmpSymbol);
+    applyComponentParamsToSymbol(unit, tmpSymbol);
     tmpSymbol.refreshDrawing();
 
-    const pins = component.pins;
+    const pins = unit.pins;
 
     pins.forEach((value: PinDefinition, key: number) => {
         // If the component pin is unplaced (not in arrange prop), then do
         // not determine it's position.
-        if (component._unplacedPins.indexOf(key) === -1){
+        if (unit._unplacedPins.indexOf(key) === -1){
             pinPositionMapping.set(key, tmpSymbol.pinPosition(key));
         }
     });
