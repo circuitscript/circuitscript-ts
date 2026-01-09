@@ -1,6 +1,11 @@
 def cmp():
     return create component:
-        pins: 5
+        pins: 8
+        arrange:
+            top: 1,2
+            right: 3,4
+            bottom: 5,6
+            left: 7,8
 
 at cmp()
 

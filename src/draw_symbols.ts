@@ -215,7 +215,7 @@ export abstract class SymbolGraphic {
     protected drawLabels(group: G): void {
         const labels = this.drawing.getLabels();
 
-        labels.forEach(label => {
+        for (const label of labels) {
             const tmpLabel = label as Textbox;
 
             const {
@@ -243,38 +243,45 @@ export abstract class SymbolGraphic {
                 useDominantBaseline = this.flipDominantBaseline(vanchor);
             }
 
-            switch (useAnchor) {
-                case HorizontalAlign.Left:
-                    anchorStyle = (this.flipX === 0) 
-                        ? HorizontalAlignProp.Start : HorizontalAlignProp.End;
-                    break;
+            /** 
+             *    Direction       | flipX                 | flipY      
+             *    Horizontal      | if 1, flip anchor     | if 1, flip baseline
+             *    Vertical        | if 1, flip baseline   | if 1, flip anchor
+             */
 
-                case HorizontalAlign.Middle:
-                    anchorStyle = HorizontalAlignProp.Middle;
-                    break;
+            const isHorizontalLabel = labelAngle === 0 || labelAngle === 180;
+            const isVerticalLabel = labelAngle === 90 || labelAngle === -90;
 
-                case HorizontalAlign.Right:
-                    anchorStyle = (this.flipX === 0) 
+            if (useAnchor === HorizontalAlign.Middle) {
+                anchorStyle = HorizontalAlignProp.Middle;
+            } else if (useAnchor === HorizontalAlign.Left) {
+                anchorStyle = HorizontalAlignProp.Start
+            } else if (useAnchor === HorizontalAlign.Right) {
+                anchorStyle = HorizontalAlignProp.End;
+            }
+
+            if (useDominantBaseline === VerticalAlign.Middle) {
+                dominantBaseline = VerticalAlignProp.Central;
+            } else if (useDominantBaseline === VerticalAlign.Top) {
+                dominantBaseline = VerticalAlignProp.Hanging;
+            } else if (useDominantBaseline === VerticalAlign.Bottom) {
+                dominantBaseline = VerticalAlignProp.TextTop;
+            }
+
+            // If middle aligned, don't do anything
+            if (anchorStyle !== HorizontalAlignProp.Middle && 
+                ((isHorizontalLabel && this.flipX === 1) || (isVerticalLabel && this.flipY === 1))){
+                anchorStyle = (anchorStyle === HorizontalAlignProp.Start) 
                         ? HorizontalAlignProp.End : HorizontalAlignProp.Start;
-                    break;
             }
 
-            switch (useDominantBaseline) {
-                case VerticalAlign.Top:
-                    dominantBaseline = (this.flipY === 0) 
-                        ? VerticalAlignProp.Hanging : VerticalAlignProp.TextTop;
-                    break;
-
-                case VerticalAlign.Middle:
-                    dominantBaseline = VerticalAlignProp.Central;
-                    break;
-
-                case VerticalAlign.Bottom:
-                    dominantBaseline = (this.flipY === 0) 
-                        ? VerticalAlignProp.TextTop : VerticalAlignProp.Hanging;
-                    break;
+            // If middle aligned, don't do anything.
+            if (dominantBaseline !== VerticalAlignProp.Central && 
+                ((isHorizontalLabel && this.flipY === 1) || (isVerticalLabel && this.flipX === 1))){
+                dominantBaseline = (dominantBaseline === VerticalAlignProp.Hanging)
+                    ? VerticalAlignProp.TextTop : VerticalAlignProp.Hanging;
             }
-
+            
             const position = tmpLabel.getLabelPosition();
 
             if (this.flipX !== 0) {
@@ -305,7 +312,7 @@ export abstract class SymbolGraphic {
             translateY = roundValue(translateY);
 
             // The port type will add some padding to the component
-            const {portType = null} = tmpLabel.style;
+            const { portType = null } = tmpLabel.style;
 
             if (portType !== null) {
                 const { x: boundsX, y: boundsY }
@@ -314,7 +321,7 @@ export abstract class SymbolGraphic {
                 const paddingHorizontal = PortPaddingHorizontal;
                 const paddingVert = PortPaddingVertical;
 
-                const boundsWidth = tmpLabel.textMeasurementBounds.width 
+                const boundsWidth = tmpLabel.textMeasurementBounds.width
                                         + paddingHorizontal * 2;
                 const boundsHeight = tmpLabel.textMeasurementBounds.height 
                                         + paddingVert * 2;
@@ -458,7 +465,7 @@ export abstract class SymbolGraphic {
                         -originSize/2)
                     .fill('green');
             }
-        });
+        }
     }
 
     flipTextAnchor(value: HorizontalAlign): HorizontalAlign {
@@ -1012,15 +1019,15 @@ export class SymbolCustom extends SymbolGraphic {
 
         const tmpPinSpacing = this.pinSpacing.toNumber();
 
-        leftPins.forEach(pin => {
+        for (const pin of leftPins) {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(pin.pinId, leftPinStart.sub(this.pinLength), pinY, 
+            drawing.addPinMM(pin.pinId, leftPinStart.sub(this.pinLength), pinY,
                 leftPinStart, pinY, defaultLineColor);
 
-            drawing.addLabel(leftPinStart.add(milsToMM(20)), 
+            drawing.addLabel(leftPinStart.add(milsToMM(20)),
                 pinY, pin.text, {
-                
+
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Middle,
@@ -1028,18 +1035,18 @@ export class SymbolCustom extends SymbolGraphic {
             });
 
             // Add the pin number
-            drawing.addLabel(leftPinStart.sub(milsToMM(10)) , pinY.sub(milsToMM(10)), pin.pinId.toString(), {
+            drawing.addLabel(leftPinStart.sub(milsToMM(10)), pinY.sub(milsToMM(10)), pin.pinId.toString(), {
                 fontSize: numeric(CustomSymbolPinIdSize),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor
             });
-        });
+        }
 
-        rightPins.forEach(pin => {
+        for (const pin of rightPins) {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(pin.pinId, rightPinStart.add(this.pinLength), pinY, 
+            drawing.addPinMM(pin.pinId, rightPinStart.add(this.pinLength), pinY,
                 rightPinStart, pinY, defaultLineColor);
 
             drawing.addLabel(rightPinStart.sub(milsToMM(20)), pinY, pin.text, {
@@ -1050,19 +1057,19 @@ export class SymbolCustom extends SymbolGraphic {
             });
 
             // Add the pin number
-            drawing.addLabel(rightPinStart.add(milsToMM(10)) , pinY.sub(milsToMM(10)), pin.pinId.toString(), {
+            drawing.addLabel(rightPinStart.add(milsToMM(10)), pinY.sub(milsToMM(10)), pin.pinId.toString(), {
                 fontSize: numeric(CustomSymbolPinIdSize),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor
             });
-        });
+        }
 
-        topPins.forEach(pin => {
+        for (const pin of topPins) {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
 
-            drawing.addPinMM(pin.pinId, 
+            drawing.addPinMM(pin.pinId,
                 pinX, topPinStart.sub(this.pinLength),
                 pinX, topPinStart, defaultLineColor);
 
@@ -1082,12 +1089,12 @@ export class SymbolCustom extends SymbolGraphic {
                 textColor: defaultLineColor,
                 angle: numeric(-90),
             });
-        });
+        }
 
-        bottomPins.forEach(pin => {
+        for (const pin of bottomPins) {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(pin.pinId, 
+            drawing.addPinMM(pin.pinId,
                 pinX, bottomPinStart.add(this.pinLength),
                 pinX, bottomPinStart, defaultLineColor);
 
@@ -1107,7 +1114,7 @@ export class SymbolCustom extends SymbolGraphic {
                 textColor: defaultLineColor,
                 angle: numeric(-90)
             });
-        });
+        } 
 
         const instanceName = drawing.variables.get('refdes');
         instanceName && drawing.addLabel(

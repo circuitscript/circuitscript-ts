@@ -2,7 +2,7 @@ import fs from 'fs';
 import { renderScript } from './helpers.js';
 import { NodeScriptEnvironment } from "./environment.js";
 
-const mainDir = './__tests__/renderData/';
+const mainDir = './__tests__/testData/renderData/';
 
 const env = new NodeScriptEnvironment();
 NodeScriptEnvironment.setInstance(env);
@@ -14,7 +14,7 @@ async function regenerateTests(extra = ""): Promise<string[]> {
 
     const files = fs.readdirSync(mainDir);
     files.forEach(file => {
-        if (file.endsWith('.cst')) {
+        if (file.endsWith('.cst') && file.startsWith('script')) {
             cstFiles.push(file);
         }
     });
@@ -26,7 +26,7 @@ async function regenerateTests(extra = ""): Promise<string[]> {
 
         const outputPath = mainDir + 'svgs/' + file + extra + '.svg';
         env.setModuleDirectory(mainDir);
-        env.setDefaultLibsPath(mainDir + '../../libs/');
+        env.setDefaultLibsPath(mainDir + '../../../libs/');
 
         await renderScript(scriptData, outputPath, {
             dumpNets: false,
@@ -34,8 +34,6 @@ async function regenerateTests(extra = ""): Promise<string[]> {
             showStats: false,
             environment: env,
         });
-
-        // console.log('generated ', outputPath);
     }
 
     return cstFiles;

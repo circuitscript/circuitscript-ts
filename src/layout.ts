@@ -1484,13 +1484,15 @@ export function applyComponentParamsToSymbol(componentUnit: ComponentUnit,
     if (componentUnit.parameters.has(ParamKeys.flipX)) {
         // either 1 or 0
         symbol.flipX =
-            componentUnit.parameters.get(ParamKeys.flipX) as number;
+            (componentUnit.parameters.get(ParamKeys.flipX) as NumericValue)
+            .toNumber();
     }
 
     if (componentUnit.parameters.has(ParamKeys.flipY)) {
         // either 1 or 0
         symbol.flipY =
-            componentUnit.parameters.get(ParamKeys.flipY) as number;
+            (componentUnit.parameters.get(ParamKeys.flipY) as NumericValue)
+            .toNumber();
     }
     
     if (symbol instanceof SymbolCustom) {

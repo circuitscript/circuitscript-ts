@@ -1774,9 +1774,9 @@ export class ExecutionContext {
                     targetUnit.setParam(ParamKeys.angle, numeric(90));
                 } else if (useAngle === 180) {
                     if (targetUnit.angleProp === 0 || targetUnit.angleProp === 180) {
-                        targetUnit.setParam(ParamKeys.flipX, 1);
+                        targetUnit.setParam(ParamKeys.flipX, numeric(1));
                     } else if (targetUnit.angleProp === 90 || targetUnit.angleProp === 270) {
-                        targetUnit.setParam(ParamKeys.flipY, 1);
+                        targetUnit.setParam(ParamKeys.flipY, numeric(1));
                     }
 
                 } else if (useAngle === 270) {

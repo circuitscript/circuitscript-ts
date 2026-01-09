@@ -1058,12 +1058,12 @@ export class ParserVisitor extends BaseVisitor {
                 if (modifierText === ParamKeys.flip) {
                     const flipValue = result as string;
                     if (flipValue.indexOf('x') !== -1) {
-                        defaultUnit.setParam(ParamKeys.flipX, 1);
+                        defaultUnit.setParam(ParamKeys.flipX, numeric(1));
                         shouldIgnoreWireOrientation = true;
                     }
 
                     if (flipValue.indexOf('y') !== -1) {
-                        defaultUnit.setParam(ParamKeys.flipY, 1);
+                        defaultUnit.setParam(ParamKeys.flipY, numeric(1));
                         shouldIgnoreWireOrientation = true;
                     }
                 } else if (modifierText === ParamKeys.angle) {
