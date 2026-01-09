@@ -29,27 +29,26 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
             return instanceName + '-' + pin.getHashValue();
         };
 
-    nets.forEach(item => {
-        const [component, pin, net] = item;
-
+    for (const [component, pin, net] of nets) {
         if (!netComponentPins.has(net)) {
             netComponentPins.set(net, []);
         }
 
         const items = netComponentPins.get(net)!;
+        const unit = component.getUnitForPin(pin);
+
         items.push([
-            component.instanceName,
+            unit.instanceName,
             pin
         ]);
 
         netComponentPins.set(net, items);
 
-        const unit = component.getUnitForPin(pin);
         pinMapping.set(makeComponentPinHash(
             unit.instanceName, pin), net);
-    });
+    };
 
-    allNodes.forEach(node => {
+    for(const node of allNodes) {
         const nodeInfo = graph.node(node) as GraphNodeInfo;
         if (nodeInfo[0] === RenderItemType.Component) {
             const { component } = nodeInfo[1] as RenderComponent;
@@ -114,7 +113,7 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
                 });
             }
         }
-    });
+    }
 
     return items;
 }

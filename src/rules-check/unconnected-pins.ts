@@ -13,16 +13,18 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
     const items: any[] = [];
     const allNodes = graph.nodes();
 
-    allNodes.forEach(node => {
+    for (const node of allNodes){
         const nodeInfo = graph.node(node);
         if (nodeInfo[0] === RenderItemType.Component) {
-            const { component } = nodeInfo[1] as RenderComponent;
+            const renderComponent = nodeInfo[1] as RenderComponent;
+            const { component, unitId } = renderComponent;
 
             // Find all edges connected to this node/component
             const edges = graph.nodeEdges(node) as Edge[];
 
-            const instanceName = component.getUnit().instanceName;
-            const connectedPins: string[] = [];
+            const componentUnit = component.getUnit(unitId);
+            const instanceName = componentUnit.instanceName;
+            const connectedUnitPins: string[] = [];
 
             // Either side of the edge must be the component
             edges.forEach(edge => {
@@ -34,13 +36,13 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
                     pin = edgeInfo[3];
                 }
                 
-                connectedPins.push(pin.getHashValue());
+                connectedUnitPins.push(pin.getHashValue());
             });
 
-            const pinIds = Array.from(component.pins.keys());
+            const pinIds = Array.from(componentUnit.pins.keys());
             pinIds.forEach(pinId => {
                 const hashValue = pinId.getHashValue();
-                if (connectedPins.indexOf(hashValue) === -1) {
+                if (connectedUnitPins.indexOf(hashValue) === -1) {
                     // Missing pin!
                     items.push({
                         type: ERC_Rules.UnconnectedPin,
@@ -62,7 +64,7 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
                 })
             }
         }
-    });
+    }
 
     return items;
 }

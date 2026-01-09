@@ -5,7 +5,7 @@
             "column": 3
         },
         "type": "UNCONNECTED-PIN",
-        "message": "Unconnected pin 5 for component"
+        "message": "Unconnected pin: J1 pin 5"
     },
     {
         "start": {
@@ -21,6 +21,6 @@
             "column": 8
         },
         "type": "NO-CONNECT-ON-CONNECTED-PIN",
-        "message": "No connect on connected pin"
+        "message": "No connect on connected pin: J1 pin 4"
     }
 ]

@@ -44,7 +44,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                     reportItems.push({
                         type,
                         start: token,
-                        message: `Unconnected pin ${item.pin} for component`
+                        message: `Unconnected pin: ${instance.assignedRefDes} pin ${item.pin}`
                     });
                 }
             }
@@ -67,12 +67,19 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.NoConnectOnConnectedPin: {
                 const instance = item.instance as ClassComponent; // The no connect component
+                const {instance: targetComponent, pin: targetPin} = item.target;
+
+                let extra = '';
+                if (targetComponent && targetComponent.assignedRefDes) {
+                    extra = `: ${targetComponent.assignedRefDes} pin ${targetPin}`;
+                }
+
                 const token = getComponentFirstCtxToken(instance);
                 if (token) {
                     reportItems.push({
                         type,
                         start: token,
-                        message: `No connect on connected pin`
+                        message: `No connect on connected pin${extra}`
                     });
                 }
             }

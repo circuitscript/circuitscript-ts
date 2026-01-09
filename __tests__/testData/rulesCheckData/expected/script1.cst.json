@@ -5,7 +5,7 @@
             "column": 3
         },
         "type": "UNCONNECTED-PIN",
-        "message": "Unconnected pin 2 for component"
+        "message": "Unconnected pin: J1 pin 2"
     },
     {
         "start": {
@@ -13,7 +13,7 @@
             "column": 3
         },
         "type": "UNCONNECTED-PIN",
-        "message": "Unconnected pin 3 for component"
+        "message": "Unconnected pin: J1 pin 3"
     },
     {
         "start": {
@@ -21,7 +21,7 @@
             "column": 3
         },
         "type": "UNCONNECTED-PIN",
-        "message": "Unconnected pin 4 for component"
+        "message": "Unconnected pin: J1 pin 4"
     },
     {
         "start": {
@@ -29,7 +29,7 @@
             "column": 3
         },
         "type": "UNCONNECTED-PIN",
-        "message": "Unconnected pin 5 for component"
+        "message": "Unconnected pin: J1 pin 5"
     },
     {
         "start": {
@@ -37,6 +37,6 @@
             "column": 3
         },
         "type": "UNCONNECTED-PIN",
-        "message": "Unconnected pin 6 for component"
+        "message": "Unconnected pin: J1 pin 6"
     }
 ]

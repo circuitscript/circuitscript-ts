@@ -5,6 +5,6 @@
             "column": 8
         },
         "type": "NO-CONNECT-ON-CONNECTED-PIN",
-        "message": "No connect on connected pin"
+        "message": "No connect on connected pin: J1 pin 4"
     }
 ]

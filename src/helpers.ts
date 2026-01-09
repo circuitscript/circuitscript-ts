@@ -607,6 +607,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                         ercResults.forEach((item, index) => {
                             console.log(`${(index + 1).toString().padStart(3)}. line ${item.start.line}, column ${item.start.column}: ${item.type} - ${item.message}`);
                         });
+                    } else {
+                        console.log('No ERC issues found');
                     }
                 }
 
