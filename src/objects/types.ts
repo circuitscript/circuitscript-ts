@@ -324,14 +324,17 @@ export enum ImportFunctionHandling {
     SpecificMergeIntoNamespace = 'specific-merge-into-namespace',
 }
 
+/** Defines the properties for a given component unit */
 export type ComponentUnitDefinition = {
-    width: number | null,
-    height: number | null,
-    angle: number | null,
+    width: NumericValue | null,
+    height: NumericValue | null,
+    angle: NumericValue | null,
     followWireOrientation: boolean | null,
 
     pins: PinDefinition[],
 
     display: SymbolDrawingCommands | null,
     arrange: any | null,
+
+    suffix: string | null,
 }

@@ -860,7 +860,7 @@ export class LayoutEngine {
 
                 accum.push(item);
             } else if (item instanceof RenderComponent){
-                const { instanceName } = item.component.getUnit();
+                const { instanceName } = item.component.getUnit(item.unitId);
 
                 // Only if not ignored already, then create the elements
                 // frame for the subgraph containing the instance.
@@ -1093,10 +1093,13 @@ export class LayoutEngine {
             // will not be any edges. Align the component to the grid first
             const [, node1]: [string, RenderItem] = graph.node(firstNodeId);
 
-            // By default align pin 1 to the grid
+            // By default align pin first pin of the component unit to the grid.
             let defaultPin = new PinId(1);
             if (node1 instanceof RenderComponent) {
-                defaultPin = node1.component.getDefaultPin();
+                const unitId = node1.unitId;
+                const componentUnit = node1.component.getUnit(unitId);
+                // Get the first pin
+                defaultPin = componentUnit.pinsFlat[0].id;
             }
 
             this.placeNodeAtPosition(numeric(0), numeric(0), node1, defaultPin);
@@ -1206,7 +1209,7 @@ export class LayoutEngine {
             [node1, node2].forEach(item => {
                 if (item instanceof RenderWire && item.isEndAutoLength()) {
                     const [component, pin] = item.getEndAuto();
-                    const instance = component.getUnit();
+                    const instance = component.getUnitForPin(pin);
                     
                     const [, targetNode]: [string, RenderItem] =
                         graph.node(instance.instanceName);
@@ -1457,9 +1460,17 @@ export function applyComponentParamsToSymbol(componentUnit: ComponentUnit,
         }
     });
 
-    if (!newMap.has('refdes')) {
-        newMap.set('refdes', componentUnit.parent.assignedRefDes ?? "?");
+    const refdesKey = 'refdes';
+
+    if (!newMap.has(refdesKey)) {
+        newMap.set(refdesKey, componentUnit.parent.assignedRefDes ?? "?");
     }
+
+    if (componentUnit.refdesSuffix !== "") {
+        const tmpRefdes = newMap.get(refdesKey) as string;
+        newMap.set(refdesKey, `${tmpRefdes}${componentUnit.refdesSuffix}`);
+    }
+
     symbol.drawing.variables = newMap;
 
     if (componentUnit.parameters.has(ParamKeys.angle)) {

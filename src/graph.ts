@@ -76,8 +76,8 @@ export class NetGraph {
                     const [, component, pin] =
                         sequenceStep as [string, ClassComponent, number];
 
-                    const targetUnit = component.getUnit();
-                    const tmpInstanceName = targetUnit.instanceName;
+                    const componentUnit = component.getUnitForPin(pin);
+                    const tmpInstanceName = componentUnit.instanceName;
 
                     // If 'at' action, then previous node/pin should be reset.
                     if (action === SequenceAction.At){
@@ -88,7 +88,7 @@ export class NetGraph {
                     if (!graph.hasNode(tmpInstanceName)) {
                         this.print('create instance', tmpInstanceName);
 
-                        const { displayProp = null } = targetUnit;
+                        const { displayProp = null } = componentUnit;
 
                         let tmpSymbol: SymbolGraphic;
 
@@ -97,29 +97,28 @@ export class NetGraph {
                             tmpSymbol.drawing.logger = this.logger;
 
                         } else {
-                            const symbolPinDefinitions = generateLayoutPinDefinition(targetUnit);
+                            const symbolPinDefinitions = generateLayoutPinDefinition(componentUnit);
 
                             if (component.typeProp === ComponentTypes.module) {
                                 tmpSymbol = new SymbolCustomModule(symbolPinDefinitions,
-                                    targetUnit.pinsMaxPositions);
+                                    componentUnit.pinsMaxPositions);
                             } else {
                                 tmpSymbol = new SymbolCustom(symbolPinDefinitions,
-                                    targetUnit.pinsMaxPositions);
+                                    componentUnit.pinsMaxPositions);
                             }
                         }
 
                         // TODO: change this to take the params from the
                         // component unit.
-                        applyComponentParamsToSymbol(targetUnit, tmpSymbol);
+                        applyComponentParamsToSymbol(componentUnit, tmpSymbol);
 
                         // Draw symbol in memory to determine the size/bounds.
                         tmpSymbol.refreshDrawing();
 
                         const { width: useWidth, height: useHeight } = tmpSymbol.size();
 
-                        const unitId = DefaultComponentUnit; // Assume default for now.
-                        tmpComponent = new RenderComponent(component, unitId, 
-                            useWidth, useHeight);
+                        tmpComponent = new RenderComponent(component, 
+                            componentUnit.unitId, useWidth, useHeight);
                         tmpComponent.symbol = tmpSymbol;
 
                         // Record the sequence number (index of the array) to determine priority
@@ -165,7 +164,7 @@ export class NetGraph {
                             // Find the net of the wire
                             const matchingItem = nets.find(([comp, pin]) => {
                                 // Assume first unit
-                                const unit = comp.getUnit();
+                                const unit = comp.getUnitForPin(pin);
                                 return unit.instanceName === previousNode
                                     && pin.equals(previousPin);
                             });

@@ -386,14 +386,14 @@ export class ParserVisitor extends BaseVisitor {
         const typeProp = properties.get('type') ?? null;
         const copy = properties.get('copy') ?? false;
 
-        const unitProperties = this.extractComponentUnitProperties(properties, 
+        const unitDefinitions = this.extractComponentUnitProperties(properties, 
             typeProp);
 
         const props = {
             type: typeProp,
             copy,
 
-            units: unitProperties
+            units: unitDefinitions
         };
 
         try {
@@ -409,13 +409,19 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    private getComponentUnitDefinition(props: Map<string, unknown>, typeProp: string | null = null): ComponentUnitDefinition {
-        const width = props.get('width') ?? null;
-        const height = props.get('height') ?? null;
-        const followWireOrientation = props.get('followWireOrientation') ?? true;
+    private extractComponentUnitDefinition(properties: Map<string, unknown>, 
+        typeProp: string | null = null,
+        lastNumericPinId = 0): ComponentUnitDefinition {
+        
+        const width = (properties.get('width') as NumericValue)?? null;
+        const height = (properties.get('height') as NumericValue) ?? null;
+        const angle = (properties.get(ParamKeys.angle) as NumericValue) ?? null;
+        const followWireOrientation = (properties.get('followWireOrientation') as boolean) ?? true;
 
-        const arrange = props.get('arrange') ?? null;
-        const display = (props.get('display') as SymbolDrawingCommands) ?? null;
+        const arrange = properties.get('arrange') ?? null;
+        const display = (properties.get('display') as SymbolDrawingCommands) ?? null;
+
+        const suffix = (properties.get('suffix') as string) ?? null;
 
         let pins: PinDefinition[] = [];
 
@@ -444,10 +450,8 @@ export class ParserVisitor extends BaseVisitor {
                 }
             });
         } else {
-            pins = this.parseCreateComponentPins(props.get('pins')!);
+            pins = this.extractPinDefintion(properties.get('pins')!, lastNumericPinId);
         }
-
-        const angle = props.get(ParamKeys.angle) ?? null;
 
         return {
             width, 
@@ -457,21 +461,43 @@ export class ParserVisitor extends BaseVisitor {
 
             display, arrange,
             pins,
+            suffix
         }
     }
 
-    private extractComponentUnitProperties(properties: Map<string, any>, typeProp: string | null = null): [string, ComponentUnitDefinition][] {
+    /**
+     * Extracts component unit from the properties provided in `create component`
+     * @param properties 
+     * @param typeProp 
+     * @returns 
+     */
+    private extractComponentUnitProperties(properties: Map<string, any>,
+        typeProp: string | null): [string, ComponentUnitDefinition][] {
+
+        let lastNumericPinId = 0;
+        
         const unitsProperties: [string, any][] = [];
         for (const [key, value] of properties) {
             if (key.split(':')[0] === 'unit') {
-                unitsProperties.push([key,
-                    this.getComponentUnitDefinition(value, typeProp)]);
+                const unitDef = this.extractComponentUnitDefinition(value, typeProp, lastNumericPinId);
+
+                // Find the largest value for pinId
+                unitDef.pins.forEach(pin => {
+                    if (pin.id.isNumeric()){
+                        lastNumericPinId = Math.max(lastNumericPinId, 
+                            pin.id.getValue() as number);
+                    }
+                });
+                
+                unitsProperties.push([key, unitDef]);
             }
         }
 
+        // If no unit properties are found, then use the top level component
+        // properties to extract the unit definition
         if (unitsProperties.length === 0) {
             unitsProperties.push(['unit',
-                this.getComponentUnitDefinition(properties, typeProp)]);
+                this.extractComponentUnitDefinition(properties, typeProp)]);
         }
 
         return unitsProperties;
@@ -2043,9 +2069,10 @@ export class ParserVisitor extends BaseVisitor {
         PinTypes.Power,
     ];
 
-
-    private parseCreateComponentPins(
+    /** Parses the pin defintion from the `pins` property */
+    private extractPinDefintion(
         pinData: NumericValue | Map<string, any>,
+        lastNumericPinId = 0,
     ): PinDefinition[] {
         const pins: PinDefinition[] = [];
 
@@ -2054,7 +2081,7 @@ export class ParserVisitor extends BaseVisitor {
             const tmpMap = new Map<number, NumericValue>();
             const lastPin = pinData.toNumber();
             for (let i = 0; i < lastPin; i++) {
-                const pinId = i + 1;
+                const pinId = lastNumericPinId + i + 1;
                 tmpMap.set(pinId, numeric(pinId));
             }
 
@@ -2321,6 +2348,8 @@ export class ParserVisitor extends BaseVisitor {
 
                     if (refdes) {
                         instance.assignedRefDes = refdes;
+                        this.setComponentUnitRefdesSuffix(instance);
+                        
                         annotater.trackRefDes(refdes);
                         this.log(refdes, '-', instance.instanceName);
                         continue;
@@ -2337,6 +2366,7 @@ export class ParserVisitor extends BaseVisitor {
             if (newRefDes !== null) {
                 instance.assignedRefDes = newRefDes;
                 this.log(newRefDes, '-', instance.instanceName);
+                this.setComponentUnitRefdesSuffix(instance);
             } else {
                 this.log('Failed to annotate:', instance.instanceName);
             }
@@ -2347,6 +2377,29 @@ export class ParserVisitor extends BaseVisitor {
         this.log('===== rename nets =====');
         this.renameNetsWithRefdes();
         this.log('===== rename nets done =====');
+    }
+
+    private setComponentUnitRefdesSuffix(instance: ClassComponent): void {
+        if (instance.assignedRefDes){
+            const {units} = instance;
+
+            if (units.length > 1){
+                // By default assign in alphabetical sequence
+                units.forEach((unit, index) => {
+                    let useRefdes = String.fromCharCode("A".charCodeAt(0) + index);
+                    if (unit.suffix !== null){
+                        useRefdes = unit.suffix;
+                    }
+                    
+                    unit.refdesSuffix = useRefdes;
+                });
+            } else {
+                // There will be at least one component unit, set the refdes
+                // suffix to blank.
+                const [firstUnit] = units;
+                firstUnit.refdesSuffix = '';
+            }
+        }
     }
 
     /**

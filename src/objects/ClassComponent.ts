@@ -21,8 +21,15 @@ export class ComponentUnit {
     parent: ClassComponent;
     unitId: string;
 
+    // This is appended to the end of the refdes to identify the
+    // component unit.
+    refdesSuffix = "A";
+
+    // Value set by user
+    suffix: string | null = null;
+
     public get instanceName(): string {
-        return `${this.parent.instanceName},${this.unitId}`; 
+        return `${this.parent.instanceName},${this.unitId}`;
     }
 
     /** Component unit parameters in a map. These parameters may be defined by 
@@ -272,6 +279,8 @@ export class ClassComponent {
     // components.
     _creationIndex = -1; // Not defined yet.
 
+    pinUnitMap = new Map<PinId, ComponentUnit>();
+
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;
@@ -470,6 +479,9 @@ export class ClassComponent {
         });
 
         component.refreshCache();
+
+        // Use this method to refresh the pin unit mapping
+        component.refreshPinUnitMap();
         return component;
     }
 
@@ -487,6 +499,14 @@ export class ClassComponent {
     addDefaultUnit(displayProp: SymbolDrawingCommands): void {
         const tmpUnit = new ComponentUnit(DefaultComponentUnit, this);
         tmpUnit.pins = this.pins;
+
+        const pinsFlat: PinDefinition[] = [];
+        this.pins.forEach(pin => {
+            pinsFlat.push(pin);
+        });
+
+        tmpUnit.pinsFlat = pinsFlat;
+
         tmpUnit.numPins = this.numPins;
         tmpUnit.pinsMaxPositions = new Map();
 
@@ -495,6 +515,30 @@ export class ClassComponent {
         tmpUnit.followWireOrientationProp = true;
 
         this.units.push(tmpUnit);
+        this.refreshPinUnitMap();
+    }
+
+    refreshPinUnitMap(): void {
+        for (const unit of this.units) {
+            const { pinsFlat } = unit;
+            for (const pin of pinsFlat) {
+                this.pinUnitMap.set(pin.id, unit);
+            }
+        }
+    }
+
+    getUnitForPin(pinId: PinId): ComponentUnit {
+        if (typeof pinId === "number") {
+            throw new RuntimeExecutionError("Invalid pin id");
+        }
+
+        for (const [tmpPin, componentUnit] of this.pinUnitMap) {
+            if (tmpPin.equals(pinId)) {
+                return componentUnit;
+            }
+        }
+
+        throw new RuntimeExecutionError("Could not find unit for pin: " + pinId);
     }
 }
 

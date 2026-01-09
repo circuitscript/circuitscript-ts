@@ -44,7 +44,7 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
 
         netComponentPins.set(net, items);
 
-        const unit = component.getUnit();
+        const unit = component.getUnitForPin(pin);
         pinMapping.set(makeComponentPinHash(
             unit.instanceName, pin), net);
     });

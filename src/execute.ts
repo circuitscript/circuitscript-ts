@@ -342,7 +342,8 @@ export class ExecutionContext {
             '[' + pinsOutput.join(', ') + ']',
         );
 
-        component.units = this.generateUnits(props.units, component);
+        component.units = this.generateComponentUnits(props.units, component);
+        component.refreshPinUnitMap();
 
         return component;
     }
@@ -355,10 +356,10 @@ export class ExecutionContext {
         return pins;
     }
 
-    private generateUnits(units:[key:string, ComponentUnitDefinition][], parent: ClassComponent): ComponentUnit[] {
+    private generateComponentUnits(units: [key: string, ComponentUnitDefinition][], parent: ClassComponent): ComponentUnit[] {
         return units.map(([key, unitDef]) => {
 
-            unitDef = {...unitDef}; // Generate a copy
+            unitDef = { ...unitDef }; // Generate a copy
 
             let useAngle = null;
             const { pins } = unitDef;
@@ -399,26 +400,26 @@ export class ExecutionContext {
             }
 
             // Remove duplicates from component.arrangeProps
-            if (unitDef.arrange !== null){
+            if (unitDef.arrange !== null) {
                 unitDef.arrange = this.removeArrangePropDuplicates(unitDef.arrange);
                 const arrangePropPins = this.getArrangePropPins(unitDef.arrange);
 
                 pins.forEach(pin => {
-                    if (arrangePropPins.find(id => id.equals(pin.id)) === undefined){
+                    if (arrangePropPins.find(id => id.equals(pin.id)) === undefined) {
                         // Pin not found in the arrange props, show a warning
                         this.logWarning(`Pin ${pin.id} is not specified in arrange property`);
                     }
                 });
-                
+
             } else {
                 unitDef.arrange = null;
             }
-            
+
             unitDef.angle = useAngle ?? 0;
 
             // Determine the side for each pin and update the
             // pin definition
-            const {pins: pinSides, maxPositions} = 
+            const { pins: pinSides, maxPositions } =
                 getPortSide(pinsMap, unitDef.arrange);
 
             const pinIdKeys = Array.from(pinsMap.keys());
@@ -443,13 +444,15 @@ export class ExecutionContext {
 
             componentUnit.pins = pinsMap;
             componentUnit.pinsFlat = pins;
-            
+
             componentUnit.numPins = unitDef.pins.length;
 
             componentUnit.pinsMaxPositions = maxPositions;
 
             componentUnit.displayProp = unitDef.display;
             componentUnit.arrangeProps = unitDef.arrange;
+            
+            componentUnit.suffix = unitDef.suffix ?? null;
 
             return componentUnit;
         });
@@ -1548,7 +1551,8 @@ export class ExecutionContext {
             this.scope.currentPin, tmp
         );
 
-        const currentUnit = this.scope.currentComponent.getUnit();
+        const currentUnit = 
+            this.scope.currentComponent.getUnitForPin(this.scope.currentPin!);
 
         if (!currentUnit.didSetWireOrientationAngle) {
             this.applyComponentAngleFromWire(
@@ -1695,7 +1699,7 @@ export class ExecutionContext {
         // is set to true, then use the first segment and also flip the
         // wire direction that is used.
 
-        const targetUnit = component.getUnit()!;
+        const targetUnit = component.getUnitForPin(pin);
 
         if (this.componentAngleFollowsWire 
             && targetUnit.followWireOrientationProp 
