@@ -1,0 +1,21 @@
+# Test annotation of other files and external annotation file loading
+
+from std import *
+from file1 import *  #= annotate
+from file2 import *  #= annotate-external
+
+v5 = supply("5V")
+gnd = dgnd()
+
+at v5
+my_circuit()
+to gnd
+
+at v5
+wire down 100
+add res(10k) #= R1
+wire down 100
+to gnd
+
+at v5
+my_shared_lib_circuit(gnd)

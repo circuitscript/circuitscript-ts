@@ -1,0 +1,30 @@
+# Test multi unit component definition with pins expansion
+
+from std import *
+
+v5 = supply("5V")
+gnd = dgnd()
+
+tmp = create component:
+    unit:
+        pins: 3
+    unit:
+        pins: 4
+at tmp
+wire right 300 to tmp pin 5
+
+
+at tmp pin 6
+wire right 100 down 100
+add cap(100n)
+wire down 100
+to gnd
+
+at tmp pin 4
+wire right 100 up 100
+add res(10k)
+to v5
+
+at tmp pin 3
+wire right 100 down 100
+to gnd

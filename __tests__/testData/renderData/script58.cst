@@ -1,0 +1,34 @@
+from std import *
+
+v5 = supply("5V")
+gnd = dgnd()
+
+tmp = create component:
+    unit:
+        pins:
+            1: "A"
+            2: "B"
+            3: "C"
+        arrange:
+            left: 1,2,3
+    unit:
+        pins: 
+            4: "D1"
+            5: "D2"
+            6: "D3"
+        arrange:
+            left: 4,5, [2]
+            bottom: 6
+
+at tmp pin 1
+wire right 300 
+to tmp pin 4
+
+at tmp pin 2
+wire right 100 down 300
+add cap (100n)
+to gnd
+
+at tmp pin "D3"
+wire down 100
+to gnd

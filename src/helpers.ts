@@ -345,10 +345,15 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 usePath = environment.join(dir, `${basename}${RefdesFileSuffix}`);
 
                 const output = tmpVisitor.getOutputForExternalRefdesFile();
+
+                // Use relative path from inputPath to filePath
+                const inputDir = environment.dirname(inputPath!);
+                const relativeFilePath = environment.relative(inputDir, filePath);
+
                 const jsonFile = {
                     format: 'v1',
                     module: moduleName,
-                    file: filePath,
+                    file: relativeFilePath,
                     items: output,
                 }
 

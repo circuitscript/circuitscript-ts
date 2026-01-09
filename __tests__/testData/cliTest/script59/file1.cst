@@ -1,0 +1,6 @@
+from std import *
+
+def my_circuit():
+    wire down 100
+    add cap(100n) #= C1_
+    wire down 100

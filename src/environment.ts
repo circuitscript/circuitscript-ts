@@ -242,4 +242,8 @@ export class NodeScriptEnvironment {
     join(...paths: string[]): string {
         return path.join(...paths);
     }
+
+    relative(from: string, to:string): string {
+        return path.relative(from, to);
+    }
 }

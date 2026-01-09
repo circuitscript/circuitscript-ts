@@ -86,18 +86,31 @@ describe('Render tests', () => {
         // import syntax forms
         ['import syntax forms', 'script53.cst'],
         ['repeated specific imports', 'script54.cst'],
-        ['specific imports followed by wildcard import', 'script55.cst']
+        ['specific imports followed by wildcard import', 'script55.cst'],
+
+        // multi-unit components
+        ['multi-unit component', 'script56.cst'],
+        ['multi-unit component with pins expansion', 'script57.cst'],
+        ['multi-unit component with arrange property', 'script58.cst'],
+
+        // multi-file schematic with refdes loaded from external file
+        ['multi file refdes with refdes from external file', 'script59/main.cst', 'script59'],
 
         // ['arrange prop with repeated pins and missing pins', 'script35.cst']
 
         
-    ])('render - %s (%s)', async (title, scriptPath) => {
+    ])('render - %s (%s)', async (title, scriptPath, extra = "") => {
         const { sheetFrames } = await renderCommon(mainPath + scriptPath);
 
         const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
-        const expectedSvgOutput = readFileSync(mainPath + "svgs/" + scriptPath + ".svg", { encoding: 'utf8' });
+        let useSvgPath = scriptPath;
+        if (extra !== ""){
+            useSvgPath = extra;
+        }
+
+        const expectedSvgOutput = readFileSync(mainPath + "svgs/" + useSvgPath + ".svg", { encoding: 'utf8' });
         // expect(svgOutput).toEqual(expectedSvgOutput);
 
         // Do not spit out all the differences

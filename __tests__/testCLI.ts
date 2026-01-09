@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import figlet from 'figlet';
 import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
-import { loadScriptFromFile } from './helpers';
+import { loadScriptFromFile, readFile } from './helpers';
 
 describe('test cli program', () => {
     const tmpFolder = '__tests__/tmp';
@@ -110,5 +110,28 @@ describe('test cli program', () => {
         const annotatedFile = await loadScriptFromFile(`${mainPath}${scriptName}.annotated.cst`);
         const expectedAnnotatedFile = await loadScriptFromFile(`${mainPath}${scriptName}.expected.annotated.cst`);
         expect(expectedAnnotatedFile).toEqual(annotatedFile);
+    });
+
+    // Test script taken from renderData/script59
+    test('test generate refdes external file', async () => {
+        execSync(baseCommand + ` ${mainPath}script59/main.cst -xu`);
+
+        // Check the generated refdes file
+        const createdRefdesJson = await readFile(`${mainPath}script59/file2.refdes.json`);
+        const expectedRefdesJson = await readFile(`${mainPath}script59/file2.expected.refdes.json`);
+
+        const json1 = JSON.parse(createdRefdesJson);
+        const json2 = JSON.parse(expectedRefdesJson);
+
+        expect(JSON.stringify(json1)).toEqual(JSON.stringify(json2));
+    });
+
+    test('test CLI direct text input and output', async () => {
+        const textInput = "from std import *\n\nv5 = supply(\"5V\")\ngnd = dgnd()\nat v5\nwire down 100\nadd res(10k)\nwire down 100\nto gnd";
+        const result = execSync(baseCommand + ` -i '${textInput}'`).toString();
+
+        const expectedSvgOutput = await readFile(`${mainPath}/textInput.expected.svg`);
+
+        expect(result.trim()).toEqual(expectedSvgOutput.trim());
     });
 });

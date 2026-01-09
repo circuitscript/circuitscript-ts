@@ -80,20 +80,22 @@ export default async function main(): Promise<void> {
     }
 
     let scriptData: string;
-    if (args.length > 0 && args[0]) {
-        inputFilePath = args[0];
 
-        if ((await env.exists(inputFilePath))) {
-            scriptData = await env.readFile(inputFilePath, { encoding: 'utf-8' });
-        } else {
-            console.error("Error: File could not be found");
-            return;
-        }
-    } else if (options.input) {
+    if (options.input) {
+        // If the input is provided, then use it
         scriptData = options.input;
     } else {
-        console.error("Error: No input provided");
-        return;
+        // Otherwise the first argument should be the script data
+        if (args.length > 0 && args[0]) {
+            inputFilePath = args[0];
+
+            if ((await env.exists(inputFilePath))) {
+                scriptData = await env.readFile(inputFilePath, { encoding: 'utf-8' });
+            } else {
+                console.error("Error: File could not be found");
+                return;
+            }
+        }
     }
 
     let updateSource = false;
@@ -129,9 +131,11 @@ export default async function main(): Promise<void> {
         saveAnnotatedCopy: saveAnnotatedCopyPath,
     }
 
+    // This is the output path
     let outputPath: string | null = null;
-    if (args.length > 0 && args[1]) {
-        // This is the output path
+    if (options.input && args.length > 0 && args[0]) {
+        outputPath = args[0];
+    } else if (args.length > 0 && args[1]) {
         outputPath = args[1];
     }
 
@@ -171,6 +175,7 @@ async function parseFile(scriptData: string, outputPath: string | null,
         return output;
     } catch (error) {
         console.error(`Unexpected Error: ${error}`);
+        console.log(error.stack);
     }
 
     return null;

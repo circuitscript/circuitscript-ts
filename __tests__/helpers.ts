@@ -66,6 +66,10 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
         return { hasError, hasParseError };
     }
 
+    if (scriptPath) {
+        visitor.enterFile(scriptPath);
+    }
+
     let hasError = false;
     try {
         await visitor.visitAsync(tree);
@@ -74,6 +78,8 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
         console.log(err);
         hasError = true;
     }
+
+    visitor.exitFile();
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
@@ -126,10 +132,14 @@ export function findItemByRefDes(instances: Map<string, ClassComponent>, typePro
 }
 
 export function loadScriptFromFile(filePath: string): string {
-    return readFileSync(filePath).toString();
+    return readFile(filePath);
 }
 
 export function loadRawNetFromFile(filePath: string): string {
+    return readFile(filePath);
+}
+
+export function readFile(filePath:string): string{
     return readFileSync(filePath).toString();
 }
 

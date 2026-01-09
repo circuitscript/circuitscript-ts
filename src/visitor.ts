@@ -2021,22 +2021,33 @@ export class ParserVisitor extends BaseVisitor {
 
         const exists = await this.environment.exists(annotatedFilePath);
         if (exists) {
+            this.log(`Import has refdes file: ${annotatedFilePath}`);
+
             // Load the file and extract the annotations
             const fileData = await this.environment.readFile(annotatedFilePath);
             const jsonData = JSON.parse(fileData);
+
+            // file should be relative to the base file path
+            const baseFilePath = this.environment.getAbsolutePath(
+                this.filePathStack[0]);
+
+            const basePathDirectory = this.environment.dirname(baseFilePath);
+
             const { file, items } = jsonData;
 
-            items.forEach(item => {
+            for (const item of items) {
                 const parts = item.split(':');
                 const refdes = parts[4]; // Might contain multiple refdes
-                const key = this.getRefdesFileAnnotation(file,
+                const useFilePath = this.environment.join(basePathDirectory, file);
+
+                const key = this.getRefdesFileAnnotation(useFilePath,
                     Number(parts[0]),
                     Number(parts[1]),
                     Number(parts[2]),
                     Number(parts[3]));
 
                 this.refdesFileAnnotations.set(key, refdes);
-            });
+            }
         }
     }
 
