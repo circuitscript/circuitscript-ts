@@ -1,6 +1,104 @@
 # Changelog
 
-## [v0.1.31](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.30...v0.1.31)
+## [v0.1.32](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.31...v0.1.32)
+
+[bf3fae8](https://gitlab.com/circuitscript/circuitscript-ts/commit/bf3fae8ef8a43477ff56dbd87460e9de05a63d8e)Add import annotation support and file path tracking
+- 
+- This commit introduces several enhancements to the import system:
+- - Adds import annotation syntax (#=annotate) to enable refdes annotation for imported modules
+- - Implements file path tracking through visitor stack to maintain context during parsing
+- - Updates grammar to support import_annotation_expr for all import variants
+- - Enhances ClassComponent references with file path metadata
+- - Modifies ImportedModule to store parse tree and token stream
+- - Improves RefdesAnnotationVisitor to handle import contexts properly
+- 
+- The changes enable better control over reference designation behavior in imported modules and improve debugging capabilities through enhanced context tracking.
+
+[66116e9](https://gitlab.com/circuitscript/circuitscript-ts/commit/66116e9a9edac71d4821d222d0d8327b81a4c59b)Add property metadata support to CircuitScript grammar
+- 
+- This commit extends the property expression syntax to support optional metadata strings
+- before the colon separator, enabling richer property annotations. This change updates
+- both the grammar definition and regenerates the TypeScript parser to support capturing
+- metadata tokens that can be used for property validation, documentation, or other
+- contextual information.
+
+[1d18fc6](https://gitlab.com/circuitscript/circuitscript-ts/commit/1d18fc6a4857b940bc049c0d6695734d6afc5a89)Add multi-unit component architecture
+- 
+- Introduce ComponentUnit class to support components with multiple units (e.g., multi-gate ICs). Each unit maintains its own pin definitions, display properties, and layout information while sharing common component data.
+- 
+- Key changes:
+- - Add ComponentUnit class with unit-specific properties (pins, display, arrange)
+- - Update component instance naming to include unit identifier using comma delimiter
+- - Modify layout and graph systems to work with component units
+- - Add getUnit() method to resolve units from components
+- - Update rules checking to use unit instance names
+
+[e494063](https://gitlab.com/circuitscript/circuitscript-ts/commit/e494063cb5a87631e13bb777dd0c2774fc2a8041)Add multi-file project support and expand test coverage
+- 
+- Implements file context tracking in visitor to support multi-file CircuitScript projects.
+- Adds comprehensive test suite for multi-file scenarios and text rendering capabilities.
+- 
+- - Add file entry/exit methods to visitor for proper file context management
+- - Refactor test helpers to support file path tracking in runScript
+- - Add script59 test cases for multi-file project validation
+- - Add script56-58 test cases for text rendering features
+- - Include expected SVG outputs and refdes JSON files for validation
+- - Extract readFile helper function for consistent file loading
+
+[bf7dd4b](https://gitlab.com/circuitscript/circuitscript-ts/commit/bf7dd4b4e55560f5c80654422d1177832ac99416)Add external refdes annotation system with JSON file support
+- 
+- Introduces a new refdes annotation output format that stores reference
+- designators in separate JSON files alongside source files. This enables
+- tracking component references without modifying source code directly.
+- 
+- Key changes:
+- - Add annotate-external import annotation for JSON-based refdes output
+- - Implement file path tracking during module execution
+- - Add RefdesModification type to separate annotation data from rendering
+- - Support loading refdes annotations from external JSON files
+- - Add environment helpers for path manipulation (dirname, basename, join)
+- - Fix async file exists check in environment
+
+[add08d7](https://gitlab.com/circuitscript/circuitscript-ts/commit/add08d79d77f41bbdd93e1a1ca24a07b041cf565)Enhance multi-unit component support with pin-to-unit mapping
+- 
+- This commit improves the multi-unit component architecture by introducing a pin-to-unit
+- mapping system that correctly associates pins with their respective component units.
+- Key changes include:
+- 
+- - Add pinUnitMap to ClassComponent for efficient pin-to-unit lookups
+- - Implement getUnitForPin() method to replace generic getUnit() calls
+- - Add unit suffix support for multi-unit component reference designators
+- - Update layout and graph logic to use pin-specific unit resolution
+- - Refactor unit definition extraction to track numeric pin IDs across units
+- - Add refdesSuffix property to ComponentUnit for proper multi-unit labeling
+- 
+- This ensures that operations on component pins correctly target the appropriate unit,
+- which is critical for multi-unit components like dual op-amps or quad gates.
+
+[df56ce9](https://gitlab.com/circuitscript/circuitscript-ts/commit/df56ce9787e16d60f6a60ff49ef19805669fcd28)Add pin arrangement support for custom components
+- 
+- Implement ability to specify pin positioning for custom components using
+- arrange directive with top/right/bottom/left sides. Update symbol drawing,
+- layout engine, and execution logic to support custom pin arrangements.
+
+[abc5c1d](https://gitlab.com/circuitscript/circuitscript-ts/commit/abc5c1d9d37e761f1a2ab9b1492ab7952d1be915)Improve ERC error messages with component reference designators
+- 
+- This commit enhances the Electrical Rules Check (ERC) reporting by including
+- component reference designators and pin numbers in error messages. This makes
+- it significantly easier for users to identify and locate issues in their circuits.
+- 
+- Changes:
+- - Update unconnected pin messages to show "Unconnected pin: &lt;refdes&gt; pin &lt;num&gt;"
+- - Update no-connect violation messages to include target component information
+- - Fix unit-aware pin checking in ERC rules to use correct component units
+- - Add success message when no ERC issues are found
+- - Update test expectations to match new error message format
+- - Refactor forEach loops to for...of loops for better readability
+- 
+- This improves the developer experience by providing actionable error messages
+- that directly reference component designators from the schematic.
+
+## [v0.1.31](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.30...v0.1.31) - 2026-01-04
 
 [e6b83b0](https://gitlab.com/circuitscript/circuitscript-ts/commit/e6b83b04e139ad3388ada430f1980f6c4fe54b83)Fixed build script
 
