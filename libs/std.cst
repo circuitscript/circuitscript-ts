@@ -429,3 +429,4 @@ def sheet_A6(revision="V1"):
 
 document.sheet_type = sheet_A4()
 document.bom.columns = ["refdes", "mpn", "manufacturer", "footprint"]
+document.bom.group_by = ["mpn", "manufacturer"]
