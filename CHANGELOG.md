@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.1.32](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.31...v0.1.32)
+## [v0.1.33](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.32...v0.1.33)
+
+[c291596](https://gitlab.com/circuitscript/circuitscript-ts/commit/c2915965313226cc36f206d8f37121c52b23dc2e)Removed -c option from command line tool
+
+## [v0.1.32](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.31...v0.1.32) - 2026-01-10
 
 [bf3fae8](https://gitlab.com/circuitscript/circuitscript-ts/commit/bf3fae8ef8a43477ff56dbd87460e9de05a63d8e)Add import annotation support and file path tracking
 - 
