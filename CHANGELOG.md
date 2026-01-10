@@ -1,6 +1,19 @@
 # Changelog
 
-## [v0.1.33](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.32...v0.1.33)
+## [v0.2.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.33...v0.2.0)
+
+[591ed14](https://gitlab.com/circuitscript/circuitscript-ts/commit/591ed14869ccdbbae05a3c018426acc6e9a5f3fd)Refactor file system operations to use environment abstraction
+- 
+- Moves file system operations from direct fs module usage to the
+- NodeScriptEnvironment class for better encapsulation and testability.
+- 
+- - Add fs wrapper methods to NodeScriptEnvironment (existsSync, mkdirSync, createWriteStream)
+- - Update BomGeneration to accept environment parameter for file operations
+- - Replace direct fs calls with environment methods throughout codebase
+- - Add 'from' keyword to semantic token visitor for import statement support
+- - Fix flipX/flipY boolean to numeric conversion in execute.ts
+
+## [v0.1.33](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.32...v0.1.33) - 2026-01-10
 
 [c291596](https://gitlab.com/circuitscript/circuitscript-ts/commit/c2915965313226cc36f206d8f37121c52b23dc2e)Removed -c option from command line tool
 
