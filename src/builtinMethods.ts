@@ -2,7 +2,7 @@ import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
-import { CallableParameter, CFunctionEntry, ImportedModule } from "./objects/types.js";
+import { CallableParameter, CFunctionEntry, ImportedLibrary } from "./objects/types.js";
 import { unwrapValue, resolveToNumericValue, RuntimeExecutionError } from "./utils.js";
 import { BaseNamespace } from "./globals.js";
 
@@ -171,8 +171,8 @@ function toString(obj: any): string {
         return obj.toBigNumber().toString();
     } else if (obj instanceof CFunctionEntry){
         return obj.toString();
-    } else if (obj instanceof ImportedModule){
-        return `[module: ${obj.moduleName}]`;
+    } else if (obj instanceof ImportedLibrary){
+        return `[library: ${obj.libraryName}]`;
                 
     } else {
         if (obj === undefined){

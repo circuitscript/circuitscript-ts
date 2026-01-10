@@ -3542,7 +3542,7 @@ export class CircuitScriptParser extends antlr.Parser {
                 this.state = 686;
                 this.match(CircuitScriptParser.Import);
                 this.state = 687;
-                (localContext as Import_simpleContext)._moduleName = this.match(CircuitScriptParser.ID);
+                (localContext as Import_simpleContext)._libraryName = this.match(CircuitScriptParser.ID);
                 this.state = 689;
                 this.errorHandler.sync(this);
                 switch (this.interpreter.adaptivePredict(this.tokenStream, 76, this.context) ) {
@@ -3562,7 +3562,7 @@ export class CircuitScriptParser extends antlr.Parser {
                 this.state = 691;
                 this.match(CircuitScriptParser.From);
                 this.state = 692;
-                (localContext as Import_all_simpleContext)._moduleName = this.match(CircuitScriptParser.ID);
+                (localContext as Import_all_simpleContext)._libraryName = this.match(CircuitScriptParser.ID);
                 this.state = 693;
                 this.match(CircuitScriptParser.Import);
                 this.state = 694;
@@ -3586,7 +3586,7 @@ export class CircuitScriptParser extends antlr.Parser {
                 this.state = 698;
                 this.match(CircuitScriptParser.From);
                 this.state = 699;
-                (localContext as Import_specificContext)._moduleName = this.match(CircuitScriptParser.ID);
+                (localContext as Import_specificContext)._libraryName = this.match(CircuitScriptParser.ID);
                 this.state = 700;
                 this.match(CircuitScriptParser.Import);
                 this.state = 701;
@@ -6874,7 +6874,7 @@ export class Import_exprContext extends antlr.ParserRuleContext {
     }
 }
 export class Import_specificContext extends Import_exprContext {
-    public _moduleName?: Token | null;
+    public _libraryName?: Token | null;
     public _ID?: Token | null;
     public _funcNames: antlr.Token[] = [];
     public constructor(ctx: Import_exprContext) {
@@ -6908,7 +6908,7 @@ export class Import_specificContext extends Import_exprContext {
     }
 }
 export class Import_all_simpleContext extends Import_exprContext {
-    public _moduleName?: Token | null;
+    public _libraryName?: Token | null;
     public constructor(ctx: Import_exprContext) {
         super(ctx.parent, ctx.invokingState);
         super.copyFrom(ctx);
@@ -6937,7 +6937,7 @@ export class Import_all_simpleContext extends Import_exprContext {
     }
 }
 export class Import_simpleContext extends Import_exprContext {
-    public _moduleName?: Token | null;
+    public _libraryName?: Token | null;
     public constructor(ctx: Import_exprContext) {
         super(ctx.parent, ctx.invokingState);
         super.copyFrom(ctx);

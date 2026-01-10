@@ -21,13 +21,13 @@ export type CFunction = (args: CallableParameter[],
 
 export class CFunctionEntry {
     
-    // Function name, without namespace/module
+    // Function name, without namespace/library
     name: string;
 
     // This may change depending on how the function is imported.
     namespace: string;
 
-    // Holds the original namespace/module of the function entry and does not change.
+    // Holds the original namespace/library of the function entry and does not change.
     originalNamespace: string;
 
     execute: CFunction;
@@ -255,6 +255,7 @@ export enum Direction {
     Up = 'up',
 }
 
+// TODO: merge with ComponentTypes
 export enum TypeProps {
     Net = 'net',
     Port = 'port',
@@ -272,15 +273,15 @@ export enum NetTypes {
     Source = 'source',
 }
 
-export class ImportedModule {
-    moduleName: string;
+export class ImportedLibrary {
+    libraryName: string;
 
     context: ExecutionContext;
 
     importHandlingFlag: ImportFunctionHandling;
     specifiedImports: string[];
-    moduleNamespace: string;
-    moduleFilePath: string;
+    libraryNamespace: string;
+    libraryFilePath: string;
 
     enableRefdesAnnotation = false;
 
@@ -291,15 +292,15 @@ export class ImportedModule {
     tree: ScriptContext;
     tokens: CommonTokenStream;
 
-    constructor(moduleName: string, moduleNamespace: string, 
-        moduleFilePath: string,
+    constructor(libraryName: string, libraryNamespace: string, 
+        libraryFilePath: string,
         tree: ScriptContext, tokens: CommonTokenStream,
         context: ExecutionContext, 
         flag: ImportFunctionHandling, specifiedImports: string[]){
         
-        this.moduleName = moduleName;
-        this.moduleNamespace = moduleNamespace;
-        this.moduleFilePath = moduleFilePath;
+        this.libraryName = libraryName;
+        this.libraryNamespace = libraryNamespace;
+        this.libraryFilePath = libraryFilePath;
         
         this.tree = tree;
         this.tokens = tokens;
@@ -312,13 +313,13 @@ export class ImportedModule {
 }
 
 /**
- * Determines handling of functions within the import/module.
+ * Determines handling of functions within the import/library.
  */
 export enum ImportFunctionHandling {
-    // Module namespace is needed to reference the function.
+    // Library namespace is needed to reference the function.
     AllWithNamespace = 'all-with-namespace',
 
-    // Module namespace is no longer needed to reference the function. Function
+    // Library namespace is no longer needed to reference the function. Function
     // should be in the current namespace.
     AllMergeIntoNamespace = 'all-merge-into-namespace',
     SpecificMergeIntoNamespace = 'specific-merge-into-namespace',

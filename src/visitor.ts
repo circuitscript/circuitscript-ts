@@ -2012,7 +2012,7 @@ export class ParserVisitor extends BaseVisitor {
         });
     }
 
-    async checkModuleHasRefdesFile(filePath: string): Promise<void> {
+    async checkLibraryHasRefdesFile(filePath: string): Promise<void> {
         // Checks if the given import has an refdes json file.
         const dir = this.environment.dirname(filePath);
         const ext = this.environment.extname(filePath);

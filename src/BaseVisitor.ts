@@ -26,7 +26,7 @@ import { CallableParameter, ComplexType,
     Direction, 
     FunctionDefinedParameter, AnyReference, UndeclaredReference, 
     ValueType,
-    ImportedModule,
+    ImportedLibrary,
     NewContextOptions,
     ImportFunctionHandling as ImportFunctionHandling} from "./objects/types.js";
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
@@ -82,7 +82,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     onErrorHandler: OnErrorHandler | null = null;
     environment: NodeScriptEnvironment;
 
-    protected importedFiles:ImportFile[] = [];
+    protected importedFiles:ImportLibraryFile[] = [];
 
     protected warnings:ExecutionWarning[] = [];
 
@@ -263,20 +263,20 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             specificImports.push(...tmpSpecificImports);
         }
 
-        const id = ctx._moduleName!.text!;
+        const id = ctx._libraryName!.text!;
         const importedFile = await this.handleImportFile(id, handling, true, ctx, specificImports);
 
         const ctxImportAnnotation = ctx.import_annotation_expr();
         if (ctxImportAnnotation) {
             const textValue = ctxImportAnnotation.getText().replace('#=', '');
-            const {importedModule} = importedFile;
+            const { importedLibrary } = importedFile;
             if (textValue === 'annotate') {
-                importedModule.enableRefdesAnnotation = true;
+                importedLibrary.enableRefdesAnnotation = true;
             } else if (textValue === 'annotate-external') {
-                importedModule.enableRefdesAnnotationFile = true;
+                importedLibrary.enableRefdesAnnotationFile = true;
             }
         }
-    } 
+    }
 
     visitImport_simple = async (ctx: Import_simpleContext): Promise<void> => {
         await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
@@ -644,35 +644,35 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                     );
 
                     try {
-                        const isModuleFunction = currentReference.rootValue 
-                            && currentReference.rootValue instanceof ImportedModule;
+                        const isLibraryFunction = currentReference.rootValue 
+                            && currentReference.rootValue instanceof ImportedLibrary;
 
-                        if (isModuleFunction){
+                        if (isLibraryFunction){
 
-                            this.log('create new module context');
+                            this.log('create new library context');
 
-                            // Restore the module context
-                            const importedModule = currentReference.rootValue as ImportedModule;
-                            const importedModuleContext = importedModule.context;
+                            // Restore the library context
+                            const importedLibrary = currentReference.rootValue as ImportedLibrary;
+                            const {context: importedLibraryContext} = importedLibrary;
 
-                            // When executing module function, update the
+                            // When executing library function, update the
                             // active filepath.
-                            this.enterFile(importedModule.moduleFilePath);
+                            this.enterFile(importedLibrary.libraryFilePath);
 
                             const newExecutor = this.handleEnterContext(
                                 this.getExecutor(),
                                 this.executionStack,
-                                importedModuleContext.name,
+                                importedLibraryContext.name,
                                 ctx,
                                 {
                                     netNamespace: executor.netNamespace,
-                                    namespace: importedModule.moduleNamespace
+                                    namespace: importedLibrary.libraryNamespace
                                 }, [], [],
                                 false
                             );
 
-                            this.log('copy module context scope');
-                            importedModuleContext.scope.copyTo(newExecutor.scope);
+                            this.log('copy library context scope');
+                            importedLibraryContext.scope.copyTo(newExecutor.scope);
                         }
 
                         const [, functionResult] =
@@ -682,8 +682,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                                 this.executionStack,
                                 useNetNamespace);
 
-                        if (isModuleFunction){
-                            this.log('pop module context scope');
+                        if (isLibraryFunction){
+                            this.log('pop library context scope');
                             this.handlePopContext(
                                 this.getExecutor(),
                                 this.executionStack,
@@ -1093,7 +1093,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     protected async handleImportFile(name: string, 
         importHandling: ImportFunctionHandling,
         throwErrors = true, ctx: ParserRuleContext | null = null, 
-        specificImports: string[] = []): Promise<ImportFile> {
+        specificImports: string[] = []): Promise<ImportLibraryFile> {
 
         name = name.trim();
         const importAlready = this.importedFiles.find(item => {
@@ -1101,9 +1101,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         });
 
         if (importAlready) {
-            const tmpImportedModule = importAlready.importedModule;
+            const { importedLibrary: tmpImportedLibrary } = importAlready;
 
-            const alreadyImportedFlag = tmpImportedModule.importHandlingFlag;
+            const alreadyImportedFlag = tmpImportedLibrary.importHandlingFlag;
             const isMergedNamespace = alreadyImportedFlag === ImportFunctionHandling.AllMergeIntoNamespace
                 || alreadyImportedFlag === ImportFunctionHandling.SpecificMergeIntoNamespace;
             
@@ -1124,13 +1124,13 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 if (alreadyImportedFlag === ImportFunctionHandling.AllMergeIntoNamespace) {
                     // Do nothing, because all already merged into the namespace
                 } else if (alreadyImportedFlag === ImportFunctionHandling.SpecificMergeIntoNamespace && importHandling === ImportFunctionHandling.AllMergeIntoNamespace) {
-                    // The incoming import is to merge all, so update the module to merge all instead.
-                    tmpImportedModule.specifiedImports = [];
-                    tmpImportedModule.importHandlingFlag = ImportFunctionHandling.AllMergeIntoNamespace;
+                    // The incoming import is to merge all, so update the library to merge all instead.
+                    tmpImportedLibrary.specifiedImports = [];
+                    tmpImportedLibrary.importHandlingFlag = ImportFunctionHandling.AllMergeIntoNamespace;
                     
                 } else if (alreadyImportedFlag === ImportFunctionHandling.SpecificMergeIntoNamespace && importHandling === ImportFunctionHandling.SpecificMergeIntoNamespace) {
                     // Combine both specific impors together
-                    tmpImportedModule.specifiedImports.push(
+                    tmpImportedLibrary.specifiedImports.push(
                         ...specificImports
                     )
                 }
@@ -1158,7 +1158,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
             pathExists = false;
         }
 
-        let importedModule: ImportedModule;
+        let importedLibrary: ImportedLibrary;
 
         if (!pathExists) {
             // if path does not exist, then search default libs path
@@ -1184,17 +1184,17 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
                 const executionContextName = name;
                 const netNamespace = executor.netNamespace;
-                const moduleNamespace = `${BaseNamespace}${name}.`;
+                const libraryNamespace = `${BaseNamespace}${name}.`;
 
                 // Create a new context, so that it is easier to track the
-                // functions that were created within the imported module.
+                // functions that were created within the imported library.
                 this.enterNewChildContext(
                     executionStack,
                     executor,
                     executionContextName,
                     { 
                         netNamespace,
-                        namespace: moduleNamespace,
+                        namespace: libraryNamespace,
                     }, [], []);
 
                 const importResult = await this.onImportFile(this, 
@@ -1206,8 +1206,8 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                 const importContext = executionStack.pop()!;
 
                 this.log(`import handling flag: ${importHandling}`);
-                importedModule = new ImportedModule(name,
-                    moduleNamespace,
+                importedLibrary = new ImportedLibrary(name,
+                    libraryNamespace,
                     filePathUsed,
                     importResult.tree, importResult.tokens,
                     importContext, importHandling, specificImports);
@@ -1218,15 +1218,15 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 
                 const scope = this.getScope();
                 
-                // Add the imported module into the scope.
-                scope.modules.set(name, importedModule);
+                // Add the imported library into the scope.
+                scope.libraries.set(name, importedLibrary);
 
-                // Add all modules that were imported within the imported modules itself
-                importedModule.context.scope.modules.forEach((module, key) => {
-                    scope.modules.set(key, module);
+                // Add all libraries that were imported within the imported libraries itself
+                importedLibrary.context.scope.libraries.forEach((lib, key) => {
+                    scope.libraries.set(key, lib);
                 });
 
-                await this.checkModuleHasRefdesFile(filePathUsed);
+                await this.checkLibraryHasRefdesFile(filePathUsed);
             }
         } catch (err) {
             if (ctx != null) {
@@ -1252,12 +1252,12 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         }
 
         // Keep track of already imported files
-        const newImportedFile: ImportFile = {
+        const newImportedFile: ImportLibraryFile = {
             id: name.trim(),
             hasError,
             hasParseError,
             pathExists,
-            importedModule: importedModule!
+            importedLibrary: importedLibrary!
         };
 
         this.importedFiles.push(newImportedFile);
@@ -1265,7 +1265,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         return newImportedFile;
     }
 
-    async checkModuleHasRefdesFile(filePath: string): Promise<void>{
+    async checkLibraryHasRefdesFile(filePath: string): Promise<void>{
         return;
     }
 
@@ -1530,12 +1530,12 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
 export type OnErrorHandler = 
     (message: string, context: ParserRuleContext, e?: any) => void;
 
-type ImportFile = {
+type ImportLibraryFile = {
     id: string,
     hasError: boolean,
     hasParseError: boolean,
     pathExists: boolean,
-    importedModule: ImportedModule
+    importedLibrary: ImportedLibrary
 }
 
 export type ImportFileResult = {

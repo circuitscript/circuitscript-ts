@@ -38,7 +38,7 @@ import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { ImportedModule } from "./objects/types.js";
+import { ImportedLibrary } from "./objects/types.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -262,7 +262,7 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
     tree: ScriptContext,
     tokens: CommonTokenStream,
     componentLinks: Map<ParserRuleContext, ClassComponent>,
-    importedModules: ImportedModule[],
+    importedLibraries: ImportedLibrary[],
     environment: NodeScriptEnvironment
 ): Promise<void> {
     const {
@@ -284,35 +284,34 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
             outputType: RefdesOutputType.WithSource
         }];
 
-        // For the imported modules, check if refdes annotation is enabled.
-        for (const module of importedModules) {
-
+        // For the imported libraries, check if refdes annotation is enabled.
+        for (const library of importedLibraries) {
             let outputType = RefdesOutputType.None;
-            if (module.enableRefdesAnnotation) {
+            if (library.enableRefdesAnnotation) {
                 outputType = RefdesOutputType.WithSource;
-            } else if (module.enableRefdesAnnotationFile) {
+            } else if (library.enableRefdesAnnotationFile) {
                 outputType = RefdesOutputType.CreateExternalFile;
             }
 
             if (outputType !== RefdesOutputType.None) {
-                const { moduleFilePath, moduleName,
-                    tokens: moduleTokens, tree: moduleTree } = module;
-                const moduleScriptData = await environment.readFile(
-                    moduleFilePath, { encoding: 'utf8' });
-                
+                const { libraryFilePath, libraryName,
+                    tokens: libTokens, tree: libTree } = library;
+                const libraryScriptData = await environment.readFile(
+                    libraryFilePath, { encoding: 'utf8' });
+
                 annotatedFiles.push({
-                    tokens: moduleTokens,
-                    tree: moduleTree,
-                    filePath: moduleFilePath,
-                    scriptData: moduleScriptData,
-                    moduleName,
+                    tokens: libTokens,
+                    tree: libTree,
+                    filePath: libraryFilePath,
+                    scriptData: libraryScriptData,
+                    libraryName,
                     outputType
                 });
             }
         }
 
         for (const item of annotatedFiles) {
-            const { scriptData, tokens, tree, filePath, moduleName,
+            const { scriptData, tokens, tree, filePath, libraryName,
                 isMainFile = false } = item;
 
             const tmpVisitor = new RefdesAnnotationVisitor(true,
@@ -322,7 +321,7 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
             let usePath = filePath;
 
-            // What path to save to for module files??
+            // What path to save to for libary files??
             if (isMainFile && saveAnnotatedCopy === true) {
                 const dir = environment.dirname(filePath);
                 const ext = environment.extname(filePath);
@@ -350,7 +349,7 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
                 const jsonFile = {
                     format: 'v1',
-                    module: moduleName,
+                    library: libraryName,
                     file: relativeFilePath,
                     items: output,
                 }
@@ -362,8 +361,8 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
             }
 
             let display = 'Refdes annotations'
-            if (moduleName) {
-                display += ` for module ${moduleName}`
+            if (libraryName) {
+                display += ` for library ${libraryName}`
             }
 
             console.log(`${display} saved to ${usePath}`);
@@ -377,7 +376,7 @@ type AnnotatedFile = {
     tree: ScriptContext,
     filePath: string,
     scriptData: string,
-    moduleName?: string,
+    libraryName?: string,
 
     outputType: RefdesOutputType,
 }
@@ -413,7 +412,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             tree: ScriptContext,
             tokens:CommonTokenStream, 
             componentLinks:Map<ParserRuleContext, ClassComponent>,
-            importedModule: ImportedModule[],
+            importedLibraries: ImportedLibrary[],
             environment: NodeScriptEnvironment) => void)[]
 
 ): Promise<RenderScriptReturn> {
@@ -517,10 +516,10 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     }
 
     const componentLinks = visitor.getComponentCtxLinks();
-    const importedModules = Array.from(visitor.getScope().modules.values());
+    const importedLibraries = Array.from(visitor.getScope().libraries.values());
     for (let i = 0; i < postAnnotationCallbacks.length; i++) {
         await postAnnotationCallbacks[i](options, scriptData, tree, 
-            tokens, componentLinks, importedModules, environment);
+            tokens, componentLinks, importedLibraries, environment);
     }
     
     if (dumpNets) {

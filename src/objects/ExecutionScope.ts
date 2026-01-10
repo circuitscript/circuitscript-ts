@@ -9,7 +9,7 @@ import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
 import { CFunction, CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
     ComponentPinWireId, 
-    ImportedModule, 
+    ImportedLibrary, 
     ParseSymbolType, ValueType } from './types.js';
 import { BlockTypes, LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
@@ -48,8 +48,8 @@ export class ExecutionScope {
 
     symbols: Map<string, { type: ParseSymbolType }> = new Map();
 
-    // Modules are imported files that contain functions, etc.
-    modules: Map<string, ImportedModule> = new Map();
+    // Libraries are imported files that contain functions, etc.
+    libraries: Map<string, ImportedLibrary> = new Map();
 
     blockStack: Map<number, BlockStackEntry> = new Map();
 

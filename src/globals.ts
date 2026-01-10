@@ -146,7 +146,7 @@ export enum ReferenceTypes {
     variable = 'variable',
     instance = 'instance',
     pinType = 'pinType',
-    module = 'module',
+    library = 'library',
     
     unknown = 'unknown',
 }

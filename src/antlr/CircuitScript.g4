@@ -251,9 +251,9 @@ wire_expr: Wire wire_atom_expr*;
 array_expr: '[' (data_expr (',' data_expr)*)* ']';
 
 point_expr: Point (ID | data_expr);
-import_expr: Import moduleName=ID  import_annotation_expr?                                      # import_simple
-      | From moduleName=ID Import '*' import_annotation_expr?                                   # import_all_simple
-      | From moduleName=ID Import funcNames+=ID (',' funcNames+=ID)*  import_annotation_expr?   # import_specific
+import_expr: Import libraryName=ID  import_annotation_expr?                                      # import_simple
+      | From libraryName=ID Import '*' import_annotation_expr?                                   # import_all_simple
+      | From libraryName=ID Import funcNames+=ID (',' funcNames+=ID)*  import_annotation_expr?   # import_specific
       ;
 
 import_annotation_expr: ANNOTATION_START (ID |'-')*;

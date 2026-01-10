@@ -21,7 +21,7 @@ import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParam
     DeclaredReference, 
     Direction,
     ImportFunctionHandling,
-    ImportedModule,
+    ImportedLibrary,
     NetTypes} from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
@@ -1041,7 +1041,7 @@ export class ExecutionContext {
 
     /**
      * 
-     * @param namespace Used to determine where (which module) function was defined
+     * @param namespace Used to determine where (which library) function was defined
      * @param functionName 
      * @param uniqueId Used if the function does not have a defined name.
      * @param __runFunc 
@@ -1091,22 +1091,21 @@ export class ExecutionContext {
 
             } else {
 
-                // Go through all modules and check if the id matches any
-                // functions within the module.
-                const modules = Array.from(context.scope.modules.values());
-                for (let j = 0; j < modules.length; j++) {
-                    const module = modules[j];
-                    if (module.importHandlingFlag === ImportFunctionHandling.AllMergeIntoNamespace ||
-                        (module.importHandlingFlag === ImportFunctionHandling.SpecificMergeIntoNamespace
-                            && module.specifiedImports.indexOf(idName) !== -1)
+                // Go through all libraries and check if the id matches any
+                // functions within the library.
+                const libraries = Array.from(context.scope.libraries.values());
+                for (const library of libraries) {
+                    if (library.importHandlingFlag === ImportFunctionHandling.AllMergeIntoNamespace ||
+                        (library.importHandlingFlag === ImportFunctionHandling.SpecificMergeIntoNamespace
+                            && library.specifiedImports.indexOf(idName) !== -1)
                     ) {
-                        const moduleContext = module.context;
-                        const functionPath = `${moduleContext.namespace}${idName}`;
-                        if (module.context.hasFunction(functionPath)) {
+                        const { context: libraryContext } = library;
+                        const functionPath = `${libraryContext.namespace}${idName}`;
+                        if (library.context.hasFunction(functionPath)) {
                             return new DeclaredReference({
                                 found: true,
-                                rootValue: module,
-                                value: module.context.getFunction(functionPath),
+                                rootValue: library,
+                                value: library.context.getFunction(functionPath),
                                 type: ReferenceTypes.function,
                                 name: idName,
                                 trailerIndex: 1,
@@ -1116,14 +1115,14 @@ export class ExecutionContext {
                     }
                 }
 
-                // Check if the idName is a module name
-                let isModule = false;
-                if (context.scope.modules.has(idName)) {
-                    const module = context.scope.modules.get(idName)!;
-                    if (module.importHandlingFlag === ImportFunctionHandling.AllWithNamespace) {
+                // Check if the idName is a library name
+                let isLibrary = false;
+                if (context.scope.libraries.has(idName)) {
+                    const library = context.scope.libraries.get(idName)!;
+                    if (library.importHandlingFlag === ImportFunctionHandling.AllWithNamespace) {
                         // Only if this flag is set, then allow using the
-                        // module/namespace.
-                        isModule = true;
+                        // library/namespace.
+                        isLibrary = true;
                     }
                 }
 
@@ -1133,10 +1132,10 @@ export class ExecutionContext {
                 // format of instances
                 let isComponentInstance = context.scope.instances.has(idName);
 
-                if (isModule || isVariable || isComponentInstance) {                    
+                if (isLibrary || isVariable || isComponentInstance) {                    
 
                     const scopeList = 
-                        isModule ? context.scope.modules :
+                        isLibrary ? context.scope.libraries :
                         (isVariable ? context.scope.variables : context.scope.instances);
 
                     const useValue = scopeList.get(idName);
@@ -1147,7 +1146,7 @@ export class ExecutionContext {
                     }
 
                     const referenceType = 
-                        isModule ? ReferenceTypes.module :
+                        isLibrary ? ReferenceTypes.library :
                         (isVariable ? ReferenceTypes.variable: ReferenceTypes.instance);
                         
                     const tmpReference = this.resolveTrailers(
@@ -1215,13 +1214,13 @@ export class ExecutionContext {
                     break;
                 }
 
-                case ReferenceTypes.module: {
+                case ReferenceTypes.library: {
                     const funcName = trailers[0];
-                    const module = rootValue as ImportedModule;
+                    const library = rootValue as ImportedLibrary;
 
-                    const functionPath = `${module.moduleNamespace}${funcName}`;
-                    if (module.context.hasFunction(functionPath)){
-                        const foundFunc = module.context.getFunction(functionPath);
+                    const functionPath = `${library.libraryNamespace}${funcName}`;
+                    if (library.context.hasFunction(functionPath)){
+                        const foundFunc = library.context.getFunction(functionPath);
 
                         return new AnyReference({
                             found: true,

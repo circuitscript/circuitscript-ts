@@ -10,7 +10,7 @@ import { Assignment_exprContext, Atom_exprContext,
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
-import { ComplexType, FunctionDefinedParameter, ImportedModule, ImportFunctionHandling, ParseSymbolType, ValueType } from "../objects/types.js";
+import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionHandling, ParseSymbolType, ValueType } from "../objects/types.js";
 import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
 import { SymbolTable } from "./SymbolTable.js";
 import { BaseVisitor } from "../BaseVisitor.js";
@@ -187,17 +187,17 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             specifiedImports.push(...tmpImports);
         }
 
-        const id = ctx._moduleName!.text!;
-        const { pathExists, importedModule } =
+        const id = ctx._libraryName!.text!;
+        const { pathExists, importedLibrary } =
             await this.handleImportFile(id, handling,
                 true, ctx, specifiedImports);
 
         if (!pathExists) {
             this.symbolTable.addUndefined(
                 this.getCurrentFile(), this.getExecutor(), id,
-                ctx._moduleName!);
+                ctx._libraryName!);
         } else {
-            this.applyModuleImports(importedModule);
+            this.applyLibraryImports(importedLibrary);
         }
     }
 
@@ -214,11 +214,11 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     }
 
     /**
-     * Add module function imports into the symbolTable based on the import handling.
-     * @param module
+     * Add library function imports into the symbolTable based on the import handling.
+     * @param library
      */
-    private applyModuleImports(module: ImportedModule): void {
-        const { importHandlingFlag: importHandling, specifiedImports } = module;
+    private applyLibraryImports(library: ImportedLibrary): void {
+        const { importHandlingFlag: importHandling, specifiedImports } = library;
 
         const addedSymbols: [key:string, symbol: SymbolTableItemDefined][] = [];
 
@@ -228,8 +228,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         symbolTable.forEach((value, key) => {
             if (value.type === ParseSymbolType.Function) {
                 const definedSymbol = (value as SymbolTableItemDefined);
-                // The symbol is part of the module
-                if (definedSymbol.fileName === module.moduleFilePath) {
+                // The symbol is part of the library
+                if (definedSymbol.fileName === library.libraryFilePath) {
 
                     const addSymbolToNamespace = importHandling === ImportFunctionHandling.AllMergeIntoNamespace
                         || (
