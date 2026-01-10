@@ -1,5 +1,4 @@
 import { Dom, registerWindow, SVG } from "@svgdotjs/svg.js";
-import { PathOrFileDescriptor, PathLike, writeFileSync } from "fs";
 import fs from 'fs';
 import path from "path";
 import CryptoJs from "crypto-js";
@@ -12,6 +11,13 @@ import { RuntimeExecutionError } from "./utils.js";
 // as the environment.
 
 export class NodeScriptEnvironment {
+    existsSync(pathLike: string): boolean {
+        return fs.existsSync(pathLike);
+    }
+
+    mkdirSync(pathLike: string): void {
+        return fs.mkdirSync(pathLike);
+    }
 
     // Maintain a global instance for ease of access
     // TODO: in the future, this should be changed away from this singleton.
@@ -184,13 +190,13 @@ export class NodeScriptEnvironment {
         return this.prepareSVGEnvironmentInternal(this.getFontsPath());
     }
 
-    async readFile(path: PathOrFileDescriptor, options?): Promise<string> {
+    async readFile(path: fs.PathOrFileDescriptor, options?): Promise<string> {
         options = options ?? {encoding: 'utf8'};
         return fs.promises.readFile(path, options);
     }
 
-    writeFileSync(path: PathOrFileDescriptor, data: string): void {
-        return writeFileSync(path, data);
+    writeFileSync(path: fs.PathOrFileDescriptor, data: string): void {
+        return fs.writeFileSync(path, data);
     }
 
     getAbsolutePath(filePath: string): string {
@@ -214,7 +220,7 @@ export class NodeScriptEnvironment {
         return path.join(this.getDirPath(this.currentFile!), filePath);
     }
 
-    async exists(path: PathLike): Promise<boolean> {
+    async exists(path: fs.PathLike): Promise<boolean> {
         try {
             await fs.promises.access(path, fs.constants.F_OK);
             return true;
@@ -245,5 +251,9 @@ export class NodeScriptEnvironment {
 
     relative(from: string, to:string): string {
         return path.relative(from, to);
+    }
+
+    createWriteStream(filePath: string): fs.WriteStream {
+        return fs.createWriteStream(filePath);
     }
 }

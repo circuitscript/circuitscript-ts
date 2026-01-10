@@ -1681,7 +1681,14 @@ export class ExecutionContext {
                     ParamKeys.flipY,
                 ];
 
-                if (unitModifiers.indexOf(paramName) !== -1){
+                if (unitModifiers.indexOf(paramName) !== -1) {
+                    // Convert the flipX/flipY value from boolean to number.
+                    if (paramName === ParamKeys.flipX || paramName == ParamKeys.flipY) {
+                        // Coerce boolean value into numeric value.
+                        if (typeof value === "boolean") {
+                            value = value ? numeric(1) : numeric(0);
+                        }
+                    }
                     component.getUnit().setParam(paramName, value);
                 }
 

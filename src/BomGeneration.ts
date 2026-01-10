@@ -1,8 +1,8 @@
 import * as csv from '@fast-csv/format';
-import * as fs from 'fs';
 
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
+import { NodeScriptEnvironment } from './environment.js';
 
 export type BomConfig = {
     columns: string[], // Specifies paramKeys that will be used in the columns of the BOM
@@ -189,9 +189,11 @@ export function generateBomCSV(bomData: Record<string, GroupEntry>[]): string[][
     return rows;
 }
 
-export async function saveBomOutputCsv(bomCsvOutput: string[][], filePath: string): Promise<void> {
+export async function saveBomOutputCsv(environment:NodeScriptEnvironment, 
+    bomCsvOutput: string[][], filePath: string): Promise<void> {
+    
     return new Promise(resolve => {
-        const outputStream = fs.createWriteStream(filePath);
+        const outputStream = environment.createWriteStream(filePath);
         const csvStream = csv.format();
         csvStream.pipe(outputStream).on("finish", () => {
             resolve();

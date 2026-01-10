@@ -471,7 +471,7 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
 const languageKeywords = [
     'break', 'branch', 'create', 'component',
     'graphic', 'wire', 'pin', 'add', 'at', 'to',
-    'point', 'join', 'parallel', 'return', 'def', 'import',
+    'point', 'join', 'parallel', 'return', 'def', 'from', 'import',
     'true', 'false', 'nc', 'sheet', 'frame', 'if', 'else', 'for', 'in',
 ];
 

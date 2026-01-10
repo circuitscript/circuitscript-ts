@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { writeFileSync, createWriteStream,
-    existsSync, mkdirSync} from "fs";
 import path from "path";
 
 import PDFDocument from "pdfkit";
@@ -493,8 +491,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
     if (dumpData) {
         console.log('Dump data to:', dumpDirectory);
-        if (!existsSync(dumpDirectory)) {
-            mkdirSync(dumpDirectory);
+        if (!environment.existsSync(dumpDirectory)) {
+            environment.mkdirSync(dumpDirectory);
         }
     }
 
@@ -530,8 +528,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         nets.forEach(item => console.log(item.join(" | ")));
     }
 
-    dumpData && writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));
-    dumpData && writeFileSync(dumpDirectory + 'raw-parser.txt', visitor.logger.dump());
+    dumpData && environment.writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));
+    dumpData && environment.writeFileSync(dumpDirectory + 'raw-parser.txt', visitor.logger.dump());
 
     if (throwError){
         throw throwError;
@@ -558,12 +556,12 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             const bomData = generateBom(bomConfig, visitor.getScope().getInstances());
 
             const bomCsvOutput = generateBomCSV(bomData);
-            await saveBomOutputCsv(bomCsvOutput, bomOutputPath);
+            await saveBomOutputCsv(environment, bomCsvOutput, bomOutputPath);
             console.log('Generated BOM file', bomOutputPath);
         }
 
         const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
-        dumpData && writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
+        dumpData && environment.writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
 
         try {
             let fileExtension: string | null = null;
@@ -625,7 +623,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
             showStats && console.log('Layout took:', layoutTimer.lap());
 
-            dumpData && writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
+            dumpData && environment.writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
 
             const generateSvgTimer = new SimpleStopwatch();
 
@@ -639,7 +637,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
             showStats && console.log('Render took:', generateSvgTimer.lap());
 
-            dumpData && writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
+            dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
 
             try {
                 if (fileExtension === "pdf") {
@@ -654,7 +652,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             if (outputPath) {
                 if (fileExtension === 'svg') {
                     try {
-                        writeFileSync(outputPath, svgOutput);
+                        environment.writeFileSync(outputPath, svgOutput);
                     } catch (err) {
                         throw new RenderError(`Error writing SVG file: ${err}`, 'file_output');
                     }
@@ -673,7 +671,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                             layout: 'landscape',
                             size: sheetSize
                         });
-                        const outputStream = createWriteStream(outputPath);
+                        const outputStream = environment.createWriteStream(outputPath);
 
                         generatePdfOutput(doc, svgCanvas,
                             sheetSize, sheetSizeDefined, outputDefaultZoom);
@@ -733,7 +731,7 @@ export class KiCadNetListOutputHandler extends ParseOutputHandler {
                     `${entry.refdes} (${entry.instanceName}) does not have footprint`);
             });
 
-            writeFileSync(outputPath, printTree(kiCadNetList));
+            visitor.environment.writeFileSync(outputPath, printTree(kiCadNetList));
             console.log('Generated file', outputPath);
 
             return false;
