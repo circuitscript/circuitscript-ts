@@ -1,6 +1,31 @@
 # Changelog
 
-## [v0.2.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.33...v0.2.0)
+## [v0.3.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.2.0...v0.3.0)
+
+[245e216](https://gitlab.com/circuitscript/circuitscript-ts/commit/245e21652e9e92165a375ccdc3edaae5cb6174a6)Rename module terminology to library throughout codebase
+- 
+- Refactor all references from "module" to "library" to better reflect the purpose of imported CircuitScript files. This includes renaming the ImportedModule class to ImportedLibrary, updating grammar definitions, execution contexts, and all related variables and comments.
+- 
+- Changes include:
+- - Rename ImportedModule class to ImportedLibrary with updated properties (moduleName -&gt; libraryName, moduleNamespace -&gt; libraryNamespace, moduleFilePath -&gt; libraryFilePath)
+- - Update ANTLR grammar to use libraryName instead of moduleName
+- - Refactor ExecutionScope to use libraries map instead of modules
+- - Update reference type from ReferenceTypes.module to ReferenceTypes.library
+- - Regenerate parser with updated grammar
+- - Update test data JSON files to reflect library terminology
+- - Update all inline comments and log messages
+
+[27f4ca8](https://gitlab.com/circuitscript/circuitscript-ts/commit/27f4ca8c688e35e63473552c90b0db2e8bf3f880)Consolidate TypeProps enum into ComponentTypes
+- 
+- Remove duplicate TypeProps enum and migrate all references to use the existing ComponentTypes enum instead. This eliminates redundant type definitions and improves code consistency across the component type system.
+- 
+- Changes:
+- - Remove TypeProps enum from src/objects/types.ts
+- - Update all TypeProps references to ComponentTypes
+- - Add resistor type to ComponentTypes enum
+- - Remove unused imports
+
+## [v0.2.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.1.33...v0.2.0) - 2026-01-10
 
 [591ed14](https://gitlab.com/circuitscript/circuitscript-ts/commit/591ed14869ccdbbae05a3c018426acc6e9a5f3fd)Refactor file system operations to use environment abstraction
 - 
