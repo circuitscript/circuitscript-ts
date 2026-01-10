@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.3.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.2.0...v0.3.0)
+## [v0.3.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.0...v0.3.1)
+
+[39c8e0e](https://gitlab.com/circuitscript/circuitscript-ts/commit/39c8e0e5c13edf75c96254fc45b4508f26f7e7fe)Missed out BOM group_by property
+
+## [v0.3.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.2.0...v0.3.0) - 2026-01-10
 
 [245e216](https://gitlab.com/circuitscript/circuitscript-ts/commit/245e21652e9e92165a375ccdc3edaae5cb6174a6)Rename module terminology to library throughout codebase
 - 
