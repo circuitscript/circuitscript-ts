@@ -138,6 +138,8 @@ export enum ComponentTypes {
 
     /** Component is a module and contains an internal circuit */
     module = 'module',
+
+    resistor = 'res',
 }
 
 export enum ReferenceTypes {

@@ -255,19 +255,6 @@ export enum Direction {
     Up = 'up',
 }
 
-// TODO: merge with ComponentTypes
-export enum TypeProps {
-    Net = 'net',
-    Port = 'port',
-    Graphic = 'graphic',
-    Module = 'module',
-
-    Resistor = 'res',
-    Capacitor = 'cap',
-    Inductor = 'ind',
-    Diode = 'diode',
-}
-
 export enum NetTypes {
     Any = 'any',
     Source = 'source',

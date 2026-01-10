@@ -1,7 +1,7 @@
 import { Edge, Graph } from "@dagrejs/graphlib";
 import { SymbolGraphic, SymbolDrawing, SymbolPlaceholder, SymbolCustomModule, 
     SymbolCustom, SymbolPinDefintion } from "./draw_symbols.js";
-import { ComponentTypes, DefaultComponentUnit } from "./globals.js";
+import { ComponentTypes } from "./globals.js";
 import { milsToMM } from "./helpers.js";
 import { RenderFrame, RenderComponent, applyComponentParamsToSymbol, 
     RenderWire } from "./layout.js";
@@ -11,7 +11,7 @@ import { Frame, FixedFrameIds, FrameParamKeys } from "./objects/Frame.js";
 import { Net } from "./objects/Net.js";
 import { numeric, NumericValue } from "./objects/ParamDefinition.js";
 import { Logger } from "./logger.js";
-import { ComponentPinNetPair, NetTypes, TypeProps } from "./objects/types.js";
+import { ComponentPinNetPair, NetTypes } from "./objects/types.js";
 import Matrix, { solve } from "ml-matrix";
 import { getPinDefinition, PinId } from "./objects/PinDefinition.js";
 
@@ -380,7 +380,7 @@ export class NetGraph {
 
         // Parse only resistors for now
         components.forEach(item => {
-            if (item.typeProp === TypeProps.Resistor){
+            if (item.typeProp === ComponentTypes.resistor){
                 const net1 = item.pinNets.get(1)!;
                 const net2 = item.pinNets.get(2)!;
 

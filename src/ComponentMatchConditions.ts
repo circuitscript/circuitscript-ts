@@ -1,6 +1,6 @@
+import { ComponentTypes } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/ParamDefinition.js"
-import { TypeProps } from "./objects/types.js";
 
 export type ConditionNode = {
     // Parameter key to compare with
@@ -158,7 +158,7 @@ export function partMatchesConditions(instance: ClassComponent, partConditions: 
 export function applyPartConditions(instances: ClassComponent[], paramKeys: string[], partConditions: PartConditions[]): void {
     instances.forEach(item => {
         // get the params
-        if (item.typeProp !== TypeProps.Graphic) {
+        if (item.typeProp !== ComponentTypes.graphic) {
             const matchedResult = partMatchesConditions(item, partConditions);
 
             if (matchedResult !== undefined) {

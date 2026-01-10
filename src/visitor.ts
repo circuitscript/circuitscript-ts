@@ -78,7 +78,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
-    FunctionDefinedParameter, TypeProps, UndeclaredReference } from './objects/types.js';
+    FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
@@ -426,7 +426,7 @@ export class ParserVisitor extends BaseVisitor {
         let pins: PinDefinition[] = [];
 
         // Assume not a graphic component.
-        if (display !== null && arrange === null && typeProp !== TypeProps.Graphic) {
+        if (display !== null && arrange === null && typeProp !== ComponentTypes.graphic) {
             // If the display prop is set, then extract the pin information 
             // from the graphic commands.
             // `pins` prop will be ignored.
@@ -858,7 +858,7 @@ export class ParserVisitor extends BaseVisitor {
         );
 
         const unitProperties = this.extractComponentUnitProperties(properties, 
-            TypeProps.Module);
+            ComponentTypes.module);
 
         const firstUnitDef = unitProperties[0][1];
         firstUnitDef.pins = tmpPorts;
@@ -877,7 +877,7 @@ export class ParserVisitor extends BaseVisitor {
         const moduleComponent = this.getExecutor().createComponent(
             moduleInstanceName, tmpPorts, blankParams, props, true) as ModuleComponent;
 
-        moduleComponent.typeProp = TypeProps.Module;
+        moduleComponent.typeProp = ComponentTypes.module;
 
         const ctxPropertyBlock = ctx.property_block_expr();
         if (ctxPropertyBlock) {
@@ -2427,8 +2427,8 @@ export class ParserVisitor extends BaseVisitor {
 
         nets.forEach(([component, pin, net]) => {
             if (net.priority === 0 && seenNets.indexOf(net) === -1 
-                && component.typeProp !== TypeProps.Module
-                && component.typeProp !== TypeProps.Net) {
+                && component.typeProp !== ComponentTypes.module
+                && component.typeProp !== ComponentTypes.net) {
                 
                 // Update both names, since both are originally system
                 // created net names.
