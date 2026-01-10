@@ -30,7 +30,6 @@ export default async function main(): Promise<void> {
         .argument('[input path]', 'Input path')
         .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')
-        .option('-c, --current-directory <path>', 'Set current directory')
         .option('-u, --update-source', 'Update source file with refdes annotation')
         .option('-j, --annotated-path [file-path]', 'Save annotated source file at given path')
         .option('-w, --watch', 'Watch for file changes')
@@ -62,10 +61,6 @@ export default async function main(): Promise<void> {
     const enableBom = options.bom !== undefined;
     let bomOutputPath = options.bom;
 
-    if (options.currentDirectory){
-        throw "Parameter not supported yet";
-    }
-    
     if (watchFileChanges) {
         console.log('watching for file changes...');
     }

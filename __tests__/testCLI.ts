@@ -26,7 +26,6 @@ describe('test cli program', () => {
             `Options:
   -V, --version                     output the version number
   -i, --input text <input text>     Input text directly
-  -c, --current-directory <path>    Set current directory
   -u, --update-source               Update source file with refdes annotation
   -j, --annotated-path [file-path]  Save annotated source file at given path
   -w, --watch                       Watch for file changes
