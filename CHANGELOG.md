@@ -1,6 +1,18 @@
 # Changelog
 
-## [v0.3.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.0...v0.3.1)
+## [v0.3.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.1...v0.3.2)
+
+[6cd3944](https://gitlab.com/circuitscript/circuitscript-ts/commit/6cd3944fec56c7485df7d4d2d31e6f75bfed88db)Consolidate external refdes annotations into single JSON file
+- 
+- Changes the external refdes annotation system to use a single JSON file per main schematic file instead of individual files per library. The refdes file is now named after the main schematic (main.refdes.json) and contains a structured format with library entries that store component reference designators by library name and path.
+- 
+- Updates:
+- - RefdesAnnotationVisitor: Return dictionary mapping refdes to position strings
+- - helpers.ts: Collect all external refdes libraries and write to single consolidated JSON
+- - visitor.ts: Update checkLibraryHasRefdesFile to read from centralized format
+- - Tests: Update expected test data files to reflect new naming and structure
+
+## [v0.3.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.0...v0.3.1) - 2026-01-10
 
 [39c8e0e](https://gitlab.com/circuitscript/circuitscript-ts/commit/39c8e0e5c13edf75c96254fc45b4508f26f7e7fe)Missed out BOM group_by property
 
