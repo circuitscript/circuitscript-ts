@@ -1,0 +1,14 @@
+{
+    "format": "v1",
+    "description": "Stores external refdes for libraries",
+    "libraries": [
+        {
+            "name": "file2",
+            "path": "file2.cst",
+            "items": {
+                "R2_": "7:8:7:19",
+                "R3_": "12:4:12:15"
+            }
+        }
+    ]
+}

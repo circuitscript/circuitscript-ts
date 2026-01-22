@@ -219,14 +219,16 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         return this.resultText;
     }
 
-    getOutputForExternalRefdesFile(): string[] {
-        const result: string[] = [];
+    getOutputForExternalRefdesFile(): Record<string, string> {
+        const result:Record<string, string> = {};
+
         this.modifications.forEach((modification, ctx) => {
             const { line: startLine, column: startColumn } = ctx.start!;
             const { line: stopLine, column: stopColumn } = ctx.stop!;
             const joinedRefdes = modification.refdes.join(',');
-            result.push(`${startLine}:${startColumn}:${stopLine}:${stopColumn}:${joinedRefdes}`);
+            result[joinedRefdes] = `${startLine}:${startColumn}:${stopLine}:${stopColumn}`;
         });
+
         return result;
     }
 

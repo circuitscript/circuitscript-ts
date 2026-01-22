@@ -2013,40 +2013,62 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     async checkLibraryHasRefdesFile(filePath: string): Promise<void> {
-        // Checks if the given import has an refdes json file.
-        const dir = this.environment.dirname(filePath);
-        const ext = this.environment.extname(filePath);
-        const basename = this.environment.basename(filePath, ext);
-        const annotatedFilePath = this.environment.join(dir, `${basename}${RefdesFileSuffix}`);
+        // Checks if the main schematic file has an refdes json file with
+        // annotations for the given library import.
 
-        const exists = await this.environment.exists(annotatedFilePath);
+        // If the filePathStack is empty, then it is a script being parsed in 
+        // directly, not a file.
+        if (this.filePathStack.length === 0){
+            return;
+        }
+
+        // Get the main schematic file path (first file in the stack)
+        const mainFilePath = this.environment.getAbsolutePath(
+            this.filePathStack[0]);
+        const mainDir = this.environment.dirname(mainFilePath);
+        const mainExt = this.environment.extname(mainFilePath);
+        const mainBasename = this.environment.basename(mainFilePath, mainExt);
+
+        // Look for <mainSchematicFile>.refdes.json
+        const refdesFilePath = this.environment.join(mainDir, `${mainBasename}${RefdesFileSuffix}`);
+
+        const exists = await this.environment.exists(refdesFilePath);
         if (exists) {
-            this.log(`Import has refdes file: ${annotatedFilePath}`);
+            this.log(`Main schematic has refdes file: ${refdesFilePath}`);
 
             // Load the file and extract the annotations
-            const fileData = await this.environment.readFile(annotatedFilePath);
+            const fileData = await this.environment.readFile(refdesFilePath);
             const jsonData = JSON.parse(fileData);
 
-            // file should be relative to the base file path
-            const baseFilePath = this.environment.getAbsolutePath(
-                this.filePathStack[0]);
+            // Get relative path from main file to the library file being checked
+            const relativeLibraryPath = this.environment.relative(mainDir, filePath);
 
-            const basePathDirectory = this.environment.dirname(baseFilePath);
+            const { libraries = [] } = jsonData;
+            for (const library of libraries) {
+                const { path: libraryPath, items } = library;
 
-            const { file, items } = jsonData;
+                // Match by relative path
+                if (libraryPath === relativeLibraryPath) {
+                    this.log(`Found refdes annotations for library at: ${libraryPath}`);
 
-            for (const item of items) {
-                const parts = item.split(':');
-                const refdes = parts[4]; // Might contain multiple refdes
-                const useFilePath = this.environment.join(basePathDirectory, file);
+                    const useFilePath = this.environment.join(mainDir, libraryPath);
 
-                const key = this.getRefdesFileAnnotation(useFilePath,
-                    Number(parts[0]),
-                    Number(parts[1]),
-                    Number(parts[2]),
-                    Number(parts[3]));
+                    for (const refdes in items) {
+                        const val = items[refdes];
+                        const parts = val.split(':');
 
-                this.refdesFileAnnotations.set(key, refdes);
+                        const key = this.getRefdesFileAnnotation(useFilePath,
+                            Number(parts[0]),
+                            Number(parts[1]),
+                            Number(parts[2]),
+                            Number(parts[3]));
+
+                        this.refdesFileAnnotations.set(key, refdes);
+                    }
+
+                    // Once library is matched, no need to process any others
+                    break;
+                }
             }
         }
     }

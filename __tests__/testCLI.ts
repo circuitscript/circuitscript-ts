@@ -115,9 +115,9 @@ describe('test cli program', () => {
     test('test generate refdes external file', async () => {
         execSync(baseCommand + ` ${mainPath}script59/main.cst -xu`);
 
-        // Check the generated refdes file
-        const createdRefdesJson = await readFile(`${mainPath}script59/file2.refdes.json`);
-        const expectedRefdesJson = await readFile(`${mainPath}script59/file2.expected.refdes.json`);
+        // Check the generated refdes file (now named after main schematic file)
+        const createdRefdesJson = await readFile(`${mainPath}script59/main.refdes.json`);
+        const expectedRefdesJson = await readFile(`${mainPath}script59/main.expected.refdes.json`);
 
         const json1 = JSON.parse(createdRefdesJson);
         const json2 = JSON.parse(expectedRefdesJson);

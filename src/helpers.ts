@@ -273,9 +273,9 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
     // Generate refdes annotation comments
     if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)) {
-        
-        // The main file should be annotated.
-        const annotatedFiles: AnnotatedFile[] = [{
+
+        // Files where the source is updated
+        const sourceAnnotatedFiles: AnnotatedFile[] = [{
             isMainFile: true,
             scriptData,
             tokens,
@@ -283,6 +283,9 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
             filePath: inputPath,
             outputType: RefdesOutputType.WithSource
         }];
+
+        // Collect all libraries that need external refdes annotation files
+        const externalRefdesLibraries: AnnotatedFile[] = [];
 
         // For the imported libraries, check if refdes annotation is enabled.
         for (const library of importedLibraries) {
@@ -299,18 +302,25 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 const libraryScriptData = await environment.readFile(
                     libraryFilePath, { encoding: 'utf8' });
 
-                annotatedFiles.push({
+                const annotatedFile = {
                     tokens: libTokens,
                     tree: libTree,
                     filePath: libraryFilePath,
                     scriptData: libraryScriptData,
                     libraryName,
                     outputType
-                });
+                };
+
+                if (outputType === RefdesOutputType.CreateExternalFile) {
+                    externalRefdesLibraries.push(annotatedFile);
+                } else {
+                    sourceAnnotatedFiles.push(annotatedFile);
+                }
             }
         }
 
-        for (const item of annotatedFiles) {
+        // Process files that need inline annotation
+        for (const item of sourceAnnotatedFiles) {
             const { scriptData, tokens, tree, filePath, libraryName,
                 isMainFile = false } = item;
 
@@ -331,34 +341,8 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 usePath = saveAnnotatedCopy as string;
             }
 
-            if (item.outputType === RefdesOutputType.WithSource){
-                environment.writeFileSync(
-                    usePath, tmpVisitor.getOutput());
-            } else if (item.outputType === RefdesOutputType.CreateExternalFile){
-                // If external file, then save to the save path, but with an extension.
-                const dir = environment.dirname(usePath);
-                const ext = environment.extname(usePath);
-                const basename = environment.basename(filePath, ext);
-                usePath = environment.join(dir, `${basename}${RefdesFileSuffix}`);
-
-                const output = tmpVisitor.getOutputForExternalRefdesFile();
-
-                // Use relative path from inputPath to filePath
-                const inputDir = environment.dirname(inputPath!);
-                const relativeFilePath = environment.relative(inputDir, filePath);
-
-                const jsonFile = {
-                    format: 'v1',
-                    library: libraryName,
-                    file: relativeFilePath,
-                    items: output,
-                }
-
-                environment.writeFileSync(
-                    usePath,
-                    JSON.stringify(jsonFile, null, 4)
-                )
-            }
+            environment.writeFileSync(
+                usePath, tmpVisitor.getOutput());
 
             let display = 'Refdes annotations'
             if (libraryName) {
@@ -367,7 +351,61 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
             console.log(`${display} saved to ${usePath}`);
         }
+
+        // Process all external refdes libraries into a single JSON file
+        if (externalRefdesLibraries.length > 0) {
+            const inputDir = environment.dirname(inputPath!);
+            const inputExt = environment.extname(inputPath!);
+            const inputBasename = environment.basename(inputPath!, inputExt);
+            const refdesFilePath = environment.join(inputDir, `${inputBasename}${RefdesFileSuffix}`);
+
+            const libraries: ExternalLibAnnotationFile[] = [];
+
+            for (const item of externalRefdesLibraries) {
+                const { scriptData, tokens, tree, filePath, libraryName } = item;
+
+                const tmpVisitor = new RefdesAnnotationVisitor(true,
+                    scriptData, tokens, componentLinks);
+
+                await tmpVisitor.visit(tree);
+
+                const output = tmpVisitor.getOutputForExternalRefdesFile();
+
+                // Use relative path from inputPath to filePath
+                const relativeFilePath = environment.relative(inputDir, filePath);
+
+                libraries.push({
+                    name: libraryName!!,
+                    path: relativeFilePath,
+                    items: output,
+                });
+            }
+
+            // Sort libraries according to library name
+            const sortedLibs = libraries.sort((a, b) => {
+                return a.name.localeCompare(b.name);
+            });
+
+            const jsonFile = {
+                format: 'v1',
+                description: 'Stores external refdes for libraries'
+                libraries: sortedLibs,
+            };
+
+            environment.writeFileSync(
+                refdesFilePath,
+                JSON.stringify(jsonFile, null, 4)
+            );
+
+            console.log(`External refdes annotations saved to ${refdesFilePath}`);
+        }
     }
+}
+
+type ExternalLibAnnotationFile = {
+    name: string,
+    path: string,
+    items: Record<string, string>,
 }
 
 type AnnotatedFile = {
