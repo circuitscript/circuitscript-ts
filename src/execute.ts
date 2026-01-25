@@ -291,7 +291,6 @@ export class ExecutionContext {
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
 
-
         const paramsMap = new Map<string, any>();
         params.forEach((param) => {
             component.parameters.set(param.paramName, param.paramValue);
@@ -1766,11 +1765,12 @@ export class ExecutionContext {
                     return;
                 }
             
+                const pinAngle = connectedPinPos.angle.toNumber();
                 this.log('set component unit angle from wire, target angle:', targetAngle,
                     ', component unit angle:', targetUnit.angleProp, 'pin angle:',
-                    connectedPinPos.angle);
+                    pinAngle);
 
-                let useAngle = (targetAngle - connectedPinPos.angle.toNumber()) % 360;
+                let useAngle = (targetAngle - pinAngle) % 360;
                 if (useAngle < 0) {
                     useAngle += 360;
                 }
@@ -1779,12 +1779,15 @@ export class ExecutionContext {
                     // Just rotate the component
                     targetUnit.setParam(ParamKeys.angle, numeric(90));
                 } else if (useAngle === 180) {
-                    if (targetUnit.angleProp === 0 || targetUnit.angleProp === 180) {
-                        targetUnit.setParam(ParamKeys.flipX, numeric(1));
-                    } else if (targetUnit.angleProp === 90 || targetUnit.angleProp === 270) {
-                        targetUnit.setParam(ParamKeys.flipY, numeric(1));
-                    }
 
+                    // If the final angle is 180, check the orientation of the
+                    // original pin to determine if flipX or flipY should be 
+                    // applied.
+                    if (pinAngle == 90 || pinAngle == 270){
+                        targetUnit.setParam(ParamKeys.flipY, numeric(1));
+                    } else if (pinAngle == 0 || pinAngle == 180){
+                        targetUnit.setParam(ParamKeys.flipX, numeric(1));
+                    }
                 } else if (useAngle === 270) {
                     targetUnit.setParam(ParamKeys.angle, numeric(270));
                 }
