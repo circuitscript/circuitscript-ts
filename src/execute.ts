@@ -1595,7 +1595,7 @@ export class ExecutionContext {
             [numeric(1), numeric(0), numeric(0),
             numeric(0), numeric(0)],
             new Map([
-                ["display_pin_id", false]
+                ["display_id", false]
             ]),
                 null
             ]

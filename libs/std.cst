@@ -4,10 +4,9 @@ def net(net_name, net_type = "any"):
     return create component:
         pins: 1
         copy: true
-        angle: -90
         display: create graphic (params):
             hline: -50, 0, 100
-            vpin: 1, 0, 50, -50, display_pin_id=false
+            vpin: 1, 0, 50, -50, display_id=false
             label: params.net_name, 0, -15, fontSize=50, anchor="middle"
         type: "net"
         params:
@@ -27,7 +26,7 @@ def label(value, anchor="left"):
         display: create graphic (params):
             textColor: "#222"
             label: params.value, 0, -10, fontSize=50, anchor=anchor
-            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            pin: 1, 0, 0, 0, 0, display_id=false
         type: "net"
         params:
             net_name: value
@@ -41,7 +40,7 @@ def port(value, portType="input"):
         display: create graphic (params):
             textColor: "#222"
             label: params.value, 0, 0, fontSize=40, anchor="left", vanchor="middle", portType=portType
-            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            pin: 1, 0, 0, 0, 0, display_id=false
         type: "port"
         params:
             net_name: value
@@ -73,7 +72,6 @@ def cap(value):
 
     return create component:
         pins: 2
-        angle: 90
         display: create graphic (params):
             lineWidth: 13
             hline: -width/2, 20, width
@@ -156,12 +154,11 @@ def cgnd():
     return create component:
         pins: 1
         copy: true
-        angle: 90
         display: create graphic (params):
             hline: -15, 0, 30
             hline: -10, 5, 20
             hline: -5, 10, 10
-            vpin: 1, 0, -10, 10, display_pin_id=false
+            vpin: 1, 0, -10, 10, display_id=false
             label: params.net_name, 0, 22, fontSize=50, anchor="middle"
         type: "net"
         params:
@@ -175,10 +172,9 @@ def dgnd(net_name="GND"):
     return create component:
         pins: 1
         copy: true
-        angle: 90
         display: create graphic (params):
             triangle: 0, 0, 0, height, width
-            vpin: 1, 0, -50, 50, display_pin_id=false
+            vpin: 1, 0, -50, 50, display_id=false
             label: params.net_name, 0, height + 50, fontSize=50, anchor="middle", vanchor="middle"
         type: "net"
         params:
@@ -191,7 +187,7 @@ def text(value, offsetX = 0, offsetY = 0, fontSize = 50):
         followWireOrientation: false
         type: "graphic"
         display: create graphic:
-            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            pin: 1, 0, 0, 0, 0, display_id=false
             text:
                 content: value
                 offset: offsetX, offsetY
@@ -205,7 +201,7 @@ def marker_point():
         display: create graphic:
             hline: -5, 0, 10
             vline: 0, -5, 10
-            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            pin: 1, 0, 0, 0, 0, display_id=false
 
 def arrow_point():
     return create component:
@@ -215,7 +211,7 @@ def arrow_point():
             lineWidth: 2
             path: ("M", -10, -5, "L", -5, 0, "L", -10, 5)
             path: ("M", -5, 0, "L", -20, 0)
-            hpin: 1, 0, 0, 0, display_pin_id=false
+            hpin: 1, 0, 0, 0, display_id=false
 
 def no_connect(size=20):
     return create component:
@@ -224,7 +220,7 @@ def no_connect(size=20):
         display: create graphic:
             path: "M", -size, -size, "L", size, size
             path: "M", -size, size, "L", size, -size
-            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            pin: 1, 0, 0, 0, 0, display_id=false
         params:
             no_connect: true
 

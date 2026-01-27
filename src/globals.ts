@@ -6,6 +6,7 @@
  */
 
 import { numeric } from "./objects/ParamDefinition.js";
+import { PinTypes } from "./objects/PinTypes.js";
 
 export const TOOL_VERSION = '0.1.5';
 
@@ -195,3 +196,11 @@ export const SymbolValidatorContext = '_sym';
 export const TrailerArrayIndex = 'index';
 
 export const DefaultComponentUnit = '__default';
+
+export const PinTypesList: string[] = [
+    PinTypes.Any,
+    PinTypes.Input,
+    PinTypes.Output,
+    PinTypes.IO,
+    PinTypes.Power,
+];

@@ -19,7 +19,7 @@ def merge_point():
         pins: 1
         type: "net"
         display: create graphic (params):
-            pin: 1, 0, 0, 0, 0, display_pin_id=false
+            pin: 1, 0, 0, 0, 0, display_id=false
 
 # create LED array
 def led_cell():

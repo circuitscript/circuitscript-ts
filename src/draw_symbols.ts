@@ -9,7 +9,7 @@ import { G } from "@svgdotjs/svg.js";
 
 import { milsToMM } from "./helpers.js";
 import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
-    CustomSymbolRefDesSize, PortArrowSize, PortPaddingHorizontal, 
+    CustomSymbolRefDesSize, PinTypesList, PortArrowSize, PortPaddingHorizontal, 
     PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
     defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "./globals.js";
@@ -738,18 +738,28 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         positionParams = [...positionParams]; // Shallow copy
 
-        const keywordDisplayPinId = 'display_pin_id';
+        const keywordDisplayPinId = 'display_id';
+        const keywordDisplayPinName = 'display_name';
+
         let displayPinId = true;
+        let displayPinName = true;
 
         if (keywordParams.has(keywordDisplayPinId)) {
             const value = keywordParams.get(keywordDisplayPinId);
-            if (value instanceof NumericValue && value.toNumber() === 0){
-                displayPinId = false;
-            }
+            displayPinId = (
+                (value instanceof NumericValue && value.toNumber() === 0)
+                || (value === 0)
+                || (value === false)
+            ) ? false: true;
+        }
 
-            if (value === 0 || value === false) {
-                displayPinId = false;
-            }
+        if (keywordParams.has(keywordDisplayPinName)) {
+            const value = keywordParams.get(keywordDisplayPinName);
+            displayPinName = (
+                (value instanceof NumericValue && value.toNumber() === 0)
+                || (value === 0)
+                || (value === false)
+            ) ? false: true;
         }
 
         let pinNameParam: string | null = null;
@@ -759,11 +769,16 @@ export class SymbolPlaceholder extends SymbolGraphic {
         if (positionParams[1].type && positionParams[1].type === ReferenceTypes.pinType){
             pinType = positionParams[1].value;
             positionParams = [positionParams[0], ...positionParams.slice(2)];
+
+        // If the pin type param is still a string and not parsed as a PinType yet.
+        } else if (typeof positionParams[1] === 'string' && PinTypesList.indexOf(positionParams[1]) !== -1){
+            pinType = positionParams[1] as PinTypes;
+            positionParams = [positionParams[0], ...positionParams.slice(2)];
         }
 
+        // If the type of the second position is a string, then
+        // use the string value as the pin name
         if (typeof positionParams[1] === 'string') {
-            // If the type of the second position is a string, then
-            // use the string value as the pin name
             pinNameParam = positionParams[1];
             positionParams = [positionParams[0], ...positionParams.slice(2)];
         }
@@ -858,7 +873,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             const usePinName = pinNameParam ?? "";
 
             // Draw the pinName
-            usePinName !== "" && drawing.addLabel(
+            displayPinName && usePinName !== "" && drawing.addLabel(
                 endX.add(pinNameOffsetX), endY, usePinName, {
                 fontSize: numeric(defaultPinNameTextSize),
                 anchor: pinNameAlignment,

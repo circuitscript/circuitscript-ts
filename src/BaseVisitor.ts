@@ -30,7 +30,7 @@ import { CallableParameter, ComplexType,
     NewContextOptions,
     ImportFunctionHandling as ImportFunctionHandling} from "./objects/types.js";
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
-import { BaseNamespace, ComponentTypes, DoubleDelimiter1, GlobalDocumentName, ReferenceTypes, TrailerArrayIndex } from './globals.js';
+import { BaseNamespace, ComponentTypes, DoubleDelimiter1, GlobalDocumentName, PinTypesList, ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
 import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
@@ -70,14 +70,6 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
     // refdes annotation comments and only graph related (at, to) rule contexts
     // are tracked.
     protected componentCtxLinks = new Map<ParserRuleContext, ClassComponent>;
-
-    pinTypesList: string[] = [
-        PinTypes.Any,
-        PinTypes.Input,
-        PinTypes.Output,
-        PinTypes.IO,
-        PinTypes.Power,
-    ];
 
     onErrorHandler: OnErrorHandler | null = null;
     environment: NodeScriptEnvironment;
@@ -544,7 +536,7 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         let currentReference: AnyReference;
 
         // Check if it is hardcoded values, like the pin types.
-        if (this.pinTypesList.indexOf(atomId) !== -1) {
+        if (PinTypesList.indexOf(atomId) !== -1) {
             // Not sure if just returning the string is enough...
             currentReference = new AnyReference({
                 found: true,
