@@ -2025,7 +2025,7 @@ export function CalculatePinPositions(unit: ComponentUnit)
     applyComponentParamsToSymbol(unit, tmpSymbol);
     tmpSymbol.refreshDrawing();
 
-    const pins = unit.pins;
+    const { pins } = unit;
 
     pins.forEach((value: PinDefinition, key: number) => {
         // If the component pin is unplaced (not in arrange prop), then do

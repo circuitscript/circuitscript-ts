@@ -10,8 +10,8 @@ import { Big } from 'big.js';
 import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_exprContext, Atom_exprContext, 
     ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
-    FunctionCallExprContext, Import_all_simpleContext, Import_exprContext, 
-    Import_simpleContext, Import_specificContext, Operator_assignment_exprContext, 
+    FunctionCallExprContext, Import_exprContext, 
+    Import_simpleContext, Import_specific_or_allContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
     Trailer_expr2Context, 
     Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
@@ -244,10 +244,10 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         this.log('===', 'end', '===');
     }
 
-    private async importCommon(ctx: Import_simpleContext | Import_all_simpleContext | Import_specificContext,
+    private async importCommon(ctx: Import_simpleContext | Import_specific_or_allContext,
         handling: ImportFunctionHandling): Promise<void> {
         const specificImports: string[] = [];
-        if (ctx instanceof Import_specificContext) {
+        if (ctx instanceof Import_specific_or_allContext) {
             const tmpSpecificImports = ctx._funcNames.map(item => {
                 return item.text!;
             });
@@ -274,12 +274,13 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
         await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
     }
 
-    visitImport_all_simple = async (ctx: Import_all_simpleContext): Promise<void> => {
-        await this.importCommon(ctx, ImportFunctionHandling.AllMergeIntoNamespace);
-    }
+    visitImport_specific_or_all = async (ctx: Import_specific_or_allContext): Promise<void> => {
+        let importType = ImportFunctionHandling.SpecificMergeIntoNamespace;
+        if (ctx._all){
+            importType = ImportFunctionHandling.AllMergeIntoNamespace
+        }
 
-    visitImport_specific = async (ctx: Import_specificContext): Promise<void> => {
-        await this.importCommon(ctx, ImportFunctionHandling.SpecificMergeIntoNamespace);
+        await this.importCommon(ctx, importType);
     }
 
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
@@ -1189,9 +1190,9 @@ export class BaseVisitor extends CircuitScriptVisitor<ComplexType | AnyReference
                         namespace: libraryNamespace,
                     }, [], []);
 
-                const importResult = await this.onImportFile(this, 
+                                const importResult = await this.onImportFile(this, 
                         filePathUsed, fileData!, this.onErrorHandler);
-
+                
                 hasError = importResult.hasError;
                 hasParseError = importResult.hasParseError;
 

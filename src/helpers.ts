@@ -388,7 +388,7 @@ async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
             const jsonFile = {
                 format: 'v1',
-                description: 'Stores external refdes for libraries'
+                description: 'Stores external refdes for libraries',
                 libraries: sortedLibs,
             };
 

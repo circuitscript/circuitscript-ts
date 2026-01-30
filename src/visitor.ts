@@ -1399,8 +1399,8 @@ export class ParserVisitor extends BaseVisitor {
         const executionStack = this.executionStack;
         const functionCounter = { counter: 0 };
 
-        const resolveNet = this.createNetResolver(this.executionStack);
-        const resolveComponentPinNet = this.createComponentPinNetResolver(this.executionStack);
+        const resolveNet = this.createNetResolver(executionStack);
+        const resolveComponentPinNet = this.createComponentPinNetResolver(executionStack);
 
         const __runFunc = (passedInParameters:CallableParameter[], 
             options: CFunctionOptions): [

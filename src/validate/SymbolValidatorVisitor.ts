@@ -5,8 +5,7 @@ import { Assignment_exprContext, Atom_exprContext,
     DataExprContext, Function_def_exprContext, 
     For_exprContext,
     Import_simpleContext,
-    Import_all_simpleContext,
-    Import_specificContext} from "../antlr/CircuitScriptParser.js";
+    Import_specific_or_allContext} from "../antlr/CircuitScriptParser.js";
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
@@ -175,12 +174,12 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     // AST Visitor Methods - Symbol table construction and validation
     //
     
-    private async importCommon(ctx: Import_simpleContext | Import_all_simpleContext | Import_specificContext,
+    private async importCommon(ctx: Import_simpleContext | Import_specific_or_allContext,
         handling: ImportFunctionHandling): Promise<void> {
 
         const specifiedImports: string[] = [];
 
-        if (ctx instanceof Import_specificContext) {
+        if (ctx instanceof Import_specific_or_allContext) {
             const tmpImports = ctx._funcNames.map(item => {
                 return item.text!;
             });
@@ -204,13 +203,14 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     visitImport_simple = async (ctx: Import_simpleContext): Promise<void> => {
         await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
     }
+    
+    visitImport_specific_or_all = async (ctx: Import_specific_or_allContext): Promise<void> => {
+        let importType = ImportFunctionHandling.SpecificMergeIntoNamespace;
+        if (ctx._all){
+            importType = ImportFunctionHandling.AllMergeIntoNamespace
+        }
 
-    visitImport_all_simple = async (ctx: Import_all_simpleContext): Promise<void> => {
-        await this.importCommon(ctx, ImportFunctionHandling.AllMergeIntoNamespace);
-    }
-
-    visitImport_specific = async (ctx: Import_specificContext): Promise<void> => {
-        await this.importCommon(ctx, ImportFunctionHandling.SpecificMergeIntoNamespace);
+        await this.importCommon(ctx, importType);
     }
 
     /**

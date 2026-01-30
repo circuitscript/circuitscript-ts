@@ -79,7 +79,6 @@ expression: graph_expressions
 
         | function_def_expr
         | function_call_expr
-        | import_expr
         | atom_expr
         | frame_expr
         | flow_expressions
@@ -251,9 +250,8 @@ wire_expr: Wire wire_atom_expr*;
 array_expr: '[' (data_expr (',' data_expr)*)* ']';
 
 point_expr: Point (ID | data_expr);
-import_expr: Import libraryName=ID  import_annotation_expr?                                      # import_simple
-      | From libraryName=ID Import '*' import_annotation_expr?                                   # import_all_simple
-      | From libraryName=ID Import funcNames+=ID (',' funcNames+=ID)*  import_annotation_expr?   # import_specific
+import_expr: Import libraryName=ID  import_annotation_expr?                                                   # import_simple
+      | From libraryName=ID Import (all='*' | (funcNames+=ID (',' funcNames+=ID)*)) import_annotation_expr?   # import_specific_or_all
       ;
 
 import_annotation_expr: ANNOTATION_START (ID |'-')*;
@@ -281,7 +279,6 @@ part_condition_expr: key_id+=part_set_key ':' values+=data_expr (',' key_id+=par
 part_condition_key_only_expr: part_set_key ':' part_match_block;
 part_value_expr: part_set_key ':' data_expr (',' data_expr)*;
 
-ANNOTATION_START: '#=';
 annotation_comment_expr: ANNOTATION_START ID;
 
 OPEN_PAREN : '(' {this.openBrace();};
@@ -289,26 +286,25 @@ CLOSE_PAREN : ')' {this.closeBrace();};
 
 // A place holder to indicate that a pin is not connected
 NOT_CONNECTED: 'nc' | 'NC';
-
 BOOLEAN_VALUE:  'true' | 'false';
 
 ID: [_a-zA-Z][_a-zA-Z0-9]*;
+ANNOTATION_START: '#=';
 
 // This value takes a number with an alphabet at the end to indicate 
 // the multipler to the number
 
 fragment DecimalIntegerLiteral
-    : '0'
-    | [1-9] [0-9_]*
-    ;
+    : '0' | [1-9] [0-9_]*;
 
-INTEGER_VALUE: ([1-9]+ [0-9]*) | [0];
+INTEGER_VALUE: DecimalIntegerLiteral; 
 DECIMAL_VALUE: DecimalIntegerLiteral '.' [0-9][0-9_]*;
 NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [GMKkmunpf]?;
 
-STRING_VALUE: '"' (.)*? '"';
+STRING_VALUE: '"' (ESC | ~["\\])* '"';
+fragment ESC: '\\' [btnfr"'\\];
+
 PERCENTAGE_VALUE: [1-9]+[0-9]* '%';
-ALPHA_NUMERIC: [a-zA-Z0-9]+;
 
 WS: [ \t]+ -> skip;
 
