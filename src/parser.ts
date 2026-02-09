@@ -18,10 +18,18 @@ import {
 } from 'antlr4ng';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 
-export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): Promise<{
+export async function parseFileWithVisitor(
+    visitor: BaseVisitor,
+    data: string,
+    options?: {
+        enableLexerDiagnostics?: boolean;
+        enableLexerVerbose?: boolean;
+    }
+): Promise<{
     tree: ScriptContext,
     parser: CircuitScriptParser,
     tokens: CommonTokenStream,
+    lexer: MainLexer,
     hasError: boolean, hasParseError: boolean,
     parserTimeTaken: number, lexerTimeTaken: number,
     throwError: any,
@@ -32,14 +40,24 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
 
     const parserErrorListener = new CircuitscriptParserErrorListener(
         visitor.onErrorHandler);
-    
+
     const chars = CharStream.fromString(data);
 
-    const lexer = new MainLexer(chars);
+    const enableDiagnostics = options?.enableLexerDiagnostics ?? false;
+    const enableVerbose = options?.enableLexerVerbose ?? false;
+    const lexer = new MainLexer(chars, enableDiagnostics);
+
+    // Set source text for character-to-token visualization
+    if (enableDiagnostics) {
+        lexer.diagnosticCollector.setSourceText(data);
+        lexer.diagnosticCollector.setVerboseLogging(enableVerbose);
+    }
+
     lexer.removeErrorListeners();
     lexer.addErrorListener(lexerErrorListener);
 
     const lexerTimer = new SimpleStopwatch();
+    
     const tokens = new CommonTokenStream(lexer);
     tokens.fill();
 
@@ -78,6 +96,7 @@ export async function parseFileWithVisitor(visitor: BaseVisitor, data: string): 
     return {
         tree, parser,
         tokens,
+        lexer,
         hasParseError,
         hasError,
         parserTimeTaken,

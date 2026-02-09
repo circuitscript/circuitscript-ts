@@ -39,6 +39,11 @@ export default async function main(): Promise<void> {
         .option('-x, --skip-output', 'Skip output generation')
         .option('-e, --erc', 'Enable ERC output')
         .option('-b, --bom [output-path]', 'Generate Bill of Materials in csv format')
+        .option('-l, --lexer-diagnostics', 'Enable lexer performance diagnostics')
+        .option('--lexer-verbose', 'Log each token as it is generated (requires -l)')
+        .option('--lexer-tokens [limit]', 'Print token stream (optionally limit number of tokens, requires -l)')
+        .option('--lexer-mapping [lines]', 'Print character-to-token mapping (optionally specify line range like "1-10", requires -l)')
+        .option('--lexer-summary', 'Print lexer operation summary (requires -l)')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -120,6 +125,11 @@ export default async function main(): Promise<void> {
         enableBom,
         bomOutputPath,
         environment: env,
+        lexerDiagnostics: options.lexerDiagnostics,
+        lexerVerbose: options.lexerVerbose,
+        lexerTokens: options.lexerTokens,
+        lexerMapping: options.lexerMapping,
+        lexerSummary: options.lexerSummary,
 
         inputPath: inputFilePath,
         updateSource,

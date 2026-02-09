@@ -13,23 +13,30 @@
 import { CharStream, Token, CommonToken } from "antlr4ng";
 import { CircuitScriptParser } from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
+import { LexerDiagnosticCollector } from "./LexerDiagnosticListener.js";
 
 export class MainLexer extends CircuitScriptLexer {
 
     // A queue where extra tokens are pushed on (see the NEWLINE lexer rule).
-    tokens: any[];
+    tokens: Token[];
 
     // The stack that keeps track of the indentation level.
-    indents: any[];
+    indents: number[];
 
     // The amount of opened braces, brackets and parenthesis.
     opened: number;
 
-    constructor(input: CharStream) {
+    // Diagnostic collector for performance analysis
+    diagnosticCollector: LexerDiagnosticCollector;
+
+    constructor(input: CharStream, enableDiagnostics = false) {
         super(input);
         this.tokens = [];
         this.indents = [];
         this.opened = 0;
+
+        this.diagnosticCollector = new LexerDiagnosticCollector();
+        this.diagnosticCollector.setEnabled(enableDiagnostics);
     }
 
     reset(): void {
@@ -41,11 +48,17 @@ export class MainLexer extends CircuitScriptLexer {
     }
 
     emitToken(token: Token): void {
+        this.diagnosticCollector.onTokenStart();
+
         super.emitToken(token);
         this.tokens.push(token);
+
+        this.diagnosticCollector.onTokenGenerated(token, this.tokens.length);
     }
 
     nextToken(): Token {
+        this.diagnosticCollector.onTokenStart();
+
         // Check if the end-of-file is ahead and there are still some DEDENTS expected.
         if (this.inputStream.LA(1) === CircuitScriptParser.EOF && this.indents.length) {
             // Remove any trailing EOF tokens from our buffer.
@@ -58,7 +71,7 @@ export class MainLexer extends CircuitScriptLexer {
             this.emitToken(fillerNewLine);
 
             // Set this property to indicate that this token should be skipped
-            // during the refdes annotated output generation, because this 
+            // during the refdes annotated output generation, because this
             // shouldn't have any text/char associated with it.
             fillerNewLine.__skip = true;
 
@@ -71,7 +84,13 @@ export class MainLexer extends CircuitScriptLexer {
             this.emitToken(this.commonToken(CircuitScriptParser.EOF, ""));
         }
         const next = super.nextToken();
-        return this.tokens.length ? this.tokens.shift() : next;
+        const returnToken = this.tokens.length ? this.tokens.shift() : next;
+
+        if (returnToken) {
+            this.diagnosticCollector.onTokenGenerated(returnToken, this.tokens.length);
+        }
+
+        return returnToken;
     }
 
     createDedent(): Token {

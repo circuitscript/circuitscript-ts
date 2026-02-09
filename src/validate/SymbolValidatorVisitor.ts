@@ -321,7 +321,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
         if (ctx.trailer_expr().length > 0) {
             ctx.trailer_expr().forEach(item => {
-                if (item.OPEN_PAREN() && item.CLOSE_PAREN()) {
+                if (item.LParen() && item.RParen()) {
                     const params = item.parameters();
                     if (params) {
                         this.visit(params);

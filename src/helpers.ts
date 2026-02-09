@@ -56,13 +56,22 @@ export type ScriptOptions = {
     enableErc?: boolean,
     enableBom?: boolean,
     bomOutputPath?: string,
-    
+
     // If true, then replace the current file with annotated refdes in comments.
     updateSource?: boolean,
 
     // Contains file path to save annotated copy. If left as blank/null, then
     // save to .annotated.cst file.
     saveAnnotatedCopy?: string | boolean,
+
+    // If true, enable lexer diagnostic collection and reporting
+    lexerDiagnostics?: boolean,
+
+    // Lexer diagnostic display options
+    lexerVerbose?: boolean,
+    lexerTokens?: number | boolean,
+    lexerMapping?: string | boolean,
+    lexerSummary?: boolean,
 };
 
 export function prepareFile(textData: string): {
@@ -461,6 +470,11 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         showStats = false,
         enableErc = false,
         enableBom = false,
+        lexerDiagnostics = false,
+        lexerVerbose = false,
+        lexerTokens = false,
+        lexerMapping = false,
+        lexerSummary = false,
 
         inputPath = '',
 
@@ -502,9 +516,12 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
         visitor.enterFile(filePath);
 
-        const { hasError, hasParseError, throwError, tree, tokens } = 
-            await parseFileWithVisitor(visitor, fileData);
-        
+        const { hasError, hasParseError, throwError, tree, tokens } =
+            await parseFileWithVisitor(visitor, fileData, {
+                enableLexerDiagnostics: lexerDiagnostics,
+                enableLexerVerbose: lexerVerbose
+            });
+
         visitor.exitFile();
 
         // Raise exception if there are errors in imported files
@@ -517,7 +534,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
             throw new ParseError(`Error parsing imported file: ${filePath}${importErrorMsg}`, undefined, undefined, filePath);
         }
-        
+
         return { hasError, hasParseError, tree, tokens};
     }
 
@@ -538,14 +555,63 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         visitor.enterFile(inputPath);
     }
 
-    const { tree, parser, tokens,
-        parserTimeTaken, 
-        lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData);
+    const { tree, parser, tokens, lexer,
+        parserTimeTaken,
+        lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData, {
+            enableLexerDiagnostics: lexerDiagnostics,
+            enableLexerVerbose: lexerVerbose
+        });
 
     printWarnings(visitor.getWarnings());
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);
+
+    // Print lexer diagnostics if enabled
+    if (lexerDiagnostics && lexer.diagnosticCollector) {
+        console.log('\n');
+
+        // Print operation summary if requested
+        if (lexerSummary) {
+            lexer.diagnosticCollector.printLexerOperationSummary();
+        }
+
+        // Print token stream if requested
+        if (lexerTokens !== false) {
+            const limit = typeof lexerTokens === 'number' ? lexerTokens : undefined;
+            lexer.diagnosticCollector.printTokenStream(limit);
+        }
+
+        // Print character-to-token mapping if requested
+        if (lexerMapping !== false) {
+            if (typeof lexerMapping === 'string') {
+                // Parse line range like "1-10"
+                const match = lexerMapping.match(/^(\d+)-(\d+)$/);
+                if (match) {
+                    const startLine = parseInt(match[1], 10);
+                    const endLine = parseInt(match[2], 10);
+                    lexer.diagnosticCollector.printCharacterToTokenMapping(startLine, endLine);
+                } else {
+                    console.log('Invalid line range format. Use format like "1-10"');
+                }
+            } else {
+                // Print all lines
+                lexer.diagnosticCollector.printCharacterToTokenMapping();
+            }
+        }
+
+        // Always print the performance report
+        lexer.diagnosticCollector.printReport();
+
+        const recommendations = lexer.diagnosticCollector.getRecommendations();
+        if (recommendations.length > 0) {
+            console.log('Performance Recommendations:');
+            recommendations.forEach((rec, idx) => {
+                console.log(`  ${idx + 1}. ${rec}`);
+            });
+            console.log('');
+        }
+    }
 
     try {
         visitor.annotateComponents();

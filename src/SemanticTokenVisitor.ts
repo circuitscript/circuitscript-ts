@@ -18,7 +18,8 @@ import { Function_def_exprContext, Create_component_exprContext,
     For_exprContext,
     Annotation_comment_exprContext,
     ScriptContext,
-    Operator_assignment_exprContext} from "./antlr/CircuitScriptParser.js";
+    Operator_assignment_exprContext,
+    CreateExprContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { buildInMethodNamesList } from "./builtinMethods.js";
@@ -173,13 +174,16 @@ export class SemanticTokensVisitor extends BaseVisitor {
         this.executionStack.pop();
     }
 
+    visitCreateExpr = (ctx: CreateExprContext):void => {
+        this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
+        this.visit(ctx.create_expr());
+    }
+
     /**
      * Visits component creation expressions
      * Example: U1 = create component: pins: 10
      */
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
-        this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
-
         ctx.property_expr().forEach(property_expr => {
             this.visit(property_expr);
         });
@@ -190,8 +194,6 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Example: create graphic: circle center (0, 0) radius 5
      */
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
-        this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
-
         const graphicsExpressionsCtx = ctx.graphic_expressions_block();
         this.visitResult(graphicsExpressionsCtx);
     }

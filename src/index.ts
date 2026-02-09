@@ -13,6 +13,7 @@ export * from './globals.js';
 export * from './helpers.js';
 export * from './layout.js';
 export * from './lexer.js';
+export * from './LexerDiagnosticListener.js';
 export * from './logger.js';
 export * from './parser.js';
 export * from './render.js';

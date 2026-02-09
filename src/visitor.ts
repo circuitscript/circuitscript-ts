@@ -62,6 +62,8 @@ import {
     Part_value_exprContext,
     Part_condition_exprContext,
     Part_condition_key_only_exprContext,
+    CreateExprContext,
+    Create_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -113,19 +115,12 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-
     // Provides a numerical index when each component is created.
     componentCreationIndex = 0;
 
     // TODO: this should be in the scope object?
     creationCtx = new Map<Wire | ClassComponent, ParserRuleContext>();
 
-    visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext): void => {
-        const id = ctx.ID().getText();
-        const value = this.visitResult(ctx.data_expr());
-        
-        this.setResult(ctx, [id, value]);
-    }
 
     visitPin_select_expr = (ctx: Pin_select_exprContext): void => {
         let pinId: PinId | null = null;
@@ -1205,29 +1200,26 @@ export class ParserVisitor extends BaseVisitor {
     visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
         let value = this.visitResult(ctx.data_expr());
 
-        const unaryOp = ctx.unary_operator();
-        if (unaryOp) {
-            if (unaryOp.Not()) {
-                if (typeof value === "boolean") {
-                    value = !value;
-                } else if (value instanceof NumericValue){
-                    value = (value.toNumber() === 0) ? true: false;
-                } else {
-                    throw "Failed to do Not operator";
-                }
-            } else if (unaryOp.Minus()) {
-                if (value instanceof NumericValue){
-                    value = value.neg();
-                } else {
-                    throw "Failed to do Negation operator";
-                }
+        if (ctx.Not()) {
+            if (typeof value === "boolean") {
+                value = !value;
+            } else if (value instanceof NumericValue){
+                value = (value.toNumber() === 0) ? true: false;
+            } else {
+                throw "Failed to do Not operator";
+            }
+        } else if (ctx.Minus()) {
+            if (value instanceof NumericValue){
+                value = value.neg();
+            } else {
+                throw "Failed to do Negation operator";
             }
         }
 
         this.setResult(ctx, value);
     }
 
-    visitDataExpr = (ctx: DataExprContext): void => {
+    visitCreate_expr = (ctx: Create_exprContext):void => {
         let value: ComplexType;
 
         const ctxCreateComponentExpr = ctx.create_component_expr();
@@ -1245,6 +1237,11 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, value);
+    }
+
+    visitCreateExpr = (ctx: CreateExprContext): void => {
+        const result = this.visitResult(ctx.create_expr());
+        this.setResult(ctx, result);
     }
 
     visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): void => {
