@@ -9,8 +9,6 @@ import { Flow_expressionsContext } from "./CircuitScriptParser.js";
 import { Graph_expressionsContext } from "./CircuitScriptParser.js";
 import { Expressions_blockContext } from "./CircuitScriptParser.js";
 import { Path_blockContext } from "./CircuitScriptParser.js";
-import { Property_set_expr2Context } from "./CircuitScriptParser.js";
-import { Assignment_expr2Context } from "./CircuitScriptParser.js";
 import { Pin_select_exprContext } from "./CircuitScriptParser.js";
 import { Component_modifier_exprContext } from "./CircuitScriptParser.js";
 import { Data_expr_with_assignmentContext } from "./CircuitScriptParser.js";
@@ -130,18 +128,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitPath_block?: (ctx: Path_blockContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.property_set_expr2`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitProperty_set_expr2?: (ctx: Property_set_expr2Context) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.assignment_expr2`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAssignment_expr2?: (ctx: Assignment_expr2Context) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.pin_select_expr`.
      * @param ctx the parse tree

@@ -21,7 +21,6 @@ expression: flow_expressions
         | double_dot_property_set_expr
         | assignment_expr
         | operator_assignment_expr
-        | property_set_expr2
         | atom_expr
         | function_call_expr
         | NEWLINE
@@ -51,13 +50,8 @@ expressions_block:
 path_block:
 	(Branch | Join | Parallel | Point) Colon expressions_block;
 
-property_set_expr2:
-	atom_expr Colon NEWLINE INDENT (NEWLINE | assignment_expr2)+ DEDENT;
-
-assignment_expr2: (ID | INTEGER_VALUE) Colon value_expr;
-
 pin_select_expr: Pin data_expr;
-component_modifier_expr: ID Colon (value_expr | ID);
+component_modifier_expr: ID Colon data_expr;
 
 data_expr_with_assignment: (data_expr | assignment_expr) component_modifier_expr* pin_select_expr?;
 

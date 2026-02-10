@@ -1027,20 +1027,13 @@ export class ParserVisitor extends BaseVisitor {
             const modifiers = ctx.component_modifier_expr();
             modifiers.forEach(modifier => {
                 const modifierText = modifier.ID(0)!.getText();
-                const ctxValueExpr = modifier.value_expr();
-                const ctxID2 = modifier.ID(1);
-
-                let result: ComplexType = null;
-                if (ctxValueExpr) {
-                    result = this.visitResult(ctxValueExpr);
-                } else if (ctxID2) {
-                    result = ctxID2.getText();
-                }
+                const ctxDataExpr = modifier.data_expr()!;
+                const result = this.visitResult(ctxDataExpr);
 
                 let shouldIgnoreWireOrientation = false;
 
                 if (modifierText === ParamKeys.flip) {
-                    const flipValue = result as string;
+                    const flipValue = result.name;
                     if (flipValue.indexOf('x') !== -1) {
                         defaultUnit.setParam(ParamKeys.flipX, numeric(1));
                         shouldIgnoreWireOrientation = true;
@@ -1055,7 +1048,7 @@ export class ParserVisitor extends BaseVisitor {
                     shouldIgnoreWireOrientation = true;
                 } else if (modifierText === 'anchor') {
                     // Do not apply to the component unit, but to component itself.
-                    dataResult.setParam('anchor', result as string);
+                    dataResult.setParam('anchor', result.name as string);
                 }
 
                 if (shouldIgnoreWireOrientation) {
