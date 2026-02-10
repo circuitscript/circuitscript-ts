@@ -74,11 +74,11 @@ DivideAssign:       '/=';
 MultiplyAssign:     '*=';
 ModulusAssign:      '%=';
 
-WS: [ \t]+ -> skip;
 
 NEWLINE
  : ( '\r'? '\n' | '\r' | '\f' ) SPACES? {this.onNewLine();}
  ;
+WS: [ \t]+ -> skip;
 
 fragment SPACES
  : [ \t]+
@@ -100,15 +100,16 @@ BOOLEAN_VALUE:  'true' | 'false';
 
 ANNOTATION_START: '#=';
 
-// This value takes a number with an alphabet at the end to indicate
-// the multipler to the number
-
-fragment DecimalIntegerLiteral
-    : '0' | [1-9] [0-9_]*;
+fragment DecimalIntegerLiteral: '0' | [1-9] [0-9_]*;
+fragment DecimalLiteral: DecimalIntegerLiteral '.' [0-9][0-9_]*;
 
 INTEGER_VALUE: DecimalIntegerLiteral;
-DECIMAL_VALUE: DecimalIntegerLiteral '.' [0-9][0-9_]*;
-NUMERIC_VALUE: (INTEGER_VALUE | DECIMAL_VALUE) [GMKkmunpf]?;
+DECIMAL_VALUE: DecimalLiteral;
+
+// This value takes a number with an alphabet at the end to indicate
+// the multipler to the number
+NUMERIC_VALUE: (DecimalIntegerLiteral | DecimalLiteral) [GMKkmunpf];
+
 PERCENTAGE_VALUE: [1-9][0-9]* '%';
 
 STRING_VALUE: '"' (('\\' [btnfr"'\\]) | ~["\\])* '"';

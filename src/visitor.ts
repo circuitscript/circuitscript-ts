@@ -1248,20 +1248,19 @@ export class ParserVisitor extends BaseVisitor {
             value2 = value2.toNumber();
         }
 
-        const binaryOperatorType = ctx.binary_operator();
         let result: boolean | null = null;
 
-        if (binaryOperatorType.Equals()) {
+        if (ctx.Equals()) {
             result = value1 == value2; // Boolean result
-        } else if (binaryOperatorType.NotEquals()) {
+        } else if (ctx.NotEquals()) {
             result = value1 != value2;
-        } else if (binaryOperatorType.GreaterThan()) {
+        } else if (ctx.GreaterThan()) {
             result = value1 > value2;
-        } else if (binaryOperatorType.GreatOrEqualThan()) {
+        } else if (ctx.GreatOrEqualThan()) {
             result = value1 >= value2;
-        } else if (binaryOperatorType.LessThan()) {
+        } else if (ctx.LessThan()) {
             result = value1 < value2;
-        } else if (binaryOperatorType.LessOrEqualThan()) {
+        } else if (ctx.LessOrEqualThan()) {
             result = value1 <= value2;
         }
 
@@ -1589,16 +1588,6 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         return this.getExecutor().addPoint(pointValue);
-    }
-
-    visitProperty_set_expr = (ctx: Property_set_exprContext): void => {
-        const result = this.visitResult(ctx.data_expr());
-
-        // To check if this works
-        const resolvedProperty = this.visitResult(ctx.atom_expr());
-
-        // TODO: check if this works correctly
-        this.getExecutor().setProperty(resolvedProperty, result);
     }
     
     visitDouble_dot_property_set_expr = (ctx: Double_dot_property_set_exprContext): void => {

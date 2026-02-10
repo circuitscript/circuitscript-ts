@@ -29,7 +29,6 @@ import { Assignment_exprContext } from "./CircuitScriptParser.js";
 import { Operator_assignment_exprContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
-import { Property_set_exprContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
 import { ValueExprContext } from "./CircuitScriptParser.js";
 import { ArrayExprContext } from "./CircuitScriptParser.js";
@@ -42,7 +41,6 @@ import { UnaryOperatorExprContext } from "./CircuitScriptParser.js";
 import { AtomExprContext } from "./CircuitScriptParser.js";
 import { BinaryOperatorExprContext } from "./CircuitScriptParser.js";
 import { RoundedBracketsExprContext } from "./CircuitScriptParser.js";
-import { Binary_operatorContext } from "./CircuitScriptParser.js";
 import { Value_exprContext } from "./CircuitScriptParser.js";
 import { Function_def_exprContext } from "./CircuitScriptParser.js";
 import { Function_exprContext } from "./CircuitScriptParser.js";
@@ -253,12 +251,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitParameters?: (ctx: ParametersContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.property_set_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitProperty_set_expr?: (ctx: Property_set_exprContext) => Result;
-    /**
      * Visit a parse tree produced by `CircuitScriptParser.double_dot_property_set_expr`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -341,12 +333,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitRoundedBracketsExpr?: (ctx: RoundedBracketsExprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.binary_operator`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitBinary_operator?: (ctx: Binary_operatorContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.value_expr`.
      * @param ctx the parse tree

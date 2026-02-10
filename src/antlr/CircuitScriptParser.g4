@@ -12,20 +12,18 @@ options { tokenVocab=CircuitScriptLexer; }
 // Only allow import expressions at start
 script: (import_expr | NEWLINE)* expression* EOF;
 
-expression: graph_expressions
+expression: flow_expressions 
+        | graph_expressions
+        | function_def_expr
+        | frame_expr
+        | part_set_expr
+        | annotation_comment_expr
+        | double_dot_property_set_expr
         | assignment_expr
         | operator_assignment_expr
-        | property_set_expr
         | property_set_expr2
-        | double_dot_property_set_expr
-
-        | function_def_expr
         | atom_expr
         | function_call_expr
-        | frame_expr
-        | flow_expressions
-        | annotation_comment_expr
-        | part_set_expr
         | NEWLINE
         ;
 
@@ -92,7 +90,6 @@ keyword_assignment_expr: ID Assign data_expr;
 parameters: (data_expr (Comma data_expr)* (Comma keyword_assignment_expr)*)
             | (keyword_assignment_expr (Comma keyword_assignment_expr)*);
 
-property_set_expr: atom_expr Assign data_expr;
 double_dot_property_set_expr: DoubleDot ID Assign data_expr;
 
 data_expr:
@@ -102,21 +99,18 @@ data_expr:
     | LSquare (data_expr (Comma data_expr)*)* RSquare   #ArrayExpr
     | data_expr (Multiply | Divide | Modulus) data_expr #MultiplyExpr
     | data_expr (Addition | Minus) data_expr            #AdditionExpr
-    | data_expr binary_operator data_expr               #BinaryOperatorExpr
+    | data_expr (Equals
+        | NotEquals
+        | GreaterThan
+        | GreatOrEqualThan
+        | LessThan
+        | LessOrEqualThan) data_expr                    #BinaryOperatorExpr
     | data_expr (LogicalAnd | LogicalOr) data_expr      #LogicalOperatorExpr
     | atom_expr                                         #AtomExpr
     | function_call_expr                                #FunctionCallExpr
     | value_expr                                        #ValueExpr 
     ;
-
-binary_operator: Equals
-    | NotEquals
-    | GreaterThan
-    | GreatOrEqualThan
-    | LessThan
-    | LessOrEqualThan
-    ;
-
+    
 value_expr: (Minus?
     (NUMERIC_VALUE
     | DECIMAL_VALUE
