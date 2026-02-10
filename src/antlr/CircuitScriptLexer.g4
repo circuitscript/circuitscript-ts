@@ -45,13 +45,13 @@ Sheet:      'sheet';
 Set:        'set';
 
 // Punctuation and operators
-Colon:      ':';
-Comma:      ',';
-Dot:        '.';
-DoubleDot:  '..';
-LSquare:    '[';
-RSquare:    ']';
-Assign:     '=';
+Colon:              ':';
+Comma:              ',';
+Dot:                '.';
+DoubleDot:          '..';
+LSquare:            '[';
+RSquare:            ']';
+Assign:             '=';
 
 Equals:             '==';
 NotEquals:          '!=';
@@ -62,11 +62,11 @@ LessOrEqualThan:    '<=';
 LogicalAnd:         '&&' | 'and';
 LogicalOr:          '||' | 'or';
 
-Addition:   '+';
-Minus:      '-';
-Divide:     '/';
-Multiply:   '*';
-Modulus:    '%';
+Addition:           '+';
+Minus:              '-';
+Divide:             '/';
+Multiply:           '*';
+Modulus:            '%';
 
 AdditionAssign:     '+=';
 MinusAssign:        '-=';

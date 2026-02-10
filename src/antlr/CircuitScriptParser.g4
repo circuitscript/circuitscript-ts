@@ -12,7 +12,6 @@ options { tokenVocab=CircuitScriptLexer; }
 // Only allow import expressions at start
 script: (import_expr | NEWLINE)* expression* EOF;
 
-// These expressions are related to circuit building only
 expression: graph_expressions
         | assignment_expr
         | operator_assignment_expr
@@ -38,18 +37,16 @@ flow_expressions: if_expr
                     | Continue
                     ;
 
-// Adds nodes to the circuit graph
-graph_expressions:  graph_linear_expression
-                    | path_block
-                    ;
-
-graph_linear_expression: add_component_expr
+// Adds nodes and build connectivity
+graph_expressions:  add_component_expr
                     | to_component_expr
                     | at_component_expr
                     | at_block
                     | wire_expr
                     | point_expr
+                    | path_block
                     ;
+
 expressions_block:
 	NEWLINE INDENT expression+ DEDENT;
 
@@ -194,12 +191,12 @@ else_expr: Else Colon expressions_block;
 while_expr: While data_expr Colon expressions_block;
 for_expr: For ID (Comma ID)* In data_expr Colon expressions_block;
 
+// Part matching for parameters.
 part_set_expr: Set Colon data_expr (Comma data_expr)* Colon part_match_block;
 part_set_key: ID | INTEGER_VALUE | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE;
 
-part_match_block: NEWLINE INDENT (NEWLINE | part_sub_expr)+ DEDENT;
-
-part_sub_expr: part_condition_expr | part_value_expr | part_condition_key_only_expr;
+part_match_block: NEWLINE INDENT part_sub_expr+ DEDENT;
+part_sub_expr: part_condition_expr | part_value_expr | part_condition_key_only_expr | NEWLINE;
 
 part_condition_expr: key_id+=part_set_key Colon values+=data_expr (Comma key_id+=part_set_key Colon values+=data_expr)* (Comma id_only=part_set_key)*Colon (part_match_block | (last_data+=data_expr (Comma last_data+=data_expr)*));
 part_condition_key_only_expr: part_set_key Colon part_match_block;

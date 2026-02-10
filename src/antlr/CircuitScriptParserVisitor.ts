@@ -7,7 +7,6 @@ import { ScriptContext } from "./CircuitScriptParser.js";
 import { ExpressionContext } from "./CircuitScriptParser.js";
 import { Flow_expressionsContext } from "./CircuitScriptParser.js";
 import { Graph_expressionsContext } from "./CircuitScriptParser.js";
-import { Graph_linear_expressionContext } from "./CircuitScriptParser.js";
 import { Expressions_blockContext } from "./CircuitScriptParser.js";
 import { Path_blockContext } from "./CircuitScriptParser.js";
 import { Property_set_expr2Context } from "./CircuitScriptParser.js";
@@ -121,12 +120,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitGraph_expressions?: (ctx: Graph_expressionsContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.graph_linear_expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitGraph_linear_expression?: (ctx: Graph_linear_expressionContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.expressions_block`.
      * @param ctx the parse tree

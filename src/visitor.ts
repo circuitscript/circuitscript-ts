@@ -303,16 +303,7 @@ export class ParserVisitor extends BaseVisitor {
             this.getExecutor().closeOpenPathBlocks();
         }
 
-        const ctxPathBlock = ctx.path_block();
-        const ctxNotPathBlock = ctx.graph_linear_expression();
-
-        if (ctxPathBlock){
-            this.visit(ctxPathBlock);
-        }
-
-        if (ctxNotPathBlock){
-            this.visit(ctxNotPathBlock);
-        }
+        this.visitChildren(ctx);
 
         // For each graph expression, check if there is a refdes file annotation.
         if (ctx.start && ctx.stop) {
@@ -1856,28 +1847,24 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitPart_match_block = (ctx: Part_match_blockContext): void => {
-        const results = ctx.part_sub_expr().map(ctxExpr => {
-            return this.visitResult(ctxExpr);
-        });
+        const results = ctx.part_sub_expr().reduce((accum, ctxExpr) => {
+            const result = this.visitResult(ctxExpr);
+            if (result !== undefined){
+                accum.push(result);
+            }
+            return accum;
+        }, []);
 
         this.setResult(ctx, results);
     }
 
     visitPart_sub_expr = (ctx: Part_sub_exprContext): void => {
-        const ctxForm1 = ctx.part_condition_expr();
-        const ctxForm2 = ctx.part_condition_key_only_expr();
-        const ctxForm3 = ctx.part_value_expr();
+        this.visitChildren(ctx);
+        const result = this.getResult(ctx.children[0]);
 
-        let result: unknown;
-        if (ctxForm1) {
-            result = this.visitResult(ctxForm1);
-        } else if (ctxForm2) {
-            result = this.visitResult(ctxForm2);
-        } else if (ctxForm3) {
-            result = this.visitResult(ctxForm3);
+        if (result !== undefined){
+            this.setResult(ctx, result);
         }
-
-        this.setResult(ctx, result);
     }
 
     visitPart_set_key = (ctx: Part_set_keyContext): void => {

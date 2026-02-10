@@ -244,6 +244,7 @@ export function expectJsonOutput(inputString: string, targetPath: string): void 
 
     if (JSON.stringify (expectedJson) !== inputString){
         console.log('inputString', inputString);
+        console.log('expected', expectedJson);
     }
 
     expect(JSON.stringify(expectedJson)).toEqual(inputString);
