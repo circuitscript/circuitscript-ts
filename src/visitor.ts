@@ -60,7 +60,6 @@ import {
     Part_condition_key_only_exprContext,
     CreateExprContext,
     Create_exprContext,
-    Wire_atom_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -1535,30 +1534,26 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(ctx.expressions_block());
     }
 
-    visitWire_atom_expr = (ctx: Wire_atom_exprContext): void => {
-        const value = ctx.ID().getText();
-        const ctxDataExpr = ctx.data_expr();
-
-        if ((value === WireAutoDirection.Auto || value === WireAutoDirection.Auto_) && ctxDataExpr === null) {
-            this.setResult(ctx, [value]);
-        } else if (this.acceptedDirections.indexOf(value) !== -1 && ctxDataExpr) {
-            let useValue: number | null = null;
-            useValue = this.visitResult(ctxDataExpr);
-
-            if (useValue instanceof NumericValue) {
-                useValue = useValue.toNumber();
-            }
-
-            this.setResult(ctx, [value, new UnitDimension(useValue)]);
-        }
-    }
-
     visitWire_expr = (ctx: Wire_exprContext): void => {
-        const wireAtomExpr = ctx.wire_atom_expr();
-        const segments = wireAtomExpr.map(wireSegment => {
-            return this.visitResult(wireSegment);
-        });
+        const segments = [];
+        ctx.ID().forEach((ctxId, index) => {
+            const value = ctxId.getText();
+            const ctxDataExpr = ctx.data_expr(index);
 
+            if ((value === WireAutoDirection.Auto || value === WireAutoDirection.Auto_) && ctxDataExpr === null) {
+                segments.push([value]);
+            } else if (this.acceptedDirections.indexOf(value) !== -1 && ctxDataExpr) {
+                let useValue: number | null = null;
+                useValue = this.visitResult(ctxDataExpr);
+
+                if (useValue instanceof NumericValue) {
+                    useValue = useValue.toNumber();
+                }
+
+                segments.push([value, new UnitDimension(useValue)]);
+            }
+        });
+        
         const newWire = this.getExecutor().addWire(segments);
         this.creationCtx.set(newWire, ctx);
     }

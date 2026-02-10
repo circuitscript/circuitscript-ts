@@ -113,13 +113,19 @@ value_expr: (Minus?
     | PERCENTAGE_VALUE
     | BOOLEAN_VALUE));
 
-function_def_expr: Define ID LParen function_args_expr? RParen Colon NEWLINE INDENT (NEWLINE | function_expr)+ DEDENT;
+function_def_expr: Define ID LParen function_args_expr? RParen Colon NEWLINE INDENT function_expr+ DEDENT;
 function_expr: expression | function_return_expr;
 
 function_args_expr:
-    ID (Comma ID)* (Comma ID Assign value_expr)*
-    | ID Assign value_expr (Comma ID Assign value_expr)*
-    ;
+    ((ID (Comma ID)*)
+    | (ID Assign value_expr)
+    ) (Comma ID Assign value_expr)*;
+
+function_return_expr: Return data_expr ;
+
+net_namespace_expr: Addition? Divide data_expr?;
+
+function_call_expr: net_namespace_expr? ID trailer_expr+;
 
 atom_expr: ID trailer_expr2*;
 
@@ -127,12 +133,6 @@ trailer_expr: LParen parameters? RParen | trailer_expr2;
 
 trailer_expr2: Dot ID
                 | LSquare data_expr RSquare;
-
-function_call_expr: net_namespace_expr? ID trailer_expr+;
-
-net_namespace_expr: Addition? Divide data_expr?;
-
-function_return_expr: Return data_expr ;
 
 property_block_expr: property_key_expr Colon expressions_block;
 
@@ -160,10 +160,9 @@ property_value_expr: nested_properties_inner        # nested_properties
                     | data_expr (Comma data_expr)*    # single_line_property
                     ;
 
-wire_atom_expr: ID data_expr?;
-wire_expr: Wire wire_atom_expr*;
-
+wire_expr: Wire (ID data_expr?)+;
 point_expr: Point (ID | data_expr);
+
 import_expr: Import libraryName=ID  import_annotation_expr?                                                   # import_simple
       | From libraryName=ID Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) import_annotation_expr?   # import_specific_or_all
       ;
