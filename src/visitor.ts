@@ -17,12 +17,10 @@ import {
     Component_select_exprContext,
     Create_component_exprContext,
     Create_graphic_exprContext,
-    DataExprContext,
     Data_expr_with_assignmentContext,
     Double_dot_property_set_exprContext,
     Frame_exprContext,
     Function_def_exprContext,
-    Keyword_assignment_exprContext,
     MultiplyExprContext,
     Nested_propertiesContext,
     Net_namespace_exprContext,
@@ -36,8 +34,6 @@ import {
     To_component_exprContext,
     Wire_exprContext,
     UnaryOperatorExprContext,
-    Wire_expr_direction_onlyContext,
-    Wire_expr_direction_valueContext,
     If_exprContext,
     If_inner_exprContext,
     LogicalOperatorExprContext,
@@ -64,6 +60,7 @@ import {
     Part_condition_key_only_exprContext,
     CreateExprContext,
     Create_exprContext,
+    Wire_atom_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -84,7 +81,7 @@ import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, Compone
 import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
-    WireAutoDirection } from './globals.js';
+    WireAutoDirection} from './globals.js';
 import { ExecutionWarning, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
@@ -179,6 +176,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
         let refComponent: ClassComponent;
+
         const creationFlag = this.trackNewComponentCreated(() => {
             const [component, pin] = this.visitResult(ctx.component_select_expr());
             this.getExecutor().atComponent(component, pin, {
@@ -1553,43 +1551,23 @@ export class ParserVisitor extends BaseVisitor {
     visitAt_block_pin_expression_complex = (ctx: At_block_pin_expression_complexContext): void => {
         this.visit(ctx.expressions_block());
     }
-    
-    visitWire_expr_direction_only = (ctx: Wire_expr_direction_onlyContext): void => {
+
+    visitWire_atom_expr = (ctx: Wire_atom_exprContext): void => {
         const value = ctx.ID().getText();
-        if (value === WireAutoDirection.Auto|| value === WireAutoDirection.Auto_){
+        const ctxDataExpr = ctx.data_expr();
+
+        if ((value === WireAutoDirection.Auto || value === WireAutoDirection.Auto_) && ctxDataExpr === null) {
             this.setResult(ctx, [value]);
-        } else {
-            throw 'Invalid direction for wire';
-        }
-    }
-
-    visitWire_expr_direction_value = (ctx: Wire_expr_direction_valueContext): void => {
-        const direction = ctx.ID().getText();
-
-        if (this.acceptedDirections.indexOf(direction) !== -1) {
+        } else if (this.acceptedDirections.indexOf(value) !== -1 && ctxDataExpr) {
             let useValue: number | null = null;
+            useValue = this.visitResult(ctxDataExpr);
 
-            const ctxIntegerValue = ctx.INTEGER_VALUE();
-            const ctxDataExpr = ctx.data_expr();
-
-            if (ctxIntegerValue) {
-                useValue = Number(ctxIntegerValue);
-            } else if (ctxDataExpr) {
-                useValue = this.visitResult(ctxDataExpr);
-
-                if (useValue instanceof NumericValue){
-                    useValue = useValue.toNumber();
-                }
+            if (useValue instanceof NumericValue) {
+                useValue = useValue.toNumber();
             }
 
-            if (useValue !== null) {
-                // Assume dimension is mils
-                this.setResult(ctx, [direction, new UnitDimension(useValue)]);
-                return;
-            }
+            this.setResult(ctx, [value, new UnitDimension(useValue)]);
         }
-
-        throw "Invalid direction or value for wire";
     }
 
     visitWire_expr = (ctx: Wire_exprContext): void => {

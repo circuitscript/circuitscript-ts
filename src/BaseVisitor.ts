@@ -8,13 +8,15 @@
 import { Big } from 'big.js';
 
 import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_exprContext, Atom_exprContext, 
+    AtomExprContext, 
     ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, 
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
     Trailer_expr2Context, 
-    Value_exprContext, ValueAtomExprContext } from "./antlr/CircuitScriptParser.js";
+    Value_exprContext, ValueAtomExprContext, 
+    ValueExprContext} from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptParserVisitor } from "./antlr/CircuitScriptParserVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { Logger } from "./logger.js";
@@ -872,32 +874,27 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         this.setResult(ctx, result);
     }
 
-    visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
+    visitValueExpr = (ctx: ValueExprContext): void => {
+        this.passResult(ctx, ctx.value_expr());
+    }
+
+    visitAtomExpr = (ctx: AtomExprContext): void => {
         let value: ComplexType = null;
+        const reference = this.visitResult(ctx.atom_expr());
 
-        const ctxValueExpr = ctx.value_expr();
-        const ctxAtomExpr = ctx.atom_expr();
-
-        if (ctxValueExpr) {
-            value = this.visitResult(ctxValueExpr);
-
-        } else if (ctxAtomExpr) {
-            const reference = this.visitResult(ctxAtomExpr);
-
-            if (!reference.found) {
-                value = new UndeclaredReference(reference);
+        if (!reference.found) {
+            value = new UndeclaredReference(reference);
+        } else {
+            // This is the returned component from the function call
+            if (reference.type && reference.type === ReferenceTypes.pinType) {
+                value = reference;
             } else {
-                // This is the returned component from the function call
-                if (reference.type && reference.type === ReferenceTypes.pinType) {
+                if ((reference.trailers && reference.trailers.length > 0) 
+                    || reference.type === ReferenceTypes.function) {
+                    
                     value = reference;
                 } else {
-                    if ((reference.trailers && reference.trailers.length > 0) 
-                        || reference.type === ReferenceTypes.function) {
-                        
-                        value = reference;
-                    } else {
-                        value = reference.value;
-                    }
+                    value = reference.value;
                 }
             }
         }
@@ -1092,6 +1089,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     visitResult(ctx: ParserRuleContext): any {
         this.visit(ctx);
         return this.getResult(ctx);
+    }
+
+    // Visits the inner/child ctx and stores the result in the parent ctx. 
+    passResult(ctx: ParserRuleContext, innerCtx: ParserRuleContext): void {
+        this.setResult(ctx, this.visitResult(innerCtx));
     }
 
     protected async handleImportFile(name: string, 

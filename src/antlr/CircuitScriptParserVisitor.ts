@@ -20,9 +20,6 @@ import { Component_select_exprContext } from "./CircuitScriptParser.js";
 import { Pin_select_expr2Context } from "./CircuitScriptParser.js";
 import { At_component_exprContext } from "./CircuitScriptParser.js";
 import { To_component_exprContext } from "./CircuitScriptParser.js";
-import { At_to_multiple_exprContext } from "./CircuitScriptParser.js";
-import { At_to_multiple_line_exprContext } from "./CircuitScriptParser.js";
-import { At_to_multiple_line_expr_to_pinContext } from "./CircuitScriptParser.js";
 import { At_blockContext } from "./CircuitScriptParser.js";
 import { At_block_expressionsContext } from "./CircuitScriptParser.js";
 import { At_block_headerContext } from "./CircuitScriptParser.js";
@@ -35,6 +32,7 @@ import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Property_set_exprContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
+import { ValueExprContext } from "./CircuitScriptParser.js";
 import { ArrayExprContext } from "./CircuitScriptParser.js";
 import { FunctionCallExprContext } from "./CircuitScriptParser.js";
 import { AdditionExprContext } from "./CircuitScriptParser.js";
@@ -42,7 +40,7 @@ import { MultiplyExprContext } from "./CircuitScriptParser.js";
 import { LogicalOperatorExprContext } from "./CircuitScriptParser.js";
 import { CreateExprContext } from "./CircuitScriptParser.js";
 import { UnaryOperatorExprContext } from "./CircuitScriptParser.js";
-import { ValueAtomExprContext } from "./CircuitScriptParser.js";
+import { AtomExprContext } from "./CircuitScriptParser.js";
 import { BinaryOperatorExprContext } from "./CircuitScriptParser.js";
 import { RoundedBracketsExprContext } from "./CircuitScriptParser.js";
 import { Binary_operatorContext } from "./CircuitScriptParser.js";
@@ -69,8 +67,7 @@ import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
 import { Nested_propertiesContext } from "./CircuitScriptParser.js";
 import { Single_line_propertyContext } from "./CircuitScriptParser.js";
-import { Wire_expr_direction_valueContext } from "./CircuitScriptParser.js";
-import { Wire_expr_direction_onlyContext } from "./CircuitScriptParser.js";
+import { Wire_atom_exprContext } from "./CircuitScriptParser.js";
 import { Wire_exprContext } from "./CircuitScriptParser.js";
 import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_simpleContext } from "./CircuitScriptParser.js";
@@ -203,24 +200,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitTo_component_expr?: (ctx: To_component_exprContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.at_to_multiple_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAt_to_multiple_expr?: (ctx: At_to_multiple_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.at_to_multiple_line_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAt_to_multiple_line_expr?: (ctx: At_to_multiple_line_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.at_to_multiple_line_expr_to_pin`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAt_to_multiple_line_expr_to_pin?: (ctx: At_to_multiple_line_expr_to_pinContext) => Result;
-    /**
      * Visit a parse tree produced by `CircuitScriptParser.at_block`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -293,6 +272,13 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitDouble_dot_property_set_expr?: (ctx: Double_dot_property_set_exprContext) => Result;
     /**
+     * Visit a parse tree produced by the `ValueExpr`
+     * labeled alternative in `CircuitScriptParser.data_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitValueExpr?: (ctx: ValueExprContext) => Result;
+    /**
      * Visit a parse tree produced by the `ArrayExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
@@ -342,12 +328,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitUnaryOperatorExpr?: (ctx: UnaryOperatorExprContext) => Result;
     /**
-     * Visit a parse tree produced by the `ValueAtomExpr`
+     * Visit a parse tree produced by the `AtomExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitValueAtomExpr?: (ctx: ValueAtomExprContext) => Result;
+    visitAtomExpr?: (ctx: AtomExprContext) => Result;
     /**
      * Visit a parse tree produced by the `BinaryOperatorExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
@@ -511,19 +497,11 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitSingle_line_property?: (ctx: Single_line_propertyContext) => Result;
     /**
-     * Visit a parse tree produced by the `wire_expr_direction_value`
-     * labeled alternative in `CircuitScriptParser.wire_atom_expr`.
+     * Visit a parse tree produced by `CircuitScriptParser.wire_atom_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitWire_expr_direction_value?: (ctx: Wire_expr_direction_valueContext) => Result;
-    /**
-     * Visit a parse tree produced by the `wire_expr_direction_only`
-     * labeled alternative in `CircuitScriptParser.wire_atom_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitWire_expr_direction_only?: (ctx: Wire_expr_direction_onlyContext) => Result;
+    visitWire_atom_expr?: (ctx: Wire_atom_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.wire_expr`.
      * @param ctx the parse tree
