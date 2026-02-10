@@ -29,7 +29,6 @@ import {
     Point_exprContext,
     Property_exprContext,
     Property_key_exprContext,
-    Property_set_exprContext,
     Single_line_propertyContext,
     To_component_exprContext,
     Wire_exprContext,
@@ -145,7 +144,7 @@ export class ParserVisitor extends BaseVisitor {
         const preCreatedIndex = this.componentCreationIndex;
 
         callback();
-
+        
         const postCreatedIndex = this.componentCreationIndex;
 
         let creationFlag = false;
@@ -987,23 +986,25 @@ export class ParserVisitor extends BaseVisitor {
         const ctxAssignmentExpr = ctx.assignment_expr();
 
         if (ctxDataExpr) {
-            dataResult = this.visitResult(ctxDataExpr);
             componentCtx = ctxDataExpr;
+
+            this.setResult(ctxDataExpr, { keepReference: true });
+            const reference = this.visitResult(ctxDataExpr) as AnyReference;
+            if (reference.found) {
+                dataResult = unwrapValue(reference);
+            } else {
+                const { trailers = [], rootValue = null } = reference;
+                if (rootValue instanceof ClassComponent && trailers.length > 0 
+                    && trailers[0] === ModuleContainsKeyword) {
+                    
+                    dataResult = rootValue;
+                    this.placeModuleContains(dataResult as ModuleComponent);
+                }
+            }
 
         } else if (ctxAssignmentExpr) {
             dataResult = this.visitResult(ctxAssignmentExpr);
             componentCtx = ctxAssignmentExpr;
-        }
-
-        if (dataResult instanceof AnyReference){
-            const {trailers = [], rootValue = null} = dataResult;
-            if (rootValue instanceof ClassComponent
-                && trailers.length > 0
-                && trailers[0] === ModuleContainsKeyword
-            ) {
-                dataResult = rootValue;
-                this.placeModuleContains(dataResult as ModuleComponent);
-            }
         }
 
         // Unwrap the reference, if it is a reference.
@@ -1027,6 +1028,9 @@ export class ParserVisitor extends BaseVisitor {
             modifiers.forEach(modifier => {
                 const modifierText = modifier.ID(0)!.getText();
                 const ctxDataExpr = modifier.data_expr()!;
+
+                // This is needed to preserve the IDs for xy, etc.
+                this.setResult(ctxDataExpr, {keepReference: true});
                 const result = this.visitResult(ctxDataExpr);
 
                 let shouldIgnoreWireOrientation = false;
@@ -1603,7 +1607,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitNet_namespace_expr = (ctx: Net_namespace_exprContext): void => {
-        let dataValue: ComplexType = null;
+        let dataValue: AnyReference;
 
         let netNamespace = null;
         const hasPlus = ctx.Addition();
@@ -1611,10 +1615,11 @@ export class ParserVisitor extends BaseVisitor {
         const ctxDataExpr = ctx.data_expr();
 
         if (ctxDataExpr) {
+            this.setResult(ctxDataExpr, {keepReference: true});
             dataValue = this.visitResult(ctxDataExpr);
 
-            if (dataValue instanceof UndeclaredReference) {
-                netNamespace = "/" + dataValue.reference.name;
+            if (!dataValue.found) {
+                netNamespace = "/" + dataValue.name;
             } else if (typeof dataValue === "string") {
                 netNamespace = "/" + dataValue;
             } else {

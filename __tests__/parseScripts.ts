@@ -349,7 +349,7 @@ print(inner_sum)
 
 export const inlineScript44 = new ScriptTest(`
 counter = 0
-while True:
+while true:
     counter = counter + 1
     if counter == 10:
         break
@@ -377,7 +377,7 @@ print(odd_sum)
 
 export const inlineScript47 = new ScriptTest(`
 counter = 0
-while True:
+while true:
     counter += 1
     if counter < 5:  # Skip first few iterations
         continue

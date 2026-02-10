@@ -9,13 +9,16 @@ import { Big } from 'big.js';
 
 import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_exprContext, Atom_exprContext, 
     AtomExprContext, 
+    Callable_exprContext, 
+    CallableExprContext, 
     ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, 
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext, Operator_assignment_exprContext, 
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
     Trailer_expr2Context, 
-    Value_exprContext, ValueAtomExprContext, 
+    TrailerContext, 
+    Value_exprContext, 
     ValueExprContext} from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptParserVisitor } from "./antlr/CircuitScriptParserVisitor.js";
 import { ExecutionContext } from "./execute.js";
@@ -23,7 +26,6 @@ import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition.js";
-import { PinTypes } from "./objects/PinTypes.js";
 import { CallableParameter, ComplexType, 
     Direction, 
     FunctionDefinedParameter, AnyReference, UndeclaredReference, 
@@ -285,7 +287,216 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         await this.importCommon(ctx, importType);
     }
 
+    visitCallableExpr = (ctx: CallableExprContext): void => {
+        this.passResult(ctx, ctx.callable_expr());
+    }
+
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
+        const ctxParams = this.getResult(ctx);
+
+        // If keepReference is true, then keep the reference that is returned
+        // after a function call. This reference may be used in the LHS of
+        // an assignment.
+        const { keepReference = false } = ctxParams ?? {};
+
+        const executor = this.getExecutor();
+
+        let passedNetNamespace = null;
+        const netNameSpaceExpr = ctx.net_namespace_expr();
+        if (netNameSpaceExpr) {
+            passedNetNamespace = this.visitResult(netNameSpaceExpr);
+        }
+
+        const firstId = ctx.ID(0)!;
+        const atomId = firstId.getText();
+        
+        let currentReference: AnyReference;
+
+        // Check if it is hardcoded values, like the pin types.
+        if (PinTypesList.indexOf(atomId) !== -1 && ctx.trailer().length === 0) {
+            // Not sure if just returning the string is enough...
+            currentReference = new AnyReference({
+                found: true,
+                value: atomId,
+                type: ReferenceTypes.pinType,
+            });
+        } else {
+            this.log('resolve variable ctx: ' + ctx.getText(), 'atomId', atomId);
+            currentReference = executor.resolveVariable(
+                this.executionStack, atomId);
+            this.log('reference:', currentReference.name, 'found:', currentReference.found);
+        }
+
+        if (currentReference !== undefined && currentReference.found) {
+            ctx.trailer().forEach(ctxTrailer => {
+                this.setResult(ctxTrailer, {
+                    reference: currentReference,
+                    netNamespace: passedNetNamespace
+                });
+                currentReference = this.visitResult(ctxTrailer);
+            });
+        }
+
+        let resultValue = currentReference;
+        if (!keepReference) {
+            // Only if is pin type, then keep the reference.
+            if (currentReference.type !== ReferenceTypes.pinType) {
+                resultValue = unwrapValue(resultValue);
+            }
+        }
+
+        this.setResult(ctx, resultValue);
+        this.log2('atom resolved: ' + ctx.getText() + ' -> ' + currentReference);
+    }
+
+    visitTrailer = (ctx: TrailerContext): void => {
+        // There should be some reference already set
+        const { reference, netNamespace } = this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
+
+        const ctxLParam = ctx.LParen();         // Function call access
+        const ctxID = ctx.ID();                 // Dot access expression
+        const ctxDataExpr = ctx.data_expr();    // Array access
+
+        const useValue = reference.value;
+        let nextReference!: AnyReference;
+
+        if (ctxID) {
+            // Extend the property in reference
+            reference.trailers.push(ctxID.getText());
+
+            const useRootValue = reference.rootValue ?? reference.value;
+            const useTrailerIndex = reference.trailerIndex ?? 0;
+
+            nextReference = this.getExecutor().resolveTrailers(
+                reference.type,
+                useRootValue,
+                reference.trailers
+            );
+
+            nextReference.name =
+                [reference.name,
+                ...reference.trailers.slice(useTrailerIndex)].join('.');
+
+        } else if (ctxDataExpr) {
+            const arrayIndex = this.visitResult(ctxDataExpr);
+            if (arrayIndex instanceof NumericValue) {
+                const arrayIndexValue = arrayIndex.toNumber();
+                const foundValue = useValue[arrayIndexValue];
+
+                const refType = foundValue instanceof ClassComponent
+                    ? ReferenceTypes.instance : ReferenceTypes.variable;
+
+                nextReference = new AnyReference({
+                    found: true,
+                    type: refType,
+                    value: foundValue,
+                    trailers: [[TrailerArrayIndex, arrayIndexValue]],
+                    rootValue: useValue
+                });
+            }
+
+        } else if (ctxLParam) {
+            nextReference = this.handleFunctionCall(reference, netNamespace, ctx);
+        }
+
+        this.setResult(ctx, nextReference);
+    }
+
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
+        const lhsCtx = ctx.callable_expr();
+        this.setResult(lhsCtx, {keepReference: true});
+        const leftSideReference = this.visitResult(lhsCtx);
+
+        const rhsCtx = ctx.data_expr();
+        const rhsCtxResult = this.visitResult(rhsCtx);
+
+        if (isReference(rhsCtxResult) && !rhsCtxResult.found) {
+            // The value does not exists
+            this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
+        }
+
+        const rhsValue = unwrapValue(rhsCtxResult);
+        const { trailers = [] } = leftSideReference;
+        const sequenceParts: (string | any)[] = [];
+
+        if (trailers.length === 0) {
+            // No trailers, directly assign the reference name
+            this.getScope().setVariable(leftSideReference.name!, rhsValue);
+
+            let itemType = '';
+            if (rhsValue instanceof ClassComponent) {
+                itemType = ReferenceTypes.instance;
+                this.log2(
+                    `assigned '${leftSideReference.name}' to ClassComponent`,
+                );
+            } else {
+                itemType = ReferenceTypes.variable;
+                this.getScope().setVariable(leftSideReference.name!, rhsValue);
+                this.log2(`assigned variable ${leftSideReference.name} to ${rhsValue}`);
+            }
+
+            sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
+        } else {
+            if (leftSideReference.rootValue instanceof ClassComponent) {
+                this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
+                this.log2(`assigned component param ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`);
+
+                sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
+
+                if (leftSideReference.rootValue.typeProp === ComponentTypes.net) {
+                    // if a net component, there is onl 1 pin
+                    const net = this.getScope().getNet(
+                        leftSideReference.rootValue, new PinId(1));
+                    if (net) {
+                        const trailerValue = trailers.join(".");
+                        net.params.set(trailerValue, rhsValue);
+                    }
+                }
+
+            } else if (leftSideReference.rootValue instanceof Object) {
+                // TODO: instanceof use AnyReference?
+
+                // Array access assignment
+                if (Array.isArray(trailers[0]) && trailers[0][0] === TrailerArrayIndex) {
+                    if (Array.isArray(leftSideReference.rootValue)) {
+                        const arrayIndexValue = trailers[0][1];
+                        leftSideReference.rootValue[arrayIndexValue] = rhsValue;
+
+                        this.log2(`assigned array index ${leftSideReference.rootValue} index: ${arrayIndexValue} value: ${rhsValue}`);
+
+                    } else {
+                        this.throwWithContext(lhsCtx, "Invalid array");
+                    }
+                } else {
+                    // Object access assignment
+
+                    // Expand the object first
+                    let expandedValue = leftSideReference.rootValue;
+
+                    // Skip the last trailer
+                    trailers.slice(0, -1).forEach(trailer => {
+                        expandedValue = expandedValue[trailer];
+                    });
+                    const lastTrailer = trailers.slice(-1)[0];
+
+                    expandedValue[lastTrailer] = rhsValue;
+                    this.log2(`assigned object ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`)
+                }
+
+                sequenceParts.push(...['variable', [leftSideReference.rootValue, trailers], rhsValue]);
+            }
+        }
+
+        if (sequenceParts.length > 0) {
+            this.getScope().sequence.push([
+                SequenceAction.Assign, ...sequenceParts
+            ]);
+        }
+
+        this.setResult(ctx, rhsValue);
+    }
+
+    visitAssignment_expr2 = (ctx: Assignment_exprContext): void => {
         const ctxAtom = ctx.atom_expr();
         const ctxFuncCallRef = ctx.function_call_expr();
 
@@ -394,7 +605,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
     visitOperator_assignment_expr = (ctx: Operator_assignment_exprContext): void => {
-        const reference = this.getReference(ctx.atom_expr()!);
+        const ctxCallable = ctx.callable_expr();
+        this.setResult(ctxCallable, {keepReference: true});
+        const reference = this.visitResult(ctx.callable_expr());
 
         const value = this.visitResult(ctx.data_expr());
 
@@ -579,7 +792,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         // an assignment.
         const {keepReference = false} = ctxParams ?? {};
 
-        this.handleFunctionCall(ctx);
+        this.handleFunctionCall_(ctx);
         if (!keepReference){
             // Function returns a reference, extract the value and return it
             const functionResultReference = this.getResult(ctx);
@@ -587,11 +800,101 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         }
     }
 
-    /**
+     /**
      * Executes the function and returns a reference to the result of the
      * function. A reference is always returned.
      */
-    private handleFunctionCall(ctx: Function_call_exprContext): void {
+    private handleFunctionCall(currentReference: AnyReference, 
+        passedNetNamespace: string| null, ctx: TrailerContext): AnyReference {
+        
+        const executor = this.getExecutor();
+                
+        let parameters: CallableParameter[] = [];
+
+        const ctxParameters = ctx.parameters();
+        if (ctxParameters) {
+            parameters = this.visitResult(ctxParameters);
+        }
+
+        const useNetNamespace = this.getNetNamespace(
+            executor.netNamespace,
+            passedNetNamespace,
+        );
+
+        try {
+            const isLibraryFunction = currentReference.rootValue 
+                && currentReference.rootValue instanceof ImportedLibrary;
+
+            if (isLibraryFunction){
+                this.log('create new library context');
+
+                // Restore the library context
+                const importedLibrary = currentReference.rootValue as ImportedLibrary;
+                const {context: importedLibraryContext} = importedLibrary;
+
+                // When executing library function, update the
+                // active filepath.
+                this.enterFile(importedLibrary.libraryFilePath);
+
+                const newExecutor = this.handleEnterContext(
+                    this.getExecutor(),
+                    this.executionStack,
+                    importedLibraryContext.name,
+                    ctx,
+                    {
+                        netNamespace: executor.netNamespace,
+                        namespace: importedLibrary.libraryNamespace
+                    }, [], [],
+                    false
+                );
+
+                this.log('copy library context scope');
+                importedLibraryContext.scope.copyTo(newExecutor.scope);
+            }
+
+            const [, functionResult] =
+                executor.callFunction(
+                    currentReference,
+                    parameters,
+                    this.executionStack,
+                    useNetNamespace);
+
+            if (isLibraryFunction){
+                this.log('pop library context scope');
+                this.handlePopContext(
+                    this.getExecutor(),
+                    this.executionStack,
+                    "",
+                    false
+                );
+
+                this.exitFile();
+            }
+
+            if (isReference(functionResult)){
+                currentReference = functionResult;
+            } else {
+                currentReference = new AnyReference({
+                    found: true,
+                    value: functionResult,
+                    trailers: [],
+                    type: (functionResult instanceof ClassComponent) ?
+                        ReferenceTypes.instance : ReferenceTypes.value,
+                });
+            }
+        } catch (err) {
+            this.throwWithContext(ctx, err);
+        }
+
+        return currentReference;
+    }
+
+    /**
+     * @deprecated
+     * Executes the function and returns a reference to the result of the
+     * function. A reference is always returned.
+     */
+    private handleFunctionCall_(ctx: Function_call_exprContext): void {
         const executor = this.getExecutor();
         const atomId = ctx.ID().getText();
         let passedNetNamespace = null; // Assumed empty by default
@@ -1093,6 +1396,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
     // Visits the inner/child ctx and stores the result in the parent ctx. 
     passResult(ctx: ParserRuleContext, innerCtx: ParserRuleContext): void {
+        // Pass any params on
+        const params = this.getResult(ctx);
+        if (params){
+            this.setResult(innerCtx, params);
+        }
         this.setResult(ctx, this.visitResult(innerCtx));
     }
 

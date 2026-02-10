@@ -30,13 +30,12 @@ import { ParametersContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
 import { ValueExprContext } from "./CircuitScriptParser.js";
 import { ArrayExprContext } from "./CircuitScriptParser.js";
-import { FunctionCallExprContext } from "./CircuitScriptParser.js";
 import { AdditionExprContext } from "./CircuitScriptParser.js";
 import { MultiplyExprContext } from "./CircuitScriptParser.js";
 import { LogicalOperatorExprContext } from "./CircuitScriptParser.js";
 import { CreateExprContext } from "./CircuitScriptParser.js";
 import { UnaryOperatorExprContext } from "./CircuitScriptParser.js";
-import { AtomExprContext } from "./CircuitScriptParser.js";
+import { CallableExprContext } from "./CircuitScriptParser.js";
 import { BinaryOperatorExprContext } from "./CircuitScriptParser.js";
 import { RoundedBracketsExprContext } from "./CircuitScriptParser.js";
 import { Value_exprContext } from "./CircuitScriptParser.js";
@@ -44,11 +43,9 @@ import { Function_def_exprContext } from "./CircuitScriptParser.js";
 import { Function_exprContext } from "./CircuitScriptParser.js";
 import { Function_args_exprContext } from "./CircuitScriptParser.js";
 import { Function_return_exprContext } from "./CircuitScriptParser.js";
-import { Atom_exprContext } from "./CircuitScriptParser.js";
-import { Trailer_exprContext } from "./CircuitScriptParser.js";
-import { Trailer_expr2Context } from "./CircuitScriptParser.js";
-import { Function_call_exprContext } from "./CircuitScriptParser.js";
 import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
+import { Callable_exprContext } from "./CircuitScriptParser.js";
+import { TrailerContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Graphic_expressions_blockContext } from "./CircuitScriptParser.js";
 import { Create_exprContext } from "./CircuitScriptParser.js";
@@ -256,13 +253,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitArrayExpr?: (ctx: ArrayExprContext) => Result;
     /**
-     * Visit a parse tree produced by the `FunctionCallExpr`
-     * labeled alternative in `CircuitScriptParser.data_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitFunctionCallExpr?: (ctx: FunctionCallExprContext) => Result;
-    /**
      * Visit a parse tree produced by the `AdditionExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
@@ -298,12 +288,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitUnaryOperatorExpr?: (ctx: UnaryOperatorExprContext) => Result;
     /**
-     * Visit a parse tree produced by the `AtomExpr`
+     * Visit a parse tree produced by the `CallableExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitAtomExpr?: (ctx: AtomExprContext) => Result;
+    visitCallableExpr?: (ctx: CallableExprContext) => Result;
     /**
      * Visit a parse tree produced by the `BinaryOperatorExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
@@ -349,35 +339,23 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitFunction_return_expr?: (ctx: Function_return_exprContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.atom_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAtom_expr?: (ctx: Atom_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.trailer_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitTrailer_expr?: (ctx: Trailer_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.trailer_expr2`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitTrailer_expr2?: (ctx: Trailer_expr2Context) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.function_call_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitFunction_call_expr?: (ctx: Function_call_exprContext) => Result;
-    /**
      * Visit a parse tree produced by `CircuitScriptParser.net_namespace_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitNet_namespace_expr?: (ctx: Net_namespace_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.callable_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitCallable_expr?: (ctx: Callable_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.trailer`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitTrailer?: (ctx: TrailerContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.property_block_expr`.
      * @param ctx the parse tree

@@ -21,8 +21,7 @@ expression: flow_expressions
         | double_dot_property_set_expr
         | assignment_expr
         | operator_assignment_expr
-        | atom_expr
-        | function_call_expr
+        | callable_expr
         | NEWLINE
         ;
 
@@ -76,8 +75,8 @@ at_block_pin_expr: pin_select_expr2 Colon (at_block_pin_expression_simple | at_b
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
 at_block_pin_expression_complex: expressions_block;
 
-assignment_expr:            (atom_expr | function_call_expr) Assign data_expr;
-operator_assignment_expr:   atom_expr (AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;
+assignment_expr:            callable_expr Assign data_expr;
+operator_assignment_expr:   callable_expr (AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;
 
 keyword_assignment_expr: ID Assign data_expr;
 
@@ -100,9 +99,8 @@ data_expr:
         | LessThan
         | LessOrEqualThan) data_expr                    #BinaryOperatorExpr
     | data_expr (LogicalAnd | LogicalOr) data_expr      #LogicalOperatorExpr
-    | atom_expr                                         #AtomExpr
-    | function_call_expr                                #FunctionCallExpr
     | value_expr                                        #ValueExpr 
+    | callable_expr                                     #CallableExpr
     ;
     
 value_expr: (Minus?
@@ -125,14 +123,11 @@ function_return_expr: Return data_expr ;
 
 net_namespace_expr: Addition? Divide data_expr?;
 
-function_call_expr: net_namespace_expr? ID trailer_expr+;
-
-atom_expr: ID trailer_expr2*;
-
-trailer_expr: LParen parameters? RParen | trailer_expr2;
-
-trailer_expr2: Dot ID
-                | LSquare data_expr RSquare;
+callable_expr: net_namespace_expr? ID trailer*;
+trailer: LParen parameters? RParen
+       | Dot ID
+       | LSquare data_expr RSquare
+       ;
 
 property_block_expr: property_key_expr Colon expressions_block;
 
