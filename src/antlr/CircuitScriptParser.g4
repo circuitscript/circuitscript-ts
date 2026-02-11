@@ -155,7 +155,7 @@ property_value_expr: properties_block                 # nested_properties
                     ;
 
 wire_expr: Wire (ID data_expr?)+;
-point_expr: Point (ID | data_expr);
+point_expr: Point data_expr;
 
 import_expr: Import libraryName=ID  import_annotation_expr?                                                   # import_simple
       | From libraryName=ID Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) import_annotation_expr?   # import_specific_or_all
