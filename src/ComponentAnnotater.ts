@@ -22,26 +22,44 @@ export class ComponentAnnotater {
     }
 
     getAnnotation(instance: ClassComponent): string | null {
-        // If type is null, then assume it is connector.
-        const type = instance.typeProp ?? 'conn';
+        // If instance has a refdesPrefix parameter, then use this instead.
 
-        // If type is unknown, then allow it to define a new range
-        if (this.counter[type] === undefined && type.length <= 2) {
-            for (const [, value] of Object.entries(ComponentRefDesPrefixes)) {
-                if (value === type) {
-                    throw "Refdes prefix is already in use!";
+        let usePrefix: string;
+        let useCounterKey: string;
+
+        if(instance.hasParam('refdesPrefix')){
+            const prefix = instance.getParam('refdesPrefix')! as string;
+            if (this.counter[prefix] === undefined){
+                this.counter[prefix] = 1;
+            }
+
+            usePrefix = prefix;
+            useCounterKey = prefix;
+
+        } else {
+            // If type is null, then assume it is connector.
+            const type = instance.typeProp ?? 'conn';
+
+            // If type is unknown, then allow it to define a new range
+            if (this.counter[type] === undefined && type.length <= 2) {
+                for (const [, value] of Object.entries(ComponentRefDesPrefixes)) {
+                    if (value === type) {
+                        throw "Refdes prefix is already in use!";
+                    }
+                }
+
+                if (ComponentRefDesPrefixes[type] === undefined) {
+                    // Define new type and start counting
+                    ComponentRefDesPrefixes[type] = type;
+                    this.counter[type] = 1;
                 }
             }
-
             if (ComponentRefDesPrefixes[type] === undefined) {
-                // Define new type and start counting
-                ComponentRefDesPrefixes[type] = type;
-                this.counter[type] = 1;
+                return null;
             }
-        }
 
-        if (ComponentRefDesPrefixes[type] === undefined) {
-            return null;
+            usePrefix = ComponentRefDesPrefixes[type];
+            useCounterKey = type;
         }
 
         let prefix = '';
@@ -79,9 +97,8 @@ export class ComponentAnnotater {
                     } else {
                         // Otherwise, generate the main refdes based on the type.
                         const { index: nextIndex, proposedName } =
-                            this.getNextRefdesCounter(
-                                ComponentRefDesPrefixes[type], this.counter[type]);
-                        this.counter[type] = nextIndex;
+                            this.getNextRefdesCounter(usePrefix, this.counter[useCounterKey]);
+                        this.counter[useCounterKey] = nextIndex;
                         prefix = proposedName;
                     }
 
@@ -101,8 +118,8 @@ export class ComponentAnnotater {
 
             } else {
                 const refdesCounter = this.getNextRefdesCounter(
-                    ComponentRefDesPrefixes[type], this.counter[type]);
-                this.counter[type] = refdesCounter.index;
+                    usePrefix, this.counter[useCounterKey]);
+                this.counter[useCounterKey] = refdesCounter.index;
                 resultRefdes = refdesCounter.proposedName;
             }
 
