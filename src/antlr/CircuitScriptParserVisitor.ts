@@ -70,7 +70,6 @@ import { Part_set_keyContext } from "./CircuitScriptParser.js";
 import { Part_match_blockContext } from "./CircuitScriptParser.js";
 import { Part_sub_exprContext } from "./CircuitScriptParser.js";
 import { Part_condition_exprContext } from "./CircuitScriptParser.js";
-import { Part_condition_key_only_exprContext } from "./CircuitScriptParser.js";
 import { Part_value_exprContext } from "./CircuitScriptParser.js";
 import { Annotation_comment_exprContext } from "./CircuitScriptParser.js";
 
@@ -501,12 +500,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitPart_condition_expr?: (ctx: Part_condition_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.part_condition_key_only_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitPart_condition_key_only_expr?: (ctx: Part_condition_key_only_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.part_value_expr`.
      * @param ctx the parse tree

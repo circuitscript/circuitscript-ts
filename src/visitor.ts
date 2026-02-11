@@ -52,7 +52,6 @@ import {
     Part_sub_exprContext,
     Part_value_exprContext,
     Part_condition_exprContext,
-    Part_condition_key_only_exprContext,
     CreateExprContext,
     Create_exprContext,
     Properties_blockContext,
@@ -1852,11 +1851,17 @@ export class ParserVisitor extends BaseVisitor {
 
     visitPart_value_expr = (ctx: Part_value_exprContext): void => {
         const key = this.visitResult(ctx.part_set_key());
-        const values = ctx.data_expr().map(ctxData => {
-            return this.visitResult(ctxData);
-        });
 
-        this.setResult(ctx, { key, endValue: values });
+        const ctxPartMatchBlock = ctx.part_match_block();
+        if (ctxPartMatchBlock) {
+            const children = this.visitResult(ctxPartMatchBlock);
+            this.setResult(ctx, { key, children });
+        } else {
+            const values = ctx.data_expr().map(ctxData => {
+                return this.visitResult(ctxData);
+            });
+            this.setResult(ctx, { key, endValue: values });
+        }
     }
 
     visitPart_condition_expr = (ctx: Part_condition_exprContext): void => {
@@ -1915,16 +1920,6 @@ export class ParserVisitor extends BaseVisitor {
         });
 
         this.setResult(ctx, tmpKeyValues);
-    }
-
-    visitPart_condition_key_only_expr = (ctx: Part_condition_key_only_exprContext): void => {
-        const key = this.visitResult(ctx.part_set_key());
-        const children = this.visitResult(ctx.part_match_block());
-
-        this.setResult(ctx, {
-            key,
-            children,
-        });
     }
 
     async checkLibraryHasRefdesFile(filePath: string): Promise<void> {

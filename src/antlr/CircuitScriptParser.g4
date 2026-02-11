@@ -177,12 +177,10 @@ part_match_block: NEWLINE INDENT part_sub_expr+ DEDENT;
 part_sub_expr:
 	part_condition_expr
 	| part_value_expr
-	| part_condition_key_only_expr
 	| NEWLINE;
 
 part_condition_expr: key_id+=part_set_key Colon values+=data_expr (Comma key_id+=part_set_key Colon values+=data_expr)* (Comma id_only=part_set_key)*Colon (part_match_block | (last_data+=data_expr (Comma last_data+=data_expr)*));
 
-part_condition_key_only_expr: part_set_key Colon part_match_block;
-part_value_expr: part_set_key Colon data_expr (Comma data_expr)*;
+part_value_expr: part_set_key Colon (part_match_block | data_expr (Comma data_expr)*);
 
 annotation_comment_expr: ANNOTATION_START (ID | Minus)*;
