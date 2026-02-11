@@ -14,6 +14,7 @@ import { ParseSyntaxError, RuntimeExecutionError, SimpleStopwatch } from './util
 import {
     ANTLRErrorListener, ATNConfigSet, ATNSimulator,
     BitSet, CharStream, CommonTokenStream, DFA, Parser,
+    PredictionMode,
     RecognitionException, Recognizer, Token
 } from 'antlr4ng';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
@@ -67,18 +68,20 @@ export async function parseFileWithVisitor(
     tokens.fill();
 
     const lexerTimeTaken = lexerTimer.lap();
-    const parserTimer = new SimpleStopwatch();
+    
+    const parser = new CircuitScriptParser(tokens);
+    parser.interpreter.predictionMode = PredictionMode.SLL;
 
-    const parser = new CircuitScriptParser(tokens); 
     parser.removeErrorListeners();
     parser.addErrorListener(parserErrorListener);
-
+    
+    const parserTimer = new SimpleStopwatch();
     const tree = parser.script();
-
+    
     let throwError: any;
     let hasError = false;
     let hasParseError = false;
-
+    
     try {
         await visitor.visitAsync(tree);
     } catch (error) {
@@ -91,11 +94,11 @@ export async function parseFileWithVisitor(
                 throwError = error;
             }
         } 
-
+        
         hasError = true;
         hasParseError = true;
     }
-
+    
     const parserTimeTaken = parserTimer.lap();
 
     return {
