@@ -24,7 +24,6 @@ import {
     MultiplyExprContext,
     Nested_propertiesContext,
     Net_namespace_exprContext,
-    Pin_select_expr2Context,
     Pin_select_exprContext,
     Point_exprContext,
     Property_exprContext,
@@ -36,7 +35,6 @@ import {
     If_exprContext,
     If_inner_exprContext,
     LogicalOperatorExprContext,
-    Nested_properties_innerContext,
     Expressions_blockContext,
     Create_module_exprContext,
     Property_block_exprContext,
@@ -59,6 +57,7 @@ import {
     Part_condition_key_only_exprContext,
     CreateExprContext,
     Create_exprContext,
+    Properties_blockContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -334,15 +333,11 @@ export class ParserVisitor extends BaseVisitor {
 
         scope.enterContext(ctx);
 
-        ctx.property_expr().forEach(item => {
-            this.visitResult(item);
-        });
+        const ctxPropertiesBlock = ctx.properties_block();
+        const properties = this.visitResult(ctxPropertiesBlock);
 
         scope.exitContext();
         scope.popOnPropertyHandler();
-
-        // Now parse here again
-        const properties = this.getPropertyExprList(ctx.property_expr());
 
         // Use a unique instance name in the context for now
         let instanceName = this.getExecutor().getUniqueInstanceName();
@@ -736,9 +731,9 @@ export class ParserVisitor extends BaseVisitor {
 
         let parameters: CallableParameter[] = [];
 
-        const ctxNestedProperties = ctx.nested_properties_inner();
-        if (ctxNestedProperties) {
-            const nestedKeyValues = this.visitResult(ctxNestedProperties);
+        const ctxPropertiesBlock = ctx.properties_block();
+        if (ctxPropertiesBlock) {
+            const nestedKeyValues = this.visitResult(ctxPropertiesBlock);
 
             nestedKeyValues.forEach((value: any, key: any) => {
                 // Values will be used by graphics command, so unwrap any
@@ -893,12 +888,7 @@ export class ParserVisitor extends BaseVisitor {
     visitProperty_expr = (ctx: Property_exprContext): void => {
         const ctxKey = ctx.property_key_expr();
         const ctxValue = ctx.property_value_expr();
-
-        const extraValue = ctx._extra;
-        if (extraValue) {
-            console.log('extra', extraValue.text);
-        }
-
+        
         const scope = this.getScope();
 
         this.getScope().enterContext(ctxKey);
@@ -944,14 +934,28 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, value);
     }
 
-    visitNested_properties_inner = (ctx: Nested_properties_innerContext): void => {
+    visitProperties_block = (ctx: Properties_blockContext): void => {
         const result = new Map<string, any>();
-        ctx.property_expr().forEach((item) => {
+
+        // For duplicated keys, track a counter value with the key.
+        const keyCounter = new Map<string, number>();
+
+        ctx.property_expr().forEach(item => {
             const property: Map<string, any> = this.visitResult(item);
 
             // Get out all items, by default
             for (const [key, value] of property) {
-                result.set(key, value);
+
+                let useKey = key;
+
+                const counterValue = keyCounter.get(key) ?? 0;
+                keyCounter.set(key, counterValue + 1);
+
+                if (counterValue > 0){
+                    useKey = key + ':' + counterValue;
+                }
+
+                result.set(useKey, value);
             }
         });
 
@@ -959,7 +963,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitNested_properties = (ctx: Nested_propertiesContext): void => {
-        this.setResult(ctx, this.visitResult(ctx.nested_properties_inner()));
+        this.passResult(ctx, ctx.children[0]);
     }
 
     visitProperty_key_expr = (ctx: Property_key_exprContext): void => {
@@ -1425,27 +1429,6 @@ export class ParserVisitor extends BaseVisitor {
             ctx, uniqueFunctionID);
     }
 
-    visitPin_select_expr2 = (ctx: Pin_select_expr2Context): void => {
-        const ctxStringValue = ctx.STRING_VALUE();
-        const ctxIntegerValue = ctx.INTEGER_VALUE();
-        let pinIdValue: string | number;
-        let pinId: PinId | null = null;
-
-        if (ctxStringValue) {
-            pinIdValue = this.prepareStringValue(ctxStringValue.getText());
-        } else if (ctxIntegerValue) {
-            pinIdValue = Number(ctxIntegerValue.getText());
-        }
-
-        if (pinIdValue !== undefined) {
-            pinId = new PinId(pinIdValue);
-        } else {
-            throw new RuntimeExecutionError("Invalid select pin", ctx);
-        }
-
-        this.setResult(ctx, pinId);
-    }
-
     visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): void => {
         const executor = this.getExecutor();
 
@@ -1457,7 +1440,9 @@ export class ParserVisitor extends BaseVisitor {
         // saves the correct location within the `at` block.
         executor.closeOpenPathBlocks(); 
 
-        const atPin: PinId = this.visitResult(ctx.pin_select_expr2());
+        const propKey = this.visitResult(ctx.property_key_expr());
+        const atPin: PinId = new PinId(propKey);
+
         executor.atComponent(currentComponent, atPin, {
             addSequence: true
         });

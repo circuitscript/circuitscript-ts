@@ -12,18 +12,17 @@ import { Path_blockContext } from "./CircuitScriptParser.js";
 import { Pin_select_exprContext } from "./CircuitScriptParser.js";
 import { Component_modifier_exprContext } from "./CircuitScriptParser.js";
 import { Data_expr_with_assignmentContext } from "./CircuitScriptParser.js";
+import { Assignment_exprContext } from "./CircuitScriptParser.js";
 import { Add_component_exprContext } from "./CircuitScriptParser.js";
 import { Component_select_exprContext } from "./CircuitScriptParser.js";
-import { Pin_select_expr2Context } from "./CircuitScriptParser.js";
 import { At_component_exprContext } from "./CircuitScriptParser.js";
 import { To_component_exprContext } from "./CircuitScriptParser.js";
+import { At_block_headerContext } from "./CircuitScriptParser.js";
 import { At_blockContext } from "./CircuitScriptParser.js";
 import { At_block_expressionsContext } from "./CircuitScriptParser.js";
-import { At_block_headerContext } from "./CircuitScriptParser.js";
 import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_simpleContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_complexContext } from "./CircuitScriptParser.js";
-import { Assignment_exprContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
@@ -46,12 +45,12 @@ import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Callable_exprContext } from "./CircuitScriptParser.js";
 import { TrailerContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
+import { Properties_blockContext } from "./CircuitScriptParser.js";
 import { Graphic_expressions_blockContext } from "./CircuitScriptParser.js";
 import { Create_exprContext } from "./CircuitScriptParser.js";
 import { Create_component_exprContext } from "./CircuitScriptParser.js";
 import { Create_graphic_exprContext } from "./CircuitScriptParser.js";
 import { Create_module_exprContext } from "./CircuitScriptParser.js";
-import { Nested_properties_innerContext } from "./CircuitScriptParser.js";
 import { GraphicForExprContext } from "./CircuitScriptParser.js";
 import { GraphicCommandExprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
@@ -142,6 +141,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitData_expr_with_assignment?: (ctx: Data_expr_with_assignmentContext) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.assignment_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAssignment_expr?: (ctx: Assignment_exprContext) => Result;
+    /**
      * Visit a parse tree produced by `CircuitScriptParser.add_component_expr`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -153,12 +158,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitComponent_select_expr?: (ctx: Component_select_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.pin_select_expr2`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitPin_select_expr2?: (ctx: Pin_select_expr2Context) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.at_component_expr`.
      * @param ctx the parse tree
@@ -172,6 +171,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitTo_component_expr?: (ctx: To_component_exprContext) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.at_block_header`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAt_block_header?: (ctx: At_block_headerContext) => Result;
+    /**
      * Visit a parse tree produced by `CircuitScriptParser.at_block`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -183,12 +188,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitAt_block_expressions?: (ctx: At_block_expressionsContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.at_block_header`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAt_block_header?: (ctx: At_block_headerContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.at_block_pin_expr`.
      * @param ctx the parse tree
@@ -207,12 +206,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitAt_block_pin_expression_complex?: (ctx: At_block_pin_expression_complexContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.assignment_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAssignment_expr?: (ctx: Assignment_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.keyword_assignment_expr`.
      * @param ctx the parse tree
@@ -356,6 +349,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitProperty_block_expr?: (ctx: Property_block_exprContext) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.properties_block`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitProperties_block?: (ctx: Properties_blockContext) => Result;
+    /**
      * Visit a parse tree produced by `CircuitScriptParser.graphic_expressions_block`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -385,12 +384,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitCreate_module_expr?: (ctx: Create_module_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.nested_properties_inner`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitNested_properties_inner?: (ctx: Nested_properties_innerContext) => Result;
     /**
      * Visit a parse tree produced by the `GraphicForExpr`
      * labeled alternative in `CircuitScriptParser.graphic_expr`.
