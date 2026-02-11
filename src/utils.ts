@@ -16,14 +16,14 @@ import { BlockTypes } from './globals.js';
 import { DeclaredReference, AnyReference } from './objects/types.js';
 
 export class SimpleStopwatch {
-    startTime: Date;
+    startTime: number;
 
     constructor() {
-        this.startTime = new Date();
+        this.startTime = performance.now();
     }
 
     lap(): number {
-        return (new Date()).getTime() - this.startTime.getTime();
+        return performance.now() - this.startTime;
     }
 }
 

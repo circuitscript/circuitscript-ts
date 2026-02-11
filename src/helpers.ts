@@ -559,7 +559,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         parserTimeTaken,
         lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData, {
             enableLexerDiagnostics: lexerDiagnostics,
-            enableLexerVerbose: lexerVerbose
+            enableLexerVerbose: lexerVerbose,
+            enableLexerTokenStream: lexerTokens !== false || lexerMapping !== false,
         });
 
     printWarnings(visitor.getWarnings());

@@ -113,7 +113,11 @@ describe('test cli program', () => {
         ['script46'],
     ])('test generated annotations - %s', async (scriptName: string) => {
         
-        execSync(baseCommand + ` ${renderPath}${scriptName}.cst -xj ${mainPath}${scriptName}.annotated.cst`);
+        const result = execSync(baseCommand + ` ${renderPath}${scriptName}.cst -xj ${mainPath}${scriptName}.annotated.cst`);
+        const resultString = result.toString();
+
+        const hasError = resultString.toLowerCase().indexOf('error') !== -1;
+        expect(hasError).toEqual(false);
 
         const annotatedFile = await loadScriptFromFile(`${mainPath}${scriptName}.annotated.cst`);
         const expectedAnnotatedFile = await loadScriptFromFile(`${mainPath}${scriptName}.expected.annotated.cst`);

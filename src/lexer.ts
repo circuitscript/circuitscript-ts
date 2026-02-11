@@ -20,6 +20,9 @@ export class MainLexer extends CircuitScriptLexer {
     // A queue where extra tokens are pushed on (see the NEWLINE lexer rule).
     tokens: Token[];
 
+    // Head pointer for O(1) dequeue from the token queue.
+    private tokensHead: number;
+
     // The stack that keeps track of the indentation level.
     indents: number[];
 
@@ -32,6 +35,7 @@ export class MainLexer extends CircuitScriptLexer {
     constructor(input: CharStream, enableDiagnostics = false) {
         super(input);
         this.tokens = [];
+        this.tokensHead = 0;
         this.indents = [];
         this.opened = 0;
 
@@ -41,6 +45,7 @@ export class MainLexer extends CircuitScriptLexer {
 
     reset(): void {
         this.tokens = [];
+        this.tokensHead = 0;
         this.indents = [];
         this.opened = 0;
 
@@ -53,20 +58,22 @@ export class MainLexer extends CircuitScriptLexer {
         super.emitToken(token);
         this.tokens.push(token);
 
-        this.diagnosticCollector.onTokenGenerated(token, this.tokens.length);
+        this.diagnosticCollector.onTokenGenerated(token, this.tokens.length - this.tokensHead);
     }
 
     nextToken(): Token {
-        this.diagnosticCollector.onTokenStart();
-
         // Check if the end-of-file is ahead and there are still some DEDENTS expected.
         if (this.inputStream.LA(1) === CircuitScriptParser.EOF && this.indents.length) {
             // Remove any trailing EOF tokens from our buffer.
-            this.tokens = this.tokens.filter(function (val) {
-                return val.type !== CircuitScriptParser.EOF;
-            });
-            // First emit an extra line break that serves as the end of the statement.
+            let writeIdx = this.tokensHead;
+            for (let i = this.tokensHead; i < this.tokens.length; i++) {
+                if (this.tokens[i].type !== CircuitScriptParser.EOF) {
+                    this.tokens[writeIdx++] = this.tokens[i];
+                }
+            }
+            this.tokens.length = writeIdx;
 
+            // First emit an extra line break that serves as the end of the statement.
             const fillerNewLine = this.commonToken(CircuitScriptParser.NEWLINE, "");
             this.emitToken(fillerNewLine);
 
@@ -84,10 +91,17 @@ export class MainLexer extends CircuitScriptLexer {
             this.emitToken(this.commonToken(CircuitScriptParser.EOF, ""));
         }
         const next = super.nextToken();
-        const returnToken = this.tokens.length ? this.tokens.shift() : next;
 
-        if (returnToken) {
-            this.diagnosticCollector.onTokenGenerated(returnToken, this.tokens.length);
+        let returnToken: Token;
+        if (this.tokensHead < this.tokens.length) {
+            returnToken = this.tokens[this.tokensHead++];
+            // Compact the queue periodically to avoid unbounded memory growth.
+            if (this.tokensHead > 64) {
+                this.tokens = this.tokens.slice(this.tokensHead);
+                this.tokensHead = 0;
+            }
+        } else {
+            returnToken = next;
         }
 
         return returnToken;
@@ -132,7 +146,7 @@ export class MainLexer extends CircuitScriptLexer {
         return token;
     }
 
-    getIndentationCount(whitespace: string): number {
+    private getIndentationCount(whitespace: string): number {
         let count = 0;
         for (let i = 0; i < whitespace.length; i++) {
             if (whitespace[i] === '\t') {
@@ -144,10 +158,6 @@ export class MainLexer extends CircuitScriptLexer {
         return count;
     }
 
-    atStartOfInput(): boolean {
-        return this.getCharIndex() === 0;
-    }
-
     openBrace(): void {
         this.opened++;
     }
@@ -157,8 +167,22 @@ export class MainLexer extends CircuitScriptLexer {
     }
 
     onNewLine(): void {
-        const newLine = this.text.replace(/[^\r\n]+/g, '');
-        const spaces = this.text.replace(/[\r\n]+/g, '');
+        // Split this.text into the newline chars and the trailing whitespace.
+        // this.text matches NEWLINE: ( '\r'? '\n' | '\r' | '\f' ) SPACES?
+        // so it starts with newline chars followed by optional spaces/tabs.
+        const text = this.text;
+        let nlLen = 0;
+
+        while (nlLen < text.length) {
+            const c = text.charCodeAt(nlLen);
+            if (c === 13 /* \r */ || c === 10 /* \n */ || c === 12 /* \f */) {
+                nlLen++;
+            } else {
+                break;
+            }
+        }
+        const newLine = text.substring(0, nlLen);
+        const spaces = text.substring(nlLen);
 
         // Strip newlines inside open clauses except if we are near EOF. We keep NEWLINEs near EOF to
         // satisfy the final newline needed by the single_put rule used by the REPL.
@@ -173,9 +197,11 @@ export class MainLexer extends CircuitScriptLexer {
             this.skip();
 
         } else {
+            const charIndex = this.getCharIndex();
+
             // New line will be at the start
-            const start = this.getCharIndex() - this.text.length;
-            const stop = this.getCharIndex() - 1;
+            const start = charIndex - this.text.length;
+            const stop = charIndex - 1;
 
             // The newline token should only be a single char token.
             this.emitToken(this.commonToken(CircuitScriptParser.NEWLINE, newLine, start, start));

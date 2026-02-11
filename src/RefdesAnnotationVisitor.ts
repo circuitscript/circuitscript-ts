@@ -12,7 +12,8 @@ import { Add_component_exprContext, At_block_headerContext,
     Component_select_exprContext, 
     Frame_exprContext, 
     Function_def_exprContext, Function_return_exprContext, ScriptContext, 
-    To_component_exprContext} from './antlr/CircuitScriptParser.js';
+    To_component_exprContext,
+    TrailerContext} from './antlr/CircuitScriptParser.js';
 import { BaseVisitor } from './BaseVisitor.js';
 import { ClassComponent } from './objects/ClassComponent.js';
 
@@ -141,6 +142,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     visitParameters = (ctx: ParametersContext): void => {
         // Do nothing;
+    }
+
+    visitTrailer = (ctx: TrailerContext): void => {
+        // Do nothing
     }
 
     addedRefdesAnnotations:string[] = [];

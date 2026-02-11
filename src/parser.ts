@@ -24,6 +24,7 @@ export async function parseFileWithVisitor(
     options?: {
         enableLexerDiagnostics?: boolean;
         enableLexerVerbose?: boolean;
+        enableLexerTokenStream?: boolean;
     }
 ): Promise<{
     tree: ScriptContext,
@@ -45,12 +46,16 @@ export async function parseFileWithVisitor(
 
     const enableDiagnostics = options?.enableLexerDiagnostics ?? false;
     const enableVerbose = options?.enableLexerVerbose ?? false;
+    const enableTokenStream = options?.enableLexerTokenStream ?? false;
     const lexer = new MainLexer(chars, enableDiagnostics);
 
     // Set source text for character-to-token visualization
     if (enableDiagnostics) {
         lexer.diagnosticCollector.setSourceText(data);
         lexer.diagnosticCollector.setVerboseLogging(enableVerbose);
+        if (enableTokenStream) {
+            lexer.diagnosticCollector.setRecordTokenStream(true);
+        }
     }
 
     lexer.removeErrorListeners();

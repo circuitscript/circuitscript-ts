@@ -82,13 +82,18 @@ export class LexerDiagnosticCollector {
     private dedentCount = 0;
     private newlineCount = 0;
 
-    private queueSizeSamples: number[] = [];
+    private queueSizeSum = 0;
+    private queueSizeCount = 0;
     private maxQueueSize = 0;
     private largeQueueLocations: Array<{ queueSize: number; tokenIndex: number; line: number; column: number; tokenType: string; text: string }> = [];
 
     private tokenStream: TokenStreamEntry[] = [];
     private verboseLogging = false;
+    private recordTokenStream = false;
     private sourceText = '';
+
+    // Cache for token type name lookups (token type number → name string)
+    private tokenTypeNameCache = new Map<number, string>();
 
     private enabled = true;
 
@@ -108,6 +113,14 @@ export class LexerDiagnosticCollector {
      */
     setVerboseLogging(enabled: boolean): void {
         this.verboseLogging = enabled;
+        if (enabled) this.recordTokenStream = true;
+    }
+
+    /**
+     * Enable or disable token stream recording (needed for --lexer-tokens and --lexer-mapping)
+     */
+    setRecordTokenStream(enabled: boolean): void {
+        this.recordTokenStream = enabled;
     }
 
     /**
@@ -136,10 +149,12 @@ export class LexerDiagnosticCollector {
         this.dedentCount = 0;
         this.newlineCount = 0;
 
-        this.queueSizeSamples = [];
+        this.queueSizeSum = 0;
+        this.queueSizeCount = 0;
         this.maxQueueSize = 0;
         this.largeQueueLocations = [];
         this.tokenStream = [];
+        this.tokenTypeNameCache.clear();
     }
 
     /**
@@ -216,8 +231,9 @@ export class LexerDiagnosticCollector {
             }
         }
 
-        // Track queue size
-        this.queueSizeSamples.push(queueSize);
+        // Track queue size using running sum instead of storing every sample
+        this.queueSizeSum += queueSize;
+        this.queueSizeCount++;
         if (queueSize > this.maxQueueSize) {
             this.maxQueueSize = queueSize;
         }
@@ -240,43 +256,50 @@ export class LexerDiagnosticCollector {
             }
         }
 
-        // Record token in stream
-        const tokenEntry: TokenStreamEntry = {
-            index: this.totalTokens - 1,
-            type: tokenTypeName,
-            text: token.text || '',
-            line: token.line,
-            column: token.column,
-            startPos: token.start,
-            stopPos: token.stop,
-            channel: token.channel,
-            timeUs: elapsedUs
-        };
-        this.tokenStream.push(tokenEntry);
+        // Only record the token stream if verbose logging or explicit token stream recording is enabled.
+        // Storing every token in memory is expensive for large files.
+        if (this.recordTokenStream) {
+            const tokenEntry: TokenStreamEntry = {
+                index: this.totalTokens - 1,
+                type: tokenTypeName,
+                text: token.text || '',
+                line: token.line,
+                column: token.column,
+                startPos: token.start,
+                stopPos: token.stop,
+                channel: token.channel,
+                timeUs: elapsedUs
+            };
+            this.tokenStream.push(tokenEntry);
 
-        // Verbose logging
-        if (this.verboseLogging) {
-            this.logToken(tokenEntry);
+            if (this.verboseLogging) {
+                this.logToken(tokenEntry);
+            }
         }
     }
 
     /**
-     * Get human-readable token type name
+     * Get human-readable token type name (cached to avoid repeated vocabulary lookups)
      */
     private getTokenTypeName(tokenType: number): string {
-        // Use the parser's vocabulary to get the symbolic name
+        let name = this.tokenTypeNameCache.get(tokenType);
+        if (name !== undefined) return name;
+
         const symbolicName = CircuitScriptParser.vocabulary.getSymbolicName(tokenType);
         if (symbolicName) {
+            this.tokenTypeNameCache.set(tokenType, symbolicName);
             return symbolicName;
         }
 
-        // Fallback to literal name or token type number
         const literalName = CircuitScriptParser.vocabulary.getLiteralName(tokenType);
         if (literalName) {
+            this.tokenTypeNameCache.set(tokenType, literalName);
             return literalName;
         }
 
-        return `TOKEN_TYPE_${tokenType}`;
+        name = `TOKEN_TYPE_${tokenType}`;
+        this.tokenTypeNameCache.set(tokenType, name);
+        return name;
     }
 
     /**
@@ -304,8 +327,8 @@ export class LexerDiagnosticCollector {
         const totalTimeNs = endTime - this.startTime;
         const totalTimeUs = Number(totalTimeNs) / 1000;
 
-        const averageQueueSize = this.queueSizeSamples.length > 0
-            ? this.queueSizeSamples.reduce((a, b) => a + b, 0) / this.queueSizeSamples.length
+        const averageQueueSize = this.queueSizeCount > 0
+            ? this.queueSizeSum / this.queueSizeCount
             : 0;
 
         return {
