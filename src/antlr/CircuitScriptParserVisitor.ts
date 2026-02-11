@@ -21,8 +21,6 @@ import { At_block_headerContext } from "./CircuitScriptParser.js";
 import { At_blockContext } from "./CircuitScriptParser.js";
 import { At_block_expressionsContext } from "./CircuitScriptParser.js";
 import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
-import { At_block_pin_expression_simpleContext } from "./CircuitScriptParser.js";
-import { At_block_pin_expression_complexContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
@@ -61,7 +59,6 @@ import { Wire_exprContext } from "./CircuitScriptParser.js";
 import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_simpleContext } from "./CircuitScriptParser.js";
 import { Import_specific_or_allContext } from "./CircuitScriptParser.js";
-import { Import_annotation_exprContext } from "./CircuitScriptParser.js";
 import { Frame_exprContext } from "./CircuitScriptParser.js";
 import { If_exprContext } from "./CircuitScriptParser.js";
 import { If_inner_exprContext } from "./CircuitScriptParser.js";
@@ -194,18 +191,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitAt_block_pin_expr?: (ctx: At_block_pin_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.at_block_pin_expression_simple`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAt_block_pin_expression_simple?: (ctx: At_block_pin_expression_simpleContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.at_block_pin_expression_complex`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAt_block_pin_expression_complex?: (ctx: At_block_pin_expression_complexContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.keyword_assignment_expr`.
      * @param ctx the parse tree
@@ -450,12 +435,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitImport_specific_or_all?: (ctx: Import_specific_or_allContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.import_annotation_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitImport_annotation_expr?: (ctx: Import_annotation_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.frame_expr`.
      * @param ctx the parse tree

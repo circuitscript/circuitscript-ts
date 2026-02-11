@@ -75,10 +75,7 @@ at_block: at_block_header NEWLINE INDENT at_block_expressions+ DEDENT;
 at_block_expressions: expression | at_block_pin_expr;
 
 // Expression to allow direct pin assignment
-at_block_pin_expr: property_key_expr Colon (at_block_pin_expression_simple | at_block_pin_expression_complex);
-
-at_block_pin_expression_simple: (expression | NOT_CONNECTED);
-at_block_pin_expression_complex: expressions_block;
+at_block_pin_expr: property_key_expr Colon (expression | expressions_block | NOT_CONNECTED);
 
 keyword_assignment_expr: ID Assign data_expr;
 
@@ -104,13 +101,15 @@ data_expr:
     | callable_expr                                     #CallableExpr
     ;
     
-value_expr: (Minus?
-    (NUMERIC_VALUE
-    | DECIMAL_VALUE
-    | INTEGER_VALUE
-    | STRING_VALUE
-    | PERCENTAGE_VALUE
-    | BOOLEAN_VALUE));
+value_expr:
+	Minus? (
+		NUMERIC_VALUE
+		| DECIMAL_VALUE
+		| INTEGER_VALUE
+		| STRING_VALUE
+		| PERCENTAGE_VALUE
+		| BOOLEAN_VALUE
+	);
 
 function_def_expr: Define ID LParen function_args_expr? RParen Colon NEWLINE INDENT function_expr+ DEDENT;
 function_expr: expression | function_return_expr;
@@ -157,12 +156,10 @@ property_value_expr: properties_block                 # nested_properties
 wire_expr: Wire (ID data_expr?)+;
 point_expr: Point data_expr;
 
-import_expr: Import libraryName=ID  import_annotation_expr?                                                   # import_simple
-      | From libraryName=ID Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) import_annotation_expr?   # import_specific_or_all
+import_expr: Import libraryName=ID  annotation_comment_expr?                                                          # import_simple
+      | From libraryName=ID Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) annotation_comment_expr?   # import_specific_or_all
       ;
-
-import_annotation_expr: ANNOTATION_START (ID |Minus)*;
-
+      
 frame_expr: (Frame | Sheet) Colon expressions_block;
 if_expr:    If data_expr Colon expressions_block if_inner_expr* else_expr?;
 
@@ -177,10 +174,15 @@ part_set_expr: Set Colon data_expr (Comma data_expr)* Colon part_match_block;
 part_set_key: ID | INTEGER_VALUE | NUMERIC_VALUE | STRING_VALUE | PERCENTAGE_VALUE;
 
 part_match_block: NEWLINE INDENT part_sub_expr+ DEDENT;
-part_sub_expr: part_condition_expr | part_value_expr | part_condition_key_only_expr | NEWLINE;
+part_sub_expr:
+	part_condition_expr
+	| part_value_expr
+	| part_condition_key_only_expr
+	| NEWLINE;
 
 part_condition_expr: key_id+=part_set_key Colon values+=data_expr (Comma key_id+=part_set_key Colon values+=data_expr)* (Comma id_only=part_set_key)*Colon (part_match_block | (last_data+=data_expr (Comma last_data+=data_expr)*));
+
 part_condition_key_only_expr: part_set_key Colon part_match_block;
 part_value_expr: part_set_key Colon data_expr (Comma data_expr)*;
 
-annotation_comment_expr: ANNOTATION_START ID;
+annotation_comment_expr: ANNOTATION_START (ID | Minus)*;

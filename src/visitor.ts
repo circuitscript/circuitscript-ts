@@ -10,8 +10,6 @@ import {
     AdditionExprContext,
     At_blockContext,
     At_block_pin_exprContext,
-    At_block_pin_expression_complexContext,
-    At_block_pin_expression_simpleContext,
     At_component_exprContext,
     BinaryOperatorExprContext,
     Component_select_exprContext,
@@ -1449,13 +1447,13 @@ export class ParserVisitor extends BaseVisitor {
 
         executor.log('at block pin expressions');
 
-        const ctxAtBlockSimple = ctx.at_block_pin_expression_simple();
-        const ctxAtBlockComplex = ctx.at_block_pin_expression_complex();
+        const ctxExpression = ctx.expression();
+        const ctxExpressionsBlock = ctx.expressions_block();
 
-        if (ctxAtBlockSimple) {
-            this.visit(ctxAtBlockSimple);
-        } else if (ctxAtBlockComplex) {
-            this.visit(ctxAtBlockComplex);
+        if (ctxExpression) {
+            this.visit(ctxExpression);
+        } else if (ctxExpressionsBlock) {
+            this.visit(ctxExpressionsBlock);
         }
 
         executor.log('end at block pin expressions');
@@ -1508,20 +1506,6 @@ export class ParserVisitor extends BaseVisitor {
         // executor.getCurrentPoint();
     }
 
-    visitAt_block_pin_expression_simple = (ctx: At_block_pin_expression_simpleContext): void => {
-        const ctxExpression = ctx.expression();
-        if (ctxExpression) {
-            // Handle any expressions within
-            this.visit(ctxExpression);
-        } else if (ctx.NOT_CONNECTED()) {
-            // Do nothing
-            return;
-        }
-    }
-
-    visitAt_block_pin_expression_complex = (ctx: At_block_pin_expression_complexContext): void => {
-        this.visit(ctx.expressions_block());
-    }
 
     visitWire_expr = (ctx: Wire_exprContext): void => {
         const segments = [];
@@ -1792,7 +1776,8 @@ export class ParserVisitor extends BaseVisitor {
 
     /** Applies refdes to components using the comment annotation syntax */
     visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
-        const refdesID = ctx.ID().getText();
+        // Only parse a single ID for now
+        const refdesID = ctx.getText().replace('#=', '').trim();
         this.setCurrentComponentRefdes(refdesID);
     }
     

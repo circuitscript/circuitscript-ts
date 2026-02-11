@@ -7,17 +7,13 @@
 
 import { Big } from 'big.js';
 
-import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_exprContext, Atom_exprContext, 
-    AtomExprContext, 
-    Callable_exprContext, 
-    CallableExprContext, 
-    ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
-    Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
-    FunctionCallExprContext, Import_exprContext, 
+import {
+    ArrayExprContext, Assignment_exprContext, Callable_exprContext,
+    CallableExprContext, ExpressionContext, Flow_expressionsContext,
+    Function_args_exprContext, Function_exprContext, Function_return_exprContext, Import_exprContext,
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext,
-    ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
-    Trailer_expr2Context, 
-    TrailerContext, 
+    ParametersContext, RoundedBracketsExprContext, ScriptContext,
+    TrailerContext,
     Value_exprContext, 
     ValueExprContext} from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptParserVisitor } from "./antlr/CircuitScriptParserVisitor.js";
@@ -262,7 +258,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         const id = ctx._libraryName!.text!;
         const importedFile = await this.handleImportFile(id, handling, true, ctx, specificImports);
 
-        const ctxImportAnnotation = ctx.import_annotation_expr();
+        const ctxImportAnnotation = ctx.annotation_comment_expr();
         if (ctxImportAnnotation) {
             const textValue = ctxImportAnnotation.getText().replace('#=', '');
             const { importedLibrary } = importedFile;
