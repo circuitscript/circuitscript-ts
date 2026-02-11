@@ -20,7 +20,6 @@ expression: flow_expressions
         | annotation_comment_expr
         | double_dot_property_set_expr
         | assignment_expr
-        | operator_assignment_expr
         | callable_expr
         | NEWLINE
         ;
@@ -64,7 +63,7 @@ pin_select_expr2: INTEGER_VALUE | STRING_VALUE;
 at_component_expr: At component_select_expr;
 to_component_expr: To component_select_expr (Comma component_select_expr)*;
 
-at_block: at_block_header NEWLINE INDENT (NEWLINE | at_block_expressions) + DEDENT;
+at_block: at_block_header NEWLINE INDENT at_block_expressions+ DEDENT;
 at_block_expressions: expression | at_block_pin_expr;
 
 at_block_header: at_component_expr Colon annotation_comment_expr*;
@@ -75,8 +74,7 @@ at_block_pin_expr: pin_select_expr2 Colon (at_block_pin_expression_simple | at_b
 at_block_pin_expression_simple: (expression | NOT_CONNECTED);
 at_block_pin_expression_complex: expressions_block;
 
-assignment_expr:            callable_expr Assign data_expr;
-operator_assignment_expr:   callable_expr (AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;
+assignment_expr: callable_expr (Assign | AdditionAssign | MinusAssign | MultiplyAssign | DivideAssign | ModulusAssign) data_expr;
 
 keyword_assignment_expr: ID Assign data_expr;
 

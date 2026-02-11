@@ -14,7 +14,7 @@ import { Array_exprContext, ArrayExprContext, ArrayIndexExprContext, Assignment_
     ExpressionContext,  Flow_expressionsContext,  Function_args_exprContext, 
     Function_call_exprContext, Function_exprContext,  Function_return_exprContext, 
     FunctionCallExprContext, Import_exprContext, 
-    Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext, Operator_assignment_exprContext, 
+    Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext,
     ParametersContext, RoundedBracketsExprContext,  ScriptContext, 
     Trailer_expr2Context, 
     TrailerContext, 
@@ -403,272 +403,166 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
-        const lhsCtx = ctx.callable_expr();
-        this.setResult(lhsCtx, {keepReference: true});
-        const leftSideReference = this.visitResult(lhsCtx);
+        if (ctx.Assign()) {
+            // Simple assignment: lhs = rhs
+            const lhsCtx = ctx.callable_expr();
+            this.setResult(lhsCtx, {keepReference: true});
+            const leftSideReference = this.visitResult(lhsCtx);
 
-        const rhsCtx = ctx.data_expr();
-        const rhsCtxResult = this.visitResult(rhsCtx);
+            const rhsCtx = ctx.data_expr();
+            const rhsCtxResult = this.visitResult(rhsCtx);
 
-        if (isReference(rhsCtxResult) && !rhsCtxResult.found) {
-            // The value does not exists
-            this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
-        }
+            if (isReference(rhsCtxResult) && !rhsCtxResult.found) {
+                // The value does not exists
+                this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
+            }
 
-        const rhsValue = unwrapValue(rhsCtxResult);
-        const { trailers = [] } = leftSideReference;
-        const sequenceParts: (string | any)[] = [];
+            const rhsValue = unwrapValue(rhsCtxResult);
+            const { trailers = [] } = leftSideReference;
+            const sequenceParts: (string | any)[] = [];
 
-        if (trailers.length === 0) {
-            // No trailers, directly assign the reference name
-            this.getScope().setVariable(leftSideReference.name!, rhsValue);
-
-            let itemType = '';
-            if (rhsValue instanceof ClassComponent) {
-                itemType = ReferenceTypes.instance;
-                this.log2(
-                    `assigned '${leftSideReference.name}' to ClassComponent`,
-                );
-            } else {
-                itemType = ReferenceTypes.variable;
+            if (trailers.length === 0) {
+                // No trailers, directly assign the reference name
                 this.getScope().setVariable(leftSideReference.name!, rhsValue);
-                this.log2(`assigned variable ${leftSideReference.name} to ${rhsValue}`);
-            }
 
-            sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
-        } else {
-            if (leftSideReference.rootValue instanceof ClassComponent) {
-                this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
-                this.log2(`assigned component param ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`);
-
-                sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
-
-                if (leftSideReference.rootValue.typeProp === ComponentTypes.net) {
-                    // if a net component, there is onl 1 pin
-                    const net = this.getScope().getNet(
-                        leftSideReference.rootValue, new PinId(1));
-                    if (net) {
-                        const trailerValue = trailers.join(".");
-                        net.params.set(trailerValue, rhsValue);
-                    }
-                }
-
-            } else if (leftSideReference.rootValue instanceof Object) {
-                // TODO: instanceof use AnyReference?
-
-                // Array access assignment
-                if (Array.isArray(trailers[0]) && trailers[0][0] === TrailerArrayIndex) {
-                    if (Array.isArray(leftSideReference.rootValue)) {
-                        const arrayIndexValue = trailers[0][1];
-                        leftSideReference.rootValue[arrayIndexValue] = rhsValue;
-
-                        this.log2(`assigned array index ${leftSideReference.rootValue} index: ${arrayIndexValue} value: ${rhsValue}`);
-
-                    } else {
-                        this.throwWithContext(lhsCtx, "Invalid array");
-                    }
+                let itemType = '';
+                if (rhsValue instanceof ClassComponent) {
+                    itemType = ReferenceTypes.instance;
+                    this.log2(
+                        `assigned '${leftSideReference.name}' to ClassComponent`,
+                    );
                 } else {
-                    // Object access assignment
-
-                    // Expand the object first
-                    let expandedValue = leftSideReference.rootValue;
-
-                    // Skip the last trailer
-                    trailers.slice(0, -1).forEach(trailer => {
-                        expandedValue = expandedValue[trailer];
-                    });
-                    const lastTrailer = trailers.slice(-1)[0];
-
-                    expandedValue[lastTrailer] = rhsValue;
-                    this.log2(`assigned object ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`)
+                    itemType = ReferenceTypes.variable;
+                    this.getScope().setVariable(leftSideReference.name!, rhsValue);
+                    this.log2(`assigned variable ${leftSideReference.name} to ${rhsValue}`);
                 }
 
-                sequenceParts.push(...['variable', [leftSideReference.rootValue, trailers], rhsValue]);
-            }
-        }
-
-        if (sequenceParts.length > 0) {
-            this.getScope().sequence.push([
-                SequenceAction.Assign, ...sequenceParts
-            ]);
-        }
-
-        this.setResult(ctx, rhsValue);
-    }
-
-    visitAssignment_expr2 = (ctx: Assignment_exprContext): void => {
-        const ctxAtom = ctx.atom_expr();
-        const ctxFuncCallRef = ctx.function_call_expr();
-
-        let leftSideReference!: AnyReference;
-        let lhsCtx!: ParserRuleContext;
-
-        if (ctxAtom){
-            leftSideReference = this.getReference(ctx.atom_expr()!);
-            lhsCtx = ctxAtom;
-        } else if (ctxFuncCallRef){
-            // If left side is function call, then the result must
-            // be a reference
-            this.setResult(ctxFuncCallRef, {keepReference: true});
-            leftSideReference = this.visitResult(ctxFuncCallRef);
-            lhsCtx = ctxFuncCallRef;
-        }
-
-        const rhsCtx = ctx.data_expr();
-        const rhsCtxResult = this.visitResult(rhsCtx);
-
-        if (isReference(rhsCtxResult) && !rhsCtxResult.found){
-            // The value does not exists
-            this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
-        }
-
-        const rhsValue = unwrapValue(rhsCtxResult);
-        const trailers = leftSideReference.trailers ?? [];
-        
-        const sequenceParts: (string|any)[] = [];
-
-        if (trailers.length === 0) {
-            // No trailers, directly assign the reference name
-            this.getScope().setVariable(leftSideReference.name!, rhsValue);
-
-            let itemType = '';
-            if (rhsValue instanceof ClassComponent) {
-                itemType = ReferenceTypes.instance;
-                this.log2(
-                    `assigned '${leftSideReference.name}' to ClassComponent`,
-                );
+                sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
             } else {
-                itemType = ReferenceTypes.variable;
-                this.getScope().setVariable(leftSideReference.name!, rhsValue);
-                this.log2(`assigned variable ${leftSideReference.name} to ${rhsValue}`);
-            }
+                if (leftSideReference.rootValue instanceof ClassComponent) {
+                    this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
+                    this.log2(`assigned component param ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`);
 
-            sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
-        } else {
-            if (leftSideReference.rootValue instanceof ClassComponent){
-                this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
-                this.log2(`assigned component param ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`);
+                    sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
 
-                sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
-
-                if (leftSideReference.rootValue.typeProp === ComponentTypes.net) {
-                    // if a net component, there is onl 1 pin
-                    const net = this.getScope().getNet(
-                        leftSideReference.rootValue, new PinId(1));
-                    if (net) {
-                        const trailerValue = trailers.join(".");
-                        net.params.set(trailerValue, rhsValue);
+                    if (leftSideReference.rootValue.typeProp === ComponentTypes.net) {
+                        // if a net component, there is onl 1 pin
+                        const net = this.getScope().getNet(
+                            leftSideReference.rootValue, new PinId(1));
+                        if (net) {
+                            const trailerValue = trailers.join(".");
+                            net.params.set(trailerValue, rhsValue);
+                        }
                     }
-                }
 
-            } else if (leftSideReference.rootValue instanceof Object) {
-                // TODO: instanceof use AnyReference?
+                } else if (leftSideReference.rootValue instanceof Object) {
+                    // TODO: instanceof use AnyReference?
 
-                // Array access assignment
-                if (Array.isArray(trailers[0]) && trailers[0][0] === TrailerArrayIndex) {
-                    if (Array.isArray(leftSideReference.rootValue)) {
-                        const arrayIndexValue = trailers[0][1];
-                        leftSideReference.rootValue[arrayIndexValue] = rhsValue;
+                    // Array access assignment
+                    if (Array.isArray(trailers[0]) && trailers[0][0] === TrailerArrayIndex) {
+                        if (Array.isArray(leftSideReference.rootValue)) {
+                            const arrayIndexValue = trailers[0][1];
+                            leftSideReference.rootValue[arrayIndexValue] = rhsValue;
 
-                        this.log2(`assigned array index ${leftSideReference.rootValue} index: ${arrayIndexValue} value: ${rhsValue}`);
+                            this.log2(`assigned array index ${leftSideReference.rootValue} index: ${arrayIndexValue} value: ${rhsValue}`);
 
+                        } else {
+                            this.throwWithContext(lhsCtx, "Invalid array");
+                        }
                     } else {
-                        this.throwWithContext(lhsCtx, "Invalid array");
+                        // Object access assignment
+
+                        // Expand the object first
+                        let expandedValue = leftSideReference.rootValue;
+
+                        // Skip the last trailer
+                        trailers.slice(0, -1).forEach(trailer => {
+                            expandedValue = expandedValue[trailer];
+                        });
+                        const lastTrailer = trailers.slice(-1)[0];
+
+                        expandedValue[lastTrailer] = rhsValue;
+                        this.log2(`assigned object ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`)
                     }
-                } else {
-                    // Object access assignment
 
-                    // Expand the object first
-                    let expandedValue = leftSideReference.rootValue;
-                    
-                    // Skip the last trailer
-                    trailers.slice(0, -1).forEach(trailer => {
-                        expandedValue = expandedValue[trailer];
-                    });
-                    const lastTrailer = trailers.slice(-1)[0];
-
-                    expandedValue[lastTrailer] = rhsValue;
-                    this.log2(`assigned object ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`)
+                    sequenceParts.push(...['variable', [leftSideReference.rootValue, trailers], rhsValue]);
                 }
-
-                sequenceParts.push(...['variable', [leftSideReference.rootValue, trailers], rhsValue]);
             }
-        }
 
-        if (sequenceParts.length > 0) {
-            this.getScope().sequence.push([
-                SequenceAction.Assign, ...sequenceParts
-            ]);
-        }
-        
-        this.setResult(ctx, rhsValue);
-    }
-
-    visitOperator_assignment_expr = (ctx: Operator_assignment_exprContext): void => {
-        const ctxCallable = ctx.callable_expr();
-        this.setResult(ctxCallable, {keepReference: true});
-        const reference = this.visitResult(ctx.callable_expr());
-
-        const value = this.visitResult(ctx.data_expr());
-
-        if (!reference.found) {
-            this.throwWithContext(ctx, 'Undefined reference: ' + reference.name);
-        }
-
-        const trailers = reference.trailers ?? [];
-
-        let currentValue: NumberOperatorType | number | null = null;
-
-        if (trailers.length === 0) {
-            currentValue = this.getExecutor().scope.variables.get(reference.name) as number;
-        } else {
-            if (reference.value instanceof ClassComponent) {
-                currentValue = this.getInstanceParam(reference.value, trailers);
-            } else if (reference.value instanceof Object) {
-                currentValue = reference.value[trailers.join('.')];
+            if (sequenceParts.length > 0) {
+                this.getScope().sequence.push([
+                    SequenceAction.Assign, ...sequenceParts
+                ]);
             }
-        }
 
-        if (currentValue === null) {
-            this.throwWithContext(ctx, 
-                'Operator assignment failed: could not get value');
-        }
-
-        let newValue: number | NumberOperatorType = 0;
-
-        const operator = new NumberOperator();
-        if (ctx.AdditionAssign()) {
-            newValue = operator.addition(
-                currentValue as NumberOperatorType, value);
-        } else if (ctx.MinusAssign()) {
-            newValue = operator.subtraction(
-                currentValue as NumberOperatorType, value);
-        } else if (ctx.MultiplyAssign()) {
-            newValue = operator.multiply(
-                currentValue as NumberOperatorType, value);
-        } else if (ctx.DivideAssign()) {
-            newValue = operator.divide(
-                currentValue as NumberOperatorType, value);
-        } else if (ctx.ModulusAssign()) {
-            newValue = operator.modulus(
-                currentValue as NumberOperatorType, value);
+            this.setResult(ctx, rhsValue);
         } else {
-            this.throwWithContext(ctx,
-                'Operator assignment failed: could not perform operator');
-        }
+            // Compound assignment: lhs += rhs, lhs -= rhs, etc.
+            const ctxCallable = ctx.callable_expr();
+            this.setResult(ctxCallable, {keepReference: true});
+            const reference = this.visitResult(ctx.callable_expr());
 
-        // Reassign back to value
-        if (trailers.length === 0) {
-            this.getExecutor().scope.setVariable(reference.name, newValue);
-        } else {
-            if (reference.value instanceof ClassComponent) {
-                this.setInstanceParam(reference.value, trailers, newValue);
-            } else if (reference.value instanceof Object) {
-                reference.value[trailers.join('.')] = newValue;
+            const value = this.visitResult(ctx.data_expr());
+
+            if (!reference.found) {
+                this.throwWithContext(ctx, 'Undefined reference: ' + reference.name);
             }
-        }
 
-        this.setResult(ctx, newValue);
+            const trailers = reference.trailers ?? [];
+
+            let currentValue: NumberOperatorType | number | null = null;
+
+            if (trailers.length === 0) {
+                currentValue = this.getExecutor().scope.variables.get(reference.name) as number;
+            } else {
+                if (reference.value instanceof ClassComponent) {
+                    currentValue = this.getInstanceParam(reference.value, trailers);
+                } else if (reference.value instanceof Object) {
+                    currentValue = reference.value[trailers.join('.')];
+                }
+            }
+
+            if (currentValue === null) {
+                this.throwWithContext(ctx,
+                    'Operator assignment failed: could not get value');
+            }
+
+            let newValue: number | NumberOperatorType = 0;
+
+            const operator = new NumberOperator();
+            if (ctx.AdditionAssign()) {
+                newValue = operator.addition(
+                    currentValue as NumberOperatorType, value);
+            } else if (ctx.MinusAssign()) {
+                newValue = operator.subtraction(
+                    currentValue as NumberOperatorType, value);
+            } else if (ctx.MultiplyAssign()) {
+                newValue = operator.multiply(
+                    currentValue as NumberOperatorType, value);
+            } else if (ctx.DivideAssign()) {
+                newValue = operator.divide(
+                    currentValue as NumberOperatorType, value);
+            } else if (ctx.ModulusAssign()) {
+                newValue = operator.modulus(
+                    currentValue as NumberOperatorType, value);
+            } else {
+                this.throwWithContext(ctx,
+                    'Operator assignment failed: could not perform operator');
+            }
+
+            // Reassign back to value
+            if (trailers.length === 0) {
+                this.getExecutor().scope.setVariable(reference.name, newValue);
+            } else {
+                if (reference.value instanceof ClassComponent) {
+                    this.setInstanceParam(reference.value, trailers, newValue);
+                } else if (reference.value instanceof Object) {
+                    reference.value[trailers.join('.')] = newValue;
+                }
+            }
+
+            this.setResult(ctx, newValue);
+        }
     }
 
     private getReference(ctx: Atom_exprContext): AnyReference {

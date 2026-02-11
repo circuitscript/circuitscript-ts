@@ -7,8 +7,8 @@
 
 import { TerminalNode, Token } from "antlr4ng";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
-import { Function_def_exprContext, Create_component_exprContext, 
-    Create_graphic_exprContext, Atom_exprContext, Property_key_exprContext, 
+import { Function_def_exprContext, Create_component_exprContext,
+    Create_graphic_exprContext, Callable_exprContext, Property_key_exprContext,
     ValueAtomExprContext,
     Assignment_exprContext,
     Import_exprContext,
@@ -18,7 +18,6 @@ import { Function_def_exprContext, Create_component_exprContext,
     For_exprContext,
     Annotation_comment_exprContext,
     ScriptContext,
-    Operator_assignment_exprContext,
     CreateExprContext} from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "./BaseVisitor.js";
 import { NodeScriptEnvironment } from "./environment.js";
@@ -261,22 +260,17 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Example: R1 = res(10k)
      */
     visitAssignment_expr = (ctx: Assignment_exprContext): void => {
-        this.visit(ctx.atom_expr());
+        this.visit(ctx.callable_expr());
         this.visit(ctx.data_expr());
     }
 
     /**
-     * Visits atom expressions and identifies variable declarations in assignments
+     * Visits callable expressions and identifies variable declarations in assignments
      */
-    visitAtom_expr = (ctx: Atom_exprContext): void => {
-        if (ctx.parent instanceof Assignment_exprContext && ctx.ID(0)){
-            this.addSemanticToken(ctx.ID(0)!, [], 'variable');
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
+        if (ctx.parent instanceof Assignment_exprContext && ctx.ID()){
+            this.addSemanticToken(ctx.ID()!, [], 'variable');
         }
-    }
-
-    visitOperator_assignment_expr = (ctx: Operator_assignment_exprContext): void => {
-        this.visit(ctx.atom_expr());
-        this.visit(ctx.data_expr());
     }
 
     /**

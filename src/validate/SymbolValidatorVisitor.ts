@@ -273,7 +273,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         this.visit(ctxDataExpr);
         const value = this.getResult(ctxDataExpr) as ComplexType;
         
-        const atomId = ctx.atom_expr().ID(0)!;
+        const atomId = ctx.callable_expr().ID();
         const atomText = atomId.getText();
         const executor = this.getExecutor();
 

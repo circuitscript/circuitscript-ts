@@ -24,7 +24,6 @@ import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_simpleContext } from "./CircuitScriptParser.js";
 import { At_block_pin_expression_complexContext } from "./CircuitScriptParser.js";
 import { Assignment_exprContext } from "./CircuitScriptParser.js";
-import { Operator_assignment_exprContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
@@ -214,12 +213,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitAssignment_expr?: (ctx: Assignment_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.operator_assignment_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitOperator_assignment_expr?: (ctx: Operator_assignment_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.keyword_assignment_expr`.
      * @param ctx the parse tree
