@@ -307,7 +307,7 @@ export class ParserVisitor extends BaseVisitor {
             if (this.filePathStack.length > 0) {
                 const useFilePath = this.getCurrentFile();
 
-                const annotationKey = this.getRefdesFileAnnotation(
+                const annotationKey = this.getRefdesFileAnnotationKey(
                     useFilePath,
                     startToken.line, startToken.column,
                     stopToken.line, stopToken.column
@@ -1977,7 +1977,7 @@ export class ParserVisitor extends BaseVisitor {
                         const val = items[refdes];
                         const parts = val.split(':');
 
-                        const key = this.getRefdesFileAnnotation(useFilePath,
+                        const key = this.getRefdesFileAnnotationKey(useFilePath,
                             Number(parts[0]),
                             Number(parts[1]),
                             Number(parts[2]),

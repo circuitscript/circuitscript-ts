@@ -668,29 +668,6 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         this.log2('atom resolved: ' + ctx.getText() + ' -> ' + currentReference);
     }
 
-    visitFunctionCallExpr = (ctx: FunctionCallExprContext): void => {
-        const result = this.visitResult(
-            ctx.function_call_expr()
-        );
-        this.setResult(ctx, result);
-    }
-
-    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
-        const ctxParams = this.getResult(ctx);
-
-        // If keepReference is true, then keep the reference that is returned
-        // after a function call. This reference may be used in the LHS of
-        // an assignment.
-        const {keepReference = false} = ctxParams ?? {};
-
-        this.handleFunctionCall_(ctx);
-        if (!keepReference){
-            // Function returns a reference, extract the value and return it
-            const functionResultReference = this.getResult(ctx);
-            this.setResult(ctx, functionResultReference.value);
-        }
-    }
-
      /**
      * Executes the function and returns a reference to the result of the
      * function. A reference is always returned.
@@ -778,136 +755,6 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         }
 
         return currentReference;
-    }
-
-    /**
-     * @deprecated
-     * Executes the function and returns a reference to the result of the
-     * function. A reference is always returned.
-     */
-    private handleFunctionCall_(ctx: Function_call_exprContext): void {
-        const executor = this.getExecutor();
-        const atomId = ctx.ID().getText();
-        let passedNetNamespace = null; // Assumed empty by default
-
-        const netNameSpaceExpr = ctx.net_namespace_expr();
-        if (netNameSpaceExpr) {
-            passedNetNamespace = this.visitResult(netNameSpaceExpr);
-        }
-
-        // Resolve the rootValue first, without any trailers. The trailers
-        // parsing will be done later.
-        let currentReference: AnyReference = executor.resolveVariable(
-            this.executionStack, atomId);
-
-        if (ctx.trailer_expr().length > 0) {
-            // Resolve all elements in the trailer expression list
-
-            if (!currentReference.found) {
-                this.log(`could not resolve function: ${atomId}`);
-                this.throwWithContext(ctx,
-                    "could not resolve function: " + atomId);
-            }
-
-            currentReference.trailers = [];
-
-            ctx.trailer_expr().forEach(item => {
-                if (item.LParen() && item.RParen()) {
-
-                    if (currentReference.type === ReferenceTypes.variable) {
-                        if (currentReference.value instanceof AnyReference && currentReference.value.type === ReferenceTypes.function) {
-                            currentReference = currentReference.value;
-                        }
-                    }
-
-                    let parameters: CallableParameter[] = [];
-
-                    const ctxParameters = item.parameters();
-                    if (ctxParameters) {
-                        parameters = this.visitResult(ctxParameters);
-                    }
-
-                    const useNetNamespace = this.getNetNamespace(
-                        executor.netNamespace,
-                        passedNetNamespace,
-                    );
-
-                    try {
-                        const isLibraryFunction = currentReference.rootValue 
-                            && currentReference.rootValue instanceof ImportedLibrary;
-
-                        if (isLibraryFunction){
-
-                            this.log('create new library context');
-
-                            // Restore the library context
-                            const importedLibrary = currentReference.rootValue as ImportedLibrary;
-                            const {context: importedLibraryContext} = importedLibrary;
-
-                            // When executing library function, update the
-                            // active filepath.
-                            this.enterFile(importedLibrary.libraryFilePath);
-
-                            const newExecutor = this.handleEnterContext(
-                                this.getExecutor(),
-                                this.executionStack,
-                                importedLibraryContext.name,
-                                ctx,
-                                {
-                                    netNamespace: executor.netNamespace,
-                                    namespace: importedLibrary.libraryNamespace
-                                }, [], [],
-                                false
-                            );
-
-                            this.log('copy library context scope');
-                            importedLibraryContext.scope.copyTo(newExecutor.scope);
-                        }
-
-                        const [, functionResult] =
-                            executor.callFunction(
-                                currentReference,
-                                parameters,
-                                this.executionStack,
-                                useNetNamespace);
-
-                        if (isLibraryFunction){
-                            this.log('pop library context scope');
-                            this.handlePopContext(
-                                this.getExecutor(),
-                                this.executionStack,
-                                "",
-                                false
-                            );
-
-                            this.exitFile();
-                        }
-
-                        if (isReference(functionResult)){
-                            currentReference = functionResult;
-                        } else {
-                            currentReference = new AnyReference({
-                                found: true,
-                                value: functionResult,
-                                trailers: [],
-                                type: (functionResult instanceof ClassComponent) ?
-                                    ReferenceTypes.instance : ReferenceTypes.value,
-                            });
-                        }
-                    } catch (err) {
-                        this.throwWithContext(ctx, err);
-                    }
-
-                } else {
-                    // Expand the reference by going through the trailers
-                    const ctxTrailer = item.trailer_expr2()!;
-                    this.setResult(ctxTrailer, currentReference); 
-                    currentReference = this.visitResult(ctxTrailer);
-                }
-            });
-        }
-
-        this.setResult(ctx, currentReference);
     }
 
     /**
@@ -1545,7 +1392,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         return '';
     }
 
-    getRefdesFileAnnotation(filePath:string, startLine:number, startColumn:number, 
+    getRefdesFileAnnotationKey(filePath:string, startLine:number, startColumn:number, 
         stopLine:number, stopColumn:number):string {
         return `${filePath}:${startLine}:${startColumn}:${stopLine}:${stopColumn}`
     }
