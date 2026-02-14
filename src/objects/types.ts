@@ -38,6 +38,10 @@ export class CFunctionEntry {
     lazyLoaded = false;
     lazyLoader: (() => void) | null = null;
 
+    // Tokens that used when loaded
+    tokens: CommonTokenStream;
+    tree: ScriptContext;
+
     constructor(namespace: string, name: string, 
         execute: CFunction, source?: ParserRuleContext, 
         uniqueId?: string) {
@@ -286,6 +290,9 @@ export class ImportedLibrary {
     tree: ScriptContext;
     tokens: CommonTokenStream;
 
+    // Stores [tokens, tree] pairs from parsing expressions within the library.
+    referencedTokens: [tokens: CommonTokenStream, tree: ParserRuleContext][] = [];
+    
     constructor(libraryName: string, libraryNamespace: string, 
         libraryFilePath: string,
         tree: ScriptContext, tokens: CommonTokenStream,

@@ -1250,7 +1250,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             pathExists = false;
         }
 
-        let importedLibrary: ImportedLibrary;
+        let importedLibrary!: ImportedLibrary;
 
         if (!pathExists) {
             // if path does not exist, then search default libs path
@@ -1390,6 +1390,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 importedLibrary.context.scope.libraries.forEach((lib, key) => {
                     scope.libraries.set(key, lib);
                 });
+
+                // Merges scope so that any sequences (actions) done in the
+                // import will also be part of the main script.
+                executor.mergeScope(importedLibrary.context.scope, 
+                    importedLibrary.libraryNamespace);
 
                 this.checkLibraryInRefdesFile(filePathUsed);
             }

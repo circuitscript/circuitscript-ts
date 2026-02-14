@@ -37,39 +37,6 @@ export function deserializeLibraryScope(
     exitContext: () => void,
 
 ): ImportedLibrary {
-    // Concatenate all function source texts into a single mini-script
-    // const miniScript = ir.functions.map(f => f.sourceText).join('\n');
-
-    ir.functions.forEach(func => {
-        const { name, uniqueId} = func;
-
-        const functionEntry = importContext.createFunctionLazyLoaded(importContext.namespace, name, uniqueId);
-        functionEntry.lazyLoader = () => {
-            importContext.log(`loading lazy function ${name}`);
-
-            // Enter previously created library context
-            enterContext();
-
-            // Line offset is needed to correctly position the code chunk.
-            // Needed to ensure correct refdes annotations.
-            const [line, column, sourceText] = func.sourceText;
-            parseAndVisit(sourceText, line-1);
-
-            exitContext();
-        }
-    });
-
-    // Re-execute top-level expression blocks to restore any side effects that
-    // occurred when the library was first parsed. Each entry is a continuous block
-    // of expressions (combined source text); blocks are separated by blank lines or
-    // function definitions and are parsed independently so that each block's line
-    // offset correctly maps back to its original position in the source file.
-    for (const block of (ir.topLevel ?? [])) {
-        const [line, column, sourceText] = block;
-        enterContext();
-        parseAndVisit(sourceText, line - 1);
-        exitContext();
-    }
 
     // Build the ImportedLibrary — tree/tokens are not available from cache
     const importedLibrary = new ImportedLibrary(
@@ -81,6 +48,43 @@ export function deserializeLibraryScope(
         importHandling,
         specificImports
     );
+
+    ir.functions.forEach(func => {
+        const { name, uniqueId } = func;
+
+        const functionEntry = importContext.createFunctionLazyLoaded(importContext.namespace, name, uniqueId);
+        functionEntry.lazyLoader = () => {
+            importContext.log(`loading lazy function ${name}`);
+
+            // Enter previously created library context
+            enterContext();
+
+            // Line offset is needed to correctly position the code chunk.
+            // Needed to ensure correct refdes annotations.
+            const [line, column, sourceText] = func.sourceText;
+            const { tokens, tree } = parseAndVisit(sourceText, line - 1);
+
+            importedLibrary.referencedTokens.push([tokens, tree]);
+
+            exitContext();
+
+            functionEntry.tokens = tokens;
+            functionEntry.tree = tree;
+        }
+    });
+
+    // Re-execute top-level expression blocks to restore any side effects that
+    // occurred when the library was first parsed. Each entry is a continuous block
+    // of expressions (combined source text); blocks are separated by blank lines or
+    // function definitions and are parsed independently so that each block's line
+    // offset correctly maps back to its original position in the source file.
+    for (const block of (ir.topLevel ?? [])) {
+        const [line, column, sourceText] = block;
+        enterContext();
+        const {tokens, tree} = parseAndVisit(sourceText, line - 1);
+        importedLibrary.referencedTokens.push([tokens, tree]);
+        exitContext();
+    }
 
     return importedLibrary;
 }

@@ -1399,7 +1399,6 @@ export class ParserVisitor extends BaseVisitor {
             // indexed.
             const executor = this.getExecutor();
 
-
             const functionCounterIndex = functionCounter['counter'];
             functionCounter['counter'] += 1;
             

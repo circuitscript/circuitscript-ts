@@ -7,6 +7,8 @@
 
 import { ImportedLibrary } from '../objects/types.js';
 import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef, SerializedExpression } from './types.js';
+import { CircuitScriptLexer } from '../antlr/CircuitScriptLexer.js';
+import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 
 export function serializeLibraryScope(
     importedLib: ImportedLibrary,
@@ -28,7 +30,8 @@ export function serializeLibraryScope(
 
             const startToken = entry.source.start!;
             const startChar = startToken.start ?? -1;
-            const stopChar = entry.source.stop?.stop ?? -1;
+            const stopChar = getFunctionDefinitionEnding(entry.source, tokens);
+
             const sourceText =
                 inputStream != null && startChar >= 0 && stopChar >= 0
                     ? inputStream.getTextFromRange(startChar, stopChar)
@@ -62,8 +65,8 @@ export function serializeLibraryScope(
         const flushGroup = () => {
             if (groupTexts.length > 0 && groupStart != null) {
                 topLevelExpressions.push([
-                    ...groupStart, 
-                    groupTexts.join('\n')
+                    ...groupStart,
+                    groupTexts.join('')
                 ]);
             }
             groupTexts = [];
@@ -77,9 +80,13 @@ export function serializeLibraryScope(
                 flushGroup();
                 continue;
             }
-            // Standalone NEWLINEs carry no executable semantics; continuity is
-            // determined by comparing line numbers of adjacent expressions instead.
-            if (exprCtx.NEWLINE() !== null) continue;
+            // NEWLINEs carry no executable semantics but are used as explicit
+            // line separators within a group so that joining with '' produces
+            // correctly formatted output.
+            if (exprCtx.NEWLINE() !== null) {
+                if (groupTexts.length > 0) groupTexts.push('\n');
+                continue;
+            }
 
             const startToken = exprCtx.start;
             if (startToken == null) continue;
@@ -121,4 +128,26 @@ export function serializeLibraryScope(
         functions,
         topLevel: topLevelExpressions,
     };
+}
+
+function getFunctionDefinitionEnding(source: ParserRuleContext, tokens: CommonTokenStream): number {
+    // Walk backwards from the declared stop token to find the last token
+    // before any trailing NEWLINE / DEDENT tokens (which are synthetic).
+    let stopChar = source.stop?.stop ?? -1;
+    const stopTokenIndex = source.stop?.tokenIndex ?? -1;
+    if (stopTokenIndex >= 0) {
+        for (let i = stopTokenIndex; i >= 0; i--) {
+            const tok = tokens.get(i);
+            if (
+                tok.type !== CircuitScriptLexer.NEWLINE &&
+                tok.type !== CircuitScriptLexer.DEDENT &&
+                tok.type !== CircuitScriptLexer.INDENT
+            ) {
+                stopChar = tok.stop ?? stopChar;
+                break;
+            }
+        }
+    }
+
+    return stopChar;
 }
