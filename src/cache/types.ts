@@ -5,21 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export const CACHE_SCHEMA_VERSION = 1;
+export const CACHE_SCHEMA_VERSION = 2;
+
+export type SerializedExpression = [
+    line: number, 
+    column: number,
+    sourceText: string,     // source text of the expression
+]
 
 export interface SerializedFunctionDef {
     name: string;
     namespace: string;
     uniqueId: string;
-    sourceText: string; // full "function name(...) { ... }" text
-    start: [
-        line: number, column: number,
-    ]
-}
-
-export interface SerializedVariable {
-    name: string;
-    value: boolean | number | string | null;
+    sourceText: SerializedExpression,
 }
 
 export interface LibraryCacheIR {
@@ -28,5 +26,5 @@ export interface LibraryCacheIR {
     libraryFilePath: string;
     referencedLibraryFilePaths: string[];
     functions: SerializedFunctionDef[];
-    variables: SerializedVariable[];
+    topLevel: SerializedExpression[];
 }

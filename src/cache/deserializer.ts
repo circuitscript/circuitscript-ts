@@ -41,8 +41,7 @@ export function deserializeLibraryScope(
     // const miniScript = ir.functions.map(f => f.sourceText).join('\n');
 
     ir.functions.forEach(func => {
-        const { name, uniqueId, start } = func;
-        const [line] = start;
+        const { name, uniqueId} = func;
 
         const functionEntry = importContext.createFunctionLazyLoaded(importContext.namespace, name, uniqueId);
         functionEntry.lazyLoader = () => {
@@ -53,16 +52,26 @@ export function deserializeLibraryScope(
 
             // Line offset is needed to correctly position the code chunk.
             // Needed to ensure correct refdes annotations.
-            parseAndVisit(func.sourceText, line-1);
+            const [line, column, sourceText] = func.sourceText;
+            parseAndVisit(sourceText, line-1);
 
             exitContext();
         }
     });
 
-    // Re-parse only the function definitions (much smaller than full library)
-    // const importResult = parseAndVisit(miniScript);
+    // Re-execute top-level expression blocks to restore any side effects that
+    // occurred when the library was first parsed. Each entry is a continuous block
+    // of expressions (combined source text); blocks are separated by blank lines or
+    // function definitions and are parsed independently so that each block's line
+    // offset correctly maps back to its original position in the source file.
+    for (const block of (ir.topLevel ?? [])) {
+        const [line, column, sourceText] = block;
+        enterContext();
+        parseAndVisit(sourceText, line - 1);
+        exitContext();
+    }
 
-    // Build the ImportedLibrary — tree/tokens from the mini-script parse
+    // Build the ImportedLibrary — tree/tokens are not available from cache
     const importedLibrary = new ImportedLibrary(
         name,
         libraryNamespace,
@@ -72,13 +81,6 @@ export function deserializeLibraryScope(
         importHandling,
         specificImports
     );
-
-    // Inject cached primitive variables directly (skipping re-execution)
-    for (const serializedVar of ir.variables) {
-        if (serializedVar.value !== null) {
-            importContext.scope.variables.set(serializedVar.name, serializedVar.value as boolean | number | string);
-        }
-    }
 
     return importedLibrary;
 }

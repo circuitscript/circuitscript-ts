@@ -120,10 +120,10 @@ describe('Cache storage', () => {
             contentHash: hash,
             libraryFilePath: libPath,
             functions: [
-                { name: 'my_ic', namespace: '__lib__.', uniqueId: 'uid1', sourceText: 'def my_ic(): ...' }
+                { name: 'my_ic', namespace: '__lib__.', uniqueId: 'uid1', sourceText: [0, 0, 'def my_ic(): ...']}
             ],
-            variables: [
-                { name: 'MY_CONST', value: 42 }
+            topLevel: [
+                [3, 0, 'MY_CONST = 42']
             ],
         };
         writeCache(libPath, hash, ir);
@@ -131,7 +131,7 @@ describe('Cache storage', () => {
         expect(result).not.toBeNull();
         expect(result!.functions).toHaveLength(1);
         expect(result!.functions[0].name).toEqual('my_ic');
-        expect(result!.variables[0].value).toEqual(42);
+        expect(result!.topLevel[0][2]).toEqual('MY_CONST = 42');
     });
 
     test('readCache returns null on wrong hash', () => {
@@ -141,7 +141,7 @@ describe('Cache storage', () => {
             contentHash: hash,
             libraryFilePath: libPath,
             functions: [],
-            variables: [],
+            topLevel: [],
         };
         writeCache(libPath, hash, ir);
         // Try to read with a different hash

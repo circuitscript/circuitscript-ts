@@ -5,20 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { NumericValue, PercentageValue } from '../objects/ParamDefinition.js';
 import { ImportedLibrary } from '../objects/types.js';
-import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef, SerializedVariable } from './types.js';
-
-function isPrimitiveValue(value: unknown): value is boolean | number | string {
-    return typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string';
-}
+import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef, SerializedExpression } from './types.js';
 
 export function serializeLibraryScope(
     importedLib: ImportedLibrary,
     contentHash: string
 ): LibraryCacheIR {
     const functions: SerializedFunctionDef[] = [];
-    const variables: SerializedVariable[] = [];
+    const topLevelExpressions: SerializedExpression[] = [];
 
     const scope = importedLib.context.scope;
     const tokens = importedLib.tokens;
@@ -43,25 +38,75 @@ export function serializeLibraryScope(
                 name: entry.name,
                 namespace: entry.originalNamespace,
                 uniqueId: entry.uniqueId ?? '',
-                sourceText,
 
                 // Original location within the file is needed to correctly
                 // apply refdes annotations.
-                start: [startToken.line, startToken.column]
+                sourceText: [
+                    startToken.line, startToken.column, sourceText
+                ]
             });
         }
     });
 
-    scope.variables.forEach((value, name) => {
-        if (isPrimitiveValue(value)) {
-            variables.push({ name, value });
-        } else if (value instanceof NumericValue) {
-            variables.push({ name, value: value.value });
-        } else if (value instanceof PercentageValue) {
-            variables.push({ name, value: value.value });
+    // Collect all top-level expressions that are not function definitions, grouping
+    // consecutive expressions into blocks. Expressions are considered continuous when
+    // the next expression begins within one line of where the previous one ended
+    // (i.e. no blank line between them). Blank lines and function definitions break
+    // continuity and start a new block.
+    const tree = importedLib.tree;
+    if (tree != null) {
+        let groupTexts: string[] = [];
+        let groupStart: [number, number] | null = null;
+        let prevStopLine: number | null = null;
+
+        const flushGroup = () => {
+            if (groupTexts.length > 0 && groupStart != null) {
+                topLevelExpressions.push([
+                    ...groupStart, 
+                    groupTexts.join('\n')
+                ]);
+            }
+            groupTexts = [];
+            groupStart = null;
+            prevStopLine = null;
+        };
+
+        for (const exprCtx of tree.expression()) {
+            // Function definitions break continuity and are handled separately.
+            if (exprCtx.function_def_expr() !== null) {
+                flushGroup();
+                continue;
+            }
+            // Standalone NEWLINEs carry no executable semantics; continuity is
+            // determined by comparing line numbers of adjacent expressions instead.
+            if (exprCtx.NEWLINE() !== null) continue;
+
+            const startToken = exprCtx.start;
+            if (startToken == null) continue;
+
+            // A gap of more than one line between the end of the previous expression
+            // and the start of this one indicates a blank line — start a new block.
+            const currentStartLine = startToken.line;
+            if (prevStopLine !== null && currentStartLine > prevStopLine + 1) {
+                flushGroup();
+            }
+
+            const startChar = startToken.start ?? -1;
+            const stopChar = exprCtx.stop?.stop ?? -1;
+            const sourceText =
+                inputStream != null && startChar >= 0 && stopChar >= 0
+                    ? inputStream.getTextFromRange(startChar, stopChar)
+                    : tokens.getTextFromContext(exprCtx);
+
+            if (groupStart == null) {
+                groupStart = [currentStartLine, startToken.column];
+            }
+            groupTexts.push(sourceText);
+            prevStopLine = exprCtx.stop?.line ?? currentStartLine;
         }
-        // Skip ClassComponent and other non-serializable types
-    });
+
+        flushGroup();
+    }
 
     const referencedLibraryFilePaths: string[] = [];
     importedLib.context.scope.libraries.forEach((lib) => {
@@ -74,6 +119,6 @@ export function serializeLibraryScope(
         libraryFilePath: importedLib.libraryFilePath,
         referencedLibraryFilePaths,
         functions,
-        variables,
+        topLevel: topLevelExpressions,
     };
 }
