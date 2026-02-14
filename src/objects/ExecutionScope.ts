@@ -46,8 +46,6 @@ export class ExecutionScope {
 
     variables: Map<string, ValueType | ClassComponent> = new Map();
 
-    symbols: Map<string, { type: ParseSymbolType }> = new Map();
-
     // Libraries are imported files that contain functions, etc.
     libraries: Map<string, ImportedLibrary> = new Map();
 

@@ -39,6 +39,7 @@ import { EvaluateERCRules } from "./rules-check/rules.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { ImportedLibrary } from "./objects/types.js";
+import { resolveAllImportFilepaths } from "./importResolver.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -506,18 +507,17 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             }
         };
 
+    const visitor = new ParserVisitor(true, onErrorHandler, environment);
     environment.setCurrentFile(inputPath);
+    visitor.log(`current file: ${inputPath}`);
 
-    const visitor = new ParserVisitor(true, 
-        onErrorHandler, environment);
-
-    visitor.onImportFile = async (visitor: BaseVisitor, filePath:string, fileData: string)
-        : Promise<ImportFileResult> => {
+    visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
+        : ImportFileResult => {
 
         visitor.enterFile(filePath);
 
         const { hasError, hasParseError, throwError, tree, tokens } =
-            await parseFileWithVisitor(visitor, fileData, {
+            parseFileWithVisitor(visitor, fileData, {
                 enableLexerDiagnostics: lexerDiagnostics,
                 enableLexerVerbose: lexerVerbose
             });
@@ -538,9 +538,6 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         return { hasError, hasParseError, tree, tokens};
     }
 
-    visitor.log('reading file');
-    visitor.log('done reading file');
-
     const dumpDirectory = environment.getRelativeToModule('/dump/');
 
     if (dumpData) {
@@ -555,6 +552,33 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         visitor.enterFile(inputPath);
     }
 
+    // Get all imports, absolute file paths for std libraries and relative
+    // file paths for internal files.
+    const importedFiles = await resolveAllImportFilepaths(inputPath, scriptData, environment);
+
+    visitor.log('resolved all referenced imports');
+
+    // Load all the files
+    const loadedFiles = new Map<string, string>();
+    for(const importFilePath of importedFiles){
+        visitor.log(`reading file: ${importFilePath}`);
+        const importFileData = await environment.readFile(importFilePath);
+        loadedFiles.set(importFilePath, importFileData);
+    }
+
+    // Check if the main refdes file exists
+    if (visitor.filePathStack.length > 0) {
+        const mainRefdesFile = visitor.getPathRefdesFile(visitor.filePathStack[0]);
+        const fileExists = await environment.exists(mainRefdesFile);
+        if (fileExists) {
+            visitor.log('.refdes.json file exists, reading it');
+            const mainRefdesFileData = await environment.readFile(mainRefdesFile);
+            loadedFiles.set(mainRefdesFile, mainRefdesFileData);
+        }
+    }
+    
+    visitor.loadedFiles = loadedFiles;
+    
     const { tree, parser, tokens, lexer,
         parserTimeTaken,
         lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData, {

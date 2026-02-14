@@ -1100,11 +1100,11 @@ export class ExecutionContext {
                     ) {
                         const { context: libraryContext } = library;
                         const functionPath = `${libraryContext.namespace}${idName}`;
-                        if (library.context.hasFunction(functionPath)) {
+                        if (libraryContext.hasFunction(functionPath)) {
                             return new DeclaredReference({
                                 found: true,
                                 rootValue: library,
-                                value: library.context.getFunction(functionPath),
+                                value: libraryContext.getFunction(functionPath),
                                 type: ReferenceTypes.function,
                                 name: idName,
                                 trailerIndex: 1,

@@ -19,7 +19,7 @@ import {
 } from 'antlr4ng';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 
-export async function parseFileWithVisitor(
+export function parseFileWithVisitor(
     visitor: BaseVisitor,
     data: string,
     options?: {
@@ -27,7 +27,7 @@ export async function parseFileWithVisitor(
         enableLexerVerbose?: boolean;
         enableLexerTokenStream?: boolean;
     }
-): Promise<{
+): {
     tree: ScriptContext,
     parser: CircuitScriptParser,
     tokens: CommonTokenStream,
@@ -35,7 +35,7 @@ export async function parseFileWithVisitor(
     hasError: boolean, hasParseError: boolean,
     parserTimeTaken: number, lexerTimeTaken: number,
     throwError: any,
-}> {
+} {
 
     const lexerErrorListener = new CircuitscriptParserErrorListener(
         visitor.onErrorHandler);
@@ -83,7 +83,7 @@ export async function parseFileWithVisitor(
     let hasParseError = false;
     
     try {
-        await visitor.visitAsync(tree);
+        visitor.visit(tree);
     } catch (error) {
         // Error is not handled by the ANTLR parsing code, since the
         // error will have cancelled subsequent parsing.

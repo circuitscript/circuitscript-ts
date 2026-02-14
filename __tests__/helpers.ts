@@ -17,6 +17,7 @@ import { NetGraph } from '../src/graph.js';
 import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
+import { resolveAllImportFilepaths } from '../src/importResolver.js';
 
 export async function runScript(script: string, scriptPath?: string): Promise<{
     visitor: ParserVisitor,
@@ -60,9 +61,9 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
 
     const tree = parser.script();
 
-    visitor.onImportFile = async (visitor: BaseVisitor, filePath: string, fileData: string,
-        errorHandler: OnErrorHandler): Promise<{ hasError: boolean, hasParseError: boolean }> => {
-        const { hasError, hasParseError } = await parseFileWithVisitor(visitor, fileData);
+    visitor.onImportFile = (visitor: BaseVisitor, filePath: string, fileData: string,
+        errorHandler: OnErrorHandler): { hasError: boolean, hasParseError: boolean } => {
+        const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData);
         return { hasError, hasParseError };
     }
 
@@ -70,9 +71,33 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
         visitor.enterFile(scriptPath);
     }
 
+    // get the list of all imports
+    const importedFiles = await resolveAllImportFilepaths(scriptPath, script, env);
+
+    // Load all the files
+    const loadedFiles = new Map<string, string>();
+
+    for(const importFilePath of importedFiles){
+        visitor.log(`load file: ${importFilePath}`);
+        const importFileData = await env.readFile(importFilePath);
+        loadedFiles.set(importFilePath, importFileData);
+    }
+
+    // Check if the main refdes file exists
+    if (visitor.filePathStack.length > 0){
+        const mainRefdesFile = visitor.getPathRefdesFile(visitor.filePathStack[0]);
+        const fileExists = await env.exists(mainRefdesFile);
+        if (fileExists){
+            const mainRefdesFileData = await env.readFile(mainRefdesFile);
+            loadedFiles.set(mainRefdesFile, mainRefdesFileData);
+        }
+    }
+
+    visitor.loadedFiles = loadedFiles;
+
     let hasError = false;
     try {
-        await visitor.visitAsync(tree);
+        visitor.visit(tree);
     } catch (err) {
         // Error should be internally handled in visitor
         console.log(err);

@@ -304,20 +304,25 @@ export class ParserVisitor extends BaseVisitor {
             const startToken = ctx.start;
             const stopToken = ctx.stop;
 
-            const annotationKey = this.getRefdesFileAnnotation(
-                this.getCurrentFile(),
-                startToken.line, startToken.column,
-                stopToken.line, stopToken.column
-            );
+            if (this.filePathStack.length > 0) {
+                const useFilePath = this.getCurrentFile();
 
-            if (this.refdesFileAnnotations.has(annotationKey)) {
-                let refdesValue = this.refdesFileAnnotations.get(annotationKey)!;
-                
-                // Only use the first value for now.
-                refdesValue = refdesValue.split(',')[0];
+                const annotationKey = this.getRefdesFileAnnotation(
+                    useFilePath,
+                    startToken.line, startToken.column,
+                    stopToken.line, stopToken.column
+                );
 
-                // Force the refdes value to be saved during annotation.
-                this.setCurrentComponentRefdes(refdesValue, true);
+                if (this.refdesFileAnnotations.has(annotationKey)) {
+                    this.log(`refdes annotation key matched: ${annotationKey}`);
+                    let refdesValue = this.refdesFileAnnotations.get(annotationKey)!;
+
+                    // Only use the first value for now.
+                    refdesValue = refdesValue.split(',')[0];
+
+                    // Force the refdes value to be saved during annotation.
+                    this.setCurrentComponentRefdes(refdesValue, true);
+                }
             }
         }
     }
@@ -1922,7 +1927,17 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, tmpKeyValues);
     }
 
-    async checkLibraryHasRefdesFile(filePath: string): Promise<void> {
+    getPathRefdesFile(filePath: string): string {
+        // Get the main schematic file path (first file in the stack)
+        const mainDir = this.environment.dirname(filePath);
+        const mainExt = this.environment.extname(filePath);
+        const mainBasename = this.environment.basename(filePath, mainExt);
+
+        // Look for <mainSchematicFile>.refdes.json
+        return this.environment.join(mainDir, `${mainBasename}${RefdesFileSuffix}`);
+    }
+
+    checkLibraryInRefdesFile(filePath: string): void {
         // Checks if the main schematic file has an refdes json file with
         // annotations for the given library import.
 
@@ -1932,22 +1947,17 @@ export class ParserVisitor extends BaseVisitor {
             return;
         }
 
-        // Get the main schematic file path (first file in the stack)
-        const mainFilePath = this.environment.getAbsolutePath(
-            this.filePathStack[0]);
-        const mainDir = this.environment.dirname(mainFilePath);
-        const mainExt = this.environment.extname(mainFilePath);
-        const mainBasename = this.environment.basename(mainFilePath, mainExt);
-
         // Look for <mainSchematicFile>.refdes.json
-        const refdesFilePath = this.environment.join(mainDir, `${mainBasename}${RefdesFileSuffix}`);
+        const [baseFile] = this.filePathStack;
+        const mainDir = this.environment.dirname(baseFile);
+        const refdesFilePath = this.getPathRefdesFile(baseFile);
 
-        const exists = await this.environment.exists(refdesFilePath);
+        const exists = this.loadedFiles.has(refdesFilePath);
         if (exists) {
             this.log(`Main schematic has refdes file: ${refdesFilePath}`);
 
             // Load the file and extract the annotations
-            const fileData = await this.environment.readFile(refdesFilePath);
+            const fileData = this.loadedFiles.get(refdesFilePath)!;
             const jsonData = JSON.parse(fileData);
 
             // Get relative path from main file to the library file being checked

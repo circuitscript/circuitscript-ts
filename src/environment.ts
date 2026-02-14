@@ -216,7 +216,8 @@ export class NodeScriptEnvironment {
         return this.currentFile!;
     }
 
-    getRelativeToCurrentFolder(filePath: string): string {
+    // Relative to current file that is set.
+    getAbsPathRelativeToCurrentFolder(filePath: string): string {
         return path.join(this.getDirPath(this.currentFile!), filePath);
     }
 
@@ -255,5 +256,10 @@ export class NodeScriptEnvironment {
 
     createWriteStream(filePath: string): fs.WriteStream {
         return fs.createWriteStream(filePath);
+    }
+
+    // Returns the directory where the script was called from.
+    getCurrentDirectory(): string {
+        return process.cwd();
     }
 }
