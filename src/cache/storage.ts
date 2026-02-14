@@ -9,15 +9,15 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from '
 import { dirname, basename, join } from 'path';
 import { CACHE_SCHEMA_VERSION, LibraryCacheIR } from './types.js';
 
-export function getCachePath(libFilePath: string, hash: string): string {
+export function getCachePath(libFilePath: string): string {
     const dir = dirname(libFilePath);
     const base = basename(libFilePath);
-    return join(dir, '.cst.cache', `${base}.${hash}-v${CACHE_SCHEMA_VERSION}.json`);
+    return join(dir, '.cst.cache', `${base}.json`);
 }
 
 export function readCache(libFilePath: string, hash: string): LibraryCacheIR | null {
     try {
-        const cachePath = getCachePath(libFilePath, hash);
+        const cachePath = getCachePath(libFilePath);
         if (!existsSync(cachePath)) {
             return null;
         }
@@ -34,7 +34,7 @@ export function readCache(libFilePath: string, hash: string): LibraryCacheIR | n
 
 export function writeCache(libFilePath: string, hash: string, ir: LibraryCacheIR): void {
     try {
-        const cachePath = getCachePath(libFilePath, hash);
+        const cachePath = getCachePath(libFilePath);
         const cacheDir = dirname(cachePath);
         if (!existsSync(cacheDir)) {
             mkdirSync(cacheDir, { recursive: true });

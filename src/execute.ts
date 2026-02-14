@@ -1067,7 +1067,8 @@ export class ExecutionContext {
                 existingEntry.execute = __runFunc;
                 existingEntry.source = source;
             } else {
-                console.log("WARNING: function is already defined");
+                this.log(`function is already defined: ${functionName}`);
+                console.log(`WARNING: function is already defined ${functionName}`);
                 // throw new RuntimeExecutionError('Function is already defined');
             }
         } else {
