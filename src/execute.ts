@@ -1046,17 +1046,51 @@ export class ExecutionContext {
      * @param __runFunc 
      */
     createFunction(namespace: string, functionName: string, __runFunc: CFunction,
-        source?: ParserRuleContext, uniqueId?: string): void {
+        source?: ParserRuleContext, uniqueId?: string): CFunctionEntry {
 
-        const functionPath = `${namespace}${functionName}`;
-        this.scope.functions.set(functionPath, new CFunctionEntry(
+        // Check if the function already exists and if it is a lazy loaded function
+        const functionEntry = new CFunctionEntry(
             namespace, functionName, __runFunc,
             source,
             uniqueId,
-        ));
+        );
+        const functionPath = functionEntry.getFunctionPath();
 
+        if (this.scope.functions.has(functionPath)) {
+            this.log(`function: ${functionPath} already exists`);
+
+            const existingEntry = this.scope.functions.get(functionPath)!;
+            if (existingEntry.lazyLoaded) {
+                this.log(`updating lazy function: ${functionPath}`);
+
+                // update the entry instead
+                existingEntry.execute = __runFunc;
+                existingEntry.source = source;
+            } else {
+                console.log("WARNING: function is already defined");
+                // throw new RuntimeExecutionError('Function is already defined');
+            }
+        } else {
+            this.scope.functions.set(functionPath, functionEntry);
+            this.log(`defined new function: ${functionPath}`);
+        }
+            
         this.__functionCache.set(functionPath, __runFunc);
-        this.log(`defined new function: ${functionPath}`);
+        return functionEntry;
+    }
+
+    createFunctionLazyLoaded(namespace:string, functionName: string, uniqueId: string): CFunctionEntry {
+        const functionEntry = new CFunctionEntry(
+            namespace, functionName, null, null, uniqueId
+        );
+        const functionPath = functionEntry.getFunctionPath();
+        functionEntry.lazyLoaded = true;
+
+        this.scope.functions.set(functionPath, functionEntry);
+        this.__functionCache.set(functionPath, null);
+
+        this.log(`defined new function with lazy flag: ${functionPath}`);
+        return functionEntry;
     }
 
     hasFunction(functionName: string): boolean {
@@ -1259,8 +1293,8 @@ export class ExecutionContext {
     ): CFunctionResult {
 
         const functionEntry = functionReference.value as CFunctionEntry;
-        const { name: functionName,
-            execute: __runFunc } = functionEntry;
+        const { name: functionName } = functionEntry;
+        let {execute: __runFunc } = functionEntry;
 
         // TODO: function caching disabled for now, not sure if caching is 
         // actually useful at this point.
@@ -1294,7 +1328,18 @@ export class ExecutionContext {
         // } else {
         //     this.log('found function in cache:', functionName);
         //     __runFunc = this.__functionCache.get(functionName)!;
-        // }        
+        // }
+
+        if (__runFunc === null && functionEntry.lazyLoaded) {
+            this.log(`load lazy function: ${functionEntry.getFunctionPath()}`);
+            // Function is not loaded yet!
+            functionEntry.lazyLoader !== null && functionEntry.lazyLoader();
+
+            this.log(`done loading lazy function: ${functionEntry.getFunctionPath()}, replacing execute method`);
+
+            // functionEntry should be updated with execute function
+            __runFunc = functionEntry.execute;
+        }
 
         if (__runFunc !== null) {
             // Get function usage call within the current scope. This is used

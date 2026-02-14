@@ -30,7 +30,9 @@ export function serializeLibraryScope(
             // Use raw char positions to reconstruct source text instead of
             // concatenating token .text fields, which would include the synthetic
             // "newline" / "indent" / "dedent" strings inserted by the lexer.
-            const startChar = entry.source.start?.start ?? -1;
+
+            const startToken = entry.source.start!;
+            const startChar = startToken.start ?? -1;
             const stopChar = entry.source.stop?.stop ?? -1;
             const sourceText =
                 inputStream != null && startChar >= 0 && stopChar >= 0
@@ -42,6 +44,10 @@ export function serializeLibraryScope(
                 namespace: entry.originalNamespace,
                 uniqueId: entry.uniqueId ?? '',
                 sourceText,
+
+                // Original location within the file is needed to correctly
+                // apply refdes annotations.
+                start: [startToken.line, startToken.column]
             });
         }
     });

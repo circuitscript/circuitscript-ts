@@ -511,7 +511,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     environment.setCurrentFile(inputPath);
     visitor.log(`current file: ${inputPath}`);
 
-    visitor.onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string)
+    visitor.onImportFile = (visitor: BaseVisitor, filePath:string, 
+        fileData: string, errorHandler, fileLineOffset=0)
         : ImportFileResult => {
 
         visitor.enterFile(filePath);
@@ -519,7 +520,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         const { hasError, hasParseError, throwError, tree, tokens } =
             parseFileWithVisitor(visitor, fileData, {
                 enableLexerDiagnostics: lexerDiagnostics,
-                enableLexerVerbose: lexerVerbose
+                enableLexerVerbose: lexerVerbose,
+                lineOffset: fileLineOffset,
             });
 
         visitor.exitFile();
@@ -552,32 +554,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         visitor.enterFile(inputPath);
     }
 
-    // Get all imports, absolute file paths for std libraries and relative
-    // file paths for internal files.
-    const importedFiles = await resolveAllImportFilepaths(inputPath, scriptData, environment);
-
-    visitor.log('resolved all referenced imports');
-
-    // Load all the files
-    const loadedFiles = new Map<string, string>();
-    for(const importFilePath of importedFiles){
-        visitor.log(`reading file: ${importFilePath}`);
-        const importFileData = await environment.readFile(importFilePath);
-        loadedFiles.set(importFilePath, importFileData);
-    }
-
-    // Check if the main refdes file exists
-    if (visitor.filePathStack.length > 0) {
-        const mainRefdesFile = visitor.getPathRefdesFile(visitor.filePathStack[0]);
-        const fileExists = await environment.exists(mainRefdesFile);
-        if (fileExists) {
-            visitor.log('.refdes.json file exists, reading it');
-            const mainRefdesFileData = await environment.readFile(mainRefdesFile);
-            loadedFiles.set(mainRefdesFile, mainRefdesFileData);
-        }
-    }
-    
-    visitor.loadedFiles = loadedFiles;
+    await visitor.resolveImportsAndLoad(inputPath, scriptData);
     
     const { tree, parser, tokens, lexer,
         parserTimeTaken,

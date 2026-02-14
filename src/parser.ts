@@ -26,6 +26,7 @@ export function parseFileWithVisitor(
         enableLexerDiagnostics?: boolean;
         enableLexerVerbose?: boolean;
         enableLexerTokenStream?: boolean;
+        lineOffset: number,
     }
 ): {
     tree: ScriptContext,
@@ -48,7 +49,10 @@ export function parseFileWithVisitor(
     const enableDiagnostics = options?.enableLexerDiagnostics ?? false;
     const enableVerbose = options?.enableLexerVerbose ?? false;
     const enableTokenStream = options?.enableLexerTokenStream ?? false;
+    const lineOffset = options?.lineOffset ?? 0;
+
     const lexer = new MainLexer(chars, enableDiagnostics);
+    lexer.setLineOffset(lineOffset);
 
     // Set source text for character-to-token visualization
     if (enableDiagnostics) {

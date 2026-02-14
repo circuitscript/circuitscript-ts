@@ -35,6 +35,9 @@ export class CFunctionEntry {
     uniqueId?: string;
     source?: ParserRuleContext;
 
+    lazyLoaded = false;
+    lazyLoader: (() => void) | null = null;
+
     constructor(namespace: string, name: string, 
         execute: CFunction, source?: ParserRuleContext, 
         uniqueId?: string) {
@@ -50,6 +53,10 @@ export class CFunctionEntry {
 
     toString(): string {
         return `[Function: ${this.name}]`;
+    }
+
+    getFunctionPath(): string {
+        return `${this.namespace}${this.name}`;
     }
 };
 

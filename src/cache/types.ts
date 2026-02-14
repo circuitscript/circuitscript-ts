@@ -12,6 +12,9 @@ export interface SerializedFunctionDef {
     namespace: string;
     uniqueId: string;
     sourceText: string; // full "function name(...) { ... }" text
+    start: [
+        line: number, column: number,
+    ]
 }
 
 export interface SerializedVariable {

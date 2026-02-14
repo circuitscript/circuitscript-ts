@@ -31,21 +31,43 @@ export function deserializeLibraryScope(
     importHandling: ImportFunctionHandling,
     specificImports: string[],
     importContext: ExecutionContext,
-    parseAndVisit: (miniScript: string) => ImportFileResult
+    parseAndVisit: (miniScript: string, lineOffset: number) => ImportFileResult,
+
+    enterContext: () => ExecutionContext,
+    exitContext: () => void,
+
 ): ImportedLibrary {
     // Concatenate all function source texts into a single mini-script
-    const miniScript = ir.functions.map(f => f.sourceText).join('\n');
+    // const miniScript = ir.functions.map(f => f.sourceText).join('\n');
+
+    ir.functions.forEach(func => {
+        const { name, uniqueId, start } = func;
+        const [line] = start;
+
+        const functionEntry = importContext.createFunctionLazyLoaded(importContext.namespace, name, uniqueId);
+        functionEntry.lazyLoader = () => {
+            importContext.log(`loading lazy function ${name}`);
+
+            // Enter previously created library context
+            enterContext();
+
+            // Line offset is needed to correctly position the code chunk.
+            // Needed to ensure correct refdes annotations.
+            parseAndVisit(func.sourceText, line-1);
+
+            exitContext();
+        }
+    });
 
     // Re-parse only the function definitions (much smaller than full library)
-    const importResult = parseAndVisit(miniScript);
+    // const importResult = parseAndVisit(miniScript);
 
     // Build the ImportedLibrary — tree/tokens from the mini-script parse
     const importedLibrary = new ImportedLibrary(
         name,
         libraryNamespace,
         filePathUsed,
-        importResult.tree,
-        importResult.tokens,
+        null, null,
         importContext,
         importHandling,
         specificImports

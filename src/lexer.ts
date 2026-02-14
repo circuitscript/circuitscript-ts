@@ -32,12 +32,17 @@ export class MainLexer extends CircuitScriptLexer {
     // Diagnostic collector for performance analysis
     diagnosticCollector: LexerDiagnosticCollector;
 
+    // Sets the line offset for the tokens. This is 1-indexed!
+    lineOffset: number;
+
     constructor(input: CharStream, enableDiagnostics = false) {
         super(input);
         this.tokens = [];
         this.tokensHead = 0;
         this.indents = [];
         this.opened = 0;
+
+        this.lineOffset = 0;
 
         this.diagnosticCollector = new LexerDiagnosticCollector();
         this.diagnosticCollector.setEnabled(enableDiagnostics);
@@ -104,6 +109,7 @@ export class MainLexer extends CircuitScriptLexer {
             returnToken = next;
         }
 
+        returnToken.line += this.lineOffset;
         return returnToken;
     }
 
@@ -226,6 +232,10 @@ export class MainLexer extends CircuitScriptLexer {
                 }
             }
         }
+    }
+
+    setLineOffset(offset: number): void {
+        this.lineOffset = offset;
     }
 }
 
