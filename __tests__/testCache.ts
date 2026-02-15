@@ -70,6 +70,9 @@ async function runImportScript(script: string, scriptPath: string): Promise<{
         hasError = true;
     }
     visitor.exitFile();
+    
+    visitor.cacheLibraries();
+
     hasError = hasError || errorListener.hasSyntaxErrors();
 
     return { hasError, visitor };

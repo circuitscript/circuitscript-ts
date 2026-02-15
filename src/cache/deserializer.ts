@@ -36,6 +36,7 @@ export function deserializeLibraryScope(
     enterContext: () => ExecutionContext,
     exitContext: () => void,
 
+    libraryFileHash: string,
 ): ImportedLibrary {
 
     // Build the ImportedLibrary — tree/tokens are not available from cache
@@ -46,7 +47,8 @@ export function deserializeLibraryScope(
         null, null,
         importContext,
         importHandling,
-        specificImports
+        specificImports,
+        libraryFileHash
     );
 
     ir.functions.forEach(func => {

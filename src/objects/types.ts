@@ -281,9 +281,10 @@ export class ImportedLibrary {
     libraryNamespace: string;
     libraryFilePath: string;
 
+    // If true, genreaete refdes annotations for library.
     enableRefdesAnnotation = false;
 
-    // If true, generate the external refdes json file.
+    // If true, generate refdes annotations in external refdes json file.
     enableRefdesAnnotationFile = false;
 
     // These are needed for the refdes annotation stage.
@@ -293,11 +294,17 @@ export class ImportedLibrary {
     // Stores [tokens, tree] pairs from parsing expressions within the library.
     referencedTokens: [tokens: CommonTokenStream, tree: ParserRuleContext][] = [];
     
+    fileHash: string;
+
+    // If true, this library should be cached. 
+    writeToCache = false;
+
     constructor(libraryName: string, libraryNamespace: string, 
         libraryFilePath: string,
         tree: ScriptContext, tokens: CommonTokenStream,
         context: ExecutionContext, 
-        flag: ImportFunctionHandling, specifiedImports: string[]){
+        flag: ImportFunctionHandling, specifiedImports: string[],
+        fileHash: string){
         
         this.libraryName = libraryName;
         this.libraryNamespace = libraryNamespace;
@@ -310,6 +317,8 @@ export class ImportedLibrary {
         this.importHandlingFlag = flag;
 
         this.specifiedImports = specifiedImports;
+
+        this.fileHash = fileHash;
     }
 }
 

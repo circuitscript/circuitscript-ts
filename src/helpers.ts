@@ -18,13 +18,14 @@ import { ParserVisitor } from "./visitor.js";
 import { ParserRuleContext } from "antlr4ng";
 import { SymbolValidatorVisitor } from "./validate/SymbolValidatorVisitor.js";
 import { SymbolValidatorResolveVisitor } from "./validate/SymbolValidatorResolveVisitor.js";
-import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, DefaultErrorStrategy, Parser, RecognitionException, Recognizer, TerminalNode, Token } from "antlr4ng";
+import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, 
+    DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser, ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { BaseVisitor, ImportFileResult, OnErrorHandler } from "./BaseVisitor.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
-import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM, RefdesFileSuffix } from "./globals.js";
+import { defaultPageMarginMM, defaultZoomScale, LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 
 // Dynamic type definition for svgdom since it's ESM-only
 export type SVGWindow = any;
@@ -34,7 +35,6 @@ import Big from "big.js";
 import { Logger } from "./logger.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { NetGraph } from "./graph.js";
-import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
@@ -283,8 +283,8 @@ export type AnnotatedFile = {
 
     outputType: RefdesOutputType,
 
-    functions: Map<string, CFunctionEntry>,
-    referencedTokens: [tokens: CommonTokenStream, tree: ParserRuleContext][],
+    library?: ImportedLibrary,
+    referencedTokens?: [tokens: CommonTokenStream, tree: ParserRuleContext][],
 }
 
 export enum RefdesOutputType {
@@ -485,6 +485,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         await postAnnotationCallbacks[i](options, scriptData, tree, 
             tokens, componentLinks, importedLibraries, environment);
     }
+
+    visitor.cacheLibraries();
     
     if (dumpNets) {
         const nets = visitor.dumpNets();

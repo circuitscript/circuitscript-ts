@@ -44,7 +44,8 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
             }
 
             if (outputType !== RefdesOutputType.None) {
-                const { libraryFilePath, libraryName, tokens: libTokens, tree: libTree } = library;
+                const { libraryFilePath, libraryName, 
+                    tokens: libTokens, tree: libTree } = library;
 
                 // TODO: load file from the visitor loadedFiles instead.
                 const libraryScriptData = await environment.readFile(
@@ -58,6 +59,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                     libraryName,
                     outputType,
 
+                    library: library,
                     referencedTokens: library.referencedTokens,
                 };
 
@@ -71,7 +73,8 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
         // Process files that need inline annotation
         for (const item of sourceAnnotatedFiles) {
-            const { scriptData, tokens, tree, filePath, libraryName, referencedTokens = [], isMainFile = false } = item;
+            const { scriptData, tokens, tree, filePath, libraryName, 
+                referencedTokens = [], isMainFile = false } = item;
 
             let usePath = filePath;
 
@@ -95,10 +98,13 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
                 for (const [tokens, tree] of referencedTokens) {
                     const inputStream = tokens.tokenSource.inputStream!;
-                    const scriptData = inputStream.getTextFromRange(0, inputStream.size);
+
+                    // Only a section of the entire code file.
+                    const scriptChunk = 
+                        inputStream.getTextFromRange(0, inputStream.size);
 
                     const tmpVisitor = new RefdesAnnotationVisitor(true,
-                        scriptData, tokens, componentLinks);
+                        scriptChunk, tokens, componentLinks);
                     tmpVisitor.visit(tree);
 
                     const resultOutput = tmpVisitor.getOutput();

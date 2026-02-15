@@ -10,7 +10,7 @@ import { Net } from './Net.js';
 import { CFunction, CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
     ComponentPinWireId, 
     ImportedLibrary, 
-    ParseSymbolType, ValueType } from './types.js';
+    ValueType } from './types.js';
 import { BlockTypes, LayoutDirection } from '../globals.js';
 import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';

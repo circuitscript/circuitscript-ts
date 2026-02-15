@@ -1281,26 +1281,27 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 const netNamespace = executor.netNamespace;
                 const libraryNamespace = `${BaseNamespace}${name}.`;
 
+                // Create a new context, so that it is easier to track the
+                // functions that were created within the imported library.
+                const importContext = this.enterNewChildContext(
+                    executionStack,
+                    executor,
+                    executionContextName,
+                    {
+                        netNamespace,
+                        namespace: libraryNamespace,
+                    }, [], []);
+
                 // Try to load from cache before running the full parse+visit pipeline
                 let loadedFromCache = false;
+                let contentHash = '';
 
-                let contentHash: string | null = null;
                 if (this.enableCachedImportsRead) {
                     try {
                         contentHash = computeContentHash(fileData!);
                         const cachedIR = readCache(filePathUsed, contentHash);
                         if (cachedIR !== null) {
                             this.log('cache hit for:', filePathUsed);
-
-                            // Create execution context (same as normal import path)
-                            const importContext = this.enterNewChildContext(
-                                executionStack,
-                                executor,
-                                executionContextName,
-                                {
-                                    netNamespace,
-                                    namespace: libraryNamespace,
-                                }, [], []);
 
                             const parseAndVisit = (miniScript: string, lineOffset: number): ImportFileResult => {
                                 return this.onImportFile(this, filePathUsed, 
@@ -1324,10 +1325,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                                 },
                                 () => {
                                     executionStack.pop();
-                                }
+                                },
+                                
+                                contentHash
                             );
 
-                            executionStack.pop();
                             loadedFromCache = true;
 
                             this.log('Done reading from import cache');
@@ -1340,42 +1342,27 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 }
 
                 if (!loadedFromCache) {
-                    // Create a new context, so that it is easier to track the
-                    // functions that were created within the imported library.
-                    this.enterNewChildContext(
-                        executionStack,
-                        executor,
-                        executionContextName,
-                        {
-                            netNamespace,
-                            namespace: libraryNamespace,
-                        }, [], []);
-
                     const importResult = this.onImportFile(this,
                         filePathUsed, fileData!, this.onErrorHandler);
 
                     hasError = importResult.hasError;
                     hasParseError = importResult.hasParseError;
 
-                    const importContext = executionStack.pop()!;
-
                     this.log(`import handling flag: ${importHandling}`);
                     importedLibrary = new ImportedLibrary(name,
                         libraryNamespace,
                         filePathUsed,
                         importResult.tree, importResult.tokens,
-                        importContext, importHandling, specificImports);
-
-                    // Persist cache for next run
-                    if (this.enableCachedImportsWrite && !hasError && !hasParseError && contentHash !== null) {
-                        try {
-                            const ir = serializeLibraryScope(importedLibrary, contentHash);
-                            writeCache(filePathUsed, contentHash, ir);
-                        } catch {
-                            // Cache write errors are non-fatal
-                        }
-                    }
+                        importContext, importHandling, specificImports, 
+                        contentHash);
+                    
+                    // Library not cached yet (or cache is outdated), so write
+                    // to cache later.
+                    importedLibrary.writeToCache = true;
                 }
+
+                // Close the import context
+                executionStack.pop();
 
                 if (specificImports.length > 0){
                     this.log('specific import: ' + specificImports.join(', '));
@@ -1434,6 +1421,28 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         return newImportedFile;
     }
+
+    cacheLibraries(): void {
+        this.log('caching libraries');
+
+        const libraries = this.getScope().libraries;
+        
+        // Persist cache for next run
+        for (const [libName, library] of libraries) {
+            
+            if (library.writeToCache){
+                try {
+                    const { fileHash } = library;
+                    const ir = serializeLibraryScope(library, fileHash);
+                    writeCache(library.libraryFilePath, fileHash, ir);
+                } catch (err) {
+                    this.log(`failed to cache library: ${libName}`);
+                    throw new RuntimeExecutionError(`Failed to cache library: ${libName}`);
+                }
+            }
+        }
+    }
+
 
     checkLibraryInRefdesFile(filePath: string): void{
         return;

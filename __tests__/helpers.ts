@@ -91,6 +91,9 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
 
     visitor.annotateComponents();
 
+    // Do not write cached libraries for tests
+    // visitor.cacheLibraries();
+
     return {
         visitor, hasError,
         componentPinNets: visitor.dumpNets(),

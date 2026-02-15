@@ -49,6 +49,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         this.componentCtxLinks = componentCtxLinks;
     }
 
+    getModifications(): Map<ParserRuleContext, RefdesModification> {
+        return this.modifications;
+    }
+
     /**
      * Get the original text for a context, preserving all formatting
      */
