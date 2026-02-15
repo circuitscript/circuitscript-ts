@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { ImportedLibrary } from '../objects/types.js';
 import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef, SerializedExpression } from './types.js';
 import { CircuitScriptLexer } from '../antlr/CircuitScriptLexer.js';
-import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
+import { generateModifiedSourceText } from '../annotate/utils.js';
 
 export function serializeLibraryScope(
     importedLib: ImportedLibrary,
@@ -18,37 +19,53 @@ export function serializeLibraryScope(
     const topLevelExpressions: SerializedExpression[] = [];
 
     const scope = importedLib.context.scope;
-    const tokens = importedLib.tokens;
+    const { tokens: libraryTokens, refdesAnnotations } = importedLib;
 
-    const inputStream = tokens.tokenSource?.inputStream ?? null;
+    const libraryInputStream = libraryTokens.tokenSource!.inputStream!;
 
     scope.functions.forEach((entry) => {
-        if (entry.source != null && tokens != null) {
-            // Use raw char positions to reconstruct source text instead of
-            // concatenating token .text fields, which would include the synthetic
-            // "newline" / "indent" / "dedent" strings inserted by the lexer.
 
-            const startToken = entry.source.start!;
+        let useSource = '';
+        let useTokenLine = 0;
+        let useTokenColumn = 0;
+
+        // Complete library was parsed and loaded, not just the function!
+        if (libraryTokens !== null && entry.source !== null) {
+            const source = entry.source!;
+            const startIndex = source.start?.tokenIndex ?? 0;
+            const stopIndex = source.stop?.tokenIndex ?? -1;
+            const contextTokens = libraryTokens.getTokens(startIndex, stopIndex);
+
+            const startToken = source.start!;
             const startChar = startToken.start ?? -1;
-            const stopChar = getFunctionDefinitionEnding(entry.source, tokens);
+            const stopChar = getFunctionDefinitionEnding(source, libraryTokens);
 
+            // Derive source text from the complete library tokens.
             const sourceText =
-                inputStream != null && startChar >= 0 && stopChar >= 0
-                    ? inputStream.getTextFromRange(startChar, stopChar)
-                    : tokens.getTextFromContext(entry.source);
+                        libraryInputStream != null && startChar >= 0 && stopChar >= 0
+                        ? libraryInputStream.getTextFromRange(startChar, stopChar)
+                        : libraryTokens.getTextFromContext(source);
 
-            functions.push({
-                name: entry.name,
-                namespace: entry.originalNamespace,
-                uniqueId: entry.uniqueId ?? '',
+            useSource = generateModifiedSourceText(
+                refdesAnnotations,
+                contextTokens,
+                sourceText,
+                startToken.start
+            );
 
-                // Original location within the file is needed to correctly
-                // apply refdes annotations.
-                sourceText: [
-                    startToken.line, startToken.column, sourceText
-                ]
-            });
+            useTokenLine = startToken.line;
+            useTokenColumn = startToken.column;
         }
+
+        functions.push({
+            name: entry.name,
+            namespace: entry.originalNamespace,
+            uniqueId: entry.uniqueId ?? '',
+
+            sourceText: [
+                useTokenLine, useTokenColumn, useSource
+            ]
+        });
     });
 
     // Collect all top-level expressions that are not function definitions, grouping
@@ -58,18 +75,44 @@ export function serializeLibraryScope(
     // continuity and start a new block.
     const tree = importedLib.tree;
     if (tree != null) {
-        let groupTexts: string[] = [];
+
+        let groupCtx: ParserRuleContext[] = [];
         let groupStart: [number, number] | null = null;
         let prevStopLine: number | null = null;
 
         const flushGroup = () => {
-            if (groupTexts.length > 0 && groupStart != null) {
+            let useSource = '';
+            if (groupCtx.length > 0 && groupStart !== null) {
+
+                // extract the output
+                const startToken = groupCtx[0].start!;
+                const stopToken = groupCtx[groupCtx.length - 1].stop!;
+
+                const startIndex = startToken.tokenIndex ?? 0;
+                const stopIndex = stopToken.tokenIndex ?? -1;
+                const contextTokens = libraryTokens.getTokens(startIndex, stopIndex);
+
+                const startChar = startToken.start ?? -1;
+                const stopChar = stopToken.stop ?? -1;
+
+                const sourceText = libraryInputStream.getTextFromRange(startChar, stopChar);
+
+                // The token start offset is needed because the tokens are 
+                // part of a larger array of tokens.
+                useSource = generateModifiedSourceText(
+                    refdesAnnotations,
+                    contextTokens,
+                    sourceText,
+                    startToken.start
+                );
+
                 topLevelExpressions.push([
                     ...groupStart,
-                    groupTexts.join('')
+                    useSource
                 ]);
             }
-            groupTexts = [];
+
+            groupCtx = [];
             groupStart = null;
             prevStopLine = null;
         };
@@ -84,7 +127,9 @@ export function serializeLibraryScope(
             // line separators within a group so that joining with '' produces
             // correctly formatted output.
             if (exprCtx.NEWLINE() !== null) {
-                if (groupTexts.length > 0) groupTexts.push('\n');
+                if (groupCtx.length > 0){
+                    groupCtx.push(exprCtx);
+                }
                 continue;
             }
 
@@ -98,17 +143,11 @@ export function serializeLibraryScope(
                 flushGroup();
             }
 
-            const startChar = startToken.start ?? -1;
-            const stopChar = exprCtx.stop?.stop ?? -1;
-            const sourceText =
-                inputStream != null && startChar >= 0 && stopChar >= 0
-                    ? inputStream.getTextFromRange(startChar, stopChar)
-                    : tokens.getTextFromContext(exprCtx);
-
             if (groupStart == null) {
                 groupStart = [currentStartLine, startToken.column];
             }
-            groupTexts.push(sourceText);
+            
+            groupCtx.push(exprCtx);
             prevStopLine = exprCtx.stop?.line ?? currentStartLine;
         }
 

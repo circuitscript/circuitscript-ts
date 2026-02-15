@@ -6,6 +6,7 @@ import { ScriptOptions, AnnotatedFile, RefdesOutputType, ExternalLibAnnotationFi
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { ImportedLibrary } from "../objects/types.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
+import { RefdesModification } from "./utils.js";
 
 export async function DefaultPostAnnotationCallback(options: ScriptOptions,
     scriptData: string,
@@ -94,6 +95,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
             let updatedScriptData = scriptData;
 
             const isCachedLibrary = tokens === null && tree === null;
+            let modifications!: Map<ParserRuleContext, RefdesModification>;
 
             // Handled cached libraries
             if (isCachedLibrary && referencedTokens) {
@@ -110,8 +112,8 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                         scriptChunk, tokens, componentLinks);
                     tmpVisitor.visit(tree);
 
-                    const modifications = tmpVisitor.getModifications();
-                    
+                    modifications = tmpVisitor.getModifications();
+
                     // If there are some modifications, then update the
                     // write to cache flag.
                     if (modifications.size > 0 && library && !library.writeToCache){
@@ -134,9 +136,13 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
                     scriptData, tokens, componentLinks);
                 tmpVisitor.visit(tree);
+                modifications = tmpVisitor.getModifications();
 
                 updatedScriptData = tmpVisitor.getOutput();
             }
+
+            // Pass annotation comments to the library.
+            library && library.addRefdesModifications(modifications);
 
             environment.writeFileSync(usePath, updatedScriptData);
 

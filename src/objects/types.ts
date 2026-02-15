@@ -15,7 +15,7 @@ import { RuntimeExecutionError } from '../utils.js';
 import { PinDefinition, PinId } from './PinDefinition.js';
 import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from 'src/draw_symbols.js';
-import { RefdesModification } from 'src/annotate/RefdesAnnotationVisitor.js';
+import { RefdesModification } from 'src/annotate/utils.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -282,7 +282,7 @@ export class ImportedLibrary {
     libraryNamespace: string;
     libraryFilePath: string;
 
-    // If true, genreaete refdes annotations for library.
+    // If true, generate refdes annotations for library.
     enableRefdesAnnotation = false;
 
     // If true, generate refdes annotations in external refdes json file.
@@ -300,6 +300,7 @@ export class ImportedLibrary {
     // If true, this library should be cached. 
     writeToCache = false;
 
+    // stores refdes annotation comments within the library.
     refdesAnnotations = new Map<ParserRuleContext, RefdesModification>;
 
     constructor(libraryName: string, libraryNamespace: string, 
@@ -324,7 +325,7 @@ export class ImportedLibrary {
         this.fileHash = fileHash;
     }
     
-    addModifications(mods: Map<ParserRuleContext, RefdesModification>): void {
+    addRefdesModifications(mods: Map<ParserRuleContext, RefdesModification>): void {
         for (const [ctx, modification] of mods) {
             this.refdesAnnotations.set(ctx, modification);
         }
