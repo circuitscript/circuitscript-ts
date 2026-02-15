@@ -1,10 +1,10 @@
 import { CommonTokenStream, ParserRuleContext } from "antlr4ng";
-import { ScriptContext } from "./antlr/CircuitScriptParser.js";
-import { NodeScriptEnvironment } from "./environment.js";
-import { RefdesFileSuffix } from "./globals.js";
-import { ScriptOptions, AnnotatedFile, RefdesOutputType, ExternalLibAnnotationFile } from "./helpers.js";
-import { ClassComponent } from "./objects/ClassComponent.js";
-import { ImportedLibrary } from "./objects/types.js";
+import { ScriptContext } from "../antlr/CircuitScriptParser.js";
+import { NodeScriptEnvironment } from "../environment.js";
+import { RefdesFileSuffix } from "../globals.js";
+import { ScriptOptions, AnnotatedFile, RefdesOutputType, ExternalLibAnnotationFile } from "../helpers.js";
+import { ClassComponent } from "../objects/ClassComponent.js";
+import { ImportedLibrary } from "../objects/types.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 
 export async function DefaultPostAnnotationCallback(options: ScriptOptions,
@@ -73,8 +73,11 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
         // Process files that need inline annotation
         for (const item of sourceAnnotatedFiles) {
-            const { scriptData, tokens, tree, filePath, libraryName, 
-                referencedTokens = [], isMainFile = false } = item;
+            const { 
+                scriptData, tokens, tree, filePath, libraryName, 
+                referencedTokens = [], isMainFile = false,
+                library
+            } = item;
 
             let usePath = filePath;
 
@@ -106,6 +109,14 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                     const tmpVisitor = new RefdesAnnotationVisitor(true,
                         scriptChunk, tokens, componentLinks);
                     tmpVisitor.visit(tree);
+
+                    const modifications = tmpVisitor.getModifications();
+                    
+                    // If there are some modifications, then update the
+                    // write to cache flag.
+                    if (modifications.size > 0 && library && !library.writeToCache){
+                        library.writeToCache = true;
+                    }
 
                     const resultOutput = tmpVisitor.getOutput();
                     const resultLines = resultOutput.split('\n');

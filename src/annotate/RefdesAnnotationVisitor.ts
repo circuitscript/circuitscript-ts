@@ -13,9 +13,9 @@ import { Add_component_exprContext, At_block_headerContext,
     Frame_exprContext, 
     Function_def_exprContext, Function_return_exprContext, ScriptContext, 
     To_component_exprContext,
-    TrailerContext} from './antlr/CircuitScriptParser.js';
-import { BaseVisitor } from './BaseVisitor.js';
-import { ClassComponent } from './objects/ClassComponent.js';
+    TrailerContext} from '../antlr/CircuitScriptParser.js';
+import { BaseVisitor } from '../BaseVisitor.js';
+import { ClassComponent } from '../objects/ClassComponent.js';
 
 /**
  * A visitor that preserves original formatting including:
@@ -386,7 +386,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     }
 }
 
-type RefdesModification = {
+export type RefdesModification = {
     originalText: string,
     refdes: string[],
 }

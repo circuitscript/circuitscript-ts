@@ -1429,7 +1429,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         
         // Persist cache for next run
         for (const [libName, library] of libraries) {
-            
+            this.log(`checking write flag for library ${library.libraryName}: ${library.writeToCache}`);
+
             if (library.writeToCache){
                 try {
                     const { fileHash } = library;

@@ -1,6 +1,6 @@
 import { ParserRuleContext } from 'antlr4ng';
-import { ClassComponent } from './objects/ClassComponent.js';
-import { ComponentRefDesPrefixes } from './visitor.js';
+import { ClassComponent } from './../objects/ClassComponent.js';
+import { ComponentRefDesPrefixes } from './../visitor.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 

@@ -39,7 +39,7 @@ import { EvaluateERCRules } from "./rules-check/rules.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { CFunctionEntry, ImportedLibrary } from "./objects/types.js";
-import { DefaultPostAnnotationCallback } from "./DefaultPostAnnotationCallback.js";
+import { DefaultPostAnnotationCallback } from "./annotate/DefaultPostAnnotationCallback.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
