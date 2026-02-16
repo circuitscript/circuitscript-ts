@@ -1,4 +1,4 @@
-import { _id, generateKiCadNetList, SExpObject } from "../src/export";
+import { _id, generateKiCadNetList, SExpObject } from "../src/render/export.js";
 import { runScript } from "./helpers";
 
 describe('export to KiCad', () => {

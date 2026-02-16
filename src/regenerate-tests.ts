@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { renderScript } from './helpers.js';
+import { renderScript } from "./pipeline.js";
 import { NodeScriptEnvironment } from "./environment.js";
 
 const mainDir = './__tests__/testData/renderData/';

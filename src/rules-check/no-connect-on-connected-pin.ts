@@ -1,6 +1,6 @@
 import { Edge, Graph } from "@dagrejs/graphlib";
-import { GraphNodeInfo, RenderItemType } from "../graph.js";
-import { RenderComponent } from "../layout.js";
+import { GraphNodeInfo, RenderItemType } from "../render/graph.js";
+import { RenderComponent } from "../render/layout.js";
 import { ComponentPinNetPair } from "src/objects/types.js";
 import { Net } from "../objects/Net.js";
 import { PinId } from "../objects/PinDefinition.js";

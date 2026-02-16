@@ -78,7 +78,7 @@ import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
     WireAutoDirection} from './globals.js';
 import { ExecutionWarning, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
-import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
+import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { BaseError, getPortType, RuntimeExecutionError } from './utils.js';

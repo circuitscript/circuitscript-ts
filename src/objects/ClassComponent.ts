@@ -7,7 +7,7 @@
 
 import { ParserRuleContext } from 'antlr4ng';
 import { Expressions_blockContext } from 'src/antlr/CircuitScriptParser.js';
-import { SymbolDrawingCommands } from '../draw_symbols.js';
+import { SymbolDrawingCommands } from '../render/draw_symbols.js';
 import { Net } from './Net.js';
 import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
 import { PinTypes } from './PinTypes.js';

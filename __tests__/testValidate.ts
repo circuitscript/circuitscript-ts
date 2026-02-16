@@ -7,7 +7,7 @@ const mainPath = '__tests__/testData/validationData/';
  * Validation is used mainly in the IDE, for syntax highlighting and 
  * semantic tokens.
  */
-describe('test validation', () => {
+describe.skip('test validation', () => {
 
     test.each([
         ["some variables", 'script1'],

@@ -7,7 +7,7 @@
 import { Big } from 'big.js';
 
 import { ParserRuleContext, Token } from "antlr4ng";
-import { SymbolDrawingCommands } from "./draw_symbols.js";
+import { SymbolDrawingCommands } from "./render/draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
 import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope.js';

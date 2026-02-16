@@ -13,8 +13,8 @@ import figlet from 'figlet';
 
 import { watch } from 'fs';
 
-import { renderScript, 
-    ScriptOptions} from './helpers.js';
+import { ScriptOptions} from './helpers.js';
+import { renderScript } from "./pipeline.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { _id } from './export.js';
 

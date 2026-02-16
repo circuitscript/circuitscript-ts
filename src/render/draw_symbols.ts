@@ -7,22 +7,22 @@
 
 import { G } from "@svgdotjs/svg.js";
 
-import { milsToMM } from "./helpers.js";
+import { milsToMM } from "../helpers.js";
 import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
     CustomSymbolRefDesSize, PinTypesList, PortArrowSize, PortPaddingHorizontal, 
     PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
     defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
-    fontDisplayScale} from "./globals.js";
+    fontDisplayScale} from "../globals.js";
 import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, LabelStyle, 
     Textbox, VerticalAlign, 
     VerticalAlignProp} from "./geometry.js";
-import { Logger } from "./logger.js";
-import { PinTypes } from "./objects/PinTypes.js";
-import { roundValue, RuntimeExecutionError, throwWithContext } from "./utils.js";
-import { DeclaredReference, UndeclaredReference } from "./objects/types.js";
+import { Logger } from "../logger.js";
+import { PinTypes } from "../objects/PinTypes.js";
+import { roundValue, RuntimeExecutionError, throwWithContext } from "../utils.js";
+import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
-import { numeric, NumericValue } from "./objects/ParamDefinition.js";
-import { PinId } from "./objects/PinDefinition.js";
+import { numeric, NumericValue } from "../objects/ParamDefinition.js";
+import { PinId } from "../objects/PinDefinition.js";
 
 
 /**

@@ -14,7 +14,7 @@ import { ReferenceTypes } from '../globals.js';
 import { RuntimeExecutionError } from '../utils.js';
 import { PinDefinition, PinId } from './PinDefinition.js';
 import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
-import { SymbolDrawingCommands } from 'src/draw_symbols.js';
+import { SymbolDrawingCommands } from 'src/render/draw_symbols.js';
 import { RefdesModification } from 'src/annotate/utils.js';
 
 export type CFunction = (args: CallableParameter[],

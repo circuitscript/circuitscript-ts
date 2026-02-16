@@ -2,8 +2,6 @@
  * Tests for the RefdesAnnotationVisitor output format.
  */
 
-import { existsSync, rmSync } from 'fs';
-import { join, dirname } from 'path';
 import { CharStream, CommonTokenStream } from 'antlr4ng';
 import { MainLexer } from '../src/lexer.js';
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
@@ -13,17 +11,7 @@ import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/p
 import { NodeScriptEnvironment } from '../src/environment.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
 
-// Reuse the same for now, since these tests were extracted from cache 
-// related tests.
-const LIB_PATH = '__tests__/testData/cacheData/lib1.cst';
-const SCRIPT_PATH = '__tests__/testData/cacheData/main.cst';
-
-function removeCacheDir(libPath: string): void {
-    const cacheDir = join(dirname(libPath), '.cst.cache');
-    if (existsSync(cacheDir)) {
-        rmSync(cacheDir, { recursive: true, force: true });
-    }
-}
+const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
 async function runScript(script: string, scriptPath: string): Promise<{
     hasError: boolean;
@@ -38,7 +26,6 @@ async function runScript(script: string, scriptPath: string): Promise<{
 
     const visitor = new ParserVisitor(true, null, env);
     visitor.printToConsole = false;
-    visitor.enableCachedImportsRead = true;
 
     visitor.onImportFile = (v: BaseVisitor, filePath: string, fileData: string,
         onErr: OnErrorHandler, fileLineOffset: number): ImportFileResult => {
@@ -71,7 +58,6 @@ async function runScript(script: string, scriptPath: string): Promise<{
     visitor.exitFile();
 
     visitor.annotateComponents();
-    visitor.cacheLibraries();
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
@@ -79,14 +65,6 @@ async function runScript(script: string, scriptPath: string): Promise<{
 }
 
 describe('Refdes annotation: output format', () => {
-    beforeEach(() => {
-        removeCacheDir(LIB_PATH);
-    });
-
-    afterEach(() => {
-        removeCacheDir(LIB_PATH);
-    });
-
     test('single add expression generates correct #= refdes comment', async () => {
         const script = `import lib1\nadd lib1.my_ic()\n`;
         const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH);

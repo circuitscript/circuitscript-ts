@@ -2,7 +2,7 @@ import { createReadStream, createWriteStream, existsSync, readFileSync, unlinkSy
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
-import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render.js";
+import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render/render.js";
 import { renderCommon } from "./helpers.js";
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';

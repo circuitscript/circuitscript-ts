@@ -5,18 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export * from './draw_symbols.js';
+export * from './render/draw_symbols.js';
 export * from './execute.js';
 export * from './export.js';
-export * from './geometry.js';
+export * from './render/geometry.js';
 export * from './globals.js';
 export * from './helpers.js';
-export * from './layout.js';
+export * from './render/layout.js';
 export * from './lexer.js';
 export * from './LexerDiagnosticListener.js';
 export * from './logger.js';
 export * from './parser.js';
-export * from './render.js';
+export * from './render/render.js';
 export * from './utils.js';
 export * from './visitor.js';
 export * from './sizing.js';

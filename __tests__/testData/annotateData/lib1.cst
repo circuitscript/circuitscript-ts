@@ -1,0 +1,9 @@
+def my_ic():
+    return create component:
+        type: "ic"
+        pins: 4
+
+def my_resistor():
+    return create component:
+        type: "res"
+        pins: 2

@@ -1,4 +1,4 @@
-import { Geometry } from "../src/geometry.js";
+import { Geometry } from "../src/render/geometry.js";
 import { numeric, NumericValue } from "../src/objects/ParamDefinition.js";
 
 describe('geometry merge wires test', () => {

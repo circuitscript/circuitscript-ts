@@ -11,11 +11,10 @@ import { program } from 'commander';
 
 import { readFileSync, existsSync } from 'fs';
 
-import { 
-    getSemanticTokens,
-    validateScript} from './helpers.js';
+import { getSemanticTokens } from "./getSemanticTokens.js";
+import { validateScript } from "./validate/validateScript.js";
 import { NodeScriptEnvironment } from "./environment.js";
-import { _id } from './export.js';
+import { _id } from './render/export.js';
 import { Token } from 'antlr4ng';
 import { ParseSymbolType } from './objects/types.js';
 import { SymbolTableItemDefined } from './validate/SymbolTable.js';

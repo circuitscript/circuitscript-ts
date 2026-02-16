@@ -8,7 +8,7 @@
 import { Box, SVGTypeMapping } from '@svgdotjs/svg.js';
 import { Big } from 'big.js';
 
-import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './geometry.js';
+import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './render/geometry.js';
 import { defaultFont } from './globals.js';
 import { NodeScriptEnvironment } from "./environment.js";
 

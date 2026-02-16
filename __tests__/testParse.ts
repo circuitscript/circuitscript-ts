@@ -1,7 +1,7 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
-import { NetGraph } from '../src/graph.js';
-import { LayoutEngine } from '../src/layout.js';
+import { NetGraph } from '../src/render/graph.js';
+import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
 import { ComponentPinNet } from '../src/objects/types.js';
 import { findItem, findItemByRefDes, runScript } from './helpers.js';

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { NoNetText } from "./globals.js";
-import { NumericValue } from "./objects/ParamDefinition.js";
-import { NetListItem } from "./visitor.js";
+import { NoNetText } from "../globals.js";
+import { NumericValue } from "../objects/ParamDefinition.js";
+import { NetListItem } from "../visitor.js";
 
 export function generateKiCadNetList(netlist: NetListItem[])
     : {

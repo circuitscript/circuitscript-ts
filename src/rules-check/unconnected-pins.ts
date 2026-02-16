@@ -1,6 +1,6 @@
 import { Edge, Graph } from "@dagrejs/graphlib";
-import { RenderItemType } from "../graph.js";
-import { RenderComponent, RenderWire } from "../layout.js";
+import { RenderItemType } from "../render/graph.js";
+import { RenderComponent, RenderWire } from "../render/layout.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { ERC_Rules } from "./rules.js";
 

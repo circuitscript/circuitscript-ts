@@ -26,10 +26,10 @@ import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParam
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
-import { CalculatePinPositions } from './layout.js';
+import { CalculatePinPositions } from './render/layout.js';
 import { UnitDimension } from './helpers.js';
 import { ParserRuleContext } from 'antlr4ng';
-import { PlaceHolderCommands, SymbolDrawingCommands } from './draw_symbols.js';
+import { PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { getBlockTypeString, RuntimeExecutionError } from './utils.js';
 
 /** Contains the current running state of the circuit graph */

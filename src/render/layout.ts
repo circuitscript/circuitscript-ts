@@ -11,22 +11,22 @@ import { SymbolCustom, SymbolDrawing, SymbolGraphic,
     SymbolPlaceholder, 
     SymbolText, PlaceHolderCommands, SymbolDrawingCommands,
     SimplePoint} from "./draw_symbols.js";
-import { ClassComponent, ComponentUnit } from "./objects/ClassComponent.js";
+import { ClassComponent, ComponentUnit } from "../objects/ClassComponent.js";
 import { DefaultComponentUnit, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     NetGraphicsParams, 
-    ParamKeys, WireAutoDirection } from './globals.js';
-import { Wire, WireSegment } from './objects/Wire.js';
+    ParamKeys, WireAutoDirection } from '../globals.js';
+import { Wire, WireSegment } from '../objects/Wire.js';
 import { Geometry, HorizontalAlign, VerticalAlign } from './geometry.js';
-import { Net } from './objects/Net.js';
-import { Logger } from './logger.js';
-import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
+import { Net } from '../objects/Net.js';
+import { Logger } from '../logger.js';
+import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from '../objects/Frame.js';
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
     printBounds, resizeBounds, resizeToNearestGrid, roundValue, 
-    toNearestGrid } from './utils.js';
-import { ComponentPinNetPair, Direction } from './objects/types.js';
-import { PinDefinition, PinId } from './objects/PinDefinition.js';
-import { milsToMM, UnitDimension } from './helpers.js';
-import { numeric, NumericValue } from './objects/ParamDefinition.js';
+    toNearestGrid } from '../utils.js';
+import { ComponentPinNetPair, Direction } from '../objects/types.js';
+import { PinDefinition, PinId } from '../objects/PinDefinition.js';
+import { milsToMM, UnitDimension } from '../helpers.js';
+import { numeric, NumericValue } from '../objects/ParamDefinition.js';
 import { generateLayoutPinDefinition, getWireName, RenderItemType } from './graph.js';
 
 export class LayoutEngine {
