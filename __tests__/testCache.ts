@@ -14,6 +14,7 @@ import { NodeScriptEnvironment } from '../src/environment.js';
 import { computeContentHash } from '../src/cache/hash.js';
 import { getCachePath, readCache, writeCache } from '../src/cache/storage.js';
 import { CACHE_SCHEMA_VERSION } from '../src/cache/types.js';
+import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
 
 const LIB_PATH = '__tests__/testData/cacheData/lib1.cst';
 const LIB_CONTENT = readFileSync(LIB_PATH, 'utf8');
@@ -32,6 +33,8 @@ function removeCacheDir(libPath: string): void {
 async function runImportScript(script: string, scriptPath: string): Promise<{
     hasError: boolean;
     visitor: ParserVisitor;
+    tree: ReturnType<CircuitScriptParser['script']>;
+    tokens: CommonTokenStream;
 }> {
     const env = new NodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
@@ -40,6 +43,7 @@ async function runImportScript(script: string, scriptPath: string): Promise<{
 
     const visitor = new ParserVisitor(true, null, env);
     visitor.printToConsole = false;
+    visitor.enableCachedImportsRead = true;
 
     // Full onImportFile that returns tree + tokens (needed for cache serialization)
     visitor.onImportFile = (v: BaseVisitor, filePath: string, fileData: string,
@@ -66,16 +70,19 @@ async function runImportScript(script: string, scriptPath: string): Promise<{
     let hasError = false;
     try {
         visitor.visit(tree);
-    } catch {
+    } catch (err){
+        console.log('got err', err);
         hasError = true;
     }
     visitor.exitFile();
-    
+
+    // Annotate components (mirrors the real execution flow in helpers.ts)
+    visitor.annotateComponents();
     visitor.cacheLibraries();
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
-    return { hasError, visitor };
+    return { hasError, visitor, tree, tokens };
 }
 
 describe('Cache hash utility', () => {
@@ -279,5 +286,47 @@ describe('Cache integration: import with cache', () => {
         const cachedFuncNames = ir!.functions.map(f => f.name).sort();
         expect(cachedFuncNames).toContain('my_ic');
         expect(cachedFuncNames).toContain('my_resistor');
+    });
+});
+
+describe('Refdes annotation: cache consistency', () => {
+    const libPath = LIB_PATH;
+    const scriptPath = '__tests__/testData/cacheData/main.cst';
+
+    beforeEach(() => {
+        removeCacheDir(libPath);
+    });
+
+    afterEach(() => {
+        removeCacheDir(libPath);
+    });
+
+    test('annotation output is identical between fresh parse and cache hit', async () => {
+        const script = `import lib1\nadd lib1.my_ic()\nadd lib1.my_resistor()\n`;
+
+        // First run — full parse, populates cache
+        const { hasError: err1, visitor: v1, tree: tree1, tokens: tok1 } =
+            await runImportScript(script, scriptPath);
+        expect(err1).toBe(false);
+
+        const av1 = new RefdesAnnotationVisitor(true, script, tok1, v1.getComponentCtxLinks());
+        await av1.visit(tree1);
+        const output1 = av1.getOutput();
+
+        // Second run — loads lib1 from cache
+        const { hasError: err2, visitor: v2, tree: tree2, tokens: tok2 } =
+            await runImportScript(script, scriptPath);
+        expect(err2).toBe(false);
+
+        const av2 = new RefdesAnnotationVisitor(true, script, tok2, v2.getComponentCtxLinks());
+        await av2.visit(tree2);
+        const output2 = av2.getOutput();
+
+        // Both runs must produce identical annotation comments
+        expect(output1).toContain('#= U1');
+        expect(output2).toContain('#= U1');
+        expect(output1).toContain('#= R1');
+        expect(output2).toContain('#= R1');
+        expect(output1).toEqual(output2);
     });
 });

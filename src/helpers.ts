@@ -497,12 +497,12 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     dumpData && environment.writeFileSync(dumpDirectory + 'raw-parser.txt', visitor.logger.dump());
 
     if (throwError){
-        throw throwError;
+        errors.push(throwError);
     }
     
     let svgOutput = "";
 
-    if (errors.length === 0){
+    if (errors.length === 0 && throwError === undefined){
         const { frameComponent } = visitor.applySheetFrameComponent();
 
         // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
