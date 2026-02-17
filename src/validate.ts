@@ -11,7 +11,7 @@ import { program } from 'commander';
 
 import { readFileSync, existsSync } from 'fs';
 
-import { getSemanticTokens } from "./getSemanticTokens.js";
+import { getSemanticTokens } from "./semantic-tokens/getSemanticTokens.js";
 import { validateScript } from "./validate/validateScript.js";
 import { NodeScriptEnvironment } from "./environment.js";
 import { _id } from './render/export.js';
@@ -94,7 +94,7 @@ export default async function validate(): Promise<void> {
 
     const visitor = await validateScript(inputFilePath, scriptData, scriptOptions);
     const symbols = visitor.getSymbols().getSymbols();
-
+    
     const undefinedSymbols = [];
 
     console.log('----- symbols -----');
@@ -114,7 +114,8 @@ export default async function validate(): Promise<void> {
     });
 
     console.log('----- tokens -----');
-    const { parsedTokens} = await getSemanticTokens(scriptData, scriptOptions);
+    const { parsedTokens} = await getSemanticTokens(inputFilePath, 
+        scriptData, scriptOptions);
 
     console.log('----- dump tokens -----')
     parsedTokens.forEach(item => {

@@ -4,7 +4,6 @@ import { ParseError } from "../utils.js";
 import { SymbolValidatorResolveVisitor } from "./SymbolValidatorResolveVisitor.js";
 import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
 
-
 export async function validateScript(filePath: string, scriptData: string,
     options: ScriptOptions): Promise<SymbolValidatorVisitor> {
 
@@ -19,9 +18,12 @@ export async function validateScript(filePath: string, scriptData: string,
     const visitor = new SymbolValidatorVisitor(true, null,
         options.environment);
 
+    await visitor.resolveImportsAndLoad(filePath, scriptData);
+    
     visitor.enterFile(filePath);
 
-    visitor.onImportFile = async (visitor: SymbolValidatorVisitor, filePath: string, textData: string): Promise<ImportFileResult> => {
+    visitor.onImportFile = (visitor: SymbolValidatorVisitor, filePath: string, 
+        textData: string): ImportFileResult => {
 
         visitor.enterFile(filePath);
 
@@ -33,7 +35,7 @@ export async function validateScript(filePath: string, scriptData: string,
             const tree = parser.script();
 
             try {
-                await visitor.visitAsync(tree);
+                visitor.visit(tree);
                 visitor.exitFile();
 
             } catch (err) {
@@ -53,13 +55,17 @@ export async function validateScript(filePath: string, scriptData: string,
     };
 
     // First pass defines variables, functions
-    await visitor.visitAsync(tree);
+    visitor.visit(tree);
 
     const symbolTable = visitor.getSymbols();
     symbolTable.clearUndefined();
 
     const visitorResolver = new SymbolValidatorResolveVisitor(
         true, null, options.environment);
+
+    // Share the same loaded files
+    visitorResolver.loadedFiles = visitor.loadedFiles;
+        
     visitorResolver.enterFile(filePath);
 
     // Use the existing symbol tree as the starting point
@@ -68,7 +74,7 @@ export async function validateScript(filePath: string, scriptData: string,
     visitorResolver.onImportFile = visitor.onImportFile;
 
     // Second pass to resolve variables, functions
-    await visitorResolver.visitAsync(tree);
+    visitorResolver.visit(tree);
 
     return visitorResolver;
 }

@@ -12,6 +12,10 @@
         "variable"
     ],
     [
+        "--.std.net_sym.params",
+        "variable"
+    ],
+    [
         "--.std.supply",
         "function"
     ],
@@ -36,6 +40,10 @@
         "variable"
     ],
     [
+        "--.std.label_sym.params",
+        "variable"
+    ],
+    [
         "--.std.port",
         "function"
     ],
@@ -45,6 +53,10 @@
     ],
     [
         "--.std.port_sym.portType",
+        "variable"
+    ],
+    [
+        "--.std.port_sym.params",
         "variable"
     ],
     [
@@ -64,6 +76,10 @@
         "variable"
     ],
     [
+        "--.std.res_sym.params",
+        "variable"
+    ],
+    [
         "--.std.cap",
         "function"
     ],
@@ -77,6 +93,10 @@
     ],
     [
         "--.std.cap_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.cap_sym.params",
         "variable"
     ],
     [
@@ -96,6 +116,10 @@
         "variable"
     ],
     [
+        "--.std.ind_sym.params",
+        "variable"
+    ],
+    [
         "--.std.diode",
         "function"
     ],
@@ -105,6 +129,10 @@
     ],
     [
         "--.std.diode_sym.height",
+        "variable"
+    ],
+    [
+        "--.std.diode_sym.params",
         "variable"
     ],
     [
@@ -124,11 +152,19 @@
         "variable"
     ],
     [
+        "--.std.led_sym.params",
+        "variable"
+    ],
+    [
         "--.std.cgnd",
         "function"
     ],
     [
         "--.std.cgnd_sym.net_name",
+        "variable"
+    ],
+    [
+        "--.std.cgnd_sym.params",
         "variable"
     ],
     [
@@ -145,6 +181,10 @@
     ],
     [
         "--.std.dgnd_sym.width",
+        "variable"
+    ],
+    [
+        "--.std.dgnd_sym.params",
         "variable"
     ],
     [
@@ -313,6 +353,10 @@
     ],
     [
         "--.std.sheet_generator_sym.title_block_y2",
+        "variable"
+    ],
+    [
+        "--.std.sheet_generator_sym.params",
         "variable"
     ],
     [
@@ -544,6 +588,10 @@
         "function"
     ],
     [
+        "--.merge_point_sym.params",
+        "variable"
+    ],
+    [
         "--.led_cell",
         "function"
     ],
@@ -566,6 +614,10 @@
     [
         "--.push_button",
         "function"
+    ],
+    [
+        "--.push_button_sym.params",
+        "variable"
     ],
     [
         "--.LDO_TLV75733PDBVR",

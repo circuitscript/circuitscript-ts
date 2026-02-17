@@ -25,6 +25,11 @@ import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
 
 export class SymbolValidatorResolveVisitor extends SymbolValidatorVisitor {
 
+    // Disable cache, because everything within import should be parsed.
+    enableCacheImports = false;
+    enableCachedImportsRead = false;
+    enableCachedImportsWrite = false;
+
     /**
      * @brief Overrides variable addition to prevent new symbol creation
      * @param name Variable identifier name (unused)

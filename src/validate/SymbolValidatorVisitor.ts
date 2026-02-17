@@ -1,19 +1,20 @@
 import { TerminalNode, Token } from "antlr4ng";
-import { Assignment_exprContext, Atom_exprContext, 
-    Function_call_exprContext, ValueAtomExprContext, UnaryOperatorExprContext, 
-    MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext, 
-    DataExprContext, Function_def_exprContext, 
+import { Assignment_exprContext, CallableExprContext,
+    UnaryOperatorExprContext,
+    MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext,
+    Function_def_exprContext,
     For_exprContext,
     Import_simpleContext,
-    Import_specific_or_allContext} from "../antlr/CircuitScriptParser.js";
+    Import_specific_or_allContext,
+    Create_graphic_exprContext} from "../antlr/CircuitScriptParser.js";
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
-import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionHandling, ParseSymbolType, ValueType } from "../objects/types.js";
+import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionHandling, ParseSymbolType } from "../objects/types.js";
 import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
 import { SymbolTable } from "./SymbolTable.js";
 import { BaseVisitor } from "../BaseVisitor.js";
-import { BaseNamespace, SymbolValidatorContext } from "../globals.js";
+import { BaseNamespace, PinTypesList, SymbolValidatorContext } from "../globals.js";
 
 /**
  * @class SymbolValidatorVisitor
@@ -48,6 +49,12 @@ import { BaseNamespace, SymbolValidatorContext } from "../globals.js";
  */
 
 export class SymbolValidatorVisitor extends BaseVisitor {
+
+    // Disable cache, because everything within import should be parsed.
+    enableCacheImports = false;
+    enableCachedImportsRead = false;
+    enableCachedImportsWrite = false;
+
 
     /** @brief Symbol table maintaining all variables, functions, and undefined references */
     symbolTable = new SymbolTable();
@@ -174,8 +181,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     // AST Visitor Methods - Symbol table construction and validation
     //
     
-    private async importCommon(ctx: Import_simpleContext | Import_specific_or_allContext,
-        handling: ImportFunctionHandling): Promise<void> {
+    private importCommon(ctx: Import_simpleContext | Import_specific_or_allContext,
+        handling: ImportFunctionHandling): void {
 
         const specifiedImports: string[] = [];
 
@@ -188,7 +195,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
         const id = ctx._libraryName!.text!;
         const { pathExists, importedLibrary } =
-            await this.handleImportFile(id, handling,
+            this.handleImportFile(id, handling,
                 true, ctx, specifiedImports);
 
         if (!pathExists) {
@@ -200,17 +207,17 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         }
     }
 
-    visitImport_simple = async (ctx: Import_simpleContext): Promise<void> => {
-        await this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
+    visitImport_simple = (ctx: Import_simpleContext): void => {
+        this.importCommon(ctx, ImportFunctionHandling.AllWithNamespace);
     }
     
-    visitImport_specific_or_all = async (ctx: Import_specific_or_allContext): Promise<void> => {
+    visitImport_specific_or_all = (ctx: Import_specific_or_allContext): void => {
         let importType = ImportFunctionHandling.SpecificMergeIntoNamespace;
         if (ctx._all){
             importType = ImportFunctionHandling.AllMergeIntoNamespace
         }
 
-        await this.importCommon(ctx, importType);
+        this.importCommon(ctx, importType);
     }
 
     /**
@@ -293,67 +300,35 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     };
 
     /**
-     * @brief Visits atomic expressions and resolves symbol references
-     * @param ctx Atom expression context containing identifier
+     * @brief Visits callable expressions (variable references and function calls)
+     * @param ctx CallableExpr context from data_expr labeled alternative
      *
      * @details
-     * Handles variable and function name references by looking up symbols
-     * in the symbol table with proper scope resolution.
+     * Handles both simple variable references (`f`) and function calls (`res(10k)`)
+     * since both parse as `callable_expr` in the grammar. Resolves the symbol
+     * and visits any call parameters for scope analysis.
      */
-    visitAtom_expr = (ctx: Atom_exprContext): void => {
-        const tmpSymbol = this.handleAtomSymbol(ctx.ID(0)!);
-        this.setResult(ctx, tmpSymbol);
-    };
+    visitCallableExpr = (ctx: CallableExprContext): void => {
+        const innerCtx = ctx.callable_expr();
 
-    /**
-     * @brief Visits function call expressions and validates function symbols
-     * @param ctx Function call expression context
-     *
-     * @details
-     * Validates function references and processes function parameters.
-     * Ensures that called functions exist in the symbol table and validates
-     * parameter expressions.
-     *
-     * Example: `print("hello")` or `res(10k)`
-     */
-    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
-        this.handleAtomSymbol(ctx.ID()!);
-
-        if (ctx.trailer_expr().length > 0) {
-            ctx.trailer_expr().forEach(item => {
-                if (item.LParen() && item.RParen()) {
-                    const params = item.parameters();
+        const innerCtxID = innerCtx.ID();
+        if (PinTypesList.indexOf(innerCtxID.getText()) !== -1 && innerCtx.trailer().length === 0) {
+            // Ignore pin types constants.
+            return;
+        } else {
+            const tmpSymbol = this.handleAtomSymbol(innerCtxID);
+            innerCtx.trailer().forEach(trailer => {
+                if (trailer.LParen() && trailer.RParen()) {
+                    
+                    const params = trailer.parameters();
                     if (params) {
                         this.visit(params);
                     }
                 }
             });
+    
+            this.setResult(ctx, tmpSymbol);
         }
-    };
-
-    /**
-     * @brief Visits value-atom expressions and delegates to appropriate handlers
-     * @param ctx ValueAtom expression context
-     *
-     * @details
-     * Handles expressions that can be either literal values or atom references.
-     * Delegates to the appropriate visitor method based on the expression type.
-     */
-    visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
-        let value: ComplexType | null = null;
-        const ctxValueExpr = ctx.value_expr();
-        const cxtAtomExpr = ctx.atom_expr();
-
-        if (ctxValueExpr) {
-            this.visit(ctxValueExpr);
-            value = this.getResult(ctxValueExpr) as ValueType;
-
-        } else if (cxtAtomExpr) {
-            this.visit(cxtAtomExpr);
-            value = this.getResult(cxtAtomExpr);
-        }
-
-        this.setResult(ctx, value);
     };
 
     /**
@@ -405,18 +380,6 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): void => {
         this.visit(ctx.data_expr(0)!);
         this.visit(ctx.data_expr(1)!);
-    };
-
-    /**
-     * @brief Visits data expressions (base case for expression hierarchy)
-     * @param ctx Data expression context
-     *
-     * @details
-     * Base visitor method for data expressions. Currently a no-op as
-     * specific expression types are handled by their respective visitors.
-     */
-    visitDataExpr = (ctx: DataExprContext): void => {
-        return;
     };
 
     /**
@@ -486,6 +449,13 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         ctx.ID().forEach(item => {
             this.addSymbolVariable(item.getSymbol(), item.getText(), null);
         });
+    }
+
+    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
+        const ctxID = ctx.ID();
+        if (ctxID){
+            this.addSymbolVariable(ctxID.getSymbol(), ctxID.getText(), null);
+        }
     }
 
     //

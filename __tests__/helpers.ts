@@ -100,8 +100,8 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
     }
 }
 
-export function testValidateScript(scriptData: string): SymbolValidatorVisitor {
-    const scriptPath = "./examples/";
+export async function testValidateScript(scriptData: string): Promise<SymbolValidatorVisitor> {
+    const scriptPath = "./__tests__/testData/validationData/";
     const environment = new NodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(environment);
 
@@ -253,7 +253,7 @@ export function expectJsonOutput(inputString: string, targetPath: string): void 
 
     if (JSON.stringify (expectedJson) !== inputString){
         console.log('inputString', inputString);
-        console.log('expected', expectedJson);
+        console.log('expected', JSON.stringify(expectedJson));
     }
 
     expect(JSON.stringify(expectedJson)).toEqual(inputString);

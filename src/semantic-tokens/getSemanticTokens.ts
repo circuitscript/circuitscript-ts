@@ -4,7 +4,8 @@ import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTo
 import { ParseError } from "../utils.js";
 
 
-export async function getSemanticTokens(scriptData: string, options: ScriptOptions): Promise<{ visitor: SemanticTokensVisitor; parsedTokens: IParsedToken[]; }> {
+export async function getSemanticTokens(
+    filePath: string, scriptData: string, options: ScriptOptions): Promise<{ visitor: SemanticTokensVisitor; parsedTokens: IParsedToken[]; }> {
 
     const { parser, lexer, tokens } = prepareFile(scriptData);
     const tree = parser.script();
@@ -43,7 +44,10 @@ export async function getSemanticTokens(scriptData: string, options: ScriptOptio
         };
     };
 
-    await visitor.visitAsync(tree);
+    // Pre-load all imported files so they are available during sync visiting
+    await visitor.resolveImportsAndLoad(filePath, scriptData);
+
+    visitor.visit(tree);
 
     const semanticTokens = visitor.getTokens();
 

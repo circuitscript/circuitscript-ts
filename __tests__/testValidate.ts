@@ -7,7 +7,7 @@ const mainPath = '__tests__/testData/validationData/';
  * Validation is used mainly in the IDE, for syntax highlighting and 
  * semantic tokens.
  */
-describe.skip('test validation', () => {
+describe('test validation', () => {
 
     test.each([
         ["some variables", 'script1'],
@@ -19,6 +19,8 @@ describe.skip('test validation', () => {
         // parsed result!
 
         const scriptData = readFileSync(`${mainPath}${scriptPath}.cst`, { encoding: 'utf8' });
+
+        // Import caching is disabled.
         const visitor = await testValidateScript(scriptData);
 
         const symbols = visitor.symbolTable.getSymbols();
@@ -27,6 +29,10 @@ describe.skip('test validation', () => {
         for (const [key, value] of symbols) {
             result.push([key, value.type]);
         }
+
+        // const sorted = result.sort((a, b) => {
+        //     return a[0].localeCompare(b[0]);
+        // });
 
         const jsonString = JSON.stringify(result);
 
