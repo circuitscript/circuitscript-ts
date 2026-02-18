@@ -1,7 +1,7 @@
 # Check refdes that is generated correctly at the top-level 
 # within loop structures and functions.
 
-from std import *
+from "std" import *
 
 v5 = supply("5V")
 gnd = dgnd()

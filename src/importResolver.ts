@@ -1,9 +1,9 @@
 import { NodeScriptEnvironment } from './environment.js';
 
-// Matches: import <ID>  (import_simple)
-const IMPORT_SIMPLE_RE = /^import\s+([A-Za-z_][A-Za-z0-9_]*)/;
-// Matches: from <ID> import ...  (import_specific_or_all)
-const IMPORT_FROM_RE = /^from\s+([A-Za-z_][A-Za-z0-9_]*)\s+import\b/;
+// Matches: import "<name>"  (import_simple)
+const IMPORT_SIMPLE_RE = /^import\s+"([^"]+)"/;
+// Matches: from "<name>" import ...  (import_specific_or_all)
+const IMPORT_FROM_RE = /^from\s+"([^"]*)"\s+import\b/;
 
 /**
  * Extracts the import library names from the leading import statements in a .cst file's content.

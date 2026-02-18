@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 
 def my_circuit():
     wire down 100

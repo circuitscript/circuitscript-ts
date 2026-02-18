@@ -175,7 +175,7 @@ describe('Cache storage', () => {
 describe('Cache integration: import with cache', () => {
     const libPath = LIB_PATH;
     const scriptPath = '__tests__/testData/cacheData/main.cst';
-    const importScript = `import lib1\n\nU1 = my_ic()\n`;
+    const importScript = `import "lib1"\n\nU1 = my_ic()\n`;
 
     beforeEach(() => {
         removeCacheDir(libPath);
@@ -302,7 +302,7 @@ describe('Refdes annotation: cache consistency', () => {
     });
 
     test('annotation output is identical between fresh parse and cache hit', async () => {
-        const script = `import lib1\nadd lib1.my_ic()\nadd lib1.my_resistor()\n`;
+        const script = `import "lib1"\nadd lib1.my_ic()\nadd lib1.my_resistor()\n`;
 
         // First run — full parse, populates cache
         const { hasError: err1, visitor: v1, tree: tree1, tokens: tok1 } =

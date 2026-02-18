@@ -291,7 +291,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             specificImports.push(...tmpSpecificImports);
         }
 
-        const id = ctx._libraryName!.text!;
+        const id = ctx._libraryName!.text!.slice(1, -1);
         const importedFile = this.handleImportFile(id, handling, true, ctx, specificImports);
 
         const ctxImportAnnotation = ctx.annotation_comment_expr();

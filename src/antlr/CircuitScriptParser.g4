@@ -156,8 +156,8 @@ property_value_expr: properties_block                 # nested_properties
 wire_expr: Wire (ID data_expr?)+;
 point_expr: Point data_expr;
 
-import_expr: Import libraryName=ID  annotation_comment_expr?                                                          # import_simple
-      | From libraryName=ID Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) annotation_comment_expr?   # import_specific_or_all
+import_expr: Import libraryName=STRING_VALUE  annotation_comment_expr?                                                          # import_simple
+      | From libraryName=STRING_VALUE Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) annotation_comment_expr?   # import_specific_or_all
       ;
       
 frame_expr: (Frame | Sheet) Colon expressions_block;

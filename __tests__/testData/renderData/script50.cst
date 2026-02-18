@@ -1,5 +1,5 @@
 # Test refdes generation is correct for at blocks.
-from std import *
+from "std" import *
 
 v5 = supply("5V")
 gnd = dgnd()

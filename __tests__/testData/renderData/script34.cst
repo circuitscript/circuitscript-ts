@@ -3,7 +3,7 @@
 # replace the previously defined setEdge(node1, node2). The final result should
 # be two edges and not one edge.
 
-from std import *
+from "std" import *
 
 v3v3 = supply("3V3")
 gnd = dgnd()

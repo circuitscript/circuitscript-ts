@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 
 width = 100
 height = 100

@@ -139,7 +139,7 @@ describe('test cli program', () => {
     });
 
     test('test CLI direct text input and output', async () => {
-        const textInput = "from std import *\n\nv5 = supply(\"5V\")\ngnd = dgnd()\nat v5\nwire down 100\nadd res(10k)\nwire down 100\nto gnd";
+        const textInput = `from "std" import *\n\nv5 = supply(\"5V\")\ngnd = dgnd()\nat v5\nwire down 100\nadd res(10k)\nwire down 100\nto gnd`;
         const result = execSync(baseCommand + ` -i '${textInput}'`).toString();
 
         const expectedSvgOutput = await readFile(`${mainPath}/textInput.expected.svg`);

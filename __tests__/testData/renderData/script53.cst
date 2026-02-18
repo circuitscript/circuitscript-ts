@@ -1,8 +1,8 @@
 # Test different import syntax
 
-import import1
-from import2 import tmp_component
-from import4 import *
+import "import1"
+from "import2" import tmp_component
+from "import4" import *
 
 tmp = import1.my_component()
 tmp2 = tmp_component()

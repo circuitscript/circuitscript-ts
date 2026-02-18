@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 
 document.bom.columns = ["refdes", "value", "lcsc"]
 document.bom.group_by = ["lcsc"]

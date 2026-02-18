@@ -193,7 +193,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             specifiedImports.push(...tmpImports);
         }
 
-        const id = ctx._libraryName!.text!;
+        const id = ctx._libraryName!.text!.slice(1, -1);
         const { pathExists, importedLibrary } =
             this.handleImportFile(id, handling,
                 true, ctx, specifiedImports);

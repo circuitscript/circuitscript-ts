@@ -1,6 +1,6 @@
 # Test multi unit component definition
 
-from std import *
+from "std" import *
 
 v5 = supply("5V")
 gnd = dgnd()

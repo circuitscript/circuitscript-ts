@@ -1,7 +1,7 @@
 # Test multiple levels of branches and also ensures that
 # current active component is not changed by branching
 
-from std import * 
+from "std" import * 
 
 usb1 = create component:
     pins: 6

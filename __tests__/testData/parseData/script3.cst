@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 
 at label("hello")
 wire right 40 

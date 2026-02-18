@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 
 gnd = dgnd()
 v3v3 = supply("3V3")

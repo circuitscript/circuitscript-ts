@@ -1,4 +1,4 @@
-from import3 import yet_another_component
+from "import3" import yet_another_component
 
 def my_other_component():
     return create component:

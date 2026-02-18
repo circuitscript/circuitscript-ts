@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 
 def my_shared_lib_circuit(gnd):
     wire down 100

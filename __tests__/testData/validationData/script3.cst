@@ -1,4 +1,4 @@
-from std import *
+from "std" import *
 document.sheet_type = sheet_A4()
 
 v3v3 = supply("3V3")

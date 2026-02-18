@@ -1,7 +1,7 @@
 # Test net graphical properties (color, lineWidth, highlight)
 # Multiple references to the same net name should modify the same net properties
 
-from std import *
+from "std" import *
 v3v = supply("3V")
 v5 = supply("5V")
 

@@ -1,6 +1,6 @@
 # Checks that when pin is defined but not in the arrange prop, then the pin will
 # not be displayed. When the same
-import lib
+import "lib"
 
 v3v3 = supply("3V3")
 gnd = dgnd()

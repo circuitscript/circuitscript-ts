@@ -2487,7 +2487,7 @@ export class CircuitScriptParser extends antlr.Parser {
                 this.state = 505;
                 this.match(CircuitScriptParser.Import);
                 this.state = 506;
-                (localContext as Import_simpleContext)._libraryName = this.match(CircuitScriptParser.ID);
+                (localContext as Import_simpleContext)._libraryName = this.match(CircuitScriptParser.STRING_VALUE);
                 this.state = 508;
                 this.errorHandler.sync(this);
                 switch (this.interpreter.adaptivePredict(this.tokenStream, 52, this.context) ) {
@@ -2507,7 +2507,7 @@ export class CircuitScriptParser extends antlr.Parser {
                 this.state = 510;
                 this.match(CircuitScriptParser.From);
                 this.state = 511;
-                (localContext as Import_specific_or_allContext)._libraryName = this.match(CircuitScriptParser.ID);
+                (localContext as Import_specific_or_allContext)._libraryName = this.match(CircuitScriptParser.STRING_VALUE);
                 this.state = 512;
                 this.match(CircuitScriptParser.Import);
                 this.state = 522;
@@ -3432,9 +3432,9 @@ export class CircuitScriptParser extends antlr.Parser {
         69,0,0,495,497,3,42,21,0,496,495,1,0,0,0,496,497,1,0,0,0,497,499,
         1,0,0,0,498,494,1,0,0,0,499,500,1,0,0,0,500,498,1,0,0,0,500,501,
         1,0,0,0,501,83,1,0,0,0,502,503,5,14,0,0,503,504,3,42,21,0,504,85,
-        1,0,0,0,505,506,5,19,0,0,506,508,5,69,0,0,507,509,3,112,56,0,508,
+        1,0,0,0,505,506,5,19,0,0,506,508,5,68,0,0,507,509,3,112,56,0,508,
         507,1,0,0,0,508,509,1,0,0,0,509,528,1,0,0,0,510,511,5,20,0,0,511,
-        512,5,69,0,0,512,522,5,19,0,0,513,523,5,49,0,0,514,519,5,69,0,0,
+        512,5,68,0,0,512,522,5,19,0,0,513,523,5,49,0,0,514,519,5,69,0,0,
         515,516,5,32,0,0,516,518,5,69,0,0,517,515,1,0,0,0,518,521,1,0,0,
         0,519,517,1,0,0,0,519,520,1,0,0,0,520,523,1,0,0,0,521,519,1,0,0,
         0,522,513,1,0,0,0,522,514,1,0,0,0,523,525,1,0,0,0,524,526,3,112,
@@ -5299,6 +5299,15 @@ export class Import_specific_or_allContext extends Import_exprContext {
     public Import(): antlr.TerminalNode {
         return this.getToken(CircuitScriptParser.Import, 0)!;
     }
+    public STRING_VALUE(): antlr.TerminalNode {
+        return this.getToken(CircuitScriptParser.STRING_VALUE, 0)!;
+    }
+    public Multiply(): antlr.TerminalNode | null {
+        return this.getToken(CircuitScriptParser.Multiply, 0);
+    }
+    public annotation_comment_expr(): Annotation_comment_exprContext | null {
+        return this.getRuleContext(0, Annotation_comment_exprContext);
+    }
     public ID(): antlr.TerminalNode[];
     public ID(i: number): antlr.TerminalNode | null;
     public ID(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
@@ -5307,12 +5316,6 @@ export class Import_specific_or_allContext extends Import_exprContext {
     	} else {
     		return this.getToken(CircuitScriptParser.ID, i);
     	}
-    }
-    public Multiply(): antlr.TerminalNode | null {
-        return this.getToken(CircuitScriptParser.Multiply, 0);
-    }
-    public annotation_comment_expr(): Annotation_comment_exprContext | null {
-        return this.getRuleContext(0, Annotation_comment_exprContext);
     }
     public Comma(): antlr.TerminalNode[];
     public Comma(i: number): antlr.TerminalNode | null;
@@ -5340,8 +5343,8 @@ export class Import_simpleContext extends Import_exprContext {
     public Import(): antlr.TerminalNode {
         return this.getToken(CircuitScriptParser.Import, 0)!;
     }
-    public ID(): antlr.TerminalNode {
-        return this.getToken(CircuitScriptParser.ID, 0)!;
+    public STRING_VALUE(): antlr.TerminalNode {
+        return this.getToken(CircuitScriptParser.STRING_VALUE, 0)!;
     }
     public annotation_comment_expr(): Annotation_comment_exprContext | null {
         return this.getRuleContext(0, Annotation_comment_exprContext);

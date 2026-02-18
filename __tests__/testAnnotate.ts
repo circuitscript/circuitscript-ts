@@ -66,13 +66,13 @@ async function runScript(script: string, scriptPath: string): Promise<{
 
 describe('Refdes annotation: output format', () => {
     test('single add expression generates correct #= refdes comment', async () => {
-        const script = `import lib1\nadd lib1.my_ic()\n`;
+        const script = `import "lib1"\nadd lib1.my_ic()\n`;
         const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH);
         expect(hasError).toBe(false);
 
         const componentLinks = visitor.getComponentCtxLinks();
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens, componentLinks);
-        await annotationVisitor.visit(tree);
+        annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
 
         // IC type maps to prefix "U", first instance is U1
@@ -81,13 +81,13 @@ describe('Refdes annotation: output format', () => {
     });
 
     test('multiple add expressions receive sequential refdes annotations', async () => {
-        const script = `import lib1\nadd lib1.my_ic()\nadd lib1.my_resistor()\n`;
+        const script = `import "lib1"\nadd lib1.my_ic()\nadd lib1.my_resistor()\n`;
         const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH);
         expect(hasError).toBe(false);
 
         const componentLinks = visitor.getComponentCtxLinks();
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens, componentLinks);
-        await annotationVisitor.visit(tree);
+        annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
 
         // IC gets U prefix, resistor gets R prefix
@@ -98,13 +98,13 @@ describe('Refdes annotation: output format', () => {
     });
 
     test('annotation format matches the #= <refdes> pattern', async () => {
-        const script = `import lib1\nadd lib1.my_resistor()\n`;
+        const script = `import "lib1"\nadd lib1.my_resistor()\n`;
         const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH);
         expect(hasError).toBe(false);
 
         const componentLinks = visitor.getComponentCtxLinks();
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens, componentLinks);
-        await annotationVisitor.visit(tree);
+        annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
 
         // Annotation format must be " #= <PREFIX><number>"
@@ -114,13 +114,13 @@ describe('Refdes annotation: output format', () => {
     });
 
     test('component inside a loop receives placeholder refdes annotation', async () => {
-        const script = `import lib1\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+        const script = `import "lib1"\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
         const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH);
         expect(hasError).toBe(false);
 
         const componentLinks = visitor.getComponentCtxLinks();
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens, componentLinks);
-        await annotationVisitor.visit(tree);
+        annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
 
         // Components in loops use placeholder format: #= R1_ (trailing underscore)
@@ -138,7 +138,7 @@ describe('Refdes annotation: output format', () => {
 
         const componentLinks = visitor.getComponentCtxLinks();
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens, componentLinks);
-        await annotationVisitor.visit(tree);
+        annotationVisitor.visit(tree);
 
         // No component contexts means no modifications and no annotation comments
         expect(annotationVisitor.getModifications().size).toBe(0);
