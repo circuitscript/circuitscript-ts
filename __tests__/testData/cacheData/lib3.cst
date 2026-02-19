@@ -1,0 +1,4 @@
+def my_comp2():
+    return create component:
+        type: "ic"
+        pins: 4

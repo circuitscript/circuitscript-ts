@@ -19,6 +19,11 @@ import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor
 const LIB_PATH = '__tests__/testData/cacheData/lib1.cst';
 const LIB_CONTENT = readFileSync(LIB_PATH, 'utf8');
 
+const LIB2_PATH = '__tests__/testData/cacheData/lib2.cst';
+const LIB2_CONTENT = readFileSync(LIB2_PATH, 'utf8');
+const LIB3_PATH = '__tests__/testData/cacheData/lib3.cst';
+const LIB3_CONTENT = readFileSync(LIB3_PATH, 'utf8');
+
 function getCacheDir(libPath: string): string {
     return join(dirname(libPath), '.cst.cache');
 }
@@ -328,5 +333,158 @@ describe('Refdes annotation: cache consistency', () => {
         expect(output1).toContain('#= R1');
         expect(output2).toContain('#= R1');
         expect(output1).toEqual(output2);
+    });
+});
+
+describe('Cache integration: transitive imports (lib2 → lib3)', () => {
+    const scriptPath = '__tests__/testData/cacheData/main.cst';
+    const importScript = `import "lib2"\n\nU1 = lib2.my_comp1()\n`;
+
+    function removeBothCacheDirs(): void {
+        removeCacheDir(LIB2_PATH);
+        removeCacheDir(LIB3_PATH);
+    }
+
+    beforeEach(() => {
+        removeBothCacheDirs();
+    });
+
+    afterEach(() => {
+        removeBothCacheDirs();
+    });
+
+    test('first run creates cache files for lib2 and lib3', async () => {
+        const cachePath2 = getCachePath(LIB2_PATH);
+        const cachePath3 = getCachePath(LIB3_PATH);
+
+        expect(existsSync(cachePath2)).toBe(false);
+        expect(existsSync(cachePath3)).toBe(false);
+
+        const { hasError } = await runImportScript(importScript, scriptPath);
+        expect(hasError).toBe(false);
+
+        expect(existsSync(cachePath2)).toBe(true);
+        expect(existsSync(cachePath3)).toBe(true);
+    });
+
+    test('lib2 cache IR contains my_comp1; lib3 cache IR contains my_comp2', async () => {
+        const { hasError } = await runImportScript(importScript, scriptPath);
+        expect(hasError).toBe(false);
+
+        const hash2 = computeContentHash(LIB2_CONTENT);
+        const hash3 = computeContentHash(LIB3_CONTENT);
+
+        const ir2 = readCache(LIB2_PATH, hash2);
+        const ir3 = readCache(LIB3_PATH, hash3);
+
+        expect(ir2).not.toBeNull();
+        expect(ir3).not.toBeNull();
+
+        const funcNames2 = ir2!.functions.map(f => f.name);
+        const funcNames3 = ir3!.functions.map(f => f.name);
+
+        expect(funcNames2).toContain('my_comp1');
+        expect(funcNames3).toContain('my_comp2');
+    });
+
+    test('cache hit: second run uses cache and produces same scope as first run', async () => {
+        // First run — full parse, populates both caches
+        const { hasError: err1, visitor: v1 } = await runImportScript(importScript, scriptPath);
+        expect(err1).toBe(false);
+
+        // Second run — should hit cache for lib2 and lib3
+        const { hasError: err2, visitor: v2 } = await runImportScript(importScript, scriptPath);
+        expect(err2).toBe(false);
+
+        const lib1 = v1.getScope().libraries.get('lib2');
+        const lib2 = v2.getScope().libraries.get('lib2');
+
+        expect(lib1).toBeDefined();
+        expect(lib2).toBeDefined();
+
+        const funcNames1 = [...lib1!.context.scope.functions.keys()].sort();
+        const funcNames2 = [...lib2!.context.scope.functions.keys()].sort();
+        expect(funcNames1).toEqual(funcNames2);
+    });
+
+    test('transitive function my_comp1 resolves correctly after cache hit', async () => {
+        // First run — parse and cache
+        const { hasError: err1, visitor: v1 } = await runImportScript(importScript, scriptPath);
+        expect(err1).toBe(false);
+
+        const lib1 = v1.getScope().libraries.get('lib2');
+        expect(lib1).toBeDefined();
+        expect([...lib1!.context.scope.functions.keys()]).toContain('--.lib2.my_comp1');
+
+        // Second run — cache hit
+        const { hasError: err2, visitor: v2 } = await runImportScript(importScript, scriptPath);
+        expect(err2).toBe(false);
+
+        const lib2 = v2.getScope().libraries.get('lib2');
+        expect(lib2).toBeDefined();
+        expect([...lib2!.context.scope.functions.keys()]).toContain('--.lib2.my_comp1');
+    });
+
+    test('cache invalidation: modified lib3 causes cache miss on lib3', async () => {
+        // Populate lib3 cache
+        await runImportScript(importScript, scriptPath);
+
+        const hash3 = computeContentHash(LIB3_CONTENT);
+        expect(existsSync(getCachePath(LIB3_PATH))).toBe(true);
+
+        // Simulate lib3 content change — different hash won't match stored hash
+        const modifiedContent = LIB3_CONTENT + '\n# modified';
+        const newHash = computeContentHash(modifiedContent);
+        expect(newHash).not.toEqual(hash3);
+
+        const result = readCache(LIB3_PATH, newHash);
+        expect(result).toBeNull();
+    });
+
+    test('cache corruption in lib3 falls back to normal parse', async () => {
+        const cachePath3 = getCachePath(LIB3_PATH);
+        const cacheDir3 = dirname(cachePath3);
+
+        // Pre-create a corrupt lib3 cache
+        if (!existsSync(cacheDir3)) {
+            mkdirSync(cacheDir3, { recursive: true });
+        }
+        writeFileSync(cachePath3, '{corrupted: json!!!', 'utf8');
+        expect(existsSync(cachePath3)).toBe(true);
+
+        // Should succeed — corrupted lib3 cache causes fresh parse of lib3
+        const { hasError } = await runImportScript(importScript, scriptPath);
+        expect(hasError).toBe(false);
+    });
+
+    test('serialize/deserialize round-trip: lib2 and lib3 function names match across runs', async () => {
+        // First run — parse and cache both libs
+        const { hasError: err1, visitor: v1 } = await runImportScript(importScript, scriptPath);
+        expect(err1).toBe(false);
+
+        const hash2 = computeContentHash(LIB2_CONTENT);
+        const hash3 = computeContentHash(LIB3_CONTENT);
+
+        const ir2 = readCache(LIB2_PATH, hash2);
+        const ir3 = readCache(LIB3_PATH, hash3);
+        expect(ir2).not.toBeNull();
+        expect(ir3).not.toBeNull();
+        expect(ir2!.functions.length).toBeGreaterThan(0);
+        expect(ir3!.functions.length).toBeGreaterThan(0);
+
+        // Second run — both libs loaded from cache
+        const { hasError: err2, visitor: v2 } = await runImportScript(importScript, scriptPath);
+        expect(err2).toBe(false);
+
+        const lib1 = v1.getScope().libraries.get('lib2');
+        const lib2 = v2.getScope().libraries.get('lib2');
+
+        const funcNames1 = [...lib1!.context.scope.functions.keys()].sort();
+        const funcNames2 = [...lib2!.context.scope.functions.keys()].sort();
+        expect(funcNames2).toEqual(funcNames1);
+
+        // Cached IRs must contain the expected function names
+        expect(ir2!.functions.map(f => f.name)).toContain('my_comp1');
+        expect(ir3!.functions.map(f => f.name)).toContain('my_comp2');
     });
 });

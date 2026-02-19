@@ -1,0 +1,4 @@
+from "lib3" import my_comp2
+
+def my_comp1():
+    return my_comp2()

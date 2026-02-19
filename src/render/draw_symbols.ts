@@ -227,15 +227,19 @@ export abstract class SymbolGraphic {
 
                 textColor = "#333",
             } = tmpLabel.style ?? {};
-
-            const labelAngle = tmpLabelAngle.toNumber();
-
+  
             let anchorStyle = 'start';
             let dominantBaseline = 'auto';
-
+            
             let useAnchor = anchor;
             let useDominantBaseline = vanchor;
-            const isRotation180 = Math.abs(this.angle) === 180;
+
+            const labelAngle = tmpLabelAngle.toNumber();
+            const finalLabelAngle = labelAngle + this.angle;
+
+            // If this is true, it means the text is upside-down. For 
+            // readability, flip it around again.
+            const isRotation180 = Math.abs(finalLabelAngle) === 180;
 
             if (isRotation180) {
                 // Special case to flip the text instead of rotating
@@ -249,8 +253,8 @@ export abstract class SymbolGraphic {
              *    Vertical        | if 1, flip baseline   | if 1, flip anchor
              */
 
-            const isHorizontalLabel = labelAngle === 0 || labelAngle === 180;
-            const isVerticalLabel = labelAngle === 90 || labelAngle === -90;
+            const isHorizontalLabel = finalLabelAngle === 0 || finalLabelAngle === 180;
+            const isVerticalLabel = finalLabelAngle === 90 || finalLabelAngle === -90;
 
             if (useAnchor === HorizontalAlign.Middle) {
                 anchorStyle = HorizontalAlignProp.Middle;
@@ -298,15 +302,9 @@ export abstract class SymbolGraphic {
             let translateX: NumericValue, translateY: NumericValue;
             let useRotateAngle = 0;
 
-            if (isRotation180){
-                translateX = position[0].neg();
-                translateY = position[1].neg();
-                useRotateAngle = 0;
-            } else {
-                translateX = position[0];
-                translateY = position[1];
-                useRotateAngle = this.angle;
-            }
+            translateX = position[0];
+            translateY = position[1];
+            useRotateAngle = this.angle;
 
             translateX = roundValue(translateX);
             translateY = roundValue(translateY);
@@ -432,6 +430,11 @@ export abstract class SymbolGraphic {
                 .rotate(useRotateAngle, 
                     -translateX.toNumber(), -translateY.toNumber());
 
+            let useLabelAngle = labelAngle;
+            if (isRotation180) {
+                useLabelAngle = (labelAngle + 180) % 360;
+            }
+
             textContainer.text(tmpLabel.text)
                 .fill(textColor)
                 .font({
@@ -442,7 +445,7 @@ export abstract class SymbolGraphic {
                     weight: fontWeight,
                 })
                 .attr("xml:space", "preserve")
-                .rotate(labelAngle, 0, 0);
+                .rotate(useLabelAngle, 0, 0);
 
             const { a, b, c, d, e, f } = textContainer.matrix();
             const newMatrix = {
