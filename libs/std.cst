@@ -55,8 +55,8 @@ def res(value):
         pins: 2
         display: create graphic (params):
             crect: 0, 0, width, height
-            hpin: 1, -width/2 - 30, 0, 30
-            hpin: 2, width/2 + 30, 0, -30
+            hpin: 1, -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, width/2 + 30, 0, -30, display_id=false
             label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left"
             label: params.value, 0, 0, fontSize=30, anchor="middle", vanchor="middle"
         type: "res"
@@ -76,8 +76,8 @@ def cap(value):
             lineWidth: 13
             hline: -width/2, 20, width
             hline: -width/2, -20, width
-            vpin: 1, 0, -100, 80
-            vpin: 2, 0, 100, -80
+            vpin: 1, 0, -100, 80, display_id=false
+            vpin: 2, 0, 100, -80, display_id=false
             label: params.refdes, 80, -30, fontSize=50, anchor="left", vanchor="middle"
             label: params.value, 80, 30, fontSize=50, anchor = "left", vanchor="middle"
         type: "cap"
@@ -98,8 +98,8 @@ def ind(value):
             arc: -25, 0, 25, 180, 360
             arc: 25, 0, 25, 180, 360
             arc: 75, 0, 25, 180, 360
-            hpin: 1, -width/2 - 100, 0, 100
-            hpin: 2, width/2 + 100, 0, -100
+            hpin: 1, -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, width/2 + 100, 0, -100, display_id=false
             label: (params.refdes, -width/2, -height/2 - 25 , fontSize=50, anchor="left")
             label: (params.value, 0, 50, fontSize=50, anchor="middle", vanchor="middle")
         params:

@@ -7,7 +7,8 @@
 
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { ImportedLibrary } from '../objects/types.js';
-import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef, SerializedExpression } from './types.js';
+import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef, 
+    SerializedExpression } from './types.js';
 import { CircuitScriptLexer } from '../antlr/CircuitScriptLexer.js';
 import { generateModifiedSourceText } from '../annotate/utils.js';
 
@@ -154,16 +155,16 @@ export function serializeLibraryScope(
         flushGroup();
     }
 
-    const referencedLibraryFilePaths: string[] = [];
-    importedLib.context.scope.libraries.forEach((lib) => {
-        referencedLibraryFilePaths.push(lib.libraryFilePath);
-    });
+    const imports: SerializedExpression[] = [];
+    for (const [libName, lib] of importedLib.context.scope.libraries) {
+        imports.push(lib.importStatement);
+    }
 
     return {
         schemaVersion: CACHE_SCHEMA_VERSION,
         contentHash,
         libraryFilePath: importedLib.libraryFilePath,
-        referencedLibraryFilePaths,
+        imports,
         functions,
         topLevel: topLevelExpressions,
     };

@@ -204,7 +204,15 @@ export class NodeScriptEnvironment {
     }
 
     getDirPath(filePath: string): string {
-        return path.dirname(path.resolve(filePath));
+        const resolved = path.resolve(filePath);
+        try {
+            if (fs.statSync(resolved).isDirectory()) {
+                return resolved;
+            }
+        } catch {
+            // Path doesn't exist; fall through to dirname
+        }
+        return path.dirname(resolved);
     }
 
     setCurrentFile(filePath: string): string {

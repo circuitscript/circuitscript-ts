@@ -112,6 +112,6 @@ NUMERIC_VALUE: (DecimalIntegerLiteral | DecimalLiteral) [GMKkmunpf];
 
 PERCENTAGE_VALUE: [1-9][0-9]* '%';
 
-STRING_VALUE: '"' (('\\' [btnfr"'\\]) | ~["\\])* '"';
+STRING_VALUE: '"' (('\\' .) | ~["\\])* '"';
 
 ID: [_a-zA-Z][_a-zA-Z0-9]*;

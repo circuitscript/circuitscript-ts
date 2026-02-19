@@ -35,7 +35,14 @@ async function resolveImportPath(
     name: string,
     environment: NodeScriptEnvironment
 ): Promise<string | null> {
-    const absPath = environment.getAbsPathRelativeToCurrentFolder(name + '.cst');
+
+    // Accept both with or without the .cst ending
+    let useName = name;
+    if (!name.endsWith('.cst')){
+        useName = name + '.cst';
+    }
+
+    const absPath = environment.getAbsPathRelativeToCurrentFolder(useName);
     const executionDirectory = environment.getCurrentDirectory();
     const relPath = environment.relative(executionDirectory, absPath)
 
@@ -43,7 +50,7 @@ async function resolveImportPath(
         return relPath;
     }
 
-    const libPath = environment.getRelativeToDefaultLibs(name + '.cst');
+    const libPath = environment.getRelativeToDefaultLibs(useName);
     if (await environment.exists(libPath)) {
         return libPath;
     }
@@ -64,7 +71,7 @@ export async function resolveAllImportFilepaths(
     const result: string[] = [];
 
     async function walk(filePath: string | null, passedInScriptData?: string | null): Promise<void> {
-        if (filePath !== undefined && filePath !== null){
+        if (filePath !== undefined && filePath !== null && filePath !== ''){
             if (visited.has(filePath)) return;
 
             visited.add(filePath);

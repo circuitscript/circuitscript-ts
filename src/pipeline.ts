@@ -109,12 +109,24 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
         visitor.enterFile(filePath);
 
-        const { hasError, hasParseError, throwError, tree, tokens } =
+        // Clear the errors array.
+        errors.splice(0, errors.length);
+
+        const result =
             parseFileWithVisitor(visitor, fileData, {
                 enableLexerDiagnostics: lexerDiagnostics,
                 enableLexerVerbose: lexerVerbose,
                 lineOffset: fileLineOffset,
             });
+
+        const { throwError, tree, tokens } = result;
+        let { hasError, hasParseError } = result;
+
+        if (errors.length > 0) {
+            // Some parsing errors...
+            hasError = true;
+            hasParseError = true;
+        }
 
         visitor.exitFile();
 
@@ -147,7 +159,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
     }
 
     await visitor.resolveImportsAndLoad(inputPath, scriptData);
-    
+
     const { tree, parser, tokens, lexer,
         parserTimeTaken,
         lexerTimeTaken, throwError } = await parseFileWithVisitor(visitor, scriptData, {
@@ -156,7 +168,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             enableLexerTokenStream: lexerTokens !== false || lexerMapping !== false,
         });
 
-    printWarnings(visitor.getWarnings());
+        printWarnings(visitor.getWarnings());
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);

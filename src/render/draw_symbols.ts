@@ -835,7 +835,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
         const offset1 = 15;
         const offset2 = 15;
 
-        let pinNameOffsetX = milsToMM(offset1);
+        let pinNameOffsetX = milsToMM(0);
+        let pinNameOffsetY = milsToMM(0);
 
         let pinIdOffsetX = numeric(0);
         let pinIdAlignment = HorizontalAlign.Left;
@@ -845,6 +846,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         const angleValue = angle.toNumber();
 
+        let usePinIdAngle = 0;
+
         switch (angleValue) {
             case 0:
                 pinNameAlignment = HorizontalAlign.Left;
@@ -852,20 +855,36 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 pinIdAlignment = HorizontalAlign.Right;
                 pinIdOffsetX = milsToMM(-offset2);
                 break;
+
             case 90:
+                pinNameAlignment = HorizontalAlign.Right;
+                pinNameOffsetX = milsToMM(0);
+                pinNameOffsetY = milsToMM(offset1);
+
+                pinIdAlignment = HorizontalAlign.Left;
+                pinIdOffsetX = milsToMM(-offset2);
+                pinIdOffsetY = milsToMM(-offset2);
+                pinIdVAlignment = VerticalAlign.Bottom;
+                usePinIdAngle = -90;
+                break;
+
             case 180:
                 pinNameAlignment = HorizontalAlign.Right;
                 pinNameOffsetX = milsToMM(-offset1);
                 pinIdAlignment = HorizontalAlign.Left;
                 pinIdOffsetX = milsToMM(offset2);
                 break;
+
             case 270:
                 pinNameAlignment = HorizontalAlign.Left;
-                pinNameOffsetX = milsToMM(offset1);
-                pinIdAlignment = HorizontalAlign.Left;
-                pinIdOffsetX = milsToMM(offset2);
+                pinNameOffsetX = milsToMM(0);
+                pinNameOffsetY = milsToMM(-offset1);
+
+                pinIdAlignment = HorizontalAlign.Right;
+                pinIdOffsetX = milsToMM(-offset2);
                 pinIdOffsetY = milsToMM(offset2);
-                pinIdVAlignment = VerticalAlign.Top;
+                pinIdVAlignment = VerticalAlign.Bottom;
+                usePinIdAngle = -90;
                 break;
         }
 
@@ -874,11 +893,13 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
             // Draw the pinName
             displayPinName && usePinName !== "" && drawing.addLabel(
-                endX.add(pinNameOffsetX), endY, usePinName, {
+                endX.add(pinNameOffsetX), endY.add(pinNameOffsetY), 
+                usePinName, {
                 fontSize: numeric(defaultPinNameTextSize),
                 anchor: pinNameAlignment,
                 vanchor: VerticalAlign.Middle,
                 textColor: pinNameColor,
+                angle: numeric(usePinIdAngle)
             });
 
             const pinDisplayText = pinId.toString();
@@ -890,7 +911,8 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 fontSize: numeric(defaultPinIdTextSize),
                 anchor: pinIdAlignment,
                 vanchor: pinIdVAlignment,
-                textColor: lineColor
+                textColor: lineColor,
+                angle: numeric(usePinIdAngle)
             });
         }
     }

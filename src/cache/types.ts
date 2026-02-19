@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export const CACHE_SCHEMA_VERSION = 2;
+export const CACHE_SCHEMA_VERSION = 3;
 
 export type SerializedExpression = [
-    line: number, 
+    line: number,
     column: number,
     sourceText: string,     // source text of the expression
 ]
@@ -24,7 +24,7 @@ export interface LibraryCacheIR {
     schemaVersion: number;
     contentHash: string;
     libraryFilePath: string;
-    referencedLibraryFilePaths: string[];
+    imports: SerializedExpression[];
     functions: SerializedFunctionDef[];
     topLevel: SerializedExpression[];
 }

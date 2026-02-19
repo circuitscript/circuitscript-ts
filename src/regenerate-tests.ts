@@ -29,6 +29,7 @@ async function regenerateTests(extra = ""): Promise<string[]> {
         env.setDefaultLibsPath(mainDir + '../../../libs/');
 
         await renderScript(scriptData, outputPath, {
+            inputPath,
             dumpNets: false,
             dumpData: false,
             showStats: false,

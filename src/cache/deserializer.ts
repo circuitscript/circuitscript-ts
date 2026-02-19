@@ -75,6 +75,13 @@ export function deserializeLibraryScope(
         }
     });
 
+    // Handle imports first.
+    enterContext();
+    for (const importStatement of ir.imports) {
+        const [line, column, statement] = importStatement;
+        parseAndVisit(statement, line - 1);
+    }
+    
     // Re-execute top-level expression blocks to restore any side effects that
     // occurred when the library was first parsed. Each entry is a continuous block
     // of expressions (combined source text); blocks are separated by blank lines or
@@ -82,11 +89,11 @@ export function deserializeLibraryScope(
     // offset correctly maps back to its original position in the source file.
     for (const block of (ir.topLevel ?? [])) {
         const [line, column, sourceText] = block;
-        enterContext();
         const {tokens, tree} = parseAndVisit(sourceText, line - 1);
         importedLibrary.referencedTokens.push([tokens, tree]);
-        exitContext();
     }
+
+    exitContext();
 
     return importedLibrary;
 }

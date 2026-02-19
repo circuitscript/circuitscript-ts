@@ -16,6 +16,7 @@ import { PinDefinition, PinId } from './PinDefinition.js';
 import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from 'src/render/draw_symbols.js';
 import { RefdesModification } from 'src/annotate/utils.js';
+import { SerializedExpression } from 'src/cache/types.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -303,13 +304,18 @@ export class ImportedLibrary {
     // stores refdes annotation comments within the library.
     refdesAnnotations = new Map<ParserRuleContext, RefdesModification>;
 
+    // True if there was an error while parsing the library.
+    parseError = false;
+
+    importStatement: SerializedExpression;
+
     constructor(libraryName: string, libraryNamespace: string, 
         libraryFilePath: string,
         tree: ScriptContext, tokens: CommonTokenStream,
-        context: ExecutionContext, 
+        context: ExecutionContext,
         flag: ImportFunctionHandling, specifiedImports: string[],
-        fileHash: string){
-        
+        fileHash: string, importStatement: SerializedExpression) {
+
         this.libraryName = libraryName;
         this.libraryNamespace = libraryNamespace;
         this.libraryFilePath = libraryFilePath;
@@ -323,6 +329,7 @@ export class ImportedLibrary {
         this.specifiedImports = specifiedImports;
 
         this.fileHash = fileHash;
+        this.importStatement = importStatement;
     }
     
     addRefdesModifications(mods: Map<ParserRuleContext, RefdesModification>): void {

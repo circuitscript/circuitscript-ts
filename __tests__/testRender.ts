@@ -12,94 +12,94 @@ const mainPath = '__tests__/testData/renderData/';
 describe('Render tests', () => {
 
     test.each([
-        ['variant and branch rendering', 'script1.cst'],
-        ['simple function', 'script2.cst'],
-        ['simple frame', 'script3.cst'],
-        ['drawing functions for graphics', 'script4.cst'],
-        ['drawing 180 deg flipped components', 'script5.cst'],
-        ['join command', 'script6.cst'],
-        ['parallel command', 'script7.cst'],
-        ['point block command', 'script8.cst'],
-        ['start immediately with `add component` command', 'script9.cst'],
-        ['start immediately with `wire` command', 'script10.cst'],
-        ['flipX and flipY parameters', 'script11.cst'],
-        ['flipX, flipY, angle parameters with multiple components', 'script12.cst'],
-        ['anchor modifier', 'script13.cst'],
-        
-        ['text graphic expression', 'script14.cst'],
-        ['component follows wire orientation', 'script15.cst'],
-        ['component with defined pin follows wire orientation', 'script16.cst'],
-        ['component with arc graphic expr', 'script17.cst'],
+        ['script1.cst', 'variant and branch rendering'],
+        ['script2.cst', 'simple function'],
+        ['script3.cst', 'simple frame'],
+        ['script4.cst', 'drawing functions for graphics'],
+        ['script5.cst', 'drawing 180 deg flipped components'],
+        ['script6.cst', 'join command'],
+        ['script7.cst', 'parallel command'],
+        ['script8.cst', 'point block command'],
+        ['script9.cst', 'start immediately with `add component` command'],
+        ['script10.cst', 'start immediately with `wire` command'],
+        ['script11.cst', 'flipX and flipY parameters'],
+        ['script12.cst', 'flipX, flipY, angle parameters with multiple components'],
+        ['script13.cst', 'anchor modifier'],
+
+        ['script14.cst', 'text graphic expression'],
+        ['script15.cst', 'component follows wire orientation'],
+        ['script16.cst', 'component with defined pin follows wire orientation'],
+        ['script17.cst', 'component with arc graphic expr'],
 
         // Check that the correct pin positions are generated for
-        // custom drawn symbols 
-        ['symbol custom with pin position', 'script18.cst'],
+        // custom drawn symbols
+        ['script18.cst', 'symbol custom with pin position'],
 
-        ['ports (in, out, io, any)', 'script19.cst'],
-        
-        ['module with ports', 'script20.cst'],
+        ['script19.cst', 'ports (in, out, io, any)'],
 
-        ['decimal places causing issues with junctions and layout', 'script21.cst'],
+        ['script20.cst', 'module with ports'],
 
-        ['catch repeated nodes in the origin nodes list', 'script22.cst'],
+        ['script21.cst', 'decimal places causing issues with junctions and layout'],
 
-        ['multiple sheet commands', 'script23.cst'],
-        ['single sheet command', 'script24.cst'],
-        ['test blank spaces at start and end in symbol custom', 'script25.cst'],
-        
-        ['for command in graphics expr', 'script26.cst'],
-        ['label angle check', 'script27.cst'],
-        ['component width and height prop', 'script28.cst'],
+        ['script22.cst', 'catch repeated nodes in the origin nodes list'],
 
-        ['frame direction arrange row to next line', 'script29.cst'],
-        ['frame direction arrange column to next line', 'script30.cst'],
+        ['script23.cst', 'multiple sheet commands'],
+        ['script24.cst', 'single sheet command'],
+        ['script25.cst', 'test blank spaces at start and end in symbol custom'],
 
-        ['branch within function', 'script31.cst'],
-        
-        ['complex wire merging and intersections', 'script32.cst'],
-        ['maintain current component through multiple branch levels', 'script33.cst'],
+        ['script26.cst', 'for command in graphics expr'],
+        ['script27.cst', 'label angle check'],
+        ['script28.cst', 'component width and height prop'],
 
-        ['node1--node2 and node2--node1 should not be the same', 'script34.cst'],
+        ['script29.cst', 'frame direction arrange row to next line'],
+        ['script30.cst', 'frame direction arrange column to next line'],
 
-        ['data expression parsing in pin selection', 'script36.cst'],
-        ['rendering circle in symbol', 'script37.cst'],
-        ['net graphical properties, multi net component references same net', 'script38.cst'],
-        ['Path blocks nested within for loop', 'script39.cst'],
-        ['Test corrcet graph when `at` block contains `point` path block', 'script40.cst'],
-        ['string and number Pin Ids for create component', 'script41.cst'],
-        ['extract PinIds from create component `display` prop', 'script42.cst'],
-        ['do not move non-copy component in frame', 'script43.cst'],
+        ['script31.cst', 'branch within function'],
+
+        ['script32.cst', 'complex wire merging and intersections'],
+        ['script33.cst', 'maintain current component through multiple branch levels'],
+
+        ['script34.cst', 'node1--node2 and node2--node1 should not be the same'],
+
+        ['script36.cst', 'data expression parsing in pin selection'],
+        ['script37.cst', 'rendering circle in symbol'],
+        ['script38.cst', 'net graphical properties, multi net component references same net'],
+        ['script39.cst', 'Path blocks nested within for loop'],
+        ['script40.cst', 'Test corrcet graph when `at` block contains `point` path block'],
+        ['script41.cst', 'string and number Pin Ids for create component'],
+        ['script42.cst', 'extract PinIds from create component `display` prop'],
+        ['script43.cst', 'do not move non-copy component in frame'],
 
         // Refdes generation related
-        ['refdes within for and while loop', 'script44.cst'],
-        ['refdes within functions', 'script45.cst'],
-        ['refdes in at blocks', 'script46.cst'],
-        ['refdes number for repeated function calls', 'script48.cst'],
+        ['script44.cst', 'refdes within for and while loop'],
+        ['script45.cst', 'refdes within functions'],
+        ['script46.cst', 'refdes in at blocks'],
+        ['script48.cst', 'refdes number for repeated function calls'],
 
         // Refdes annotation parsing
-        ['refdes annotation parsing: script44.cst with changed refdes and annotations', 'script47.cst'],
-        ['refdes annotation parsing: script45.cst with changed refdes and annotations', 'script49.cst'],
-        ['refdes annotation parsing: script46.cst with changed refdes and annotations', 'script50.cst'],
-        ['refdes annotation parsing: script48.cst with changed refdes and annotations', 'script51.cst'],
-        ['refdes annotation parsing with repeated annotations', 'script52.cst'],
+        ['script47.cst', 'refdes annotation parsing: script44.cst with changed refdes and annotations'],
+        ['script49.cst', 'refdes annotation parsing: script45.cst with changed refdes and annotations'],
+        ['script50.cst', 'refdes annotation parsing: script46.cst with changed refdes and annotations'],
+        ['script51.cst', 'refdes annotation parsing: script48.cst with changed refdes and annotations'],
+        ['script52.cst', 'refdes annotation parsing with repeated annotations'],
 
         // import syntax forms
-        ['import syntax forms', 'script53.cst'],
-        ['repeated specific imports', 'script54.cst'],
-        ['specific imports followed by wildcard import', 'script55.cst'],
+        ['script53.cst', 'import syntax forms'],
+        ['script54.cst', 'repeated specific imports'],
+        ['script55.cst', 'specific imports followed by wildcard import'],
 
         // multi-unit components
-        ['multi-unit component', 'script56.cst'],
-        ['multi-unit component with pins expansion', 'script57.cst'],
-        ['multi-unit component with arrange property', 'script58.cst'],
+        ['script56.cst', 'multi-unit component'],
+        ['script57.cst', 'multi-unit component with pins expansion'],
+        ['script58.cst', 'multi-unit component with arrange property'],
 
         // multi-file schematic with refdes loaded from external file
-        ['multi file refdes with refdes from external file', 'script59/main.cst', 'script59'],
+        ['script59/main.cst', 'multi file refdes with refdes from external file', 'script59'],
 
-        // ['arrange prop with repeated pins and missing pins', 'script35.cst']
+        // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
-        
-    ])('render - %s (%s)', async (title, scriptPath, extra = "") => {
+
+    ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames } = await renderCommon(mainPath + scriptPath);
 
         const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
@@ -116,7 +116,7 @@ describe('Render tests', () => {
         // Do not spit out all the differences
         expect(svgOutput === expectedSvgOutput).toEqual(true);
     });
-    
+
     test('pdf output', async () => {
         const scriptPath = 'script1.cst';
         const targetPdf = mainPath + "pdfs/" + scriptPath + ".pdf";
@@ -173,6 +173,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('8dc01f37ccd0300bbac25aeb4e705e30');
+        expect(result).toEqual('419525617b50e7ca75a63a6425fa7a60');
     });
 });
