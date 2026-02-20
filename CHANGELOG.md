@@ -1,6 +1,273 @@
 # Changelog
 
-## [v0.3.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.1...v0.3.2)
+## [v0.4.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.2...v0.4.0)
+
+[5f67814](https://gitlab.com/circuitscript/circuitscript-ts/commit/5f678149024091dc5b469c92a1d54d1fdcebbcc3)Split ANTLR grammar into separate lexer and parser files
+- 
+- Refactored the monolithic CircuitScript.g4 grammar file into separate
+- CircuitScriptLexer.g4 and CircuitScriptParser.g4 files for improved
+- modularity and performance. Added comprehensive lexer diagnostics system
+- with token-level tracing and performance analysis capabilities.
+- 
+- Key changes:
+- - Split CircuitScript.g4 into CircuitScriptLexer.g4 and CircuitScriptParser.g4
+- - Added LexerDiagnosticListener.ts for detailed lexer performance analysis
+- - Renamed CircuitScriptVisitor.ts to CircuitScriptParserVisitor.ts
+- - Updated all imports and references throughout codebase
+- - Added CLI flags for lexer diagnostics (--lexer-diagnostics, --lexer-verbose, etc.)
+- - Updated package dependencies for ANTLR4 tooling
+- - Regenerated parser and lexer TypeScript files from new grammar split
+- 
+- This change improves grammar maintainability and adds powerful debugging
+- capabilities for language development.
+
+[2396652](https://gitlab.com/circuitscript/circuitscript-ts/commit/2396652b4129b23b5f3b01961dcca4db7ae68f71)Refactor parser grammar and simplify visitor pattern
+- 
+- Simplified expression handling in the ANTLR grammar by consolidating
+- value_expr and atom_expr rules, removing redundant intermediate nodes.
+- Updated visitor methods to use new passResult helper for cleaner
+- result propagation. Regenerated parser files with optimized grammar.
+
+[503d6ac](https://gitlab.com/circuitscript/circuitscript-ts/commit/503d6ac544d172d0bd05308a407d943c55e1a08f)Refactor grammar rules for clarity and consistency
+- 
+- - Move assignment_expr before add_component_expr for better rule ordering
+- - Replace pin_select_expr2 with property_key_expr in at_block_pin_expr
+- - Extract properties_block as a reusable rule for component/module/graphic blocks
+- - Simplify parameters rule to reduce ambiguity
+- - Simplify function_args_expr rule structure
+- - Remove extra STRING_VALUE from property_expr
+- - Reorder at_block_header before at_block for forward reference clarity
+- - Reorder to_component_expr after at_block in graph_expressions alternatives
+- - Regenerate parser and update visitor accordingly
+
+[7592080](https://gitlab.com/circuitscript/circuitscript-ts/commit/7592080bc7c486fbd9df076050d0dbdc7a669f40)Unify atom_expr and function_call_expr into callable_expr with trailer rule
+- 
+- Replace separate atom_expr/function_call_expr/trailer_expr/trailer_expr2
+- grammar rules with a single callable_expr + trailer rule. Implement
+- visitCallableExpr and visitTrailer in BaseVisitor to handle dot access,
+- array index, and function call trailers in a unified traversal. Update
+- assignment_expr and operator_assignment_expr to use callable_expr on LHS.
+
+[c458333](https://gitlab.com/circuitscript/circuitscript-ts/commit/c458333bdf8efec9f536a7bd85102ba020149802)Optimize lexer token ordering and inline binary operators in grammar
+- 
+- - Reorder WS rule after NEWLINE to fix token precedence
+- - Extract DecimalIntegerLiteral and DecimalLiteral as fragments
+- - Make NUMERIC_VALUE require a unit suffix (remove optional modifier)
+- - Inline binary_operator rule into BinaryOperatorExpr for flatter AST
+- - Remove property_set_expr rule (superseded by assignment_expr)
+- - Reorder expression alternatives to improve parse performance
+- - Update visitor to use inlined operator tokens directly from context
+
+[49bd73b](https://gitlab.com/circuitscript/circuitscript-ts/commit/49bd73b851f49524b81b47d66827e336b755c826)Refactor import grammar rules and improve token definitions
+- 
+- Consolidate import_all_simple and import_specific grammar rules into a single import_specific_or_all rule using a choice operator for cleaner syntax. Add proper escape sequence support to STRING_VALUE tokens and simplify INTEGER_VALUE definition using DecimalIntegerLiteral fragment. Remove unused ALPHA_NUMERIC token.
+
+[073850b](https://gitlab.com/circuitscript/circuitscript-ts/commit/073850b4e373d4a78469514ae5e18a4051d6917f)Merge operator_assignment_expr into assignment_expr
+- 
+- Consolidate simple (=) and compound (+=, -=, *=, /=, %=) assignments
+- into a single grammar rule and visitor method, removing the separate
+- operator_assignment_expr rule and its associated visitor methods.
+
+[74681b7](https://gitlab.com/circuitscript/circuitscript-ts/commit/74681b7e40a0f90429a66cd8fec1cf74fb624f97)Improve grammar organization and simplify visitor pattern
+- 
+- Reorganized ANTLR grammar rules for better clarity and consistency:
+- - Aligned token definitions in lexer for improved readability
+- - Restructured graph_expressions to flatten rule hierarchy
+- - Simplified part_match_block handling to filter undefined results
+- - Refactored visitor methods to use visitChildren() where appropriate
+- 
+- These changes improve code maintainability without altering language semantics.
+
+[eabfdc7](https://gitlab.com/circuitscript/circuitscript-ts/commit/eabfdc71f5d82086581f71e336b732f69fedb545)Remove property_set_expr2 and simplify component_modifier_expr
+- 
+- Remove the redundant property_set_expr2 and assignment_expr2 grammar rules,
+- and broaden component_modifier_expr to accept data_expr instead of the
+- narrower (value_expr | ID). Update generated parser and visitor accordingly.
+
+[12b41bf](https://gitlab.com/circuitscript/circuitscript-ts/commit/12b41bf9ac4925b0c2b581fe8cc35df6e36f521f)Inline wire_atom_expr into wire_expr and reorder grammar rules
+- 
+- Simplify the grammar by removing the wire_atom_expr intermediate rule
+- and handling wire segments directly in wire_expr. Also reorder function-
+- related rules for better logical grouping and simplify function_args_expr
+- and function_def_expr.
+
+[3b0c927](https://gitlab.com/circuitscript/circuitscript-ts/commit/3b0c927b19ded014f55e44d4ca419a7b60b7a694)Remove redundant grammar rules and consolidate annotation handling
+- 
+- - Remove at_block_pin_expression_simple/complex sub-rules, inlining them directly into at_block_pin_expr
+- - Remove import_annotation_expr rule, reusing annotation_comment_expr for import annotations
+- - Update annotation_comment_expr to support optional IDs and minus tokens (matching previous import_annotation_expr behavior)
+- - Update BaseVisitor and visitor to use the renamed/consolidated rule methods
+- - Re-number parser rule constants to reflect removed rules
+
+[eddeb5a](https://gitlab.com/circuitscript/circuitscript-ts/commit/eddeb5a8ccf36a8e294afabe0b72b64dd3d81543)Reorganize source into render/ and semantic-tokens/ subdirectories
+- 
+- Move draw_symbols, export, geometry, graph, layout, and render into
+- src/render/, and SemanticTokenVisitor into src/semantic-tokens/.
+- Extract pipeline logic from helpers into src/pipeline.ts, and add
+- KiCadNetListOutputHandler, PaperSizes, getSemanticTokens, and
+- validateScript modules.
+
+[a43ee13](https://gitlab.com/circuitscript/circuitscript-ts/commit/a43ee13beebd2f61e96f4f80ff0f89c03e7c97bf)Merge part_condition_key_only_expr into part_value_expr
+- 
+- Consolidates the two similar grammar rules by extending part_value_expr
+- to accept either a match block or data expressions, removing the need
+- for the separate part_condition_key_only_expr rule.
+
+[84b5cf9](https://gitlab.com/circuitscript/circuitscript-ts/commit/84b5cf9ccb2eec614630b59ab8837790e05d3805)Fix pin label rendering for vertical pins and improve robustness
+- 
+-  Fix pin name/id label positioning for 90° and 270° angle pins
+-  Add display_id=false to std.cst pins (res, cap, ind) to suppress pin IDs
+-  Relax string escape handling in lexer to support arbitrary escape sequences
+-  Support .cst file extension in import paths (optional now)
+-  Fix getDirPath to return directory itself when path is a directory
+-  Skip empty string import paths in resolveAllImportFilepaths
+-  Add parseError flag and importStatement to ImportedLibrary
+-  Store imports as SerializedExpression in LibraryCacheIR (schema v3)
+-  Clear errors array before parsing imported files in renderScriptCustom
+-  Update golden SVG test fixtures for all affected test scripts
+
+[812b5c8](https://gitlab.com/circuitscript/circuitscript-ts/commit/812b5c8864f86f9d4653d9294088983bc5cfc852)Simplify point_expr to always use data_expr
+- 
+- Remove the ID-only alternative from point_expr grammar rule, requiring
+- all point references to use data_expr. Update the visitor to use
+- keepReference when resolving point values, falling back to result.name
+- for identifier-based lookups.
+
+[7cbbd29](https://gitlab.com/circuitscript/circuitscript-ts/commit/7cbbd29f2fdb47e07cecd8614898201c4fa63242)Pre-load all imports synchronously before visitor execution
+- 
+- Introduce an import resolver that eagerly resolves and reads all
+- transitive import file paths before the visitor runs, storing them in
+- a `loadedFiles` map. The visitor then reads from this in-memory store
+- instead of performing async file I/O during tree traversal, allowing
+- the visitor pipeline (visitScript, importCommon, handleImportFile,
+- parseFileWithVisitor) to become fully synchronous. Also adds opt-in
+- cache support for imported library scopes via content hash.
+
+[11ee2d8](https://gitlab.com/circuitscript/circuitscript-ts/commit/11ee2d8eaeb8bd5420734d8feabc0358535aba25)Extract DefaultPostAnnotationCallback and fix cache token tracking
+- 
+- - Move DefaultPostAnnotationCallback out of helpers.ts into its own file
+- - Track parsed tokens/tree pairs in ImportedLibrary.referencedTokens for cached library annotation support
+- - Store tokens/tree on CFunctionEntry after lazy loading
+- - Fix serializer to strip trailing NEWLINE/DEDENT tokens from function definitions
+- - Fix top-level expression grouping to join with empty string and preserve newlines within groups
+- - Merge imported library scope into main executor after processing
+- - Export AnnotatedFile, ExternalLibAnnotationFile, RefdesOutputType types from helpers.ts
+
+[7022ba3](https://gitlab.com/circuitscript/circuitscript-ts/commit/7022ba3a4644d47957b1260f3d8ea28f97e60261)Extract annotation utilities and apply refdes to cache serialization
+- 
+- Move RefdesModification type and generateModifiedSourceText into a shared
+- utils module under src/annotate/. Apply refdes annotations when serializing
+- library scope to cache so cached output reflects annotation comments.
+- Rename addModifications to addRefdesModifications for clarity.
+
+[806af3c](https://gitlab.com/circuitscript/circuitscript-ts/commit/806af3ca1011dea83991b001fc717e33c098cbf8)Add cache test suite and simplify cache storage paths
+- 
+- - Add comprehensive tests for cache hash, storage, and import integration
+- - Add lib1.cst test fixture for cache integration tests
+- - Simplify getCachePath to use a single file per library (no hash in filename)
+- - Improve duplicate function warning to include function name
+
+[39ede42](https://gitlab.com/circuitscript/circuitscript-ts/commit/39ede42ccc4a12c8e3f9d4c8741f880aec8644b1) Changed import syntax from ID to string
+-  updated tests
+
+[42777ba](https://gitlab.com/circuitscript/circuitscript-ts/commit/42777bac80515ebe64c940e8adad256a139ab741)Refactor validator to pre-load imports and use sync visiting
+- 
+- Pre-load all imported files before visiting so the symbol validator
+- can use synchronous visit() instead of visitAsync(). Updates
+- SymbolValidatorVisitor to handle the new CallableExpr and
+- create_graphic_expr grammar rules, disables import caching in
+- validator visitors, and adds filePath parameter to getSemanticTokens.
+
+[9e11ded](https://gitlab.com/circuitscript/circuitscript-ts/commit/9e11ded3f8b30976779aa98989065d5fc2a3b1e2)Implement lazy loading for cached library functions
+- 
+- - Add lazy function loading via CFunctionEntry.lazyLoader callback, so cached
+- library functions are only parsed and executed on first call rather than
+- eagerly on import
+- - Consolidate import resolution and file loading into BaseVisitor.resolveImportsAndLoad
+- method, removing duplicated logic from helpers.ts and test helpers
+- - Thread fileLineOffset through onImportFile callback and parseFileWithVisitor
+- to correctly position cached function source text within the original file
+- - Add lineOffset support to MainLexer so re-parsed function snippets report
+- accurate line numbers for refdes annotations
+- - Store function start position in SerializedFunctionDef cache type and use it
+- during deserialization to apply the correct line offset
+- - Split enableCachedImports into separate read/write flags for finer control
+- - Return CFunctionEntry from createFunction and add createFunctionLazyLoaded helper
+
+[df7ca45](https://gitlab.com/circuitscript/circuitscript-ts/commit/df7ca4566b4f65023ea0bf1f5836fd06dabcf112)Add RefdesAnnotationVisitor tests and fix error propagation in helpers
+- 
+- - Add testAnnotate.ts with tests for RefdesAnnotationVisitor output format
+- - Extend testCache.ts with annotation cache consistency tests and expose tree/tokens from runImportScript
+- - Fix renderScriptCustom to collect throwError into errors array instead of immediately throwing, preventing valid render when errors exist
+- 
+- Co-Authored-By: Weihao &lt;weihao@example.com&gt;
+
+[300316a](https://gitlab.com/circuitscript/circuitscript-ts/commit/300316a23cdf56792af0bbf768787be9da058bcc)Add library scope caching infrastructure
+- 
+- Introduces serialization, deserialization, hashing, and disk storage
+- modules for caching parsed library scopes to speed up repeated imports.
+
+[6529996](https://gitlab.com/circuitscript/circuitscript-ts/commit/65299962624deb9cbcaf8978636179a961499268)Add transitive import cache tests and fix pin label rotation for rotated components
+- 
+- - Added cache integration tests for transitive imports (lib2 → lib3) covering
+- cache creation, hit, invalidation, corruption fallback, and round-trip serialization
+- - Added lib2.cst and lib3.cst test fixtures for chained import scenarios
+- - Fixed pin label rotation in draw_symbols.ts: use combined component+label angle
+- to determine when text is upside-down, preventing incorrect flip behavior
+- - Updated golden SVG references for script5 and script27
+
+[175c4fa](https://gitlab.com/circuitscript/circuitscript-ts/commit/175c4fa5e26efdd9e34bbdf1725a2a552cba7f38)Optimize lexer memory usage and diagnostic collection
+- 
+- - Replace token queue shift() with head-pointer dequeue for O(1) removal, compacting periodically
+- - Replace queueSizeSamples array with running sum/count to avoid storing every sample
+- - Add recordTokenStream flag to skip token stream recording when not needed
+- - Cache token type name lookups in a Map to avoid repeated vocabulary lookups
+- - Optimize onNewLine() string splitting to avoid regex allocations
+- - Switch SimpleStopwatch from Date to performance.now() for higher resolution timing
+- - Add enableLexerTokenStream option to parseFileWithVisitor
+- - Add visitTrailer stub to RefdesAnnotationVisitor
+- - Improve EOF filter in nextToken to use in-place compaction instead of filter()
+- - Add error detection check in testCLI annotation test
+
+[344bc79](https://gitlab.com/circuitscript/circuitscript-ts/commit/344bc798a2947b333454989154a6e40f7d5d9a68)Minor cleanups
+
+[24f7e1b](https://gitlab.com/circuitscript/circuitscript-ts/commit/24f7e1b2092112687d6a160d8e22128f012f6af6)Refactor cache to serialize top-level expressions instead of variables
+- 
+- Replace variable snapshot serialization with grouped top-level expression
+- blocks. Expressions are re-executed on cache load to restore side effects,
+- using their original source positions for correct refdes annotation.
+- 
+- Bump CACHE_SCHEMA_VERSION to 2.
+
+[1c46f67](https://gitlab.com/circuitscript/circuitscript-ts/commit/1c46f678083339006e5dc4ace6be7ef52677f9cc)Refactor import context creation and defer cache writes
+- 
+- Move import context creation before the cache-hit check so both
+- cache and non-cache paths share the same context setup. Replace
+- inline cache writes with a deferred writeToCache flag on ImportedLibrary,
+- flushed via cacheLibraries() after annotation. Add fileHash field to
+- ImportedLibrary and expose getModifications() on RefdesAnnotationVisitor.
+
+[e08128c](https://gitlab.com/circuitscript/circuitscript-ts/commit/e08128c469ae230c04739ee4feaad8af40d9ae29)Rename pin display parameter and add pin name visibility control
+- 
+- - Rename 'display_pin_id' to 'display_id' for clarity
+- - Add 'display_name' parameter to control pin name visibility
+- - Remove default angle properties from net, cap, and ground components
+- - Move PinTypesList constant to globals.ts for better organization
+- - Improve pin type and name parameter parsing logic in draw_symbols.ts
+
+[158d1c4](https://gitlab.com/circuitscript/circuitscript-ts/commit/158d1c46a32532e86b189f5a502caae6090b751d)Re-organize annotation related files
+
+[98e7bc7](https://gitlab.com/circuitscript/circuitscript-ts/commit/98e7bc77d07f886cfff5c62139b7f1d9c9d80759)Support custom refdes prefix via refdesPrefix parameter
+- 
+- Allow components to specify a custom reference designator prefix
+- using the refdesPrefix parameter, bypassing the default type-based
+- prefix lookup in ComponentRefDesPrefixes.
+
+[f3c6a1e](https://gitlab.com/circuitscript/circuitscript-ts/commit/f3c6a1e752a800db610da1f18c8ec3e032df230d)Speed up parsing using SLL prediction mode
+
+[1ec4896](https://gitlab.com/circuitscript/circuitscript-ts/commit/1ec4896c756d9f32f281b0bd0bb3d62df8e38a77)Fixed bug in pin rotation
+
+## [v0.3.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.1...v0.3.2) - 2026-01-22
 
 [6cd3944](https://gitlab.com/circuitscript/circuitscript-ts/commit/6cd3944fec56c7485df7d4d2d31e6f75bfed88db)Consolidate external refdes annotations into single JSON file
 - 
