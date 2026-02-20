@@ -1,3 +1,5 @@
+import {jest} from '@jest/globals'
+
 import { createReadStream, createWriteStream, existsSync, readFileSync, unlinkSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
@@ -8,9 +10,10 @@ import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 
 const mainPath = '__tests__/testData/renderData/';
-jest.setTimeout(15000);
 
 describe('Render tests', () => {
+    
+    jest.setTimeout(15000);
 
     test.each([
         ['script1.cst', 'variant and branch rendering'],
