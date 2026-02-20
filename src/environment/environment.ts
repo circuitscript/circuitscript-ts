@@ -105,7 +105,7 @@ export class NodeScriptEnvironment {
         const stackLine = new Error().stack?.split('\n')[1];
         if (stackLine) {
             // Look for file:// URLs (ESM) or regular paths (Jest/CJS)
-            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);)
+            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);
             if (fileMatch) {
                 const filePath = fileMatch[1].replace('file://', '');
                 const finalPath = path.resolve(
