@@ -80,15 +80,15 @@ test_build:
     - !reference [.common_rules, rules]
 
 # Publishes the package to npm.
-publish:
-  stage: publish
-  interruptible: false
-  dependencies:
-    - install
-  script:
-    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
-    - npm run build:release || true
-    - npm publish --verbose
-  resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
-  rules:
-    - !reference [.common_rules, rules]
+# publish:
+#   stage: publish
+#   interruptible: false
+#   dependencies:
+#     - install
+#   script:
+#     - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
+#     - npm run build:release || true
+#     - npm publish --verbose
+#   resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
+#   rules:
+#     - !reference [.common_rules, rules]
