@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream, existsSync, readFileSync, unlinkSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
@@ -119,7 +119,13 @@ describe('Render tests', () => {
 
     test('pdf output', async () => {
         const scriptPath = 'script1.cst';
-        const targetPdf = mainPath + "pdfs/" + scriptPath + ".pdf";
+        
+        const targetFolder = mainPath + "pdfs/";
+        const targetPdf = targetFolder + scriptPath + ".pdf";
+
+        if (!existsSync(targetFolder)){
+            mkdirSync(targetFolder);
+        }
 
         // Remove the original file first
         if (existsSync(targetPdf)) {
