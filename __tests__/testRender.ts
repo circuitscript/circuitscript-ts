@@ -12,8 +12,6 @@ import { Logger } from '../src/logger.js';
 const mainPath = '__tests__/testData/renderData/';
 
 describe('Render tests', () => {
-    
-    jest.setTimeout(15000);
 
     test.each([
         ['script1.cst', 'variant and branch rendering'],
@@ -130,9 +128,16 @@ describe('Render tests', () => {
             unlinkSync(targetPdf);
         }
 
+        console.log('removed original if exists');
+
         // First, generate the PDF
         const { sheetFrames } = await renderCommon(mainPath + scriptPath);
+        
+        console.log('done render');
+
         const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
+
+        console.log('done generate svg canvas');
 
         // Full ISO time string is given, because the CI server might
         // have a different timezone
@@ -147,10 +152,14 @@ describe('Render tests', () => {
             }
         });
 
+        console.log('before generate pdf');
+
         generatePdfOutput(doc, svgCanvas, sheetSize, false, 1);
         const outputStream = createWriteStream(targetPdf);
         doc.pipe(outputStream);
         doc.end();
+
+        console.log('done genereate pdf');
 
         // Wait for stream to finish
         await new Promise(resolve => {
@@ -159,11 +168,16 @@ describe('Render tests', () => {
             });
         });
 
+        console.log('stream finished');
+
         expect(existsSync(targetPdf)).toEqual(true);
+
+        console.log('check hash');
 
         // Done creating PDF, now generate the md5 hash for comparison
         const hash = crypto.createHash('md5');
         hash.setEncoding('hex');
+
 
         const result = await new Promise(resolve => {
             const fd = createReadStream(targetPdf);
@@ -175,6 +189,8 @@ describe('Render tests', () => {
 
             fd.pipe(hash);
         });
+
+        console.log('done waiting for hash');
 
         // Use file hash to verify that files are the same.
         expect(result).toEqual('419525617b50e7ca75a63a6425fa7a60');
