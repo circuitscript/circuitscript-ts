@@ -15,8 +15,8 @@ import { watch } from 'fs';
 
 import { ScriptOptions} from './helpers.js';
 import { renderScript } from "./pipeline.js";
-import { NodeScriptEnvironment } from "./environment.js";
-import { _id } from './export.js';
+import { NodeScriptEnvironment } from "./environment/environment.js";
+import { _id } from './render/export.js';
 
 export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();

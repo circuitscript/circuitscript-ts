@@ -8,8 +8,8 @@ import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 import { ParserVisitor } from '../src/visitor.js';
 import { BaseVisitor, OnErrorHandler, ImportFileResult } from '../src/BaseVisitor.js';
 import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/parser.js';
-import { NodeScriptEnvironment } from '../src/environment.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
+import { getTestEnvironment } from './helpers.js';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
@@ -19,8 +19,8 @@ async function runScript(script: string, scriptPath: string): Promise<{
     tree: ReturnType<CircuitScriptParser['script']>;
     tokens: CommonTokenStream;
 }> {
-    const env = new NodeScriptEnvironment();
-    NodeScriptEnvironment.setInstance(env);
+    const env = getTestEnvironment();
+    
     await env.prepareSVGEnvironment();
     env.setCurrentFile(scriptPath);
 

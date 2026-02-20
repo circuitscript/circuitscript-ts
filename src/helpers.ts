@@ -18,7 +18,7 @@ import { LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 export type SVGWindow = any;
 import { NumericValue } from "./objects/ParamDefinition.js";
 import Big from "big.js";
-import { NodeScriptEnvironment } from "./environment.js";
+import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ImportedLibrary } from "./objects/types.js";
 
 export enum JSModuleType {

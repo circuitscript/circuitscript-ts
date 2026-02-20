@@ -10,11 +10,11 @@ import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 import { ParserVisitor } from '../src/visitor.js';
 import { BaseVisitor, OnErrorHandler, ImportFileResult } from '../src/BaseVisitor.js';
 import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/parser.js';
-import { NodeScriptEnvironment } from '../src/environment.js';
 import { computeContentHash } from '../src/cache/hash.js';
 import { getCachePath, readCache, writeCache } from '../src/cache/storage.js';
 import { CACHE_SCHEMA_VERSION } from '../src/cache/types.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
+import { getTestEnvironment } from './helpers.js';
 
 const LIB_PATH = '__tests__/testData/cacheData/lib1.cst';
 const LIB_CONTENT = readFileSync(LIB_PATH, 'utf8');
@@ -41,8 +41,8 @@ async function runImportScript(script: string, scriptPath: string): Promise<{
     tree: ReturnType<CircuitScriptParser['script']>;
     tokens: CommonTokenStream;
 }> {
-    const env = new NodeScriptEnvironment();
-    NodeScriptEnvironment.setInstance(env);
+    const env = getTestEnvironment();
+    
     await env.prepareSVGEnvironment();
     env.setCurrentFile(scriptPath);
 

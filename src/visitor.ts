@@ -87,7 +87,7 @@ import { FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './annotate/ComponentAnnotater.js';
 import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
-import { NodeScriptEnvironment } from './environment.js';
+import { NodeScriptEnvironment } from './environment/environment.js';
 
 export class ParserVisitor extends BaseVisitor {
 

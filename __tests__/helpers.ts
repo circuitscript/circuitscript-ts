@@ -11,12 +11,19 @@ import { BaseVisitor, OnErrorHandler } from '../src/BaseVisitor.js';
 import { validateScript } from '../src/validate/validateScript.js';
 import { SymbolValidatorVisitor } from '../src/validate/SymbolValidatorVisitor.js';
 import { ParseSyntaxError } from '../src/utils.js';
-import { NodeScriptEnvironment } from '../src/environment.js';
+import { ESMNodeScriptEnvironment } from '../src/environment/esm-environment.js';
+import { NodeScriptEnvironment } from '../src/environment/environment.js';
 import { LayoutEngine, SheetFrame } from '../src/render/layout.js';
 import { NetGraph } from '../src/render/graph.js';
 import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
+
+export function getTestEnvironment(): NodeScriptEnvironment {
+    const env = new ESMNodeScriptEnvironment();
+    NodeScriptEnvironment.setInstance(env);
+    return env;
+}
 
 export async function runScript(script: string, scriptPath?: string): Promise<{
     visitor: ParserVisitor,
@@ -27,7 +34,7 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
 
-    const env = new NodeScriptEnvironment();
+    const env = new ESMNodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
 
     await env.prepareSVGEnvironment();
@@ -102,8 +109,7 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
 
 export async function testValidateScript(scriptData: string): Promise<SymbolValidatorVisitor> {
     const scriptPath = "./__tests__/testData/validationData/";
-    const environment = new NodeScriptEnvironment();
-    NodeScriptEnvironment.setInstance(environment);
+    const environment = getTestEnvironment();
 
     return validateScript(
         scriptPath,

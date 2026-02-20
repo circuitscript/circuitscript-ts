@@ -1,4 +1,4 @@
-import { generateKiCadNetList, printTree } from "../export.js";
+import { generateKiCadNetList, printTree } from "./export.js";
 import { ParserVisitor } from "../visitor.js";
 
 /**
