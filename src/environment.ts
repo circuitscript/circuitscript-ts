@@ -7,8 +7,11 @@ import { TOOL_VERSION } from "./globals.js";
 import { SVGWindow } from "./helpers.js";
 import { RuntimeExecutionError } from "./utils.js";
 
-// TODO: create an interface for this. Default is to use node 
+// TODO: create an interface for this. Default is to use node
 // as the environment.
+
+// Shared promise for svgdom module loading - prevents race conditions in test environments
+let svgdomLoadPromise: Promise<{ config: any; createSVGWindow: () => SVGWindow }> | null = null;
 
 export class NodeScriptEnvironment {
     existsSync(pathLike: string): boolean {
@@ -147,9 +150,14 @@ export class NodeScriptEnvironment {
      */
     private async prepareSVGEnvironmentInternal(fontsPath: string | null): Promise<void> {
         try {
-            // Use Function constructor to prevent TypeScript from converting to require() in CJS build
-            const dynamicImport = new Function('specifier', 'return import(specifier)');
-            const { config, createSVGWindow } = await dynamicImport('svgdom');
+            // Use shared promise to avoid race conditions when multiple instances are created in parallel
+            if (!svgdomLoadPromise) {
+                // Use Function constructor to prevent TypeScript from converting to require() in CJS build
+                const dynamicImport = new Function('specifier', 'return import(specifier)');
+                svgdomLoadPromise = dynamicImport('svgdom');
+            }
+
+            const { config, createSVGWindow } = await svgdomLoadPromise;
 
             this.globalCreateSVGWindow = createSVGWindow;
             if (fontsPath !== null) {
@@ -158,6 +166,8 @@ export class NodeScriptEnvironment {
                     .preloadFonts();
             }
         } catch (error) {
+            // Reset the promise on error so next attempt can retry
+            svgdomLoadPromise = null;
             throw new Error(`Failed to load svgdom ESM module: ${error}`);
         }
     }
