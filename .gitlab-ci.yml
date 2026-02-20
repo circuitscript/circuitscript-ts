@@ -12,7 +12,7 @@ stages:
   - prepare
   - test_jest
   - test_build
-  - publish
+  # - publish
 
 .common_rules:
   rules:
