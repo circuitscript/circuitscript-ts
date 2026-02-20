@@ -1,6 +1,11 @@
 # Changelog
 
-## [v0.4.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.2...v0.4.0)
+## [v0.4.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.4.0...v0.4.1)
+
+[ca7ecce](https://gitlab.com/circuitscript/circuitscript-ts/commit/ca7ecce7221e3665ac702ee185c821cf1e93a390) minor fix
+-  fixed exports
+
+## [v0.4.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.2...v0.4.0) - 2026-02-20
 
 [5f67814](https://gitlab.com/circuitscript/circuitscript-ts/commit/5f678149024091dc5b469c92a1d54d1fdcebbcc3)Split ANTLR grammar into separate lexer and parser files
 - 
@@ -20,6 +25,8 @@
 - 
 - This change improves grammar maintainability and adds powerful debugging
 - capabilities for language development.
+- 
+- Co-Authored-By: Claude Sonnet 4.5 &lt;noreply@anthropic.com&gt;
 
 [2396652](https://gitlab.com/circuitscript/circuitscript-ts/commit/2396652b4129b23b5f3b01961dcca4db7ae68f71)Refactor parser grammar and simplify visitor pattern
 - 
@@ -231,6 +238,12 @@
 
 [344bc79](https://gitlab.com/circuitscript/circuitscript-ts/commit/344bc798a2947b333454989154a6e40f7d5d9a68)Minor cleanups
 
+[12ba3ac](https://gitlab.com/circuitscript/circuitscript-ts/commit/12ba3ac574956f27aae07a74b879656c0a748660) fixed import
+-  updated gitlab test command
+-  moved environment
+-  added ESM specific environment
+-  use ESM specific environment for tests
+
 [24f7e1b](https://gitlab.com/circuitscript/circuitscript-ts/commit/24f7e1b2092112687d6a160d8e22128f012f6af6)Refactor cache to serialize top-level expressions instead of variables
 - 
 - Replace variable snapshot serialization with grouped top-level expression
@@ -263,9 +276,14 @@
 - using the refdesPrefix parameter, bypassing the default type-based
 - prefix lookup in ComponentRefDesPrefixes.
 
+[80f8745](https://gitlab.com/circuitscript/circuitscript-ts/commit/80f874541c6de96c034460ba76424ecbdab65182) fixed test
+-  revert back gitlab-ci
+
 [f3c6a1e](https://gitlab.com/circuitscript/circuitscript-ts/commit/f3c6a1e752a800db610da1f18c8ec3e032df230d)Speed up parsing using SLL prediction mode
 
 [1ec4896](https://gitlab.com/circuitscript/circuitscript-ts/commit/1ec4896c756d9f32f281b0bd0bb3d62df8e38a77)Fixed bug in pin rotation
+
+[6790a64](https://gitlab.com/circuitscript/circuitscript-ts/commit/6790a64a5a992f0955a60c0720789835621b7f23) fixed directory resolution for cjs
 
 ## [v0.3.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.3.1...v0.3.2) - 2026-01-22
 
