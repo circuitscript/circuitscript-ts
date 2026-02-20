@@ -48,13 +48,7 @@ test_jest:
     - install
   script:
     - npm run build:release || true
-    - npm run test testCLI
-    - npm run test testExport
-    - npm run test testMergeWires
-    - npm run test testParse
-    - npm run test testRender
-    - npm run test testValidate
-    - npm run test testMathOps
+    - npm run test
   rules:
     - !reference [.common_rules, rules]
 
