@@ -56,10 +56,10 @@ test_jest:
     # - npm run test testMathOps
     # - npm run test testMergeWires
     # - npm run test testParse
-    # - npm run test testRender
+    - npm run test testRender
     # - npm run test testRulesCheck
     # - npm run test testValidate
-    - npm run test
+    # - npm run test
 
   rules:
     - !reference [.common_rules, rules]

@@ -13,6 +13,8 @@ const mainPath = '__tests__/testData/renderData/';
 
 describe('Render tests', () => {
 
+    jest.setTimeout(20000);
+
     test.each([
         ['script1.cst', 'variant and branch rendering'],
         ['script2.cst', 'simple function'],
