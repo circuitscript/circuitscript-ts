@@ -2,7 +2,7 @@ import * as csv from '@fast-csv/format';
 
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/ParamDefinition.js";
-import { NodeScriptEnvironment } from './environment.js';
+import { NodeScriptEnvironment } from './environment/environment.js';
 
 export type BomConfig = {
     columns: string[], // Specifies paramKeys that will be used in the columns of the BOM

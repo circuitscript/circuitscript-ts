@@ -35,7 +35,7 @@ import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./uti
 import { linkBuiltInMethods } from './builtinMethods.js';
 import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
-import { NodeScriptEnvironment } from "./environment.js";
+import { NodeScriptEnvironment } from "./environment/environment.js";
 import { PinId } from './objects/PinDefinition.js';
 import { computeContentHash } from './cache/hash.js';
 import { readCache, writeCache } from './cache/storage.js';

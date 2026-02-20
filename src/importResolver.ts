@@ -1,4 +1,4 @@
-import { NodeScriptEnvironment } from './environment.js';
+import { NodeScriptEnvironment } from './environment/environment.js';
 
 // Matches: import "<name>"  (import_simple)
 const IMPORT_SIMPLE_RE = /^import\s+"([^"]+)"/;

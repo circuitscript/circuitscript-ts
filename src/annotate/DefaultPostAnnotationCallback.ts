@@ -1,6 +1,6 @@
 import { CommonTokenStream, ParserRuleContext } from "antlr4ng";
 import { ScriptContext } from "../antlr/CircuitScriptParser.js";
-import { NodeScriptEnvironment } from "../environment.js";
+import { NodeScriptEnvironment } from "../environment/environment.js";
 import { RefdesFileSuffix } from "../globals.js";
 import { ScriptOptions, AnnotatedFile, RefdesOutputType, ExternalLibAnnotationFile } from "../helpers.js";
 import { ClassComponent } from "../objects/ClassComponent.js";

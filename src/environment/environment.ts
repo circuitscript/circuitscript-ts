@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from "path";
 import CryptoJs from "crypto-js";
 
-import { TOOL_VERSION } from "./globals.js";
-import { SVGWindow } from "./helpers.js";
-import { RuntimeExecutionError } from "./utils.js";
+import { TOOL_VERSION } from "../globals.js";
+import { SVGWindow } from "../helpers.js";
+import { RuntimeExecutionError } from "../utils.js";
 
 // TODO: create an interface for this. Default is to use node 
 // as the environment.
@@ -105,10 +105,12 @@ export class NodeScriptEnvironment {
         const stackLine = new Error().stack?.split('\n')[1];
         if (stackLine) {
             // Look for file:// URLs (ESM) or regular paths (Jest/CJS)
-            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);
+            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);)
             if (fileMatch) {
                 const filePath = fileMatch[1].replace('file://', '');
-                return path.dirname(filePath);
+                const finalPath = path.resolve(
+                    path.dirname(filePath) + "/../");
+                return finalPath;
             }
         }
 
@@ -145,7 +147,7 @@ export class NodeScriptEnvironment {
     /**
      * Prepares the SVG environment by loading the svgdom ESM module and configuring fonts
      */
-    private async prepareSVGEnvironmentInternal(fontsPath: string | null): Promise<void> {
+    protected async prepareSVGEnvironmentInternal(fontsPath: string | null): Promise<void> {
         try {
             // Use Function constructor to prevent TypeScript from converting to require() in CJS build
             const dynamicImport = new Function('specifier', 'return import(specifier)');

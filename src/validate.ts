@@ -13,7 +13,7 @@ import { readFileSync, existsSync } from 'fs';
 
 import { getSemanticTokens } from "./semantic-tokens/getSemanticTokens.js";
 import { validateScript } from "./validate/validateScript.js";
-import { NodeScriptEnvironment } from "./environment.js";
+import { NodeScriptEnvironment } from "./environment/environment.js";
 import { _id } from './render/export.js';
 import { Token } from 'antlr4ng';
 import { ParseSymbolType } from './objects/types.js';
@@ -94,7 +94,7 @@ export default async function validate(): Promise<void> {
 
     const visitor = await validateScript(inputFilePath, scriptData, scriptOptions);
     const symbols = visitor.getSymbols().getSymbols();
-    
+
     const undefinedSymbols = [];
 
     console.log('----- symbols -----');

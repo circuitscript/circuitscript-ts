@@ -13,7 +13,7 @@ import { DefaultPostAnnotationCallback } from "./annotate/DefaultPostAnnotationC
 import { ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { OnErrorHandler, BaseVisitor, ImportFileResult } from "./BaseVisitor.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
-import { NodeScriptEnvironment } from "./environment.js";
+import { NodeScriptEnvironment } from "./environment/environment.js";
 import { defaultZoomScale } from "./globals.js";
 import { NetGraph } from "./render/graph.js";
 import { ScriptOptions, RenderScriptReturn } from "./helpers.js";

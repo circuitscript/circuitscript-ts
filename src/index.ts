@@ -25,5 +25,5 @@ export * from './builtinMethods.js';
 export * from './validate/SymbolTable.js';
 export * from './validate/SymbolValidatorResolveVisitor.js';
 export * from './validate/SymbolValidatorVisitor.js';
-export * from './environment.js';
+export * from './environment/environment.js';
 export * from './annotate/RefdesAnnotationVisitor.js';

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { renderScript } from "./pipeline.js";
-import { NodeScriptEnvironment } from "./environment.js";
+import { NodeScriptEnvironment } from "./environment/environment.js";
 
 const mainDir = './__tests__/testData/renderData/';
 
