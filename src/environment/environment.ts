@@ -98,14 +98,14 @@ export class NodeScriptEnvironment {
 
         // Try CommonJS approach first
         if (typeof __dirname !== 'undefined') {
-            return __dirname;
+            return path.resolve(__dirname + "/../");
         }
 
         // For ESM environments, use stack trace to find current file location
         const stackLine = new Error().stack?.split('\n')[1];
         if (stackLine) {
             // Look for file:// URLs (ESM) or regular paths (Jest/CJS)
-            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);)
+            const fileMatch = stackLine.match(/\((.+)\:[\d]+\:[\d]+\)/);
             if (fileMatch) {
                 const filePath = fileMatch[1].replace('file://', '');
                 const finalPath = path.resolve(
