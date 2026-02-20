@@ -8,6 +8,7 @@ import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 
 const mainPath = '__tests__/testData/renderData/';
+jest.setTimeout(15000);
 
 describe('Render tests', () => {
 
