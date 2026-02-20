@@ -100,9 +100,6 @@
         "tslib": "~2.5",
         "ws": "^8.14.2"
     },
-    "volta": {
-        "node": "18.12.1"
-    },
     "auto-changelog": {
         "output": "CHANGELOG.md",
         "commitLimit": false,
