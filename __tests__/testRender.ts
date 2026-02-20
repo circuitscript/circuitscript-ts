@@ -1,6 +1,4 @@
-import {jest} from '@jest/globals'
-
-import { createReadStream, createWriteStream, existsSync, readFileSync, unlinkSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, mkdir, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
@@ -12,8 +10,6 @@ import { Logger } from '../src/logger.js';
 const mainPath = '__tests__/testData/renderData/';
 
 describe('Render tests', () => {
-
-    jest.setTimeout(20000);
 
     test.each([
         ['script1.cst', 'variant and branch rendering'],
@@ -121,9 +117,15 @@ describe('Render tests', () => {
         expect(svgOutput === expectedSvgOutput).toEqual(true);
     });
 
-    test.only('pdf output', async () => {
+    test('pdf output', async () => {
         const scriptPath = 'script1.cst';
-        const targetPdf = mainPath + "pdfs/" + scriptPath + ".pdf";
+
+        const targetFolder = mainPath + "pdfs/";
+        const targetPdf = targetFolder + scriptPath + ".pdf";
+
+        if (!existsSync(targetFolder)){
+            mkdirSync(targetFolder);
+        }
 
         // Remove the original file first
         if (existsSync(targetPdf)) {
