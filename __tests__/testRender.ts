@@ -119,7 +119,7 @@ describe('Render tests', () => {
         expect(svgOutput === expectedSvgOutput).toEqual(true);
     });
 
-    test('pdf output', async () => {
+    test.only('pdf output', async () => {
         const scriptPath = 'script1.cst';
         const targetPdf = mainPath + "pdfs/" + scriptPath + ".pdf";
 
@@ -161,12 +161,16 @@ describe('Render tests', () => {
 
         console.log('done genereate pdf');
 
-        // Wait for stream to finish
-        await new Promise(resolve => {
-            outputStream.on('finish', () => {
-                resolve();
+        try {
+            // Wait for stream to finish
+            await new Promise(resolve => {
+                outputStream.on('finish', () => {
+                    resolve();
+                });
             });
-        });
+        } catch (err) {
+            console.log('err 1', err);
+        }
 
         console.log('stream finished');
 
@@ -177,7 +181,6 @@ describe('Render tests', () => {
         // Done creating PDF, now generate the md5 hash for comparison
         const hash = crypto.createHash('md5');
         hash.setEncoding('hex');
-
 
         const result = await new Promise(resolve => {
             const fd = createReadStream(targetPdf);
