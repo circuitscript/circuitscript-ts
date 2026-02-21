@@ -1017,8 +1017,12 @@ export class ParserVisitor extends BaseVisitor {
         dataResult = unwrapValue(dataResult);
 
         if (dataResult === null || dataResult === undefined) {
-            this.throwWithContext(componentCtx, 
-                "Could not find component: " + componentCtx.getText());
+            if (componentCtx){
+                this.throwWithContext(componentCtx, 
+                    "Could not find component: " + componentCtx.getText());
+            } else {
+                this.throwWithContext(ctx, "Failed to parse");
+            }
         }
 
         if (dataResult instanceof ClassComponent
@@ -1509,7 +1513,6 @@ export class ParserVisitor extends BaseVisitor {
         // executor.getCurrentPoint();
     }
 
-
     visitWire_expr = (ctx: Wire_exprContext): void => {
         const segments = [];
         ctx.ID().forEach((ctxId, index) => {
@@ -1527,8 +1530,15 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
                 segments.push([value, new UnitDimension(useValue)]);
+            } else {
+                // Invalid segment
+                this.throwWithContext(ctx, "Invalid wire expression");
             }
         });
+
+        if (segments.length === 0){
+            this.throwWithContext(ctx, "Invalid wire expression");
+        }
         
         const newWire = this.getExecutor().addWire(segments);
         this.creationCtx.set(newWire, ctx);

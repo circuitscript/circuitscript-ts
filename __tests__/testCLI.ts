@@ -111,7 +111,7 @@ describe('test cli program', () => {
         ['script44'],
         ['script45'],
         ['script46'],
-    ])('test generated annotations - %s', async (scriptName: string) => {
+    ])('generated annotations - %s', async (scriptName: string) => {
         
         const result = execSync(baseCommand + ` ${renderPath}${scriptName}.cst -xj ${mainPath}${scriptName}.annotated.cst`);
         const resultString = result.toString();
@@ -125,7 +125,7 @@ describe('test cli program', () => {
     });
 
     // Test script taken from renderData/script59
-    test('test generate refdes external file', async () => {
+    test('generate refdes external file', async () => {
         execSync(baseCommand + ` ${mainPath}script59/main.cst -xu`);
 
         // Check the generated refdes file (now named after main schematic file)
@@ -138,7 +138,7 @@ describe('test cli program', () => {
         expect(JSON.stringify(json1)).toEqual(JSON.stringify(json2));
     });
 
-    test('test CLI direct text input and output', async () => {
+    test('CLI direct text input and output', async () => {
         const textInput = `from "std" import *\n\nv5 = supply(\"5V\")\ngnd = dgnd()\nat v5\nwire down 100\nadd res(10k)\nwire down 100\nto gnd`;
         const result = execSync(baseCommand + ` -i '${textInput}'`).toString();
 

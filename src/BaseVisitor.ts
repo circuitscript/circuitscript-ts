@@ -370,6 +370,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 });
                 currentReference = this.visitResult(ctxTrailer);
             });
+        } else {
+            // Check if is a function call, then have to say it is undefined
+            if (ctx.trailer().length > 0 && ctx.trailer(0)!.LParen()) {
+                this.throwWithContext(ctx, `Function not found: ${ctx.getText()}`);
+            }
         }
 
         let resultValue = currentReference;

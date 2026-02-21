@@ -285,23 +285,33 @@ export class BaseError extends Error {
 }
 
 export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
-    if(ctx === null || ctx === undefined){
+    if (ctx === null || ctx === undefined) {
         return null;
     }
-    
-    const startToken = ctx.start;
-    const endToken = ctx.stop;
 
+    const { start: startToken, stop: stopToken } = ctx;
     let result: string | null = null;
 
     if (startToken) {
         const { line, column } = startToken;
-        if (endToken && (endToken.line !== startToken.line || endToken.column !== startToken.column)) {
-            const endLine = endToken.line;
-            const endColumn = endToken.column + (endToken.stop - endToken.start);
-            result = ` at ${line}:${column}-${endLine}:${endColumn}`;
+
+        let stopLine = 0;
+        let stopCol = 0;
+
+        if (stopToken && (stopToken.line !== startToken.line || stopToken.column !== startToken.column)) {
+            stopLine = stopToken.line;
+            stopCol = stopToken.column + (stopToken.stop - stopToken.start);
+        } else if (startToken === stopToken || startToken) {
+            // If both tokens are the same, then it is only a single token.
+            stopLine = line;
+            stopCol = column + 1 + (startToken.stop - startToken.start);
         } else {
-            result = ` at ${line}:${column}`;
+            stopCol = -1;
+        }
+
+        result = ` at ${line}:${column+1}`;
+        if (stopCol !== -1){
+            result += `-${stopLine}:${stopCol+1}`;
         }
     }
 

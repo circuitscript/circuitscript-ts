@@ -3,7 +3,6 @@ import { ScriptOptions, prepareFile } from "../helpers.js";
 import { IParsedToken, prepareTokens, SemanticTokensVisitor } from "./SemanticTokenVisitor.js";
 import { ParseError } from "../utils.js";
 
-
 export async function getSemanticTokens(
     filePath: string, scriptData: string, options: ScriptOptions): Promise<{ visitor: SemanticTokensVisitor; parsedTokens: IParsedToken[]; }> {
 

@@ -110,7 +110,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         visitor.enterFile(filePath);
 
         // Clear the errors array.
-        errors.splice(0, errors.length);
+        const numErrors = errors.length;
 
         const result =
             parseFileWithVisitor(visitor, fileData, {
@@ -122,7 +122,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         const { throwError, tree, tokens } = result;
         let { hasError, hasParseError } = result;
 
-        if (errors.length > 0) {
+        if (errors.length > numErrors) {
             // Some parsing errors...
             hasError = true;
             hasParseError = true;
@@ -168,7 +168,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             enableLexerTokenStream: lexerTokens !== false || lexerMapping !== false,
         });
 
-        printWarnings(visitor.getWarnings());
+    printWarnings(visitor.getWarnings());
 
     showStats && console.log('Lexing took:', lexerTimeTaken);
     showStats && console.log('Parsing took:', parserTimeTaken);

@@ -10,7 +10,6 @@ import { CircuitScriptLexer } from "../antlr/CircuitScriptLexer.js";
 import { Function_def_exprContext, Create_component_exprContext,
     Create_graphic_exprContext, Callable_exprContext, Property_key_exprContext,
     Assignment_exprContext,
-    Import_exprContext,
     Function_args_exprContext,
     GraphicCommandExprContext,
     For_exprContext,
@@ -18,7 +17,8 @@ import { Function_def_exprContext, Create_component_exprContext,
     ScriptContext,
     CreateExprContext,
     Import_simpleContext,
-    Import_specific_or_allContext} from "../antlr/CircuitScriptParser.js";
+    Import_specific_or_allContext,
+    At_component_exprContext} from "../antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "../BaseVisitor.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
 import { SymbolValidatorContext } from "../globals.js";
@@ -159,7 +159,6 @@ export class SemanticTokensVisitor extends BaseVisitor {
     }
 
     visitCreateExpr = (ctx: CreateExprContext):void => {
-        this.addSemanticToken(ctx.Create(), ['defaultLibrary'], 'function');
         this.visit(ctx.create_expr());
     }
 
@@ -233,30 +232,56 @@ export class SemanticTokensVisitor extends BaseVisitor {
     }
 
     /**
-     * Visits callable expressions and identifies variable declarations in assignments
+     * Visits callable expressions and identifies:
+     * - Variable declarations in assignments
+     * - Function calls (callable with parameters)
      */
     visitCallable_expr = (ctx: Callable_exprContext): void => {
-        if (ctx.parent instanceof Assignment_exprContext && ctx.ID()){
-            this.addSemanticToken(ctx.ID()!, [], 'variable');
+        const id = ctx.ID();
+        if (!id) return;
+
+        // Check if this is a variable declaration (left side of assignment)
+        if (ctx.parent instanceof Assignment_exprContext) {
+            this.addSemanticToken(id, [], 'variable');
+            return;
+        }
+
+        // Check if this is a function call (has parentheses trailer)
+        const trailers = ctx.trailer();
+        if (trailers && trailers.length > 0) {
+            // Check if the first trailer is a function call (has LParen)
+            const firstTrailer = trailers[0];
+            if (firstTrailer.LParen()) {
+                this.addSemanticToken(id, [], 'function');
+                return;
+            }
         }
     }
 
     /**
-     * Visits import expressions and marks imported identifiers as namespaces
-     * Example: import myLibrary
+     * Visits simple import expressions and marks library name as namespace
+     * Example: import "myLibrary"
      */
-    // visitImport_expr = (ctx: Import_exprContext): void => {
-    //     // Mark imported identifier as namespace (don't process imported file)
-    //     this.addSemanticToken(ctx.ID(), [], 'namespace');
-    // }
+    visitImport_simple = (ctx: Import_simpleContext): void => {
+        // libraryName should be passed as a string
+    }
 
-    // visitImport_simple = (ctx: Import_simpleContext): void => {
-    //     this.addSemanticToken(ctx._libraryName!, [], 'namespace');
-    // }
+    /**
+     * Visits specific/all import expressions and marks library name and imported functions
+     * Example: from "myLibrary" import func1, func2
+     * Example: from "myLibrary" import *
+     */
+    visitImport_specific_or_all = (ctx: Import_specific_or_allContext): void => {
+        // libraryName should be passed as a string
 
-    // visitImport_specific_or_all = (ctx: Import_specific_or_allContext): void => {
-    //     this.addSemanticToken()
-    // }
+        // Mark imported function names as functions
+        const funcNames = ctx.ID();
+        if (funcNames && funcNames.length > 0) {
+            funcNames.forEach(funcName => {
+                this.addSemanticToken(funcName, ['defaultLibrary'], 'function');
+            });
+        }
+    }
 
     visitFor_expr = (ctx: For_exprContext): void => {
         ctx.ID().forEach(item => {
@@ -269,7 +294,12 @@ export class SemanticTokensVisitor extends BaseVisitor {
 
     visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
         this.addSemanticToken(ctx.ANNOTATION_START(), [], 'comment');
-        this.addSemanticToken(ctx.ID(), [], 'comment');
+        const ids = ctx.ID();
+        if (ids && ids.length > 0) {
+            ids.forEach(id => {
+                this.addSemanticToken(id, [], 'comment');
+            });
+        }
     } 
 
     //
@@ -303,21 +333,22 @@ export class SemanticTokensVisitor extends BaseVisitor {
 
         // Resolve token type from lexer symbolic names
         if (this.lexer.symbolicNames[token.type] !== null && this.lexer.symbolicNames[token.type] !== undefined) {
-            stringValue = this.lexer.symbolicNames[token.type];
+            stringValue = this.lexer.symbolicNames[token.type] ?? '';
             if (stringValue !== "NEWLINE") {
                 textPart = this.script.substring(token.start, token.stop + 1);
             } else {
-                textPart = token.text.length-1;
+                textPart = token.text || '';
             }
-        } 
+        }
         // Resolve token type from lexer literal names
         else if (this.lexer.literalNames[token.type] !== null && this.lexer.literalNames[token.type] !== undefined) {
-            stringValue = this.lexer.literalNames[token.type];
+            stringValue = this.lexer.literalNames[token.type] ?? '';
             textPart = this.script.substring(token.start, token.stop + 1);
-        } 
+        }
         // Fallback to token text
         else {
-            stringValue = token._text;
+            stringValue = token.text ?? '';
+            textPart = token.text || '';
         }
 
         return {
@@ -327,6 +358,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
             tokenType: tokenType !== null ? tokenType : stringValue,
             tokenModifiers: modifiers,
             textValue: textPart,
+            path: '',
         }
     }
 
@@ -393,7 +425,7 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
     
     const parsedTokens: IParsedToken[] = [];
 
-    tokens.forEach(item => {
+    for (const item of tokens){
         // Skip EOF tokens
         if (item.type !== -1) {
             let stringValue = "";
@@ -401,36 +433,38 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
 
             // Resolve token type from lexer symbolic names
             if (lexer.symbolicNames[item.type] !== null && lexer.symbolicNames[item.type] !== undefined) {
-                stringValue = lexer.symbolicNames[item.type];
+                stringValue = lexer.symbolicNames[item.type] ?? '';
                 if (stringValue !== "NEWLINE") {
                     textPart = script.substring(item.start, item.stop + 1);
                 } else {
-                    textPart = item.text.length - 1;
+                    textPart = item.text || '';
                 }
-            } 
-            // Resolve token type from lexer literal names
-            else if (lexer.literalNames[item.type] !== null && lexer.literalNames[item.type] !== undefined) {
-                stringValue = lexer.literalNames[item.type];
-                textPart = script.substring(item.start, item.stop + 1);
-            } 
+            }
             // Fallback to token text
             else {
-                stringValue = item._text;
+                stringValue = item.text ?? '';
+                textPart = item.text || '';
             }
 
             // Only add tokens with valid text content
-            if (textPart !== 0 && textPart !== '') {
-                parsedTokens.push({
-                    line: item.line,
-                    column: item.column,
-                    length: item.stop - item.start + 1,
-                    tokenType: resolveTokenType(stringValue),
-                    tokenModifiers: resolveTokenModifiers(stringValue),
-                    textValue: textPart,
-                });
+            if (textPart !== '') {
+                const tokenType = resolveTokenType(stringValue);
+
+                // Only keep tokens that have a valid type.
+                if (tokenType !== ''){
+                    parsedTokens.push({
+                        line: item.line,
+                        column: item.column,
+                        length: item.stop - item.start + 1,
+                        tokenType: tokenType,
+                        tokenModifiers: resolveTokenModifiers(stringValue),
+                        textValue: textPart,
+                        path: '',
+                    });
+                }
             }
         }
-    });
+    }
 
     return parsedTokens;
 }
@@ -445,28 +479,23 @@ const languageKeywords = [
     'graphic', 'wire', 'pin', 'add', 'at', 'to',
     'point', 'join', 'parallel', 'return', 'def', 'from', 'import',
     'true', 'false', 'nc', 'sheet', 'frame', 'if', 'else', 'for', 'in',
-];
 
-/** Circuit graph construction operators for specialized highlighting */
-const operatorKeywords = [
+    /** Circuit graph construction operators for specialized highlighting */
     'at', 'to', 'wire', 'add', 'frame', 'join', 'parallel', 'point'
-]
+];
 
 /**
  * Resolves ANTLR token type to semantic token type for syntax highlighting
  * Maps lexer token types to semantic categories for editor highlighting
- * 
+ *
  * @param tokenType - ANTLR lexer token type name
- * @returns Semantic token type string or null if not recognized
+ * @returns Semantic token type string (defaults to empty string if not recognized)
  */
 function resolveTokenType(tokenType: string): string {
-    // Circuit graph construction operators get special treatment
-    if (operatorKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
-        return 'graphKeyword';
-    } // General language keywords
-    else if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
+    // Circuit graph construction operators and general language keywords
+    if (languageKeywords.indexOf(tokenType.toLowerCase()) !== -1) {
         return 'keyword';
-    } 
+    }
     // Specific token type mappings
     else {
         switch (tokenType) {
@@ -486,7 +515,7 @@ function resolveTokenType(tokenType: string): string {
                 return 'comment';
         }
 
-        return null;
+        return '';
     }
 }
 

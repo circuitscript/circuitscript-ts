@@ -6,9 +6,10 @@
  */
 
 import { ParserRuleContext, CommonTokenStream } from 'antlr4ng';
-import { Add_component_exprContext, At_block_headerContext, 
+import { Add_component_exprContext, Assignment_exprContext, At_block_headerContext, 
     At_blockContext, 
     At_component_exprContext, 
+    Callable_exprContext, 
     Component_select_exprContext, 
     Frame_exprContext, 
     Function_def_exprContext, Function_return_exprContext, ScriptContext, 
@@ -84,6 +85,14 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             this.tokenStream.getTokens(),
             this.sourceText,
         );
+    }
+
+    visitCallable_expr = (ctx: Callable_exprContext) => {
+        // Do nothing
+    }
+
+    visitAssignment_expr = (ctx: Assignment_exprContext) => {
+        // Do nothing
     }
 
     visitAdd_component_expr = (ctx: Add_component_exprContext): void => {

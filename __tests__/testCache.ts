@@ -180,7 +180,7 @@ describe('Cache storage', () => {
 describe('Cache integration: import with cache', () => {
     const libPath = LIB_PATH;
     const scriptPath = '__tests__/testData/cacheData/main.cst';
-    const importScript = `import "lib1"\n\nU1 = my_ic()\n`;
+    const importScript = `import "lib1"\n\nU1 = lib1.my_ic()\n`;
 
     beforeEach(() => {
         removeCacheDir(libPath);
