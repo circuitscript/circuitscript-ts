@@ -1,6 +1,33 @@
 # Changelog
 
-## [v0.4.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.4.0...v0.4.1)
+## [v0.5.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.4.1...v0.5.0)
+
+[357794e](https://gitlab.com/circuitscript/circuitscript-ts/commit/357794e81d237285c26610b4ce88492b6d3f1d9b)Add semantic tokens support and improve error handling
+- 
+- - Add comprehensive semantic tokens visitor with tests
+- - Improve function/variable detection in semantic analysis
+- - Add better error messages for undefined functions and components
+- - Fix test descriptions and cache test imports
+- - Update ESLint config to use correct tsconfig reference
+- - Enhance wire expression validation
+- - Fix error position reporting to use 1-based column indexing
+- 
+- Co-Authored-By: Claude Sonnet 4.5 &lt;noreply@anthropic.com&gt;
+
+[bb9ccd5](https://gitlab.com/circuitscript/circuitscript-ts/commit/bb9ccd5c7c2505611795ce1930c1adcc7082cc6a)Refactor numeric value types into separate modules
+- 
+- Extracted NumericValue, PercentageValue, WrappedNumber, and BlockTypes classes from their original locations into dedicated files for better code organization and maintainability.
+- 
+- Key changes:
+- - Moved NumericValue, NumberOperator, and related functions from ParamDefinition.ts to new NumericValue.ts
+- - Extracted PercentageValue to PercentageValue.ts
+- - Extracted WrappedNumber to WrappedNumber.ts
+- - Moved BlockTypes enum from globals.ts to BlockTypes.ts
+- - Updated all imports across the codebase to reference new file locations
+- - Improved lexer diagnostics initialization to only create collector when enabled
+- - Fixed tsconfig structure to properly define rootDir and includes for each build target
+
+## [v0.4.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.4.0...v0.4.1) - 2026-02-20
 
 [ca7ecce](https://gitlab.com/circuitscript/circuitscript-ts/commit/ca7ecce7221e3665ac702ee185c821cf1e93a390) minor fix
 -  fixed exports
