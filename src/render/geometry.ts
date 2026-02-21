@@ -9,9 +9,8 @@ import Flatten from '@flatten-js/core'
 import { measureTextSize2 } from '../sizing.js';
 import { defaultFont, fontDisplayScale, PortArrowSize, PortPaddingHorizontal, PortPaddingVertical } from '../globals.js';
 import { Box } from '@svgdotjs/svg.js';
-import { numeric, NumericValue } from '../objects/ParamDefinition.js';
+import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
 import { AllPinTypes, PinTypes } from '../objects/PinTypes.js';
-import { roundValue } from '../utils.js';
 import { SimplePoint } from './draw_symbols.js';
 
 export type Segment = Flatten.Segment;

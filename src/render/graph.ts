@@ -9,7 +9,7 @@ import { ClassComponent, ComponentUnit } from "../objects/ClassComponent.js";
 import { SequenceItem, SequenceAction, FrameAction, SequenceActionWire } from "../objects/ExecutionScope.js";
 import { Frame, FixedFrameIds, FrameParamKeys } from "../objects/Frame.js";
 import { Net } from "../objects/Net.js";
-import { numeric, NumericValue } from "../objects/ParamDefinition.js";
+import { NumericValue, numeric } from "../objects/NumericValue.js";
 import { Logger } from "../logger.js";
 import { ComponentPinNetPair, NetTypes } from "../objects/types.js";
 import Matrix, { solve } from "ml-matrix";

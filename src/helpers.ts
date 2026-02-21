@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { BaseError, resolveToNumericValue, SimpleStopwatch } from "./utils.js";
+import Big from "big.js";
 import { ParserRuleContext } from "antlr4ng";
+
+import { BaseError, SimpleStopwatch } from "./utils.js";
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, 
     DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";
@@ -16,8 +18,7 @@ import { LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 
 // Dynamic type definition for svgdom since it's ESM-only
 export type SVGWindow = any;
-import { NumericValue } from "./objects/ParamDefinition.js";
-import Big from "big.js";
+import { NumericValue, resolveToNumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ImportedLibrary } from "./objects/types.js";
 

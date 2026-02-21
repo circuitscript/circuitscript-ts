@@ -1,6 +1,6 @@
 import { ComponentTypes } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { NumericValue } from "./objects/ParamDefinition.js"
+import { NumericValue } from "./objects/NumericValue.js"
 
 export type ConditionNode = {
     // Parameter key to compare with

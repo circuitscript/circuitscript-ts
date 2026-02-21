@@ -37,6 +37,14 @@ src/antlr/.antlr
 *.svg
 dump/*
 
+# CircuitScript library pre-compile cache
+.cst.cache/
+**/.cst.cache/
+
 !__tests__/**/*.svg
 __tests__/tmp
 *.tgz
+
+__tests__/cliTest/*.annotated.cst
+examples/*
+oshwa-examples/*

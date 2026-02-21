@@ -13,7 +13,7 @@ import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
 import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
 import { ExecutionContext } from '../execute.js';
-import { NumericValue } from './ParamDefinition.js';
+import { NumericValue } from './NumericValue.js';
 import { DefaultComponentUnit, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from '../utils.js';
 

@@ -18,10 +18,10 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
     VerticalAlignProp} from "./geometry.js";
 import { Logger } from "../logger.js";
 import { PinTypes } from "../objects/PinTypes.js";
-import { roundValue, RuntimeExecutionError, throwWithContext } from "../utils.js";
+import { RuntimeExecutionError, throwWithContext } from "../utils.js";
 import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
-import { numeric, NumericValue } from "../objects/ParamDefinition.js";
+import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
 
 

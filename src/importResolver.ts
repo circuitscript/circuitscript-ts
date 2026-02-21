@@ -44,7 +44,7 @@ async function resolveImportPath(
 
     const absPath = environment.getAbsPathRelativeToCurrentFolder(useName);
     const executionDirectory = environment.getCurrentDirectory();
-    const relPath = environment.relative(executionDirectory, absPath)
+    const relPath = environment.relative(executionDirectory, absPath);
 
     if (await environment.exists(relPath)) {
         return relPath;
@@ -71,7 +71,7 @@ export async function resolveAllImportFilepaths(
     const result: string[] = [];
 
     async function walk(filePath: string | null, passedInScriptData?: string | null): Promise<void> {
-        if (filePath !== undefined && filePath !== null && filePath !== ''){
+                if (filePath !== undefined && filePath !== null && filePath !== ''){
             if (visited.has(filePath)) return;
 
             visited.add(filePath);
@@ -80,9 +80,9 @@ export async function resolveAllImportFilepaths(
         let fileData: string;
         if (passedInScriptData === undefined || passedInScriptData === null) {
             try {
-                fileData = await environment.readFile(filePath!, { encoding: 'utf8' });
+                                fileData = await environment.readFile(filePath!, { encoding: 'utf8' });
             } catch {
-                return;
+                                return;
             }
         } else {
             fileData = passedInScriptData;
@@ -90,7 +90,7 @@ export async function resolveAllImportFilepaths(
 
         if (fileData) {
             const importNames = extractImportNames(fileData);
-            const savedFile = environment.getCurrentFile();
+                        const savedFile = environment.getCurrentFile();
 
             if (filePath) {
                 environment.setCurrentFile(filePath);
@@ -98,7 +98,7 @@ export async function resolveAllImportFilepaths(
 
             for (const name of importNames) {
                 const resolvedPath = await resolveImportPath(name, environment);
-                if (resolvedPath) {
+                                if (resolvedPath) {
                     result.push(resolvedPath);
                     await walk(resolvedPath);
                 }

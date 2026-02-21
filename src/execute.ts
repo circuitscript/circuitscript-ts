@@ -5,16 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalNames, 
+import { ComponentTypes, Delimiter1, FrameType, GlobalNames, 
     NoNetText, ParamKeys, 
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
+import { BlockTypes } from "./objects/BlockTypes.js";
 import { ExecutionWarning } from "./utils.js";
 import { ClassComponent, ComponentUnit, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
-import { numeric, NumericValue, ParamDefinition } from './objects/ParamDefinition.js';
+import { NumericValue } from './objects/NumericValue.js';
+import { ParamDefinition } from "./objects/ParamDefinition.js";
+import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
 import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
     ComponentUnitDefinition, 

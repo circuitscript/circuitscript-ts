@@ -21,7 +21,9 @@ import { ExecutionContext } from "./execute.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
-import { NumberOperator, NumberOperatorType, NumericValue, PercentageValue } from "./objects/ParamDefinition.js";
+import { NumberOperator, NumberOperatorType, NumericValue, 
+    resolveToNumericValue } from "./objects/NumericValue.js";
+import { PercentageValue } from "./objects/PercentageValue.js";
 import { CallableParameter, ComplexType, 
     Direction, 
     FunctionDefinedParameter, AnyReference, UndeclaredReference, 
@@ -33,7 +35,7 @@ import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseNamespace, ComponentTypes, DoubleDelimiter1, GlobalDocumentName, PinTypesList, ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
-import { BaseError, resolveToNumericValue, RuntimeExecutionError, throwWithContext } from './utils.js';
+import { BaseError, RuntimeExecutionError, throwWithContext } from './utils.js';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { PinId } from './objects/PinDefinition.js';

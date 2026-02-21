@@ -6,7 +6,7 @@
  */
 
 import { RuntimeExecutionError } from '../utils.js';
-import { NumericValue } from './ParamDefinition.js';
+import { NumericValue } from './NumericValue.js';
 import { PinTypes } from './PinTypes.js';
 
 export class PinId {

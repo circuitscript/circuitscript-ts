@@ -1,7 +1,7 @@
 import * as csv from '@fast-csv/format';
 
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { NumericValue } from "./objects/ParamDefinition.js";
+import { NumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from './environment/environment.js';
 
 export type BomConfig = {

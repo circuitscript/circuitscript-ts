@@ -6,7 +6,7 @@
  */
 
 import { NoNetText } from "../globals.js";
-import { NumericValue } from "../objects/ParamDefinition.js";
+import { NumericValue } from "../objects/NumericValue.js";
 import { NetListItem } from "../visitor.js";
 
 export function generateKiCadNetList(netlist: NetListItem[])

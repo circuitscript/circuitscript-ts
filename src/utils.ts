@@ -4,15 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { Big } from 'big.js';
-
 import { ParserRuleContext, Token } from "antlr4ng";
 import { SymbolDrawingCommands } from "./render/draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { NumericValue } from "./objects/ParamDefinition.js";
 import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope.js';
 import { UnitDimension } from './helpers.js';
-import { BlockTypes } from './globals.js';
+import { BlockTypes } from "./objects/BlockTypes.js";
 import { DeclaredReference, AnyReference } from './objects/types.js';
 
 export class SimpleStopwatch {
@@ -111,12 +108,6 @@ export function getPortType(component: ClassComponent): string | null {
     return foundPinType;
 }
 
-export function roundValue(value: NumericValue): NumericValue {
-    return resolveToNumericValue(
-        new Big(
-            value.toBigNumber().toFixed(7)));
-}
-
 export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
     if (messageOrError instanceof BaseError){
         throw messageOrError;
@@ -140,76 +131,6 @@ export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
         newMap.set(key, value);
     });
     return newMap;
-}
-
-export function getNumberExponential(value: string): number {
-    value = value.trim();
-    switch (value) {
-        case 'G':
-            return 9;
-        case 'M':
-            return 6;
-        case 'k':
-        case 'K':
-            return 3;
-        case 'm':
-            return -3;
-        case 'u':
-            return -6;
-        case 'n':
-            return -9;
-        case 'p':
-            return -12;
-        case 'f':
-            return -15;
-        default:
-            return 0;
-    }
-}
-
-export function getNumberExponentialText(value: number): string {
-    switch (value) {
-        case -15:
-            return 'f';
-        case -12:
-            return 'p';
-        case -9:
-            return 'n';
-        case -6:
-            return 'u';
-        case -3:
-            return 'm';
-
-        case 3:
-            return 'k';
-        case 6:
-            return 'M';
-        case 9:
-            return 'G';
-
-        case 0:
-        default:
-            return '';
-    }
-}
-
-export function resolveToNumericValue(value: Big): NumericValue {
-    // find the nearest exponential value
-    if (value.toNumber() === 0) {
-        return new NumericValue(0);
-    }
-
-    const isNeg = value.lt(0);
-    const positiveValue = isNeg ? value.neg() : value;
-    const prefixPart = Math.floor(Math.log10(positiveValue.toNumber()) / 3);
-
-    let useValue = value;
-    if (prefixPart !== 0) {
-        const tmpValue1 = positiveValue.div(Math.pow(10, prefixPart * 3));
-        useValue = isNeg ? tmpValue1.neg() : tmpValue1;
-    }
-
-    return new NumericValue(useValue, prefixPart * 3);
 }
 
 export function isPointWithinArea(

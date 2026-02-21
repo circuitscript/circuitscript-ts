@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { numeric } from "./objects/ParamDefinition.js";
+import { numeric } from "./objects/NumericValue.js";
 import { PinTypes } from "./objects/PinTypes.js";
 
 export const TOOL_VERSION = '0.1.5';
@@ -152,13 +152,6 @@ export enum ReferenceTypes {
     library = 'library',
     
     unknown = 'unknown',
-}
-
-export enum BlockTypes {
-    Branch = 1,     // split off circuit paths, same starting insertion point
-    Join = 2,       // join circuit paths, same ending insertion point
-    Parallel = 3,   // same starting and ending points for the circuit paths
-    Point = 4,      // to this point
 }
 
 export enum NetGraphicsParams {

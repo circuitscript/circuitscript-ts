@@ -62,20 +62,20 @@ import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
 import {
     NumberOperator,
     NumberOperatorType,
-    numeric,
-    NumericValue,
-    ParamDefinition
-} from './objects/ParamDefinition.js';
+    NumericValue} from './objects/NumericValue.js';
+import { ParamDefinition } from "./objects/ParamDefinition.js";
+import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BlockTypes, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
+import { ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
     WireAutoDirection} from './globals.js';
+import { BlockTypes } from "./objects/BlockTypes.js";
 import { ExecutionWarning, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';

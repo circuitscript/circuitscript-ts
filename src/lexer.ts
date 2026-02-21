@@ -35,6 +35,8 @@ export class MainLexer extends CircuitScriptLexer {
     // Sets the line offset for the tokens. This is 1-indexed!
     lineOffset: number;
 
+    enableDiagnostics = false;
+
     constructor(input: CharStream, enableDiagnostics = false) {
         super(input);
         this.tokens = [];
@@ -44,8 +46,12 @@ export class MainLexer extends CircuitScriptLexer {
 
         this.lineOffset = 0;
 
-        this.diagnosticCollector = new LexerDiagnosticCollector();
-        this.diagnosticCollector.setEnabled(enableDiagnostics);
+        this.enableDiagnostics = enableDiagnostics;
+
+        if (this.enableDiagnostics){
+            this.diagnosticCollector = new LexerDiagnosticCollector();
+            this.diagnosticCollector.setEnabled(enableDiagnostics);
+        }
     }
 
     reset(): void {
@@ -58,12 +64,12 @@ export class MainLexer extends CircuitScriptLexer {
     }
 
     emitToken(token: Token): void {
-        this.diagnosticCollector.onTokenStart();
+        this.enableDiagnostics && this.diagnosticCollector.onTokenStart();
 
         super.emitToken(token);
         this.tokens.push(token);
 
-        this.diagnosticCollector.onTokenGenerated(token, this.tokens.length - this.tokensHead);
+        this.enableDiagnostics && this.diagnosticCollector.onTokenGenerated(token, this.tokens.length - this.tokensHead);
     }
 
     nextToken(): Token {

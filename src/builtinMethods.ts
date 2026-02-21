@@ -1,9 +1,9 @@
 import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
-import { numeric, NumericValue } from "./objects/ParamDefinition.js";
+import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericValue.js";
 import { CallableParameter, CFunctionEntry, ImportedLibrary } from "./objects/types.js";
-import { unwrapValue, resolveToNumericValue, RuntimeExecutionError } from "./utils.js";
+import { unwrapValue, RuntimeExecutionError } from "./utils.js";
 import { BaseNamespace } from "./globals.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [

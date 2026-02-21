@@ -1,3 +1,10 @@
 {
-    "extends": "./tsconfig.cjs.json",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "__tests__"
+  ]
 }

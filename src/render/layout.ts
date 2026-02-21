@@ -21,12 +21,12 @@ import { Net } from '../objects/Net.js';
 import { Logger } from '../logger.js';
 import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from '../objects/Frame.js';
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
-    printBounds, resizeBounds, resizeToNearestGrid, roundValue, 
+    printBounds, resizeBounds, resizeToNearestGrid, 
     toNearestGrid } from '../utils.js';
 import { ComponentPinNetPair, Direction } from '../objects/types.js';
 import { PinDefinition, PinId } from '../objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from '../helpers.js';
-import { numeric, NumericValue } from '../objects/ParamDefinition.js';
+import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
 import { generateLayoutPinDefinition, getWireName, RenderItemType } from './graph.js';
 
 export class LayoutEngine {

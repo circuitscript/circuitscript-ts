@@ -9,19 +9,18 @@ import { TerminalNode, Token } from "antlr4ng";
 import { CircuitScriptLexer } from "../antlr/CircuitScriptLexer.js";
 import { Function_def_exprContext, Create_component_exprContext,
     Create_graphic_exprContext, Callable_exprContext, Property_key_exprContext,
-    ValueAtomExprContext,
     Assignment_exprContext,
     Import_exprContext,
     Function_args_exprContext,
-    Function_call_exprContext,
     GraphicCommandExprContext,
     For_exprContext,
     Annotation_comment_exprContext,
     ScriptContext,
-    CreateExprContext} from "../antlr/CircuitScriptParser.js";
+    CreateExprContext,
+    Import_simpleContext,
+    Import_specific_or_allContext} from "../antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "../BaseVisitor.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
-import { buildInMethodNamesList } from "../builtinMethods.js";
 import { SymbolValidatorContext } from "../globals.js";
 
 /**
@@ -124,20 +123,6 @@ export class SemanticTokensVisitor extends BaseVisitor {
     }
 
     /**
-     * Visits function call expressions and marks the function name
-     * Example: myFunction(arg1, arg2)
-     */
-    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
-        const modifiers = [];
-
-        if (buildInMethodNamesList.indexOf(ctx.ID().getText()) !== -1){
-            modifiers.push('defaultLibrary');
-        }
-
-        this.addSemanticToken(ctx.ID(), modifiers, 'function');
-    }
-
-    /**
      * Visits function definition expressions and creates new execution scope
      * Handles both function name declaration and parameter processing
      * Example: def myFunction(params): body
@@ -183,9 +168,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Example: U1 = create component: pins: 10
      */
     visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
-        ctx.property_expr().forEach(property_expr => {
-            this.visit(property_expr);
-        });
+        this.visitResult(ctx.properties_block());
     }
 
     /**
@@ -193,8 +176,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Example: create graphic: circle center (0, 0) radius 5
      */
     visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
-        const graphicsExpressionsCtx = ctx.graphic_expressions_block();
-        this.visitResult(graphicsExpressionsCtx);
+        this.visitResult(ctx.graphic_expressions_block());
     }
 
     /**
@@ -242,20 +224,6 @@ export class SemanticTokensVisitor extends BaseVisitor {
     }
 
     /**
-     * Visits value atom expressions - delegates to appropriate sub-expressions
-     */
-    visitValueAtomExpr = (ctx: ValueAtomExprContext): void => {
-        const ctxValueExpr = ctx.value_expr();
-        const ctxAtomExpr = ctx.atom_expr();
-
-        if (ctxValueExpr) {
-            this.visit(ctxValueExpr);
-        } else if (ctxAtomExpr) {
-            this.visit(ctxAtomExpr);
-        }
-    }
-
-    /**
      * Visits assignment expressions
      * Example: R1 = res(10k)
      */
@@ -277,10 +245,18 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Visits import expressions and marks imported identifiers as namespaces
      * Example: import myLibrary
      */
-    visitImport_expr = (ctx: Import_exprContext): void => {
-        // Mark imported identifier as namespace (don't process imported file)
-        this.addSemanticToken(ctx.ID(), [], 'namespace');
-    }
+    // visitImport_expr = (ctx: Import_exprContext): void => {
+    //     // Mark imported identifier as namespace (don't process imported file)
+    //     this.addSemanticToken(ctx.ID(), [], 'namespace');
+    // }
+
+    // visitImport_simple = (ctx: Import_simpleContext): void => {
+    //     this.addSemanticToken(ctx._libraryName!, [], 'namespace');
+    // }
+
+    // visitImport_specific_or_all = (ctx: Import_specific_or_allContext): void => {
+    //     this.addSemanticToken()
+    // }
 
     visitFor_expr = (ctx: For_exprContext): void => {
         ctx.ID().forEach(item => {

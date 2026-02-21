@@ -20,7 +20,7 @@ import {
     defaultWireLineWidth, fontDisplayScale,
     junctionSize
 } from '../globals.js';
-import { numeric, NumericValue } from '../objects/ParamDefinition.js';
+import { NumericValue, numeric } from '../objects/NumericValue.js';
 import { BoundBox, combineMaps, getBoundsSize } from '../utils.js';
 import { milsToMM } from '../helpers.js';
 import { getPaperSize } from "./PaperSizes.js";

@@ -11,7 +11,8 @@ import { CFunction, CFunctionEntry, ComponentPinNet, ComponentPinNetPair,
     ComponentPinWireId, 
     ImportedLibrary, 
     ValueType } from './types.js';
-import { BlockTypes, LayoutDirection } from '../globals.js';
+import { LayoutDirection } from '../globals.js';
+import { BlockTypes } from "./BlockTypes.js";
 import { Wire, WireSegment } from './Wire.js';
 import { Frame } from './Frame.js';
 import { ParserRuleContext } from 'antlr4ng';
