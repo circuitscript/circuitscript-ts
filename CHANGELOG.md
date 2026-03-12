@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.5.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.4.1...v0.5.0)
+## [v0.5.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.0...v0.5.1)
+
+[6dd3774](https://gitlab.com/circuitscript/circuitscript-ts/commit/6dd3774038687205c6ad0be30d26333089447225) removed unused fonts
+
+## [v0.5.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.4.1...v0.5.0) - 2026-02-21
 
 [357794e](https://gitlab.com/circuitscript/circuitscript-ts/commit/357794e81d237285c26610b4ce88492b6d3f1d9b)Add semantic tokens support and improve error handling
 - 
