@@ -14,14 +14,14 @@ import { ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { OnErrorHandler, BaseVisitor, ImportFileResult } from "./BaseVisitor.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
-import { defaultZoomScale } from "./globals.js";
+import { defaultZoomScale, GlobalDocumentName } from "./globals.js";
 import { NetGraph } from "./render/graph.js";
 import { ScriptOptions, RenderScriptReturn } from "./helpers.js";
 import { LayoutEngine } from "./render/layout.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { FrameParamKeys } from "./objects/Frame.js";
-import { ImportedLibrary } from "./objects/types.js";
+import { DocumentVariable, ImportedLibrary } from "./objects/types.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
@@ -261,8 +261,10 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         //     console.log(instance.pinNets);
         // }
 
+        const documentVariable = visitor.getScope()
+            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+
         if (enableBom && bomOutputPath) {
-            const documentVariable = visitor.getScope().variables.get('document')!;
             const bomConfig = documentVariable.bom;
             const bomData = generateBom(bomConfig, visitor.getScope().getInstances());
 
@@ -341,7 +343,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             const renderLogger = new Logger();
             let svgCanvas;
             try {
-                svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger);
+                svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable);
             } catch (err) {
                 throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
             }

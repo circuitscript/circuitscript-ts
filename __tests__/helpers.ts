@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 
 import { ParserVisitor, VisitorExecutionException } from '../src/visitor.js';
-import { ComponentPinNet } from '../src/objects/types.js';
+import { ComponentPinNet, DocumentVariable } from '../src/objects/types.js';
 import { CircuitscriptParserErrorListener, parseFileWithVisitor } from '../src/parser.js';
 import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { MainLexer } from '../src/lexer.js';
@@ -18,6 +18,7 @@ import { NetGraph } from '../src/render/graph.js';
 import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
+import { GlobalDocumentName } from '../src/globals.js';
 
 export function getTestEnvironment(): NodeScriptEnvironment {
     const env = new ESMNodeScriptEnvironment();
@@ -212,6 +213,7 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         sheetFrames: SheetFrame[], 
         ercResults: ERCReportItem[],
         bomCsvOutput: string[][], 
+        documentVariable: DocumentVariable
     }> {
 
     const script = readFileSync(scriptPath, { encoding: 'utf8' });
@@ -242,11 +244,15 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         const bomData = generateBom(options.bomConfig, visitor.getScope().getInstances());
         bomCsvOutput = generateBomCSV(bomData);
     }
+    
+    const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
 
     return {
         sheetFrames,
         ercResults,
-        bomCsvOutput
+        bomCsvOutput,
+        documentVariable
     }
 }
 

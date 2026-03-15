@@ -30,6 +30,7 @@ import { FrameParamKeys } from '../objects/Frame.js';
 import { SymbolPlaceholder } from './draw_symbols.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import { Logger } from '../logger.js';
+import { DocumentVariable } from 'src/objects/types.js';
 
 function createSvgCanvas(): Svg {
     const env = NodeScriptEnvironment.getInstance();
@@ -44,7 +45,9 @@ function createSvgCanvas(): Svg {
     return canvas;
 }
 
-export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger): Svg {
+export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger, 
+    documentVariable: DocumentVariable): Svg {
+    
     const canvas = createSvgCanvas();
 
     sheetFrames.forEach((sheet, index) => {
@@ -135,9 +138,16 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger): Sv
         logger.add('generating svg children in sheet');
         const sheetElements = sheetGroup.group().addClass('sheet-elements');
 
+        const gridProperties: GridProperties = {
+            gridBounds,
+            extendGrid,
+            style: documentVariable[FrameParamKeys.GridStyle] as string | undefined,
+            color: documentVariable[FrameParamKeys.GridColor] as string | undefined,
+        }
+
         // Draw all SVG children within the grid bounds only
         generateSVGChild(sheetElements, components, wires, junctions,
-            mergedWires, allFrames, textObjects, gridBounds, extendGrid, logger);
+            mergedWires, allFrames, textObjects, gridProperties, logger);
 
         sheetElements.translate(xOffset, yOffset);
         sheetGroup.translate(0, sheetYOffset.toNumber());    
@@ -218,25 +228,27 @@ function generateSVGChild(canvas: Svg | G,
     components: RenderComponent[], wires: RenderWire[], 
     junctions: RenderJunction[], mergedWires:MergedWire[],
     frameObjects:RenderFrame[], textObjects: RenderText[], 
-    gridBounds: BoundBox | null,
-    extendGrid: boolean, logger: Logger): void {
+    gridProperties: GridProperties,
+    logger: Logger): void {
 
     const displayWireId = false;
-
+    
     // Draw the display grid
-
+    
     // The bounds will be in mm, since all the items are drawn in mm
-    if (gridBounds === null){
+    if (gridProperties.gridBounds === null) {
         logger.add('get grid bounds');
-        gridBounds = getBounds(components, wires, junctions, frameObjects);
+        gridProperties.gridBounds = getBounds(components, wires, junctions, frameObjects);
     }
+
+    const { gridBounds } = gridProperties;
 
     logger.add('grid bounds',
         gridBounds.xmin, gridBounds.ymin, gridBounds.xmax, gridBounds.ymax);
 
     drawGrid(
         canvas.group().translate(0, 0),
-        gridBounds, extendGrid, logger);
+        gridProperties, logger);
 
     components.forEach(item => {
         const { x, y, width, height } = item;
@@ -456,12 +468,17 @@ function generateSVGChild(canvas: Svg | G,
         .stroke('none').fill('red');
 }
 
-function drawGrid(group: G, 
-    canvasSize: BoundBox,
-    extendGrid: boolean, logger:Logger): void {
-    
+function drawGrid(group: G,
+    gridProperties: GridProperties, logger: Logger): void {
+
+    const { gridBounds: canvasSize,
+        extendGrid,
+        style: gridStyle = "dots",
+        color: gridColor = "#000"
+    } = gridProperties;
+
     const gridSize = defaultGridSizeUnits;
-    const { xmin, ymin, xmax, ymax } = canvasSize;
+    const { xmin, ymin, xmax, ymax } = canvasSize!;
 
     // If extend grid is true, then draw outside of the canvas size
     const extraValue = extendGrid ? 1 : 0;
@@ -487,6 +504,10 @@ function drawGrid(group: G,
         .translate(-originSize/2, -originSize/2)
         .stroke('none').fill('blue');
 
+    // Even if the gridStyle is none, still draw the elements so that the
+    // same gridBounds will be generated.
+    const useGridColor = gridStyle !== "none" ? gridColor: "rgba(0,0,0,0)";
+    
     const lines = [];
     const smallOffset = milsToMM(3);
 
@@ -499,7 +520,7 @@ function drawGrid(group: G,
         const startX = gridStartX.add(numericGridSize.mul(i)).toNumber();
         lines.push(`M ${startX} ${startY.toNumber()} L ${startX} ${endY.toNumber()}`);
     }
-
+    
     const strokeSize = milsToMM(3);
     group.addClass('grid')
         .path(lines.join(" "))
@@ -508,8 +529,8 @@ function drawGrid(group: G,
         })
         .stroke({
             width: strokeSize.toNumber(),
-            color: '#000'
-        })
+            color: useGridColor
+        });
 }
 
 function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
@@ -548,4 +569,11 @@ interface SymbolExtras {
     value?: string | number;
     instance_name?: string;
     place?: boolean;
+}
+
+type GridProperties = {
+    gridBounds: BoundBox | null,
+    extendGrid: boolean,
+    style?: 'dots' | 'none',
+    color?: string,
 }

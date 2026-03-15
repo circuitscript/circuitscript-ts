@@ -38,6 +38,10 @@ export enum FrameParamKeys {
     // Same parameter is used in 'document' and 'sheet(frame)' objects
     SheetType = 'sheet_type',
 
+    // Grid that is displayed
+    GridStyle = "grid_style",  // "none", "dots"
+    GridColor = "grid_color",
+
     TitleAlign = 'title_align',
 
     HorizontalAlign = 'align',

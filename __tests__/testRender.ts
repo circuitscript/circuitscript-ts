@@ -96,13 +96,16 @@ describe('Render tests', () => {
         // multi-file schematic with refdes loaded from external file
         ['script59/main.cst', 'multi file refdes with refdes from external file', 'script59'],
 
+        ['script60.cst', 'grid style none'],
+        ['script61.cst', 'grid color red'],
+
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
-        const { sheetFrames } = await renderCommon(mainPath + scriptPath);
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
 
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable);
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         let useSvgPath = scriptPath;
@@ -133,8 +136,8 @@ describe('Render tests', () => {
         }
 
         // First, generate the PDF
-        const { sheetFrames } = await renderCommon(mainPath + scriptPath);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger());
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable);
 
         // Full ISO time string is given, because the CI server might
         // have a different timezone

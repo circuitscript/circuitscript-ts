@@ -18,6 +18,8 @@ import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from 'src/render/draw_symbols.js';
 import { RefdesModification } from 'src/annotate/utils.js';
 import { SerializedExpression } from 'src/cache/types.js';
+import { BomConfig } from 'src/BomGeneration.js';
+import { FrameParamKeys } from './Frame.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -367,3 +369,7 @@ export type ComponentUnitDefinition = {
 
     suffix: string | null,
 }
+
+export type DocumentVariable = {
+    bom: BomConfig;
+} & Partial<Record<FrameParamKeys, ValueType | ClassComponent>>;
