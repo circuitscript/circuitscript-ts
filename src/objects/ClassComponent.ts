@@ -377,7 +377,7 @@ export class ClassComponent {
         }
     }
 
-    setParam(key: string, value: number | string | NumericValue): void {
+    setParam(key: string, value: number | string | NumericValue | Net): void {
         this.parameters.set(key, value);
         this.refreshParamCache();
     }

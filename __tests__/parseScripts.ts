@@ -487,21 +487,21 @@ from "std" import *
 tmp1 = net("3V3")
 tmp2 = net("3V3")
 
-tmp1.color = "blue"
-print(tmp2.color)
+tmp1.net.color = "blue"
+print(tmp2.net.color)
 `, ["\"blue\""]);
 
 export const inlineScript58 = new ScriptTest(`
 # Test function return values and references
 from "std" import *
 tmp1 = net("3V3")
-tmp1.color = "blue"
-print(tmp1.color)
+tmp1.net.color = "blue"
+print(tmp1.net.color)
 
-net("3V3").color = "red"
-print(tmp1.color)
+net("3V3").net.color = "red"
+print(tmp1.net.color)
 
-print(net("3V3").color)
+print(net("3V3").net.color)
 `, ['"blue"', '"red"', '"red"']);
 
 export const inlineScript59 = new ScriptTest(`

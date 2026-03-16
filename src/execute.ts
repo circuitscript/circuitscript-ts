@@ -330,6 +330,9 @@ export class ExecutionContext {
             const defaultPin = new PinId(1);
             this.scope.setNet(component, defaultPin, tmpNet);
             this.log('set net', netName, 'component', component, defaultPin);
+
+            // Assign the net to a property of the component.
+            component.setParam('net', tmpNet);
         }
         
         this.scope.instances.set(instanceName, component);
@@ -1222,41 +1225,21 @@ export class ExecutionContext {
         let useValue = item;
 
         if (trailers.length > 0) {
-            rootValue = useValue;
-            const trailersPath = trailers.join(".");
+            rootValue = item;
+            useValue = item;
 
-            switch(type){
-                case ReferenceTypes.variable:
-                    useValue = rootValue;
-                    trailers.forEach(trailerPath => {
-                        useValue = useValue[trailerPath];
-                    });
-                    break;
-                    
-                case ReferenceTypes.instance: {
-                    // If is a net component, then try to access the 
-                    // the net instance used globally
-
-                    const tmpComponent = (rootValue as ClassComponent)
-                    if (tmpComponent.typeProp === ComponentTypes.net) {
-                        const usedNet = this.scope.getNet(tmpComponent, new PinId(1));
-                        if (usedNet) {
-                            const trailerValue = trailers.join(".");
-                            useValue = usedNet.params.get(trailerValue) ?? null;
-                        }
-                    } else {
-                        useValue = (rootValue as ClassComponent)
-                            .parameters.get(trailersPath);
-                    }
-                    break;
-                }
-
-                case ReferenceTypes.library: {
+            for (let i = 0; i < trailers.length; i++) {
+                if (useValue instanceof ClassComponent) {
+                    useValue = (useValue as ClassComponent).parameters.get(trailers[i]);
+                } else if (useValue instanceof Net) {
+                    useValue = (useValue as Net).params.get(trailers[i]);
+                } else if (useValue instanceof ImportedLibrary) {
+                    // Only handle a specific case for now..
                     const funcName = trailers[0];
                     const library = rootValue as ImportedLibrary;
 
                     const functionPath = `${library.libraryNamespace}${funcName}`;
-                    if (library.context.hasFunction(functionPath)){
+                    if (library.context.hasFunction(functionPath)) {
                         const foundFunc = library.context.getFunction(functionPath);
 
                         return new AnyReference({
@@ -1265,11 +1248,11 @@ export class ExecutionContext {
                             rootValue,
                             trailers,
                             trailerIndex: trailers.length,
-                            value: foundFunc, 
+                            value: foundFunc,
                         });
                     }
-
-                    break;
+                } else {
+                    useValue = useValue[trailers[i]];
                 }
             }
         }

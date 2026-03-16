@@ -5,6 +5,8 @@ import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericV
 import { CallableParameter, CFunctionEntry, ImportedLibrary } from "./objects/types.js";
 import { unwrapValue, RuntimeExecutionError } from "./utils.js";
 import { BaseNamespace } from "./globals.js";
+import { ClassComponent } from "./objects/ClassComponent.js";
+import { Net } from "./objects/Net.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -173,7 +175,10 @@ function toString(obj: any): string {
         return obj.toString();
     } else if (obj instanceof ImportedLibrary){
         return `[library: ${obj.libraryName}]`;
-                
+    } else if (obj instanceof ClassComponent) {
+        return `[component: ${obj.instanceName}]`;
+    } else if (obj instanceof Net){
+        return `[net: ${obj.toString()}]`
     } else {
         if (obj === undefined){
             return 'undefined'; 

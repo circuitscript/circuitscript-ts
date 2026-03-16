@@ -3,9 +3,9 @@ from "std" import *
 document.grid_style = "none"
 
 v5 = supply("5V")
-v5.color = "red"
-v5.highlight = "red"
-v5.highlightWidth = 20
+v5.net.color = "red"
+v5.net.highlight = "red"
+v5.net.highlightWidth = 20
 
 gnd = dgnd()
 
