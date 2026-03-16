@@ -1567,8 +1567,26 @@ export class ParserVisitor extends BaseVisitor {
     
     visitDouble_dot_property_set_expr = (ctx: Double_dot_property_set_exprContext): void => {
         const result = this.visitResult(ctx.data_expr());
-        const propertyName = ctx.ID().getText();
-        this.getExecutor().setProperty('..' + propertyName, result);
+        
+        const scope = this.getScope();
+        const useObject = scope.currentFrameId !== -1 ?
+            scope.frames[scope.currentFrameId - 1] : scope.currentComponent;
+
+        const lastReference = new AnyReference({
+            found: true,
+            value: useObject,
+            type: ReferenceTypes.instance,
+            trailerIndex: 0,
+        });
+
+        const firstId = ctx.ID().getText();
+        const referenceWithFirstID = this.getExecutor().resolveTrailers(
+            null, lastReference.value, [firstId]);
+
+        const useReference = this.resolveTrailersForReference(
+            referenceWithFirstID, null, ctx);
+        
+        this.assignValueToReference([], useReference, ctx, result);
     }
 
     visitExpressions_block = (ctx: Expressions_blockContext): void => {

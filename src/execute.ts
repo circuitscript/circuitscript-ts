@@ -1675,61 +1675,6 @@ export class ExecutionContext {
         });
     }
 
-    setProperty(nameWithProp: string, value: any): void {
-        this.log('set property', nameWithProp, 'value', value);
-
-        let idName: string;
-        let paramName: string;
-        
-        let useActive = false;
-
-        if (nameWithProp.startsWith('..')){
-            useActive = true;
-            paramName = nameWithProp.substring(2);
-        } else {
-            const parts = nameWithProp.split(".");
-            idName = parts[0];
-            paramName = parts[1];
-        }
-
-        if (useActive && this.scope.currentFrameId !== -1) {
-            // If there is some frame selected, then update frame params
-            this.scope.frames[this.scope.currentFrameId - 1]
-                .parameters.set(paramName, value);
-        } else {
-            idName = this.scope.currentComponent.instanceName;
-
-            // Check if instance exists
-            if (this.scope.instances.has(idName)) {
-                const component = this.scope.instances.get(idName)!;
-                component.setParam(paramName, value);
-
-                const unitModifiers = [
-                    ParamKeys.angle,
-                    ParamKeys.flip,
-                    ParamKeys.flipX,
-                    ParamKeys.flipY,
-                ];
-
-                if (unitModifiers.indexOf(paramName) !== -1) {
-                    // Convert the flipX/flipY value from boolean to number.
-                    if (paramName === ParamKeys.flipX || paramName == ParamKeys.flipY) {
-                        // Coerce boolean value into numeric value.
-                        if (typeof value === "boolean") {
-                            value = value ? numeric(1) : numeric(0);
-                        }
-                    }
-                    component.getUnit().setParam(paramName, value);
-                }
-
-            } else if (this.scope.variables.has(idName)) {
-                throw "Not implemented yet!";
-            } else {
-                throw "Unknown identifier: " + idName;
-            }
-        }
-    }
-
     applyComponentAngleFromWire(component: ClassComponent, pin: number, 
         opposite = false): void {
         // By default the last segment of the wire is used. But if opposite
