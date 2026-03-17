@@ -99,8 +99,9 @@ describe('Render tests', () => {
         ['script60.cst', 'grid style none'],
         ['script61.cst', 'grid color red'],
 
-        // ['script35.cst', 'arrange prop with repeated pins and missing pins']
+        ['script62.cst', 'label net color and properties']
 
+        // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);

@@ -1,0 +1,9 @@
+# Test that label net properties can be set.
+
+from "std" import *
+
+at label("myNet")
+..net.color = "blue"
+..net.lineWidth = 10
+
+wire right 300
