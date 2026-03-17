@@ -1,6 +1,33 @@
 # Changelog
 
-## [v0.5.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.0...v0.5.1)
+## [v0.5.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.1...v0.5.2)
+
+[a6ffead](https://gitlab.com/circuitscript/circuitscript-ts/commit/a6ffeaddd249cf257f802ca4f8f6a9e2a6fde25e)Support trailer access in double-dot property set expressions
+- 
+- Extends the double_dot_property_set_expr grammar rule to support trailers,
+- enabling nested property assignment (e.g. `..component.pin.param = value`).
+- Refactors property setting logic from execute.ts into the visitor layer using
+- the reference resolution system, and extracts resolveTrailersForReference as
+- a reusable method in BaseVisitor.
+
+[22e2a97](https://gitlab.com/circuitscript/circuitscript-ts/commit/22e2a97fb896760a8ecc23378ce50a7c0c779b0b)Change net property access syntax to use .net. accessor
+- 
+- Net properties like color, lineWidth, highlight are now accessed via
+- component.net.color instead of component.color. Refactored assignment
+- logic into shared assignValueToReference method, unified trailer
+- resolution to a loop-based approach, and updated setInstanceParam to
+- handle nested multi-level trailer paths.
+
+[1dfd3a4](https://gitlab.com/circuitscript/circuitscript-ts/commit/1dfd3a4b628a9181fdd2e2c6a77a57ca82606c30)Add document-level grid style and color properties
+- 
+- - Add GridStyle and GridColor to FrameParamKeys
+- - Add DocumentVariable type that exposes document properties to the render pipeline
+- - Pass DocumentVariable through renderSheetsToSVG so grid appearance can be controlled via document.grid_style and document.grid_color
+- - Add tests for grid_style="none" and custom grid_color
+
+[82f2d52](https://gitlab.com/circuitscript/circuitscript-ts/commit/82f2d52e2e296f22aa710aeac6726941d62fb5ae) added test for label properties
+
+## [v0.5.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.0...v0.5.1) - 2026-03-12
 
 [6dd3774](https://gitlab.com/circuitscript/circuitscript-ts/commit/6dd3774038687205c6ad0be30d26333089447225) removed unused fonts
 
