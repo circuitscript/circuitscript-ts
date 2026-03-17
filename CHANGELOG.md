@@ -1,6 +1,11 @@
 # Changelog
 
-## [v0.5.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.1...v0.5.2)
+## [v0.5.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.2...v0.5.3)
+
+[b849679](https://gitlab.com/circuitscript/circuitscript-ts/commit/b84967934678a64cb07cd8f74f4a5447bd926e19) remove unused code
+-  fixed handling of trailers in validation visitors
+
+## [v0.5.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.1...v0.5.2) - 2026-03-17
 
 [a6ffead](https://gitlab.com/circuitscript/circuitscript-ts/commit/a6ffeaddd249cf257f802ca4f8f6a9e2a6fde25e)Support trailer access in double-dot property set expressions
 - 
