@@ -18,7 +18,7 @@ import { Function_def_exprContext, Create_component_exprContext,
     CreateExprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
-    At_component_exprContext} from "../antlr/CircuitScriptParser.js";
+    TrailerContext} from "../antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "../BaseVisitor.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
 import { SymbolValidatorContext } from "../globals.js";
@@ -301,6 +301,10 @@ export class SemanticTokensVisitor extends BaseVisitor {
             });
         }
     } 
+
+    visitTrailer = (ctx: TrailerContext): void => {
+        // Do nothing
+    }
 
     //
     // Token Processing Methods

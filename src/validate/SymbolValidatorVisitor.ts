@@ -6,7 +6,8 @@ import { Assignment_exprContext, CallableExprContext,
     For_exprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
-    Create_graphic_exprContext} from "../antlr/CircuitScriptParser.js";
+    Create_graphic_exprContext,
+    TrailerContext} from "../antlr/CircuitScriptParser.js";
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
@@ -456,6 +457,10 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         if (ctxID){
             this.addSymbolVariable(ctxID.getSymbol(), ctxID.getText(), null);
         }
+    }
+    
+    visitTrailer = (ctx: TrailerContext): void => {
+        // Do nothing
     }
 
     //
