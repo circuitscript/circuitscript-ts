@@ -1,0 +1,22 @@
+# Test document background color, line color, line width, text color
+
+from "std" import *
+document.background_color = "#000"
+document.grid_color = "#ccc"
+document.line_color = "#fff"
+document.text_color = "#fff"
+
+gnd = dgnd()
+
+at supply("5V")
+wire down 100
+branch:
+    wire right 300 down 100
+    add res(10k)
+    wire down 100
+    to gnd
+
+wire down 100
+add cap(100n)
+wire down 100
+to gnd

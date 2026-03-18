@@ -14,13 +14,20 @@ import { Logger } from "../logger.js";
 import { ComponentPinNetPair, NetTypes } from "../objects/types.js";
 import Matrix, { solve } from "ml-matrix";
 import { getPinDefinition, PinId } from "../objects/PinDefinition.js";
+import { Styles } from "src/styles.js";
 
 export class NetGraph {
 
     logger: Logger;
 
+    styles!: Styles;
+
     constructor(logger: Logger) {
         this.logger = logger;
+    }
+
+    setStyles(styles: Styles): void {
+        this.styles = styles;
     }
 
     /** Given the sequence of actions (generated from parser), return a 
@@ -94,6 +101,8 @@ export class NetGraph {
 
                         if (displayProp instanceof SymbolDrawing) {
                             tmpSymbol = new SymbolPlaceholder(displayProp);
+                            tmpSymbol.setStyles(this.styles);
+
                             tmpSymbol.drawing.logger = this.logger;
 
                         } else {

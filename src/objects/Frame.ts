@@ -42,6 +42,17 @@ export enum FrameParamKeys {
     GridStyle = "grid_style",  // "none", "dots"
     GridColor = "grid_color",
 
+    BackgroundColor = 'background_color',
+    LineColor = 'line_color',
+    LineWidth = 'line_width',
+    
+    FillColor = 'fill_color',
+
+    TextColor = 'text_color',
+
+    WireColor = 'wire_color',
+    WireWidth = 'wire_width',
+
     TitleAlign = 'title_align',
 
     HorizontalAlign = 'align',

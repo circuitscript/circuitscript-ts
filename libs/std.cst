@@ -24,7 +24,7 @@ def label(value, anchor="left"):
         copy: true
         followWireOrientation: false
         display: create graphic (params):
-            textColor: "#222"
+            text_color: "#222"
             label: params.value, 0, -10, fontSize=50, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_id=false
         type: "net"
@@ -38,7 +38,7 @@ def port(value, portType="input"):
         pins: 1
         copy: true
         display: create graphic (params):
-            textColor: "#222"
+            text_color: "#222"
             label: params.value, 0, 0, fontSize=40, anchor="left", vanchor="middle", portType=portType
             pin: 1, 0, 0, 0, 0, display_id=false
         type: "port"
@@ -73,7 +73,7 @@ def cap(value):
     return create component:
         pins: 2
         display: create graphic (params):
-            lineWidth: 13
+            line_width: 13
             hline: -width/2, 20, width
             hline: -width/2, -20, width
             vpin: 1, 0, -100, 80, display_id=false
@@ -208,7 +208,7 @@ def arrow_point():
         pins: 1
         followWireOrientation: false
         display: create graphic:
-            lineWidth: 2
+            line_width: 2
             path: ("M", -10, -5, "L", -5, 0, "L", -10, 5)
             path: ("M", -5, 0, "L", -20, 0)
             hpin: 1, 0, 0, 0, display_id=false
@@ -269,12 +269,12 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
             fill: "none"
 
             # outer rect 
-            lineColor: "#cccccc"
+            line_color: "#cccccc"
             crect: (paper_width/2, paper_height/2, 
                 paper_width, paper_height, class="paper-area")
 
             # inner rect
-            lineColor: "#111111"
+            line_color: "#111111"
             crect: (paper_width/2, paper_height/2, 
                     inner_width, inner_height, class="plot-area")
 

@@ -1,6 +1,7 @@
 import { ParserRuleContext } from 'antlr4ng';
 import { ClassComponent } from './../objects/ClassComponent.js';
 import { ComponentRefDesPrefixes } from './../visitor.js';
+import { KeywordRefdesPrefix } from '../globals.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 
@@ -27,8 +28,8 @@ export class ComponentAnnotater {
         let usePrefix: string;
         let useCounterKey: string;
 
-        if(instance.hasParam('refdesPrefix')){
-            const prefix = instance.getParam('refdesPrefix')! as string;
+        if(instance.hasParam(KeywordRefdesPrefix)){
+            const prefix = instance.getParam(KeywordRefdesPrefix)! as string;
             if (this.counter[prefix] === undefined){
                 this.counter[prefix] = 1;
             }

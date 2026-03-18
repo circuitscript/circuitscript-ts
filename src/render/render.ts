@@ -17,7 +17,7 @@ import {
     ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, MilsToMM,ParamKeys, 
     RenderFlags, defaultGridSizeUnits,
     defaultPageSpacingMM,
-    defaultWireLineWidth, fontDisplayScale,
+    fontDisplayScale,
     junctionSize
 } from '../globals.js';
 import { NumericValue, numeric } from '../objects/NumericValue.js';
@@ -31,6 +31,7 @@ import { SymbolPlaceholder } from './draw_symbols.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import { Logger } from '../logger.js';
 import { DocumentVariable } from 'src/objects/types.js';
+import { Styles } from 'src/styles.js';
 
 function createSvgCanvas(): Svg {
     const env = NodeScriptEnvironment.getInstance();
@@ -46,7 +47,7 @@ function createSvgCanvas(): Svg {
 }
 
 export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger, 
-    documentVariable: DocumentVariable): Svg {
+    documentVariable: DocumentVariable, styles: Styles): Svg {
     
     const canvas = createSvgCanvas();
 
@@ -143,11 +144,13 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
             extendGrid,
             style: documentVariable[FrameParamKeys.GridStyle] as string | undefined,
             color: documentVariable[FrameParamKeys.GridColor] as string | undefined,
+
+            backgroundColor: documentVariable[FrameParamKeys.BackgroundColor] as string | undefined,
         }
 
         // Draw all SVG children within the grid bounds only
         generateSVGChild(sheetElements, components, wires, junctions,
-            mergedWires, allFrames, textObjects, gridProperties, logger);
+            mergedWires, allFrames, textObjects, gridProperties, styles, logger);
 
         sheetElements.translate(xOffset, yOffset);
         sheetGroup.translate(0, sheetYOffset.toNumber());    
@@ -229,6 +232,7 @@ function generateSVGChild(canvas: Svg | G,
     junctions: RenderJunction[], mergedWires:MergedWire[],
     frameObjects:RenderFrame[], textObjects: RenderText[], 
     gridProperties: GridProperties,
+    styles: Styles,
     logger: Logger): void {
 
     const displayWireId = false;
@@ -313,12 +317,16 @@ function generateSVGChild(canvas: Svg | G,
 
     const mergedWireGroup = canvas.group();
 
+    styles = styles ?? {};
+    const defaultWireColor = styles.wireColor;
+    const defaultWireLineWidth = milsToMM(styles.wireWidth!).toNumber();
+    
     // draw the merged wires
     mergedWires.forEach(tmpItem => {
         const { intersectPoints, net = null, lines = null } = tmpItem;
 
         let useJunctionColor = ColorScheme.JunctionColor;
-        let useColor = ColorScheme.WireColor;
+        let useColor = defaultWireColor;
         let useLineWidth = defaultWireLineWidth;
         let displayHighlight = false;
         let displayHighlightColor: string | null = null;
@@ -326,7 +334,7 @@ function generateSVGChild(canvas: Svg | G,
         let displayHighlightWidth = 5 * MilsToMM;
 
         if (net !== null) {
-            useColor = net.color ?? ColorScheme.WireColor;
+            useColor = net.color ?? defaultWireColor;
             useJunctionColor = net.color ?? ColorScheme.JunctionColor;
             useLineWidth = net.lineWidth ?? defaultWireLineWidth;
 
@@ -474,7 +482,9 @@ function drawGrid(group: G,
     const { gridBounds: canvasSize,
         extendGrid,
         style: gridStyle = "dots",
-        color: gridColor = "#000"
+        color: gridColor = "#000",
+
+        backgroundColor = "",
     } = gridProperties;
 
     const gridSize = defaultGridSizeUnits;
@@ -519,6 +529,14 @@ function drawGrid(group: G,
     for (let i = 0; i < numCols; i++) {
         const startX = gridStartX.add(numericGridSize.mul(i)).toNumber();
         lines.push(`M ${startX} ${startY.toNumber()} L ${startX} ${endY.toNumber()}`);
+    }
+
+    if (backgroundColor !== ""){
+        const width = gridEndX.sub(gridStartX).toNumber();
+        const height = gridEndY.sub(gridStartY).toNumber();
+        group
+            .rect(width, height).fill(backgroundColor)
+            .translate(gridStartX.toNumber(), gridStartY.toNumber());
     }
     
     const strokeSize = milsToMM(3);
@@ -576,4 +594,7 @@ type GridProperties = {
     extendGrid: boolean,
     style?: 'dots' | 'none',
     color?: string,
+
+    backgroundColor?: string,
+    textColor?: string,
 }

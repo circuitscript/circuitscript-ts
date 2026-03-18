@@ -4,6 +4,6 @@ from "std" import *
 
 at label("myNet")
 ..net.color = "blue"
-..net.lineWidth = 10
+..net.line_width = 10
 
 wire right 300

@@ -19,6 +19,7 @@ import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
 import { GlobalDocumentName } from '../src/globals.js';
+import { getStylesFromDocument } from '../src/styles.js';
 
 export function getTestEnvironment(): NodeScriptEnvironment {
     const env = new ESMNodeScriptEnvironment();
@@ -228,6 +229,12 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     const graphEngine = new NetGraph(logger);
     const layoutEngine = new LayoutEngine(logger);
 
+    const documentVariable = visitor.getScope()
+        .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+
+    const styles = getStylesFromDocument(documentVariable); 
+    graphEngine.setStyles(styles);
+
     const { graph, containerFrames } =
         graphEngine.generateLayoutGraph(sequence, nets);
 
@@ -245,8 +252,6 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         bomCsvOutput = generateBomCSV(bomData);
     }
     
-    const documentVariable = visitor.getScope()
-                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
 
     return {
         sheetFrames,

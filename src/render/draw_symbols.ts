@@ -9,7 +9,7 @@ import { G } from "@svgdotjs/svg.js";
 
 import { milsToMM } from "../helpers.js";
 import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
-    CustomSymbolRefDesSize, PinTypesList, PortArrowSize, PortPaddingHorizontal, 
+    CustomSymbolRefDesSize, Defaults, PinTypesList, PortArrowSize, PortPaddingHorizontal, 
     PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
     defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "../globals.js";
@@ -23,6 +23,7 @@ import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
 import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
+import { Styles } from "src/styles.js";
 
 
 /**
@@ -49,6 +50,8 @@ export abstract class SymbolGraphic {
     
     // Stores a reference of <labelID> to the label value
     labelTexts = new Map<string, string>();
+
+    styles?: Styles;
 
     constructor(){
         this.drawing = new SymbolDrawing();
@@ -99,6 +102,10 @@ export abstract class SymbolGraphic {
             width: this.width,
             height: this.height
         }
+    }
+
+    setStyles(styles: Styles): void {
+        this.styles = styles;
     }
 
     // Subclasses should implement this
@@ -524,6 +531,9 @@ export class SymbolText extends SymbolGraphic {
 export class SymbolPlaceholder extends SymbolGraphic {
     // This is used if the drawing object is defined within
     // circuitscript code itself.
+
+    styles!: Styles;
+
     generateDrawing(): void {
         const drawing = this.drawing as SymbolDrawingCommands;
 
@@ -536,19 +546,31 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.flipX = this._flipX;
         drawing.flipY = this._flipY;
 
+        // Styles might not be set before rendering stage.
+        const styles = this.styles ?? {
+            lineColor: ColorScheme.PinLineColor,
+            textColor: ColorScheme.PinNameColor,
+            lineWidth: Defaults.LineWidth,
+        };
+
+        const defaultLineColor = styles.lineColor;
+        const defaultLineWidth = styles.lineWidth;
+        const defaultTextColor = styles.textColor;
+
         // Add default commands at the start to provide consistent style
         const commands = [
             [PlaceHolderCommands.units, ['mils'], {}],
-            [PlaceHolderCommands.lineColor, [ColorScheme.PinLineColor], {}],
-            [PlaceHolderCommands.textColor, [ColorScheme.PinNameColor], {}],
-            [PlaceHolderCommands.lineWidth, [numeric(5)], {}],
+            [PlaceHolderCommands.lineColor, [defaultLineColor], {}],
+            [PlaceHolderCommands.textColor, [defaultTextColor], {}],
+            [PlaceHolderCommands.lineWidth, [defaultLineWidth], {}],
+            [PlaceHolderCommands.fill, ['none']],
             ...drawing.getCommands()
             ];
 
         drawing.log('id: ', drawing.id, 'angle: ', this._angle, "commands:", commands.length);
 
-        let lineColor = "#333";
-        let textColor = "#333";
+        let lineColor = defaultLineColor;
+        let textColor = defaultTextColor;
         
         commands.forEach(([commandName, positionParams, keywordParams, ctx]) => {
 
@@ -924,6 +946,10 @@ export class SymbolPlaceholder extends SymbolGraphic {
         super();
         this.drawing = drawing;
     }
+
+    setStyles(styles: Styles): void {
+        this.styles = styles;
+    }
 }
 
 export enum PlaceHolderCommands { 
@@ -940,10 +966,10 @@ export enum PlaceHolderCommands {
     line = 'line',
     label = 'label',
     path = 'path',
-    lineWidth = 'lineWidth',
+    lineWidth = 'line_width',
     fill = 'fill',
-    lineColor = 'lineColor',
-    textColor = 'textColor',
+    lineColor = 'line_color',
+    textColor = 'text_color',
     text = 'text',
 
     units = 'units',

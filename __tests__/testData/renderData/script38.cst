@@ -8,7 +8,7 @@ v5 = supply("5V")
 gnd = dgnd()
 
 v3v.net.color = "blue"
-v3v.net.lineWidth = 5
+v3v.net.line_width = 5
 
 at v3v
 wire down 100
@@ -30,15 +30,15 @@ to gnd
 
 # try to reassign
 v3v.net.color = "red"
-v3v.net.lineWidth = 1
+v3v.net.line_width = 1
 
 # use another supply instance with same net name
 another = supply("3V")
 another.net.color = "purple"
-another.net.lineWidth = 10
+another.net.line_width = 10
 another.net.highlight = "red"
-another.net.highlightWidth = 30
-another.net.highlightOpacity = 0.5
+another.net.highlight_width = 30
+another.net.highlight_opacity = 0.5
 
 at v5
 wire down 100

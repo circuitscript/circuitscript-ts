@@ -30,6 +30,7 @@ import { BaseError, RuntimeExecutionError, ParseSyntaxError,
     ParseError, printWarnings, RenderError, generateDebugSequenceAction, 
     sequenceActionString, SimpleStopwatch } from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
+import { getStylesFromDocument } from "./styles.js";
 
 export async function renderScript(scriptData: string, outputPath: string | null,
     options: ScriptOptions): Promise<RenderScriptReturn> {
@@ -304,10 +305,14 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             const layoutEngine = new LayoutEngine(logger);
             const layoutTimer = new SimpleStopwatch();
 
+            const styles = getStylesFromDocument(documentVariable);
+
             // graphEngine.generateNetGraph(nets);
 
             let sheetFrames;
             try {
+                graphEngine.setStyles(styles);
+
                 const { graph, containerFrames } =
                     graphEngine.generateLayoutGraph(sequence, nets);
 
@@ -343,7 +348,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             const renderLogger = new Logger();
             let svgCanvas;
             try {
-                svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable);
+                svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, styles);
             } catch (err) {
                 throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
             }

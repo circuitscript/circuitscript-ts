@@ -85,8 +85,12 @@ export const defaultZoomScale = 2.5; // Convert language units into output units
 // A font size of 10 (before applying scale), should fit around 50 mils
 export const fontDisplayScale = 0.032;
 
+export const Defaults = {
+    WireLineWidth:  numeric(6),
+    LineWidth:      numeric(5),
+}
+
 export const defaultSymbolLineWidth = numeric(MilsToMM).mul(6).toNumber();
-export const defaultWireLineWidth = numeric(MilsToMM).mul(6).toNumber();
 
 export const defaultPinNameTextSize = 40;
 export const defaultPinIdTextSize = 30;
@@ -156,10 +160,10 @@ export enum ReferenceTypes {
 
 export enum NetGraphicsParams {
     Color = 'color',
-    LineWidth = 'lineWidth',
+    LineWidth = 'line_width',
     Highlight = 'highlight',
-    HighlightWidth = 'highlightWidth',
-    HighlightOpacity = 'highlightOpacity',
+    HighlightWidth = 'highlight_width',
+    HighlightOpacity = 'highlight_opacity',
 }
 
 export enum FrameType {
@@ -171,6 +175,8 @@ export enum FrameType {
 export const ModuleContainsKeyword = 'contains';
 
 export const GlobalDocumentName = 'document';
+
+export const KeywordRefdesPrefix = 'refdes_prefix';
 
 export const RenderFlags = {
     ShowElementFrames:      false,

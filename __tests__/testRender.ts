@@ -6,6 +6,7 @@ import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/
 import { renderCommon } from "./helpers.js";
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
+import { getStylesFromDocument } from '../src/styles.js';
 
 const mainPath = '__tests__/testData/renderData/';
 
@@ -99,14 +100,16 @@ describe('Render tests', () => {
         ['script60.cst', 'grid style none'],
         ['script61.cst', 'grid color red'],
 
-        ['script62.cst', 'label net color and properties']
+        ['script62.cst', 'label net color and properties'],
+        ['script63.cst', 'document background color, line color and line width']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
 
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable);
+        const styles = getStylesFromDocument(documentVariable);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         let useSvgPath = scriptPath;
@@ -138,7 +141,9 @@ describe('Render tests', () => {
 
         // First, generate the PDF
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable);
+
+        const styles = getStylesFromDocument(documentVariable);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
 
         // Full ISO time string is given, because the CI server might
         // have a different timezone
@@ -183,6 +188,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('419525617b50e7ca75a63a6425fa7a60');
+        expect(result).toEqual('6f406981eb7a8746047fa851579c206e');
     });
 });
