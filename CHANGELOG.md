@@ -1,6 +1,17 @@
 # Changelog
 
-## [v0.5.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.2...v0.5.3)
+## [v0.5.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.3...v0.5.4)
+
+[532f8fa](https://gitlab.com/circuitscript/circuitscript-ts/commit/532f8fa8fa8ca7b5f6144cd04f8adb91bc88f4b2)Introduce global styles system and standardize param names to snake_case
+- 
+-  Added Styles class to centralize line, text, wire, and fill style configuration
+-  Renamed camelCase graphic/frame params to snake_case (lineWidth → line_width, lineColor → line_color, etc.)
+-  Added background_color support for document/frame rendering
+-  Propagate styles through pipeline into graph layout and SVG render stages
+-  Added KeywordRefdesPrefix constant and Defaults for wire/line widths
+-  Updated std.cst and all test golden files to reflect new param names
+
+## [v0.5.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.2...v0.5.3) - 2026-03-17
 
 [b849679](https://gitlab.com/circuitscript/circuitscript-ts/commit/b84967934678a64cb07cd8f74f4a5447bd926e19) remove unused code
 -  fixed handling of trailers in validation visitors
