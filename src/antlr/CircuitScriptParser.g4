@@ -45,6 +45,8 @@ graph_expressions:  add_component_expr
 expressions_block:
 	NEWLINE INDENT expression+ DEDENT;
 
+// Defined as separate expression only, so that it can be used within
+// for expressions.
 path_block:
 	(Branch | Join | Parallel | Point) Colon expressions_block;
 

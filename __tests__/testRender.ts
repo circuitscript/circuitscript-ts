@@ -101,7 +101,9 @@ describe('Render tests', () => {
         ['script61.cst', 'grid color red'],
 
         ['script62.cst', 'label net color and properties'],
-        ['script63.cst', 'document background color, line color and line width']
+        ['script63.cst', 'document background color, line color and line width'],
+
+        ['script64.cst', 'proper exist of path block levels'],
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

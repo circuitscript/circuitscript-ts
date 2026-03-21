@@ -854,7 +854,16 @@ export class ExecutionContext {
             this.atComponent(component, pin, { addSequence: true });
         }
 
-        this.scope.blockStack.delete(scopeLevel);
+        // Delete any inner levels as well, since they should be closed too
+        // since it is not at their levels anymore.
+        const scopeLevels = Array.from(this.scope.blockStack.keys());
+        for(const level of scopeLevels){
+            if (level >= scopeLevel){
+                this.log(`blockstack delete level ${level}`)
+                this.scope.blockStack.delete(level);
+            }
+        }
+
         this.log('exit blocks');
     }
 

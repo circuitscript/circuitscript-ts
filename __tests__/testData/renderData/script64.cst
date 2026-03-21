@@ -1,0 +1,40 @@
+# Test to ensure that path block levels are closed properly, otherwise
+# rendering will be wrong.
+
+from "std" import *
+v5 = supply("5V")
+gnd = dgnd()
+
+cmp = create component:
+    pins: 10
+
+at cmp pin 1
+wire right 100 up 100
+to v5
+
+at cmp:
+    5:
+        at v5
+        wire down 300 left 200
+        
+        branch:
+            wire up 100
+            add res(10k)
+            
+            point:
+                at v5
+                wire down 100
+                add res(10k)
+                wire down 100
+                to point
+        
+        wire left 300
+        to cmp pin 5
+
+
+    10:
+        at v5
+        wire down 100
+        branch:
+            wire right 300
+            to cmp pin 10

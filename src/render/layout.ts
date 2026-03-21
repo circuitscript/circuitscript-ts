@@ -23,7 +23,7 @@ import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from '../obj
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
     printBounds, resizeBounds, resizeToNearestGrid, 
     toNearestGrid } from '../utils.js';
-import { AutoWireFailedError } from "../errors.js";
+import { AutoWireFailedError_ } from "../errors.js";
 import { ComponentPinNetPair, Direction } from '../objects/types.js';
 import { PinDefinition, PinId } from '../objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from '../helpers.js';
@@ -1226,7 +1226,7 @@ export class LayoutEngine {
                     const itemOriginNode = findOriginNode(item);
 
                     if (targetOriginNode !== itemOriginNode) {
-                        throw new AutoWireFailedError(
+                        throw new AutoWireFailedError_(
                             "Wire auto length failed. Please specify a fixed wire length.", item.wire);
                     }
 

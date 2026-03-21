@@ -17,6 +17,7 @@ import { ScriptOptions} from './helpers.js';
 import { renderScript } from "./pipeline.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { _id } from './render/export.js';
+import { printErrorChain } from './errors.js';
 
 export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();
@@ -179,8 +180,8 @@ async function parseFile(scriptData: string, outputPath: string | null,
 
         return output;
     } catch (error) {
-        console.error(`Unexpected Error: ${error}`);
-        console.log(error.stack);
+        console.error(`Unexpected Error:`);
+        printErrorChain(error);
     }
 
     return null;

@@ -6,6 +6,9 @@
 import { Token, ParserRuleContext } from "antlr4ng";
 import { Wire } from "./objects/Wire.js";
 
+/**
+ * Errors that have a ParserRuleContext associated.
+ */
 export class BaseError extends Error {
 
     name = 'BaseError';
@@ -17,9 +20,10 @@ export class BaseError extends Error {
     filePath?: string;
 
     constructor(message: string, startTokenOrCtx?: Token | ParserRuleContext, 
-        endToken?: Token, filePath?: string) {
+        endToken?: Token, filePath?: string, options?: ErrorOptions) {
         
-        super(message);
+        super(message, options);
+
         this.message = message;
 
         if (startTokenOrCtx instanceof ParserRuleContext) {
@@ -96,20 +100,26 @@ export function throwWithTokenRange(message: string, startToken: Token, endToken
 export class RenderError extends Error {
     public stage?: string;
 
-    constructor(message: string, stage?: string) {
-        super(message);
+    constructor(message: string, stage?: string, options?:ErrorOptions) {
+        super(message, options);
         this.name = 'RenderError';
         this.stage = stage;
     }
 }
 
-export class AutoWireFailedError extends RenderError {
+export class AutoWireFailedError_ extends Error {
+    name = 'AutoWireFailedError_';
+
     wire: Wire;
     constructor(message: string, wire: Wire) {
-        super(message, 'layout');
-        this.name = 'AutoWireFailedError';
+        super(message);
         this.wire = wire;
     }
+}
+
+// This has ParserRuleContext info
+export class AutoWireFailedError extends BaseError {
+    name = 'AutoWireFailedError';
 }
 
 /**
@@ -131,4 +141,33 @@ export class ParseSyntaxError extends BaseError {
  */
 export class ParseError extends ParseSyntaxError {
     name = 'ParseError';
+}
+
+
+export function collectErrorChain(error: Error): Error[] {
+    const items: Error[] = [];
+
+    let currentError = error;
+
+    for (let i = 0; i < 100; i++) {
+        if (currentError.cause) {
+            items.push(currentError.cause);
+            currentError = currentError.cause!;
+        } else {
+            break;
+        }
+    }
+
+    return items;
+}
+
+export function printErrorChain(error: Error): void {
+    const errors = collectErrorChain(error);
+
+    // Show the deepest error first
+    errors.reverse();
+
+    for (const err of errors) {
+        console.log("  " + err.toString());
+    }
 }

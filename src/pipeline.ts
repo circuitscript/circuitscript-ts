@@ -8,7 +8,7 @@
 import path from "path";
 import PDFDocument from "pdfkit";
 
-import { CommonTokenStream, ParserRuleContext, RecognitionException } from "antlr4ng";
+import { CommonTokenStream, Parser, ParserRuleContext, RecognitionException } from "antlr4ng";
 import { DefaultPostAnnotationCallback } from "./annotate/DefaultPostAnnotationCallback.js";
 import { ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { OnErrorHandler, BaseVisitor, ImportFileResult } from "./BaseVisitor.js";
@@ -31,7 +31,8 @@ import { printWarnings, generateDebugSequenceAction,
 import { ParserVisitor } from "./visitor.js";
 import { getStylesFromDocument } from "./styles.js";
 import { BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError, 
-    RenderError, AutoWireFailedError, throwWithContext } from "./errors.js";
+    RenderError, AutoWireFailedError, throwWithContext, 
+    AutoWireFailedError_} from "./errors.js";
 
 export async function renderScript(scriptData: string, outputPath: string | null,
     options: ScriptOptions): Promise<RenderScriptReturn> {
@@ -335,11 +336,16 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                 }
 
             } catch (err) {
-                if (err instanceof AutoWireFailedError){
+                let useErr = err;
+                // This error is rewrapped to include ParserRuleContext info.
+                if (err instanceof AutoWireFailedError_){
                     const errCtx = visitor.wireCtxLinks.get(err.wire)!;
-                    throwWithContext(errCtx, err.message);
+                    useErr = new AutoWireFailedError(err.message, errCtx.start!,
+                        errCtx.stop!);
                 }
-                throw new RenderError(`Error during layout generation: ${err}`, 'layout');
+
+                throw new RenderError(`Error during layout generation`, 
+                    'layout', {cause: useErr});
             }
 
             layoutEngine.printWarnings();
@@ -410,7 +416,8 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                 console.log('Generated file', outputPath);
             }
         } catch (err) {
-            throw new RenderError(`Error during rendering: ${err}`, 'output_generation');
+            throw new RenderError(`Error during rendering: ${err}`, 
+                'output_generation', {cause: err});
         }
     }
 

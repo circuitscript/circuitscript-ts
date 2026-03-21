@@ -252,13 +252,13 @@ export class ParserVisitor extends BaseVisitor {
 
         let blockType = BlockTypes.Branch; // default first
 
-        if (ctx.Branch()){
+        if (ctx.Branch()) {
             blockType = BlockTypes.Branch;
-        } else if (ctx.Join()){
+        } else if (ctx.Join()) {
             blockType = BlockTypes.Join;
-        } else if (ctx.Parallel()){
+        } else if (ctx.Parallel()) {
             blockType = BlockTypes.Parallel;
-        } else if (ctx.Point()){
+        } else if (ctx.Point()) {
             blockType = BlockTypes.Point;
         }
 
@@ -266,15 +266,15 @@ export class ParserVisitor extends BaseVisitor {
         const executor = this.getExecutor();
         const scopeLevel = scope.scopeLevel;
 
-        if (scope.blockStack.has(scopeLevel)){
+        if (scope.blockStack.has(scopeLevel)) {
             const blockStackEntry = scope.blockStack.get(scopeLevel)!;
-            if (blockStackEntry.type !== blockType){
+            if (blockStackEntry.type !== blockType) {
                 // If the block type is not the same, then close the path blocks
                 executor.exitBlocks();
             }
         }
 
-        if (!scope.blockStack.has(scopeLevel)){
+        if (!scope.blockStack.has(scopeLevel)) {
             // If not exists, it means the block stack is currently not active,
             // so create it
             executor.enterBlocks(blockType);
