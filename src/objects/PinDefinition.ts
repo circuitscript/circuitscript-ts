@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { RuntimeExecutionError } from '../utils.js';
+import { RuntimeExecutionError } from "../errors.js";
 import { NumericValue } from './NumericValue.js';
 import { PinTypes } from './PinTypes.js';
 

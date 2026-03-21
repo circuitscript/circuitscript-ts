@@ -373,7 +373,8 @@ print(---b)
             errorMessage = err;
         }
 
-        expect(errorMessage).toEqual("Wire auto length failed. Please specify a fixed wire length.");
+        expect(errorMessage.toString())
+            .toEqual("AutoWireFailedError: Wire auto length failed. Please specify a fixed wire length.");
     });
 
     testInlineScriptTest('test builtin methods', inlineScript55);

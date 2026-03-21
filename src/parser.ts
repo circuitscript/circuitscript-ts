@@ -10,7 +10,8 @@ import {
     ScriptContext} from './antlr/CircuitScriptParser.js';
 
 import { MainLexer } from './lexer.js';
-import { ParseSyntaxError, RuntimeExecutionError, SimpleStopwatch } from './utils.js';
+import { SimpleStopwatch } from './utils.js';
+import { ParseSyntaxError, RuntimeExecutionError } from "./errors.js";
 import {
     ANTLRErrorListener, ATNConfigSet, ATNSimulator,
     BitSet, CharStream, CommonTokenStream, DFA, Parser,

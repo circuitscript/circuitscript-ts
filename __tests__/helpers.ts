@@ -10,7 +10,7 @@ import { CharStream, CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseVisitor, OnErrorHandler } from '../src/BaseVisitor.js';
 import { validateScript } from '../src/validate/validateScript.js';
 import { SymbolValidatorVisitor } from '../src/validate/SymbolValidatorVisitor.js';
-import { ParseSyntaxError } from '../src/utils.js';
+import { ParseSyntaxError } from "../src/errors.js";
 import { ESMNodeScriptEnvironment } from '../src/environment/esm-environment.js';
 import { NodeScriptEnvironment } from '../src/environment/environment.js';
 import { LayoutEngine, SheetFrame } from '../src/render/layout.js';

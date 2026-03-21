@@ -4,13 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { ParserRuleContext, Token } from "antlr4ng";
+import { ParserRuleContext } from "antlr4ng";
 import { SymbolDrawingCommands } from "./render/draw_symbols.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem } from './objects/ExecutionScope.js';
 import { UnitDimension } from './helpers.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { DeclaredReference, AnyReference } from './objects/types.js';
+import { getLinePositionAsString } from "./errors.js";
 
 export class SimpleStopwatch {
     startTime: number;
@@ -106,21 +107,6 @@ export function getPortType(component: ClassComponent): string | null {
     });
 
     return foundPinType;
-}
-
-export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
-    if (messageOrError instanceof BaseError){
-        throw messageOrError;
-    }
-    throwWithTokenRange(messageOrError as string, context.start!, context.stop!);
-}
-
-export function throwWithToken(message: string, token: Token): void {
-    throw new ParseError(message, token);
-}
-
-export function throwWithTokenRange(message: string, startToken: Token, endToken?: Token): void {
-    throw new ParseError(message, startToken, endToken);
 }
 
 export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
@@ -240,115 +226,6 @@ export function getBlockTypeString(type: BlockTypes): string {
     }
 
     return returnValue;
-}
-
-export class BaseError extends Error {
-
-    name = 'BaseError';
-
-    message: string;
-    
-    startToken?: Token;
-    endToken?: Token;
-    filePath?: string;
-
-    constructor(message: string, startTokenOrCtx?: Token | ParserRuleContext, endToken?: Token, filePath?: string) {
-        super(message);
-        this.message = message;
-
-        if (startTokenOrCtx instanceof ParserRuleContext) {
-            this.startToken = startTokenOrCtx.start;
-            this.endToken = startTokenOrCtx.stop;
-        } else {
-            this.startToken = startTokenOrCtx;
-            this.endToken = endToken;
-        }
-
-        this.filePath = filePath;
-    }
-
-    toString(): string {
-        const parts = [this.name];
-
-        const linePosition = getLinePositionAsString({
-            start: this.startToken,
-            stop: this.endToken
-        });
-
-        if(linePosition !== null){
-            parts.push(linePosition);
-        }
-
-        parts.push(`: ${this.message}`);
-        return parts.join('');
-    }
-}
-
-export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
-    if (ctx === null || ctx === undefined) {
-        return null;
-    }
-
-    const { start: startToken, stop: stopToken } = ctx;
-    let result: string | null = null;
-
-    if (startToken) {
-        const { line, column } = startToken;
-
-        let stopLine = 0;
-        let stopCol = 0;
-
-        if (stopToken && (stopToken.line !== startToken.line || stopToken.column !== startToken.column)) {
-            stopLine = stopToken.line;
-            stopCol = stopToken.column + (stopToken.stop - stopToken.start);
-        } else if (startToken === stopToken || startToken) {
-            // If both tokens are the same, then it is only a single token.
-            stopLine = line;
-            stopCol = column + 1 + (startToken.stop - startToken.start);
-        } else {
-            stopCol = -1;
-        }
-
-        result = ` at ${line}:${column+1}`;
-        if (stopCol !== -1){
-            result += `-${stopLine}:${stopCol+1}`;
-        }
-    }
-
-    return result;
-}
-
-/** Errors that occur within the lexing of tokens */
-export class ParseSyntaxError extends BaseError {
-    name = 'ParseSyntaxError';
-}
-
-/**
- * Error class for parsing-related failures (i.e. actual execution of the code)
- */
-export class ParseError extends ParseSyntaxError {
-    name = 'ParseError';
-}
-
-/**
- * Error class for runtime execution failures during visitor traversal
- * These should halt execution immediately
- */
-export class RuntimeExecutionError extends BaseError {
-    name = 'RuntimeExecutionError';
-}
-
-/**
- * Error class for rendering-related failures
- */
-export class RenderError extends Error {
-    public stage?: string;
-
-    constructor(message: string, stage?: string) {
-        super(message);
-        this.name = 'RenderError';
-        this.stage = stage;
-    }
 }
 
 export type ExecutionWarning = {

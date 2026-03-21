@@ -15,7 +15,7 @@ import { WireSegment } from './Wire.js';
 import { ExecutionContext } from '../execute.js';
 import { NumericValue } from './NumericValue.js';
 import { DefaultComponentUnit, ParamKeys } from '../globals.js';
-import { RuntimeExecutionError } from '../utils.js';
+import { RuntimeExecutionError } from "../errors.js";
 
 export class ComponentUnit {
     parent: ClassComponent;

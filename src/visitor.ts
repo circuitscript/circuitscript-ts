@@ -81,7 +81,8 @@ import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
-import { BaseError, getPortType, RuntimeExecutionError } from './utils.js';
+import { getPortType } from './utils.js';
+import { BaseError, RuntimeExecutionError } from './errors.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './annotate/ComponentAnnotater.js';
@@ -1540,8 +1541,10 @@ export class ParserVisitor extends BaseVisitor {
             this.throwWithContext(ctx, "Invalid wire expression");
         }
         
-        const newWire = this.getExecutor().addWire(segments);
+        const newWire = this.getExecutor().addWire(segments, ctx);
         this.creationCtx.set(newWire, ctx);
+
+        this.wireCtxLinks.set(newWire, ctx);
     }
 
     visitPoint_expr = (ctx: Point_exprContext): ComponentPin => {

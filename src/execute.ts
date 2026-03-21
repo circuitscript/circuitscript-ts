@@ -33,7 +33,8 @@ import { CalculatePinPositions } from './render/layout.js';
 import { UnitDimension } from './helpers.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
-import { getBlockTypeString, RuntimeExecutionError } from './utils.js';
+import { getBlockTypeString } from './utils.js';
+import { RuntimeExecutionError } from "./errors.js";
 
 /** Contains the current running state of the circuit graph */
 export class ExecutionContext {
@@ -1534,8 +1535,7 @@ export class ExecutionContext {
         return mergedInstances;
     }
 
-    addWire(segments: [string, (number | UnitDimension)?][]): Wire {
-
+    addWire(segments: [string, (number | UnitDimension)?][], ctx: ParserRuleContext): Wire {
         if (this.scope.currentComponent === null) {
             throw "No current component";
         }

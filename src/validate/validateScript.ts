@@ -1,6 +1,6 @@
 import { ImportFileResult } from "../BaseVisitor.js";
 import { ScriptOptions, prepareFile, ParseErrorStrategy, TokenErrorListener } from "../helpers.js";
-import { ParseError } from "../utils.js";
+import { ParseError } from "../errors.js";
 import { SymbolValidatorResolveVisitor } from "./SymbolValidatorResolveVisitor.js";
 import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
 

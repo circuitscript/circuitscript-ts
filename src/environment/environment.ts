@@ -5,7 +5,7 @@ import CryptoJs from "crypto-js";
 
 import { TOOL_VERSION } from "../globals.js";
 import { SVGWindow } from "../helpers.js";
-import { RuntimeExecutionError } from "../utils.js";
+import { RuntimeExecutionError } from "../errors.js";
 
 // TODO: create an interface for this. Default is to use node 
 // as the environment.

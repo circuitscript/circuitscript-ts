@@ -18,7 +18,7 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
     VerticalAlignProp} from "./geometry.js";
 import { Logger } from "../logger.js";
 import { PinTypes } from "../objects/PinTypes.js";
-import { RuntimeExecutionError, throwWithContext } from "../utils.js";
+import { RuntimeExecutionError, throwWithContext } from "../errors.js";
 import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
 import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";

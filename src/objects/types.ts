@@ -12,7 +12,7 @@ import { Net } from './Net.js';
 import { NumericValue } from './NumericValue.js';
 import { PercentageValue } from "./PercentageValue.js";
 import { ReferenceTypes } from '../globals.js';
-import { RuntimeExecutionError } from '../utils.js';
+import { RuntimeExecutionError } from "../errors.js";
 import { PinDefinition, PinId } from './PinDefinition.js';
 import { ScriptContext } from 'src/antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from 'src/render/draw_symbols.js';

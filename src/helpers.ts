@@ -8,7 +8,8 @@
 import Big from "big.js";
 import { ParserRuleContext } from "antlr4ng";
 
-import { BaseError, SimpleStopwatch } from "./utils.js";
+import { SimpleStopwatch } from "./utils.js";
+import { BaseError } from './errors.js';
 import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream, 
     DefaultErrorStrategy, Parser, RecognitionException, Recognizer, Token } from "antlr4ng";
 import { MainLexer } from "./lexer.js";

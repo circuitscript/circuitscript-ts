@@ -19,7 +19,7 @@ import { ParserRuleContext } from 'antlr4ng';
 import { Property_key_exprContext } from '../antlr/CircuitScriptParser.js';
 import { BaseVisitor } from 'src/BaseVisitor.js';
 import { PinId } from './PinDefinition.js';
-import { RuntimeExecutionError } from '../utils.js';
+import { RuntimeExecutionError } from "../errors.js";
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 

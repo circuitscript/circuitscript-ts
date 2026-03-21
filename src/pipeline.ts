@@ -26,11 +26,12 @@ import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
-import { BaseError, RuntimeExecutionError, ParseSyntaxError, 
-    ParseError, printWarnings, RenderError, generateDebugSequenceAction, 
-    sequenceActionString, SimpleStopwatch } from "./utils.js";
+import { printWarnings, generateDebugSequenceAction, 
+    sequenceActionString, SimpleStopwatch} from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
 import { getStylesFromDocument } from "./styles.js";
+import { BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError, 
+    RenderError, AutoWireFailedError, throwWithContext } from "./errors.js";
 
 export async function renderScript(scriptData: string, outputPath: string | null,
     options: ScriptOptions): Promise<RenderScriptReturn> {
@@ -334,6 +335,10 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                 }
 
             } catch (err) {
+                if (err instanceof AutoWireFailedError){
+                    const errCtx = visitor.wireCtxLinks.get(err.wire)!;
+                    throwWithContext(errCtx, err.message);
+                }
                 throw new RenderError(`Error during layout generation: ${err}`, 'layout');
             }
 
