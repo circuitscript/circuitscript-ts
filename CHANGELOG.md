@@ -1,6 +1,56 @@
 # Changelog
 
-## [v0.5.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.3...v0.5.4)
+## [v0.5.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.4...v0.5.5)
+
+[9a86af2](https://gitlab.com/circuitscript/circuitscript-ts/commit/9a86af21b68fddbf01db09fe45803898ebc7fcac)Improve layout engine alignment, add NumericValue utilities, and pixel-level SVG diffing
+- 
+- - Refactor placeAndSizeFrame with alignment param support (HAlign/VAlign), depth limiting, and improved logging
+- - Add floor(), ceil(), roundDp(), copy() methods to NumericValue; roundValue() now accepts raw numbers
+- - Fix floating-point precision in render.ts by rounding frame dimensions and grid calculations
+- - Add pixel-level SVG comparison utilities in test helpers using resvg/pngjs/pixelmatch
+- - Fix regenerate-tests sort to handle annotated file names correctly
+- - Dump raw layout log on error when dumpData is enabled
+- - Update golden SVG references for layout changes
+- 
+- Improve SplitIntoLines to handle overlap areas and track 2D positions
+- 
+- The layout algorithm now tracks accumX/accumY instead of a single
+- accumValue, enabling proper row/column wrapping when frames would
+- overlap with avoid-areas. Container frames no longer double-count
+- padding. Introduces a LayoutItem type to hold per-frame position
+- and size during grouping.
+- 
+- Updates script29 reference SVG to match new layout output.
+
+[255f9ae](https://gitlab.com/circuitscript/circuitscript-ts/commit/255f9ae1049574ff30d019ad9ffc6eaddcc96d6c)Add layout alignment tests and refactor layout engine
+- 
+- Add test scripts 65-67 covering frame title alignment (left/middle/right),
+- row-direction frame layout, and mixed nested frame arrangements. Refactor
+- layout.ts to improve frame sizing, title alignment, and component positioning.
+
+[680c9d8](https://gitlab.com/circuitscript/circuitscript-ts/commit/680c9d88d3c917cc92ab8f1741427f951b6456d1)Extract error classes into dedicated errors.ts module
+- 
+- Move BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError,
+- RenderError and related helpers from utils.ts to a new errors.ts file.
+- Add AutoWireFailedError with wire reference and source context tracking
+- so layout failures report the originating line in user scripts.
+
+[3e7b245](https://gitlab.com/circuitscript/circuitscript-ts/commit/3e7b2459eb360ac66a7efc18218ddf5e8e4fbe02) renamed alignment parameter from Middle to Center
+-  updated tests accordingly
+
+[865fbe5](https://gitlab.com/circuitscript/circuitscript-ts/commit/865fbe5fab74fd1fd7f77d5f0c0b9b223da92b6c)Fix path block level cleanup and improve error chaining
+- 
+-  Fix block stack cleanup in exitBlocks to also remove inner scope levels, preventing incorrect rendering when nested path blocks are not properly closed
+-  Refactor AutoWireFailedError to carry ParserRuleContext info by splitting into AutoWireFailedError_ (layout layer) and AutoWireFailedError (with context, wrapping via cause)
+-  Add collectErrorChain and printErrorChain utilities for structured error output
+-  Add test case script64.cst for nested path block scenarios
+
+[f42ed3d](https://gitlab.com/circuitscript/circuitscript-ts/commit/f42ed3db414f9c46ae50f0c6c01d40301d16cc96) added tests
+
+[c7dcdb6](https://gitlab.com/circuitscript/circuitscript-ts/commit/c7dcdb688cc799532daa287951eaa342d3cdd501) changed builtin methods to use snake case
+-  updated tests
+
+## [v0.5.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.3...v0.5.4) - 2026-03-19
 
 [532f8fa](https://gitlab.com/circuitscript/circuitscript-ts/commit/532f8fa8fa8ca7b5f6144cd04f8adb91bc88f4b2)Introduce global styles system and standardize param names to snake_case
 - 
