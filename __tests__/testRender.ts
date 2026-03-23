@@ -105,9 +105,14 @@ describe('Render tests', () => {
 
         ['script64.cst', 'proper exit of path block levels'],
 
+        // frame title alignment
         ['script65.cst', 'title alignment parameter in frame'],
+
+        // frame alignment options for single and multi lines
         ['script66.cst', 'frame row direction alignment options, single line'],
         ['script67.cst', 'frame column direction alignment options, single line'],
+        ['script68.cst', 'frame row direction alignment options, multi line'],
+        ['script69.cst', 'frame column direction alignment options, multi line'],
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

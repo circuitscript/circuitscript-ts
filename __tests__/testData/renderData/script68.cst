@@ -1,0 +1,36 @@
+# Test frame row direction layout with different alignment options and multi-line
+
+from "std" import *
+document.sheet_type = sheet_A6()
+
+vcc = net("3v3")
+gnd = dgnd()
+
+align = ["left", "middle", "right"]
+valign = ["top", "middle", "bottom"]
+
+frame:
+    ..width = 3000 * 3 + 100 * 2 + 100 * 2
+
+    for i in range(0, 3):
+        for j in range(0, 3):
+
+            tmp_align = arrayGet(align, i)
+            tmp_valign = arrayGet(valign, j)
+
+            frame: 
+                ..width = 3000
+                ..height = 4000
+                ..align = tmp_align
+                ..valign = tmp_valign
+                ..direction = "row"
+
+                ..title = tmp_align + ", " + tmp_valign
+
+                for z in range(0, 5):
+                    frame:
+                        at vcc
+                        wire down 100
+                        add cap(100n)
+                        wire down 100
+                        to gnd
