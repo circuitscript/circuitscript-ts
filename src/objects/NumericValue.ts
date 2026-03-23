@@ -46,6 +46,12 @@ export class NumericValue {
         return 'numeric:' + this.value;
     }
 
+    // Used to return a duplicate, without modifying the original
+    // value.
+    copy(): NumericValue {
+        return this.add(0);
+    }
+
     toDisplayString(): string {
         if (typeof this.value  === 'number'){
             return this.value.toString();
@@ -127,6 +133,19 @@ export class NumericValue {
 
     eq(value: NumericValue): boolean {
         return this.toBigNumber().eq(value.toBigNumber());
+    }
+
+    floor(): NumericValue {
+        return numeric(Math.floor(this.toNumber()));
+    }
+
+    ceil(): NumericValue {
+        return numeric(Math.ceil(this.toNumber()));
+    }
+
+    // Change the value to a rounded dp with fixed precision.
+    roundDp(): NumericValue {
+        return roundValue(this.toNumber());
     }
 }
 
@@ -272,7 +291,11 @@ export function resolveToNumericValue(value: Big): NumericValue {
     return new NumericValue(useValue, prefixPart * 3);
 }
 
-export function roundValue(value: NumericValue): NumericValue {
+export function roundValue(value: NumericValue | number): NumericValue {
+    if (typeof value === "number"){
+        value = numeric(value);
+    }
+    
     return resolveToNumericValue(
         new Big(
             value.toBigNumber().toFixed(7)));

@@ -103,7 +103,7 @@ describe('Render tests', () => {
         ['script62.cst', 'label net color and properties'],
         ['script63.cst', 'document background color, line color and line width'],
 
-        ['script64.cst', 'proper exist of path block levels'],
+        ['script64.cst', 'proper exit of path block levels'],
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
@@ -118,10 +118,18 @@ describe('Render tests', () => {
         if (extra !== ""){
             useSvgPath = extra;
         }
-
+        
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + useSvgPath + ".svg", { encoding: 'utf8' });
-        // expect(svgOutput).toEqual(expectedSvgOutput);
+        
+        // if (svgOutput !== expectedSvgOutput){
+        // const expectedSvgPath = `${mainPath}svgs/${useSvgPath}.svg`;
+        // Use pixel compare to check.
+        // console.log("run manual pixel check: " + useSvgPath);
+        // const pixCompare = compareSvgToFile(expectedSvgPath, svgOutput);
+        // expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
 
+        // expect(svgOutput).toEqual(expectedSvgOutput);
+        
         // Do not spit out all the differences
         expect(svgOutput === expectedSvgOutput).toEqual(true);
     });

@@ -20,7 +20,7 @@ import {
     fontDisplayScale,
     junctionSize
 } from '../globals.js';
-import { NumericValue, numeric } from '../objects/NumericValue.js';
+import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
 import { BoundBox, combineMaps, getBoundsSize } from '../utils.js';
 import { milsToMM } from '../helpers.js';
 import { getPaperSize } from "./PaperSizes.js";
@@ -432,25 +432,28 @@ function generateSVGChild(canvas: Svg | G,
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
         const { width, height } = getBoundsSize(bounds);
-        let strokeColor = '#111';
+
+        const useWidth = roundValue(width).toNumber();
+        const useHeight = roundValue(height).toNumber();
+        const useBorderWidth = roundValue(borderWidth).toNumber();
+
+        let strokeColor = item.borderColor ?? '#111';
 
         if (item.frame.frameType === FrameType.Sheet) {
             drawSheetFrameBorder(frameGroup, item);
         } else {
-            if (borderWidth.toNumber() > 0) {
-                if (item.renderType === RenderFrameType.Container) {
-                    strokeColor = '#111';
-                } else if (item.renderType === RenderFrameType.Elements) {
+            if (useBorderWidth > 0) {
+                if (item.renderType === RenderFrameType.Elements) {
                     strokeColor = '#aaa';
                     if (!RenderFlags.ShowElementFrames) {
                         return;
                     }
                 }
 
-                const tmpRect = frameGroup.rect(width, height)
+                const tmpRect = frameGroup.rect(useWidth, useHeight)
                     .fill('none')
                     .stroke({ 
-                        width: milsToMM(borderWidth).toNumber(), 
+                        width: milsToMM(useBorderWidth).toNumber(), 
                         color: strokeColor 
                     });
 
@@ -488,23 +491,27 @@ function drawGrid(group: G,
     } = gridProperties;
 
     const gridSize = defaultGridSizeUnits;
-    const { xmin, ymin, xmax, ymax } = canvasSize!;
 
     // If extend grid is true, then draw outside of the canvas size
     const extraValue = extendGrid ? 1 : 0;
 
-    const gridStartX = (numeric(Math.floor(xmin / gridSize)).sub(extraValue)).mul(gridSize);
-    const gridStartY = (numeric(Math.floor(ymin / gridSize)).sub(extraValue)).mul(gridSize);
+    const xmin = roundValue(canvasSize!.xmin);
+    const ymin = roundValue(canvasSize!.ymin);
+    const xmax = roundValue(canvasSize!.xmax);
+    const ymax = roundValue(canvasSize!.ymax);
+
+    const gridStartX = xmin.div(gridSize).floor().sub(extraValue).mul(gridSize);
+    const gridStartY = ymin.div(gridSize).floor().sub(extraValue).mul(gridSize);
 
     const gridEndX = extendGrid
-        ? (numeric(Math.ceil(xmax / gridSize)).add(extraValue)).mul(gridSize)
-        : (numeric(xmax).sub(xmin));
+        ?   xmax.div(gridSize).ceil().add(extraValue).mul(gridSize) 
+        : xmax;
 
     const gridEndY = extendGrid
-        ? (numeric(Math.ceil(ymax / gridSize)).add(extraValue)).mul(gridSize)
-        : (numeric(ymax).sub(ymin));
+        ? ymax.div(gridSize).ceil().add(extraValue).mul(gridSize)
+        : ymax;
 
-    const numCols = Math.floor(gridEndX.sub(gridStartX).div(gridSize).toNumber())
+    const numCols = gridEndX.sub(gridStartX).div(gridSize).floor().toNumber()
         + (extendGrid ? 1 : 0);
     // const numRows = Math.ceil((gridEndY - gridStartY) / gridSize);
 
@@ -532,8 +539,8 @@ function drawGrid(group: G,
     }
 
     if (backgroundColor !== ""){
-        const width = gridEndX.sub(gridStartX).toNumber();
-        const height = gridEndY.sub(gridStartY).toNumber();
+        const width = gridEndX.sub(gridStartX).roundDp().toNumber();
+        const height = gridEndY.sub(gridStartY).roundDp().toNumber();
         group
             .rect(width, height).fill(backgroundColor)
             .translate(gridStartX.toNumber(), gridStartY.toNumber());

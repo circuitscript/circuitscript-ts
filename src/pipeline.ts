@@ -344,6 +344,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                         errCtx.stop!);
                 }
 
+                dumpData && environment.writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
                 throw new RenderError(`Error during layout generation`, 
                     'layout', {cause: useErr});
             }

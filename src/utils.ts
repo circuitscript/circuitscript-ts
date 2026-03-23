@@ -12,6 +12,7 @@ import { UnitDimension } from './helpers.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { DeclaredReference, AnyReference } from './objects/types.js';
 import { getLinePositionAsString } from "./errors.js";
+import { roundValue } from "./objects/NumericValue.js";
 
 export class SimpleStopwatch {
     startTime: number;
@@ -58,8 +59,13 @@ function hasRemainder(value: number, value2: number): number {
     return diff;
 }
 
-/** Given an input bounding box, returns a bounding box
- *  such that all edges are aligned with the grid size provided.
+/** 
+ * Given an input bounding box, returns a bounding box such that all edges 
+ * are aligned with the grid size provided. There is a bit of nudging added, 
+ * so that if the original bounds fall nicely on the grid, then it will be 
+ * expanded outwards by 1 x grid size.
+ * 
+ * Method is NOT idempotent, so it should not be called more than once.
  */
 export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
 
@@ -71,16 +77,22 @@ export function resizeToNearestGrid(bounds: BoundBox, gridSize = 20): BoundBox {
     const addYMax = hasRemainder(bounds.ymax, gridSize) === 0 ? 1 : 0;
 
     return {
-        xmin: Math.floor((bounds.xmin + addXMin) / gridSize) * gridSize,
-        ymin: Math.floor((bounds.ymin + addYMin) / gridSize) * gridSize,
+        xmin: roundValue(Math.floor((bounds.xmin + addXMin) / gridSize) * gridSize).toNumber(),
+        ymin: roundValue(Math.floor((bounds.ymin + addYMin) / gridSize) * gridSize).toNumber(),
 
-        xmax: Math.ceil((bounds.xmax + addXMax) / gridSize) * gridSize,
-        ymax: Math.ceil((bounds.ymax + addYMax) / gridSize) * gridSize,
+        xmax: roundValue(Math.ceil((bounds.xmax + addXMax) / gridSize) * gridSize).toNumber(),
+        ymax: roundValue(Math.ceil((bounds.ymax + addYMax) / gridSize) * gridSize).toNumber(),
     }
 }
 
+// Finds the nearest grid, using the Math.floor function
 export function toNearestGrid(value: number, gridSize: number): number {
-    return Math.floor(value / gridSize) * gridSize;
+    return roundValue(value / gridSize).floor().mul(gridSize).toNumber();
+}
+
+// Finds the nearest grid, using the Math.ceil function.
+export function toNearestGrid2(value: number, gridSize: number): number {
+    return roundValue(value/gridSize).ceil().mul(gridSize).toNumber(); 
 }
 
 export function getBoundsSize(bounds: BoundBox): {width: number, height: number} {

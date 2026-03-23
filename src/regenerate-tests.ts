@@ -59,17 +59,16 @@ async function regenerateTests(extra = ""): Promise<string[]> {
             const svg1 = 'svgs/' + file + '.svg';
             const svg2 = 'svgs/' + file + '.next.svg';
 
-            const cleanedName = file.replace('script', '').replace('.cst', '');
-            allFiles.push([file, svg1, svg2, cleanedName])
+            const cleanedName = file.replace('script', '')
+                .replace('.cst', '')
+                .replace('.annotated', '');
+            allFiles.push([file, svg1, svg2, Number(cleanedName)])
         });
 
         const sortedFiles = allFiles.sort((a, b) => {
-            const nameA: string = a[3];
-            const nameB: string = b[3];
+            const indexA: number = a[3];
+            const indexB: number = b[3];
 
-            const indexA = Number(nameA);
-            const indexB = Number(nameB);
-            
             if (indexA > indexB){
                 return 1;
             } else if (indexA < indexB){
@@ -78,7 +77,7 @@ async function regenerateTests(extra = ""): Promise<string[]> {
                 return 0;
             }
         });
-        
+
         const output = [];
         sortedFiles.forEach(group => {
             const [file, svg1, svg2] = group;

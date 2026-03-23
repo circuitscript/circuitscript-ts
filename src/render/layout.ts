@@ -22,7 +22,7 @@ import { Logger } from '../logger.js';
 import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from '../objects/Frame.js';
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
     printBounds, resizeBounds, resizeToNearestGrid, 
-    toNearestGrid } from '../utils.js';
+    toNearestGrid} from '../utils.js';
 import { AutoWireFailedError_ } from "../errors.js";
 import { ComponentPinNetPair, Direction } from '../objects/types.js';
 import { PinDefinition, PinId } from '../objects/PinDefinition.js';
@@ -277,6 +277,7 @@ export class LayoutEngine {
         // The base/default frame will always be the first element
         const baseFrame = frameObjects[0];
         baseFrame.padding = numeric(0);
+        baseFrame.gap = numeric(defaultGridSizeUnits);
         baseFrame.borderWidth = numeric(0);
 
         if (this.showBaseFrame) {
@@ -395,78 +396,85 @@ export class LayoutEngine {
      */
     private placeAndSizeFrame(frame: RenderFrame, level = 0): void {
         // All inner items are either Container or Element frames.
+
+        if (level > 50){
+            throw 'Exceeded placeAndSizeFrame depth limit!';
+        }
+
+        this.printLevel(level, `placeAndSizeFrame called`);
+        
         const innerFrames = frame.innerItems as RenderFrame[];
         const gridSize = defaultGridSizeUnits;
-
+        
         const frameDirection = frame.direction;
+        const isFrameDirectionRow = frameDirection === FramePlotDirection.Row;
+
+        this.printLevel(level, `frame info, id: ${frame.frameId}, direction: ${frameDirection}, virtual: ${frame.virtual}`);
+
+        const frameParams = frame.frame.parameters;
+
+        // Default alignment options
+        let hAlign = HorizontalAlign.Middle;
+        let vAlign = VerticalAlign.Top;
+        
+        // Load alignment parameters.
+        if (frameParams.has(FrameParamKeys.HorizontalAlign)){
+            hAlign = 
+                frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;
+        }
+
+        if (frameParams.has(FrameParamKeys.VerticalAlign)){
+            vAlign = 
+                frameParams.get(FrameParamKeys.VerticalAlign) as VerticalAlign;
+        }
+
+        if (frame.overwriteAlignParamsForTitleLayout){
+            // This is a frame with title, do not apply the alignment params
+            // in the direct children.
+
+            hAlign = HorizontalAlign.Middle;
+            vAlign = VerticalAlign.Top;
+        }
+
+        this.printLevel(level, `align params: ${hAlign} ${vAlign}`);
 
         // This is used to determine the final bounds of this frame
-        const boundPoints: [x: number, y: number][] = [];
+        // const boundPoints: [x: number, y: number][] = [];
+
+        this.printLevel(level, `size inner frames, length: ${innerFrames.length}`);
 
         // First pass collects the size of all inner frames
-        const frameSizes = innerFrames.map(innerFrame => {
+        for (const innerFrame of innerFrames) {
             if (innerFrame.renderType === RenderFrameType.Elements) {
-                // Set translate such that the origin of the frame is at it's 
-                // upper left corner.
-                innerFrame.bounds = resizeToNearestGrid(
-                    innerFrame.bounds!, gridSize);
+
+                if (!innerFrame.didResize){
+                    // Set translate such that the origin of the frame is at it's 
+                    // upper left corner.
+                    innerFrame.bounds = resizeToNearestGrid(
+                        innerFrame.bounds!, gridSize);
+                    innerFrame.didResize = true;
+                }
+
+                // Bounds calculation does not include any padding.
 
                 innerFrame.translateX = innerFrame.bounds.xmin;
                 innerFrame.translateY = innerFrame.bounds.ymin;
+
+                this.printLevel(level, `element frame, id: ${innerFrame.frameId}, bounds: ${JSON.stringify(innerFrame.bounds)}`);
+
             } else {
                 // If this is a container frame, then apply the same strategy
                 // to size the inner items of this frame.
                 this.placeAndSizeFrame(innerFrame, level + 1);
             }
-
-            return innerFrame.bounds!;
-        });
-
-        // Find the largest width (should already be aligned to grid size).
-        const maxWidth = Math.max(...frameSizes.map(item => {
-            const { width } = getBoundsSize(item);
-            return width;
-        }));
-
-        // Frame with the largest height
-        const maxHeight = Math.max(...frameSizes.map(item => {
-            const { height } = getBoundsSize(item);
-            return height;
-        }));
-
-        let accumRowWidth = 0;
-        let titleFrameWidth = 0;
-
-        const inRowShouldCenterInnerFrames = true;
-
-        if (frameDirection === FramePlotDirection.Row) {
-
-            // When plot direction is row, then sum all inner frame widths. 
-            accumRowWidth = frameSizes.reduce((accum, item, index) => {
-                const { width } = getBoundsSize(item);
-
-                if ((frame.innerItems[index] as RenderFrame).containsTitle){
-                    // If frame contains title, then skip it for 
-                    // the width calculation
-                    titleFrameWidth = width;
-                    return accum;
-                }
-                
-                return accum + width + 
-                    ((index + 1 < frameSizes.length) ? frame.gap.toNumber() : 0);
-            }, 0);
-
-        } else {
-            accumRowWidth = maxWidth;
         }
 
-        let frameWidth: NumericValue = numeric(0);
-        let frameHeight: NumericValue = numeric(0);
+        this.printLevel(level, 'done sizing inner frames');
 
+        let frameWidth = numeric(0);
+        let frameHeight = numeric(0);
         let frameXMin = numeric(0);
         let frameYMin = numeric(0);
-
-        const frameParams = frame.frame.parameters;
 
         const avoidAreas: BoundBox2[] = [];
 
@@ -519,6 +527,12 @@ export class LayoutEngine {
                 ]);
             });
 
+            // If no valign parameter was set, then change default to 
+            // middle fo the sheet.
+            if (!frameParams.has(FrameParamKeys.VerticalAlign)){
+                vAlign = VerticalAlign.Middle;
+            }
+
         } else {
             // If not sheet frame, then check if width and height is defined
             if (frame.width !== null) {
@@ -529,284 +543,226 @@ export class LayoutEngine {
             }
         }
 
-        // Always start arranging inner frames (excluding frame with title)
-        // from the top left corner.
-        const offsetX = frame.padding;
-        const offsetY = frame.padding;
+        // if (frame.frame.parameters.get('id')){
+        //     const idParam = frame.frame.parameters.get('id') as NumericValue;
+        //     if (idParam.toNumber() === 0){
+        //         console.log('stop here');
+        //     }
+        // }
 
-        let centeredOffsetX = 0;
+        const titleFrame = innerFrames.find(item => item.containsTitle);
+        const innerFramesWithoutTitle = innerFrames.filter(item => !item.containsTitle);
 
-        // This is used to determine position of the title in the frame.
-        let widthForTitle: number;
+        this.printLevel(level, `split into lines, width: ${frameWidth.toNumber()} height: ${frameHeight.toNumber()}, padding: ${frame.padding.toNumber()}, gap: ${frame.gap.toNumber()}, direction: ${frameDirection}`);
 
-        if (frameWidth.toNumber() !== 0) {
-            widthForTitle = frameWidth.toNumber();
-        } else if (titleFrameWidth > accumRowWidth) {
-            widthForTitle = titleFrameWidth;
-        } else {
-            widthForTitle = accumRowWidth;
-        }
-        
-        if (frameDirection=== FramePlotDirection.Row && 
-            inRowShouldCenterInnerFrames &&
-            titleFrameWidth !== null && titleFrameWidth > accumRowWidth) {
+        const frameLines = SplitIntoLines(
+            frameWidth, frameHeight, frame.padding, frame.gap, frameDirection,
+            innerFramesWithoutTitle, avoidAreas
+        );
+
+        this.printLevel(level, `frame lines: ${frameLines.length}`);
+
+        if (frameLines.length > 1){
+            this.printLevel(level, `split lines to containers`);
+
+            // If there are multiple lines, need to split them up again.
+            const newInnerFrames: RenderFrame[] = [];
+
+            for (const line of frameLines) {
+                const container = RenderFrame.createContainer(frame.gap);
+                container.innerItems = [...line];
+                container.direction = frameDirection;
+
+                container.frame.parameters.set(FrameParamKeys.HorizontalAlign, hAlign);
+                container.frame.parameters.set(FrameParamKeys.VerticalAlign, vAlign);
+
+                if (isFrameDirectionRow){
+                    if (frameWidth.toNumber() !== 0){
+                        container.width = frameWidth.sub(frame.padding.mul(2));
+                    }
+
+                    // Set height to the largest height of the inner items
+                    const itemHeights = container.innerItems.map(frame => {
+                        const bounds = (frame as RenderFrame).bounds!;
+                        return (bounds.ymax - bounds.ymin);
+                    });
+
+                    const maxHeight = Math.max(...itemHeights);
+                    container.height = numeric(maxHeight);
+
+                    this.printLevel(level, `set container size w: ${container.width}, h: ${container.height}`);
+
+                } else {
+                    if (frameHeight.toNumber() !== 0){
+                        container.height = frameHeight.sub(frame.padding.mul(2));
+                    }
+                }
+
+                newInnerFrames.push(container);
+            }
+
+            const container = RenderFrame.createContainer(frame.gap);
+            container.direction = isFrameDirectionRow ? FramePlotDirection.Column : FramePlotDirection.Row;
+            container.innerItems = newInnerFrames;
+
+            frame.innerItems = [container];
             
-            centeredOffsetX = 
-                toNearestGrid(titleFrameWidth / 2 - accumRowWidth / 2, gridSize);
-        }
+            // Size and place the inner frames.
+            this.placeAndSizeFrame(frame, level + 1);
+        } else {
+            // If only one line, then place it
+            let accumValue = frame.padding.copy();
+            const bounds: [x: number, y: number][] = [];
 
-        let title_align = HorizontalAlign.Middle;
+            for (const innerFrame of innerFrames) {
+                const { width: innerFrameWidth, height: innerFrameHeight }
+                    = getBoundsSize(innerFrame.bounds!);
 
-        if (frameParams.has(FrameParamKeys.TitleAlign)){
-            title_align = frameParams.get(FrameParamKeys.TitleAlign) as HorizontalAlign;
-        }
+                if (isFrameDirectionRow) {
+                    innerFrame.x = accumValue.copy();
+                    innerFrame.y = frame.padding.copy();
+                    accumValue = accumValue.add(innerFrameWidth).add(frame.gap);
+                } else {
+                    innerFrame.x = frame.padding.copy();
+                    innerFrame.y = accumValue.copy();
+                    accumValue = accumValue.add(innerFrameHeight).add(frame.gap);
+                }
 
-        let accumX = numeric(0);
-        let accumY = numeric(0);
+                bounds.push(
+                    [innerFrame.x.toNumber(), innerFrame.y.toNumber()],
+                    [
+                        innerFrame.x.add(innerFrameWidth).toNumber(),
+                        innerFrame.y.add(innerFrameHeight).toNumber(),
+                    ]
+                )
+            }
 
-        // Second pass arranges the items and sets the height
-        innerFrames.forEach((innerFrame, index) => {
-            // Align to nearest grid
-            const { width: innerFrameWidth, height: innerFrameHeight }
-                = getBoundsSize(innerFrame.bounds!);
+            const frameInnerBounds = getBoundsFromPoints(bounds);
 
-            let arrangeLineAttempts = 0;
-            const maxAttempts = 10;
+            // Expands the bounds by padding size.
+            const contentsPaddedBounds = resizeBounds(frameInnerBounds, frame.padding.toNumber());
 
-            let innerFrameX: NumericValue = numeric(0);
-            let innerFrameY: NumericValue = numeric(0);
+            const contentsPaddedWidth = roundValue(contentsPaddedBounds.xmax - contentsPaddedBounds.xmin).toNumber();
+            const contentsPaddedHeight = roundValue(contentsPaddedBounds.ymax - contentsPaddedBounds.ymin).toNumber();
 
-            if (innerFrame.containsTitle) {
-                // Assume title is aligned to the left
-                innerFrame.x = offsetX.add(accumX);
-                innerFrame.y = offsetY.add(accumY);
-                accumY = accumY.add(innerFrameHeight).add(frame.gap);
+            const contentsWidth = roundValue(frameInnerBounds.xmax - frameInnerBounds.xmin).toNumber();
+            const contentsHeight = roundValue(frameInnerBounds.ymax - frameInnerBounds.ymin).toNumber();
+
+            if (frameWidth.toNumber() === 0) {
+                frameWidth = numeric(contentsPaddedWidth);
+            }
+
+            if (frameHeight.toNumber() === 0) {
+                frameHeight = numeric(contentsPaddedHeight);
+            }
+
+            frame.bounds = {
+                xmin: contentsPaddedBounds.xmin,
+                xmax: contentsPaddedBounds.xmin + frameWidth.toNumber(),
+
+                ymin: contentsPaddedBounds.ymin,
+                ymax: contentsPaddedBounds.ymin + frameHeight.toNumber(),
+            }
+
+            this.printLevel(level, `alignment h: ${hAlign}, v: ${vAlign}`);
+
+            // Without the padding
+            const tmpFrameWidth = frameWidth.sub(frame.padding.mul(2));
+            const tmpFrameHeight = frameHeight.sub(frame.padding.mul(2));
+
+            this.printLevel(level, `inner frame size, width: ${tmpFrameWidth}, height: ${tmpFrameHeight}`);
+
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (isFrameDirectionRow){
+                // Main axis - Offset for all items.
+                switch (hAlign) {
+                    case HorizontalAlign.Left:
+                        offsetX = 0;
+                        break;
+                    case HorizontalAlign.Middle:
+                        offsetX = toNearestGrid(
+                            tmpFrameWidth.sub(contentsWidth).div(2).toNumber(), gridSize);
+                        break;
+                    case HorizontalAlign.Right:
+                        offsetX = toNearestGrid(
+                            tmpFrameWidth.sub(contentsWidth).toNumber(), gridSize
+                        );
+                        break;
+                }
+
+                offsetX = roundValue(offsetX).toNumber();
+                
+                // Default for vertical is align to top.
+                offsetY = 0;
+
+                for (const innerFrame of innerFrames) {
+                    const { height: innerFrameHeight }
+                        = getBoundsSize(innerFrame.bounds!);
+
+                    // For this case, then have to use the innerFrame's height
+                    // to determine the offsetY.
+                    if (vAlign === VerticalAlign.Middle) {
+                        offsetY = toNearestGrid(
+                            tmpFrameHeight.sub(innerFrameHeight).div(2).toNumber(), gridSize);
+                    } else if (vAlign === VerticalAlign.Bottom) {
+                        offsetY = toNearestGrid(
+                            tmpFrameHeight.sub(innerFrameHeight).toNumber(), gridSize);
+                    }
+
+                    offsetY = roundValue(offsetY).toNumber();
+
+                    innerFrame.x = innerFrame.x.add(offsetX);
+                    innerFrame.y = innerFrame.y.add(offsetY);
+                }
 
             } else {
-                if (frameDirection === FramePlotDirection.Column) {
-                    // Align to the center, but also to the nearest grid size.
-                    innerFrameX = offsetX.add(accumX);
-                    innerFrameY = offsetY.add(accumY);
+                // Main axis
+                switch(vAlign){
+                    case VerticalAlign.Top:
+                        offsetY = 0;
+                        break;
+                    case VerticalAlign.Middle:
+                        offsetY = toNearestGrid(
+                            tmpFrameHeight.sub(contentsHeight).div(2).toNumber(), gridSize);
+                        break;
+                    case VerticalAlign.Bottom:
+                        offsetY = toNearestGrid(
+                            tmpFrameHeight.sub(contentsHeight).toNumber(), gridSize
+                        );
+                        break;
+                }
 
-                    while (arrangeLineAttempts < maxAttempts) { //Arbitrary end for now
-                        const innerFrameY2 = innerFrameY.toNumber() + innerFrameHeight;
-                        const doesExceedFrameHeight = (frameHeight.toNumber() > 0 
-                            && innerFrameY2 > frameHeight.toNumber());
+                // Default for horizontal is align to left.
+                offsetX = 0;
+                offsetY = roundValue(offsetY).toNumber();
 
-                        // Find largest bounds point so far
-                        const { xmax } = getBoundsFromPoints(boundPoints);
+                // Offset all inner frames.
+                for(const innerFrame of innerFrames){
 
-                        // Check if the frame overlaps with the avoid areas 
-                        // (title/info frame), units is mm.
-                        const tmpX1 = innerFrameX.toNumber();
-                        const tmpY1 = innerFrameY.toNumber();
-                        const tmpX2 = tmpX1 + innerFrameWidth;
-                        const tmpY2 = tmpY1 + innerFrameHeight;
-                        const frameArea: BoundBox2 = [tmpX1, tmpY1, tmpX2, tmpY2];
+                    const { width: innerFrameHeight }
+                        = getBoundsSize(innerFrame.bounds!);
 
-                        const overlaps = avoidAreas.filter(area => areasOverlap(frameArea, area));
-
-                        const doesOverlapAreasToAvoid = overlaps.length > 0;
-
-                        if (boundPoints.length > 0 && (doesExceedFrameHeight || doesOverlapAreasToAvoid)){
-                            // Move back to the start of the vertical line
-                            innerFrameY = offsetY;
-
-                            const nextX = numeric(xmax).sub(offsetX).add(frame.gap);
-                            innerFrameX = offsetX.add(nextX);
-
-                            accumY = numeric(0);
-                            accumX = nextX;
-                        }
-
-                        arrangeLineAttempts++;
-
-                        if (arrangeLineAttempts > maxAttempts){
-                            throw "Failed to place inner frame";
-                        }
+                    // For this case, then have to use the innerFrame's width
+                    // to determine the offsetY.
+                    if (hAlign === HorizontalAlign.Middle) {
+                        offsetX = toNearestGrid(
+                            tmpFrameWidth.sub(innerFrameHeight).div(2).toNumber(), gridSize);
+                    } else if (hAlign === HorizontalAlign.Right){
+                        offsetX = toNearestGrid(
+                            tmpFrameWidth.sub(innerFrameHeight).toNumber(), gridSize);
                     }
 
-                    innerFrame.x = innerFrameX;
-                    innerFrame.y = innerFrameY;
-
-                    accumY = accumY.add(innerFrameHeight).add(frame.gap);
-
-                } else if (frameDirection === FramePlotDirection.Row) {
-
-                    // Placement of top left corner of the frame within the
-                    // parent frame.
-                    innerFrameX = offsetX.add(centeredOffsetX).add(accumX);
-                    innerFrameY = offsetY.add(accumY);
-
-                    while (arrangeLineAttempts < maxAttempts) { //Arbitrary end for now
-                        const innerFrameX2 = innerFrameX.toNumber() + innerFrameWidth;
-                        const doesExceedFrameWidth = (frameWidth.toNumber() > 0 
-                            && innerFrameX2 > frameWidth.toNumber());
-
-                        // Check if the frame overlaps with the avoid areas 
-                        // (title/info frame), units is mm.
-                        const tmpX1 = innerFrameX.toNumber();
-                        const tmpY1 = innerFrameY.toNumber();
-                        const tmpX2 = tmpX1 + innerFrameWidth;
-                        const tmpY2 = tmpY1 + innerFrameHeight;
-                        const frameArea: BoundBox2 = [tmpX1, tmpY1, tmpX2, tmpY2];
-
-                        const overlaps = avoidAreas.filter(area => areasOverlap(frameArea, area));
-
-                        const doesOverlapAreasToAvoid = overlaps.length > 0;
-
-                        if (boundPoints.length > 0 && (doesExceedFrameWidth || doesOverlapAreasToAvoid)) {
-                            // Exceeds the frame width, so go to the next line,
-                            // restart from start of the line.
-                            innerFrameX = offsetX.add(centeredOffsetX);
-
-                            // Find largest bounds point so far
-                            const { ymax } = getBoundsFromPoints(boundPoints);
-
-                            // ymax already includes the yOffset, so it has to be
-                            // removed.
-                            const nextY = numeric(ymax).sub(offsetY).add(frame.gap);
-                            innerFrameY = offsetY.add(nextY);
-
-                            // Reset the accum to be on the next 'line'
-                            accumX = numeric(0);
-                            accumY = nextY;
-                        } else {
-                            break;
-                        }
-
-                        arrangeLineAttempts++;
-
-                        if (arrangeLineAttempts > maxAttempts){
-                            throw "Failed to place inner frame";
-                        }
-                    }
-                   
-                    innerFrame.x = innerFrameX;
-                    innerFrame.y = innerFrameY;
-
-                    accumX = accumX.add(innerFrameWidth).add(frame.gap);
+                    offsetX = roundValue(offsetX).toNumber();
+                        
+                    innerFrame.x = innerFrame.x.add(offsetX);
+                    innerFrame.y = innerFrame.y.add(offsetY);
                 }
             }
-
-            // Add both the min values and max values of the coordinates
-            boundPoints.push(
-                [
-                    innerFrame.x.toNumber(), 
-                    innerFrame.y.toNumber()],
-                [   
-                    innerFrame.x.add(innerFrameWidth).toNumber(), 
-                    innerFrame.y.add(innerFrameHeight).toNumber()]
-            );
-        });
-
-        // Determine the bounds based on the points. The points should already
-        // be aligned to the grid, add the frame padding to expand the bounds correctly.
-
-        const contentsBounds = resizeBounds(getBoundsFromPoints(boundPoints),
-            frame.padding.toNumber());
-
-        const contentsWidth = contentsBounds.xmax - contentsBounds.xmin;
-        const contentsHeight = contentsBounds.ymax - contentsBounds.ymin;
-
-        // Find the alignment options
-        let hAlign = HorizontalAlign.Middle;
-        let vAlign = VerticalAlign.Middle;
-
-        if (frameParams.has(FrameParamKeys.HorizontalAlign)){
-            hAlign = 
-                frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;
         }
 
-        if (frameParams.has(FrameParamKeys.VerticalAlign)){
-            vAlign = 
-                frameParams.get(FrameParamKeys.VerticalAlign) as VerticalAlign;
-        }
-
-        if (frameParams.has(FrameParamKeys.SheetType)) {
-            frameXMin = numeric(0);
-            frameYMin = numeric(0);
-        } else {
-            frameXMin = numeric(contentsBounds.xmin);
-            frameYMin = numeric(contentsBounds.ymin);
-        }
-
-        if (frameWidth.toNumber() === 0) {
-            frameWidth = numeric(contentsWidth);
-        }
-
-        if (frameHeight.toNumber() === 0) {
-            frameHeight = numeric(contentsHeight);
-        }
-
-        // Third pass: set the alignment of the title
-        const titleFrame = innerFrames.find(frame => {
-            return frame.containsTitle;
-        });
-
-        if (titleFrame) {
-            // Align to nearest grid
-            const { width: innerFrameWidth }
-                = getBoundsSize(titleFrame.bounds!);
-
-            // This is a title frame
-            let titleOffset = 0;
-
-            switch (title_align) {
-                case HorizontalAlign.Left:
-                    titleOffset = 0;
-                    break;
-                case HorizontalAlign.Middle:
-                    titleOffset = toNearestGrid(widthForTitle / 2 - innerFrameWidth / 2, gridSize);
-                    break;
-                case HorizontalAlign.Right:
-                    titleOffset = frameWidth!.toNumber() - innerFrameWidth;
-                    break;
-            }
-
-            titleFrame.x = titleFrame.x.add(titleOffset);
-        }
-
-
-        let frameOffsetX = 0;
-        let frameOffsetY = 0;
-
-        switch (hAlign) {
-            case HorizontalAlign.Left:
-                frameOffsetX = 0;
-                break;
-            case HorizontalAlign.Middle:
-                frameOffsetX = toNearestGrid((frameWidth.toNumber() - contentsWidth) / 2, gridSize);
-                break;
-            case HorizontalAlign.Right:
-                frameOffsetX = toNearestGrid(frameWidth.toNumber() - contentsWidth, gridSize);
-                break;
-        }
-
-        switch (vAlign) {
-            case VerticalAlign.Top:
-                frameOffsetY = 0;
-                break;
-            case VerticalAlign.Middle:
-                frameOffsetY = toNearestGrid((frameHeight.toNumber() - contentsHeight) / 2, gridSize);
-                break;
-            case VerticalAlign.Bottom:
-                frameOffsetY = toNearestGrid(frameHeight.toNumber() - contentsHeight, gridSize);
-                break;
-        }
-
-        innerFrames.forEach(innerFrame => {
-            // apply the offset to all the frames
-            innerFrame.x = innerFrame.x.add(frameOffsetX);
-            innerFrame.y = innerFrame.y.add(frameOffsetY);
-        });
-
-        frame.bounds = {
-            xmin: frameXMin.toNumber(),
-            ymin: frameYMin.toNumber(),
-            xmax: frameXMin.toNumber() + frameWidth.toNumber(),
-            ymax: frameYMin.toNumber() + frameHeight.toNumber(),
-        }
+        return;
     }
 
     dumpFrame(frame: RenderFrame, level = 0): void {
@@ -925,43 +881,105 @@ export class LayoutEngine {
                     frameObject.parameters.get(FrameParamKeys.Title) as string;
                 
                 // Add the element frame containing the text item
-                const tmpFrame = new RenderFrame(
+                const titleFrame = new RenderFrame(
                     new Frame(FixedFrameIds.FrameIdNotUsed),
                     RenderFrameType.Elements);
 
                 // Mark this render frame as containing only the title element,
                 // this is used later during inner item placement of the frame.
-                tmpFrame.containsTitle = true;
+                titleFrame.containsTitle = true;
 
-                tmpFrame.subgraphId = title.replace(/\s/g, "_");
+                titleFrame.subgraphId = title.replace(/\s/g, "_");
 
                 const textObject = new RenderText(title);
                 textObject.fontSize = numeric(defaultFrameTitleTextSize);
                 textObject.fontWeight = 'bold';
+                textObject.x = numeric(0);
+                textObject.y = numeric(0);
 
                 textObject.symbol.refreshDrawing();
-                tmpFrame.innerItems.push(textObject);
+                titleFrame.innerItems = [textObject];
 
                 const tmpBox = textObject.symbol.drawing.getBoundingBox();
-                tmpFrame.bounds = {
+                const tmpBounds = {
                     xmin: tmpBox.start[0],
                     ymin: tmpBox.start[1],
                     xmax: tmpBox.start[0] + tmpBox.width,
                     ymax: tmpBox.start[1] + tmpBox.height
                 };
 
-                textObject.x = numeric(0);
-                textObject.y = numeric(0);
+                titleFrame.bounds = resizeToNearestGrid(tmpBounds,
+                    defaultGridSizeUnits);
+                titleFrame.didResize = true;
 
-                // Add as first element within the frame
-                frame.innerItems.splice(0, 0, tmpFrame);
+                // If there is a title, then re-wrap the entire frame as a 
+                // column layout, where the title element is the first item
+                // the remaining items will be in a container in the second
+                // element in the column layout.
 
-                this.printLevel(level, frame, 'added text', tmpFrame);
+                const container = RenderFrame.createContainer(frame.gap);
+                container.direction = frame.direction;
+                container.innerItems = [...frame.innerItems];
+
+                const frameParams = frame.frame.parameters;
+                let hAlign = HorizontalAlign.Middle;
+                let vAlign = VerticalAlign.Middle;
+                if (frameParams.has(FrameParamKeys.HorizontalAlign)){
+                    hAlign = 
+                        frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;
+                }
+
+                if (frameParams.has(FrameParamKeys.VerticalAlign)){
+                    vAlign = 
+                        frameParams.get(FrameParamKeys.VerticalAlign) as VerticalAlign;
+                }
+                    
+                // Make sure that container take sall the properties of the frame.
+                container.frame.parameters.set(FrameParamKeys.HorizontalAlign, hAlign);
+                container.frame.parameters.set(FrameParamKeys.VerticalAlign, vAlign);
+
+                const columnLayoutContainer = RenderFrame.createContainer(numeric(defaultGridSizeUnits));
+                columnLayoutContainer.direction = FramePlotDirection.Column;
+                columnLayoutContainer.innerItems = [
+                    titleFrame,
+                    container,
+                ];
+
+                // columnLayoutContainer.borderWidth = numeric(1);
+                // container.borderWidth = numeric(1);
+                // container.borderColor = 'red';
+
+                const frameWidth = frame.width ?? numeric(0);
+                if (frameWidth.toNumber() !== 0) {
+                    columnLayoutContainer.width = frameWidth.sub(frame.padding.mul(2));
+                    container.width = columnLayoutContainer.width.copy();
+                }
+
+                const frameHeight = frame.height ?? numeric(0);
+                if (frameHeight.toNumber() !== 0){
+                    columnLayoutContainer.height = frameHeight.sub(frame.padding.mul(2));
+
+                    const {height: titleFrameHeight} = getBoundsSize(titleFrame.bounds);
+
+                    // Container height depends on title height too.
+                    container.height = columnLayoutContainer.height
+                        .sub(titleFrameHeight)
+                        .sub(columnLayoutContainer.gap);
+                }
+
+                frame.innerItems = [columnLayoutContainer];
+
+                // Set flag, so that this frame's alignment parameters will
+                // be overwritten.
+                frame.overwriteAlignParamsForTitleLayout = true;
+                columnLayoutContainer.overwriteAlignParamsForTitleLayout = true;
+
+                this.printLevel(level, frame, 'added text', titleFrame);
 
                 textObjects.push(textObject);
 
                 // Add frame to the start
-                elementFrames.splice(0, 0, tmpFrame);
+                elementFrames.splice(0, 0, titleFrame);
             }
         }
     }
@@ -1900,7 +1918,7 @@ export class RenderFrame extends RenderObject {
     /** Bounds of the render frame */
     bounds: BoundBox | null = null;
 
-    /** Holds the parameters of the frame that this RenderFRame is for */
+    /** Holds the parameters of the frame that this RenderFrame is for */
     frame: Frame;
 
     /**
@@ -1922,6 +1940,7 @@ export class RenderFrame extends RenderObject {
     gap = milsToMM(100);
 
     borderWidth = numeric(5); //mils
+    borderColor = "#111";
 
     /** Direction that frame elements are plotted. By default frame elements
      * are plotted in a ROW (horizontal direction) */
@@ -1943,15 +1962,32 @@ export class RenderFrame extends RenderObject {
     /** If true, then frame only contains text for frame title. */
     containsTitle = false;
 
+    // If true, then the align params are ignored.
+    overwriteAlignParamsForTitleLayout = false;
+
+    // If true, then this frame is not an actual defined frame, but a virtual
+    // frame that is used in multi-line layout.
+    virtual  = false;
+
+    // Flag for Element type frames to indicate if they have already been
+    // resized once. 
+    didResize = false;
+
+    lineIndex = 0;
+
     frameId: number;
 
-    constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container) {
+    constructor(frame: Frame, type: RenderFrameType = RenderFrameType.Container, 
+        virtual = false) {
+        
         super();
         this.frame = frame;
         this.renderType = type;
 
         this.frameId = RenderFrame.FrameIdCounter;
         RenderFrame.FrameIdCounter++;
+
+        this.virtual = virtual;
     }
 
     toString(): string {
@@ -1964,6 +2000,20 @@ export class RenderFrame extends RenderObject {
 
         return name + ": " + this.x + "," + this.y 
             + " bounds:" + (this.bounds && printBounds(this.bounds));
+    }
+
+    static createContainer(gap: NumericValue): RenderFrame {
+        const tmpFrame = new RenderFrame(
+            new Frame(FixedFrameIds.FrameIdNotUsed),
+            RenderFrameType.Container,
+            true
+        );
+
+        tmpFrame.gap = gap.copy();
+        tmpFrame.borderWidth = numeric(0);
+        tmpFrame.padding = numeric(0);
+
+        return tmpFrame;
     }
 }
 
@@ -2085,3 +2135,116 @@ type SubGraphInfo = {
 }
 
 export { BoundBox };
+
+function SplitIntoLines(frameWidth: NumericValue, frameHeight: NumericValue, 
+    framePadding: NumericValue, frameGap: NumericValue, frameDirection: string, 
+    innerFrames: RenderFrame[], avoidAreas: BoundBox2[]): RenderFrame[][] {
+
+    if (frameWidth.toNumber() === 0){
+        // Assume no limits
+        frameWidth = numeric(1e24);
+    } 
+
+    if (frameHeight.toNumber() === 0){
+        frameHeight = numeric(1e24);
+    }
+
+    const allGroups: LayoutItem[][] = [];
+    let currentGroup: LayoutItem[] = [];
+
+    const tmpFrameWidth = frameWidth.sub(framePadding.mul(2)).toNumber();
+    const tmpFrameHeight = frameHeight.sub(framePadding.mul(2)).toNumber();
+
+    // Can only be row or column.
+    const isRowDirection = frameDirection === FramePlotDirection.Row;
+
+    const dimensionLimit = isRowDirection ? tmpFrameWidth: tmpFrameHeight;
+
+    let accumX = framePadding.copy();
+    let accumY = framePadding.copy();
+
+    // Group into lines and consider overlap areas
+    for (const innerFrame of innerFrames) {
+        const { width: innerFrameWidth, height: innerFrameHeight }
+            = getBoundsSize(innerFrame.bounds!);
+
+        // Get final size of the inner frame, including padding.
+        const innerFramePadding = innerFrame.padding.toNumber();
+        const isContainerFrame = innerFrame.renderType === RenderFrameType.Container;
+
+        // Only add the frame padding if the frame is an element frame.
+        const useFrameWidth = innerFrameWidth + (isContainerFrame ? innerFramePadding : 0);
+        const useFrameHeight = innerFrameHeight + (isContainerFrame ? innerFramePadding : 0);
+
+        const tmpX1 = accumX.toNumber();
+        const tmpY1 = accumY.toNumber();
+        const tmpX2 = tmpX1 + useFrameWidth;
+        const tmpY2 = tmpY1 + useFrameHeight;
+        const frameArea: BoundBox2 = [tmpX1, tmpY1, tmpX2, tmpY2];
+
+        const conditionOverlapAvoidAreas = 
+            avoidAreas.filter(area => areasOverlap(frameArea, area)).length > 0;
+
+       if (isRowDirection){
+            const tmpX = accumX.add(useFrameWidth).toNumber();
+            const conditionExceedDimension = tmpX > dimensionLimit;
+
+            if ((conditionExceedDimension || conditionOverlapAvoidAreas) && currentGroup.length > 0){
+                allGroups.push(currentGroup);
+
+                // Find largest height of group.
+                const heightsInLine = currentGroup.map(item => item.height);
+                const maxHeight = Math.max(...heightsInLine);
+
+                accumX = numeric(0);
+                accumY = accumY.add(frameGap).add(maxHeight);
+
+                currentGroup = [];
+            }
+
+            accumX = accumX.add(useFrameWidth).add(frameGap);
+        } else {
+            const tmpY = accumY.add(useFrameHeight).toNumber();
+            const conditionExistDimension = tmpY > dimensionLimit;
+
+            if ((conditionExistDimension || conditionOverlapAvoidAreas) && currentGroup.length > 0){
+                allGroups.push(currentGroup);
+
+                // Find largest width of group.
+                const widthsInLine = currentGroup.map(item => item.width);
+                const maxWidth = Math.max(...widthsInLine);
+
+                accumX = accumX.add(frameGap).add(maxWidth);
+                accumY = numeric(0);
+
+                currentGroup = [];
+            }
+
+            accumY = accumY.add(useFrameHeight).add(frameGap);
+        }
+
+        currentGroup.push({
+            x: accumX.toNumber(),
+            y: accumY.toNumber(),
+            width: useFrameWidth,
+            height: useFrameHeight,
+            frame: innerFrame
+        });
+    }
+
+    if (currentGroup.length > 0){
+        allGroups.push(currentGroup);
+    }
+
+    // Return only the render frames, layout info is not needed
+    // at the moment.
+    return allGroups.map(lines => {
+        return lines.map(layoutItem => layoutItem.frame);
+    });
+}
+
+type LayoutItem = {
+    x: number, y: number,
+    width: number, height: number,
+    frame: RenderFrame,
+}

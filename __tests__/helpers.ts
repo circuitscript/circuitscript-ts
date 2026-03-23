@@ -1,4 +1,7 @@
 import { readFileSync } from 'fs';
+// import { Resvg } from '@resvg/resvg-js';
+// import { PNG } from 'pngjs';
+// import pixelmatch from 'pixelmatch';
 import { CircuitScriptParser } from '../src/antlr/CircuitScriptParser.js';
 
 import { ParserVisitor, VisitorExecutionException } from '../src/visitor.js';
@@ -260,6 +263,57 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         documentVariable
     }
 }
+
+export type SvgDiffResult = {
+    numDiffPixels: number;
+    width: number;
+    height: number;
+    diffPng: Buffer;
+};
+
+function svgToPng(svgString: string): PNG {
+    const resvg = new Resvg(svgString);
+    const pngBuffer = resvg.render().asPng();
+    return PNG.sync.read(pngBuffer);
+}
+
+// export function compareSvgToFile(svgFilePath: string, svgString: string, threshold = 0.1): SvgDiffResult {
+//     const fileContents = readFileSync(svgFilePath, { encoding: 'utf8' });
+
+//     const img1 = svgToPng(fileContents);
+//     const img2 = svgToPng(svgString);
+
+//     if (img1.width !== img2.width || img1.height !== img2.height){
+        
+//         // Use this to indicate dimensions do not match.
+//         return {
+//             numDiffPixels: -1,
+//         }
+//     }
+
+//     const width = Math.max(img1.width, img2.width);
+//     const height = Math.max(img1.height, img2.height);
+
+//     // Pad images to the same dimensions if they differ
+//     function padImage(img: PNG): Buffer {
+//         if (img.width === width && img.height === height) return img.data;
+//         const padded = Buffer.alloc(width * height * 4, 0);
+//         for (let y = 0; y < img.height; y++) {
+//             img.data.copy(padded, y * width * 4, y * img.width * 4, (y + 1) * img.width * 4);
+//         }
+//         return padded;
+//     }
+
+//     const diff = new PNG({ width, height });
+//     const numDiffPixels = pixelmatch(padImage(img1), padImage(img2), diff.data, width, height, { threshold });
+
+//     return {
+//         numDiffPixels,
+//         width,
+//         height,
+//         diffPng: PNG.sync.write(diff),
+//     };
+// }
 
 export function expectJsonOutput(inputString: string, targetPath: string): void {
     const expectedJsonString = readFileSync(targetPath, { encoding: 'utf8' });
