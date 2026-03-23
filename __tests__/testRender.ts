@@ -105,6 +105,10 @@ describe('Render tests', () => {
 
         ['script64.cst', 'proper exit of path block levels'],
 
+        ['script65.cst', 'title alignment parameter in frame'],
+        ['script66.cst', 'frame row direction alignment options, single line'],
+        ['script67.cst', 'frame column direction alignment options, single line'],
+
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {

@@ -1,0 +1,50 @@
+
+# Test title alignment in frames.
+from "std" import *
+
+vcc = net("3v3")
+gnd = dgnd()
+
+frame:
+    ..title = "Hello world"
+    ..title_align = "middle"
+    #..width = 2000
+
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+frame:
+    ..title = "Hello world"
+    ..title_align = "left"
+    ..width = 2000
+
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+frame:
+    ..title = "Hello world"
+    ..title_align = "middle"
+    ..width = 2000
+
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+frame:
+    ..title = "Hello world"
+    ..title_align = "right"
+    ..width = 2000
+
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd

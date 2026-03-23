@@ -473,8 +473,6 @@ export class LayoutEngine {
 
         let frameWidth = numeric(0);
         let frameHeight = numeric(0);
-        let frameXMin = numeric(0);
-        let frameYMin = numeric(0);
 
         const avoidAreas: BoundBox2[] = [];
 
@@ -545,12 +543,11 @@ export class LayoutEngine {
 
         // if (frame.frame.parameters.get('id')){
         //     const idParam = frame.frame.parameters.get('id') as NumericValue;
-        //     if (idParam.toNumber() === 0){
+        //     if (idParam.toNumber() === 100){
         //         console.log('stop here');
         //     }
         // }
 
-        const titleFrame = innerFrames.find(item => item.containsTitle);
         const innerFramesWithoutTitle = innerFrames.filter(item => !item.containsTitle);
 
         this.printLevel(level, `split into lines, width: ${frameWidth.toNumber()} height: ${frameHeight.toNumber()}, padding: ${frame.padding.toNumber()}, gap: ${frame.gap.toNumber()}, direction: ${frameDirection}`);
@@ -868,119 +865,130 @@ export class LayoutEngine {
     private checkAddFrameTitle(frame: RenderFrame, 
         elementFrames: RenderFrame[], textObjects: RenderText[], level: number): void {
         
+        if (frame.renderType !== RenderFrameType.Container){
+            return;
+        }
+
         // If the frame has a title specified, then this is added as an 
         // element frame.
-        if (frame.renderType === RenderFrameType.Container) {
-            const frameObject = frame.frame;
+        const frameObject = frame.frame;
+        const frameParams = frame.frame.parameters;
 
-            // Do not draw title if this is a sheet frame
-            const isSheetFrame = frameObject.frameType === FrameType.Sheet;
+        // Do not draw title if this is a sheet frame
+        const isSheetFrame = frameObject.frameType === FrameType.Sheet;
 
-            if (frameObject.parameters.has(FrameParamKeys.Title) && !isSheetFrame) {
-                const title = 
-                    frameObject.parameters.get(FrameParamKeys.Title) as string;
-                
-                // Add the element frame containing the text item
-                const titleFrame = new RenderFrame(
-                    new Frame(FixedFrameIds.FrameIdNotUsed),
-                    RenderFrameType.Elements);
+        if (frameParams.has(FrameParamKeys.Title) && !isSheetFrame) {
+            const title = 
+                frameParams.get(FrameParamKeys.Title) as string;
+            
+            // Add the element frame containing the text item
+            const titleFrame = new RenderFrame(
+                new Frame(FixedFrameIds.FrameIdNotUsed),
+                RenderFrameType.Elements);
 
-                // Mark this render frame as containing only the title element,
-                // this is used later during inner item placement of the frame.
-                titleFrame.containsTitle = true;
+            // Mark this render frame as containing only the title element,
+            // this is used later during inner item placement of the frame.
+            titleFrame.containsTitle = true;
 
-                titleFrame.subgraphId = title.replace(/\s/g, "_");
+            titleFrame.subgraphId = title.replace(/\s/g, "_");
 
-                const textObject = new RenderText(title);
-                textObject.fontSize = numeric(defaultFrameTitleTextSize);
-                textObject.fontWeight = 'bold';
-                textObject.x = numeric(0);
-                textObject.y = numeric(0);
+            const textObject = new RenderText(title);
+            textObject.fontSize = numeric(defaultFrameTitleTextSize);
+            textObject.fontWeight = 'bold';
+            textObject.x = numeric(0);
+            textObject.y = numeric(0);
 
-                textObject.symbol.refreshDrawing();
-                titleFrame.innerItems = [textObject];
+            textObject.symbol.refreshDrawing();
+            titleFrame.innerItems = [textObject];
 
-                const tmpBox = textObject.symbol.drawing.getBoundingBox();
-                const tmpBounds = {
-                    xmin: tmpBox.start[0],
-                    ymin: tmpBox.start[1],
-                    xmax: tmpBox.start[0] + tmpBox.width,
-                    ymax: tmpBox.start[1] + tmpBox.height
-                };
+            const tmpBox = textObject.symbol.drawing.getBoundingBox();
+            const tmpBounds = {
+                xmin: tmpBox.start[0],
+                ymin: tmpBox.start[1],
+                xmax: tmpBox.start[0] + tmpBox.width,
+                ymax: tmpBox.start[1] + tmpBox.height
+            };
 
-                titleFrame.bounds = resizeToNearestGrid(tmpBounds,
-                    defaultGridSizeUnits);
-                titleFrame.didResize = true;
+            titleFrame.bounds = resizeToNearestGrid(tmpBounds,
+                defaultGridSizeUnits);
+            titleFrame.didResize = true;
 
-                // If there is a title, then re-wrap the entire frame as a 
-                // column layout, where the title element is the first item
-                // the remaining items will be in a container in the second
-                // element in the column layout.
+            const titleFrameContainer = RenderFrame.createContainer(numeric(0));
+            titleFrameContainer.innerItems = [titleFrame];
 
-                const container = RenderFrame.createContainer(frame.gap);
-                container.direction = frame.direction;
-                container.innerItems = [...frame.innerItems];
-
-                const frameParams = frame.frame.parameters;
-                let hAlign = HorizontalAlign.Middle;
-                let vAlign = VerticalAlign.Middle;
-                if (frameParams.has(FrameParamKeys.HorizontalAlign)){
-                    hAlign = 
-                        frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;
-                }
-
-                if (frameParams.has(FrameParamKeys.VerticalAlign)){
-                    vAlign = 
-                        frameParams.get(FrameParamKeys.VerticalAlign) as VerticalAlign;
-                }
-                    
-                // Make sure that container take sall the properties of the frame.
-                container.frame.parameters.set(FrameParamKeys.HorizontalAlign, hAlign);
-                container.frame.parameters.set(FrameParamKeys.VerticalAlign, vAlign);
-
-                const columnLayoutContainer = RenderFrame.createContainer(numeric(defaultGridSizeUnits));
-                columnLayoutContainer.direction = FramePlotDirection.Column;
-                columnLayoutContainer.innerItems = [
-                    titleFrame,
-                    container,
-                ];
-
-                // columnLayoutContainer.borderWidth = numeric(1);
-                // container.borderWidth = numeric(1);
-                // container.borderColor = 'red';
-
-                const frameWidth = frame.width ?? numeric(0);
-                if (frameWidth.toNumber() !== 0) {
-                    columnLayoutContainer.width = frameWidth.sub(frame.padding.mul(2));
-                    container.width = columnLayoutContainer.width.copy();
-                }
-
-                const frameHeight = frame.height ?? numeric(0);
-                if (frameHeight.toNumber() !== 0){
-                    columnLayoutContainer.height = frameHeight.sub(frame.padding.mul(2));
-
-                    const {height: titleFrameHeight} = getBoundsSize(titleFrame.bounds);
-
-                    // Container height depends on title height too.
-                    container.height = columnLayoutContainer.height
-                        .sub(titleFrameHeight)
-                        .sub(columnLayoutContainer.gap);
-                }
-
-                frame.innerItems = [columnLayoutContainer];
-
-                // Set flag, so that this frame's alignment parameters will
-                // be overwritten.
-                frame.overwriteAlignParamsForTitleLayout = true;
-                columnLayoutContainer.overwriteAlignParamsForTitleLayout = true;
-
-                this.printLevel(level, frame, 'added text', titleFrame);
-
-                textObjects.push(textObject);
-
-                // Add frame to the start
-                elementFrames.splice(0, 0, titleFrame);
+            if (frameParams.has(FrameParamKeys.TitleAlign)) {
+                const alignValue = frameParams.get(FrameParamKeys.TitleAlign);
+                titleFrameContainer.frame.parameters.set(FrameParamKeys.HorizontalAlign, alignValue);
             }
+
+            // If there is a title, then re-wrap the entire frame as a 
+            // column layout, where the title element is the first item
+            // the remaining items will be in a container in the second
+            // element in the column layout.
+
+            const container = RenderFrame.createContainer(frame.gap);
+            container.direction = frame.direction;
+            container.innerItems = [...frame.innerItems];
+
+            let hAlign = HorizontalAlign.Middle;
+            let vAlign = VerticalAlign.Middle;
+            if (frameParams.has(FrameParamKeys.HorizontalAlign)){
+                hAlign = 
+                    frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;
+            }
+
+            if (frameParams.has(FrameParamKeys.VerticalAlign)){
+                vAlign = 
+                    frameParams.get(FrameParamKeys.VerticalAlign) as VerticalAlign;
+            }
+                
+            // Make sure that container take sall the properties of the frame.
+            container.frame.parameters.set(FrameParamKeys.HorizontalAlign, hAlign);
+            container.frame.parameters.set(FrameParamKeys.VerticalAlign, vAlign);
+
+            const columnLayoutContainer = RenderFrame.createContainer(numeric(defaultGridSizeUnits));
+            columnLayoutContainer.direction = FramePlotDirection.Column;
+            columnLayoutContainer.innerItems = [
+                titleFrameContainer,
+                container,
+            ];
+
+            // columnLayoutContainer.borderWidth = numeric(1);
+            // container.borderWidth = numeric(1);
+            // container.borderColor = 'red';
+
+            const frameWidth = frame.width ?? numeric(0);
+            if (frameWidth.toNumber() !== 0) {
+                columnLayoutContainer.width = frameWidth.sub(frame.padding.mul(2));
+                container.width = columnLayoutContainer.width.copy();
+                titleFrameContainer.width = columnLayoutContainer.width.copy();
+            }
+
+            const frameHeight = frame.height ?? numeric(0);
+            if (frameHeight.toNumber() !== 0) {
+                columnLayoutContainer.height = frameHeight.sub(frame.padding.mul(2));
+
+                const { height: titleFrameHeight } = getBoundsSize(titleFrame.bounds);
+
+                // Container height depends on title height too.
+                container.height = columnLayoutContainer.height
+                    .sub(titleFrameHeight)
+                    .sub(columnLayoutContainer.gap);
+            }
+
+            frame.innerItems = [columnLayoutContainer];
+
+            // Set flag, so that this frame's alignment parameters will
+            // be overwritten.
+            frame.overwriteAlignParamsForTitleLayout = true;
+            columnLayoutContainer.overwriteAlignParamsForTitleLayout = true;
+
+            this.printLevel(level, frame, 'added text', titleFrame);
+
+            textObjects.push(textObject);
+
+            // Add frame to the start
+            elementFrames.splice(0, 0, titleFrame);
         }
     }
 
@@ -1441,22 +1449,7 @@ function getNodePositionAtPin(item: RenderItem, pin: number): [x: NumericValue, 
     ]
 }
 
-
-function getNeighbours(graph: Graph, nodeIds: string[]): [from: string, to: string][] {
-    
-    return nodeIds.reduce((accum, nodeId) => {
-        const tmp = graph.neighbors(nodeId);
-        if (tmp) {
-            tmp.forEach(neighborNodeId => {
-                accum.push([nodeId, neighborNodeId]);
-            });
-        }
-        return accum;
-    }, [] as [from: string, to: string][]);
-}
-
 type RenderItem = RenderComponent | RenderWire | RenderText;
-
 
 export function applyComponentParamsToSymbol(componentUnit: ComponentUnit,
     symbol: SymbolGraphic): void {
@@ -2160,33 +2153,38 @@ function SplitIntoLines(frameWidth: NumericValue, frameHeight: NumericValue,
 
     const dimensionLimit = isRowDirection ? tmpFrameWidth: tmpFrameHeight;
 
-    let accumX = framePadding.copy();
-    let accumY = framePadding.copy();
+    // Start at 0, since the frame padding is already accounted for.
+    let accumX = numeric(0);
+    let accumY = numeric(0);
+
+    // Offset framePadding for the avoid areas, so that the overlap handling
+    // is correct.
+    const framePaddingValue = framePadding.toNumber();
+    avoidAreas = avoidAreas.map(bounds => {
+        return [
+            bounds[0] - framePaddingValue,
+            bounds[1] - framePaddingValue,
+            bounds[2] - framePaddingValue,
+            bounds[3] - framePaddingValue
+        ]
+    });
 
     // Group into lines and consider overlap areas
     for (const innerFrame of innerFrames) {
         const { width: innerFrameWidth, height: innerFrameHeight }
             = getBoundsSize(innerFrame.bounds!);
 
-        // Get final size of the inner frame, including padding.
-        const innerFramePadding = innerFrame.padding.toNumber();
-        const isContainerFrame = innerFrame.renderType === RenderFrameType.Container;
-
-        // Only add the frame padding if the frame is an element frame.
-        const useFrameWidth = innerFrameWidth + (isContainerFrame ? innerFramePadding : 0);
-        const useFrameHeight = innerFrameHeight + (isContainerFrame ? innerFramePadding : 0);
-
         const tmpX1 = accumX.toNumber();
         const tmpY1 = accumY.toNumber();
-        const tmpX2 = tmpX1 + useFrameWidth;
-        const tmpY2 = tmpY1 + useFrameHeight;
+        const tmpX2 = tmpX1 + innerFrameWidth;
+        const tmpY2 = tmpY1 + innerFrameHeight;
         const frameArea: BoundBox2 = [tmpX1, tmpY1, tmpX2, tmpY2];
 
         const conditionOverlapAvoidAreas = 
             avoidAreas.filter(area => areasOverlap(frameArea, area)).length > 0;
 
        if (isRowDirection){
-            const tmpX = accumX.add(useFrameWidth).toNumber();
+            const tmpX = accumX.add(innerFrameWidth).toNumber();
             const conditionExceedDimension = tmpX > dimensionLimit;
 
             if ((conditionExceedDimension || conditionOverlapAvoidAreas) && currentGroup.length > 0){
@@ -2202,9 +2200,9 @@ function SplitIntoLines(frameWidth: NumericValue, frameHeight: NumericValue,
                 currentGroup = [];
             }
 
-            accumX = accumX.add(useFrameWidth).add(frameGap);
+            accumX = accumX.add(innerFrameWidth).add(frameGap);
         } else {
-            const tmpY = accumY.add(useFrameHeight).toNumber();
+            const tmpY = accumY.add(innerFrameHeight).toNumber();
             const conditionExistDimension = tmpY > dimensionLimit;
 
             if ((conditionExistDimension || conditionOverlapAvoidAreas) && currentGroup.length > 0){
@@ -2220,14 +2218,14 @@ function SplitIntoLines(frameWidth: NumericValue, frameHeight: NumericValue,
                 currentGroup = [];
             }
 
-            accumY = accumY.add(useFrameHeight).add(frameGap);
+            accumY = accumY.add(innerFrameHeight).add(frameGap);
         }
 
         currentGroup.push({
             x: accumX.toNumber(),
             y: accumY.toNumber(),
-            width: useFrameWidth,
-            height: useFrameHeight,
+            width: innerFrameWidth,
+            height: innerFrameHeight,
             frame: innerFrame
         });
     }

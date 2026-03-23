@@ -1,0 +1,54 @@
+# Test frame column direction layout with different alignment options
+
+from "std" import *
+v5 = supply("5V")
+gnd = dgnd()
+
+document.sheet_type = sheet_A4()
+
+v_align = ["top", "middle", "bottom"]
+h_align = ["left", "middle", "right"]
+
+frame:
+    ..width = 10900
+    ..align = "left"
+    
+    for i in range(0, 3):
+        for j in range(0, 3):
+
+            tmp_h_align = arrayGet(h_align, i)
+            tmp_v_align = arrayGet(v_align, j)
+
+            frame:
+                ..direction = "column"
+                ..align = tmp_h_align
+                ..valign = tmp_v_align
+                ..id = 0
+                ..width = 3500
+                ..height = 5000
+
+                ..title = tmp_h_align + ", " + tmp_v_align
+
+                frame:
+                    ..id = 1
+                    at v5
+                    wire down 100
+                    add cap(100n)
+                    wire down 100
+                    to gnd
+
+                frame:
+                    ..id = 2
+                    at v5
+                    wire down 100 right 500 down 100
+                    add cap(100n)
+                    wire down 100
+                    to gnd
+
+                frame:
+                    ..id = 3
+                    at v5
+                    wire down 100 right 1000 down 100
+                    add cap(100n)
+                    wire down 100
+                    to gnd
