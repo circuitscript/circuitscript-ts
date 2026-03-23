@@ -15,8 +15,8 @@ frame:
     for i in range(0, 3):
         for j in range(0, 3):
 
-            tmp_align = arrayGet(align, i)
-            tmp_valign = arrayGet(valign, j)
+            tmp_align = array_get(align, i)
+            tmp_valign = array_get(valign, j)
 
             frame: 
                 ..width = 3000

@@ -17,8 +17,8 @@ frame:
     for i in range(0, 3):
         for j in range(0, 3):
 
-            tmp_h_align = arrayGet(h_align, i)
-            tmp_v_align = arrayGet(v_align, j)
+            tmp_h_align = array_get(h_align, i)
+            tmp_v_align = array_get(v_align, j)
 
             frame:
                 ..direction = "row"

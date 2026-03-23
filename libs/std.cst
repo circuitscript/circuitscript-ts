@@ -375,47 +375,47 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
             grid_height: paper_height - 2 * margin_y
 
 def sheet_A1():
-    paper_width = toMils(841)
-    paper_height = toMils(594)
+    paper_width = to_mils(841)
+    paper_height = to_mils(594)
     margin = 400
 
     return sheet_generator("A1", paper_width, paper_height, margin, margin, 
         range(1, 17), ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"])
 
 def sheet_A2():
-    paper_width = toMils(594)
-    paper_height = toMils(420)
+    paper_width = to_mils(594)
+    paper_height = to_mils(420)
     margin = 400
 
     return sheet_generator("A2", paper_width, paper_height, margin, margin, 
         range(1, 13), ["A", "B", "C", "D", "E", "F", "G", "H"])
 
 def sheet_A3():
-    paper_width = toMils(420)
-    paper_height = toMils(297)
+    paper_width = to_mils(420)
+    paper_height = to_mils(297)
     margin = 400
 
     return sheet_generator("A3", paper_width, paper_height, margin, margin, 
         range(1, 9), ["A", "B", "C", "D", "E", "F"])
 
 def sheet_A4():
-    paper_width = toMils(297)
-    paper_height = toMils(210)
+    paper_width = to_mils(297)
+    paper_height = to_mils(210)
     margin = 400
 
     return sheet_generator("A4", paper_width, paper_height, margin, margin, 
         range(1, 7), ["A", "B", "C", "D"])
 
 def sheet_A5():
-    paper_width = toMils(210)
-    paper_height = toMils(148)
+    paper_width = to_mils(210)
+    paper_height = to_mils(148)
     margin = 400
 
     return sheet_generator("A5", paper_width, paper_height, margin, margin, range(1, 5), ["A", "B", "C"])
 
 def sheet_A6(revision="V1"):
-    paper_width = toMils(148)
-    paper_height = toMils(105)
+    paper_width = to_mils(148)
+    paper_height = to_mils(105)
     margin = 400
 
     tmp_sheet = sheet_generator("A6", paper_width, paper_height, margin, margin, range(1, 4), ["A", "B"])

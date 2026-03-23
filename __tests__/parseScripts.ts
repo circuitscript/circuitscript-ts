@@ -450,17 +450,17 @@ print(a and a)
 `, ['true', 'false', '1', '0', '1']);
 
 export const inlineScript55 = new ScriptTest(`
-# Test builtin methods for arrayPush, arrayGet, arraySet and len
+# Test builtin methods for array_push, array_get, array_set and len
 tmp = []
-arrayPush(tmp, 1)
-arrayPush(tmp, 2)
-arrayPush(tmp, 3)
+array_push(tmp, 1)
+array_push(tmp, 2)
+array_push(tmp, 3)
 print(tmp)
-print(arrayGet(tmp, 2))
-print(arrayGet(tmp, 0))
+print(array_get(tmp, 2))
+print(array_get(tmp, 0))
 
-arraySet(tmp, 1, 100)
-print(arrayGet(tmp, 1))
+array_set(tmp, 1, 100)
+print(array_get(tmp, 1))
 
 print(len(tmp))
 `, ['[1, 2, 3]', '3', '1', '100', '3']);

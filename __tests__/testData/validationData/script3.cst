@@ -377,12 +377,12 @@ sheet:
                     wire down 100
                     add tmp = merge_point()
 
-                    if arrayGet(tmp_array, i-1) == 0:
+                    if array_get(tmp_array, i-1) == 0:
                         wire left 500
                         add label("ROW" + i)
                     else:
                         wire left 400
-                        to arrayGet(tmp_array, i-1, tmp)
+                        to array_get(tmp_array, i-1, tmp)
 
                     arraySet(tmp_array, i-1, tmp)
 

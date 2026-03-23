@@ -11,12 +11,12 @@ import { Net } from "./objects/Net.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
-    ['toMils', toMils],
+    ['to_mils', toMils],
     ['range', range],
     ['len', objectLength],
-    ['arrayPush', arrayPush],
-    ['arrayGet', arrayGet],
-    ['arraySet', arraySet],
+    ['array_push', arrayPush],
+    ['array_get', arrayGet],
+    ['array_set', arraySet],
     ['print', null],
 ];
 
