@@ -7,7 +7,7 @@ gnd = dgnd()
 
 frame:
     ..title = "Hello world"
-    ..title_align = "middle"
+    ..title_align = "center"
     #..width = 2000
 
     at vcc
@@ -29,7 +29,7 @@ frame:
 
 frame:
     ..title = "Hello world"
-    ..title_align = "middle"
+    ..title_align = "center"
     ..width = 2000
 
     at vcc

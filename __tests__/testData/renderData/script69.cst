@@ -6,8 +6,8 @@ document.sheet_type = sheet_A6()
 vcc = net("3v3")
 gnd = dgnd()
 
-align = ["left", "middle", "right"]
-valign = ["top", "middle", "bottom"]
+align = ["left", "center", "right"]
+valign = ["top", "center", "bottom"]
 
 frame:
     ..width = 3000 * 3 + 100 * 2 + 100 * 2

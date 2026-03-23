@@ -14,7 +14,7 @@ def solder_bridge():
             vline: -10, -height/2, height
             hpin: 1, -10-width/2-40, 0, 40
             hpin: 2, 10+width/2 + 40, 0, -40
-            label: params.refdes, 0, -height/2 - 20, anchor="middle"
+            label: params.refdes, 0, -height/2 - 20, anchor="center"
 
 
 vcc = supply("VCC")

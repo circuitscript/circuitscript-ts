@@ -6,8 +6,8 @@ gnd = dgnd()
 
 document.sheet_type = sheet_A4()
 
-v_align = ["top", "middle", "bottom"]
-h_align = ["left", "middle", "right"]
+v_align = ["top", "center", "bottom"]
+h_align = ["left", "center", "right"]
 
 frame:
     ..width = 10900

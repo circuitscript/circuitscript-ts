@@ -48,7 +48,7 @@ export function measureTextSize2(
                 dominantBaseline = VerticalAlignProp.Hanging;
                 break;
 
-            case VerticalAlign.Middle:
+            case VerticalAlign.Center:
                 dominantBaseline = VerticalAlignProp.Central;
                 break;
 
@@ -62,7 +62,7 @@ export function measureTextSize2(
             case HorizontalAlign.Left:
                 useAnchor = HorizontalAlignProp.Start;
                 break;
-            case HorizontalAlign.Middle:
+            case HorizontalAlign.Center:
                 useAnchor = HorizontalAlignProp.Middle;
                 break;
             case HorizontalAlign.Right:

@@ -263,7 +263,7 @@ export abstract class SymbolGraphic {
             const isHorizontalLabel = finalLabelAngle === 0 || finalLabelAngle === 180;
             const isVerticalLabel = finalLabelAngle === 90 || finalLabelAngle === -90;
 
-            if (useAnchor === HorizontalAlign.Middle) {
+            if (useAnchor === HorizontalAlign.Center) {
                 anchorStyle = HorizontalAlignProp.Middle;
             } else if (useAnchor === HorizontalAlign.Left) {
                 anchorStyle = HorizontalAlignProp.Start
@@ -271,7 +271,7 @@ export abstract class SymbolGraphic {
                 anchorStyle = HorizontalAlignProp.End;
             }
 
-            if (useDominantBaseline === VerticalAlign.Middle) {
+            if (useDominantBaseline === VerticalAlign.Center) {
                 dominantBaseline = VerticalAlignProp.Central;
             } else if (useDominantBaseline === VerticalAlign.Top) {
                 dominantBaseline = VerticalAlignProp.Hanging;
@@ -484,7 +484,7 @@ export abstract class SymbolGraphic {
         } else if (value === HorizontalAlign.Right) {
             return HorizontalAlign.Left;
         } else {
-            return HorizontalAlign.Middle;
+            return HorizontalAlign.Center;
         }
     }
 
@@ -494,7 +494,7 @@ export abstract class SymbolGraphic {
         } else if (value === VerticalAlign.Bottom) {
             return VerticalAlign.Top;
         } else {
-            return VerticalAlign.Middle;
+            return VerticalAlign.Center;
         }
     }
 }
@@ -516,7 +516,7 @@ export class SymbolText extends SymbolGraphic {
         
         drawing.addTextbox(numeric(0), numeric(0), this.text, {
             fontSize: this.fontSize,
-            anchor: HorizontalAlign.Middle,
+            anchor: HorizontalAlign.Center,
             fontWeight: this.fontWeight,
         });
 
@@ -922,7 +922,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 usePinName, {
                 fontSize: numeric(defaultPinNameTextSize),
                 anchor: pinNameAlignment,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: pinNameColor,
                 angle: numeric(usePinIdAngle)
             });
@@ -1096,7 +1096,7 @@ export class SymbolCustom extends SymbolGraphic {
 
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
             });
 
@@ -1118,7 +1118,7 @@ export class SymbolCustom extends SymbolGraphic {
             drawing.addLabel(rightPinStart.sub(milsToMM(20)), pinY, pin.text, {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Right,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
             });
 
@@ -1142,7 +1142,7 @@ export class SymbolCustom extends SymbolGraphic {
             drawing.addLabel(pinX, topPinStart.add(milsToMM(20)), pin.text, {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Right,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
                 angle: numeric(-90),
             });
@@ -1167,7 +1167,7 @@ export class SymbolCustom extends SymbolGraphic {
             drawing.addLabel(pinX, bottomPinStart.sub(milsToMM(20)), pin.text, {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
                 angle: numeric(-90),
             });
@@ -1308,7 +1308,7 @@ export class SymbolCustomModule extends SymbolCustom {
             drawing.addLabel(leftPinStart.add(this.portWidth).add(milsToMM(20)), pinY, pin.text, {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
             });
         });
@@ -1324,7 +1324,7 @@ export class SymbolCustomModule extends SymbolCustom {
             drawing.addLabel(rightPinStart.sub(this.portWidth).sub(milsToMM(20)), pinY, pin.text, {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Right,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
             });
         });
@@ -1341,7 +1341,7 @@ export class SymbolCustomModule extends SymbolCustom {
             drawing.addLabel(pinX, topPinStart.add(this.portWidth).add(milsToMM(20)), pin.text, {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Right,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
                 angle: numeric(-90),
             });
@@ -1359,7 +1359,7 @@ export class SymbolCustomModule extends SymbolCustom {
             drawing.addLabel(pinX, bottomPinStart.sub(this.portWidth).sub(milsToMM(20)), pin.text, {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Left,
-                vanchor: VerticalAlign.Middle,
+                vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
                 angle: numeric(-90),
             });

@@ -414,7 +414,7 @@ export class LayoutEngine {
         const frameParams = frame.frame.parameters;
 
         // Default alignment options
-        let hAlign = HorizontalAlign.Middle;
+        let hAlign = HorizontalAlign.Center;
         let vAlign = VerticalAlign.Top;
         
         // Load alignment parameters.
@@ -432,7 +432,7 @@ export class LayoutEngine {
             // This is a frame with title, do not apply the alignment params
             // in the direct children.
 
-            hAlign = HorizontalAlign.Middle;
+            hAlign = HorizontalAlign.Center;
             vAlign = VerticalAlign.Top;
         }
 
@@ -528,7 +528,7 @@ export class LayoutEngine {
             // If no valign parameter was set, then change default to 
             // middle fo the sheet.
             if (!frameParams.has(FrameParamKeys.VerticalAlign)){
-                vAlign = VerticalAlign.Middle;
+                vAlign = VerticalAlign.Center;
             }
 
         } else {
@@ -678,7 +678,7 @@ export class LayoutEngine {
                     case HorizontalAlign.Left:
                         offsetX = 0;
                         break;
-                    case HorizontalAlign.Middle:
+                    case HorizontalAlign.Center:
                         offsetX = toNearestGrid(
                             tmpFrameWidth.sub(contentsWidth).div(2).toNumber(), gridSize);
                         break;
@@ -700,7 +700,7 @@ export class LayoutEngine {
 
                     // For this case, then have to use the innerFrame's height
                     // to determine the offsetY.
-                    if (vAlign === VerticalAlign.Middle) {
+                    if (vAlign === VerticalAlign.Center) {
                         offsetY = toNearestGrid(
                             tmpFrameHeight.sub(innerFrameHeight).div(2).toNumber(), gridSize);
                     } else if (vAlign === VerticalAlign.Bottom) {
@@ -720,7 +720,7 @@ export class LayoutEngine {
                     case VerticalAlign.Top:
                         offsetY = 0;
                         break;
-                    case VerticalAlign.Middle:
+                    case VerticalAlign.Center:
                         offsetY = toNearestGrid(
                             tmpFrameHeight.sub(contentsHeight).div(2).toNumber(), gridSize);
                         break;
@@ -743,7 +743,7 @@ export class LayoutEngine {
 
                     // For this case, then have to use the innerFrame's width
                     // to determine the offsetY.
-                    if (hAlign === HorizontalAlign.Middle) {
+                    if (hAlign === HorizontalAlign.Center) {
                         offsetX = toNearestGrid(
                             tmpFrameWidth.sub(innerFrameHeight).div(2).toNumber(), gridSize);
                     } else if (hAlign === HorizontalAlign.Right){
@@ -930,8 +930,8 @@ export class LayoutEngine {
             container.direction = frame.direction;
             container.innerItems = [...frame.innerItems];
 
-            let hAlign = HorizontalAlign.Middle;
-            let vAlign = VerticalAlign.Middle;
+            let hAlign = HorizontalAlign.Center;
+            let vAlign = VerticalAlign.Center;
             if (frameParams.has(FrameParamKeys.HorizontalAlign)){
                 hAlign = 
                     frameParams.get(FrameParamKeys.HorizontalAlign) as HorizontalAlign;

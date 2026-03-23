@@ -28,8 +28,8 @@ export type LabelStyle = {
     fontWeight?: string,
     angle?: NumericValue,
     
-    anchor?: HorizontalAlign.Left | HorizontalAlign.Middle | HorizontalAlign.Right, // Horizontal anchor
-    vanchor?: VerticalAlign.Top | VerticalAlign.Middle | VerticalAlign.Bottom, // Vertical anchor
+    anchor?: HorizontalAlign.Left | HorizontalAlign.Center | HorizontalAlign.Right, // Horizontal anchor
+    vanchor?: VerticalAlign.Top | VerticalAlign.Center | VerticalAlign.Bottom, // Vertical anchor
 
     textColor?: string,
 
@@ -737,7 +737,7 @@ function labelPolygonForAnchors(x: number, y: number, width: number, height: num
                 [1, -1],
                 [1, 1],
             ];
-        } else if (vAnchor === VerticalAlign.Middle){
+        } else if (vAnchor === VerticalAlign.Center){
             coordVectors = [
                 [0, -0.5],
                 [0, 0.5],
@@ -760,7 +760,7 @@ function labelPolygonForAnchors(x: number, y: number, width: number, height: num
                 [-1, -1],
                 [0, -1],
             ]; 
-        } else if (vAnchor === VerticalAlign.Middle){
+        } else if (vAnchor === VerticalAlign.Center){
             coordVectors = [
                 [0, -0.5],
                 [0, 0.5],
@@ -776,7 +776,7 @@ function labelPolygonForAnchors(x: number, y: number, width: number, height: num
             ]; 
         }
     }
-    else if (hAnchor === HorizontalAlign.Middle){
+    else if (hAnchor === HorizontalAlign.Center){
         if (vAnchor === VerticalAlign.Bottom){
             coordVectors = [
                 [-0.5, 0],
@@ -784,7 +784,7 @@ function labelPolygonForAnchors(x: number, y: number, width: number, height: num
                 [0.5, -1],
                 [0.5, 0]
             ]; 
-        } else if (vAnchor === VerticalAlign.Middle){
+        } else if (vAnchor === VerticalAlign.Center){
             coordVectors = [
                 [-0.5, 0.5],
                 [-0.5, -0.5],
@@ -813,15 +813,16 @@ type WirePointCount = [x: number, y: number, count: number];
 
 export enum HorizontalAlign {
     Left = 'left',
-    Middle = 'middle',
+    Center = 'center',
     Right = 'right',
 }
 
 export enum VerticalAlign {
     Top = 'top',
-    Middle = 'middle',
+    Center = 'center',
     Bottom = 'bottom',
 }
+
 export enum HorizontalAlignProp {
     Start = 'start',
     Middle = 'middle',

@@ -13,10 +13,10 @@ tmp = create component:
         label: "1", 200, 0, fontSize=fontSize, anchor="left", vanchor="bottom", angle=180
         label: "1", 300, 0, fontSize=fontSize, anchor="left", vanchor="bottom", angle=270
 
-        label: "1", 0,   200, fontSize=fontSize, anchor="middle", vanchor="bottom", angle=0
-        label: "1", 100, 200, fontSize=fontSize, anchor="middle", vanchor="bottom", angle=90
-        label: "1", 200, 200, fontSize=fontSize, anchor="middle", vanchor="bottom", angle=180
-        label: "1", 300, 200, fontSize=fontSize, anchor="middle", vanchor="bottom", angle=270
+        label: "1", 0,   200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=0
+        label: "1", 100, 200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=90
+        label: "1", 200, 200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=180
+        label: "1", 300, 200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=270
 
         label: "1", 0,   400, fontSize=fontSize, anchor="right", vanchor="bottom", angle=0
         label: "1", 100, 400, fontSize=fontSize, anchor="right", vanchor="bottom", angle=90
@@ -26,20 +26,20 @@ tmp = create component:
         line: -200, 500, 500, 500
 
         #vanchor middle
-        label: "1", 0,   600, fontSize=fontSize, anchor="left", vanchor="middle", angle=0
-        label: "1", 100, 600, fontSize=fontSize, anchor="left", vanchor="middle", angle=90
-        label: "1", 200, 600, fontSize=fontSize, anchor="left", vanchor="middle", angle=180
-        label: "1", 300, 600, fontSize=fontSize, anchor="left", vanchor="middle", angle=270
+        label: "1", 0,   600, fontSize=fontSize, anchor="left", vanchor="center", angle=0
+        label: "1", 100, 600, fontSize=fontSize, anchor="left", vanchor="center", angle=90
+        label: "1", 200, 600, fontSize=fontSize, anchor="left", vanchor="center", angle=180
+        label: "1", 300, 600, fontSize=fontSize, anchor="left", vanchor="center", angle=270
 
-        label: "1", 0,   800, fontSize=fontSize, anchor="middle", vanchor="middle", angle=0
-        label: "1", 100, 800, fontSize=fontSize, anchor="middle", vanchor="middle", angle=90
-        label: "1", 200, 800, fontSize=fontSize, anchor="middle", vanchor="middle", angle=180
-        label: "1", 300, 800, fontSize=fontSize, anchor="middle", vanchor="middle", angle=270
+        label: "1", 0,   800, fontSize=fontSize, anchor="center", vanchor="center", angle=0
+        label: "1", 100, 800, fontSize=fontSize, anchor="center", vanchor="center", angle=90
+        label: "1", 200, 800, fontSize=fontSize, anchor="center", vanchor="center", angle=180
+        label: "1", 300, 800, fontSize=fontSize, anchor="center", vanchor="center", angle=270
 
-        label: "1", 0,   1000, fontSize=fontSize, anchor="right", vanchor="middle", angle=0
-        label: "1", 100, 1000, fontSize=fontSize, anchor="right", vanchor="middle", angle=90
-        label: "1", 200, 1000, fontSize=fontSize, anchor="right", vanchor="middle", angle=180
-        label: "1", 300, 1000, fontSize=fontSize, anchor="right", vanchor="middle", angle=270
+        label: "1", 0,   1000, fontSize=fontSize, anchor="right", vanchor="center", angle=0
+        label: "1", 100, 1000, fontSize=fontSize, anchor="right", vanchor="center", angle=90
+        label: "1", 200, 1000, fontSize=fontSize, anchor="right", vanchor="center", angle=180
+        label: "1", 300, 1000, fontSize=fontSize, anchor="right", vanchor="center", angle=270
 
         line: -200, 1100, 500, 1100
 
@@ -49,10 +49,10 @@ tmp = create component:
         label: "1", 200, 1200, fontSize=fontSize, anchor="left", vanchor="top", angle=180
         label: "1", 300, 1200, fontSize=fontSize, anchor="left", vanchor="top", angle=270
 
-        label: "1", 0,   1400, fontSize=fontSize, anchor="middle", vanchor="top", angle=0
-        label: "1", 100, 1400, fontSize=fontSize, anchor="middle", vanchor="top", angle=90
-        label: "1", 200, 1400, fontSize=fontSize, anchor="middle", vanchor="top", angle=180
-        label: "1", 300, 1400, fontSize=fontSize, anchor="middle", vanchor="top", angle=270
+        label: "1", 0,   1400, fontSize=fontSize, anchor="center", vanchor="top", angle=0
+        label: "1", 100, 1400, fontSize=fontSize, anchor="center", vanchor="top", angle=90
+        label: "1", 200, 1400, fontSize=fontSize, anchor="center", vanchor="top", angle=180
+        label: "1", 300, 1400, fontSize=fontSize, anchor="center", vanchor="top", angle=270
 
         label: "1", 0,   1600, fontSize=fontSize, anchor="right", vanchor="top", angle=0
         label: "1", 100, 1600, fontSize=fontSize, anchor="right", vanchor="top", angle=90

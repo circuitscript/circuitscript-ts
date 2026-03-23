@@ -13,7 +13,7 @@ def res_2(value):
             line: 0, 0, 100, 100
             pin: 1, -width / 2 - 20, 0, -width/2, 0
             pin: 2, width/2 + 20, 0, width/2, 0
-            label: (params.value, 0, 4, fontSize=30, anchor="middle", vanchor="middle")
+            label: (params.value, 0, 4, fontSize=30, anchor="center", vanchor="center")
             label: (params.refdes, -width/2, -height/2 - 20 , fontSize=50, anchor="left")
 
         type: "res"
