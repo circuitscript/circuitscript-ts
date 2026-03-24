@@ -1,0 +1,30 @@
+# Test that wire direction is correct after branch and parallel statements.
+
+from "std" import *
+
+v3v3 = supply("3V3")
+gnd = dgnd()
+
+
+at v3v3
+wire down 100
+
+branch:
+    add res(10k)
+
+
+at v3v3
+wire down 100
+
+parallel:
+    add res(10k)
+    wire down 100
+
+parallel:
+    wire right 200 
+    add res(10k) angle:90
+    wire down 100
+    wire auto
+
+wire down 100
+to gnd

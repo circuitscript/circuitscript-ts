@@ -658,6 +658,7 @@ export class ExecutionContext {
         this.scope.setCurrent(component, pinId);
 
         this.scope.clearActive();
+        this.log('clear active wire/frame (to component)');
 
         if (addSequence) {
             if (this.scope.sequence.length > 0) {
@@ -732,6 +733,7 @@ export class ExecutionContext {
         // Insertion point is currently at a component pin, so clear
         // any wire/frame selected.
         this.scope.clearActive();
+        this.log('clear active wire/frame (at component)');
 
         if (addSequence) {
             this.scope.sequence.push([SequenceAction.At, 
@@ -803,8 +805,16 @@ export class ExecutionContext {
             // connect future components/wires.
             
             const key = getBlockTypeString(blockType);
+
+            // Preserve the wire id for the wire direction later.
+            const wireIdBefore = this.scope.currentWireId;
+            
             this.addPoint(`${Delimiter1}${key}.${this.name}.${this.tmpPointId}`, false);
             this.tmpPointId += 1;
+
+            if (wireIdBefore !== -1){
+                this.scope.currentWireId = wireIdBefore;
+            }
         }
 
         this.scope.blockStack.set(this.scope.scopeLevel, {

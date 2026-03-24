@@ -13,7 +13,7 @@ const mainDir = './__tests__/testData/renderData/';
 const env = new NodeScriptEnvironment();
 NodeScriptEnvironment.setInstance(env);
 
-async function regenerateTests(extra = ""): Promise<string[]> {
+async function regenerateTests(extra = "", fileList: string[] = []): Promise<string[]> {
     await env.prepareSVGEnvironment();
 
     const cstFiles: string[] = [];
@@ -21,7 +21,9 @@ async function regenerateTests(extra = ""): Promise<string[]> {
     const files = fs.readdirSync(mainDir);
     files.forEach(file => {
         if (file.endsWith('.cst') && file.startsWith('script')) {
-            cstFiles.push(file);
+            if (fileList.length === 0 || fileList.includes(file)) {
+                cstFiles.push(file);
+            }
         }
     });
 
@@ -49,14 +51,22 @@ async function regenerateTests(extra = ""): Promise<string[]> {
 (async () => {
 
     // Set to true, to not overwrite the existing .svg and use .next.svg. This
-    // is used for comparing svg when there are significant changes to the 
+    // is used for comparing svg when there are significant changes to the
     // renderer.
     const generateDiff = (process.argv.indexOf('-diff') !== -1);
     console.log('diff flag: ', generateDiff);
 
+    const listIndex = process.argv.indexOf('--list');
+    const fileList = listIndex !== -1 && process.argv[listIndex + 1]
+        ? process.argv[listIndex + 1].split(',').map(f => f.trim())
+        : [];
+    if (fileList.length > 0) {
+        console.log('filtering to files: ', fileList);
+    }
+
     const nextExtra = generateDiff ? '.next' : '';
 
-    const cstFiles = await regenerateTests(nextExtra);
+    const cstFiles = await regenerateTests(nextExtra, fileList);
 
     const allFiles = [];
 

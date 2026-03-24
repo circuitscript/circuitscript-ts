@@ -3,7 +3,7 @@ import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render/render.js";
-import { renderCommon } from "./helpers.js";
+import { compareSvgToFile, renderCommon } from "./helpers.js";
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 import { getStylesFromDocument } from '../src/styles.js';
@@ -114,6 +114,9 @@ describe('Render tests', () => {
         ['script68.cst', 'frame row direction alignment options, multi line'],
         ['script69.cst', 'frame column direction alignment options, multi line'],
 
+        // wire direction after branch statement
+        ['script70.cst', 'wire direction after branch and parallel statements'],
+
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
@@ -129,14 +132,14 @@ describe('Render tests', () => {
         }
         
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + useSvgPath + ".svg", { encoding: 'utf8' });
-        
         // if (svgOutput !== expectedSvgOutput){
-        // const expectedSvgPath = `${mainPath}svgs/${useSvgPath}.svg`;
-        // Use pixel compare to check.
-        // console.log("run manual pixel check: " + useSvgPath);
-        // const pixCompare = compareSvgToFile(expectedSvgPath, svgOutput);
-        // expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
-
+        //     const expectedSvgPath = `${mainPath}svgs/${useSvgPath}.svg`;
+        //     console.log("run manual pixel check: " + useSvgPath);
+        //     const pixCompare = compareSvgToFile(expectedSvgPath, svgOutput);
+        //     expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
+        // } else {
+        // }
+        
         // expect(svgOutput).toEqual(expectedSvgOutput);
         
         // Do not spit out all the differences
