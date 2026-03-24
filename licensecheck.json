@@ -1,0 +1,48 @@
+{
+    "ignore": [
+        "node_modules",
+        "dist",
+        "build",
+        "coverage",
+        "src/antlr",
+        "__tests__",
+        "fonts",
+        "libs",
+        "examples",
+        "oshwa-examples",
+        "*.json",
+        "*.md",
+        "*.g4",
+        "*.svg",
+        "*.pdf",
+        "*.html",
+        "*.cst",
+        "*.csv",
+        "*.net",
+        "*.py",
+        "*.cjs",
+        "*.mjs",
+        "*.log",
+        ".*",
+        ".vscode",
+        ".claude",
+        ".DS_Store"
+    ],
+    "license": "license_header.txt",
+    "licenseFormats": {
+        "ts": {
+            "prepend": "/*",
+            "append": " */",
+            "eachLine": {
+                "prepend": " * "
+            }
+        },
+        "mts": {
+            "prepend": "/*",
+            "append": " */",
+            "eachLine": {
+                "prepend": " * "
+            }
+        }
+    }
+}

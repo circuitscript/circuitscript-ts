@@ -1,3 +1,9 @@
+/*
+ * Copyright 2023 Liu Weihao
+ * 
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 import { Token } from "antlr4ng";
 import { ComplexType, FunctionDefinedParameter } from "../objects/types.js";
 import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";

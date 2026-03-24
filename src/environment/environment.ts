@@ -1,3 +1,9 @@
+/*
+ * Copyright 2023 Liu Weihao
+ * 
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 import { Dom, registerWindow, SVG } from "@svgdotjs/svg.js";
 import fs from 'fs';
 import path from "path";

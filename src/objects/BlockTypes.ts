@@ -1,3 +1,9 @@
+/*
+ * Copyright 2023 Liu Weihao
+ * 
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 export enum BlockTypes {
     Branch = 1,// split off circuit paths, same starting insertion point
