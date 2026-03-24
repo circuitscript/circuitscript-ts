@@ -1,6 +1,13 @@
 # Changelog
 
-## [v0.5.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.4...v0.5.5)
+## [v0.5.6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.5...v0.5.6)
+
+[1b9c02a](https://gitlab.com/circuitscript/circuitscript-ts/commit/1b9c02a3349eee50f942d40bad5173890b02e6f4) updated license header
+-  added package to manage license header
+
+[b7b0684](https://gitlab.com/circuitscript/circuitscript-ts/commit/b7b068408dfd89873c6ed76a2c1a5efdd04ed43e) added readme file
+
+## [v0.5.5](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.4...v0.5.5) - 2026-03-23
 
 [9a86af2](https://gitlab.com/circuitscript/circuitscript-ts/commit/9a86af21b68fddbf01db09fe45803898ebc7fcac)Improve layout engine alignment, add NumericValue utilities, and pixel-level SVG diffing
 - 
