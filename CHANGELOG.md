@@ -1,6 +1,14 @@
 # Changelog
 
-## [v0.5.6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.5...v0.5.6)
+## [v0.5.7](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.6...v0.5.7)
+
+[3dfa737](https://gitlab.com/circuitscript/circuitscript-ts/commit/3dfa737edfd85588d8f546dfaaa75883896e4eb3) fix wire direction after branch and parallel statements
+-  added test case for wire direction after branch/parallel
+-  re-enabled pixel-based SVG comparison in test helpers
+-  added --list flag to regenerate-tests for selective regeneration
+-  updated golden SVG references
+
+## [v0.5.6](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.5...v0.5.6) - 2026-03-24
 
 [1b9c02a](https://gitlab.com/circuitscript/circuitscript-ts/commit/1b9c02a3349eee50f942d40bad5173890b02e6f4) updated license header
 -  added package to manage license header
