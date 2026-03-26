@@ -165,7 +165,7 @@ import_expr: Import libraryName=STRING_VALUE  annotation_comment_expr?          
       | From libraryName=STRING_VALUE Import (all=Multiply | (funcNames+=ID (Comma funcNames+=ID)*)) annotation_comment_expr?   # import_specific_or_all
       ;
       
-frame_expr: (Frame | Sheet) Colon expressions_block;
+frame_expr: (Frame | Sheet) Colon expressions_block?;
 if_expr:    If data_expr Colon expressions_block if_inner_expr* else_expr?;
 
 if_inner_expr: Else If data_expr Colon expressions_block;

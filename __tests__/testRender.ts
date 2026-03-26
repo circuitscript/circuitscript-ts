@@ -119,7 +119,9 @@ describe('Render tests', () => {
 
         ['script71.cst', 'single line expressions in at block'],
 
-        ['script72.cst', 'nested point path block']
+        ['script72.cst', 'nested point path block'],
+
+        ['script73.cst', 'blank frames or sheets are still accepted']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

@@ -1605,9 +1605,13 @@ export class ParserVisitor extends BaseVisitor {
             frameType = FrameType.Sheet;
         }
 
-        const frameId = this.getExecutor().enterFrame(frameType);
-        this.visit(ctx.expressions_block());
-        this.getExecutor().exitFrame(frameId);
+        const ctxExpressionsBlock = ctx.expressions_block();
+
+        if (ctxExpressionsBlock ){
+            const frameId = this.getExecutor().enterFrame(frameType);
+            this.visit(ctxExpressionsBlock);
+            this.getExecutor().exitFrame(frameId);
+        }
     }
 
     visitNet_namespace_expr = (ctx: Net_namespace_exprContext): void => {

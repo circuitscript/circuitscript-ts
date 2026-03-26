@@ -1,0 +1,26 @@
+# Test that blank frames or sheets are still accepted.
+
+from "std" import *
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+frame:
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+frame:
+    # this is blank frame
+
+frame:
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+sheet:
+    # blank sheet
