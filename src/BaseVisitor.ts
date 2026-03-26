@@ -12,6 +12,7 @@ import {
     CallableExprContext, Double_dot_property_set_exprContext, ExpressionContext, Flow_expressionsContext,
     Function_args_exprContext, Function_exprContext, Function_return_exprContext, Import_exprContext,
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext,
+    Non_newline_expressionContext,
     ParametersContext, RoundedBracketsExprContext, ScriptContext,
     TrailerContext,
     Value_exprContext, 
@@ -1472,7 +1473,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
     protected runExpressions(executor: ExecutionContext,
-        expressions: ExpressionContext[] | Function_exprContext[]): ComplexType {
+        expressions: ExpressionContext[]
+            | Function_exprContext[]
+            | Non_newline_expressionContext[]): ComplexType {
 
         let returnValue: ComplexType | null = null;
 

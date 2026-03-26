@@ -1,0 +1,16 @@
+# Test single line of expressions in at block
+
+from "std" import *
+
+tmp = create component:
+    pins: 6
+    arrange:
+        left: 1,2,3,4,5,6
+
+at tmp:
+    1: wire right 200 add label("hello1", "right")
+    2: wire right 200 add label("hello2", "right")
+    3: wire right 200 add label("hello3", "right")
+    4: wire right 200 add label("hello4", "right")
+    5: wire right 200 add label("hello5", "right")
+    6: wire right 200 add label("hello6", "right")

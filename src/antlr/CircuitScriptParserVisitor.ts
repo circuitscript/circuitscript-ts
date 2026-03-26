@@ -5,6 +5,7 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 
 import { ScriptContext } from "./CircuitScriptParser.js";
 import { ExpressionContext } from "./CircuitScriptParser.js";
+import { Non_newline_expressionContext } from "./CircuitScriptParser.js";
 import { Flow_expressionsContext } from "./CircuitScriptParser.js";
 import { Graph_expressionsContext } from "./CircuitScriptParser.js";
 import { Expressions_blockContext } from "./CircuitScriptParser.js";
@@ -94,6 +95,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitExpression?: (ctx: ExpressionContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.non_newline_expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitNon_newline_expression?: (ctx: Non_newline_expressionContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.flow_expressions`.
      * @param ctx the parse tree

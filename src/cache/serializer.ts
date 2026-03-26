@@ -120,7 +120,7 @@ export function serializeLibraryScope(
 
         for (const exprCtx of tree.expression()) {
             // Function definitions break continuity and are handled separately.
-            if (exprCtx.function_def_expr() !== null) {
+            if (exprCtx.non_newline_expression()?.function_def_expr() !== null) {
                 flushGroup();
                 continue;
             }

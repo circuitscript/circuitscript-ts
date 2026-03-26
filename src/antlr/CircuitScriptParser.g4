@@ -12,17 +12,20 @@ options { tokenVocab=CircuitScriptLexer; }
 // Only allow import expressions at start
 script: (import_expr | NEWLINE)* expression* EOF;
 
-expression: flow_expressions 
-        | graph_expressions
-        | function_def_expr
-        | frame_expr
-        | part_set_expr
-        | annotation_comment_expr
-        | double_dot_property_set_expr
-        | assignment_expr
-        | callable_expr
+expression: non_newline_expression
         | NEWLINE
         ;
+
+non_newline_expression: flow_expressions 
+    | graph_expressions
+    | function_def_expr
+    | frame_expr
+    | part_set_expr
+    | annotation_comment_expr
+    | double_dot_property_set_expr
+    | assignment_expr
+    | callable_expr
+    ;
 
 // Changes flow of the program
 flow_expressions: if_expr
@@ -74,10 +77,10 @@ to_component_expr: To component_select_expr (Comma component_select_expr)*;
 
 at_block_header: at_component_expr Colon annotation_comment_expr*;
 at_block: at_block_header NEWLINE INDENT at_block_expressions+ DEDENT;
-at_block_expressions: expression | at_block_pin_expr;
+at_block_expressions: at_block_pin_expr | expression;
 
 // Expression to allow direct pin assignment
-at_block_pin_expr: property_key_expr Colon (expression | expressions_block | NOT_CONNECTED);
+at_block_pin_expr: property_key_expr Colon (non_newline_expression+ | expressions_block | NOT_CONNECTED);
 
 keyword_assignment_expr: ID Assign data_expr;
 

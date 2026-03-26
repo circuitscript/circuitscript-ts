@@ -1455,11 +1455,12 @@ export class ParserVisitor extends BaseVisitor {
 
         executor.log('at block pin expressions');
 
-        const ctxExpression = ctx.expression();
+        const ctxExpression = ctx.non_newline_expression();
         const ctxExpressionsBlock = ctx.expressions_block();
 
-        if (ctxExpression) {
-            this.visit(ctxExpression);
+        if (ctxExpression.length > 0) {
+            this.runExpressions(executor, ctxExpression);
+
         } else if (ctxExpressionsBlock) {
             this.visit(ctxExpressionsBlock);
         }
