@@ -1,0 +1,29 @@
+# Nested point path block should be handled properly when there are no entries
+# at a given block stack (undefined will be returned)
+
+from "std" import *
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+tmp = create component:
+    pins: 6
+    arrange:
+        left: 1,2,3,4,5,6
+
+at gnd
+wire up 100
+point:
+    at tmp:
+        5:
+            wire right 500 down 100
+            to point
+        4:
+            wire right 100
+            add res(10k)
+            wire right 100
+            wire auto
+            to point
+
+        1:  wire auto to point
+        2:  wire right 100 add res(10k) wire auto to point

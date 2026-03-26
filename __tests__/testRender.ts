@@ -117,7 +117,9 @@ describe('Render tests', () => {
         // wire direction after branch statement
         ['script70.cst', 'wire direction after branch and parallel statements'],
 
-        ['script71.cst', 'single line expressions in at block']
+        ['script71.cst', 'single line expressions in at block'],
+
+        ['script72.cst', 'nested point path block']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

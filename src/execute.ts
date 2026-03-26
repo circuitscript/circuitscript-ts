@@ -996,11 +996,13 @@ export class ExecutionContext {
 
         for (let i = 0; i < this.scope.scopeLevel; i++) {
             const stackRef = this.scope.blockStack.get(this.scope.scopeLevel - 1 - i)!;
-            const { start_point } = stackRef;
-            const component: ClassComponent = start_point[0];
-
-            if (component.instanceName.startsWith(`${Delimiter1}point.`)) {
-                return start_point;
+            if (stackRef){
+                const { start_point } = stackRef;
+                const component: ClassComponent = start_point[0];
+    
+                if (component.instanceName.startsWith(`${Delimiter1}point.`)) {
+                    return start_point;
+                }
             }
         }
 

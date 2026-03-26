@@ -186,8 +186,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
-        ctx.component_select_expr().forEach(item => {
-
+        for (const item of ctx.component_select_expr()) {
             let refComponent: ClassComponent;
             const creationFlag = this.trackNewComponentCreated(() => {
                 const [component, pin] = this.visitResult(item);
@@ -205,7 +204,7 @@ export class ParserVisitor extends BaseVisitor {
 
             // Link each item within the 'to' component list
             this.linkComponentToCtx(item, refComponent!, creationFlag);
-        });
+        }
 
         return this.getExecutor().getCurrentPoint();
     }
