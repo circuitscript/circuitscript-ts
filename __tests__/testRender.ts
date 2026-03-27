@@ -121,7 +121,8 @@ describe('Render tests', () => {
 
         ['script72.cst', 'nested point path block'],
 
-        ['script73.cst', 'blank frames or sheets are still accepted']
+        ['script73.cst', 'blank frames or sheets are still accepted'],
+        ['script74.cst', 'title color, bold and italic font style']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

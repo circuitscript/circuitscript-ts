@@ -30,6 +30,7 @@ const measureTextSizeCacheHits: { [key: string]: number } = {};
 export function measureTextSize2(
     text: string, fontFamily: string,
     fontSize: number, fontWeight = 'regular',
+    fontStyle = 'normal',
     anchor = HorizontalAlign.Left,
     vanchor = VerticalAlign.Bottom): { width: number, height: number, box: Box } {
 
@@ -39,7 +40,7 @@ export function measureTextSize2(
     const mainCanvas = environment.getCanvasWindow();
 
     // Check if entry already exists in the cache
-    const key = `${text}-${fontFamily}-${fontSize}-${fontWeight}-${anchor}-${vanchor}`;
+    const key = `${text}-${fontFamily}-${fontSize}-${fontWeight}-${fontStyle}-${anchor}-${vanchor}`;
 
     if (measureTextSizeCache[key] === undefined) {
         let dominantBaseline = VerticalAlignProp.Hanging;
@@ -78,6 +79,7 @@ export function measureTextSize2(
             anchor: useAnchor,
             'dominant-baseline': dominantBaseline,
             weight: fontWeight,
+            style: fontStyle,
         })
         .attr("xml:space", "preserve")
         .fill('#333');

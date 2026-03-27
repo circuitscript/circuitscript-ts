@@ -181,7 +181,7 @@ def dgnd(net_name="GND"):
             net_name: net_name
             priority: 100
 
-def text(value, offsetX = 0, offsetY = 0, fontSize = 50):
+def text(value, offsetX = 0, offsetY = 0, fontSize = 50, bold = false, italic = false):
     return create component:
         pins: 1
         followWireOrientation: false
@@ -192,6 +192,8 @@ def text(value, offsetX = 0, offsetY = 0, fontSize = 50):
                 content: value
                 offset: offsetX, offsetY
                 fontSize: fontSize
+                bold: bold
+                italic: italic
 
 # Drawing markers
 

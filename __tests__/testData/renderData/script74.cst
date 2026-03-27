@@ -1,0 +1,67 @@
+# Test that title color, bold and italic font style
+
+from "std" import *
+
+def net2(net_name, net_type = "any"):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            hline: -50, 0, 100
+            vpin: 1, 0, 50, -50, display_id=false
+            label: params.net_name, 0, -15, fontSize=50, anchor="center", italic=true
+        type: "net"
+        params:
+            net_name: net_name
+            priority: 10
+            net_type: net_type
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+frame:
+    ..title = "my frame"
+    ..font_size = 100
+    ..color = "#f00"
+
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
+
+
+frame:
+    ..title = "my frame"
+    ..font_size = 100
+    ..bold = false
+    ..italic = true
+
+    at vcc
+    wire down 100
+    add cap(200n)
+    wire down 100
+    to gnd
+
+frame:
+    ..title = "my frame"
+    ..font_size = 100
+    ..bold = false
+
+    at vcc
+    wire down 100
+    add cap(300n)
+    wire down 100
+    to gnd
+
+
+at net2("hello")
+wire down 100
+
+add text("some normal text", 100, 0)
+
+add text("some italic text", 100, 100, 50, false, true)
+
+add text("some bold and italic text", 100, 200, 50, true, false)
+
+add text("some bold and italic text", 100, 300, 50, true, true)

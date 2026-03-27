@@ -227,9 +227,10 @@ export abstract class SymbolGraphic {
 
             const {
                 fontSize = numeric(50),
-                anchor = HorizontalAlign.Left, 
+                anchor = HorizontalAlign.Left,
                 vanchor = VerticalAlign.Bottom,
                 fontWeight = 'regular',
+                fontStyle = 'normal',
                 angle: tmpLabelAngle = numeric(0),
 
                 textColor = "#333",
@@ -442,15 +443,22 @@ export abstract class SymbolGraphic {
                 useLabelAngle = (labelAngle + 180) % 360;
             }
 
+            const fontProperties = {
+                family: useFont,
+                size: fontSize.toNumber() * fontDisplayScale,
+                anchor: anchorStyle,
+                'dominant-baseline': dominantBaseline,
+                weight: fontWeight,
+            }
+
+            if (fontStyle !== 'normal'){
+                // Asume that default is normal.
+                fontProperties.style = fontStyle;
+            }
+
             textContainer.text(tmpLabel.text)
                 .fill(textColor)
-                .font({
-                    family: useFont,
-                    size: fontSize.toNumber() * fontDisplayScale,
-                    anchor: anchorStyle,
-                    'dominant-baseline': dominantBaseline,
-                    weight: fontWeight,
-                })
+                .font(fontProperties)
                 .attr("xml:space", "preserve")
                 .rotate(useLabelAngle, 0, 0);
 
@@ -504,6 +512,8 @@ export class SymbolText extends SymbolGraphic {
     text: string;
     fontSize = numeric(40);
     fontWeight = 'regular';
+    fontStyle = 'normal';
+    color: string | undefined = undefined;
 
     constructor(text: string){
         super();
@@ -513,11 +523,13 @@ export class SymbolText extends SymbolGraphic {
     generateDrawing(): void {
         const drawing = this.drawing;
         drawing.clear();
-        
+
         drawing.addTextbox(numeric(0), numeric(0), this.text, {
             fontSize: this.fontSize,
             anchor: HorizontalAlign.Center,
             fontWeight: this.fontWeight,
+            fontStyle: this.fontStyle,
+            textColor: this.color
         });
 
         this.drawing = drawing;
@@ -731,9 +743,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
         return param;
     }
 
-    parseLabelStyle(keywordParams: Map<string, any>): { [key: string]: any } {
+    parseLabelStyle(keywordParams: Map<string, any>): LabelStyle {
         const keywords = ['fontSize', 'anchor', 'vanchor', 
-            'angle', 'textColor', 'portType', 'bold'];
+            'angle', 'textColor', 'portType', 'bold', 'italic'];
 
         // Create the style object
         const style: { [key: string]: any } = {};
@@ -742,11 +754,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 style[item] = keywordParams.get(item);
                 
                 if (item === 'bold'){
-                    if (keywordParams.get(item) === true){
-                        style['fontWeight'] = 'bold';
-                    } else {
-                        style['fontWeight'] = 'normal';
-                    }
+                    style.fontWeight = keywordParams.get(item) === true ? 'bold' : 'regular';
+                } else if (item === 'italic'){
+                    style.fontStyle = keywordParams.get(item) === true ? 'italic' : 'normal';
                 }
 
             }

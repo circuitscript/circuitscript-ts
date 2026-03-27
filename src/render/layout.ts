@@ -880,7 +880,19 @@ export class LayoutEngine {
         if (frameParams.has(FrameParamKeys.Title) && !isSheetFrame) {
             const title = 
                 frameParams.get(FrameParamKeys.Title) as string;
-            
+
+            const fontSize = 
+                (frameParams.get(FrameParamKeys.FontSize) as NumericValue) ?? numeric(defaultFrameTitleTextSize);
+
+            const isBold =
+                (frameParams.get(FrameParamKeys.Bold) as boolean) ?? true;
+
+            const isItalic =
+                (frameParams.get(FrameParamKeys.Italic) as boolean) ?? false;
+
+            const titleColor =
+                (frameParams.get(FrameParamKeys.Color) as string) ?? null;
+  
             // Add the element frame containing the text item
             const titleFrame = new RenderFrame(
                 new Frame(FixedFrameIds.FrameIdNotUsed),
@@ -893,8 +905,14 @@ export class LayoutEngine {
             titleFrame.subgraphId = title.replace(/\s/g, "_");
 
             const textObject = new RenderText(title);
-            textObject.fontSize = numeric(defaultFrameTitleTextSize);
-            textObject.fontWeight = 'bold';
+            textObject.fontSize = fontSize;
+            textObject.fontWeight = isBold ? 'bold': 'regular';
+            textObject.fontStyle = isItalic ? 'italic': 'normal';
+            
+            if (titleColor !==null){
+                textObject.color = titleColor;
+            }
+
             textObject.x = numeric(0);
             textObject.y = numeric(0);
 
@@ -1876,6 +1894,8 @@ export class RenderText extends RenderObject {
 
     _fontSize = numeric(12);
     _fontWeight = 'regular';
+    _fontStyle = 'normal';
+    _color: string | undefined = undefined;
 
     get fontSize (): NumericValue {
         return this._fontSize;
@@ -1893,6 +1913,24 @@ export class RenderText extends RenderObject {
     set fontWeight(value: string) {
         this._fontWeight = value;
         this.symbol.fontWeight = value;
+    }
+
+    get fontStyle(): string {
+        return this._fontStyle;
+    }
+
+    set fontStyle(value: string) {
+        this._fontStyle = value;
+        this.symbol.fontStyle = value;
+    }
+
+    get color(): string | undefined {
+        return this._color;
+    }
+
+    set color(value: string | undefined) {
+        this._color = value;
+        this.symbol.color = value;
     }
 
     constructor(text: string) {

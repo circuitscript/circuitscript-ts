@@ -208,6 +208,14 @@
         "variable"
     ],
     [
+        "--.std.text_sym.bold",
+        "variable"
+    ],
+    [
+        "--.std.text_sym.italic",
+        "variable"
+    ],
+    [
         "--.std.marker_point",
         "function"
     ],

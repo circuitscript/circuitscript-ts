@@ -26,6 +26,8 @@ export type LabelStyle = {
     font?: string,
     fontSize?: NumericValue,
     fontWeight?: string,
+    fontStyle?: string, // normal (default), italic
+
     angle?: NumericValue,
     
     anchor?: HorizontalAlign.Left | HorizontalAlign.Center | HorizontalAlign.Right, // Horizontal anchor
@@ -96,21 +98,22 @@ export class Textbox extends Flatten.Polygon {
             throw 'Invalid string passed into textbox';
         }
 
-        const { 
+        const {
             fontSize = numeric(50),
             anchor = HorizontalAlign.Left,
             vanchor = VerticalAlign.Bottom,
             fontWeight = 'regular',
+            fontStyle = 'normal',
 
             portType = null,
          } = style ?? {};
-         
-        // Determine the size of the text, this is needed to determine the 
+
+        // Determine the size of the text, this is needed to determine the
         // bounding box of the text for layout purposes.
         const { box } =
-            measureTextSize2(useText, defaultFont, 
-                fontSize.mul(fontDisplayScale).toNumber(), 
-                fontWeight, anchor, vanchor);
+            measureTextSize2(useText, defaultFont,
+                fontSize.mul(fontDisplayScale).toNumber(),
+                fontWeight, fontStyle, anchor, vanchor);
 
         let polygonCoords : SimplePoint[] = [];
 

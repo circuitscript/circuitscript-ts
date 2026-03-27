@@ -57,6 +57,10 @@ export enum FrameParamKeys {
 
     HorizontalAlign = 'align',
     VerticalAlign = 'valign',
+    FontSize = 'font_size',
+    Bold = 'bold',
+    Italic = 'italic',
+    Color = 'color',
 
     SheetNumber = 'sheet_number',   // Current sheet number
     SheetTotal = 'sheet_total',     // Total number of sheets
