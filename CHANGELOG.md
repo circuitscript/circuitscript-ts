@@ -1,6 +1,38 @@
 # Changelog
 
-## [v0.5.7](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.6...v0.5.7)
+## [v0.6.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.7...v0.6.0)
+
+[b9691aa](https://gitlab.com/circuitscript/circuitscript-ts/commit/b9691aa007b5b2d6a52601555a19ccf9deb0b288) add join block support with inline path expressions in grammar
+-  refactor at_block grammar to support inline and block expressions
+-  add AtBlock type to BlockTypes
+-  update visitor, executor, and parser for new grammar rules
+-  add test case for path block join styles (script75)
+
+[90998ee](https://gitlab.com/circuitscript/circuitscript-ts/commit/90998eec9bfb31bf7d56d725f85227f7970578bc) added non_newline_expression grammar rule to support single-line at block expressions
+-  regenerated parser from updated grammar
+-  updated visitor and BaseVisitor to handle non_newline_expression context
+-  added test case for single line expressions in at block
+
+[195252f](https://gitlab.com/circuitscript/circuitscript-ts/commit/195252f4bf1201733466e700f000878f10ff7283)support blank frame and sheet blocks in grammar and visitor
+- 
+- - updated grammar to make expressions_block optional in frame_expr
+- - regenerated parser to reflect grammar change
+- - visitor now skips frame execution when block is absent
+- - added test case for blank frame/sheet handling
+
+[9165ed5](https://gitlab.com/circuitscript/circuitscript-ts/commit/9165ed5d8f0a1ed4908f6b6063ec0bcc53bf4942) add bold, italic, and color styling support for frame titles
+-  add bold and italic params to text() component in std.cst
+-  propagate fontStyle through geometry, layout, draw_symbols, and sizing
+-  add test case for title color, bold and italic font style (script74)
+
+[89dd336](https://gitlab.com/circuitscript/circuitscript-ts/commit/89dd336e18e073743d3d8d91fcf267dfd28e0ad0)fix null reference in nested point path block lookup
+- 
+- Guard against undefined stackRef when traversing block stack for point
+- path resolution; also fixes visitor to use for..of instead of forEach
+- for component_select_expr to support early returns. Adds test case
+- script72 covering nested point path blocks with missing stack entries.
+
+## [v0.5.7](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.6...v0.5.7) - 2026-03-24
 
 [3dfa737](https://gitlab.com/circuitscript/circuitscript-ts/commit/3dfa737edfd85588d8f546dfaaa75883896e4eb3) fix wire direction after branch and parallel statements
 -  added test case for wire direction after branch/parallel
