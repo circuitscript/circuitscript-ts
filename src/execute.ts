@@ -949,14 +949,8 @@ export class ExecutionContext {
             }
         } else if (blockType === BlockTypes.Join || blockType === BlockTypes.Parallel) {
             if (blockIndex === 0) {
-                // First join block will determine the final join location
-
-                const pointIdName = `${Delimiter1}${getBlockTypeString(blockType)}`;
-
-                // Add point to current location, start with _join keyword to
-                // indicate that this is a point for join keyword
-                this.addPoint(`${pointIdName}.${this.name}.${this.tmpPointId}`, false);
-                this.tmpPointId += 1;
+                // First join/parallel block will determine the final join location.
+                this.addPointForBlockType(blockType);
 
                 stackRef.end_point = [
                     this.scope.currentComponent!,
@@ -972,6 +966,15 @@ export class ExecutionContext {
                 this.toComponent(component, pin, { addSequence: true });
             }
         }
+    }
+
+    addPointForBlockType(blockType: BlockTypes): void {
+        const pointIdName = `${Delimiter1}${getBlockTypeString(blockType)}`;
+
+        // Add point to current location, start with _join keyword to
+        // indicate that this is a point for join keyword
+        this.addPoint(`${pointIdName}.${this.name}.${this.tmpPointId}`, false);
+        this.tmpPointId += 1;
     }
 
     atPointBlock(): void {

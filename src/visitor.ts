@@ -55,6 +55,7 @@ import {
     CreateExprContext,
     Create_exprContext,
     Properties_blockContext,
+    At_block_expressionsContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -283,7 +284,19 @@ export class ParserVisitor extends BaseVisitor {
         const { current_index } = blockStackEntry;
 
         executor.enterBlock(current_index);
-        this.visit(ctx.expressions_block());
+
+        const ctxNonNewlineExpressions = ctx.non_newline_expression();
+        const ctxExpressionsBlock = ctx.expressions_block();
+        const ctxAtBlockExpressions = ctx.at_block_expressions();
+
+        if (ctxNonNewlineExpressions.length > 0){
+            this.runExpressions(executor, ctxNonNewlineExpressions);
+        } else if (ctxExpressionsBlock){
+            this.visit(ctxExpressionsBlock);
+        } else if (ctxAtBlockExpressions){
+            this.visit(ctxAtBlockExpressions);
+        }
+
         executor.exitBlock(current_index);
 
         blockStackEntry.current_index++;
@@ -1436,9 +1449,23 @@ export class ParserVisitor extends BaseVisitor {
 
     visitAt_block_pin_expr = (ctx: At_block_pin_exprContext): void => {
         const executor = this.getExecutor();
+        const scope = this.getScope();
+        const scopeLevel = scope.scopeLevel;
 
-        // Store the current location
-        const [currentComponent, currentPin] = executor.getCurrentPoint();
+        const params = this.getResult(ctx);
+        const blockIndex = params.index as number;
+
+        let useComponent!: ClassComponent;
+
+        // Get the position from the blockstack at the parent scope level
+        // Find the nearest block stack entry with AtBlock
+        for (let i = scopeLevel - 1; i >= 0; i--) {
+            const blockStackEntry = scope.blockStack.get(i)!;
+            if (blockStackEntry.type === BlockTypes.AtBlock) {
+                useComponent = blockStackEntry.start_point[0];
+                break;
+            }
+        }
 
         // Close any open path blocks. Depending on path block type, 
         // this might change the current location, so the earlier statement
@@ -1448,26 +1475,59 @@ export class ParserVisitor extends BaseVisitor {
         const propKey = this.visitResult(ctx.property_key_expr());
         const atPin: PinId = new PinId(propKey);
 
-        executor.atComponent(currentComponent, atPin, {
+        executor.atComponent(useComponent, atPin, {
             addSequence: true
         });
 
-        executor.log('at block pin expressions');
+        executor.log(`at block pin expressions, pin id: ${atPin}`);
 
         const ctxExpression = ctx.non_newline_expression();
         const ctxExpressionsBlock = ctx.expressions_block();
 
         if (ctxExpression.length > 0) {
             this.runExpressions(executor, ctxExpression);
-
         } else if (ctxExpressionsBlock) {
             this.visit(ctxExpressionsBlock);
         }
 
-        executor.log('end at block pin expressions');
+        // Do not go back at the end of the expression, let the upper context
+        // reset the current point.
 
-        // Go back to the original position
-        executor.atComponent(currentComponent, currentPin);
+        // Special handling: If direct parent scope is a 'join' block, then
+        // treat the block ending like a join block too.
+        // TODO: Explore if this could be merged with path blocks
+        const parentBlockStackEntry = scope.blockStack.get(scopeLevel-1)!;
+        if (parentBlockStackEntry.type === BlockTypes.Join){
+            if (blockIndex === 0 && parentBlockStackEntry.current_index === 0){
+                // Treat it as a join block.
+                executor.addPointForBlockType(BlockTypes.Join);
+
+                parentBlockStackEntry.end_point = [
+                    scope.currentComponent!,
+                    scope.currentPin,
+                    scope.currentWireId
+                ];
+            } else {
+                const { end_point: finalPoint } = parentBlockStackEntry;
+                const [component, pin] = finalPoint;
+                executor.toComponent(component, pin, { addSequence: true });
+            }
+        }
+    }
+
+    visitAt_block_expressions = (ctx: At_block_expressionsContext):void => {
+        let atBlockPinIndex = 0;
+
+        for (const tmpCtx of ctx.at_block_expressions_inner()) {
+            const ctxAtBlockPin = tmpCtx.at_block_pin_expr();
+            if (ctxAtBlockPin) {
+                this.setResult(ctxAtBlockPin, { index: atBlockPinIndex });
+                atBlockPinIndex++;
+                this.visit(ctxAtBlockPin);
+            } else {
+                this.visit(tmpCtx.expression()!);
+            }
+        }
     }
 
     visitAt_block_header = (ctx: At_block_headerContext):void => {
@@ -1492,26 +1552,45 @@ export class ParserVisitor extends BaseVisitor {
 
     visitAt_block = (ctx: At_blockContext): void => {
         const executor = this.getExecutor();
-        executor.log('entering at block');
+        const scope = this.getScope();
+        const scopeLevel = scope.scopeLevel;
+
+        // If there is an existing block, then close it.
+        if (scope.blockStack.has(scopeLevel)){
+            executor.exitBlocks();
+        }
 
         const ctxAtBlockComponent = ctx.at_block_header();
         this.visit(ctxAtBlockComponent);
 
-        const [currentComponent, currentPin] = executor.getCurrentPoint();        
-        executor.scope.scopeLevel += 1;
+        const [currentComponent, currentPin] = executor.getCurrentPoint();
+        
+        // Save current location in the block stack.
+        scope.blockStack.set(scopeLevel, {
+            start_point: [
+                scope.currentComponent,
+                scope.currentPin,
+                scope.currentWireId
+            ],
+            end_point: null,
+            current_index: 0,
+            type: BlockTypes.AtBlock,
+        })
 
-        ctx.at_block_expressions().forEach(expression => {
-            this.visit(expression);
-        });
+        executor.log('entering at block');
+        executor.scope.scopeLevel += 1; // Child level is one level deeper.
+
+        this.visit(ctx.at_block_expressions());
 
         executor.scope.scopeLevel -= 1;
 
-        // Once all done, then restore
+        // Once all done, then restore.
         executor.scope.setCurrent(currentComponent, currentPin);
 
-        executor.log('leaving at block');
+        // Clear the block stack.
+        scope.blockStack.delete(scopeLevel);
 
-        // executor.getCurrentPoint();
+        executor.log('leaving at block');
     }
 
     visitWire_expr = (ctx: Wire_exprContext): void => {

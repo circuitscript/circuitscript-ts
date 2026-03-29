@@ -477,6 +477,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 lhsCtx, rhsValue);
                 
             if (sequenceParts.length > 0) {
+                this.log('add sequence action: assign');
                 this.getScope().sequence.push([
                     SequenceAction.Assign, ...sequenceParts
                 ]);

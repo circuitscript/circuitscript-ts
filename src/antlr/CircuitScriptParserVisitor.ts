@@ -21,6 +21,7 @@ import { To_component_exprContext } from "./CircuitScriptParser.js";
 import { At_block_headerContext } from "./CircuitScriptParser.js";
 import { At_blockContext } from "./CircuitScriptParser.js";
 import { At_block_expressionsContext } from "./CircuitScriptParser.js";
+import { At_block_expressions_innerContext } from "./CircuitScriptParser.js";
 import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
@@ -191,6 +192,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitAt_block_expressions?: (ctx: At_block_expressionsContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.at_block_expressions_inner`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAt_block_expressions_inner?: (ctx: At_block_expressions_innerContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.at_block_pin_expr`.
      * @param ctx the parse tree

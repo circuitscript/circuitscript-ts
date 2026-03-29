@@ -111,12 +111,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         this.addRefdesAnnotationComment(ctx);
     }
     
+    // Override the visitor.ts version.
     visitAt_block = (ctx: At_blockContext):void => {
         this.visit(ctx.at_block_header());
-
-        ctx.at_block_expressions().forEach(expression => {
-            this.visit(expression);
-        });
+        this.visit(ctx.at_block_expressions());
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): void => {

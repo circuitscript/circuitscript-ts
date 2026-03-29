@@ -1,0 +1,57 @@
+# Test different path block join styles
+
+from "std" import *
+
+gnd = dgnd()
+gnd.net.highlight = "red"
+gnd.net.highlight_width = 50
+vcc = supply("VCC")
+
+tmp =  create component:
+    pins: 6
+
+tmp2 = create component:
+    pins: 6
+
+tmp3 = create component:
+    pins: 6
+
+# multiple join expressions
+at tmp: 
+    join:
+        1:  
+            wire right 100 add res(10k)
+            wire right 100 down 300
+    join:
+        3: 
+            wire right 100
+            wire auto
+
+    wire down 100
+    to gnd
+
+# join with nested at pin expressions
+at tmp2:
+    join:
+        1:  
+            wire right 100 add res(10k)
+            wire right 100 down 300
+        3: 
+            wire right 100
+            wire auto
+    wire down 100
+    to gnd
+
+# manual expressions
+at tmp3 pin 1
+wire right 100 add res(10k)
+wire right 100 down 300
+point tmp1
+
+at tmp3 pin 3
+wire right 100
+wire auto
+to tmp1
+
+wire down 100
+to gnd

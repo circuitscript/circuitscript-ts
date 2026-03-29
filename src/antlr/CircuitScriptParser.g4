@@ -51,7 +51,7 @@ expressions_block:
 // Defined as separate expression only, so that it can be used within
 // for expressions.
 path_block:
-	(Branch | Join | Parallel | Point) Colon expressions_block;
+	(Branch | Join | Parallel | Point) Colon (non_newline_expression+ | expressions_block |  at_block_expressions);
 
 pin_select_expr: Pin data_expr;
 component_modifier_expr: ID Colon data_expr;
@@ -76,8 +76,9 @@ at_component_expr: At component_select_expr;
 to_component_expr: To component_select_expr (Comma component_select_expr)*;
 
 at_block_header: at_component_expr Colon annotation_comment_expr*;
-at_block: at_block_header NEWLINE INDENT at_block_expressions+ DEDENT;
-at_block_expressions: at_block_pin_expr | expression;
+at_block: at_block_header at_block_expressions;
+at_block_expressions: NEWLINE INDENT at_block_expressions_inner+ DEDENT;
+at_block_expressions_inner: at_block_pin_expr | expression;
 
 // Expression to allow direct pin assignment
 at_block_pin_expr: property_key_expr Colon (non_newline_expression+ | expressions_block | NOT_CONNECTED);
