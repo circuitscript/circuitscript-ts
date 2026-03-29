@@ -1,0 +1,12 @@
+# Test that flip:y works properly with wire direction.
+
+from "std" import *
+
+gnd = dgnd()
+at tmp = create component:
+    pins: 10
+    arrange:
+        left: 1,2,3,4,5,6,7,8,9,10
+
+at tmp flip:y pin 10
+wire right 100 to gnd

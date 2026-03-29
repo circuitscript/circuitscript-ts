@@ -123,7 +123,8 @@ describe('Render tests', () => {
 
         ['script73.cst', 'blank frames or sheets are still accepted'],
         ['script74.cst', 'title color, bold and italic font style'],
-        ['script75.cst', 'different path block join styles']
+        ['script75.cst', 'different path block join styles'],
+        ['script76.cst', 'flip:y works properly with wire direction.']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

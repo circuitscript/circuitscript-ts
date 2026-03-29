@@ -1060,15 +1060,22 @@ export class ParserVisitor extends BaseVisitor {
 
                 if (modifierText === ParamKeys.flip) {
                     const flipValue = result.name;
+                    let didSetX = false;
+                    let didSetY = false;
+
                     if (flipValue.indexOf('x') !== -1) {
                         defaultUnit.setParam(ParamKeys.flipX, numeric(1));
-                        shouldIgnoreWireOrientation = true;
+                        didSetX = true;
                     }
 
                     if (flipValue.indexOf('y') !== -1) {
                         defaultUnit.setParam(ParamKeys.flipY, numeric(1));
-                        shouldIgnoreWireOrientation = true;
+                        didSetY = true;
                     }
+
+                    // If only both x and y are set, then ignore the wire direction.
+                    shouldIgnoreWireOrientation = didSetX && didSetY;
+
                 } else if (modifierText === ParamKeys.angle) {
                     defaultUnit.setParam(ParamKeys.angle, result as NumericValue);
                     shouldIgnoreWireOrientation = true;
