@@ -1,0 +1,21 @@
+# Test pin selection using pin name
+
+from "std" import *
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+-- right 100
+add led("GREEN") pin "A"
+-- right 100 
+add res(10k)
+-- right 100 to gnd
+
+at vcc
+-- right 100
+add tmp = led("YELLOW") pin "A"
+
+at tmp pin "C"
+-- right 100 
+add res(10k)
+-- r 100 to gnd

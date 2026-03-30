@@ -26,7 +26,6 @@ async function regenerateTests(extra = "", fileList: string[] = []): Promise<str
             }
         }
     });
-
     for (let i = 0; i < cstFiles.length; i++) {
         const file = cstFiles[i];
         const inputPath = mainDir + file;
@@ -36,13 +35,17 @@ async function regenerateTests(extra = "", fileList: string[] = []): Promise<str
         env.setModuleDirectory(mainDir);
         env.setDefaultLibsPath(mainDir + '../../../libs/');
 
-        await renderScript(scriptData, outputPath, {
+        const {errors} = await renderScript(scriptData, outputPath, {
             inputPath,
             dumpNets: false,
             dumpData: false,
             showStats: false,
             environment: env,
         });
+
+        if (errors.length > 0) {
+            console.log(errors);
+        }
     }
 
     return cstFiles;

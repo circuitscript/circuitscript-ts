@@ -672,6 +672,11 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     drawing.addTriangle(...positionParams);
                     break;
 
+                case PlaceHolderCommands.arrow:
+                    // @ts-ignore
+                    drawing.addArrow(...positionParams);
+                    break;
+
                 case PlaceHolderCommands.pin: 
                 case PlaceHolderCommands.hpin:
                 case PlaceHolderCommands.vpin:
@@ -968,6 +973,9 @@ export enum PlaceHolderCommands {
     rect = 'rect',          // (x, y) with width and height
     crect = 'crect',        // Rect defined from center (x, y)
     triangle = 'triangle',
+
+    arrow = 'arrow',
+
     pin = 'pin',
     hpin = 'hpin',
     vpin = 'vpin',
@@ -1544,6 +1552,52 @@ export class SymbolDrawing {
                 [dx2.add(startX), dy2.add(startY)],
                 [endX, endY],
                 [dx1.add(startX), dy1.add(startY)],
+            ])
+        );
+
+        return this;
+    }
+
+    addArrow(startX: NumericValue, startY: NumericValue, endX: NumericValue, endY: NumericValue, 
+        arrowLength = numeric(25), arrowWidth = numeric(25)): SymbolDrawing {
+        startX = milsToMM(startX);
+        startY = milsToMM(startY);
+        endX = milsToMM(endX);
+        endY = milsToMM(endY);
+        arrowLength = milsToMM(arrowLength);
+        arrowWidth = milsToMM(arrowWidth);
+
+        // Compute unit direction vector from start to end
+        const dxNum = endX.sub(startX).toNumber();
+        const dyNum = endY.sub(startY).toNumber();
+        const len = Math.sqrt(dxNum * dxNum + dyNum * dyNum);
+        const unitDx = numeric(dxNum / len);
+        const unitDy = numeric(dyNum / len);
+
+        // Base of arrowhead: end point moved back by arrowLength along direction
+        const arrowBaseX = endX.sub(unitDx.mul(arrowLength));
+        const arrowBaseY = endY.sub(unitDy.mul(arrowLength));
+
+        // Draw shaft line from start to arrowhead base
+        this.items.push(
+            Geometry.segment([startX, startY], [arrowBaseX, arrowBaseY])
+        );
+
+        // Perpendicular unit vector for spreading the arrowhead base
+        const perpX = numeric(-unitDy.toNumber());
+        const perpY = numeric(unitDx.toNumber());
+
+        const dx1 = perpX.mul(arrowWidth).half();
+        const dy1 = perpY.mul(arrowWidth).half();
+        const dx2 = perpX.mul(arrowWidth.neg()).half();
+        const dy2 = perpY.mul(arrowWidth.neg()).half();
+
+        this.items.push(
+            Geometry.polygon([
+                [dx1.add(arrowBaseX), dy1.add(arrowBaseY)],
+                [dx2.add(arrowBaseX), dy2.add(arrowBaseY)],
+                [endX, endY],
+                [dx1.add(arrowBaseX), dy1.add(arrowBaseY)],
             ])
         );
 

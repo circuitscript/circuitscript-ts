@@ -57,7 +57,7 @@ def res(value):
             crect: 0, 0, width, height
             hpin: 1, -width/2 - 30, 0, 30, display_id=false
             hpin: 2, width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left"
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
             label: params.value, 0, 0, fontSize=30, anchor="center", vanchor="center"
         type: "res"
         params:
@@ -65,6 +65,8 @@ def res(value):
             size: "0402"
             footprint: "Resistor_SMD:R_0402_1005Metric"
             description: "RES {value} OHM {size}"
+            refdes_offsetx: 0
+            refdes_offsety: 0
 
 def cap(value):
     width = 120
@@ -78,13 +80,15 @@ def cap(value):
             hline: -width/2, -20, width
             vpin: 1, 0, -100, 80, display_id=false
             vpin: 2, 0, 100, -80, display_id=false
-            label: params.refdes, 80, -30, fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
             label: params.value, 80, 30, fontSize=50, anchor = "left", vanchor="center"
         type: "cap"
         params:
             value: value
             size: "0402"
             footprint: "Capacitor_SMD:C_0402_1005Metric"
+            refdes_offsetx: 0
+            refdes_offsety: 0
 
 def ind(value):
     width = 200
@@ -100,10 +104,12 @@ def ind(value):
             arc: 75, 0, 25, 180, 360
             hpin: 1, -width/2 - 100, 0, 100, display_id=false
             hpin: 2, width/2 + 100, 0, -100, display_id=false
-            label: (params.refdes, -width/2, -height/2 - 25 , fontSize=50, anchor="left")
+            label: (params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 25 + params.refdes_offsety, fontSize=50, anchor="left")
             label: (params.value, 0, 50, fontSize=50, anchor="center", vanchor="center")
         params:
             value: value
+            refdes_offsetx: 0
+            refdes_offsety: 0
 
 def diode():
     width = 100
@@ -119,7 +125,10 @@ def diode():
             vline: width/2, -height/2, height
             hpin: 1, -width/2-100, 0, 100    # cathode
             hpin: 2, width/2 + 100, 0, -100  # anode
-            label: params.refdes, 0, -100, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
 
 def led(color):
     width = 100
@@ -127,20 +136,16 @@ def led(color):
 
     # anode and cathode pin numbers follow KiCad
     return create component:
-        pins:   
-            1: "cathode"
-            2: "anode"
         type: "diode"
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
             vline: width/2, -height/2, height
-            path: ("M", 70, 30, "L", 130, 90,
-                    "M", 130, 60, "L", 130, 90, "L", 100, 90)
-            path: ("M", 120, 30, "L", 180, 90,
-                    "M", 180, 60, "L", 180, 90, "L", 150, 90)
-            hpin: 1, width/2 + 100, 0, -100  # cathode
-            hpin: 2, -width/2-100, 0, 100    # anode
-            label: params.refdes, 0, -100, fontSize=50, anchor="center", vanchor="top"
+            arrow: 70, 30, 130, 90, 25, 25
+            arrow: 120, 30, 180, 90, 25, 25
+
+            hpin: 1, "C", width/2 + 100, 0, -100, display_name=false  # cathode
+            hpin: 2, "A", -width/2-100, 0, 100, display_name=false    # anode
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
             label: params.color, 0, 100, fontSize=40, anchor="center", vanchor="bottom"
         params:
             size: "0603"
@@ -148,6 +153,8 @@ def led(color):
             value: color
             footprint: "LED_SMD:LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
             description: "LED {color} {size}"
+            refdes_offsetx: 0
+            refdes_offsety: 0
 
 def cgnd():
     net_name = "gnd"
@@ -228,6 +235,570 @@ def no_connect(size=20):
 
 def dnc(size=20):
     return no_connect(size)
+
+# ============================================================
+# Passive Components
+# ============================================================
+
+def pot(value):
+    # Potentiometer — 3 pins: pin1 (end1), pin2 (end2), pin3 (wiper)
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 3
+        type: "res"
+        display: create graphic (params):
+            crect: 0, 0, width, height
+            hpin: 1, -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, width/2 + 30, 0, -30, display_id=false
+            vpin: 3, 0, height/2 + 80, -80, display_id=false
+            # Arrowhead pointing up toward body (wiper indicator)
+            path: ("M", -12, height/2 + 14, "L", 0, height/2, "L", 12, height/2 + 14)
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
+            label: params.value, 0, 0, fontSize=30, anchor="center", vanchor="center"
+        params:
+            value: value
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def cap_pol(value):
+    # Polarized capacitor (electrolytic) — pin1 (+anode), pin2 (-cathode)
+    width = 120
+    height = 40
+
+    return create component:
+        pins: 2
+        type: "cap"
+        display: create graphic (params):
+            line_width: 13
+            hline: -width/2, 20, width
+            hline: -width/2, -20, width
+            vpin: 1, 0, -100, 80, display_id=false
+            vpin: 2, 0, 100, -80, display_id=false
+            # Plus sign near positive (top) plate
+            line_width: 8
+            hline: -50, -50, 30
+            vline: -35, -65, 30
+            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+            label: params.value, 80, 30, fontSize=50, anchor="left", vanchor="center"
+        params:
+            value: value
+            size: "0402"
+            footprint: "Capacitor_SMD:CP_Elec_3x5.3"
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def ferrite(value):
+    # Ferrite bead — filled rectangle body
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 2
+        type: "ind"
+        display: create graphic (params):
+            fill: "#333"
+            crect: 0, 0, width, height
+            fill: "none"
+            hpin: 1, -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, width/2 + 30, 0, -30, display_id=false
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
+        params:
+            value: value
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def xtal(frequency):
+    # Crystal oscillator — 2-pin
+    width = 80
+    height = 160
+
+    return create component:
+        type: "X"
+        pins: 2
+        display: create graphic (params):
+            # Piezoelectric plates (thick vertical lines)
+            line_width: 14
+            vline: -12, -height/2, height
+            vline: 12, -height/2, height
+            # Outer case
+            line_width: 5
+            crect: 0, 0, width, height
+            hpin: 1, -width/2 - 120, 0, 120, display_id=false
+            hpin: 2, width/2 + 120, 0, -120, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.frequency, 0, height/2 + 20, fontSize=50, anchor="center", vanchor="top"
+        params:
+            frequency: frequency
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def fuse(value):
+    # Fuse — rectangle with center line
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 2
+        type: "F"
+        display: create graphic (params):
+            crect: 0, 0, width, height
+            hline: -width/2, 0, width
+            hpin: 1, -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, width/2 + 30, 0, -30, display_id=false
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
+            label: params.value, 0, 0, fontSize=30, anchor="center", vanchor="center"
+        params:
+            value: value
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def jumper():
+    # Jumper / solder bridge — 2 pads with arc
+    return create component:
+        pins: 2
+        type: "jp"
+        display: create graphic (params):
+            circle: -50, 0, 20
+            circle: 50, 0, 20
+            arc: 0, 0, 50, 180, 360
+            hpin: 1, -150, 0, 100, display_id=false
+            hpin: 2, 150, 0, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_prefix: "JP"
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+# ============================================================
+# Diodes
+# ============================================================
+
+def zener():
+    # Zener diode — pin1 (cathode), pin2 (anode)
+    width = 100
+    height = 100
+
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
+            # Zener wings (bent ends on cathode bar)
+            line: width/2, -height/2, width/2-20, -height/2-20
+            line: width/2, height/2, width/2 + 20, height/2 + 20
+            hpin: 1, -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, width/2 + 100, 0, -100, display_id=false
+            label: params.refdes, -20- params.refdes_offsetx, -110 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def schottky():
+    # Schottky diode — pin1 (cathode), pin2 (anode)
+    width = 100
+    height = 100
+
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
+            # Schottky S-curve marks on cathode bar
+            path: ("M", width/2, -height/2, "L", width/2 - 20, -height/2, "L", width/2 - 20, -height/2 + 20)
+            path: ("M", width/2, height/2, "L", width/2 + 20, height/2, "L", width/2 + 20, height/2 - 20)
+            hpin: 1, -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, width/2 + 100, 0, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def tvs():
+    # TVS (transient voltage suppressor) — bidirectional zener
+    # pin1 (A1), pin2 (A2)
+    width = 100
+    height = 100
+
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic (params):
+            # Two back-to-back diode triangles
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
+            hline: width/2, -height/2, 20
+            hline: width/2 - 20, height/2, 20
+            #triangle: width/2, 0, -width/2, 0, height
+            #vline: -width/2, -height/2, height
+            #hline: -width/2, -height/2, -20
+            #hline: -width/2 + 20, height/2, -20
+            hpin: 1, -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, width/2 + 100, 0, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def photodiode():
+    # Photodiode — arrows pointing inward (light detecting)
+    # pin1 (cathode), pin2 (anode)
+    width = 100
+    height = 100
+
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
+            # Light arrows pointing toward junction
+
+            arrow: -25, 95, 25, 45, 25, 25
+            arrow: -25, 145, 25, 95, 25, 25
+
+            #path: ("M", -25, 125, "L", 25, 75, "M", 25, 100, "L", 25, 75, "L", 0, 75)
+            #path: ("M", -75, 125, "L", -25, 75, "M", -25, 100, "L", -25, 75, "L", -50, 75)
+
+            hpin: 1, -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, width/2 + 100, 0, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+# ============================================================
+# Transistors
+# ============================================================
+
+def npn():
+    # NPN BJT — pin1 (B), pin2 (C), pin3 (E)
+    return create component:
+        pins:
+            1: "B"
+            2: "C"
+            3: "E"
+        type: "transistor"
+        display: create graphic (params):
+            # Base bar
+            line_width: 15
+            vline: -25, -80, 160
+            line_width: 5
+            # Collector diagonal (upper)
+            line: -20, -40, 60, -100
+            # Emitter diagonal (lower)
+            arrow: -20, 40, 60, 100, 25, 25
+
+            # Emitter arrow — NPN: outward (away from base)
+
+            hpin: 1, -120, 0, 100, display_id=false     # base
+            vpin: 2, 60, -200, 100, display_id=false    # collector
+            vpin: 3, 60, 200, -100, display_id=false    # emitter
+            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def pnp():
+    # PNP BJT — pin1 (B), pin2 (C), pin3 (E)
+    return create component:
+        pins:
+            1: "B"
+            2: "C"
+            3: "E"
+        type: "transistor"
+        display: create graphic (params):
+            # Base bar
+            line_width: 15
+            vline: -25, -80, 160
+            line_width:5
+
+            # Collector diagonal (upper)
+            line: -20, -40, 60, -100
+            # Emitter diagonal (lower)
+            #line: -20, 40, 60, 100
+            # Emitter arrow — PNP: inward (toward base bar)
+            arrow:60, 100, -20, 40
+            hpin: 1, -120, 0, 100, display_id=false
+            vpin: 2, 60, -200, 100, display_id=false
+            vpin: 3, 60, 200, -100, display_id=false
+            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def pmos():
+    return create component:
+        pins: 3
+        type: "Q"
+        display: create graphic (params):
+            hline: -75, -25, 175
+            fill: "#333"
+            crect: 0, 0, 50, 15
+            crect: 75, 0, 50, 15
+            crect: -75, 0, 50, 15
+            vline: 75, 0, 100
+            vline: -75, 0, 100
+            
+            arrow: 0, 0, 0, 90
+            vline: 0, 0, 100
+            
+            hline: 0, 100, -100
+            hline: 100, 100, -25
+            
+            path: "M", -100, 100, "L", -100, 150, "L", 100, 150, "L", 100, 100
+            arrow: 100, 150, -12.5,150
+            vline: -12.5, 150-20, 40
+
+            label: params.refdes, 70, -60, anchor="center"
+            label: params.mpn, 0, 250, anchor="center"
+
+            hpin: 1, "D", 200, 100, -100, display_id=false, display_name=false
+            vpin: 2, "G", 0, -100, 75, display_id=false, display_name=false
+            hpin: 3, "S", -200, 100, 100, display_id=false, display_name=false
+
+            label: "S", -200, 70
+            label: "D", 200, 70, anchor="right"
+            label: "G", -70, -50
+        params:
+            mpn: "?"
+
+def nmos():
+    return create component:
+        pins: 3
+        type: "Q"
+        display: create graphic (params):
+            hline: -75, -25, 175
+            fill: "#333"
+            crect: 0, 0, 50, 15
+            crect: 75, 0, 50, 15
+            crect: -75, 0, 50, 15
+            vline: 75, 0, 100
+            vline: -75, 0, 100
+            
+            arrow: 0, 100, 0, 20
+            vline: 0, 0, 100
+            
+            hline: 0, 100, -100
+            hline: 100, 100, -25
+
+            path: "M", -100, 100, "L", -100, 150, "L", 100, 150, "L", 100, 100
+            arrow: -100, 150, 12.5,150
+            vline: 12.5, 150-20, 40
+
+            label: params.refdes, 70, -60, anchor="center"
+            label: params.mpn, 0, 250, anchor="center"
+
+            hpin: 1, "D", 200, 100, -100, display_id=false, display_name=false
+            vpin: 2, "G", 0, -100, 75, display_id=false, display_name=false
+            hpin: 3, "S", -200, 100, 100, display_id=false, display_name=false
+
+            label: "S", -200, 70
+            label: "D", 200, 70, anchor="right"
+            label: "G", -70, -50
+        params:
+            mpn: "?"
+
+# ============================================================
+# Integrated Circuits
+# ============================================================
+
+def opamp():
+    # Op-amp — pin1 (OUT), pin2 (-), pin3 (+)
+    width = 200
+    height = 200
+
+    return create component:
+        type: "ic"
+        pins:
+            1: "OUT"
+            2: "-"
+            3: "+"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            hpin: 1, width/2 + 100, 0, -100, display_id=false
+            hpin: 2, -width/2 - 100, 50, 100, display_id=false
+            hpin: 3, -width/2 - 100, -50, 100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def comparator():
+    # Comparator — pin1 (OUT), pin2 (-), pin3 (+)
+    # Same triangle symbol as opamp; open-collector output indication
+    width = 200
+    height = 200
+
+    return create component:
+        type: "ic"
+        pins:
+            1: "OUT"
+            2: "-"
+            3: "+"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            hpin: 1, width/2 + 100, 0, -100, display_id=false
+            hpin: 2, -width/2 - 100, 50, 100, display_id=false
+            hpin: 3, -width/2 - 100, -50, 100, display_id=false
+            # Open-collector circle at output
+            circle: width/2 + 15, 0, 15
+            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+# ============================================================
+# Switches and Connectors
+# ============================================================
+
+def switch_spst():
+    # Single-pole single-throw switch (normally open)
+    return create component:
+        pins: 2
+        type: "sw"
+        display: create graphic (params):
+            circle: -60, 0, 12
+            circle: 60, 0, 12
+            # Open switch line (diagonal)
+            line: -48, 0, 45, -60
+            hpin: 1, -160, 0, 100, display_id=false
+            hpin: 2, 160, 0, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def switch_pb():
+    # Normally-open push button
+    return create component:
+        pins: 2
+        type: "sw"
+        display: create graphic (params):
+            # Contact circles
+            circle: -60, 20, 12
+            circle: 60, 20, 12
+            # Actuator bar (above)
+            hline: -50, -30, 100
+            # Push shaft
+            vline: 0, -80, 50
+            # Arrowhead pointing down (push direction)
+            path: ("M", -12, -32, "L", 0, -12, "L", 12, -32)
+            hpin: 1, -160, 20, 100, display_id=false
+            hpin: 2, 160, 20, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def conn(n):
+    # Generic N-pin connector — all pins on left side
+    pin_spacing = 100
+    body_height = n * pin_spacing
+    body_width = 200
+
+    return create component:
+        type: "conn"
+        pins: n
+        display: create graphic (params):
+            crect: 0, 0, body_width, body_height
+            for i in range(1, n + 1):
+                circle: 0, -body_height/2 + (i - 0.5) * pin_spacing, 35
+                hpin: i, -body_width/2 - 100, -body_height/2 + (i - 0.5) * pin_spacing, 100, display_id=false
+            label: params.refdes, body_width/2 + 20 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+# ============================================================
+# Electromechanical
+# ============================================================
+
+def relay_spst():
+    # SPST relay — pin1,2 (coil), pin3,4 (switch contacts)
+    coil_w = 140
+    coil_h = 80
+    sw_offset = -220
+
+    return create component:
+        pins: 4
+        type: "relay"
+        display: create graphic (params):
+            # Coil body
+            crect: 0, 0, coil_w, coil_h
+            # Coil arcs inside
+            arc: -40, 0, 20, 180, 360
+            arc: 0, 0, 20, 180, 360
+            arc: 40, 0, 20, 180, 360
+            # Electromagnetic link (dashed represented as short line)
+            vline: 0, -coil_h/2, sw_offset + coil_h/2
+            # Switch contacts
+            circle: -60, sw_offset, 12
+            circle: 60, sw_offset, 12
+            line: -48, sw_offset, 45, sw_offset - 60
+            hpin: 1, -coil_w/2 - 100, 0, 100, display_id=false
+            hpin: 2, coil_w/2 + 100, 0, -100, display_id=false
+            hpin: 3, -160, sw_offset, 100, display_id=false
+            hpin: 4, 160, sw_offset, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, sw_offset - 80 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def speaker():
+    # Speaker / buzzer — pin1 (+), pin2 (-)
+    return create component:
+        pins: 2
+        type: "speaker"
+        display: create graphic (params):
+            # Voice coil (rectangle)
+            crect: -30, 0, 40, 120
+            # Horn/cone (trapezoid)
+            path: ("M", -10, -60, "L", -10, 60, "L", 80, 110, "L", 80, -110, "L", -10, -60)
+            # Vibration arc
+            arc: 100, 0, 80, 270, 90
+            hpin: 1, -130, -30, 100, display_id=false
+            hpin: 2, -130, 30, 100, display_id=false
+            label: params.refdes, 90 + params.refdes_offsetx, -120 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+def motor_dc():
+    # DC motor — pin1 (+), pin2 (-)
+    radius = 100
+
+    return create component:
+        pins: 2
+        type: "motor"
+        display: create graphic (params):
+            circle: 0, 0, radius
+            hpin: 1, -radius - 100, 0, 100, display_id=false
+            hpin: 2, radius + 100, 0, -100, display_id=false
+            label: params.refdes, 0 + params.refdes_offsetx, -radius - 30 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+# ============================================================
+# Test / Annotation
+# ============================================================
+
+def test_point():
+    # Test point — single-pin circle marker
+    return create component:
+        pins: 1
+        type: "tp"
+        display: create graphic (params):
+            circle: 0, 0, 30
+            vpin: 1, 0, 80, -80, display_id=false
+            label: params.refdes, 40 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+        params:
+            refdes_offsetx: 0
+            refdes_offsety: 0
 
 def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y, 
     col_display_value, row_display_value, inner_frame_margin = 50):

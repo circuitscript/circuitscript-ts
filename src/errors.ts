@@ -168,12 +168,16 @@ export function collectErrorChain(error: Error): Error[] {
 }
 
 export function printErrorChain(error: Error): void {
-    const errors = collectErrorChain(error);
+    let useErrors = collectErrorChain(error);
+
+    if (useErrors.length === 0){
+        useErrors = [error];
+    }
 
     // Show the deepest error first
-    errors.reverse();
+    useErrors.reverse();
 
-    for (const err of errors) {
+    for (const err of useErrors) {
         console.log("  " + err.toString());
     }
 }

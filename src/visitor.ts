@@ -71,7 +71,7 @@ import { PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
-    FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
+    Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
 import { ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
     ValidPinSides, 
@@ -362,8 +362,8 @@ export class ParserVisitor extends BaseVisitor {
             this.parseCreateComponentParams(propParams);
 
         if (params.length > 0) {
-            // Append the first value to the generated name to add a bit more
-            // description/context.
+            // Append the first value of the parameter list to the generated 
+            // name to add a bit more description/context.
             const firstParam = params[0];
             const paramValue = firstParam.paramValue;
             let appendValue = paramValue.toString();
@@ -423,6 +423,10 @@ export class ParserVisitor extends BaseVisitor {
             // from the graphic commands.
             // `pins` prop will be ignored.
 
+            // Set initial variables, since some of the params might be
+            // used during graphics creation.
+            display.variables = properties.get('params') ?? new Map();
+
             const drawCommands = display!.getCommands();
             drawCommands.forEach(command => {
                 const [commandValue,] = command;
@@ -431,13 +435,16 @@ export class ParserVisitor extends BaseVisitor {
                     || commandValue === PlaceHolderCommands.pin) {
 
                     const id = PinId.from(command[1][0]);
+                    let pinName = id.toString();
 
-                    const pinType = id.getType();
-                    const pinName = id.toString();
+                    // If this a string, then this is the pin name.
+                    if (typeof command[1][1] === 'string'){
+                        pinName = command[1][1];
+                    }
 
                     // TODO: `pin` graphic commands should also allow pin 
                     // type to be set
-                    pins.push(new PinDefinition(id, pinType,
+                    pins.push(new PinDefinition(id, id.getType(),
                         pinName, PinTypes.Any));
                 }
             });
@@ -1082,6 +1089,9 @@ export class ParserVisitor extends BaseVisitor {
                 } else if (modifierText === 'anchor') {
                     // Do not apply to the component unit, but to component itself.
                     dataResult.setParam('anchor', result.name as string);
+                } else {
+                    // For all other params, set it directly on the component.
+                    dataResult.setParam(modifierText, result);
                 }
 
                 if (shouldIgnoreWireOrientation) {
@@ -1603,20 +1613,39 @@ export class ParserVisitor extends BaseVisitor {
     visitWire_expr = (ctx: Wire_exprContext): void => {
         const segments = [];
         ctx.ID().forEach((ctxId, index) => {
-            const value = ctxId.getText();
+            const valueText = ctxId.getText();
             const ctxDataExpr = ctx.data_expr(index);
 
-            if ((value === WireAutoDirection.Auto || value === WireAutoDirection.Auto_) && ctxDataExpr === null) {
-                segments.push([value]);
+            let value: Direction | null = null;
+
+            // Accept alternative direction symbols.
+            switch(valueText){
+                case 'right':
+                case 'rg':
+                case 'r':
+                    value = Direction.Right;
+                    break;
+                case 'left':
+                case 'lf':
+                case 'l':
+                    value = Direction.Left;
+                    break;
+                case 'up':
+                case 'u':
+                    value = Direction.Up;
+                    break;
+                case 'down':
+                case 'dw':
+                case 'd':
+                    value = Direction.Down;
+                    break;
+            }
+
+            if ((valueText === WireAutoDirection.Auto || valueText === WireAutoDirection.Auto_) && ctxDataExpr === null) {
+                segments.push([valueText]);
             } else if (this.acceptedDirections.indexOf(value) !== -1 && ctxDataExpr) {
-                let useValue: number | null = null;
-                useValue = this.visitResult(ctxDataExpr);
-
-                if (useValue instanceof NumericValue) {
-                    useValue = useValue.toNumber();
-                }
-
-                segments.push([value, new UnitDimension(useValue)]);
+                const useValue = this.visitResult(ctxDataExpr) as NumericValue;
+                segments.push([value, new UnitDimension(useValue.toNumber())]);
             } else {
                 // Invalid segment
                 this.throwWithContext(ctx, "Invalid wire expression");

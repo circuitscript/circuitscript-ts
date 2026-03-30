@@ -18,6 +18,7 @@ Graphic:    'graphic';
 Module:     'module';
 
 Wire:       'wire';
+
 Pin:        'pin';
 Add:        'add';
 At:         'at';
@@ -73,7 +74,6 @@ MinusAssign:        '-=';
 DivideAssign:       '/=';
 MultiplyAssign:     '*=';
 ModulusAssign:      '%=';
-
 
 NEWLINE
  : ( '\r'? '\n' | '\r' | '\f' ) SPACES? {this.onNewLine();}

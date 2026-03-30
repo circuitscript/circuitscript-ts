@@ -34,9 +34,9 @@ export class ComponentAnnotater {
         let usePrefix: string;
         let useCounterKey: string;
 
-        if(instance.hasParam(KeywordRefdesPrefix)){
+        if (instance.hasParam(KeywordRefdesPrefix)) {
             const prefix = instance.getParam(KeywordRefdesPrefix)! as string;
-            if (this.counter[prefix] === undefined){
+            if (this.counter[prefix] === undefined) {
                 this.counter[prefix] = 1;
             }
 
@@ -49,24 +49,19 @@ export class ComponentAnnotater {
 
             // If type is unknown, then allow it to define a new range
             if (this.counter[type] === undefined && type.length <= 2) {
-                for (const [, value] of Object.entries(ComponentRefDesPrefixes)) {
-                    if (value === type) {
-                        throw "Refdes prefix is already in use!";
-                    }
-                }
-
-                if (ComponentRefDesPrefixes[type] === undefined) {
-                    // Define new type and start counting
-                    ComponentRefDesPrefixes[type] = type;
-                    this.counter[type] = 1;
-                }
+                // Define new type and start counting
+                ComponentRefDesPrefixes[type] = type;
+                this.counter[type] = 1;
             }
+
+            // If the type is undefined,then set it as a conn
+            let useType = type;
             if (ComponentRefDesPrefixes[type] === undefined) {
-                return null;
+                useType = 'conn';
             }
 
-            usePrefix = ComponentRefDesPrefixes[type];
-            useCounterKey = type;
+            usePrefix = ComponentRefDesPrefixes[useType];
+            useCounterKey = useType;
         }
 
         let prefix = '';

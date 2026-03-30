@@ -1,0 +1,29 @@
+# wire expression with different direction symbols
+from "std" import *
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+-- down 100 dw 100
+add res(10k)
+wire d 100
+to gnd
+
+at vcc
+-- right 100 rg 100
+add res(10k)
+wire r 100
+to gnd
+
+at vcc
+-- left 100 lf 100
+add res(10k)
+wire l 100
+to gnd
+
+at vcc
+-- up 100
+add res(10k)
+wire u 100
+to gnd

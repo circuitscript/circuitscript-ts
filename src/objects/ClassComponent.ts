@@ -362,14 +362,14 @@ export class ClassComponent {
     /**
      * Returns the next pin after the current pin. This will wrap around once
      * the last pin is reached.
-     * @param pinIndex
+     * @param pinId
      * @returns 
      */
-    getNextPinAfter(pinIndex: PinId): PinId {
+    getNextPinAfter(pinId: PinId): PinId {
         const pins = Array.from(this.pins.keys());
-        pins.sort();
+        const foundPin = this.getPin(pinId);
+        const index  = pins.findIndex(tmp => tmp.equals(foundPin));
 
-        const index = pins.findIndex(tmp => tmp.equals(pinIndex));
         if (index + 1 < pins.length) {
             return pins[index + 1];
         } else {

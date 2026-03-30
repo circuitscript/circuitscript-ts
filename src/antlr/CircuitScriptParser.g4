@@ -159,7 +159,7 @@ property_value_expr: properties_block                 # nested_properties
                     | data_expr (Comma data_expr)*    # single_line_property
                     ;
 
-wire_expr: Wire (ID data_expr?)+;
+wire_expr: (Wire | Minus Minus) (ID data_expr?)+;
 point_expr: Point data_expr;
 
 import_expr: Import libraryName=STRING_VALUE  annotation_comment_expr?                                                          # import_simple

@@ -1699,13 +1699,14 @@ export class ExecutionContext {
         });
     }
 
-    applyComponentAngleFromWire(component: ClassComponent, pin: number, 
+    applyComponentAngleFromWire(component: ClassComponent, pin: PinId, 
         opposite = false): void {
         // By default the last segment of the wire is used. But if opposite
         // is set to true, then use the first segment and also flip the
         // wire direction that is used.
 
-        const targetUnit = component.getUnitForPin(pin);
+        const usePin = component.getPin(pin);
+        const targetUnit = component.getUnitForPin(usePin);
 
         if (this.componentAngleFollowsWire 
             && targetUnit.followWireOrientationProp 
@@ -1724,8 +1725,8 @@ export class ExecutionContext {
             // pin positions.
             const pinPositions = CalculatePinPositions(targetUnit);
 
-            if (pinPositions.has(pin)){
-                const connectedPinPos = pinPositions.get(pin)!;
+            if (pinPositions.has(usePin)){
+                const connectedPinPos = pinPositions.get(usePin)!;
 
                 // This is the final angle that the component unit will have
                 let targetAngle: number | null = null;
