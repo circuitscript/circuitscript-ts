@@ -613,15 +613,11 @@ def opamp():
 
     return create component:
         type: "ic"
-        pins:
-            1: "OUT"
-            2: "-"
-            3: "+"
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
-            hpin: 1, width/2 + 100, 0, -100, display_id=false
-            hpin: 2, -width/2 - 100, 50, 100, display_id=false
-            hpin: 3, -width/2 - 100, -50, 100, display_id=false
+            hpin: 1, "OUT", width/2 + 100, 0, -100, display_id=false, display_name = false
+            hpin: 2, "-", -width/2 - 100, 50, 100, display_id=false
+            hpin: 3, "+", -width/2 - 100, -50, 100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
@@ -635,15 +631,11 @@ def comparator():
 
     return create component:
         type: "ic"
-        pins:
-            1: "OUT"
-            2: "-"
-            3: "+"
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
-            hpin: 1, width/2 + 100, 0, -100, display_id=false
-            hpin: 2, -width/2 - 100, 50, 100, display_id=false
-            hpin: 3, -width/2 - 100, -50, 100, display_id=false
+            hpin: 1, "OUT", width/2 + 100, 0, -100, display_id=false, display_name = false
+            hpin: 2, "-", -width/2 - 100, 50, 100, display_id=false
+            hpin: 3, "+", -width/2 - 100, -50, 100, display_id=false
             # Open-collector circle at output
             circle: width/2 + 15, 0, 15
             label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
@@ -659,7 +651,7 @@ def switch_spst():
     # Single-pole single-throw switch (normally open)
     return create component:
         pins: 2
-        type: "sw"
+        type: "SW"
         display: create graphic (params):
             circle: -60, 0, 12
             circle: 60, 0, 12
@@ -676,17 +668,18 @@ def switch_pb():
     # Normally-open push button
     return create component:
         pins: 2
-        type: "sw"
+        type: "SW"
         display: create graphic (params):
             # Contact circles
             circle: -60, 20, 12
             circle: 60, 20, 12
             # Actuator bar (above)
-            hline: -50, -30, 100
+            hline: -70, -30, 140
             # Push shaft
-            vline: 0, -80, 50
             # Arrowhead pointing down (push direction)
-            path: ("M", -12, -32, "L", 0, -12, "L", 12, -32)
+
+            arrow: 0, -90, 0, -35
+
             hpin: 1, -160, 20, 100, display_id=false
             hpin: 2, 160, 20, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
@@ -694,21 +687,22 @@ def switch_pb():
             refdes_offsetx: 0
             refdes_offsety: 0
 
-def conn(n):
+def conn_single_row(num_pins):
     # Generic N-pin connector — all pins on left side
-    pin_spacing = 100
-    body_height = n * pin_spacing
-    body_width = 200
+    # pin 1 is used as the symbol origin
 
     return create component:
         type: "conn"
-        pins: n
+        pins: num_pins
         display: create graphic (params):
-            crect: 0, 0, body_width, body_height
-            for i in range(1, n + 1):
-                circle: 0, -body_height/2 + (i - 0.5) * pin_spacing, 35
-                hpin: i, -body_width/2 - 100, -body_height/2 + (i - 0.5) * pin_spacing, 100, display_id=false
-            label: params.refdes, body_width/2 + 20 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+            rect: -100, -100, 200, (num_pins-1) * 100 + 200
+
+            for i in range(0, num_pins):
+                circle: 0, i * 100, 40
+                hpin: (i+1), -200, i * 100,   160
+
+            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, align="center"
+            #label: "mpn", -20, 20 + 4, "?", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -721,11 +715,11 @@ def test_point():
     # Test point — single-pin circle marker
     return create component:
         pins: 1
-        type: "tp"
+        type: "TP"
         display: create graphic (params):
-            circle: 0, 0, 30
-            vpin: 1, 0, 80, -50, display_id=false
-            label: params.refdes, 40 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+            circle: 0, -20, 20
+            vpin: 1, 0, 100, -100, display_id=false
+            label: params.refdes, 40 + params.refdes_offsetx, -20 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
