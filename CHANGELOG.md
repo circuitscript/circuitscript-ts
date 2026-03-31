@@ -1,6 +1,24 @@
 # Changelog
 
-## [v0.6.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.7...v0.6.0)
+## [v0.6.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.0...v0.6.1)
+
+[596f8b4](https://gitlab.com/circuitscript/circuitscript-ts/commit/596f8b4701e1ae22f994a822fde206a207563d34) add arrow graphic command for symbol drawing
+-  add string pin name support in graphic commands
+-  add wire direction aliases (r, l, u, d, dw, rg, lf)
+-  add refdes_offsetx/y params to std components
+-  update LED symbol to use arrow command
+-  fix printErrorChain for empty error chains
+-  fix applyComponentAngleFromWire to use PinId
+-  add test cases for direction aliases (script77) and pin name selection (script78)
+
+[b80dbc0](https://gitlab.com/circuitscript/circuitscript-ts/commit/b80dbc0465b91e4cd4972ca2b955e95d5456eb54) updated tests
+-  updated std.cst
+
+[a2c81a2](https://gitlab.com/circuitscript/circuitscript-ts/commit/a2c81a2ba6047b89b3a01c1b3a0985fe77b31f28)fix wire direction ignored when only flip:y is applied
+- 
+- Only suppress wire orientation when both x and y axes are flipped; a single-axis flip should preserve the wire direction. Add test case script76.
+
+## [v0.6.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.5.7...v0.6.0) - 2026-03-29
 
 [b9691aa](https://gitlab.com/circuitscript/circuitscript-ts/commit/b9691aa007b5b2d6a52601555a19ccf9deb0b288) add join block support with inline path expressions in grammar
 -  refactor at_block grammar to support inline and block expressions
