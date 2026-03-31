@@ -1,6 +1,6 @@
 {
     "name": "circuitscript",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "description": "Interpreter for the circuitscript language",
     "homepage": "https://circuitscript.net",
     "engines": {

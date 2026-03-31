@@ -1,6 +1,12 @@
 # Changelog
 
-## [v0.6.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.0...v0.6.1)
+## [v0.6.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.1...v0.6.2)
+
+[7897bfe](https://gitlab.com/circuitscript/circuitscript-ts/commit/7897bfeec96575c88bfb090b3cd25d1a39076413) fixed tests
+
+[6dae5b7](https://gitlab.com/circuitscript/circuitscript-ts/commit/6dae5b7f833b512a89fc38e37a03b389b53ae4a0) missed out updated std.cst
+
+## [v0.6.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.0...v0.6.1) - 2026-03-31
 
 [596f8b4](https://gitlab.com/circuitscript/circuitscript-ts/commit/596f8b4701e1ae22f994a822fde206a207563d34) add arrow graphic command for symbol drawing
 -  add string pin name support in graphic commands
