@@ -714,76 +714,6 @@ def conn(n):
             refdes_offsety: 0
 
 # ============================================================
-# Electromechanical
-# ============================================================
-
-def relay_spst():
-    # SPST relay — pin1,2 (coil), pin3,4 (switch contacts)
-    coil_w = 140
-    coil_h = 80
-    sw_offset = -220
-
-    return create component:
-        pins: 4
-        type: "relay"
-        display: create graphic (params):
-            # Coil body
-            crect: 0, 0, coil_w, coil_h
-            # Coil arcs inside
-            arc: -40, 0, 20, 180, 360
-            arc: 0, 0, 20, 180, 360
-            arc: 40, 0, 20, 180, 360
-            # Electromagnetic link (dashed represented as short line)
-            vline: 0, -coil_h/2, sw_offset + coil_h/2
-            # Switch contacts
-            circle: -60, sw_offset, 12
-            circle: 60, sw_offset, 12
-            line: -48, sw_offset, 45, sw_offset - 60
-            hpin: 1, -coil_w/2 - 100, 0, 100, display_id=false
-            hpin: 2, coil_w/2 + 100, 0, -100, display_id=false
-            hpin: 3, -160, sw_offset, 100, display_id=false
-            hpin: 4, 160, sw_offset, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, sw_offset - 80 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
-        params:
-            refdes_offsetx: 0
-            refdes_offsety: 0
-
-def speaker():
-    # Speaker / buzzer — pin1 (+), pin2 (-)
-    return create component:
-        pins: 2
-        type: "speaker"
-        display: create graphic (params):
-            # Voice coil (rectangle)
-            crect: -30, 0, 40, 120
-            # Horn/cone (trapezoid)
-            path: ("M", -10, -60, "L", -10, 60, "L", 80, 110, "L", 80, -110, "L", -10, -60)
-            # Vibration arc
-            arc: 100, 0, 80, 270, 90
-            hpin: 1, -130, -30, 100, display_id=false
-            hpin: 2, -130, 30, 100, display_id=false
-            label: params.refdes, 90 + params.refdes_offsetx, -120 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="bottom"
-        params:
-            refdes_offsetx: 0
-            refdes_offsety: 0
-
-def motor_dc():
-    # DC motor — pin1 (+), pin2 (-)
-    radius = 100
-
-    return create component:
-        pins: 2
-        type: "motor"
-        display: create graphic (params):
-            circle: 0, 0, radius
-            hpin: 1, -radius - 100, 0, 100, display_id=false
-            hpin: 2, radius + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -radius - 30 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
-        params:
-            refdes_offsetx: 0
-            refdes_offsety: 0
-
-# ============================================================
 # Test / Annotation
 # ============================================================
 
@@ -794,7 +724,7 @@ def test_point():
         type: "tp"
         display: create graphic (params):
             circle: 0, 0, 30
-            vpin: 1, 0, 80, -80, display_id=false
+            vpin: 1, 0, 80, -50, display_id=false
             label: params.refdes, 40 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
