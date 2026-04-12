@@ -45,6 +45,7 @@ export default async function main(): Promise<void> {
         .option('--lexer-tokens [limit]', 'Print token stream (optionally limit number of tokens, requires -l)')
         .option('--lexer-mapping [lines]', 'Print character-to-token mapping (optionally specify line range like "1-10", requires -l)')
         .option('--lexer-summary', 'Print lexer operation summary (requires -l)')
+        .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -135,6 +136,7 @@ export default async function main(): Promise<void> {
         inputPath: inputFilePath,
         updateSource,
         saveAnnotatedCopy: saveAnnotatedCopyPath,
+        kiCadVersion: options.kicadVersion,
     }
 
     // This is the output path

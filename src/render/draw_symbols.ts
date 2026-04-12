@@ -687,16 +687,29 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 }
 
                 case PlaceHolderCommands.label: {
-                    const style = this.parseLabelStyle(keywordParams);
+                    // Extract name property if it is defined.
+                    let labelName = undefined;
+
+                    const useParams = new Map(keywordParams as Map<string, string>);
+                    if (useParams.has('name')){
+                        labelName = useParams.get('name');
+                        useParams.delete('name');
+                    }
+
+                    const style = this.parseLabelStyle(useParams);
 
                     if (style['textColor'] === undefined) {
                         style['textColor'] = textColor;
                     }
 
-                    const tmpPositionParams = [
-                        positionParams[1], positionParams[2],
-                        positionParams[0], style
-                    ];
+                    const tmpPositionParams: unknown[] = [
+                            positionParams[1], positionParams[2],
+                            positionParams[0], style
+                        ];
+
+                    if (labelName){
+                        tmpPositionParams.push(labelName);
+                    }
 
                     drawing.log('add label', JSON.stringify(tmpPositionParams));
 
@@ -864,7 +877,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             positionParams[0] = new PinId(positionParams[0]);
         }
 
-        drawing.addPinMM(...positionParams, lineColor);
+        drawing.addPinMM(...positionParams, lineColor, displayPinId, displayPinName, pinNameParam);
 
         // Add a label for the pinId and pinName
         const lastAddedPin = this.drawing.pins[this.drawing.pins.length - 1];
@@ -1434,8 +1447,9 @@ export class SymbolDrawing {
         return this;
     }
 
-    addPinMM(pinId: PinId, startXMM: NumericValue, startYMM: NumericValue, 
-        endXMM: NumericValue, endYMM: NumericValue, lineColor: string): SymbolDrawing {
+    addPinMM(pinId: PinId, startXMM: NumericValue, startYMM: NumericValue,
+        endXMM: NumericValue, endYMM: NumericValue, lineColor: string,
+        displayId = true, displayName = true, pinName: string | null = null): SymbolDrawing {
         // Values should be in mm
 
         // Determine the pin angle based on vector with start point 
@@ -1470,7 +1484,10 @@ export class SymbolDrawing {
             pinId,
             Geometry.segment([startXMM, startYMM], [endXMM, endYMM]),
             numeric(angle),
-            lineColor
+            lineColor,
+            displayId,
+            displayName,
+            pinName
         ]);
 
         return this;
@@ -1618,23 +1635,19 @@ export class SymbolDrawing {
     //     return this;
     // }
 
-    addLabel(x: NumericValue, y: NumericValue, textValue: string, style: LabelStyle): SymbolDrawing {
+    addLabel(x: NumericValue, y: NumericValue, textValue: string, 
+        style: LabelStyle, name: string | null = null): SymbolDrawing {
+        
         this.items.push(
-            Geometry.label(null, x, y, textValue, style)
-        )
-
+            Geometry.label(name, x, y, textValue, style)
+        );
         return this;
     }
 
-    addLabelMils( x: NumericValue, y: NumericValue, textValue: string, style: LabelStyle): SymbolDrawing {
-        x = milsToMM(x);
-        y = milsToMM(y);
-
-        this.items.push(
-            Geometry.label(null, x, y, textValue, style)
-        )
-
-        return this;
+    // Takes x and y in mils.
+    addLabelMils(x: NumericValue, y: NumericValue, textValue: string,
+        style: LabelStyle, name: string | null = null): SymbolDrawing {
+        return this.addLabel(milsToMM(x), milsToMM(y), textValue, style, name);
     }
 
     addTextbox(x: NumericValue, y: NumericValue, textValue: string, style: LabelStyle): SymbolDrawing {
@@ -2007,5 +2020,5 @@ export type SymbolPinDefintion = {
     pinType: PinTypes,
 }
 
-export type PinRenderInfo = 
-    [PinId, Feature, angle: NumericValue, lineColor: string];
+export type PinRenderInfo =
+    [PinId, Feature, angle: NumericValue, lineColor: string, displayId: boolean, displayName: boolean, pinName: string | null];

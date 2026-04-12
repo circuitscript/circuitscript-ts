@@ -7,7 +7,7 @@ def net(net_name, net_type = "any"):
         display: create graphic (params):
             hline: -50, 0, 100
             vpin: 1, 0, 50, -50, display_id=false
-            label: params.net_name, 0, -15, fontSize=50, anchor="center"
+            label: params.net_name, 0, -15, name="value", fontSize=50, anchor="center"
         type: "net"
         params:
             net_name: net_name
@@ -25,7 +25,7 @@ def label(value, anchor="left"):
         followWireOrientation: false
         display: create graphic (params):
             text_color: "#222"
-            label: params.value, 0, -10, fontSize=50, anchor=anchor
+            label: params.value, 0, -10, name="value", fontSize=50, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_id=false
         type: "net"
         params:
@@ -39,7 +39,7 @@ def port(value, portType="input"):
         copy: true
         display: create graphic (params):
             text_color: "#222"
-            label: params.value, 0, 0, fontSize=40, anchor="left", vanchor="center", portType=portType
+            label: params.value, 0, 0, name="value", fontSize=40, anchor="left", vanchor="center", portType=portType
             pin: 1, 0, 0, 0, 0, display_id=false
         type: "port"
         params:
@@ -57,8 +57,8 @@ def res(value):
             crect: 0, 0, width, height
             hpin: 1, -width/2 - 30, 0, 30, display_id=false
             hpin: 2, width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
-            label: params.value, 0, 0, fontSize=30, anchor="center", vanchor="center"
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, anchor="center", vanchor="center"
         type: "res"
         params:
             value: value
@@ -80,8 +80,8 @@ def cap(value):
             hline: -width/2, -20, width
             vpin: 1, 0, -100, 80, display_id=false
             vpin: 2, 0, 100, -80, display_id=false
-            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
-            label: params.value, 80, 30, fontSize=50, anchor = "left", vanchor="center"
+            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
+            label: params.value, 80, 30, name="value", fontSize=50, anchor = "left", vanchor="center"
         type: "cap"
         params:
             value: value
@@ -104,8 +104,8 @@ def ind(value):
             arc: 75, 0, 25, 180, 360
             hpin: 1, -width/2 - 100, 0, 100, display_id=false
             hpin: 2, width/2 + 100, 0, -100, display_id=false
-            label: (params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 25 + params.refdes_offsety, fontSize=50, anchor="left")
-            label: (params.value, 0, 50, fontSize=50, anchor="center", vanchor="center")
+            label: (params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 25 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left")
+            label: (params.value, 0, 50, name="value", fontSize=50, anchor="center", vanchor="center")
         params:
             value: value
             refdes_offsetx: 0
@@ -125,7 +125,7 @@ def diode():
             vline: width/2, -height/2, height
             hpin: 1, -width/2-100, 0, 100    # cathode
             hpin: 2, width/2 + 100, 0, -100  # anode
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -145,7 +145,7 @@ def led(color):
 
             hpin: 1, "C", width/2 + 100, 0, -100, display_name=false  # cathode
             hpin: 2, "A", -width/2-100, 0, 100, display_name=false    # anode
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
             label: params.color, 0, 100, fontSize=40, anchor="center", vanchor="bottom"
         params:
             size: "0603"
@@ -166,7 +166,7 @@ def cgnd():
             hline: -10, 5, 20
             hline: -5, 10, 10
             vpin: 1, 0, -10, 10, display_id=false
-            label: params.net_name, 0, 22, fontSize=50, anchor="center"
+            label: params.net_name, 0, 22, name="value", fontSize=50, anchor="center"
         type: "net"
         params:
             net_name: net_name
@@ -182,7 +182,7 @@ def dgnd(net_name="GND"):
         display: create graphic (params):
             triangle: 0, 0, 0, height, width
             vpin: 1, 0, -50, 50, display_id=false
-            label: params.net_name, 0, height + 50, fontSize=50, anchor="center", vanchor="center"
+            label: params.net_name, 0, height + 50, name="value", fontSize=50, anchor="center", vanchor="center"
         type: "net"
         params:
             net_name: net_name
@@ -255,8 +255,8 @@ def pot(value):
             vpin: 3, 0, height/2 + 80, -80, display_id=false
             # Arrowhead pointing up toward body (wiper indicator)
             path: ("M", -12, height/2 + 14, "L", 0, height/2, "L", 12, height/2 + 14)
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
-            label: params.value, 0, 0, fontSize=30, anchor="center", vanchor="center"
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, anchor="center", vanchor="center"
         params:
             value: value
             refdes_offsetx: 0
@@ -280,8 +280,8 @@ def cap_pol(value):
             line_width: 8
             hline: -50, -50, 30
             vline: -35, -65, 30
-            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
-            label: params.value, 80, 30, fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
+            label: params.value, 80, 30, name="value", fontSize=50, anchor="left", vanchor="center"
         params:
             value: value
             size: "0402"
@@ -303,7 +303,7 @@ def ferrite(value):
             fill: "none"
             hpin: 1, -width/2 - 30, 0, 30, display_id=false
             hpin: 2, width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
         params:
             value: value
             refdes_offsetx: 0
@@ -327,7 +327,7 @@ def xtal(frequency):
             crect: 0, 0, width, height
             hpin: 1, -width/2 - 120, 0, 120, display_id=false
             hpin: 2, width/2 + 120, 0, -120, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
             label: params.frequency, 0, height/2 + 20, fontSize=50, anchor="center", vanchor="top"
         params:
             frequency: frequency
@@ -347,8 +347,8 @@ def fuse(value):
             hline: -width/2, 0, width
             hpin: 1, -width/2 - 30, 0, 30, display_id=false
             hpin: 2, width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="left"
-            label: params.value, 0, 0, fontSize=30, anchor="center", vanchor="center"
+            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, anchor="center", vanchor="center"
         params:
             value: value
             refdes_offsetx: 0
@@ -365,7 +365,7 @@ def jumper():
             arc: 0, 0, 50, 180, 360
             hpin: 1, -150, 0, 100, display_id=false
             hpin: 2, 150, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_prefix: "JP"
             refdes_offsetx: 0
@@ -391,7 +391,7 @@ def zener():
             line: width/2, height/2, width/2 + 20, height/2 + 20
             hpin: 1, -width/2 - 100, 0, 100, display_id=false
             hpin: 2, width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, -20- params.refdes_offsetx, -110 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, -20- params.refdes_offsetx, -110 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -412,7 +412,7 @@ def schottky():
             path: ("M", width/2, height/2, "L", width/2 + 20, height/2, "L", width/2 + 20, height/2 - 20)
             hpin: 1, -width/2 - 100, 0, 100, display_id=false
             hpin: 2, width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -438,7 +438,7 @@ def tvs():
             #hline: -width/2 + 20, height/2, -20
             hpin: 1, -width/2 - 100, 0, 100, display_id=false
             hpin: 2, width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -465,7 +465,7 @@ def photodiode():
 
             hpin: 1, -width/2 - 100, 0, 100, display_id=false
             hpin: 2, width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -497,7 +497,7 @@ def npn():
             hpin: 1, -120, 0, 100, display_id=false     # base
             vpin: 2, 60, -200, 100, display_id=false    # collector
             vpin: 3, 60, 200, -100, display_id=false    # emitter
-            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -525,7 +525,7 @@ def pnp():
             hpin: 1, -120, 0, 100, display_id=false
             vpin: 2, 60, -200, 100, display_id=false
             vpin: 3, 60, 200, -100, display_id=false
-            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -553,7 +553,7 @@ def pmos():
             arrow: 100, 150, -12.5,150
             vline: -12.5, 150-20, 40
 
-            label: params.refdes, 70, -60, anchor="center"
+            label: params.refdes, 70, -60, name="refdes", anchor="center"
             label: params.mpn, 0, 250, anchor="center"
 
             hpin: 1, "D", 200, 100, -100, display_id=false, display_name=false
@@ -589,7 +589,7 @@ def nmos():
             arrow: -100, 150, 12.5,150
             vline: 12.5, 150-20, 40
 
-            label: params.refdes, 70, -60, anchor="center"
+            label: params.refdes, 70, -60, name="refdes", anchor="center"
             label: params.mpn, 0, 250, anchor="center"
 
             hpin: 1, "D", 200, 100, -100, display_id=false, display_name=false
@@ -618,7 +618,7 @@ def opamp():
             hpin: 1, "OUT", width/2 + 100, 0, -100, display_id=false, display_name = false
             hpin: 2, "-", -width/2 - 100, 50, 100, display_id=false
             hpin: 3, "+", -width/2 - 100, -50, 100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -638,7 +638,7 @@ def comparator():
             hpin: 3, "+", -width/2 - 100, -50, 100, display_id=false
             # Open-collector circle at output
             circle: width/2 + 15, 0, 15
-            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -659,7 +659,7 @@ def switch_spst():
             line: -48, 0, 45, -60
             hpin: 1, -160, 0, 100, display_id=false
             hpin: 2, 160, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -682,7 +682,7 @@ def switch_pb():
 
             hpin: 1, -160, 20, 100, display_id=false
             hpin: 2, 160, 20, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -701,7 +701,7 @@ def conn_single_row(num_pins):
                 circle: 0, i * 100, 40
                 hpin: (i+1), -200, i * 100,   160
 
-            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, align="center"
+            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, name="refdes", align="center"
             #label: "mpn", -20, 20 + 4, "?", vanchor="top"
         params:
             refdes_offsetx: 0
@@ -743,7 +743,7 @@ def conn_double_rows(num_pins, pin_order = "sequence"):
                 hpin: array_get(left_pins, i), -200, i * 100, 100
                 hpin: array_get(right_pins, i), 200, i * 100, -100
 
-            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, align="center"
+            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, name="refdes", align="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -761,7 +761,7 @@ def test_point():
         display: create graphic (params):
             circle: 0, -20, 20
             vpin: 1, 0, 100, -100, display_id=false
-            label: params.refdes, 40 + params.refdes_offsetx, -20 + params.refdes_offsety, fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 40 + params.refdes_offsetx, -20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0

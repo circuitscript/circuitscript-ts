@@ -55,6 +55,9 @@ export type ScriptOptions = {
     lexerTokens?: number | boolean,
     lexerMapping?: string | boolean,
     lexerSummary?: boolean,
+
+    // KiCad schematic output version: '9' or '10' (default '9')
+    kiCadVersion?: string,
 };
 
 export function prepareFile(textData: string): {

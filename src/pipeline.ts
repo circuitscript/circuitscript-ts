@@ -24,6 +24,7 @@ import { FrameParamKeys } from "./objects/Frame.js";
 import { DocumentVariable, ImportedLibrary } from "./objects/types.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
+import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
 import { EvaluateERCRules } from "./rules-check/rules.js";
 import { printWarnings, generateDebugSequenceAction, 
@@ -37,8 +38,12 @@ import { BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError,
 export async function renderScript(scriptData: string, outputPath: string | null,
     options: ScriptOptions): Promise<RenderScriptReturn> {
 
+    const kiCadVersion = options.kiCadVersion === '10' ? KiCadVersion.V10 : KiCadVersion.V9;
+    const env = options.environment;
+
     const parseHandlers = [
         new KiCadNetListOutputHandler(),
+        new KiCadSchOutputHandler(kiCadVersion, env.getPackageVersion()),
     ];
 
     return renderScriptCustom(scriptData, outputPath, options, parseHandlers,
@@ -354,6 +359,22 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
             showStats && console.log('Layout took:', layoutTimer.lap());
 
             dumpData && environment.writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
+
+            // Call afterRender handlers with layout data (sheetFrames)
+            for (let i = 0; i < parseHandlers.length; i++) {
+                const handler = parseHandlers[i];
+                if (handler.afterRender) {
+                    const keepParsing = handler.parse(visitor,
+                        outputPath, fileExtension, sheetFrames);
+
+                    if (!keepParsing) {
+                        return {
+                            svgOutput: null,
+                            errors
+                        };
+                    }
+                }
+            }
 
             const generateSvgTimer = new SimpleStopwatch();
 
