@@ -1637,6 +1637,8 @@ export class ExecutionContext {
         componentPoint._pointLinkComponent = usePointLinkComponent;
         componentPoint.addDefaultUnit(this.getPointSymbol(useName));
 
+        componentPoint._isInternalPathObject = true;
+
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });
 

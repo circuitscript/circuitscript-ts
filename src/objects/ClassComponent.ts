@@ -281,6 +281,9 @@ export class ClassComponent {
 
     pinUnitMap = new Map<PinId, ComponentUnit>();
 
+    // If true, this component is created just for paths (branch, parallel, etc.)
+    _isInternalPathObject = false;
+
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;

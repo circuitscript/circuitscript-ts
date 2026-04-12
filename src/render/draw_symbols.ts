@@ -13,8 +13,9 @@ import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSy
     PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
     defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "../globals.js";
-import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, LabelStyle, 
-    Textbox, VerticalAlign, 
+import Flatten from '@flatten-js/core';
+import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, LabelStyle,
+    Textbox, VerticalAlign,
     VerticalAlignProp} from "./geometry.js";
 import { Logger } from "../logger.js";
 import { PinTypes } from "../objects/PinTypes.js";
@@ -25,6 +26,27 @@ import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { Styles } from "src/styles.js";
 
+
+export type PathDrawItem = {
+    kind: 'path';
+    path: string;
+    fillColor: string;
+    lineColor: string;
+    lineWidth: NumericValue;
+    isClosedPolygon: boolean;
+};
+
+export type CircleDrawItem = {
+    kind: 'circle';
+    cx: number;
+    cy: number;
+    radius: number;
+    lineWidth: NumericValue;
+    lineColor: string;
+    fillColor: string;
+};
+
+export type DrawItem = PathDrawItem | CircleDrawItem;
 
 /**
  * Base class for a graphical object on the schematic. Defines the position
@@ -195,15 +217,27 @@ export abstract class SymbolGraphic {
     protected drawBody(group: G): void {
         // Draws the symbol body
 
-        const paths = this.drawing.getPaths();
-        paths.forEach(pathInfo => {
-            const {path, lineColor, fillColor, lineWidth} = pathInfo;
-            group.path(path)
-                .stroke({
-                    width: lineWidth.toNumber(),
-                    color: lineColor,
-                })
-                .fill(fillColor)
+        const items = this.drawing.getPaths();
+        items.forEach(item => {
+            if (item.kind === 'circle') {
+                const {cx, cy, radius, lineColor, fillColor, lineWidth} = item;
+                group.circle(radius * 2)
+                    .cx(cx)
+                    .cy(cy)
+                    .stroke({
+                        width: lineWidth.toNumber(),
+                        color: lineColor,
+                    })
+                    .fill(fillColor);
+            } else {
+                const {path, lineColor, fillColor, lineWidth} = item;
+                group.path(path)
+                    .stroke({
+                        width: lineWidth.toNumber(),
+                        color: lineColor,
+                    })
+                    .fill(fillColor);
+            }
         });
     }
 
@@ -662,9 +696,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     // circle params: center x, center y, radius
                     // Circle consists of drawing two arcs of 180 degrees each
                     // @ts-ignore
-                    drawing.addArc(...positionParams, numeric(0), numeric(180));
-                    // @ts-ignore
-                    drawing.addArc(...positionParams, numeric(180), numeric(360));
+                    drawing.addCircle(...positionParams);
                     break;
 
                 case PlaceHolderCommands.triangle:
@@ -953,7 +985,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 vanchor: VerticalAlign.Center,
                 textColor: pinNameColor,
                 angle: numeric(usePinIdAngle)
-            });
+            }, "pin-name_*");
 
             const pinDisplayText = pinId.toString();
 
@@ -966,7 +998,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 vanchor: pinIdVAlignment,
                 textColor: lineColor,
                 angle: numeric(usePinIdAngle)
-            });
+            }, "pin-id_*");
         }
     }
 
@@ -1129,7 +1161,7 @@ export class SymbolCustom extends SymbolGraphic {
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
-            });
+            }, "pin-name_*");
 
             // Add the pin number
             drawing.addLabel(leftPinStart.sub(milsToMM(10)), pinY.sub(milsToMM(10)), pin.pinId.toString(), {
@@ -1137,7 +1169,7 @@ export class SymbolCustom extends SymbolGraphic {
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor
-            });
+            }, "pin-id_*");
         }
 
         for (const pin of rightPins) {
@@ -1151,7 +1183,7 @@ export class SymbolCustom extends SymbolGraphic {
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
-            });
+            }, "pin-name_*");
 
             // Add the pin number
             drawing.addLabel(rightPinStart.add(milsToMM(10)), pinY.sub(milsToMM(10)), pin.pinId.toString(), {
@@ -1159,7 +1191,7 @@ export class SymbolCustom extends SymbolGraphic {
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor
-            });
+            }, "pin-id_*");
         }
 
         for (const pin of topPins) {
@@ -1176,7 +1208,7 @@ export class SymbolCustom extends SymbolGraphic {
                 vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
                 angle: numeric(-90),
-            });
+            }, "pin-name_*");
 
             // Add the pin number
             drawing.addLabel(pinX.sub(milsToMM(10)), topPinStart.sub(milsToMM(10)), pin.pinId.toString(), {
@@ -1185,7 +1217,7 @@ export class SymbolCustom extends SymbolGraphic {
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor,
                 angle: numeric(-90),
-            });
+            }, "pin-id_*");
         }
 
         for (const pin of bottomPins) {
@@ -1201,7 +1233,7 @@ export class SymbolCustom extends SymbolGraphic {
                 vanchor: VerticalAlign.Center,
                 textColor: ColorScheme.PinNameColor,
                 angle: numeric(-90),
-            });
+            }, "pin-name_*");
 
             // Add the pin number
             drawing.addLabel(pinX.sub(milsToMM(10)), bottomPinStart.add(milsToMM(10)), pin.pinId.toString(), {
@@ -1210,17 +1242,17 @@ export class SymbolCustom extends SymbolGraphic {
                 vanchor: VerticalAlign.Bottom,
                 textColor: defaultLineColor,
                 angle: numeric(-90)
-            });
+            }, "pin-id_*");
         } 
 
         const instanceName = drawing.variables.get('refdes');
         instanceName && drawing.addLabel(
-            bodyWidthMM.neg().half(), 
-            bodyHeightMM.neg().half().sub(milsToMM(20)
-        ), instanceName, {
+            bodyWidthMM.neg().half(),
+            bodyHeightMM.neg().half().sub(milsToMM(20)),
+            instanceName, {
             fontSize: numeric(CustomSymbolRefDesSize),
             anchor: HorizontalAlign.Left,
-        });
+        }, "refdes");
 
         const acceptedMPNKeys = ['MPN', 'mpn', 'manufacturer_pn'];
 
@@ -1817,10 +1849,21 @@ export class SymbolDrawing {
         // Angles in degrees, convert to radians
         startAngle = startAngle.mul(Math.PI).div(180);
         endAngle = endAngle.mul(Math.PI).div(180);
+
+        const sweep = startAngle < endAngle;
         
         this.items.push(
-            Geometry.arc([x, y], radius, startAngle, endAngle, true));
+            Geometry.arc([x, y], radius, startAngle, endAngle, sweep));
 
+        return this;
+    }
+
+    addCircle(x: NumericValue, y: NumericValue, radius: NumericValue): SymbolDrawing {
+        x = milsToMM(x);
+        y = milsToMM(y);
+        radius = milsToMM(radius);
+
+        this.items.push(Geometry.circle([x,y], radius));
         return this;
     }
 
@@ -1829,16 +1872,13 @@ export class SymbolDrawing {
         return this;
     }
 
-    getPaths(): {path: string, 
-        fillColor: string, 
-        lineColor: string, 
-        lineWidth: NumericValue}[] {
-        
+    getPaths(): DrawItem[] {
+
         let currentFill = "#fff";
         let currentLineWidth = numeric(1);
         let currentLineColor = '#333';
 
-        const pathItems = [];
+        const pathItems: DrawItem[] = [];
 
         this.items.forEach(item => {
             if (!(item instanceof Textbox)){
@@ -1855,19 +1895,35 @@ export class SymbolDrawing {
                     tmpResult = Geometry.groupRotate(tmpResult, this.angle,
                         this.mainOrigin);
 
-                    const { path, isClosedPolygon } =
-                        this.featuresToPath(tmpResult, this.flipX, this.flipY);
+                    const transformed = tmpResult[0];
 
-                    pathItems.push({
-                        path: path,
-                        lineWidth: currentLineWidth,
-                        lineColor: currentLineColor,
-                        fillColor: isClosedPolygon ? currentFill : 'none',
-                    });
+                    if (transformed instanceof Flatten.Circle) {
+                        pathItems.push({
+                            kind: 'circle',
+                            cx: transformed.center.x,
+                            cy: transformed.center.y,
+                            radius: transformed.r,
+                            lineWidth: currentLineWidth,
+                            lineColor: currentLineColor,
+                            fillColor: currentFill,
+                        });
+                    } else {
+                        const { path, isClosedPolygon } =
+                            this.featuresToPath(tmpResult, this.flipX, this.flipY);
+
+                        pathItems.push({
+                            kind: 'path',
+                            path: path,
+                            lineWidth: currentLineWidth,
+                            lineColor: currentLineColor,
+                            fillColor: isClosedPolygon ? currentFill : 'none',
+                            isClosedPolygon,
+                        });
+                    }
                 }
             }
         });
-        
+
         return pathItems;
     }
 

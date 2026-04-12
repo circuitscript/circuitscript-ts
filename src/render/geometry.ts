@@ -19,8 +19,9 @@ export type Multiline = Flatten.Multiline;
 export type Line = Flatten.Line;
 
 export type Arc = Flatten.Arc;
+export type Circle = Flatten.Circle;
 
-export type Feature = Segment | Polygon | Textbox | Arc | Multiline;
+export type Feature = Segment | Polygon | Textbox | Arc | Multiline | Circle;
 
 export type LabelStyle = {
     font?: string,
@@ -304,8 +305,13 @@ export class Geometry {
         startAngle: NumericValue, endAngle: NumericValue, sweepDirection: boolean): Arc {
         // Angle should be in radians for Flatten library.
         return new Flatten.Arc(Geometry.point(center[0], center[1]),
-            radius.toNumber(), 
+            radius.toNumber(),
             startAngle.toNumber(), endAngle.toNumber(), sweepDirection);
+    }
+
+    static circle(center: [x: NumericValue, y: NumericValue], radius: NumericValue): Circle {
+        return new Flatten.Circle(Geometry.point(center[0], center[1]),
+            radius.toNumber());
     }
 
     static getCoords(item: Feature): [x: NumericValue, y: NumericValue][] {

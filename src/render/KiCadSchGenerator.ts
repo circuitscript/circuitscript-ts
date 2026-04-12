@@ -12,6 +12,9 @@ import { SymbolDrawing, PinRenderInfo, SymbolCustom } from './draw_symbols.js';
 import { SheetFrame, RenderComponent } from './layout.js';
 import { ParserVisitor } from '../visitor.js';
 import { Id, RawAtom, raw, printTree } from './s_expressions.js';
+import { FrameParamKeys } from '../objects/Frame.js';
+import { ClassComponent } from '../objects/ClassComponent.js';
+import Flatten from '@flatten-js/core';
 
 export enum KiCadVersion {
     V9 = 9,
@@ -251,6 +254,14 @@ export class KiCadSchGenerator {
     }
 
     generate(visitor: ParserVisitor, sheetFrames: SheetFrame[], outputPath: string): string {
+
+        // For kicad schematic output, enforce that a user-defined `sheet:` must
+        // be specified. Without a user-defined sheet, the first sheet frame
+        // will be automatically generated.
+        if (sheetFrames.length > 0 && sheetFrames[0].frame.frameId <= 0){
+            throw "No sheet specified for kicad schematic output"; 
+        }
+
         const allComponents: RenderComponent[] = [];
         for (const sf of sheetFrames) {
             allComponents.push(...sf.components);
@@ -260,8 +271,7 @@ export class KiCadSchGenerator {
 
         // Skip components that are internal to circuitscript (branches, points, etc.)
         const keepComponents = allComponents.filter(item =>
-            !item.component.instanceName.startsWith('-') &&
-            !item.component.instanceName.startsWith('point.')
+            !item.component._isInternalPathObject
         );
 
         this.powerComponentIndexes.clear();
@@ -275,12 +285,23 @@ export class KiCadSchGenerator {
         const netListMap = this.buildPinNetMap(visitor);
         const projectName = path.basename(outputPath, path.extname(outputPath));
 
+        // Resolve paper size from the sheet_type component's paper_size parameter
+        let paperSize = 'A4';
+        if (sheetFrames.length > 0) {
+            const frameParams = sheetFrames[0].frame.frame.parameters;
+            const frameComponent = frameParams.get(FrameParamKeys.SheetType) as ClassComponent | undefined;
+            if (frameComponent) {
+                const ps = frameComponent.getParam(FrameParamKeys.PaperSize);
+                if (ps) paperSize = String(ps);
+            }
+        }
+
         const root = n('kicad_sch',
             n('version', raw(this.fileVersion())),
             n('generator', 'circuitscript'),
             n('generator_version', this.circuitscriptVersion),
             n('uuid', schematicUuid),
-            n('paper', 'A4'),
+            n('paper', paperSize),
 
             // lib_symbols
             n('lib_symbols',
@@ -528,12 +549,21 @@ export class KiCadSchGenerator {
         const stroke = n('stroke', n('width', raw(mm(lineWidth))), n('type', raw('default')));
         const fill = n('fill', n('type', raw(fillType)));
 
-        // Arc: Flatten.Arc has center, r, startAngle, endAngle
-        if (f.center !== undefined && f.r !== undefined) {
+        // Circle: Flatten.Circle has center and r but no startAngle
+        if (f instanceof Flatten.Circle) {
+            return n('circle',
+                n('center', raw(mm(f.center.x)), raw(mm(-f.center.y))),
+                n('radius', raw(mm(f.r))),
+                stroke,
+                fill
+            );
+        } else if (f instanceof Flatten.Arc) {
             const start = f.start;
             const end = f.end;
-            // KiCad lib symbols use Y-up; negate all y coordinates and mid-angle sin term
-            const midAngle = f.startAngle + (f.endAngle - f.startAngle) / 2;
+            // KiCad lib symbols use Y-up; negate all y coordinates and mid-angle sin term.
+            const midAngle = f.counterClockwise
+                ? f.startAngle + (f.endAngle - f.startAngle) / 2
+                : (f.startAngle + f.endAngle) / 2 + Math.PI;
             const midX = f.center.x + f.r * Math.cos(midAngle);
             const midY = -(f.center.y + f.r * Math.sin(midAngle));
 
@@ -551,16 +581,21 @@ export class KiCadSchGenerator {
         const vertices = Array.from(f.vertices) as { x: number; y: number }[];
         const ptsChildren: N[] = vertices.map(v => n('xy', raw(mm(v.x)), raw(mm(-v.y))));
 
+        let useFill:N;
+
         // Close polygon if 3+ vertices and last vertex differs from first
-        if (vertices.length > 2) {
+        if (f instanceof Flatten.Polygon) {
             const first = vertices[0];
             const last = vertices[vertices.length - 1];
             if (first.x !== last.x || first.y !== last.y) {
                 ptsChildren.push(n('xy', raw(mm(first.x)), raw(mm(-first.y))));
             }
+            useFill = fill;
+        } else {
+            useFill = n('fill', n('type', raw('none')));
         }
 
-        return n('polyline', n('pts', ...ptsChildren), stroke, fill);
+        return n('polyline', n('pts', ...ptsChildren), stroke, useFill);
     }
 
     /**
@@ -650,6 +685,11 @@ export class KiCadSchGenerator {
 
         const params = rc.component.parameters;
 
+        let setNotPlaced = false;
+        if (params.has('place') && (params.get('place') as boolean) === false){
+            setNotPlaced = true;
+        }
+
         if (params.has('net_name')) {
             // Power component: manually add Reference since there is no refdes label.
             children.push(
@@ -703,7 +743,7 @@ export class KiCadSchGenerator {
             n('unit', raw(1)),
             n('in_bom', raw('yes')),
             n('on_board', raw('yes')),
-            n('dnp', raw('no')),
+            n('dnp', raw(setNotPlaced ? 'yes' : 'no')),
             ...children
         );
     }
@@ -728,6 +768,13 @@ export class KiCadSchGenerator {
             // not created by the user code)
             if (rf.frame.frameId <= 0) continue;
             if (!rf.bounds) continue;
+
+            if (rf.frame.parameters.has('border')){
+                const borderWidthValue = rf.frame.parameters.get('border').toNumber();
+                if (borderWidthValue === 0){
+                    continue;
+                }
+            }
 
             const xpos = rf.x.toNumber();
             const ypos = rf.y.toNumber();
