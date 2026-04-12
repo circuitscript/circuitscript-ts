@@ -8,10 +8,10 @@
 import { createHash } from 'crypto';
 import path from 'path';
 import { Geometry, GeometryProp, Feature, Textbox, HorizontalAlign, VerticalAlign } from './geometry.js';
-import { SymbolDrawing, PinRenderInfo } from './draw_symbols.js';
+import { SymbolDrawing, PinRenderInfo, SymbolCustom } from './draw_symbols.js';
 import { SheetFrame, RenderComponent } from './layout.js';
 import { ParserVisitor } from '../visitor.js';
-import { Id, IdObject, RawAtom, raw, printTree } from './s_expressions.js';
+import { Id, RawAtom, raw, printTree } from './s_expressions.js';
 
 export enum KiCadVersion {
     V9 = 9,
@@ -290,6 +290,7 @@ export class KiCadSchGenerator {
             // Wires and junctions
             ...sheetFrames.flatMap(sf => this.buildWires(sf)),
             ...sheetFrames.flatMap(sf => this.buildJunctions(sf)),
+            ...sheetFrames.flatMap(sf => this.buildFrameRectangles(sf)),
 
             // Component instance placements
             ...keepComponents.map(rc =>
@@ -337,6 +338,7 @@ export class KiCadSchGenerator {
         const angle = drawing.angle;
         const flipX = drawing.flipX;
         const flipY = drawing.flipY;
+        const isCustomSymbol = rc.symbol instanceof SymbolCustom;
 
         const children: Array<string | number | RawAtom | N> = [];
 
@@ -353,10 +355,25 @@ export class KiCadSchGenerator {
         children.push(n('exclude_from_sim', raw('no')));
         children.push(n('in_bom', raw('yes')));
         children.push(n('on_board', raw('yes')));
+        
+        // The value at position 4 is whether pin id/number is displayed.
+        const showPinNumbers = isCustomSymbol || drawing.pins.some(pin => pin[4] === true);
 
-        // For now hide all pin numbers and names; use the ones rendered by circuitscript as text.
-        children.push(n('pin_numbers', n('hide', raw('yes'))));
-        children.push(n('pin_names', n('offset', raw(0)), n('hide', raw('yes'))));
+        // The value at position 5 is whether pin name is displayed.
+        const showPinNames = isCustomSymbol || drawing.pins.some(pin => pin[5] === true);
+
+        const pinNameOffset = isCustomSymbol ? 0.002 : 0;
+
+        if (showPinNumbers) {
+            children.push(n('pin_numbers'));
+        } else {
+            children.push(n('pin_numbers', n('hide', raw('yes'))));
+        }
+        if (showPinNames) {
+            children.push(n('pin_names', n('offset', raw(pinNameOffset))));
+        } else {
+            children.push(n('pin_names', n('offset', raw(pinNameOffset)), n('hide', raw('yes'))));
+        }
 
         // Body geometry and pins (inside sub-symbol _1_1)
         let fillType = 'none';
@@ -466,33 +483,41 @@ export class KiCadSchGenerator {
         const offsetX = useComponentOrigin ? rc.x.toNumber() : 0;
         const offsetY = useComponentOrigin ? rc.y.toNumber() : 0;
 
-        return this.transformedLabels(rc).map(({ index, name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
-            let propName = `Text_${index}`;
-            if (name === 'refdes') propName = 'Reference';
-            else if (name === 'value') propName = 'Value';
+        return this.transformedLabels(rc)
+            .filter(({ name }) => {
+                if (name) {
+                    return !name.startsWith('pin-id_') && !name.startsWith('pin-name_');
+                } else {
+                    return true;
+                }
+            })
+            .map(({ index, name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
+                let propName = `Text_${index}`;
+                if (name === 'refdes') propName = 'Reference';
+                else if (name === 'value') propName = 'Value';
 
-            // Map CircuitScript anchor/vanchor to KiCad justify terms.
-            const justifyH = anchor === HorizontalAlign.Left ? 'left'
-                : anchor === HorizontalAlign.Right ? 'right'
-                : null;
-            const justifyV = vanchor === VerticalAlign.Top ? 'top'
-                : vanchor === VerticalAlign.Bottom ? 'bottom'
-                : null;
-            const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];
+                // Map CircuitScript anchor/vanchor to KiCad justify terms.
+                const justifyH = anchor === HorizontalAlign.Left ? 'left'
+                    : anchor === HorizontalAlign.Right ? 'right'
+                        : null;
+                const justifyV = vanchor === VerticalAlign.Top ? 'top'
+                    : vanchor === VerticalAlign.Bottom ? 'bottom'
+                        : null;
+                const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];
 
-            const effectsChildren: Array<N | RawAtom> = [
-                n('font', n('size', raw(mm(fontSizeMM)), raw(mm(fontSizeMM))))
-            ];
-            if (justifyParts.length > 0) {
-                effectsChildren.push(n('justify', ...justifyParts.map(p => raw(p))));
-            }
+                const effectsChildren: Array<N | RawAtom> = [
+                    n('font', n('size', raw(mm(fontSizeMM)), raw(mm(fontSizeMM))))
+                ];
+                if (justifyParts.length > 0) {
+                    effectsChildren.push(n('justify', ...justifyParts.map(p => raw(p))));
+                }
 
-            // Schematic space = CircuitScript Y-down; add placement origin, no Y negation
-            return n('property', propName, text,
-                n('at', raw(mm(offsetX + x)), raw(mm(offsetY + y)), raw(kicadAngle)),
-                n('effects', ...effectsChildren)
-            );
-        });
+                // Schematic space = CircuitScript Y-down; add placement origin, no Y negation
+                return n('property', propName, text,
+                    n('at', raw(mm(offsetX + x)), raw(mm(offsetY + y)), raw(kicadAngle)),
+                    n('effects', ...effectsChildren)
+                );
+            });
     }
 
     /**
@@ -686,6 +711,42 @@ export class KiCadSchGenerator {
     private getPowerComponentRef(rc: RenderComponent): string {
         const index = this.powerComponentIndexes.get(rc) ?? 0;
         return '#PWR' + index.toString().padStart(2, '0');
+    }
+
+    // -----------------------------------------------------------------------
+    // Frame rectangle generation
+    // -----------------------------------------------------------------------
+
+    /**
+     * For each user-defined frame in the sheet (frameId > 0), emit a KiCad
+     * rectangle graphic using the frame's bounding box.
+     */
+    private buildFrameRectangles(sf: SheetFrame): N[] {
+        const rects: N[] = [];
+        for (const rf of sf.frames) {
+            // If frameId is <= 0, then it is not a user-defined frame (i.e.
+            // not created by the user code)
+            if (rf.frame.frameId <= 0) continue;
+            if (!rf.bounds) continue;
+
+            const xpos = rf.x.toNumber();
+            const ypos = rf.y.toNumber();
+
+            const xmax = xpos + rf.bounds.xmax;
+            const ymax = ypos + rf.bounds.ymax;
+
+            const rectUuid = deterministicUUID(`frame_rect_${rf.frame.frameId}_${xpos}_${ypos}`);
+            rects.push(
+                n('rectangle',
+                    n('start', raw(mm(xpos)), raw(mm(ypos))),
+                    n('end', raw(mm(xmax)), raw(mm(ymax))),
+                    n('stroke', n('width', raw(0)), n('type', raw('default'))),
+                    n('fill', n('type', raw('none'))),
+                    n('uuid', rectUuid)
+                )
+            );
+        }
+        return rects;
     }
 
     // -----------------------------------------------------------------------
