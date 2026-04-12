@@ -323,6 +323,11 @@ export class Geometry {
         return feature.rotate(angleRads, Geometry.point(center[0], center[1]));
     }
 
+    static translate(feature: Feature, dx: number, dy: number): Feature {
+        const matrix = (new Flatten.Matrix()).translate(dx, dy);
+        return feature.transform(matrix);
+    }
+
     static flip(feature: Feature, flipX: number, flipY: number): Feature {
         const flipMatrix = (new Flatten.Matrix()).scale(
             flipX === 0 ? 1 : -1,
@@ -836,7 +841,8 @@ export enum VerticalAlignProp {
     Hanging = 'hanging',
     Middle = 'middle',
     Central = 'central',
-    TextTop = 'text-top'
+    TextTop = 'text-top',
+    Alphabetic = 'alphabetic',
 }
 
 // function getArcPoint(centerX: number, centerY: number, radius: number,

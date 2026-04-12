@@ -277,7 +277,7 @@ export abstract class SymbolGraphic {
             } else if (useDominantBaseline === VerticalAlign.Top) {
                 dominantBaseline = VerticalAlignProp.Hanging;
             } else if (useDominantBaseline === VerticalAlign.Bottom) {
-                dominantBaseline = VerticalAlignProp.TextTop;
+                dominantBaseline = VerticalAlignProp.Alphabetic;
             }
 
             // If middle aligned, don't do anything
@@ -291,7 +291,7 @@ export abstract class SymbolGraphic {
             if (dominantBaseline !== VerticalAlignProp.Central && 
                 ((isHorizontalLabel && this.flipY === 1) || (isVerticalLabel && this.flipX === 1))){
                 dominantBaseline = (dominantBaseline === VerticalAlignProp.Hanging)
-                    ? VerticalAlignProp.TextTop : VerticalAlignProp.Hanging;
+                    ? VerticalAlignProp.Alphabetic : VerticalAlignProp.Hanging;
             }
             
             const position = tmpLabel.getLabelPosition();
