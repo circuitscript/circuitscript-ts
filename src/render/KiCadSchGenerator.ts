@@ -75,6 +75,7 @@ export class KiCadSchGenerator {
     }
 
     powerComponentIndexes = new Map<RenderComponent, number>();
+    private currentProjectName = '';
 
     // -----------------------------------------------------------------------
     // Public entry point
@@ -284,6 +285,7 @@ export class KiCadSchGenerator {
 
         const netListMap = this.buildPinNetMap(visitor);
         const projectName = path.basename(outputPath, path.extname(outputPath));
+        this.currentProjectName = projectName;
 
         // Resolve paper size from the sheet_type component's paper_size parameter
         let paperSize = 'A4';
@@ -354,7 +356,7 @@ export class KiCadSchGenerator {
      * the instance placement uses angle 0.
      */
     private buildLibrarySymbol(rc: RenderComponent): N {
-        const symName = this.libSymId(rc);
+        const {symbolId:symbolId, symbolPart} = this.librarySymbolId(rc);
         const drawing = rc.symbol.drawing;
         const angle = drawing.angle;
         const flipX = drawing.flipX;
@@ -400,9 +402,11 @@ export class KiCadSchGenerator {
         let fillType = 'none';
         let lineWidth = 0;
 
-        // First pass: extract style properties
+        const subSymChildren: N[] = [];
+
+        // First pass: extract style properties and build geometry nodes with
+        // the current selected style properties.
         for (const item of drawing.items) {
-            if (!(item instanceof GeometryProp)) continue;
             if (item.name === 'fillColor') {
                 const fc = item.value as string;
                 fillType = fc === 'none' ? 'none'
@@ -412,16 +416,15 @@ export class KiCadSchGenerator {
                 lineWidth = (typeof lw === 'object' && lw !== null && typeof lw.toNumber === 'function')
                     ? lw.toNumber()
                     : Number(lw);
-            }
-        }
+            } else {
+                if (item instanceof GeometryProp || (item instanceof Textbox)){
+                    continue;
+                }
 
-        // Second pass: build geometry nodes
-        const subSymChildren: N[] = [];
-        for (const item of drawing.items) {
-            if (item instanceof GeometryProp || item instanceof Textbox) continue;
-            let feat = Geometry.flip(item as Feature, flipX, flipY);
-            feat = Geometry.rotateDegs(feat, angle, drawing.mainOrigin);
-            subSymChildren.push(this.buildFeature(feat, fillType, lineWidth));
+                let feat = Geometry.flip(item as Feature, flipX, flipY);
+                feat = Geometry.rotateDegs(feat, angle, drawing.mainOrigin);
+                subSymChildren.push(this.buildFeature(feat, fillType, lineWidth));
+            }
         }
 
         // Pins inside _1_1
@@ -432,13 +435,13 @@ export class KiCadSchGenerator {
         }
 
         if (subSymChildren.length > 0) {
-            children.push(n('symbol', `${symName}_1_1`, ...subSymChildren));
+            children.push(n('symbol', `${symbolPart}_1_1`, ...subSymChildren));
         }
 
         // Labels as KiCad property tokens
         children.push(...this.buildLibraryLabels(rc));
 
-        return n('symbol', symName, ...children);
+        return n('symbol', symbolId, ...children);
     }
 
     /**
@@ -673,7 +676,7 @@ export class KiCadSchGenerator {
         netListMap: Map<string, Map<string, string>>,
         schematicUuid: string, projectName: string): N {
 
-        const symName = this.libSymId(rc);
+        const {symbolId: symName} = this.librarySymbolId(rc);
         const x = rc.x.toNumber();
         const y = rc.y.toNumber();
         const refdes = rc.component.assignedRefDes ?? rc.component.instanceName;
@@ -850,15 +853,21 @@ export class KiCadSchGenerator {
     // Helpers
     // -----------------------------------------------------------------------
 
-    /** Unique lib_symbol name for a component instance */
-    private libSymId(rc: RenderComponent): string {
+    /** Unique lib_symbol name for a component instance, prefixed with the project name as the library. */
+    private librarySymbolId(rc: RenderComponent): {
+        symbolId: string,
+        symbolPart: string,
+    } {
         const refdes = rc.component.assignedRefDes ?? rc.component.instanceName;
         const unit = rc.unitId !== '__default' ? `_${rc.unitId}` : '';
-        const name = `${refdes}${unit}_sym`;
-        // Sanitize: KiCad parses colons as library:symbol separators, so the part
-        // after a colon must not start with a digit (invalid symbol unit name prefix).
-        // Replace colons with underscores to avoid this constraint.
-        return name.replace(/:/g, '_');
+        // Sanitize the symbol part: replace colons with underscores since KiCad
+        // parses colons as library:symbol separators and the symbol part must not
+        // start with a digit.
+        const symbolPart = `${refdes}${unit}_sym`.replace(/:/g, '_');
+        return {
+            symbolId: `${this.currentProjectName}:${symbolPart}`,
+            symbolPart,
+        }
     }
 
 }
