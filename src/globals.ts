@@ -185,7 +185,7 @@ export const RenderFlags = {
     
     ShowLabelBoxBounds:     false,
     ShowLabelOrigin:        false,
-    // ShowLabelBounds:        true,
+    ShowLabelBounds:        false,
 }
 
 // Used to differentiate between the main execution context and

@@ -261,6 +261,34 @@ export class ExecutionContext {
         return net1;
     }
 
+    /**
+     * Extracts a component definition name from a scoped execution context name.
+     *
+     * The input `name` is a fully-qualified scope path containing library segments
+     * in brackets (e.g. `[lib1][lib2]`) and a trailing function call segment of the
+     * form `funcName-<index>.`. This method collects all bracketed library names and
+     * combines them with the last function name into a dash-separated identifier.
+     *
+     * @param name - The scoped execution context name to parse.
+     * @returns A dash-joined string of library names and the last function name,
+     *          or `null` if the name does not match the expected pattern.
+     */
+    private extractComponentDefinitionName(name: string): string | null {
+        const matches = name.matchAll(/\[(\w+)\]/g);
+        const libraries: string[] = []
+        for (const match of matches) {
+            libraries.push(match[1]);
+        }
+
+        // last function definition
+        const lastFuncMatch = name.match(/([\w_]+)\-[\d]+\.$/);
+        if (lastFuncMatch) {
+            const funcName = lastFuncMatch[1];
+            return [...libraries, funcName].join("-");
+        }
+        return null;
+    }
+
     /** Given the component parameters, returns a component */
     createComponent(
         instanceName: string,
@@ -274,8 +302,8 @@ export class ExecutionContext {
             height?: number,
             copy: boolean,
             angle?: NumericValue,
+            
             followWireOrientation: boolean,
-
             units: [string, ComponentUnitDefinition][],
         },
         isModule = false
@@ -287,6 +315,11 @@ export class ExecutionContext {
             instanceName,
             pins.length
         );
+
+        if (!isModule){
+            component.definitionName = 
+                this.extractComponentDefinitionName(this.namespace); 
+        }
 
         pins.forEach((pin) => {
             component.pins.set(pin.id, pin);

@@ -672,7 +672,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                     ctx,
                     {
                         netNamespace: executor.netNamespace,
-                        namespace: importedLibrary.libraryNamespace
+                        namespace: importedLibrary.libraryNamespace,
                     }, [], [],
                     false
                 );
@@ -1217,7 +1217,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
                 const executionContextName = name;
                 const netNamespace = executor.netNamespace;
-                const libraryNamespace = `${BaseNamespace}${name}.`;
+
+                // The library name in the namespace string is wrapped with [ ].
+                const libraryNamespace = `${BaseNamespace}[${name}].`;
 
                 // Create a new context, so that it is easier to track the
                 // functions that were created within the imported library.
@@ -1593,7 +1595,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     ): ExecutionContext {
         const { 
             netNamespace = "",
-            namespace = null,
+            namespace = null
         } = options;
 
         // Create a new execution context, so that the commands are executed only

@@ -284,6 +284,15 @@ export class ClassComponent {
     // If true, this component is created just for paths (branch, parallel, etc.)
     _isInternalPathObject = false;
 
+    /** The name of the class definition that was used to create this component,
+     * in the form `[lib1]-[lib2]-...-funcName` (e.g. `std-res`, `mylib-npn`).
+     *
+     * Used by the KiCad exporter to share a single canonical lib_symbol entry
+     * across all instances of the same definition, rather than emitting one
+     * entry per component instance.
+     */
+    definitionName: string | null = null;
+
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;

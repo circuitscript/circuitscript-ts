@@ -253,6 +253,10 @@ export abstract class SymbolGraphic {
         });
     }
 
+    /**
+     * Label transforms are always applied in this order: flipx/y, then angle.
+     * @param group
+     */
     protected drawLabels(group: G): void {
         const labels = this.drawing.getLabels();
 
@@ -261,17 +265,19 @@ export abstract class SymbolGraphic {
 
             const {
                 fontSize = numeric(50),
+                
                 anchor = HorizontalAlign.Left,
                 vanchor = VerticalAlign.Bottom,
+                angle: tmpLabelAngle = numeric(0),
+
                 fontWeight = 'regular',
                 fontStyle = 'normal',
-                angle: tmpLabelAngle = numeric(0),
 
                 textColor = "#333",
             } = tmpLabel.style ?? {};
   
-            let anchorStyle = 'start';
-            let dominantBaseline = 'auto';
+            let anchorStyle = HorizontalAlignProp.Start;
+            let dominantBaseline = VerticalAlignProp.Alphabetic;
             
             let useAnchor = anchor;
             let useDominantBaseline = vanchor;
@@ -289,14 +295,9 @@ export abstract class SymbolGraphic {
                 useDominantBaseline = this.flipDominantBaseline(vanchor);
             }
 
-            /** 
-             *    Direction       | flipX                 | flipY      
-             *    Horizontal      | if 1, flip anchor     | if 1, flip baseline
-             *    Vertical        | if 1, flip baseline   | if 1, flip anchor
-             */
-
-            const isHorizontalLabel = finalLabelAngle === 0 || finalLabelAngle === 180;
-            const isVerticalLabel = finalLabelAngle === 90 || finalLabelAngle === -90;
+            // If the label is a horizontal label, then it is NOT a vertical label.
+            const isHorizontalLabel = labelAngle === 0 || labelAngle == 180;
+            const isVerticalLabel = !isHorizontalLabel;
 
             if (useAnchor === HorizontalAlign.Center) {
                 anchorStyle = HorizontalAlignProp.Middle;
@@ -306,6 +307,18 @@ export abstract class SymbolGraphic {
                 anchorStyle = HorizontalAlignProp.End;
             }
 
+            // If horizontal label and flipX is performed, then invert the anchorStyle.
+            // For vertical label, the x-axis still remains the same (vertical 
+            // axis), so invert anchorStyle (not the dominant baseline). 
+            if ((isHorizontalLabel && this.flipX) || (isVerticalLabel && this.flipY)){
+                // invert the anchor
+                if (useAnchor === HorizontalAlign.Left){
+                    anchorStyle = HorizontalAlignProp.End;
+                } else if (useAnchor === HorizontalAlign.Right){
+                    anchorStyle = HorizontalAlignProp.Start;
+                }
+            }
+
             if (useDominantBaseline === VerticalAlign.Center) {
                 dominantBaseline = VerticalAlignProp.Central;
             } else if (useDominantBaseline === VerticalAlign.Top) {
@@ -313,21 +326,16 @@ export abstract class SymbolGraphic {
             } else if (useDominantBaseline === VerticalAlign.Bottom) {
                 dominantBaseline = VerticalAlignProp.Alphabetic;
             }
-
-            // If middle aligned, don't do anything
-            if (anchorStyle !== HorizontalAlignProp.Middle && 
-                ((isHorizontalLabel && this.flipX === 1) || (isVerticalLabel && this.flipY === 1))){
-                anchorStyle = (anchorStyle === HorizontalAlignProp.Start) 
-                        ? HorizontalAlignProp.End : HorizontalAlignProp.Start;
-            }
-
-            // If middle aligned, don't do anything.
-            if (dominantBaseline !== VerticalAlignProp.Central && 
-                ((isHorizontalLabel && this.flipY === 1) || (isVerticalLabel && this.flipX === 1))){
-                dominantBaseline = (dominantBaseline === VerticalAlignProp.Hanging)
-                    ? VerticalAlignProp.Alphabetic : VerticalAlignProp.Hanging;
-            }
             
+            // Similar logic as above.
+            if ((isHorizontalLabel && this.flipY) || (isVerticalLabel && this.flipX)){
+                if (useDominantBaseline === VerticalAlign.Top){
+                    dominantBaseline = VerticalAlignProp.Alphabetic;
+                } else if (useDominantBaseline === VerticalAlign.Bottom){
+                    dominantBaseline = VerticalAlignProp.Hanging;
+                }
+            }
+                        
             const position = tmpLabel.getLabelPosition();
 
             if (this.flipX !== 0) {
@@ -449,32 +457,41 @@ export abstract class SymbolGraphic {
                     .rotate(labelAngle, -box.xmin, -box.ymin);
             }
 
-            // Display text bounds
-            if (RenderFlags.ShowLabelBounds) {
-                const textBounds = tmpLabel.textMeasurementBounds;
-                // display text bounds
-
-                const xOffset = (this.flipX !== 0) ? textBounds.width : 0;
-
-                textContainer.rect(
-                    textBounds.width, textBounds.height
-                )
-                .fill('none')
-                .stroke({
-                        width: 0.1,
-                        color: 'red',
-                    })
-                    .translate(textBounds.x - xOffset, textBounds.y);
-            }
-
             textContainer.translate(
                     translateX.toNumber(), translateY.toNumber())
-                .rotate(useRotateAngle, 
+                .rotate(useRotateAngle,
                     -translateX.toNumber(), -translateY.toNumber());
 
             let useLabelAngle = labelAngle;
             if (isRotation180) {
                 useLabelAngle = (labelAngle + 180) % 360;
+            }
+
+            // Display text bounds, still not working properly.
+            if (RenderFlags.ShowLabelBounds) {
+                const textBounds = tmpLabel.textMeasurementBounds;
+
+                // Mirror the box to match the actual rendered position.
+                // The axis that each flip affects depends on label orientation
+                // (matches the anchor/baseline inversion logic above):
+                //   Horizontal: flipX → anchor (X), flipY → baseline (Y)
+                //   Vertical:   flipX → baseline (Y), flipY → anchor (X)
+                const flipHAnchor = (isHorizontalLabel && this.flipX) || (isVerticalLabel && this.flipY);
+                const flipVAnchor = (isHorizontalLabel && this.flipY) || (isVerticalLabel && this.flipX);
+
+                const boundsX = flipHAnchor ? -textBounds.x2 : textBounds.x;
+                const boundsY = flipVAnchor ? textBounds.y : -textBounds.y2;
+
+                textContainer.rect(
+                    textBounds.width, textBounds.height
+                )
+                    .fill('none')
+                    .stroke({
+                        width: 0.1,
+                        color: 'red',
+                    })
+                    .translate(boundsX, boundsY)
+                    .rotate(useLabelAngle, -boundsX, -boundsY);
             }
 
             const fontProperties = {
@@ -1266,7 +1283,7 @@ export class SymbolCustom extends SymbolGraphic {
                     fontSize: numeric(CustomSymbolParamTextSize),
                     anchor: HorizontalAlign.Left,
                     vanchor: VerticalAlign.Top,
-                });
+                }, key);
             }
         });
     }

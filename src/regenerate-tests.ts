@@ -11,6 +11,10 @@ import { NodeScriptEnvironment } from "./environment/environment.js";
 const mainDir = './__tests__/testData/renderData/';
 
 const env = new NodeScriptEnvironment();
+env.getPackageVersion = (): string => {
+    return "0.0.0";
+}
+
 NodeScriptEnvironment.setInstance(env);
 
 async function regenerateTests(extra = "", fileList: string[] = []): Promise<string[]> {

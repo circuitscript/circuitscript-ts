@@ -80,8 +80,9 @@ export type NewContextOptions = {
     netNamespace?: string,
     namespace?: string,
 
-    // The nth time that the function was called within the executing scope.
-    functionCallIndex: number,
+    // Only for function contexts: The nth time that the function was 
+    // called within the executing scope.
+    functionCallIndex?: number,
 }
 
 export type CFunctionResult = [
