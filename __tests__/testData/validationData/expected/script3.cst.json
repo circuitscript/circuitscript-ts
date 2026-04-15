@@ -1,626 +1,626 @@
 [
     [
-        "--.std.net",
+        "--.[std].net",
         "function"
     ],
     [
-        "--.std.net_sym.net_name",
+        "--.[std].net_sym.net_name",
         "variable"
     ],
     [
-        "--.std.net_sym.net_type",
+        "--.[std].net_sym.net_type",
         "variable"
     ],
     [
-        "--.std.net_sym.params",
+        "--.[std].net_sym.params",
         "variable"
     ],
     [
-        "--.std.supply",
+        "--.[std].supply",
         "function"
     ],
     [
-        "--.std.supply_sym.net_name",
+        "--.[std].supply_sym.net_name",
         "variable"
     ],
     [
-        "--.std.supply_sym.net_obj",
+        "--.[std].supply_sym.net_obj",
         "variable"
     ],
     [
-        "--.std.label",
+        "--.[std].label",
         "function"
     ],
     [
-        "--.std.label_sym.value",
+        "--.[std].label_sym.value",
         "variable"
     ],
     [
-        "--.std.label_sym.anchor",
+        "--.[std].label_sym.anchor",
         "variable"
     ],
     [
-        "--.std.label_sym.params",
+        "--.[std].label_sym.params",
         "variable"
     ],
     [
-        "--.std.port",
+        "--.[std].port",
         "function"
     ],
     [
-        "--.std.port_sym.value",
+        "--.[std].port_sym.value",
         "variable"
     ],
     [
-        "--.std.port_sym.portType",
+        "--.[std].port_sym.portType",
         "variable"
     ],
     [
-        "--.std.port_sym.params",
+        "--.[std].port_sym.params",
         "variable"
     ],
     [
-        "--.std.res",
+        "--.[std].res",
         "function"
     ],
     [
-        "--.std.res_sym.value",
+        "--.[std].res_sym.value",
         "variable"
     ],
     [
-        "--.std.res_sym.width",
+        "--.[std].res_sym.width",
         "variable"
     ],
     [
-        "--.std.res_sym.height",
+        "--.[std].res_sym.height",
         "variable"
     ],
     [
-        "--.std.res_sym.params",
+        "--.[std].res_sym.params",
         "variable"
     ],
     [
-        "--.std.cap",
+        "--.[std].cap",
         "function"
     ],
     [
-        "--.std.cap_sym.value",
+        "--.[std].cap_sym.value",
         "variable"
     ],
     [
-        "--.std.cap_sym.width",
+        "--.[std].cap_sym.width",
         "variable"
     ],
     [
-        "--.std.cap_sym.height",
+        "--.[std].cap_sym.height",
         "variable"
     ],
     [
-        "--.std.cap_sym.params",
+        "--.[std].cap_sym.params",
         "variable"
     ],
     [
-        "--.std.ind",
+        "--.[std].ind",
         "function"
     ],
     [
-        "--.std.ind_sym.value",
+        "--.[std].ind_sym.value",
         "variable"
     ],
     [
-        "--.std.ind_sym.width",
+        "--.[std].ind_sym.width",
         "variable"
     ],
     [
-        "--.std.ind_sym.height",
+        "--.[std].ind_sym.height",
         "variable"
     ],
     [
-        "--.std.ind_sym.params",
+        "--.[std].ind_sym.params",
         "variable"
     ],
     [
-        "--.std.diode",
+        "--.[std].diode",
         "function"
     ],
     [
-        "--.std.diode_sym.width",
+        "--.[std].diode_sym.width",
         "variable"
     ],
     [
-        "--.std.diode_sym.height",
+        "--.[std].diode_sym.height",
         "variable"
     ],
     [
-        "--.std.diode_sym.params",
+        "--.[std].diode_sym.params",
         "variable"
     ],
     [
-        "--.std.led",
+        "--.[std].led",
         "function"
     ],
     [
-        "--.std.led_sym.color",
+        "--.[std].led_sym.color",
         "variable"
     ],
     [
-        "--.std.led_sym.width",
+        "--.[std].led_sym.width",
         "variable"
     ],
     [
-        "--.std.led_sym.height",
+        "--.[std].led_sym.height",
         "variable"
     ],
     [
-        "--.std.led_sym.params",
+        "--.[std].led_sym.params",
         "variable"
     ],
     [
-        "--.std.cgnd",
+        "--.[std].cgnd",
         "function"
     ],
     [
-        "--.std.cgnd_sym.net_name",
+        "--.[std].cgnd_sym.net_name",
         "variable"
     ],
     [
-        "--.std.cgnd_sym.params",
+        "--.[std].cgnd_sym.params",
         "variable"
     ],
     [
-        "--.std.dgnd",
+        "--.[std].dgnd",
         "function"
     ],
     [
-        "--.std.dgnd_sym.net_name",
+        "--.[std].dgnd_sym.net_name",
         "variable"
     ],
     [
-        "--.std.dgnd_sym.height",
+        "--.[std].dgnd_sym.height",
         "variable"
     ],
     [
-        "--.std.dgnd_sym.width",
+        "--.[std].dgnd_sym.width",
         "variable"
     ],
     [
-        "--.std.dgnd_sym.params",
+        "--.[std].dgnd_sym.params",
         "variable"
     ],
     [
-        "--.std.text",
+        "--.[std].text",
         "function"
     ],
     [
-        "--.std.text_sym.value",
+        "--.[std].text_sym.value",
         "variable"
     ],
     [
-        "--.std.text_sym.offsetX",
+        "--.[std].text_sym.offsetX",
         "variable"
     ],
     [
-        "--.std.text_sym.offsetY",
+        "--.[std].text_sym.offsetY",
         "variable"
     ],
     [
-        "--.std.text_sym.fontSize",
+        "--.[std].text_sym.fontSize",
         "variable"
     ],
     [
-        "--.std.text_sym.bold",
+        "--.[std].text_sym.bold",
         "variable"
     ],
     [
-        "--.std.text_sym.italic",
+        "--.[std].text_sym.italic",
         "variable"
     ],
     [
-        "--.std.marker_point",
+        "--.[std].marker_point",
         "function"
     ],
     [
-        "--.std.arrow_point",
+        "--.[std].arrow_point",
         "function"
     ],
     [
-        "--.std.no_connect",
+        "--.[std].no_connect",
         "function"
     ],
     [
-        "--.std.no_connect_sym.size",
+        "--.[std].no_connect_sym.size",
         "variable"
     ],
     [
-        "--.std.dnc",
+        "--.[std].dnc",
         "function"
     ],
     [
-        "--.std.dnc_sym.size",
+        "--.[std].dnc_sym.size",
         "variable"
     ],
     [
-        "--.std.pot",
+        "--.[std].pot",
         "function"
     ],
     [
-        "--.std.pot_sym.value",
+        "--.[std].pot_sym.value",
         "variable"
     ],
     [
-        "--.std.pot_sym.width",
+        "--.[std].pot_sym.width",
         "variable"
     ],
     [
-        "--.std.pot_sym.height",
+        "--.[std].pot_sym.height",
         "variable"
     ],
     [
-        "--.std.pot_sym.params",
+        "--.[std].pot_sym.params",
         "variable"
     ],
     [
-        "--.std.cap_pol",
+        "--.[std].cap_pol",
         "function"
     ],
     [
-        "--.std.cap_pol_sym.value",
+        "--.[std].cap_pol_sym.value",
         "variable"
     ],
     [
-        "--.std.cap_pol_sym.width",
+        "--.[std].cap_pol_sym.width",
         "variable"
     ],
     [
-        "--.std.cap_pol_sym.height",
+        "--.[std].cap_pol_sym.height",
         "variable"
     ],
     [
-        "--.std.cap_pol_sym.params",
+        "--.[std].cap_pol_sym.params",
         "variable"
     ],
     [
-        "--.std.ferrite",
+        "--.[std].ferrite",
         "function"
     ],
     [
-        "--.std.ferrite_sym.value",
+        "--.[std].ferrite_sym.value",
         "variable"
     ],
     [
-        "--.std.ferrite_sym.width",
+        "--.[std].ferrite_sym.width",
         "variable"
     ],
     [
-        "--.std.ferrite_sym.height",
+        "--.[std].ferrite_sym.height",
         "variable"
     ],
     [
-        "--.std.ferrite_sym.params",
+        "--.[std].ferrite_sym.params",
         "variable"
     ],
     [
-        "--.std.xtal",
+        "--.[std].xtal",
         "function"
     ],
     [
-        "--.std.xtal_sym.frequency",
+        "--.[std].xtal_sym.frequency",
         "variable"
     ],
     [
-        "--.std.xtal_sym.width",
+        "--.[std].xtal_sym.width",
         "variable"
     ],
     [
-        "--.std.xtal_sym.height",
+        "--.[std].xtal_sym.height",
         "variable"
     ],
     [
-        "--.std.xtal_sym.params",
+        "--.[std].xtal_sym.params",
         "variable"
     ],
     [
-        "--.std.fuse",
+        "--.[std].fuse",
         "function"
     ],
     [
-        "--.std.fuse_sym.value",
+        "--.[std].fuse_sym.value",
         "variable"
     ],
     [
-        "--.std.fuse_sym.width",
+        "--.[std].fuse_sym.width",
         "variable"
     ],
     [
-        "--.std.fuse_sym.height",
+        "--.[std].fuse_sym.height",
         "variable"
     ],
     [
-        "--.std.fuse_sym.params",
+        "--.[std].fuse_sym.params",
         "variable"
     ],
     [
-        "--.std.jumper",
+        "--.[std].jumper",
         "function"
     ],
     [
-        "--.std.jumper_sym.params",
+        "--.[std].jumper_sym.params",
         "variable"
     ],
     [
-        "--.std.zener",
+        "--.[std].zener",
         "function"
     ],
     [
-        "--.std.zener_sym.width",
+        "--.[std].zener_sym.width",
         "variable"
     ],
     [
-        "--.std.zener_sym.height",
+        "--.[std].zener_sym.height",
         "variable"
     ],
     [
-        "--.std.zener_sym.params",
+        "--.[std].zener_sym.params",
         "variable"
     ],
     [
-        "--.std.schottky",
+        "--.[std].schottky",
         "function"
     ],
     [
-        "--.std.schottky_sym.width",
+        "--.[std].schottky_sym.width",
         "variable"
     ],
     [
-        "--.std.schottky_sym.height",
+        "--.[std].schottky_sym.height",
         "variable"
     ],
     [
-        "--.std.schottky_sym.params",
+        "--.[std].schottky_sym.params",
         "variable"
     ],
     [
-        "--.std.tvs",
+        "--.[std].tvs",
         "function"
     ],
     [
-        "--.std.tvs_sym.width",
+        "--.[std].tvs_sym.width",
         "variable"
     ],
     [
-        "--.std.tvs_sym.height",
+        "--.[std].tvs_sym.height",
         "variable"
     ],
     [
-        "--.std.tvs_sym.params",
+        "--.[std].tvs_sym.params",
         "variable"
     ],
     [
-        "--.std.photodiode",
+        "--.[std].photodiode",
         "function"
     ],
     [
-        "--.std.photodiode_sym.width",
+        "--.[std].photodiode_sym.width",
         "variable"
     ],
     [
-        "--.std.photodiode_sym.height",
+        "--.[std].photodiode_sym.height",
         "variable"
     ],
     [
-        "--.std.photodiode_sym.params",
+        "--.[std].photodiode_sym.params",
         "variable"
     ],
     [
-        "--.std.npn",
+        "--.[std].npn",
         "function"
     ],
     [
-        "--.std.npn_sym.params",
+        "--.[std].npn_sym.params",
         "variable"
     ],
     [
-        "--.std.pnp",
+        "--.[std].pnp",
         "function"
     ],
     [
-        "--.std.pnp_sym.params",
+        "--.[std].pnp_sym.params",
         "variable"
     ],
     [
-        "--.std.pmos",
+        "--.[std].pmos",
         "function"
     ],
     [
-        "--.std.pmos_sym.params",
+        "--.[std].pmos_sym.params",
         "variable"
     ],
     [
-        "--.std.nmos",
+        "--.[std].nmos",
         "function"
     ],
     [
-        "--.std.nmos_sym.params",
+        "--.[std].nmos_sym.params",
         "variable"
     ],
     [
-        "--.std.opamp",
+        "--.[std].opamp",
         "function"
     ],
     [
-        "--.std.opamp_sym.width",
+        "--.[std].opamp_sym.width",
         "variable"
     ],
     [
-        "--.std.opamp_sym.height",
+        "--.[std].opamp_sym.height",
         "variable"
     ],
     [
-        "--.std.opamp_sym.params",
+        "--.[std].opamp_sym.params",
         "variable"
     ],
     [
-        "--.std.comparator",
+        "--.[std].comparator",
         "function"
     ],
     [
-        "--.std.comparator_sym.width",
+        "--.[std].comparator_sym.width",
         "variable"
     ],
     [
-        "--.std.comparator_sym.height",
+        "--.[std].comparator_sym.height",
         "variable"
     ],
     [
-        "--.std.comparator_sym.params",
+        "--.[std].comparator_sym.params",
         "variable"
     ],
     [
-        "--.std.switch_spst",
+        "--.[std].switch_spst",
         "function"
     ],
     [
-        "--.std.switch_spst_sym.params",
+        "--.[std].switch_spst_sym.params",
         "variable"
     ],
     [
-        "--.std.switch_pb",
+        "--.[std].switch_pb",
         "function"
     ],
     [
-        "--.std.switch_pb_sym.params",
+        "--.[std].switch_pb_sym.params",
         "variable"
     ],
     [
-        "--.std.conn_single_row",
+        "--.[std].conn_single_row",
         "function"
     ],
     [
-        "--.std.conn_single_row_sym.num_pins",
+        "--.[std].conn_single_row_sym.num_pins",
         "variable"
     ],
     [
-        "--.std.conn_single_row_sym.params",
+        "--.[std].conn_single_row_sym.params",
         "variable"
     ],
     [
-        "--.std.conn_double_rows",
+        "--.[std].conn_double_rows",
         "function"
     ],
     [
-        "--.std.conn_double_rows_sym.num_pins",
+        "--.[std].conn_double_rows_sym.num_pins",
         "variable"
     ],
     [
-        "--.std.conn_double_rows_sym.pin_order",
+        "--.[std].conn_double_rows_sym.pin_order",
         "variable"
     ],
     [
-        "--.std.conn_double_rows_sym.half",
+        "--.[std].conn_double_rows_sym.half",
         "variable"
     ],
     [
-        "--.std.conn_double_rows_sym.left_pins",
+        "--.[std].conn_double_rows_sym.left_pins",
         "variable"
     ],
     [
-        "--.std.conn_double_rows_sym.right_pins",
+        "--.[std].conn_double_rows_sym.right_pins",
         "variable"
     ],
     [
-        "--.std.conn_double_rows_sym.i",
+        "--.[std].conn_double_rows_sym.i",
         "variable"
     ],
     [
-        "--.std.conn_double_rows_sym.params",
+        "--.[std].conn_double_rows_sym.params",
         "variable"
     ],
     [
-        "--.std.test_point",
+        "--.[std].test_point",
         "function"
     ],
     [
-        "--.std.test_point_sym.params",
+        "--.[std].test_point_sym.params",
         "variable"
     ],
     [
-        "--.std.sheet_generator",
+        "--.[std].sheet_generator",
         "function"
     ],
     [
-        "--.std.sheet_generator_sym.paper_size_name",
+        "--.[std].sheet_generator_sym.paper_size_name",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.paper_width",
+        "--.[std].sheet_generator_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.paper_height",
+        "--.[std].sheet_generator_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.margin_x",
+        "--.[std].sheet_generator_sym.margin_x",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.margin_y",
+        "--.[std].sheet_generator_sym.margin_y",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.col_display_value",
+        "--.[std].sheet_generator_sym.col_display_value",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.row_display_value",
+        "--.[std].sheet_generator_sym.row_display_value",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.inner_frame_margin",
+        "--.[std].sheet_generator_sym.inner_frame_margin",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.horizontal_1",
+        "--.[std].sheet_generator_sym.horizontal_1",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.horizontal_2",
+        "--.[std].sheet_generator_sym.horizontal_2",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.vertical_1",
+        "--.[std].sheet_generator_sym.vertical_1",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.vertical_2",
+        "--.[std].sheet_generator_sym.vertical_2",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.inner_width",
+        "--.[std].sheet_generator_sym.inner_width",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.inner_height",
+        "--.[std].sheet_generator_sym.inner_height",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.tmp_height",
+        "--.[std].sheet_generator_sym.tmp_height",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.tmp_y",
+        "--.[std].sheet_generator_sym.tmp_y",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.tmp_width",
+        "--.[std].sheet_generator_sym.tmp_width",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.tmp_x",
+        "--.[std].sheet_generator_sym.tmp_x",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.fontSize",
+        "--.[std].sheet_generator_sym.fontSize",
         "variable"
     ],
     [
@@ -628,51 +628,51 @@
         "function"
     ],
     [
-        "--.std.sheet_generator_sym.num_columns",
+        "--.[std].sheet_generator_sym.num_columns",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.num_rows",
+        "--.[std].sheet_generator_sym.num_rows",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.ratio_x",
+        "--.[std].sheet_generator_sym.ratio_x",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.ratio_y",
+        "--.[std].sheet_generator_sym.ratio_y",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.title_block_width",
+        "--.[std].sheet_generator_sym.title_block_width",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.title_block_height",
+        "--.[std].sheet_generator_sym.title_block_height",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.title_block_x",
+        "--.[std].sheet_generator_sym.title_block_x",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.title_block_y",
+        "--.[std].sheet_generator_sym.title_block_y",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.title_block_x2",
+        "--.[std].sheet_generator_sym.title_block_x2",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.title_block_y2",
+        "--.[std].sheet_generator_sym.title_block_y2",
         "variable"
     ],
     [
-        "--.std.sheet_generator_sym.params",
+        "--.[std].sheet_generator_sym.params",
         "variable"
     ],
     [
-        "--.std.sheet_A1",
+        "--.[std].sheet_A1",
         "function"
     ],
     [
@@ -680,15 +680,15 @@
         "function"
     ],
     [
-        "--.std.sheet_A1_sym.paper_width",
+        "--.[std].sheet_A1_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_A1_sym.paper_height",
+        "--.[std].sheet_A1_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_A1_sym.margin",
+        "--.[std].sheet_A1_sym.margin",
         "variable"
     ],
     [
@@ -696,95 +696,95 @@
         "function"
     ],
     [
-        "--.std.sheet_A2",
+        "--.[std].sheet_A2",
         "function"
     ],
     [
-        "--.std.sheet_A2_sym.paper_width",
+        "--.[std].sheet_A2_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_A2_sym.paper_height",
+        "--.[std].sheet_A2_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_A2_sym.margin",
+        "--.[std].sheet_A2_sym.margin",
         "variable"
     ],
     [
-        "--.std.sheet_A3",
+        "--.[std].sheet_A3",
         "function"
     ],
     [
-        "--.std.sheet_A3_sym.paper_width",
+        "--.[std].sheet_A3_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_A3_sym.paper_height",
+        "--.[std].sheet_A3_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_A3_sym.margin",
+        "--.[std].sheet_A3_sym.margin",
         "variable"
     ],
     [
-        "--.std.sheet_A4",
+        "--.[std].sheet_A4",
         "function"
     ],
     [
-        "--.std.sheet_A4_sym.paper_width",
+        "--.[std].sheet_A4_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_A4_sym.paper_height",
+        "--.[std].sheet_A4_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_A4_sym.margin",
+        "--.[std].sheet_A4_sym.margin",
         "variable"
     ],
     [
-        "--.std.sheet_A5",
+        "--.[std].sheet_A5",
         "function"
     ],
     [
-        "--.std.sheet_A5_sym.paper_width",
+        "--.[std].sheet_A5_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_A5_sym.paper_height",
+        "--.[std].sheet_A5_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_A5_sym.margin",
+        "--.[std].sheet_A5_sym.margin",
         "variable"
     ],
     [
-        "--.std.sheet_A6",
+        "--.[std].sheet_A6",
         "function"
     ],
     [
-        "--.std.sheet_A6_sym.revision",
+        "--.[std].sheet_A6_sym.revision",
         "variable"
     ],
     [
-        "--.std.sheet_A6_sym.paper_width",
+        "--.[std].sheet_A6_sym.paper_width",
         "variable"
     ],
     [
-        "--.std.sheet_A6_sym.paper_height",
+        "--.[std].sheet_A6_sym.paper_height",
         "variable"
     ],
     [
-        "--.std.sheet_A6_sym.margin",
+        "--.[std].sheet_A6_sym.margin",
         "variable"
     ],
     [
-        "--.std.sheet_A6_sym.tmp_sheet",
+        "--.[std].sheet_A6_sym.tmp_sheet",
         "variable"
     ],
     [
-        "--.std.document",
+        "--.[std].document",
         "variable"
     ],
     [

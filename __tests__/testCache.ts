@@ -414,7 +414,7 @@ describe('Cache integration: transitive imports (lib2 → lib3)', () => {
 
         const lib1 = v1.getScope().libraries.get('lib2');
         expect(lib1).toBeDefined();
-        expect([...lib1!.context.scope.functions.keys()]).toContain('--.lib2.my_comp1');
+        expect([...lib1!.context.scope.functions.keys()]).toContain('--.[lib2].my_comp1');
 
         // Second run — cache hit
         const { hasError: err2, visitor: v2 } = await runImportScript(importScript, scriptPath);
@@ -422,7 +422,7 @@ describe('Cache integration: transitive imports (lib2 → lib3)', () => {
 
         const lib2 = v2.getScope().libraries.get('lib2');
         expect(lib2).toBeDefined();
-        expect([...lib2!.context.scope.functions.keys()]).toContain('--.lib2.my_comp1');
+        expect([...lib2!.context.scope.functions.keys()]).toContain('--.[lib2].my_comp1');
     });
 
     test('cache invalidation: modified lib3 causes cache miss on lib3', async () => {
