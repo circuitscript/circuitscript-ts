@@ -81,184 +81,11 @@ export class KiCadSchGenerator {
     // Public entry point
     // -----------------------------------------------------------------------
 
-    /**
-     * Generate a KiCad project (.kicad_pro) JSON file for the given schematic.
-     * The project references the schematic UUID which must match the one used in generate().
-     */
-    generateProject(outputPath: string): string {
-        const schematicUuid = deterministicUUID(outputPath);
-        const projectName = path.basename(outputPath, path.extname(outputPath));
-
-        const project = {
-            board: {
-                "3dviewports": [],
-                design_settings: {
-                    defaults: {
-                        board_outline_line_width: 0.1,
-                        copper_line_width: 0.2,
-                        copper_text_size_h: 1.5,
-                        copper_text_size_v: 1.5,
-                        copper_text_thickness: 0.3,
-                        other_line_width: 0.15,
-                        silk_line_width: 0.15,
-                        silk_text_size_h: 1.0,
-                        silk_text_size_v: 1.0,
-                        silk_text_thickness: 0.15
-                    },
-                    diff_pair_dimensions: [],
-                    drc_exclusions: [],
-                    rules: {
-                        min_copper_edge_clearance: 0.0,
-                        solder_mask_clearance: 0.0,
-                        solder_mask_min_width: 0.0
-                    },
-                    track_widths: [],
-                    via_dimensions: []
-                },
-                layer_presets: [],
-                viewports: []
-            },
-            boards: [],
-            cvpcb: { equivalence_files: [] },
-            erc: {
-                erc_exclusions: [],
-                meta: { version: 0 },
-                pin_map: [
-                    [0,0,0,0,0,0,1,0,0,0,0,2],
-                    [0,2,0,1,0,0,1,0,2,2,2,2],
-                    [0,0,0,0,0,0,1,0,1,0,1,2],
-                    [0,1,0,0,0,0,1,1,2,1,1,2],
-                    [0,0,0,0,0,0,1,0,0,0,0,2],
-                    [0,0,0,0,0,0,0,0,0,0,0,2],
-                    [1,1,1,1,1,0,1,1,1,1,1,2],
-                    [0,0,0,1,0,0,1,0,0,0,0,2],
-                    [0,2,1,2,0,0,1,0,2,2,2,2],
-                    [0,2,0,1,0,0,1,0,2,0,0,2],
-                    [0,2,1,1,0,0,1,0,2,0,0,2],
-                    [2,2,2,2,2,2,2,2,2,2,2,2]
-                ],
-                rule_severities: {
-                    bus_definition_conflict: 'error',
-                    bus_entry_needed: 'error',
-                    bus_to_bus_conflict: 'error',
-                    bus_to_net_conflict: 'error',
-                    conflicting_netclasses: 'error',
-                    different_unit_footprint: 'error',
-                    different_unit_net: 'error',
-                    duplicate_reference: 'error',
-                    duplicate_sheet_names: 'error',
-                    endpoint_off_grid: 'warning',
-                    extra_units: 'error',
-                    global_label_dangling: 'warning',
-                    hier_label_mismatch: 'error',
-                    label_dangling: 'error',
-                    lib_symbol_issues: 'warning',
-                    missing_bidi_pin: 'warning',
-                    missing_input_pin: 'warning',
-                    missing_power_pin: 'error',
-                    missing_unit: 'warning',
-                    multiple_net_names: 'warning',
-                    net_not_bus_member: 'warning',
-                    no_connect_connected: 'warning',
-                    no_connect_dangling: 'warning',
-                    pin_not_connected: 'error',
-                    pin_not_driven: 'error',
-                    pin_to_pin: 'warning',
-                    power_pin_not_driven: 'error',
-                    similar_labels: 'warning',
-                    simulation_model_issue: 'ignore',
-                    unannotated: 'error',
-                    unit_value_mismatch: 'error',
-                    unresolved_variable: 'error',
-                    wire_dangling: 'error'
-                }
-            },
-            libraries: {
-                pinned_footprint_libs: [],
-                pinned_symbol_libs: []
-            },
-            meta: {
-                filename: `${projectName}.kicad_pro`,
-                version: 1
-            },
-            net_settings: {
-                classes: [{
-                    bus_width: 12,
-                    clearance: 0.2,
-                    diff_pair_gap: 0.25,
-                    diff_pair_via_gap: 0.25,
-                    diff_pair_width: 0.2,
-                    line_style: 0,
-                    microvia_diameter: 0.3,
-                    microvia_drill: 0.1,
-                    name: 'Default',
-                    pcb_color: 'rgba(0, 0, 0, 0.000)',
-                    schematic_color: 'rgba(0, 0, 0, 0.000)',
-                    track_width: 0.25,
-                    via_diameter: 0.8,
-                    via_drill: 0.4,
-                    wire_width: 6
-                }],
-                meta: { version: 3 },
-                net_colors: null,
-                netclass_assignments: null,
-                netclass_patterns: []
-            },
-            pcbnew: {
-                last_paths: {
-                    gencad: '',
-                    idf: '',
-                    netlist: '',
-                    specctra_dsn: '',
-                    step: '',
-                    vrml: ''
-                },
-                page_layout_descr_file: ''
-            },
-            schematic: {
-                annotate_start_num: 0,
-                drawing: {
-                    dashed_lines_dash_length_ratio: 12.0,
-                    dashed_lines_gap_length_ratio: 3.0,
-                    default_line_thickness: 6.0,
-                    default_text_size: 50.0,
-                    field_names: [],
-                    intersheets_ref_own_page: false,
-                    intersheets_ref_prefix: '',
-                    intersheets_ref_short: false,
-                    intersheets_ref_show: false,
-                    intersheets_ref_suffix: '',
-                    junction_size_choice: 3,
-                    label_size_ratio: 0.375,
-                    pin_symbol_size: 25.0,
-                    text_offset_ratio: 0.15
-                },
-                legacy_lib_dir: '',
-                legacy_lib_list: [],
-                meta: { version: 1 },
-                net_format_name: '',
-                page_layout_descr_file: '',
-                plot_directory: '',
-                spice_current_sheet_as_root: false,
-                spice_external_command: 'spice "%I"',
-                spice_model_current_sheet_as_root: true,
-                spice_save_all_currents: false,
-                spice_save_all_voltages: false,
-                subpart_first_id: 65,
-                subpart_id_separator: 0
-            },
-            sheets: [[schematicUuid, '']],
-            text_variables: {}
-        };
-
-        return JSON.stringify(project, null, 2);
-    }
 
     generate(visitor: ParserVisitor, sheetFrames: SheetFrame[], outputPath: string): string {
 
         // For kicad schematic output, enforce that a user-defined `sheet:` must
-        // be specified. Without a user-defined sheet, the first sheet frame
-        // will be automatically generated.
+        // be specified.
         if (sheetFrames.length > 0 && sheetFrames[0].frame.frameId <= 0){
             throw "No sheet specified for kicad schematic output"; 
         }
@@ -283,7 +110,7 @@ export class KiCadSchGenerator {
             }
         }
 
-        const netListMap = this.buildPinNetMap(visitor);
+        // const netListMap = this.buildPinNetMap(visitor);
         const projectName = path.basename(outputPath, path.extname(outputPath));
         this.currentProjectName = projectName;
 
@@ -298,6 +125,19 @@ export class KiCadSchGenerator {
             }
         }
 
+        // Deduplicate lib_symbols: components sharing a definitionName and
+        // orientation (transforms are baked into the lib_symbol geometry) only
+        // emit one entry.
+        const seenSymbolIds = new Set<string>();
+        const libSymbolComponents: RenderComponent[] = [];
+        for (const rc of keepComponents) {
+            const { symbolId } = this.librarySymbolId(rc);
+            if (!seenSymbolIds.has(symbolId)) {
+                seenSymbolIds.add(symbolId);
+                libSymbolComponents.push(rc);
+            }
+        }
+
         const root = n('kicad_sch',
             n('version', raw(this.fileVersion())),
             n('generator', 'circuitscript'),
@@ -307,7 +147,7 @@ export class KiCadSchGenerator {
 
             // lib_symbols
             n('lib_symbols',
-                ...keepComponents.map(rc => this.buildLibrarySymbol(rc))
+                ...libSymbolComponents.map(rc => this.buildLibrarySymbol(rc))
             ),
 
             // Wires and junctions
@@ -317,7 +157,7 @@ export class KiCadSchGenerator {
 
             // Component instance placements
             ...keepComponents.map(rc =>
-                this.buildSymbolPlacement(rc, netListMap, schematicUuid, projectName)
+                this.buildSymbolPlacement(rc, schematicUuid, projectName)
             ),
 
             // Sheet instances
@@ -352,20 +192,23 @@ export class KiCadSchGenerator {
 
     /**
      * Each RenderComponent gets its own lib_symbol entry (named by refdes).
-     * The symbol's geometry has all transforms (flip, rotation) baked in so
-     * the instance placement uses angle 0.
+     * The symbol geometry is canonical (no angle, no flip); transforms are
+     * applied in the instance placement via angle and mirror tokens.
      */
     private buildLibrarySymbol(rc: RenderComponent): N {
         const {symbolId:symbolId, symbolPart} = this.librarySymbolId(rc);
         const drawing = rc.symbol.drawing;
-        const angle = drawing.angle;
-        const flipX = drawing.flipX;
-        const flipY = drawing.flipY;
         const isCustomSymbol = rc.symbol instanceof SymbolCustom;
 
         const children: Array<string | number | RawAtom | N> = [];
 
-        if (rc.component.parameters.has('net_name')) {
+        let componentInBom = true;
+        let componentOnBoard = true;
+
+        // Components with the 'net_name' parameter are power/net components.
+        const isNetComponent = rc.component.parameters.has('net_name');
+
+        if (isNetComponent) {
             children.push(n('power'));
             children.push(
                 n('property', 'Reference', '#PWR',
@@ -373,11 +216,14 @@ export class KiCadSchGenerator {
                     n('effects', n('font', n('size', raw(1.27), raw(1.27))), n('hide', raw('yes')))
                 )
             );
+
+            componentInBom = false;
+            componentOnBoard = false;
         }
 
         children.push(n('exclude_from_sim', raw('no')));
-        children.push(n('in_bom', raw('yes')));
-        children.push(n('on_board', raw('yes')));
+        children.push(n('in_bom', raw(componentInBom ? 'yes': 'no')));
+        children.push(n('on_board', raw(componentOnBoard ? 'yes': 'no')));
         
         // The value at position 4 is whether pin id/number is displayed.
         const showPinNumbers = isCustomSymbol || drawing.pins.some(pin => pin[4] === true);
@@ -421,16 +267,13 @@ export class KiCadSchGenerator {
                     continue;
                 }
 
-                let feat = Geometry.flip(item as Feature, flipX, flipY);
-                feat = Geometry.rotateDegs(feat, angle, drawing.mainOrigin);
-                subSymChildren.push(this.buildFeature(feat, fillType, lineWidth));
+                subSymChildren.push(this.buildFeature(item as Feature, fillType, lineWidth));
             }
         }
 
         // Pins inside _1_1
-        const isPower = rc.component.parameters.has('net_name');
         for (const pin of drawing.pins) {
-            const pinNode = this.buildLibraryPin(pin, flipX, flipY, angle, drawing, isPower);
+            const pinNode = this.buildLibraryPin(pin, 0, 0, 0, drawing, isNetComponent);
             if (pinNode !== null) subSymChildren.push(pinNode);
         }
 
@@ -447,8 +290,9 @@ export class KiCadSchGenerator {
     /**
      * Compute transformed label data for all Textbox items in the drawing.
      * Returns position in CircuitScript Y-down local coordinates (before placement offset).
+     * When canonical=true, all transforms are identity (for lib_symbol entries).
      */
-    private transformedLabels(rc: RenderComponent): {
+    private transformedLabels(rc: RenderComponent, canonical = false): {
         index: number;
         name: string;
         text: string;
@@ -457,29 +301,76 @@ export class KiCadSchGenerator {
         anchor: HorizontalAlign; vanchor: VerticalAlign;
     }[] {
         const drawing = rc.symbol.drawing;
-        const angle = drawing.angle;
-        const flipX = drawing.flipX;
-        const flipY = drawing.flipY;
+        const angle = canonical ? 0 : drawing.angle;
+        const flipX = canonical ? 0 : drawing.flipX;
+        const flipY = canonical ? 0 : drawing.flipY;
 
-        return drawing.getLabels().map((label, index) => {
+        return drawing.getLabels().filter(label => {
+            // Ignore/skip certain label names.
+            const { id: name } = label;
+            if (name) {
+                return !name.startsWith('pin-id_') && !name.startsWith('pin-name_');
+            } else {
+                return true;
+            }
+        }).map((label, index) => {
             let feat = Geometry.flip(label, flipX, flipY);
             feat = Geometry.rotateDegs(feat, angle, drawing.mainOrigin);
 
             const transformed = feat as Textbox;
             const [ax, ay] = transformed.getLabelPosition();
 
+            // Compute kicadAngle accounting for flip and rotation.
+            // In Flatten.js Y-up space: flipX reflects θ → 180-θ, flipY reflects θ → -θ.
+            // KiCad negates the angle (Y-up lib space vs Y-down schematic space).
             const styleAngle = label.style?.angle?.toNumber() ?? 0;
-            let kicadAngle = -(styleAngle + angle);
-
-            if (kicadAngle < 0){
-                kicadAngle += 360;
+            const totalAngle = styleAngle + angle;
+            let kicadAngle: number;
+            if (flipX !== 0 && flipY !== 0) {
+                kicadAngle = 180 - totalAngle;
+            } else if (flipX !== 0) {
+                kicadAngle = totalAngle - 180;
+            } else if (flipY !== 0) {
+                kicadAngle = totalAngle;
+            } else {
+                kicadAngle = -totalAngle;
             }
+            kicadAngle = ((kicadAngle % 360) + 360) % 360;
 
             const fontSizeMils = label.style?.fontSize?.toNumber() ?? 50;
             const fontSizeMM = fontSizeMils * 0.0254;
 
-            const anchor = label.style?.anchor ?? HorizontalAlign.Left;
-            const vanchor = label.style?.vanchor ?? VerticalAlign.Bottom;
+            // Mirror the anchor/vanchor flipping logic from SymbolGraphic.drawLabels.
+            let anchor = label.style?.anchor ?? HorizontalAlign.Left;
+            let vanchor = label.style?.vanchor ?? VerticalAlign.Bottom;
+
+            // totalAngle already computed above; reuse it for direction detection.
+            const isRotation180 = Math.abs(totalAngle) === 180;
+            const isHorizontalLabel = totalAngle === 0 || totalAngle === 180;
+            const isVerticalLabel = totalAngle === 90 || totalAngle === -90;
+
+            // isRotation180: flip both anchor and vanchor (text is upside-down, so
+            // we conceptually flip it, matching drawLabels' flipTextAnchor / flipDominantBaseline).
+            if (isRotation180) {
+                if (anchor === HorizontalAlign.Left) anchor = HorizontalAlign.Right;
+                else if (anchor === HorizontalAlign.Right) anchor = HorizontalAlign.Left;
+                if (vanchor === VerticalAlign.Top) vanchor = VerticalAlign.Bottom;
+                else if (vanchor === VerticalAlign.Bottom) vanchor = VerticalAlign.Top;
+            }
+
+            /**
+             *    Direction       | flipX                 | flipY
+             *    Horizontal      | if 1, flip anchor     | if 1, flip baseline
+             *    Vertical        | if 1, flip baseline   | if 1, flip anchor
+             */
+            if (anchor !== HorizontalAlign.Center &&
+                ((isHorizontalLabel && flipX !== 0) || (isVerticalLabel && flipY !== 0))) {
+                anchor = (anchor === HorizontalAlign.Left) ? HorizontalAlign.Right : HorizontalAlign.Left;
+            }
+            if (vanchor !== VerticalAlign.Center &&
+                ((isHorizontalLabel && flipY !== 0) || (isVerticalLabel && flipX !== 0))) {
+                vanchor = (vanchor === VerticalAlign.Top) ? VerticalAlign.Bottom : VerticalAlign.Top;
+            }
 
             return { index, name: label.id, text: label.text,
                 x: ax.toNumber(), y: ay.toNumber(),
@@ -489,10 +380,10 @@ export class KiCadSchGenerator {
 
     /**
      * Build KiCad (property ...) nodes for all Textbox items in the drawing,
-     * for use inside a lib_symbol (no placement offset, Y not negated).
+     * for use inside a lib_symbol (no placement offset, canonical transforms).
      */
     private buildLibraryLabels(rc: RenderComponent): N[] {
-        return this.buildLabels(rc, false);
+        return this.buildLabels(rc, false, true);
     }
 
     /**
@@ -500,21 +391,14 @@ export class KiCadSchGenerator {
      * for use inside a symbol instance placement (with component origin added).
      */
     private buildPlacementLabels(rc: RenderComponent): N[] {
-        return this.buildLabels(rc, true);
+        return this.buildLabels(rc, true, false, true);
     }
 
-    private buildLabels(rc: RenderComponent, useComponentOrigin: boolean): N[] {
+    private buildLabels(rc: RenderComponent, useComponentOrigin: boolean, canonical = false, ignoreLabelAngle=false): N[] {
         const offsetX = useComponentOrigin ? rc.x.toNumber() : 0;
         const offsetY = useComponentOrigin ? rc.y.toNumber() : 0;
 
-        return this.transformedLabels(rc)
-            .filter(({ name }) => {
-                if (name) {
-                    return !name.startsWith('pin-id_') && !name.startsWith('pin-name_');
-                } else {
-                    return true;
-                }
-            })
+        return this.transformedLabels(rc, canonical)
             .map(({ index, name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
                 let propName = `Text_${index}`;
                 if (name === 'refdes') propName = 'Reference';
@@ -527,7 +411,7 @@ export class KiCadSchGenerator {
                 const justifyV = vanchor === VerticalAlign.Top ? 'top'
                     : vanchor === VerticalAlign.Bottom ? 'bottom'
                         : null;
-                const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];
+                const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];;
 
                 const effectsChildren: Array<N | RawAtom> = [
                     n('font', n('size', raw(mm(fontSizeMM)), raw(mm(fontSizeMM))))
@@ -536,9 +420,11 @@ export class KiCadSchGenerator {
                     effectsChildren.push(n('justify', ...justifyParts.map(p => raw(p))));
                 }
 
+                const useAngle = ignoreLabelAngle ? 0: kicadAngle;
+
                 // Schematic space = CircuitScript Y-down; add placement origin, no Y negation
                 return n('property', propName, text,
-                    n('at', raw(mm(offsetX + x)), raw(mm(offsetY + y)), raw(kicadAngle)),
+                    n('at', raw(mm(offsetX + x)), raw(mm(offsetY + y)), raw(useAngle)),
                     n('effects', ...effectsChildren)
                 );
             });
@@ -673,12 +559,15 @@ export class KiCadSchGenerator {
     // -----------------------------------------------------------------------
 
     private buildSymbolPlacement(rc: RenderComponent,
-        netListMap: Map<string, Map<string, string>>,
         schematicUuid: string, projectName: string): N {
 
         const {symbolId: symName} = this.librarySymbolId(rc);
         const x = rc.x.toNumber();
         const y = rc.y.toNumber();
+        const drawing = rc.symbol.drawing;
+        const placementAngle = drawing.angle;
+        let flipX = drawing.flipX;
+        let flipY = drawing.flipY;
         const refdes = rc.component.assignedRefDes ?? rc.component.instanceName;
         const instanceUuid = deterministicUUID(`sym_${rc.component.instanceName}_${rc.unitId}`);
 
@@ -716,6 +605,23 @@ export class KiCadSchGenerator {
         // Label properties mirroring the lib_symbol text items
         children.push(...this.buildPlacementLabels(rc));
 
+        // Kicad uses 
+        let usePlacementAngle = placementAngle * -1;
+
+        if (usePlacementAngle < 0){
+            usePlacementAngle += 360;
+        } else if (usePlacementAngle > 360){
+            usePlacementAngle = usePlacementAngle % 360;
+        }
+
+        if (flipX && flipY){
+            usePlacementAngle += 180;
+            usePlacementAngle = usePlacementAngle % 360;
+
+            flipX = 0;
+            flipY = 0;
+        }
+
         // Pin UUID entries
         const unit = rc.component.getUnit(rc.unitId);
         unit.pins.forEach((_pinDef, pinId) => {
@@ -739,10 +645,42 @@ export class KiCadSchGenerator {
             )
         );
 
-        // Transforms baked into lib_symbol – use angle 0 here
+        const mirrorNodes: N[] = [];
+
+        /**
+         * Circuitscript will applies the flip first then the rotation. But
+         * Kicad seems to do the opposite, it applies the rotation first, 
+         * then the flip.
+         */
+
+        const isConsideredHorizontal = usePlacementAngle === 0 || usePlacementAngle == 180;
+
+        let useMirrorValue: string | null = null;
+
+        if (flipX) {
+            if (isConsideredHorizontal) {
+                useMirrorValue = 'y';
+            } else {
+                useMirrorValue = 'x';
+            }
+        }
+
+        if (useMirrorValue === null && flipY) {
+            if (isConsideredHorizontal) {
+                useMirrorValue = 'x';
+            } else {
+                useMirrorValue = 'y';
+            }
+        }
+
+        if (useMirrorValue !== null) {
+            mirrorNodes.push(n('mirror', raw(useMirrorValue)));
+        }
+
         return n('symbol',
             n('lib_id', symName),
-            n('at', raw(mm(x)), raw(mm(y)), raw(0)),
+            n('at', raw(mm(x)), raw(mm(y)), raw(usePlacementAngle)),
+            ...mirrorNodes,
             n('unit', raw(1)),
             n('in_bom', raw('yes')),
             n('on_board', raw('yes')),
@@ -853,11 +791,25 @@ export class KiCadSchGenerator {
     // Helpers
     // -----------------------------------------------------------------------
 
-    /** Unique lib_symbol name for a component instance, prefixed with the project name as the library. */
+    /** Unique lib_symbol name for a component instance, prefixed with the project name as the library.
+     *
+     * Components with a `definitionName` (created from a named class definition) share a single
+     * canonical lib_symbol entry. Orientation (angle + flip) is applied in the instance placement
+     * via the `at` angle and `mirror` tokens, so no orientation suffix is needed.
+     */
     private librarySymbolId(rc: RenderComponent): {
         symbolId: string,
         symbolPart: string,
     } {
+        if (rc.component.definitionName) {
+            const symbolPart = (rc.component.definitionName + '_sym')
+                .replace(/:/g, '_');
+            return {
+                symbolId: `${this.currentProjectName}:${symbolPart}`,
+                symbolPart,
+            };
+        }
+
         const refdes = rc.component.assignedRefDes ?? rc.component.instanceName;
         const unit = rc.unitId !== '__default' ? `_${rc.unitId}` : '';
         // Sanitize the symbol part: replace colons with underscores since KiCad

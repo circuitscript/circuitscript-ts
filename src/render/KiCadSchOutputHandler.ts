@@ -34,15 +34,7 @@ export class KiCadSchOutputHandler extends ParseOutputHandler {
             const content = generator.generate(visitor, sheetFrames, outputPath);
             visitor.environment.writeFileSync(outputPath, content);
             console.log('Generated file', outputPath);
-
-            // const projectPath = path.join(
-            //     path.dirname(outputPath),
-            //     path.basename(outputPath, '.kicad_sch') + '.kicad_pro'
-            // );
-            // const projectContent = generator.generateProject(outputPath);
-            // visitor.environment.writeFileSync(projectPath, projectContent);
-            // console.log('Generated file', projectPath);
-
+            
             return false;
         }
         return true;
