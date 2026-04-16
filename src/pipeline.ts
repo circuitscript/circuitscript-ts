@@ -8,19 +8,20 @@
 import path from "path";
 import PDFDocument from "pdfkit";
 
-import { CommonTokenStream, Parser, ParserRuleContext, RecognitionException } from "antlr4ng";
+import { CommonTokenStream, ParserRuleContext, RecognitionException } from "antlr4ng";
 import { DefaultPostAnnotationCallback } from "./annotate/DefaultPostAnnotationCallback.js";
 import { ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { OnErrorHandler, BaseVisitor, ImportFileResult } from "./BaseVisitor.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
-import { defaultZoomScale, GlobalDocumentName } from "./globals.js";
+import { defaultZoomScale, GlobalDocumentName, FrameType } from "./globals.js";
 import { NetGraph } from "./render/graph.js";
 import { ScriptOptions, RenderScriptReturn } from "./helpers.js";
 import { LayoutEngine } from "./render/layout.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
-import { FrameParamKeys } from "./objects/Frame.js";
+import { Frame, FrameParamKeys } from "./objects/Frame.js";
+import { FrameAction, SequenceAction } from "./objects/ExecutionScope.js";
 import { DocumentVariable, ImportedLibrary } from "./objects/types.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
@@ -32,7 +33,7 @@ import { printWarnings, generateDebugSequenceAction,
 import { ParserVisitor } from "./visitor.js";
 import { getStylesFromDocument } from "./styles.js";
 import { BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError, 
-    RenderError, AutoWireFailedError, throwWithContext, 
+    RenderError, AutoWireFailedError, 
     AutoWireFailedError_} from "./errors.js";
 
 export async function renderScript(scriptData: string, outputPath: string | null,
@@ -262,6 +263,31 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
         const { sequence, nets } = visitor.getGraph();
+
+        // If KiCad output is selected and no Sheet frame exists in the sequence,
+        // wrap the entire sequence in an auto-generated Sheet frame.
+        const isKiCadOutput = outputPath !== null &&
+            path.extname(outputPath).substring(1) === 'kicad_sch' &&
+            parseHandlers.some(h => h instanceof KiCadSchOutputHandler);
+
+        // If is kicad output and there is not user defined sheet, then add
+        // a sheet.
+        if (isKiCadOutput) {
+            const hasSheetFrame = sequence.some(
+                item => item[0] === SequenceAction.Frame && (item[1] as Frame).frameType === FrameType.Sheet
+            );
+
+            if (!hasSheetFrame) {
+                const autoFrame = new Frame(1, FrameType.Sheet);
+                sequence.unshift([SequenceAction.Frame, autoFrame, FrameAction.Enter]);
+                sequence.push([SequenceAction.Frame, autoFrame, FrameAction.Exit]);
+
+                autoFrame.parameters
+                    .set(FrameParamKeys.SheetType, frameComponent)
+                    .set(FrameParamKeys.SheetNumber, 1)
+                    .set(FrameParamKeys.SheetTotal, 1);
+            }
+        }
 
         // const tmpInstances = visitor.getExecutor().scope.instances;
         // for (const [instanceName, instance] of tmpInstances){

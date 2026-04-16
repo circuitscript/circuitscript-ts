@@ -21,7 +21,7 @@ describe('test cli program', () => {
         });
         
         expect(result.includes(circuitscriptText)).toBe(true);
-
+        
         const options =
             `Options:
   -V, --version                     output the version number
@@ -44,6 +44,8 @@ describe('test cli program', () => {
                                     (optionally specify line range like "1-10",
                                     requires -l)
   --lexer-summary                   Print lexer operation summary (requires -l)
+  --kicad-version <version>         KiCad schematic output version (9 or 10)
+                                    (default: "9")
   -h, --help                        display help for command`
 
         expect(result.includes(options)).toBe(true);
