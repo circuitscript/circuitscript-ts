@@ -76,6 +76,8 @@ export class KiCadSchGenerator {
 
     powerComponentIndexes = new Map<RenderComponent, number>();
     private currentProjectName = '';
+    /** Maps definitionName → set of distinct numPins values seen across all components */
+    private definitionPinCounts = new Map<string, Set<number>>();
 
     // -----------------------------------------------------------------------
     // Public entry point
@@ -101,6 +103,21 @@ export class KiCadSchGenerator {
         const keepComponents = allComponents.filter(item =>
             !item.component._isInternalPathObject
         );
+
+        // Build definitionName → numPins map to determine whether numPins needs
+        // to be included in the library symbol id (only needed when the same
+        // definitionName is used with different pin counts).
+        this.definitionPinCounts.clear();
+        for (const rc of keepComponents) {
+            const { definitionName } = rc.component;
+            if (definitionName) {
+                const numPins = rc.component.numPins;
+                if (!this.definitionPinCounts.has(definitionName)) {
+                    this.definitionPinCounts.set(definitionName, new Set());
+                }
+                this.definitionPinCounts.get(definitionName)!.add(numPins);
+            }
+        }
 
         this.powerComponentIndexes.clear();
         let counter = 1;
@@ -798,13 +815,23 @@ export class KiCadSchGenerator {
      * via the `at` angle and `mirror` tokens, so no orientation suffix is needed.
      */
     private librarySymbolId(rc: RenderComponent): {
+        projectName: string,
         symbolId: string,
         symbolPart: string,
     } {
-        if (rc.component.definitionName) {
-            const symbolPart = (rc.component.definitionName + '_sym')
-                .replace(/:/g, '_');
+        const { definitionName = null } = rc.component;
+
+        if (definitionName) {
+            const numPins = rc.component.numPins;
+            const pinCounts = this.definitionPinCounts.get(definitionName);
+            const needsPinSuffix = pinCounts !== undefined && pinCounts.size > 1;
+            const baseName = needsPinSuffix
+                ? `${definitionName}-${numPins}_sym`
+                : `${definitionName}_sym`;
+            const symbolPart = baseName.replace(/:/g, '_');
+
             return {
+                projectName: this.currentProjectName,
                 symbolId: `${this.currentProjectName}:${symbolPart}`,
                 symbolPart,
             };
@@ -817,6 +844,7 @@ export class KiCadSchGenerator {
         // start with a digit.
         const symbolPart = `${refdes}${unit}_sym`.replace(/:/g, '_');
         return {
+            projectName: this.currentProjectName,
             symbolId: `${this.currentProjectName}:${symbolPart}`,
             symbolPart,
         }
