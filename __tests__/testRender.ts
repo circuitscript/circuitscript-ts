@@ -127,6 +127,7 @@ describe('Render tests', () => {
         ['script76.cst', 'flip:y works properly with wire direction.'],
         ['script77.cst', 'wire expression with different direction symbols'],
         ['script78.cst', 'Pin selection using pin name'],
+        ['script79.cst', 'correct label text alignment (anchor, vanchor) for different angles and flipxy']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
