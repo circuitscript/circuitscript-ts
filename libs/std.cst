@@ -28,6 +28,7 @@ def label(value, anchor="left"):
             label: params.value, 0, -10, name="value", fontSize=50, anchor=anchor
             pin: 1, 0, 0, 0, 0, display_id=false
         type: "net"
+        is_label: true
         params:
             net_name: value
             value: value

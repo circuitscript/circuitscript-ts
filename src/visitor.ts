@@ -388,6 +388,10 @@ export class ParserVisitor extends BaseVisitor {
             units: unitDefinitions
         };
 
+        if (properties.has('is_label')){
+            props.is_label = properties.get('is_label');
+        }
+
         try {
             const createdComponent = this.getExecutor().createComponent(instanceName,
                 [], params, props);

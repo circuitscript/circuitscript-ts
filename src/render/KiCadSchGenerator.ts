@@ -104,11 +104,15 @@ export class KiCadSchGenerator {
             !item.component._isInternalPathObject
         );
 
+        // Components with isNetLabel are rendered as KiCad (label ...) tokens, not symbols.
+        const labelComponents = keepComponents.filter(rc => rc.component.isNetLabel);
+        const regularComponents = keepComponents.filter(rc => !rc.component.isNetLabel);
+
         // Build definitionName → numPins map to determine whether numPins needs
         // to be included in the library symbol id (only needed when the same
         // definitionName is used with different pin counts).
         this.definitionPinCounts.clear();
-        for (const rc of keepComponents) {
+        for (const rc of regularComponents) {
             const { definitionName } = rc.component;
             if (definitionName) {
                 const numPins = rc.component.numPins;
@@ -121,7 +125,7 @@ export class KiCadSchGenerator {
 
         this.powerComponentIndexes.clear();
         let counter = 1;
-        for (const rc of keepComponents) {
+        for (const rc of regularComponents) {
             if (rc.component.parameters.has('net_name')) {
                 this.powerComponentIndexes.set(rc, counter++);
             }
@@ -147,7 +151,7 @@ export class KiCadSchGenerator {
         // emit one entry.
         const seenSymbolIds = new Set<string>();
         const libSymbolComponents: RenderComponent[] = [];
-        for (const rc of keepComponents) {
+        for (const rc of regularComponents) {
             const { symbolId } = this.librarySymbolId(rc);
             if (!seenSymbolIds.has(symbolId)) {
                 seenSymbolIds.add(symbolId);
@@ -172,8 +176,11 @@ export class KiCadSchGenerator {
             ...sheetFrames.flatMap(sf => this.buildJunctions(sf)),
             ...sheetFrames.flatMap(sf => this.buildFrameRectangles(sf)),
 
+            // Net labels (isNetLabel components → KiCad label tokens)
+            ...labelComponents.map(rc => this.buildNetLabel(rc)),
+
             // Component instance placements
-            ...keepComponents.map(rc =>
+            ...regularComponents.map(rc =>
                 this.buildSymbolPlacement(rc, schematicUuid, projectName)
             ),
 
@@ -299,7 +306,7 @@ export class KiCadSchGenerator {
         }
 
         // Labels as KiCad property tokens
-        children.push(...this.buildLibraryLabels(rc));
+        children.push(...this.buildLibraryProperties(rc));
 
         return n('symbol', symbolId, ...children);
     }
@@ -309,7 +316,7 @@ export class KiCadSchGenerator {
      * Returns position in CircuitScript Y-down local coordinates (before placement offset).
      * When canonical=true, all transforms are identity (for lib_symbol entries).
      */
-    private transformedLabels(rc: RenderComponent, canonical = false): {
+    private transformedProperties(rc: RenderComponent, canonical = false): {
         index: number;
         name: string;
         text: string;
@@ -399,23 +406,23 @@ export class KiCadSchGenerator {
      * Build KiCad (property ...) nodes for all Textbox items in the drawing,
      * for use inside a lib_symbol (no placement offset, canonical transforms).
      */
-    private buildLibraryLabels(rc: RenderComponent): N[] {
-        return this.buildLabels(rc, false, true);
+    private buildLibraryProperties(rc: RenderComponent): N[] {
+        return this.buildProperties(rc, false, true);
     }
 
     /**
      * Build KiCad (property ...) nodes for all Textbox items in the drawing,
      * for use inside a symbol instance placement (with component origin added).
      */
-    private buildPlacementLabels(rc: RenderComponent): N[] {
-        return this.buildLabels(rc, true, false, true);
+    private buildPlacementProperties(rc: RenderComponent): N[] {
+        return this.buildProperties(rc, true, false, true);
     }
 
-    private buildLabels(rc: RenderComponent, useComponentOrigin: boolean, canonical = false, ignoreLabelAngle=false): N[] {
+    private buildProperties(rc: RenderComponent, useComponentOrigin: boolean, canonical = false, ignoreLabelAngle=false): N[] {
         const offsetX = useComponentOrigin ? rc.x.toNumber() : 0;
         const offsetY = useComponentOrigin ? rc.y.toNumber() : 0;
 
-        return this.transformedLabels(rc, canonical)
+        return this.transformedProperties(rc, canonical)
             .map(({ index, name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
                 let propName = `Text_${index}`;
                 if (name === 'refdes') propName = 'Reference';
@@ -620,7 +627,7 @@ export class KiCadSchGenerator {
         }
 
         // Label properties mirroring the lib_symbol text items
-        children.push(...this.buildPlacementLabels(rc));
+        children.push(...this.buildPlacementProperties(rc));
 
         // Kicad uses 
         let usePlacementAngle = placementAngle * -1;
@@ -752,6 +759,71 @@ export class KiCadSchGenerator {
             );
         }
         return rects;
+    }
+
+    // -----------------------------------------------------------------------
+    // Net label generation
+    // -----------------------------------------------------------------------
+
+    /**
+     * Build a KiCad (label ...) token for a component with isNetLabel = true.
+     * The label's connection point is the component origin (rc.x, rc.y).
+     */
+    private buildNetLabel(rc: RenderComponent): N {
+        const text = String(
+            rc.component.parameters.get('value') ??
+            rc.component.parameters.get('net_name') ?? ''
+        );
+        const x = rc.x.toNumber();
+        const y = rc.y.toNumber();
+        const drawing = rc.symbol.drawing;
+        const placementAngle = drawing.angle;
+        let flipX = drawing.flipX;
+        let flipY = drawing.flipY;
+
+        // Same angle/flip normalisation as buildSymbolPlacement
+        let usePlacementAngle = placementAngle * -1;
+        if (usePlacementAngle < 0) usePlacementAngle += 360;
+        else if (usePlacementAngle > 360) usePlacementAngle = usePlacementAngle % 360;
+
+        if (flipX && flipY) {
+            usePlacementAngle = (usePlacementAngle + 180) % 360;
+            flipX = 0;
+            flipY = 0;
+        }
+
+        // Derive anchor/vanchor from the transformed label properties (e.g. the "value" text).
+        const props = this.transformedProperties(rc);
+        const valueProp = props.find(p => p.name === 'value') ?? props[0];
+
+        let justifyH: string | null;
+        let justifyV: string | null;
+        if (valueProp) {
+            justifyH = valueProp.anchor === HorizontalAlign.Left ? 'left'
+                : valueProp.anchor === HorizontalAlign.Right ? 'right'
+                : null; // center → omit (KiCad default)
+            justifyV = valueProp.vanchor === VerticalAlign.Top ? 'top'
+                : valueProp.vanchor === VerticalAlign.Bottom ? 'bottom'
+                : null; // center → omit (KiCad default)
+        } else {
+            // Fallback: at 180° the stub is on the right, text extends left → justify right.
+            justifyH = usePlacementAngle === 180 ? 'right' : 'left';
+            justifyV = 'bottom';
+        }
+
+        const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];
+
+        const labelUuid = deterministicUUID(`netlabel_${rc.component.instanceName}`);
+
+        return n('label', text,
+            n('at', raw(mm(x)), raw(mm(y)), raw(usePlacementAngle)),
+            n('fields_autoplaced', raw('yes')),
+            n('effects',
+                n('font', n('size', raw(1.27), raw(1.27))),
+                n('justify', ...justifyParts.map(p => raw(p)))
+            ),
+            n('uuid', labelUuid)
+        );
     }
 
     // -----------------------------------------------------------------------

@@ -328,6 +328,8 @@ export class ExecutionContext {
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
 
+        component.isNetLabel = props.is_label ?? false;
+
         const paramsMap = new Map<string, any>();
         params.forEach((param) => {
             component.parameters.set(param.paramName, param.paramValue);
@@ -368,7 +370,7 @@ export class ExecutionContext {
             // Assign the net to a property of the component.
             component.setParam('net', tmpNet);
         }
-        
+
         this.scope.instances.set(instanceName, component);
 
         const pinsOutput = pins.map((pin) => {

@@ -293,6 +293,10 @@ export class ClassComponent {
      */
     definitionName: string | null = null;
 
+    // For Kicad output generation, if true, indicates that this 
+    // component is a kicad label.
+    isNetLabel = false;
+
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;
@@ -489,6 +493,8 @@ export class ClassComponent {
             tmpUnit.parent = component;
             return tmpUnit;
         });
+
+        component.isNetLabel = this.isNetLabel;
 
         component.refreshCache();
 
