@@ -1724,6 +1724,17 @@ export class ParserVisitor extends BaseVisitor {
             frameType = FrameType.Sheet;
         }
 
+        const activeFrame =
+            this.getScope().frames.find(
+                frame => frame.frameId === this.getScope().currentFrameId)!;
+        
+        if (activeFrame && activeFrame.frameType === FrameType.Sheet){
+            if (frameType === FrameType.Sheet){
+                // Cannot have nested sheets!
+                this.throwWithContext(ctx, "Nested sheets are not allowed");
+            }
+        }
+
         const ctxExpressionsBlock = ctx.expressions_block();
 
         if (ctxExpressionsBlock ){
