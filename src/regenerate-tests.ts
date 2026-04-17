@@ -39,7 +39,7 @@ async function regenerateTests(extra = "", fileList: string[] = []): Promise<str
         env.setModuleDirectory(mainDir);
         env.setDefaultLibsPath(mainDir + '../../../libs/');
 
-        const {errors} = await renderScript(scriptData, outputPath, {
+        const {errors} = await renderScript(scriptData, [outputPath], {
             inputPath,
             dumpNets: false,
             dumpData: false,

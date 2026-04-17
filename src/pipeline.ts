@@ -36,7 +36,7 @@ import { BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError,
     RenderError, AutoWireFailedError, 
     AutoWireFailedError_} from "./errors.js";
 
-export async function renderScript(scriptData: string, outputPath: string | null,
+export async function renderScript(scriptData: string, outputPaths: string[],
     options: ScriptOptions): Promise<RenderScriptReturn> {
 
     const kiCadVersion = options.kiCadVersion === '10' ? KiCadVersion.V10 : KiCadVersion.V9;
@@ -47,12 +47,12 @@ export async function renderScript(scriptData: string, outputPath: string | null
         new KiCadSchOutputHandler(kiCadVersion, env.getPackageVersion()),
     ];
 
-    return renderScriptCustom(scriptData, outputPath, options, parseHandlers,
+    return renderScriptCustom(scriptData, outputPaths, options, parseHandlers,
         [DefaultPostAnnotationCallback]);
 }
 
 // TODO: have a unifying way to hook callbacks into different parts of the render flow.
-export async function renderScriptCustom(scriptData: string, outputPath: string | null,
+export async function renderScriptCustom(scriptData: string, outputPaths: string[],
     options: ScriptOptions, parseHandlers: ParseOutputHandler[],
 
     postAnnotationCallbacks: (
@@ -266,8 +266,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
         // If KiCad output is selected and no Sheet frame exists in the sequence,
         // wrap the entire sequence in an auto-generated Sheet frame.
-        const isKiCadOutput = outputPath !== null &&
-            path.extname(outputPath).substring(1) === 'kicad_sch' &&
+        const isKiCadOutput = outputPaths.some(p => path.extname(p).substring(1) === 'kicad_sch') &&
             parseHandlers.some(h => h instanceof KiCadSchOutputHandler);
 
         // If is kicad output and there is not user defined sheet, then add
@@ -311,23 +310,18 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
         dumpData && environment.writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
 
         try {
-            let fileExtension: string | null = null;
-            let outputDefaultZoom = defaultZoomScale;
+            // Track which output paths have been handled by a parse handler.
+            const handledPaths = new Set<string>();
 
-            if (outputPath) {
-                fileExtension = path.extname(outputPath).substring(1);
-            }
-
-            for (let i = 0; i < parseHandlers.length; i++) {
-                const handler = parseHandlers[i];
-                if (handler.beforeRender) {
-                    const keepParsing = handler.parse(visitor,
-                        outputPath, fileExtension);
-
-                    if (!keepParsing) {
-                        return {
-                            svgOutput: null,
-                            errors
+            // beforeRender phase: call handlers for each output path.
+            for (const outPath of outputPaths) {
+                const ext = path.extname(outPath).substring(1);
+                for (const handler of parseHandlers) {
+                    if (handler.beforeRender) {
+                        const keepParsing = handler.parse(visitor, outPath, ext);
+                        if (!keepParsing) {
+                            handledPaths.add(outPath);
+                            break;
                         }
                     }
                 }
@@ -376,7 +370,7 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                 }
 
                 dumpData && environment.writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
-                throw new RenderError(`Error during layout generation`, 
+                throw new RenderError(`Error during layout generation`,
                     'layout', {cause: useErr});
             }
 
@@ -386,56 +380,48 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
 
             dumpData && environment.writeFileSync(dumpDirectory + 'raw-layout.txt', layoutEngine.logger.dump());
 
-            // Call afterRender handlers with layout data (sheetFrames)
-            for (let i = 0; i < parseHandlers.length; i++) {
-                const handler = parseHandlers[i];
-                if (handler.afterRender) {
-                    const keepParsing = handler.parse(visitor,
-                        outputPath, fileExtension, sheetFrames);
-
-                    if (!keepParsing) {
-                        return {
-                            svgOutput: null,
-                            errors
-                        };
+            // afterRender phase: call handlers for each unhandled output path.
+            for (const outPath of outputPaths) {
+                if (handledPaths.has(outPath)) continue;
+                const ext = path.extname(outPath).substring(1);
+                for (const handler of parseHandlers) {
+                    if (handler.afterRender) {
+                        const keepParsing = handler.parse(visitor, outPath, ext, sheetFrames);
+                        if (!keepParsing) {
+                            handledPaths.add(outPath);
+                            break;
+                        }
                     }
                 }
             }
 
-            const generateSvgTimer = new SimpleStopwatch();
+            // Determine which paths still need SVG/PDF rendering.
+            const remainingPaths = outputPaths.filter(p => !handledPaths.has(p));
 
-            const renderLogger = new Logger();
-            let svgCanvas;
-            try {
-                svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, styles);
-            } catch (err) {
-                throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
-            }
+            if (remainingPaths.length > 0 || outputPaths.length === 0) {
+                const generateSvgTimer = new SimpleStopwatch();
 
-            showStats && console.log('Render took:', generateSvgTimer.lap());
-
-            dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
-
-            try {
-                if (fileExtension === "pdf") {
-                    outputDefaultZoom = 1;
+                const renderLogger = new Logger();
+                let svgCanvas;
+                try {
+                    svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, styles);
+                } catch (err) {
+                    throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
                 }
 
-                svgOutput = generateSvgOutput(svgCanvas, outputDefaultZoom);
-            } catch (err) {
-                throw new RenderError(`Error generating SVG output: ${err}`, 'svg_output');
-            }
+                showStats && console.log('Render took:', generateSvgTimer.lap());
 
-            if (outputPath) {
-                if (fileExtension === 'svg') {
-                    try {
-                        environment.writeFileSync(outputPath, svgOutput);
-                    } catch (err) {
-                        throw new RenderError(`Error writing SVG file: ${err}`, 'file_output');
-                    }
+                dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
 
-                } else if (fileExtension === 'pdf') {
+                try {
+                    svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+                } catch (err) {
+                    throw new RenderError(`Error generating SVG output: ${err}`, 'svg_output');
+                }
 
+                if (remainingPaths.length === 0) {
+                    // No output paths — SVG string will be returned to caller.
+                } else {
                     let sheetSize = "A4";
                     let sheetSizeDefined = false;
                     if (frameComponent) {
@@ -443,28 +429,38 @@ export async function renderScriptCustom(scriptData: string, outputPath: string 
                         sheetSizeDefined = true;
                     }
 
-                    try {
-                        const doc = new PDFDocument({
-                            layout: 'landscape',
-                            size: sheetSize
-                        });
-                        const outputStream = environment.createWriteStream(outputPath);
+                    for (const outPath of remainingPaths) {
+                        const ext = path.extname(outPath).substring(1);
+                        if (ext === 'svg') {
+                            try {
+                                environment.writeFileSync(outPath, svgOutput);
+                            } catch (err) {
+                                throw new RenderError(`Error writing SVG file: ${err}`, 'file_output');
+                            }
+                        } else if (ext === 'pdf') {
+                            try {
+                                const doc = new PDFDocument({
+                                    layout: 'landscape',
+                                    size: sheetSize
+                                });
+                                const outputStream = environment.createWriteStream(outPath);
 
-                        generatePdfOutput(doc, svgCanvas,
-                            sheetSize, sheetSizeDefined, outputDefaultZoom);
+                                generatePdfOutput(doc, svgCanvas, sheetSize, sheetSizeDefined, 1);
 
-                        doc.pipe(outputStream);
-                        doc.end();
-                    } catch (err) {
-                        throw new RenderError(`Error generating PDF file: ${err}`, 'pdf_output');
+                                doc.pipe(outputStream);
+                                doc.end();
+                            } catch (err) {
+                                throw new RenderError(`Error generating PDF file: ${err}`, 'pdf_output');
+                            }
+                        } else {
+                            throw new RenderError(`Invalid output format: ${ext}`, 'file_output');
+                        }
+                        console.log('Generated file', outPath);
                     }
-                } else {
-                    throw new RenderError(`Invalid output format: ${fileExtension}`, 'file_output');
                 }
-                console.log('Generated file', outputPath);
             }
         } catch (err) {
-            throw new RenderError(`Error during rendering: ${err}`, 
+            throw new RenderError(`Error during rendering: ${err}`,
                 'output_generation', {cause: err});
         }
     }

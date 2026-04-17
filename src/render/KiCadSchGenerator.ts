@@ -83,21 +83,49 @@ export class KiCadSchGenerator {
     // Public entry point
     // -----------------------------------------------------------------------
 
+    generate(visitor: ParserVisitor, sheetFrames: SheetFrame[], projectName: string): { fileName: string, output: string }[] {
+        this.currentProjectName = projectName;
 
-    generate(visitor: ParserVisitor, sheetFrames: SheetFrame[], outputPath: string): string {
-
-        // For kicad schematic output, enforce that a user-defined `sheet:` must
-        // be specified.
-        if (sheetFrames.length > 0 && sheetFrames[0].frame.frameId <= 0){
-            throw "No sheet specified for kicad schematic output"; 
+        // Resolve paper size from the sheet_type component's paper_size parameter
+        let paperSize = 'A4';
+        if (sheetFrames.length > 0) {
+            const frameParams = sheetFrames[0].frame.frame.parameters;
+            const frameComponent = frameParams.get(FrameParamKeys.SheetType) as ClassComponent | undefined;
+            if (frameComponent) {
+                const ps = frameComponent.getParam(FrameParamKeys.PaperSize);
+                if (ps) paperSize = String(ps);
+            }
         }
 
-        const allComponents: RenderComponent[] = [];
-        for (const sf of sheetFrames) {
-            allComponents.push(...sf.components);
-        }
+        // If only single sheet, then do not add the -{index} suffix for the 
+        // default value.
+        const singleSheet = sheetFrames.length === 1;
 
-        const schematicUuid = deterministicUUID(outputPath);
+        return sheetFrames.map((sheet, index) => {
+            const sheetParams = sheet.frame.frame.parameters;
+
+            // Default filename if none is provided.
+            let useSheetName = singleSheet ? projectName : `${projectName}-${index}`;
+            if (sheetParams.has('name')) {
+                // Use name of the sheet as the file name
+                useSheetName = sheetParams.get('name');
+            }
+
+            const schematicUuid = deterministicUUID(`${projectName}-${useSheetName}`);
+            const kicadOutput = this.generateSheet(visitor, sheet, schematicUuid,
+                paperSize, this.currentProjectName);
+
+            return {
+                fileName: useSheetName,
+                output: kicadOutput,
+            }
+        });
+    }
+
+    generateSheet(visitor: ParserVisitor, sheetFrame: SheetFrame, 
+        schematicUuid: string, paperSize: string, projectName: string): string {
+
+        const allComponents = sheetFrame.components;
 
         // Skip components that are internal to circuitscript (branches, points, etc.)
         const keepComponents = allComponents.filter(item =>
@@ -131,21 +159,6 @@ export class KiCadSchGenerator {
             }
         }
 
-        // const netListMap = this.buildPinNetMap(visitor);
-        const projectName = path.basename(outputPath, path.extname(outputPath));
-        this.currentProjectName = projectName;
-
-        // Resolve paper size from the sheet_type component's paper_size parameter
-        let paperSize = 'A4';
-        if (sheetFrames.length > 0) {
-            const frameParams = sheetFrames[0].frame.frame.parameters;
-            const frameComponent = frameParams.get(FrameParamKeys.SheetType) as ClassComponent | undefined;
-            if (frameComponent) {
-                const ps = frameComponent.getParam(FrameParamKeys.PaperSize);
-                if (ps) paperSize = String(ps);
-            }
-        }
-
         // Deduplicate lib_symbols: components sharing a definitionName and
         // orientation (transforms are baked into the lib_symbol geometry) only
         // emit one entry.
@@ -172,9 +185,9 @@ export class KiCadSchGenerator {
             ),
 
             // Wires and junctions
-            ...sheetFrames.flatMap(sf => this.buildWires(sf)),
-            ...sheetFrames.flatMap(sf => this.buildJunctions(sf)),
-            ...sheetFrames.flatMap(sf => this.buildFrameRectangles(sf)),
+            ...this.buildWires(sheetFrame),
+            ...this.buildJunctions(sheetFrame),
+            ...this.buildFrameRectangles(sheetFrame),
 
             // Net labels (isNetLabel components → KiCad label tokens)
             ...labelComponents.map(rc => this.buildNetLabel(rc)),

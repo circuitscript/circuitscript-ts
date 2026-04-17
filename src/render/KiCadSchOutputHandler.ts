@@ -31,10 +31,20 @@ export class KiCadSchOutputHandler extends ParseOutputHandler {
         if (outputPath !== null && fileExtension === 'kicad_sch') {
             const sheetFrames = extra ?? [];
             const generator = new KiCadSchGenerator(this.version, this.circuitscriptVersion);
-            const content = generator.generate(visitor, sheetFrames, outputPath);
-            visitor.environment.writeFileSync(outputPath, content);
-            console.log('Generated file', outputPath);
-            
+
+            const projectName = path.basename(outputPath, path.extname(outputPath));
+            const projectDirectory = path.dirname(outputPath);
+
+            const sheetOutputs = generator.generate(visitor, sheetFrames, projectName);
+
+            for(const item of sheetOutputs){
+                const {fileName, output} = item;
+                const filePath = path.join(projectDirectory, fileName + ".kicad_sch");
+
+                visitor.environment.writeFileSync(filePath, output);
+                console.log('Generated file', filePath);
+            }
+
             return false;
         }
         return true;

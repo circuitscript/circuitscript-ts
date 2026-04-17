@@ -25,6 +25,8 @@ export default async function main(): Promise<void> {
 
     const version = env.getPackageVersion();
 
+    const collectOutputPaths = (val: string, prev: string[]) => [...prev, val];
+
     program
         .description('generate graphical output from circuitscript files')
         .version(version)
@@ -46,6 +48,7 @@ export default async function main(): Promise<void> {
         .option('--lexer-mapping [lines]', 'Print character-to-token mapping (optionally specify line range like "1-10", requires -l)')
         .option('--lexer-summary', 'Print lexer operation summary (requires -l)')
         .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
+        .option('--o <fileName>', 'Additional output path (can be repeated)', collectOutputPaths, [])
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -75,11 +78,6 @@ export default async function main(): Promise<void> {
     await env.prepareSVGEnvironment();
 
     let inputFilePath = "";
-
-    if (args.length > 2) {
-        console.log("Error: Extra arguments passed");
-        return;
-    }
 
     let scriptData: string;
 
@@ -139,38 +137,39 @@ export default async function main(): Promise<void> {
         kiCadVersion: options.kicadVersion,
     }
 
-    // This is the output path
-    let outputPath: string | null = null;
+    // Build the list of output paths.
+    const outputPaths: string[] = [];
     if (options.input && args.length > 0 && args[0]) {
-        outputPath = args[0];
-    } else if (args.length > 0 && args[1]) {
-        outputPath = args[1];
+        outputPaths.push(args[0]);
+    } else if (args.length > 1 && args[1]) {
+        outputPaths.push(args[1]);
     }
+    outputPaths.push(...(options.o as string[]));
 
-    const output = await parseFile(scriptData, outputPath, scriptOptions);
-    
-    if (outputPath === null && output && (options.skipOutput === undefined)) {
+    const output = await parseFile(scriptData, outputPaths, scriptOptions);
+
+    if (outputPaths.length === 0 && output && (options.skipOutput === undefined)) {
         console.log(output);
     }
-    
+
     if (watchFileChanges) {
         watch(inputFilePath, async event => {
             if (event === 'change') {
-                const scriptData = await env.readFile(inputFilePath, 
+                const scriptData = await env.readFile(inputFilePath,
                     {encoding: 'utf-8'});
 
-                parseFile(scriptData, outputPath, scriptOptions);
+                parseFile(scriptData, outputPaths, scriptOptions);
             }
         });
     }
 }
 
-async function parseFile(scriptData: string, outputPath: string | null, 
+async function parseFile(scriptData: string, outputPaths: string[],
     scriptOptions: ScriptOptions): Promise<string | null> {
-        
+
     try {
         const { svgOutput: output, errors } =
-            await renderScript(scriptData, outputPath, scriptOptions);
+            await renderScript(scriptData, outputPaths, scriptOptions);
 
         errors.forEach((err, index) => {
             console.log(`[${index}] ${err}`);
