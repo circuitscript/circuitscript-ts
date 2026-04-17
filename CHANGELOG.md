@@ -1,6 +1,113 @@
 # Changelog
 
-## [v0.6.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.1...v0.6.2)
+## [v0.7.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.2...v0.7.0)
+
+[fbc42bf](https://gitlab.com/circuitscript/circuitscript-ts/commit/fbc42bfb758afd9143747de065a581e4a3770493) added conn_double_rows to std library
+-  fixed vertical label alignment (TextTop -&gt; Alphabetic)
+-  added Geometry.translate helper and Alphabetic enum value
+-  updated test snapshots
+
+[273c16d](https://gitlab.com/circuitscript/circuitscript-ts/commit/273c16d3cbbfe67f2737fcb0cde04534371a059c)add KiCad schematic export (.kicad_sch) output
+- 
+- - add KiCadSchGenerator and KiCadSchOutputHandler for generating KiCad schematic files
+- - add s_expressions.ts utility for building KiCad S-expression syntax
+- - add name= attribute to labels in std.cst to identify refdes/value fields for KiCad property mapping
+- - extend pipeline and export to support kicad_sch output format
+
+[5493892](https://gitlab.com/circuitscript/circuitscript-ts/commit/54938926c32c4255c10aa2741fc200469ab95012) fixed tests
+
+[ad10eaa](https://gitlab.com/circuitscript/circuitscript-ts/commit/ad10eaa3d670360b4caba1a64057c88f73297d7c)KiCad export: share lib_symbol entries by definitionName and apply transforms at placement
+- 
+- - Components sharing a definitionName now emit a single canonical lib_symbol
+- entry; orientation (angle + flip) is applied via the instance placement
+- angle and mirror tokens instead of being baked into the geometry
+- - Removed generateProject() and related project file generation code
+- - Fixed label transform logic: canonical lib_symbol labels use identity
+- transforms; placement labels correctly compute kicadAngle with flip/rotation
+- - Exclude net/power components from BOM and board
+- - Mirror value selection accounts for KiCad's rotation-then-flip order
+
+[b259d6e](https://gitlab.com/circuitscript/circuitscript-ts/commit/b259d6eb2f23f3470247f20514ea47a993e06a44)Support multiple output paths and per-sheet KiCad schematic generation
+- 
+- - Add --o flag to CLI for specifying additional output paths (repeatable)
+- - Change renderScript/renderScriptCustom to accept outputPaths[] instead of single outputPath
+- - Refactor KiCadSchGenerator.generate() to return [{fileName, output}] per sheet frame
+- - KiCadSchOutputHandler writes one .kicad_sch file per sheet, named by sheet name
+
+[12a8ff8](https://gitlab.com/circuitscript/circuitscript-ts/commit/12a8ff8d322d724bb493e6d60cdea763c7c558e6)KiCad export: circle support, DNP flag, paper size, path object filtering
+- 
+- - Add Geometry.circle() and Circle type; SymbolDrawing.addCircle() for true circles
+- - DrawItem union type (PathDrawItem | CircleDrawItem) replaces plain path objects
+- - Fix circle rendering in SVG via drawBody() handling CircleDrawItem
+- - Fix KiCad arc/circle detection using instanceof Flatten.Circle vs Flatten.Arc
+- - Fix polyline fill: only fill closed Polygon shapes, not open polylines
+- - Add _isInternalPathObject flag on ClassComponent; use it to filter path objects in KiCad output
+- - Resolve paper size from sheet frame parameters instead of hardcoding A4
+- - Support place:false → DNP yes in KiCad symbol instances
+- - Skip frames with border:0 in KiCad rectangle output
+- - Require user-defined sheet for KiCad schematic output
+- - Add label IDs (pin-name_*, pin-id_*, refdes) to SymbolCustom and SymbolPlaceholder
+- - Fix arc sweep direction based on startAngle &lt; endAngle comparison
+
+[b8d961a](https://gitlab.com/circuitscript/circuitscript-ts/commit/b8d961ae5725a56649c04091c820819856c73e79)add definitionName to components and fix label alignment for flipped symbols
+- 
+- - Add `definitionName` field to ClassComponent: a dash-joined identifier
+- (e.g. `std-res`) derived from the scoped execution context namespace,
+- used by the KiCad exporter to share lib_symbol entries across instances
+- - Add `extractComponentDefinitionName` in ExecutionContext to parse the
+- bracketed library namespace path into the definition name
+- - Wrap library namespace segments in `[ ]` in BaseVisitor to make them
+- parseable
+- - Fix label anchor/baseline inversion logic for flipped symbols: separate
+- horizontal vs. vertical label handling so flipX/flipY correctly swap
+- anchor or dominant-baseline depending on label orientation
+- - Fix label bounds debug rect to mirror position correctly after flips
+- - Pin `regenerate-tests` to version `0.0.0` for stable test snapshots
+- - Uncomment ShowLabelBounds flag (set to false) and minor style cleanups
+
+[3c4c023](https://gitlab.com/circuitscript/circuitscript-ts/commit/3c4c02303f2edecbc082368d7c067e304cc755a9)improve KiCad schematic export: pin visibility, label filtering, frame rectangles
+- 
+-  show pin numbers/names based on symbol type and pin definitions
+-  filter out internal pin-id and pin-name labels from property output
+-  emit rectangle graphics for user-defined frames
+
+[947902c](https://gitlab.com/circuitscript/circuitscript-ts/commit/947902c6784c9ab0634c80f26accadbaad8f77bf)KiCad export: render isNetLabel components as KiCad (label ...) tokens
+- 
+- Add is_label property to label component definition and wire it through
+- the visitor, execute, and ClassComponent so that components marked with
+- is_label=true are emitted as KiCad net-label tokens instead of lib symbols.
+- Rename internal buildLabels/transformedLabels helpers to buildProperties/
+- transformedProperties for clarity.
+
+[8a22136](https://gitlab.com/circuitscript/circuitscript-ts/commit/8a221362d147dcf9fb7f2e4252229f84d2328bb9)KiCad export: prefix lib symbols with project name as library
+- 
+- Renamed libSymId to librarySymbolId, returning both the full
+- library-qualified symbol ID (projectName:symbolPart) and the bare
+- symbol part for use in sub-symbol names. Stores the project name
+- as an instance field so it is available during symbol construction.
+- Also merged the two-pass geometry loop into a single pass that
+- applies style properties before building each geometry node.
+
+[7a477df](https://gitlab.com/circuitscript/circuitscript-ts/commit/7a477df930c8c547ffd4f0066328e6c515dcc666) added test
+
+[4fe419c](https://gitlab.com/circuitscript/circuitscript-ts/commit/4fe419c0c53a28baab08ad39d489edfadfc9bb4f)KiCad export: auto-wrap sequence in Sheet frame when none is defined
+- 
+- - pipeline.ts: inject a Sheet frame around the sequence for KiCad output when no user-defined Sheet frame exists
+- - testCLI.ts: update expected help text to include --kicad-version option
+
+[f065603](https://gitlab.com/circuitscript/circuitscript-ts/commit/f0656039ac22aa18ade72319ad8211e00976e3c9)KiCad export: disambiguate lib symbol ids when same definitionName has multiple pin counts
+- 
+- Adds a pin-count suffix to library symbol ids only when the same
+- definitionName is used with different numPins values, avoiding id
+- collisions while keeping names clean in the common case.
+
+[ac83b5f](https://gitlab.com/circuitscript/circuitscript-ts/commit/ac83b5f070db49bf60512bcffa6eac7e1ff57ad7) removed extra cli options
+
+[4e6f1a6](https://gitlab.com/circuitscript/circuitscript-ts/commit/4e6f1a6a0e8a27179483b12097b2f8da5889e1bc) do not allow nested sheets
+
+[da3a3d2](https://gitlab.com/circuitscript/circuitscript-ts/commit/da3a3d2b4be14ad1b8f279d520c448e5ef817418) fixed tests
+
+## [v0.6.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.1...v0.6.2) - 2026-03-31
 
 [7897bfe](https://gitlab.com/circuitscript/circuitscript-ts/commit/7897bfeec96575c88bfb090b3cd25d1a39076413) fixed tests
 
