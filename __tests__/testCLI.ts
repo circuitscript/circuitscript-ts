@@ -35,17 +35,10 @@ describe('test cli program', () => {
   -x, --skip-output                 Skip output generation
   -e, --erc                         Enable ERC output
   -b, --bom [output-path]           Generate Bill of Materials in csv format
-  -l, --lexer-diagnostics           Enable lexer performance diagnostics
-  --lexer-verbose                   Log each token as it is generated (requires
-                                    -l)
-  --lexer-tokens [limit]            Print token stream (optionally limit number
-                                    of tokens, requires -l)
-  --lexer-mapping [lines]           Print character-to-token mapping
-                                    (optionally specify line range like "1-10",
-                                    requires -l)
-  --lexer-summary                   Print lexer operation summary (requires -l)
   --kicad-version <version>         KiCad schematic output version (9 or 10)
                                     (default: "9")
+  --o <fileName>                    Additional output path (can be repeated)
+                                    (default: [])
   -h, --help                        display help for command`
 
         expect(result.includes(options)).toBe(true);
