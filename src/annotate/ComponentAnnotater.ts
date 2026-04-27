@@ -21,6 +21,8 @@ export class ComponentAnnotater {
 
     existingRefDes: string[] = [];
 
+    indexedRefdesGroups = new Map<string, string[]>();
+
     constructor() {
         // Refdes counting should all start at 1. e.g. R1, C1, etc.
         for (const key in ComponentRefDesPrefixes) {
@@ -118,6 +120,12 @@ export class ComponentAnnotater {
                     console.log('Warning: Refdes already used:', resultRefdes);
                 }
 
+                const basePrefix = this.indexedContextPrefix.get(useCtx)!;
+                if (!this.indexedRefdesGroups.has(basePrefix)) {
+                    this.indexedRefdesGroups.set(basePrefix, []);
+                }
+                this.indexedRefdesGroups.get(basePrefix)!.push(resultRefdes);
+
             } else {
                 const refdesCounter = this.getNextRefdesCounter(
                     usePrefix, this.counter[useCounterKey]);
@@ -153,6 +161,18 @@ export class ComponentAnnotater {
         }
 
         return { index, proposedName };
+    }
+
+    getIndexedRefdesSimplifications(): Map<string, string> {
+        const simplifications = new Map<string, string>();
+
+        for (const [basePrefix, indexedList] of this.indexedRefdesGroups) {
+            if (indexedList.length === 1) {
+                simplifications.set(indexedList[0], basePrefix);
+            }
+        }
+
+        return simplifications;
     }
 
     trackRefDes(name: string): void {

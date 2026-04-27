@@ -19,6 +19,8 @@ describe('test cli program', () => {
         const circuitscriptText = figlet.textSync('circuitscript', {
             font: 'Small Slant'
         });
+
+        console.log(result);
         
         expect(result.includes(circuitscriptText)).toBe(true);
         
@@ -37,6 +39,8 @@ describe('test cli program', () => {
   -b, --bom [output-path]           Generate Bill of Materials in csv format
   --kicad-version <version>         KiCad schematic output version (9 or 10)
                                     (default: "9")
+  --no-simplify-refdes              Disable simplification of single-instance
+                                    indexed refdes (e.g. R1_1 → R1)
   --o <fileName>                    Additional output path (can be repeated)
                                     (default: [])
   -h, --help                        display help for command`

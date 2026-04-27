@@ -58,6 +58,9 @@ export type ScriptOptions = {
 
     // KiCad schematic output version: '9' or '10' (default '9')
     kiCadVersion?: string,
+
+    // If false, disables simplification of single-instance indexed refdes (e.g. R1_1 → R1)
+    simplifyRefdes?: boolean,
 };
 
 export function prepareFile(textData: string): {

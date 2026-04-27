@@ -30,7 +30,9 @@ export function getTestEnvironment(): NodeScriptEnvironment {
     return env;
 }
 
-export async function runScript(script: string, scriptPath?: string): Promise<{
+export async function runScript(script: string, scriptPath?: string, options?: {
+    simplifyRefdes?: boolean,
+}): Promise<{
     visitor: ParserVisitor,
     hasError: boolean,
     componentPinNets: ComponentPinNet[]
@@ -101,7 +103,7 @@ export async function runScript(script: string, scriptPath?: string): Promise<{
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
-    visitor.annotateComponents();
+    visitor.annotateComponents(options?.simplifyRefdes ?? true);
 
     // Do not write cached libraries for tests
     // visitor.cacheLibraries();

@@ -48,6 +48,7 @@ export default async function main(): Promise<void> {
         // .option('--lexer-mapping [lines]', 'Print character-to-token mapping (optionally specify line range like "1-10", requires -l)')
         // .option('--lexer-summary', 'Print lexer operation summary (requires -l)')
         .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
+        .option('--no-simplify-refdes', 'Disable simplification of single-instance indexed refdes (e.g. R1_1 → R1)')
         .option('--o <fileName>', 'Additional output path (can be repeated)', collectOutputPaths, [])
         ;
 
@@ -135,6 +136,7 @@ export default async function main(): Promise<void> {
         updateSource,
         saveAnnotatedCopy: saveAnnotatedCopyPath,
         kiCadVersion: options.kicadVersion,
+        simplifyRefdes: options.simplifyRefdes,
     }
 
     // Build the list of output paths.

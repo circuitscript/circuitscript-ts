@@ -124,6 +124,81 @@ branch:
         expect(findItem(instances, 'cap', 'C1', 'numeric:100n')).not.toBeNull();
     });
 
+    test('simplify refdes enabled', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+v33 = supply("3V3")
+gnd = dgnd()
+
+def opamp():
+    return res(10k)
+
+def tmp_block():
+    tmp = opamp()
+    at v33
+    -- d 100
+    to tmp
+
+def tmp_block_2():
+    tmp = opamp()
+    at v33
+    -- d 100
+    to tmp
+
+tmp_block()
+
+tmp_block_2()
+tmp_block_2()
+`);
+        expect(hasError).toEqual(false);
+
+        const instances = visitor.dumpInstances();
+
+        expect(findItem(instances, 'res', 'R1', 'numeric:10k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R2_1', 'numeric:10k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R2_2', 'numeric:10k')).not.toBeNull();
+    });
+
+    test('simplify refdes disabled', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+v33 = supply("3V3")
+gnd = dgnd()
+
+def opamp():
+    return res(10k)
+
+def tmp_block():
+    tmp = opamp()
+    at v33
+    -- d 100
+    to tmp
+
+def tmp_block_2():
+    tmp = opamp()
+    at v33
+    -- d 100
+    to tmp
+
+tmp_block()
+
+tmp_block_2()
+tmp_block_2()
+`, undefined, { simplifyRefdes: false });
+        expect(hasError).toEqual(false);
+
+        const instances = visitor.dumpInstances();
+
+        // With simplifyRefdes disabled, single-instance indexed refdes are NOT simplified
+        expect(findItem(instances, 'res', 'R1_1', 'numeric:10k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R2_1', 'numeric:10k')).not.toBeNull();
+        expect(findItem(instances, 'res', 'R2_2', 'numeric:10k')).not.toBeNull();
+    });
+
     test('component annotation with custom type param', async () => {
 
         const script = `

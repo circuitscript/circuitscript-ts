@@ -108,6 +108,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     // Stores refdes file annotation keys to the refdes output
     refdesFileAnnotations = new Map<string, string>();
 
+    // Provides a numerical index when each component is created.
+    protected componentCreationIndex = 0;
+
     constructor(silent = false, 
         onErrorHandler: OnErrorHandler | null = null,
         environment: NodeScriptEnvironment) {
@@ -462,25 +465,34 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         if (ctx.Assign()) {
             // Simple assignment: lhs = rhs
-            const rhsCtx = ctx.data_expr();
-            const rhsCtxResult = this.visitResult(rhsCtx);
 
-            const sequenceParts: (string | any)[] = [];
-            
-            if (isReference(rhsCtxResult) && !rhsCtxResult.found) {
-                // The value does not exists
-                this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
-            }
-            
-            const rhsValue = unwrapValue(rhsCtxResult);
-            this.assignValueToReference(sequenceParts, leftSideReference, 
-                lhsCtx, rhsValue);
-                
-            if (sequenceParts.length > 0) {
-                this.log('add sequence action: assign');
-                this.getScope().sequence.push([
-                    SequenceAction.Assign, ...sequenceParts
-                ]);
+            const rhsCtx = ctx.data_expr();
+            let rhsValue: any;
+
+            const creationFlag = this.trackNewComponentCreated(() => {
+                const rhsCtxResult = this.visitResult(rhsCtx);
+
+                const sequenceParts: (string | any)[] = [];
+
+                if (isReference(rhsCtxResult) && !rhsCtxResult.found) {
+                    // The value does not exists
+                    this.throwWithContext(rhsCtx, rhsCtx.getText() + ' is not defined');
+                }
+
+                rhsValue = unwrapValue(rhsCtxResult);
+                this.assignValueToReference(sequenceParts, leftSideReference,
+                    lhsCtx, rhsValue);
+
+                if (sequenceParts.length > 0) {
+                    this.log('add sequence action: assign');
+                    this.getScope().sequence.push([
+                        SequenceAction.Assign, ...sequenceParts
+                    ]);
+                }
+            });
+
+            if (rhsValue instanceof ClassComponent) {
+                this.linkComponentToCtx(ctx, rhsValue, creationFlag);
             }
 
             this.setResult(ctx, rhsValue);
@@ -1679,6 +1691,22 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         this.validateType(value, context, (val) => {
             return (val instanceof NumericValue);
         }, 'numeric value');
+    }
+
+    protected trackNewComponentCreated = (callback: () => void): boolean => {
+        const preCreatedIndex = this.componentCreationIndex;
+
+        callback();
+        
+        const postCreatedIndex = this.componentCreationIndex;
+
+        let creationFlag = false;
+        if (postCreatedIndex > preCreatedIndex){
+            // New component was created!
+            creationFlag = true;
+        }
+
+        return creationFlag;
     }
 
     enterFile(filePath: string): void {

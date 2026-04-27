@@ -1,8 +1,8 @@
 [
     {
         "start": {
-            "line": 14,
-            "column": 3
+            "line": 6,
+            "column": 0
         },
         "type": "UNCONNECTED-PIN",
         "message": "Unconnected pin: J1 pin 5"

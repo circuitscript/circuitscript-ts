@@ -72,9 +72,9 @@ import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { ComponentTypes, Delimiter1, FrameType, GlobalDocumentName, 
-    ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide, 
-    ValidPinSides, 
+import { ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
+    ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
+    ValidPinSides,
     WireAutoDirection} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { ExecutionWarning, unwrapValue } from "./utils.js";
@@ -108,9 +108,7 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    // Provides a numerical index when each component is created.
-    componentCreationIndex = 0;
-
+    
     // TODO: this should be in the scope object?
     creationCtx = new Map<Wire | ClassComponent, ParserRuleContext>();
 
@@ -136,22 +134,6 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, pinId);
-    }
-
-    trackNewComponentCreated = (callback: () => void): boolean => {
-        const preCreatedIndex = this.componentCreationIndex;
-
-        callback();
-        
-        const postCreatedIndex = this.componentCreationIndex;
-
-        let creationFlag = false;
-        if (postCreatedIndex > preCreatedIndex){
-            // New component was created!
-            creationFlag = true;
-        }
-
-        return creationFlag;
     }
 
     visitAdd_component_expr = (ctx: Add_component_exprContext): void => {
@@ -2442,7 +2424,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     /** Performs simple annotation for components and rename nets */
-    annotateComponents(): void {
+    annotateComponents(simplifyRefdes = true): void {
         this.log('===== annotate components =====');
 
         const annotater = new ComponentAnnotater();
@@ -2488,6 +2470,22 @@ export class ParserVisitor extends BaseVisitor {
                 this.log('Failed to annotate:', instance.instanceName);
             }
         });
+
+        if (simplifyRefdes) {
+            // Simplify indexed refdes that only have one instance (e.g. R1_1 → R1).
+            const simplifications = annotater.getIndexedRefdesSimplifications();
+            if (simplifications.size > 0) {
+                for (const [, instance] of instances) {
+                    const simplified = simplifications.get(instance.assignedRefDes ?? '');
+                    if (simplified !== undefined) {
+                        this.log(`Simplify refdes: ${instance.assignedRefDes} → ${simplified}`);
+                        instance.assignedRefDes = simplified;
+                        this.setComponentUnitRefdesSuffix(instance);
+                    }
+                }
+            }
+
+        }
 
         this.log('===== annotate components done =====');
 

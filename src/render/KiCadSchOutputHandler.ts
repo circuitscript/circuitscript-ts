@@ -30,6 +30,41 @@ export class KiCadSchOutputHandler extends ParseOutputHandler {
 
         if (outputPath !== null && fileExtension === 'kicad_sch') {
             const sheetFrames = extra ?? [];
+
+            const missingFootprint: { line: number; col: number; text: string }[] = [];
+            for (const sheet of sheetFrames) {
+                for (const rc of sheet.components) {
+                    const comp = rc.component;
+                    if (
+                        comp._isInternalPathObject ||
+                        comp.isNetLabel ||
+                        comp.parameters.has('net_name')
+                    ) continue;
+
+                    if (comp.assignedRefDes !== null && !comp.parameters.has('footprint')) {
+                        const origin = comp.ctxReferences[0] ?? undefined;
+                        let location = '?';
+                        let line = 0, col = 0;
+                        if (origin) {
+                            const { filePath, ctx } = origin;
+                            line = ctx.start?.line ?? 0;
+                            col = (ctx.start?.column ?? 0) + 1;
+                            location = filePath
+                                ? `${filePath}:${line}:${col}`
+                                : `line ${line}:${col}`;
+                        }
+                        const pinCount = comp.pins.size;
+                        missingFootprint.push({ line, col, text: `  ${comp.assignedRefDes} (${pinCount} pin${pinCount !== 1 ? 's' : ''}) - ${location}` });
+                    }
+                }
+            }
+            if (missingFootprint.length > 0) {
+                missingFootprint.sort((a, b) => a.line !== b.line ? a.line - b.line : a.col - b.col);
+                console.warn(
+                    `Warning: the following components have no footprint assigned:\n${missingFootprint.map(e => e.text).join('\n')}`
+                );
+            }
+
             const generator = new KiCadSchGenerator(this.version, this.circuitscriptVersion);
 
             const projectName = path.basename(outputPath, path.extname(outputPath));
