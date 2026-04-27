@@ -1,6 +1,14 @@
 # Changelog
 
-## [v0.7.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.2...v0.7.0)
+## [v0.7.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.0...v0.7.1)
+
+[ceeb2f8](https://gitlab.com/circuitscript/circuitscript-ts/commit/ceeb2f80dcaa54092691a23dc2f8bb725544b061)Simplify single-instance indexed refdes and warn on missing footprints
+- 
+-  Annotator now simplifies indexed refdes with only one instance (e.g. R1_1 → R1); controllable via --no-simplify-refdes CLI flag or simplifyRefdes option
+-  KiCad export warns when components are missing footprint assignments
+-  Moved componentCreationIndex and trackNewComponentCreated to BaseVisitor
+
+## [v0.7.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.6.2...v0.7.0) - 2026-04-17
 
 [fbc42bf](https://gitlab.com/circuitscript/circuitscript-ts/commit/fbc42bfb758afd9143747de065a581e4a3770493) added conn_double_rows to std library
 -  fixed vertical label alignment (TextTop -&gt; Alphabetic)
