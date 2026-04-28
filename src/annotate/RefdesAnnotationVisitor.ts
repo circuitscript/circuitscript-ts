@@ -72,7 +72,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     /**
      * Main method to generate output with all modifications applied
      */
-    visitScript = async (ctx: ScriptContext): Promise<void> => {
+    visitScript = (ctx: ScriptContext): void => {
         // Imports do not need to be handled.
         this.runExpressions(this.getExecutor(), ctx.expression());
 

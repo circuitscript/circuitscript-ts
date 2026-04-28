@@ -20,8 +20,6 @@ describe('test cli program', () => {
             font: 'Small Slant'
         });
 
-        console.log(result);
-        
         expect(result.includes(circuitscriptText)).toBe(true);
         
         const options =

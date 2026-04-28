@@ -93,7 +93,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
     // AST Visitor Methods - Handle specific CircuitScript language constructs
     //
 
-    visitScript = async (ctx: ScriptContext): Promise<void> => {
+    visitScript = (ctx: ScriptContext): void => {
         this.log('===', 'start', '===');
 
         ctx.import_expr().forEach(ctxImport => {
