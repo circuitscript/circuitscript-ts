@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.7.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.0...v0.7.1)
+## [v0.7.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.1...v0.7.2)
+
+[e90c5fa](https://gitlab.com/circuitscript/circuitscript-ts/commit/e90c5faf8e6008c075daa6cafbbb71970a7f9845)Remove debug console.log and fix visitScript signatures to be synchronous
+
+## [v0.7.1](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.0...v0.7.1) - 2026-04-27
 
 [ceeb2f8](https://gitlab.com/circuitscript/circuitscript-ts/commit/ceeb2f80dcaa54092691a23dc2f8bb725544b061)Simplify single-instance indexed refdes and warn on missing footprints
 - 
