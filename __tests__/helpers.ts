@@ -271,6 +271,8 @@ export type SvgDiffResult = {
     width: number;
     height: number;
     diffPng: Buffer;
+    img1: PNG,
+    img2: PNG,
 };
 
 function svgToPng(svgString: string): PNG {
@@ -314,6 +316,8 @@ export function compareSvgToFile(svgFilePath: string, svgString: string, thresho
         width,
         height,
         diffPng: PNG.sync.write(diff),
+        img1,
+        img2,
     };
 }
 

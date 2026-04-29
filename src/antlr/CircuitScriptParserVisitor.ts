@@ -57,6 +57,7 @@ import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
 import { Nested_propertiesContext } from "./CircuitScriptParser.js";
 import { Single_line_propertyContext } from "./CircuitScriptParser.js";
+import { WithBracketsPropertyContext } from "./CircuitScriptParser.js";
 import { Wire_exprContext } from "./CircuitScriptParser.js";
 import { Point_exprContext } from "./CircuitScriptParser.js";
 import { Import_simpleContext } from "./CircuitScriptParser.js";
@@ -422,6 +423,13 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitSingle_line_property?: (ctx: Single_line_propertyContext) => Result;
+    /**
+     * Visit a parse tree produced by the `WithBracketsProperty`
+     * labeled alternative in `CircuitScriptParser.property_value_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitWithBracketsProperty?: (ctx: WithBracketsPropertyContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.wire_expr`.
      * @param ctx the parse tree

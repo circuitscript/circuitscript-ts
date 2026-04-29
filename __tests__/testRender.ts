@@ -1,9 +1,10 @@
-import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render/render.js";
 import { compareSvgToFile, renderCommon } from "./helpers.js";
+import { PNG } from 'pngjs';
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 import { getStylesFromDocument } from '../src/styles.js';
@@ -144,18 +145,25 @@ describe('Render tests', () => {
         }
         
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + useSvgPath + ".svg", { encoding: 'utf8' });
-        // if (svgOutput !== expectedSvgOutput){
-        //     const expectedSvgPath = `${mainPath}svgs/${useSvgPath}.svg`;
-        //     console.log("run manual pixel check: " + useSvgPath);
-        //     const pixCompare = compareSvgToFile(expectedSvgPath, svgOutput);
-        //     expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
-        // } else {
-        // }
-        
-        // expect(svgOutput).toEqual(expectedSvgOutput);
-        
-        // Do not spit out all the differences
-        expect(svgOutput === expectedSvgOutput).toEqual(true);
+        const doPixelCheck = false;
+
+        if (doPixelCheck && svgOutput !== expectedSvgOutput){
+            const expectedSvgPath = `${mainPath}svgs/${useSvgPath}.svg`;
+            console.log("run manual pixel check: " + useSvgPath);
+            const pixCompare = compareSvgToFile(expectedSvgPath, svgOutput);
+
+            // const outputDiff = pixCompare.diffPng;
+            // writeFileSync(`${expectedSvgPath}-diff.png`, outputDiff);
+            // writeFileSync(`${expectedSvgPath}-img1.png`, PNG.sync.write(pixCompare.img1));
+            // writeFileSync(`${expectedSvgPath}-img2.png`, PNG.sync.write(pixCompare.img2));
+
+            expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
+        } else {
+            // expect(svgOutput).toEqual(expectedSvgOutput);
+            
+            // Do not spit out all the differences
+            expect(svgOutput === expectedSvgOutput).toEqual(true);
+        }
     });
 
     test('pdf output', async () => {
