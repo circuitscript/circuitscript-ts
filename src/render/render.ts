@@ -33,6 +33,26 @@ import { Logger } from '../logger.js';
 import { DocumentVariable } from 'src/objects/types.js';
 import { Styles } from 'src/styles.js';
 
+function componentTooltip(component: ClassComponent): string | null {
+    const creation = component.ctxReferences.find(r => r.creationFlag)
+                  ?? component.ctxReferences[0];
+    if (!creation) return null;
+    const line = creation.ctx.start?.line ?? '?';
+    const col  = (creation.ctx.start?.column ?? 0) + 1;
+    // const file = creation.filePath;
+
+    let extraText = '';
+    if (component.assignedRefDes){
+        extraText = `${component.assignedRefDes}: `;
+    }
+
+    if (component.isNetLabel){
+        extraText = `${component.parameters.get('net_name')}: `;
+    }
+    
+    return `${extraText}line ${line}:${col}`;
+}
+
 function createSvgCanvas(): Svg {
     const env = NodeScriptEnvironment.getInstance();
     const window = env.createSVGWindow();
@@ -258,6 +278,11 @@ function generateSVGChild(canvas: Svg | G,
         const { x, y, width, height } = item;
         const symbolGroup = canvas.group();
         symbolGroup.translate(x.toNumber(), y.toNumber());
+
+        const tooltip = componentTooltip(item.component);
+        if (tooltip) {
+            symbolGroup.element('title').words(tooltip);
+        }
 
         const { symbol = null } = item;
 
