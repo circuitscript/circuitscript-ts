@@ -56,6 +56,7 @@ import {
     Create_exprContext,
     Properties_blockContext,
     At_block_expressionsContext,
+    WithBracketsPropertyContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -687,41 +688,45 @@ export class ParserVisitor extends BaseVisitor {
 
     visitGraphic_expressions_block = (ctx: Graphic_expressions_blockContext): void => {
         const commands = ctx.graphic_expr().reduce((accum, item) => {
-            const [commandName, parameters] =
-                this.visitResult(item) as [string, CallableParameter[]];
+            try {
+                const [commandName, parameters] =
+                    this.visitResult(item) as [string, CallableParameter[]];
+                    
+                if (commandName === PlaceHolderCommands.for) {
+                    accum = accum.concat(parameters);
+                } else {
+                    const keywordParams = new Map<string, any>();
+                    const positionParams = parameters.reduce(
+                        (accum, [argType, name, value]) => {
+                            if (argType === 'position') {
+                                accum.push(value);
+                            } else {
+                                keywordParams.set(name, value);
+                            }
+                            return accum;
+                        }, [] as any[]);
 
-            if (commandName === PlaceHolderCommands.for) {
-                accum = accum.concat(parameters);
-            } else {
-                const keywordParams = new Map<string, any>();
-                const positionParams = parameters.reduce(
-                    (accum, [argType, name, value]) => {
-                        if (argType === 'position') {
-                            accum.push(value);
-                        } else {
-                            keywordParams.set(name, value);
-                        }
-                        return accum;
-                    }, [] as any[]);
+                    let useCommandName = commandName;
+                    let usePositionParams = positionParams;
 
-                let useCommandName = commandName;
-                let usePositionParams = positionParams;
+                    // Replace center-rects with normal rects
+                    if (commandName === PlaceHolderCommands.crect) {
+                        useCommandName = PlaceHolderCommands.rect;
+                        const [centerX, centerY, width, height] = positionParams as NumericValue[];
 
-                // Replace center-rects with normal rects
-                if (commandName === PlaceHolderCommands.crect) {
-                    useCommandName = PlaceHolderCommands.rect;
-                    const [centerX, centerY, width, height] = positionParams as NumericValue[];
+                        // Keep in original user-land units
+                        const newX = centerX.sub(width.half());
+                        const newY = centerY.sub(height.half());
+                        usePositionParams = [newX, newY, width, height];
+                    }
 
-                    // Keep in original user-land units
-                    const newX = centerX.sub(width.half());
-                    const newY = centerY.sub(height.half());
-                    usePositionParams = [newX, newY, width, height];
+                    accum.push([useCommandName, usePositionParams, keywordParams, item]);
                 }
 
-                accum.push([useCommandName, usePositionParams, keywordParams, item]);
+                return accum;
+            } catch (err){
+                this.throwWithContext(item, err);
             }
-
-            return accum;
         }, [] as GraphicExprCommand[]);
 
         this.setResult(ctx, commands);
@@ -940,6 +945,11 @@ export class ParserVisitor extends BaseVisitor {
 
         this.getScope().exitContext();
         this.setResult(ctx, value);
+    }
+
+    visitWithBracketsProperty = (ctx: WithBracketsPropertyContext): void => {
+        // Same handling
+        this.visitSingle_line_property(ctx);
     }
 
     visitProperties_block = (ctx: Properties_blockContext): void => {

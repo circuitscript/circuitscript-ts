@@ -1415,11 +1415,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
     visitRoundedBracketsExpr = (ctx: RoundedBracketsExprContext):void => {
-        const results = ctx.data_expr().map(innerCtx => {
-            return this.visitResult(innerCtx);
-        });
-
-        this.setResult(ctx, results);
+        this.passResult(ctx, ctx.data_expr());
     }
 
     protected setupDefinedParameters(
