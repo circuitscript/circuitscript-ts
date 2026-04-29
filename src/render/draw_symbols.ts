@@ -510,7 +510,7 @@ export abstract class SymbolGraphic {
             textContainer.text(tmpLabel.text)
                 .fill(textColor)
                 .font(fontProperties)
-                .attr("xml:space", "preserve")
+                .css("white-space", "pre")
                 .rotate(useLabelAngle, 0, 0);
 
             const { a, b, c, d, e, f } = textContainer.matrix();

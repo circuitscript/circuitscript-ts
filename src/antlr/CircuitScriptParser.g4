@@ -90,7 +90,7 @@ parameters: ((data_expr (Comma data_expr)*) | keyword_assignment_expr) (Comma ke
 double_dot_property_set_expr: DoubleDot ID trailer* Assign data_expr;
 
 data_expr:
-    LParen data_expr RParen                             #RoundedBracketsExpr
+    LParen data_expr (Comma data_expr)* RParen          #RoundedBracketsExpr
     | Create create_expr                                #CreateExpr
     | (Not | Minus) data_expr                           #UnaryOperatorExpr
     | LSquare (data_expr (Comma data_expr)*)* RSquare   #ArrayExpr

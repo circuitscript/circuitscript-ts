@@ -81,7 +81,7 @@ export function measureTextSize2(
             weight: fontWeight,
             style: fontStyle,
         })
-        .attr("xml:space", "preserve")
+        .css("white-space", "pre")
         .fill('#333');
 
         let textbox = tmpTextElement.bbox();
