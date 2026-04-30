@@ -43,11 +43,11 @@ function componentTooltip(component: ClassComponent): string | null {
 
     let extraText = '';
     if (component.assignedRefDes){
-        extraText = `${component.assignedRefDes}: `;
+        extraText = `Component ${component.assignedRefDes}: `;
     }
 
     if (component.isNetLabel){
-        extraText = `${component.parameters.get('net_name')}: `;
+        extraText = `Net label ${component.parameters.get('net_name')}: `;
     }
     
     return `${extraText}line ${line}:${col}`;

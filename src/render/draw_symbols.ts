@@ -626,7 +626,10 @@ export class SymbolPlaceholder extends SymbolGraphic {
             [PlaceHolderCommands.lineColor, [defaultLineColor], {}],
             [PlaceHolderCommands.textColor, [defaultTextColor], {}],
             [PlaceHolderCommands.lineWidth, [defaultLineWidth], {}],
-            [PlaceHolderCommands.fill, ['none']],
+
+            // Set as transparent, so that the mouseover/hitarea will include
+            // the component background.
+            [PlaceHolderCommands.fill, ['transparent']],  
             ...drawing.getCommands()
             ];
 
