@@ -1,6 +1,38 @@
 # Changelog
 
-## [v0.7.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.1...v0.7.2)
+## [v0.7.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.2...v0.7.3)
+
+[cdca91d](https://gitlab.com/circuitscript/circuitscript-ts/commit/cdca91dd0b4d41b3f52de185b49ede67b59f792c)Add WithBracketsProperty grammar rule and improve render test pixel comparison
+- 
+- Separate tuple syntax in property values from grouped expressions by introducing a dedicated WithBracketsProperty alternative, regenerate the parser, and expose raw PNG images in SVG diff results for easier debugging.
+
+[0b250f4](https://gitlab.com/circuitscript/circuitscript-ts/commit/0b250f47479cad80cc8219cc81a6093234740c79)Support tuple syntax in parentheses and fix SVG whitespace attribute
+- 
+- - Extend RoundedBracketsExpr grammar rule to allow comma-separated expressions: (a, b, c)
+- - Update BaseVisitor to collect all inner expressions as an array result
+- - Regenerate parser from updated grammar
+- - Replace deprecated xml:space="preserve" SVG attribute with CSS white-space:pre
+
+[6191e6e](https://gitlab.com/circuitscript/circuitscript-ts/commit/6191e6e911233b7bc844304914b91a82ba9be7f1)Add SVG title tooltips to component symbols showing source location
+- 
+- Each component group in the SVG output now includes a &lt;title&gt; element
+- with the reference designator and source line/column for hover tooltips.
+- Updates all golden SVG test fixtures to include the new title elements.
+
+[1765e70](https://gitlab.com/circuitscript/circuitscript-ts/commit/1765e7067595ec12e896ac648ee7a9934c2ab258) updated tooltip text
+-  changed symbol default fill to transparent for hitarea
+
+[be30be3](https://gitlab.com/circuitscript/circuitscript-ts/commit/be30be34abaa4c84f27076fc7b1399492dfd103e)Add error handling to graphic expressions block and simplify rounded brackets visitor
+- 
+- - Wrap visitGraphic_expressions_block in try/catch for robustness
+- - Simplify visitRoundedBracketsExpr to use passResult
+- - Update test fixtures to reflect SVG whitespace attribute changes
+
+[c31cbe6](https://gitlab.com/circuitscript/circuitscript-ts/commit/c31cbe6dc969167560a8a5c8ff65832299e95f27)Add test for multi-line bracket syntax in component properties and drawing commands
+- 
+- Updates golden SVG for script59 to reflect "Component X:" tooltip prefix, and adds script80 test case verifying brackets spanning multiple lines in arrange/graphic blocks.
+
+## [v0.7.2](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.1...v0.7.2) - 2026-04-28
 
 [e90c5fa](https://gitlab.com/circuitscript/circuitscript-ts/commit/e90c5faf8e6008c075daa6cafbbb71970a7f9845)Remove debug console.log and fix visitScript signatures to be synchronous
 
