@@ -1,6 +1,14 @@
 # Changelog
 
-## [v0.7.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.2...v0.7.3)
+## [v0.7.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.3...v0.7.4)
+
+[7974f79](https://gitlab.com/circuitscript/circuitscript-ts/commit/7974f7961556a86b0def74321fbee53ac61e30bc)Centralize version constant into src/version.ts
+- 
+- Replace runtime package.json parsing with a static VERSION export, removing
+- the cached file-read logic in NodeScriptEnvironment and the TOOL_VERSION
+- fallback in globals.ts.
+
+## [v0.7.3](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.2...v0.7.3) - 2026-05-01
 
 [cdca91d](https://gitlab.com/circuitscript/circuitscript-ts/commit/cdca91dd0b4d41b3f52de185b49ede67b59f792c)Add WithBracketsProperty grammar rule and improve render test pixel comparison
 - 
