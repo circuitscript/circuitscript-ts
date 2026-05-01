@@ -8,8 +8,6 @@
 import { numeric } from "./objects/NumericValue.js";
 import { PinTypes } from "./objects/PinTypes.js";
 
-export const TOOL_VERSION = '0.1.5';
-
 // Delimiter should not include chars that can be in instance name 
 // or in variable names.
 export const Delimiter1 = '-';

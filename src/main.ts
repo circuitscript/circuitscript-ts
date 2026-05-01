@@ -18,18 +18,17 @@ import { renderScript } from "./pipeline.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { _id } from './render/export.js';
 import { printErrorChain } from './errors.js';
+import { VERSION } from './version.js';
 
 export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
 
-    const version = env.getPackageVersion();
-
     const collectOutputPaths = (val: string, prev: string[]) => [...prev, val];
 
     program
         .description('generate graphical output from circuitscript files')
-        .version(version)
+        .version(VERSION)
         .argument('[input path]', 'Input path')
         .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')

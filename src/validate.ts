@@ -18,16 +18,15 @@ import { _id } from './render/export.js';
 import { Token } from 'antlr4ng';
 import { ParseSymbolType } from './objects/types.js';
 import { SymbolTableItemDefined } from './validate/SymbolTable.js';
+import { VERSION } from './version.js';
 
 export default async function validate(): Promise<void> {
     const env = new NodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
- 
-    const version = env.getPackageVersion();
 
     program
         .description('generate validation output circuitscript files')
-        .version(version)
+        .version(VERSION)
         .argument('[input path]', 'Input path')
         .argument('[output path]', 'Output path')
         .option('-i, --input text <input text>', 'Input text directly')

@@ -37,6 +37,7 @@ import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, ParamKeys,
     PinTypesList, ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInMethods } from './builtinMethods.js';
+import { VERSION } from './version.js';
 import { BaseError, throwWithContext, RuntimeExecutionError } from './errors.js';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
 import { NodeScriptEnvironment } from "./environment/environment.js";
@@ -141,6 +142,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         // Add the document global object, this is used to set the page size
         scope.setVariable(GlobalDocumentName, {
             'bom': {},  // Store bom configuration
+            'version': VERSION,
         });
         
         this.setupBuiltInFunctions(this.startingContext);

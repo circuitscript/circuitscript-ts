@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from "path";
 import CryptoJs from "crypto-js";
 
-import { TOOL_VERSION } from "../globals.js";
+import { VERSION } from "../version.js";
 import { SVGWindow } from "../helpers.js";
 import { RuntimeExecutionError } from "../errors.js";
 
@@ -65,28 +65,10 @@ export class NodeScriptEnvironment {
     }
 
     /**
-     * Gets the package version from package.json.
-     * Reads and caches the version on first call for both CommonJS and ESM compatibility.
-     * @returns The version string from package.json
+     * @returns The version string from package.json is also found at this variable.
      */
     getPackageVersion(): string {
-        if (this.cachedVersion !== null) {
-            return this.cachedVersion;
-        }
-
-        try {
-            // Locate package.json at the tools path (project root)
-            const packageJsonPath = path.join(this.getToolsPath(), '../', 'package.json');
-            const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
-            const packageJson = JSON.parse(packageJsonContent);
-
-            this.cachedVersion = packageJson.version || TOOL_VERSION;
-            return this.cachedVersion!;
-        } catch (error) {
-            // Fallback to hardcoded version if package.json cannot be read
-            console.warn('Failed to read version from package.json, using fallback version:', error);
-            return TOOL_VERSION;
-        }
+        return VERSION;
     }
 
     /**
