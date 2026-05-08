@@ -395,16 +395,10 @@ export class ClassComponent {
 
     setParam(key: string, value: number | string | NumericValue | Net): void {
         this.parameters.set(key, value);
-        this.refreshParamCache();
     }
 
     hasParam(key: string): boolean {
         return this.parameters.has(key);
-    }
-
-    private refreshParamCache(): void {
-        this._cachedParams =
-            JSON.stringify(Object.fromEntries(this.parameters));
     }
 
     private refreshPinsCache(): void {
@@ -412,7 +406,6 @@ export class ClassComponent {
     }
 
     refreshCache(): void {
-        this.refreshParamCache();
         this.refreshPinsCache();
     }
 
@@ -447,7 +440,18 @@ export class ClassComponent {
 
         if (this.typeProp !== other.typeProp) return false;
         if (this._cachedPins !== other._cachedPins) return false;
-        if (this._cachedParams !== other._cachedParams) return false;
+
+        // Compare parameter length first then each key.
+        const thisKeys = Array.from(this.parameters.keys());
+        const otherKeys = Array.from(this.parameters.keys());
+
+        if (thisKeys.length !== otherKeys.length) return false;
+
+        for (const key of thisKeys) {
+            if (this.parameters.get(key) !== other.parameters.get(key)) {
+                return false;
+            }
+        }
 
         // Check if units are the same
         for (let i = 0; i < this.units.length; i++) {
