@@ -161,7 +161,7 @@ describe('Render tests', () => {
 
             expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
         } else {
-            // expect(svgOutput).toEqual(expectedSvgOutput);
+            expect(svgOutput).toEqual(expectedSvgOutput);
             
             // Do not spit out all the differences
             expect(svgOutput === expectedSvgOutput).toEqual(true);

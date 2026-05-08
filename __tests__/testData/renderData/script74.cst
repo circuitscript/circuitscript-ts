@@ -2,7 +2,7 @@
 
 from "std" import *
 
-def net2(net_name, net_type = "any"):
+def net2(net_name):
     return create component:
         pins: 1
         copy: true
@@ -14,7 +14,6 @@ def net2(net_name, net_type = "any"):
         params:
             net_name: net_name
             priority: 10
-            net_type: net_type
 
 vcc = supply("VCC")
 gnd = dgnd()

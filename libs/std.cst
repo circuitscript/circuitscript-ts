@@ -1,6 +1,17 @@
 # Circuitscript default lib
 
-def net(net_name, net_type = "any"):
+def net_class():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            hline: -50, 0, 100
+            vpin: 1, 0, 50, -50, display_id=false
+            label: params.net_name, 0, -15, name="value", fontSize=50, anchor="center"
+        type: "net"
+        params:
+            priority: 1
+
+def net(net_name):
     return create component:
         pins: 1
         copy: true
@@ -12,10 +23,9 @@ def net(net_name, net_type = "any"):
         params:
             net_name: net_name
             priority: 10
-            net_type: net_type
 
 def supply(net_name):
-    net_obj = net(net_name, "source")
+    net_obj = net(net_name)
     return net_obj
 
 def label(value, anchor="left"):

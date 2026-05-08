@@ -340,9 +340,6 @@ export class ExecutionContext {
             // If the net name is not defined, then generate a unique net name
             const netName = paramsMap.get(ParamKeys.net_name) ?? this.getUniqueNetName();
 
-            // If net type not defined, use any as default.
-            const netType = paramsMap.get(ParamKeys.net_type) ?? NetTypes.Any;
-
             let priority = 0;
             if (paramsMap.has(ParamKeys.priority)) {
                 priority = (paramsMap.get(ParamKeys.priority) as NumericValue).toNumber();
@@ -357,7 +354,7 @@ export class ExecutionContext {
                 this.log('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
-                tmpNet = new Net(this.netNamespace, netName, priority, netType);
+                tmpNet = new Net(this.netNamespace, netName, priority);
                 this.log('net not found, added net instance', 
                     tmpNet.namespace, tmpNet.name);
             }

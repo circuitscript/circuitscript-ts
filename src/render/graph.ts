@@ -436,6 +436,9 @@ export class NetGraph {
 
         try {
             netsWithoutGnd.forEach((net, index) => {
+
+                // TODO: consider alternative source for this.
+
                 // Ignore the GND net and only parse nets with type "source"
                 if (net.type === NetTypes.Source) {
                     const currentVector = Matrix.zeros(netsWithoutGnd.length, 1);

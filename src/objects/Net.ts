@@ -31,8 +31,7 @@ export class Net {
 
     // private randomId: string;
 
-    constructor(namespace: string, name: string, priority = 0, 
-        type = NetTypes.Any) {
+    constructor(namespace: string, name: string, priority = 0) {
         if (namespace.indexOf(' ') !== -1){
             throw "Invalid net namespace provided";
         }
@@ -45,8 +44,6 @@ export class Net {
         this.name = name;
         
         this.priority = priority;
-        this.type = type;
-
         this.baseName = name;
 
         // this.randomId = Math.random().toString();
@@ -68,7 +65,6 @@ export class Net {
         return netA.namespace === netB.namespace &&
             netA.name === netB.name &&
             netA.baseName === netB.baseName &&
-            netA.priority === netB.priority &&
-            netA.type === netB.type;
+            netA.priority === netB.priority;
     }
 }
