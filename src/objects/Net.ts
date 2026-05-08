@@ -26,6 +26,9 @@ export class Net {
     // Store parameters like net color, wire thickness, highlight, etc.
     params: Map<string, any> = new Map();
 
+    // If set, then the net class params are used by default.
+    class?: Net;
+
     // private randomId: string;
 
     constructor(namespace: string, name: string, priority = 0, 
@@ -51,6 +54,14 @@ export class Net {
 
     toString(): string {
         return this.namespace + this.name;
+    }
+
+    hasParam(key: string): boolean {
+        return this.params.has(key);
+    }
+
+    getParam(key: string): any {
+        return this.params.get(key);
     }
 
     static isSame(netA: Net, netB: Net): boolean {

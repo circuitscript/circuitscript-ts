@@ -68,7 +68,7 @@ import {
 import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
-import { PinTypes } from './objects/PinTypes.js';
+import { AllPinTypes, PinTypes } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
@@ -1684,7 +1684,7 @@ export class ParserVisitor extends BaseVisitor {
         
         const scope = this.getScope();
         const useObject = scope.currentFrameId !== -1 ?
-            scope.frames[scope.currentFrameId - 1] : scope.currentComponent;
+            scope.frames[scope.currentFrameId - 1] : scope.lastComponentReference;
 
         const lastReference = new AnyReference({
             found: true,
@@ -2170,14 +2170,6 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    pinTypes = [
-        PinTypes.Any,
-        PinTypes.IO,
-        PinTypes.Input,
-        PinTypes.Output,
-        PinTypes.Power,
-    ];
-
     /** Parses the pin defintion from the `pins` property */
     private extractPinDefintion(
         pinData: NumericValue | Map<string, any>,
@@ -2215,7 +2207,7 @@ export class ParserVisitor extends BaseVisitor {
                 // Check if firstValue matches a pin type
                 if (firstValue.type
                     && firstValue.type === ReferenceTypes.pinType
-                    && this.pinTypes.indexOf(firstValue.value) !== -1) {
+                    && AllPinTypes.indexOf(firstValue.value) !== -1) {
                     // First value matches a pin type
                     pinType = firstValue.value;
                     pinName = pinDef[1];

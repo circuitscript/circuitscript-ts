@@ -21,7 +21,8 @@ import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionH
 import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
 import { SymbolTable } from "./SymbolTable.js";
 import { BaseVisitor } from "../BaseVisitor.js";
-import { BaseNamespace, PinTypesList, SymbolValidatorContext } from "../globals.js";
+import { BaseNamespace, SymbolValidatorContext } from "../globals.js";
+import { AllPinTypes } from "../objects/PinTypes.js";
 
 /**
  * @class SymbolValidatorVisitor
@@ -319,7 +320,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         const innerCtx = ctx.callable_expr();
 
         const innerCtxID = innerCtx.ID();
-        if (PinTypesList.indexOf(innerCtxID.getText()) !== -1 && innerCtx.trailer().length === 0) {
+        if (AllPinTypes.indexOf(innerCtxID.getText()) !== -1 && innerCtx.trailer().length === 0) {
             // Ignore pin types constants.
             return;
         } else {

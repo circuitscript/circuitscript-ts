@@ -28,6 +28,8 @@ export const NoNetText = 'NO_NET';
 export enum ParamKeys {
     priority = 'priority',
     net_name = 'net_name',
+
+    /** @deprecated */
     net_type = 'net_type',
 
     flip = 'flip',
@@ -195,10 +197,3 @@ export const TrailerArrayIndex = 'index';
 
 export const DefaultComponentUnit = '__default';
 
-export const PinTypesList: string[] = [
-    PinTypes.Any,
-    PinTypes.Input,
-    PinTypes.Output,
-    PinTypes.IO,
-    PinTypes.Power,
-];

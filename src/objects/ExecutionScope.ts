@@ -78,6 +78,10 @@ export class ExecutionScope {
 
     // This is the first component in the circuit scope
     componentRoot: ClassComponent | null = null;
+
+    // Used to track the last component referenced in graph operations AND
+    // in assignment operations.
+    lastComponentReference: ClassComponent | null = null;
     
     // Tracks the counter for copies of each component instance
     // Copies are the same component electrically, but different symbols.
@@ -231,6 +235,8 @@ export class ExecutionScope {
         } else {
             this.currentPin = null;
         }
+
+        this.lastComponentReference = component;
     }
 
     enterContext(context: ParserRuleContext): void {

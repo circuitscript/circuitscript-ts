@@ -9,7 +9,7 @@ import { G } from "@svgdotjs/svg.js";
 
 import { milsToMM } from "../helpers.js";
 import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
-    CustomSymbolRefDesSize, Defaults, PinTypesList, PortArrowSize, PortPaddingHorizontal, 
+    CustomSymbolRefDesSize, Defaults, PortArrowSize, PortPaddingHorizontal,
     PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
     defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "../globals.js";
@@ -18,7 +18,7 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
     Textbox, VerticalAlign,
     VerticalAlignProp} from "./geometry.js";
 import { Logger } from "../logger.js";
-import { PinTypes } from "../objects/PinTypes.js";
+import { AllPinTypes, PinTypes } from "../objects/PinTypes.js";
 import { RuntimeExecutionError, throwWithContext } from "../errors.js";
 import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
@@ -876,7 +876,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
             positionParams = [positionParams[0], ...positionParams.slice(2)];
 
         // If the pin type param is still a string and not parsed as a PinType yet.
-        } else if (typeof positionParams[1] === 'string' && PinTypesList.indexOf(positionParams[1]) !== -1){
+        } else if (typeof positionParams[1] === 'string' && AllPinTypes.indexOf(positionParams[1]) !== -1){
             pinType = positionParams[1] as PinTypes;
             positionParams = [positionParams[0], ...positionParams.slice(2)];
         }

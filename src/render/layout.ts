@@ -12,7 +12,7 @@ import { SymbolCustom, SymbolDrawing, SymbolGraphic,
     SymbolText, PlaceHolderCommands, SymbolDrawingCommands,
     SimplePoint} from "./draw_symbols.js";
 import { ClassComponent, ComponentUnit } from "../objects/ClassComponent.js";
-import { DefaultComponentUnit, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
+import { ComponentTypes, DefaultComponentUnit, defaultFrameTitleTextSize, defaultGridSizeUnits, FrameType, 
     NetGraphicsParams, 
     ParamKeys, WireAutoDirection } from '../globals.js';
 import { Wire, WireSegment } from '../objects/Wire.js';
@@ -131,6 +131,23 @@ export class LayoutEngine {
         // Find the unique nets and then convert the Net into a 
         // RenderNet object.
         const renderNets = new Map<string, RenderNet>();
+ 
+        // Apply the net class parameter to load default parameters for the net.
+        const tmpComponents = new Set<ClassComponent>(nets.map(([component, ,]) => component));
+        const originalNetComponents = Array.from(tmpComponents).filter(item => item.typeProp === ComponentTypes.net);
+
+        originalNetComponents.forEach(netComponent => {
+            if (netComponent.hasParam("class")) {
+                // Apply the parameters to the linked net
+                const net = netComponent.getParam("net") as Net;
+
+                // Set the net parameters based on the net class component
+                const netClassComponent = netComponent.getParam("class") as ClassComponent;
+                const netClassComponentNet = netClassComponent.getParam("net") as Net;
+
+                net.class = netClassComponentNet;
+            }
+        });
 
         const uniqueNets = new Set<Net>(nets.map(([,,net]) => net));
         uniqueNets.forEach(net => {
@@ -139,31 +156,32 @@ export class LayoutEngine {
                 net,
             }
 
-            if (net.params.has(NetGraphicsParams.Color)) {
-                renderNet.color = net.params.get(NetGraphicsParams.Color);
+            const netParams = this.getNetCombinedParameters(net);
+            if (netParams.has(NetGraphicsParams.Color)) {
+                renderNet.color = netParams.get(NetGraphicsParams.Color);
             }
 
-            if (net.params.has(NetGraphicsParams.LineWidth)) {
+            if (netParams.has(NetGraphicsParams.LineWidth)) {
                 // In mils, convert to mm
-                const value = net.params.get(NetGraphicsParams.LineWidth);
+                const value = netParams.get(NetGraphicsParams.LineWidth);
                 renderNet.lineWidth = milsToMM(value).toNumber();
             }
 
-            if (net.params.has(NetGraphicsParams.Highlight)) {
+            if (netParams.has(NetGraphicsParams.Highlight)) {
                 renderNet.highlight = 
-                    net.params.get(NetGraphicsParams.Highlight);
+                    netParams.get(NetGraphicsParams.Highlight);
             }
 
-            if (net.params.has(NetGraphicsParams.HighlightWidth)) {
+            if (netParams.has(NetGraphicsParams.HighlightWidth)) {
                 renderNet.highlightWidth =
-                    milsToMM(net.params.get(NetGraphicsParams.HighlightWidth))
+                    milsToMM(netParams.get(NetGraphicsParams.HighlightWidth))
                         .toNumber();
             }
 
-            if (net.params.has(NetGraphicsParams.HighlightOpacity)){
+            if (netParams.has(NetGraphicsParams.HighlightOpacity)){
                 // 0 to 1
                 renderNet.highlightOpacity = 
-                    (net.params.get(NetGraphicsParams.HighlightOpacity) as NumericValue)
+                    (netParams.get(NetGraphicsParams.HighlightOpacity) as NumericValue)
                         .toNumber();
             }
 
@@ -171,6 +189,34 @@ export class LayoutEngine {
         });
 
         return renderNets;
+    }
+
+    // If the net class is set, then return the value from the net class
+    private getNetCombinedParameters(net: Net): Map<string, any> {
+        const tmpParams = new Map(net.params);
+
+        if (net.class) {
+            const netClass = net.class;
+
+            // Limit the parameters.
+            const targetParams = [
+                NetGraphicsParams.Color,
+                NetGraphicsParams.LineWidth,
+                NetGraphicsParams.Highlight,
+                NetGraphicsParams.HighlightOpacity,
+                NetGraphicsParams.HighlightWidth,
+            ];
+
+            for (const key of targetParams) {
+                // The value set in the net component's parameters will have
+                // precedence over the net class.
+                if (!tmpParams.has(key) && netClass.hasParam(key) ) {
+                    tmpParams.set(key, netClass.getParam(key));
+                }
+            }
+        }
+
+        return tmpParams;
     }
 
     private flattenFrameItems(frame: RenderFrame):

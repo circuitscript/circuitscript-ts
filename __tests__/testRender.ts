@@ -129,7 +129,8 @@ describe('Render tests', () => {
         ['script77.cst', 'wire expression with different direction symbols'],
         ['script78.cst', 'Pin selection using pin name'],
         ['script79.cst', 'correct label text alignment (anchor, vanchor) for different angles and flipxy'],
-        ['script80.cst', 'brackets in properties and drawing commands are handled properly']
+        ['script80.cst', 'brackets in properties and drawing commands are handled properly'],
+        ['script81.cst', 'double dot syntax works for assignment']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 
