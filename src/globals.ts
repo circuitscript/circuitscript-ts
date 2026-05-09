@@ -152,7 +152,6 @@ export enum ReferenceTypes {
     value = 'value',
     variable = 'variable',
     instance = 'instance',
-    pinType = 'pinType',
     library = 'library',
     
     unknown = 'unknown',

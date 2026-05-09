@@ -68,7 +68,7 @@ import {
 import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
-import { AllPinTypes, PinTypes } from './objects/PinTypes.js';
+import { AllPinTypes, PinTypes, resolvePinType } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
@@ -424,15 +424,25 @@ export class ParserVisitor extends BaseVisitor {
                     const id = PinId.from(command[1][0]);
                     let pinName = id.toString();
 
-                    // If this a string, then this is the pin name.
+                    let pinType = PinTypes.Passive;
+
+                    // If this a string, then this is the pin type
                     if (typeof command[1][1] === 'string'){
-                        pinName = command[1][1];
+
+                        const pinTypeString = command[1][1];
+                        if (AllPinTypes.indexOf(pinTypeString)){
+                            pinType = resolvePinType(command[1][1])!;
+                        }
+
+                        // Only if pinType is specified, then parse the next
+                        // parameter as the pin name.
+                        if (typeof command[1][2] === 'string'){
+                            pinName = command[1][2];
+                        }
                     }
 
-                    // TODO: `pin` graphic commands should also allow pin 
-                    // type to be set
                     pins.push(new PinDefinition(id, id.getType(),
-                        pinName, PinTypes.Any));
+                        pinName, pinType));
                 }
             });
         } else {
@@ -839,7 +849,7 @@ export class ParserVisitor extends BaseVisitor {
                 index + 1,
                 PinIdType.Int,
                 portName,
-                PinTypes.Any
+                PinTypes.Passive
             );
         });
 
@@ -2193,7 +2203,7 @@ export class ParserVisitor extends BaseVisitor {
 
         for (const [pinId, pinDef] of pinData) {
             let pinIdType = PinIdType.Int;
-            let pinType = PinTypes.Any;
+            let pinType = PinTypes.Passive;
             let pinName: string | null = null;
             let altPinNames: string[] = [];
 
@@ -2202,26 +2212,20 @@ export class ParserVisitor extends BaseVisitor {
             }
 
             if (Array.isArray(pinDef)) {
-                const firstValue = pinDef[0];
+                // pinType is the first param, followed by pinName, then 
+                // alternative pin names.
+                pinType = resolvePinType(pinDef[0]);
 
-                // Check if firstValue matches a pin type
-                if (firstValue.type
-                    && firstValue.type === ReferenceTypes.pinType
-                    && AllPinTypes.indexOf(firstValue.value) !== -1) {
-                    // First value matches a pin type
-                    pinType = firstValue.value;
+                if (pinDef.length > 1) {
                     pinName = pinDef[1];
 
                     if (pinDef.length > 2) {
                         altPinNames = pinDef.slice(2);
                     }
-                } else {
-                    pinName = pinDef[0];
-                    if (pinDef.length > 1) {
-                        altPinNames = pinDef.slice(1);
-                    }
                 }
+
             } else {
+                pinType = PinTypes.Passive;
                 pinName = pinDef;
             }
 

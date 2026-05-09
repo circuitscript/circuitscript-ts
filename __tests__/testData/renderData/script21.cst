@@ -13,13 +13,13 @@ def conn3x2():
         display: create graphic (params):
             crect: 0, 0, width, height
 
-            hpin: 1, "1", -width/2 - 100, -100,   100
-            hpin: 3, "3", -width/2 - 100, 0,      100
-            hpin: 5, "5", -width/2 - 100, 100,    100
+            hpin: 1, "passive", "1", -width/2 - 100, -100,   100
+            hpin: 3, "passive", "3", -width/2 - 100, 0,      100
+            hpin: 5, "passive", "5", -width/2 - 100, 100,    100
             
-            hpin: 2, "2", width/2 + 100, -100,   -100
-            hpin: 4, "4", width/2 + 100, 0,      -100
-            hpin: 6, "6", width/2 + 100, 100,    -100
+            hpin: 2, "passive", "2", width/2 + 100, -100,   -100
+            hpin: 4, "passive", "4", width/2 + 100, 0,      -100
+            hpin: 6, "passive", "6", width/2 + 100, 100,    -100
             
             label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left", vanchor="bottom"
 
@@ -34,8 +34,8 @@ def conn3x2():
 atmega = create component:
     type: "ic"
     pins:
-        1: "RESET"
-        2: "PB7"
+        1: "passive", "RESET"
+        2: "passive", "PB7"
 
     width: 1000
     arrange:

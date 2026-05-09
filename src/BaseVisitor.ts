@@ -358,29 +358,16 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         let currentReference: AnyReference;
 
-        // Check if it is hardcoded values, like the pin types.
-        if (AllPinTypes.indexOf(atomId) !== -1 && ctx.trailer().length === 0) {
-            // Not sure if just returning the string is enough...
-            currentReference = new AnyReference({
-                found: true,
-                value: atomId,
-                type: ReferenceTypes.pinType,
-            });
-        } else {
-            this.log('resolve variable ctx: ' + ctx.getText(), 'atomId', atomId);
-            currentReference = executor.resolveVariable(
-                this.executionStack, atomId);
-            this.log('reference:', currentReference.name, 'found:', currentReference.found);
-        }
+        this.log('resolve variable ctx: ' + ctx.getText(), 'atomId', atomId);
+        currentReference = executor.resolveVariable(
+            this.executionStack, atomId);
+        this.log('reference:', currentReference.name, 'found:', currentReference.found);
 
         currentReference = this.resolveTrailersForReference(currentReference, passedNetNamespace, ctx);
-
         let resultValue = currentReference;
+
         if (!keepReference) {
-            // Only if is pin type, then keep the reference.
-            if (currentReference.type !== ReferenceTypes.pinType) {
-                resultValue = unwrapValue(resultValue);
-            }
+            resultValue = unwrapValue(resultValue);
         }
 
         this.setResult(ctx, resultValue);
@@ -904,16 +891,12 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             value = new UndeclaredReference(reference);
         } else {
             // This is the returned component from the function call
-            if (reference.type && reference.type === ReferenceTypes.pinType) {
+            if ((reference.trailers && reference.trailers.length > 0) 
+                || reference.type === ReferenceTypes.function) {
+                
                 value = reference;
             } else {
-                if ((reference.trailers && reference.trailers.length > 0) 
-                    || reference.type === ReferenceTypes.function) {
-                    
-                    value = reference;
-                } else {
-                    value = reference.value;
-                }
+                value = reference.value;
             }
         }
 

@@ -163,7 +163,7 @@ export class Textbox extends Flatten.Polygon {
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
                 ];
                 anchorOffsetX += paddingHorizontal + PortArrowSize;
-            } else if (portType === PinTypes.Any) {
+            } else if (portType === PinTypes.Passive || portType === PinTypes.Any) {
                 polygonCoords = [
                     [box.x - paddingHorizontal, box.y - paddingVert],
                     [box.x2 + paddingHorizontal, box.y - paddingVert],

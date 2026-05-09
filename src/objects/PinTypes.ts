@@ -6,23 +6,35 @@
  */
 
 export enum PinTypes {
+    // Default pin type
+    Passive = 'passive',
     Any = 'any',
+    
     Input = 'input',
     Output = 'output',
     IO = 'io',
     HiZ = 'hiz',
-    Passive = 'passive',
     OpenCollector = 'open_collector',
     OpenEmitter = 'open_emitter',
+    
+    // Used for supply/gnd symbol.
     Power = 'power',
+    
     PowerInput = 'power_input',
     PowerOutput = 'power_output',
-    Unspecified = 'unspecified',
+    
     NoConnect = 'no_connect',
+}
+
+export function resolvePinType(value: string): PinTypes {
+    return Object.values(PinTypes).find((v) => v === value) as PinTypes;
 }
 
 export const AllPinTypes = [
     PinTypes.Any,
+    PinTypes.Passive,
+    PinTypes.Power,
+    
     PinTypes.Input,
     PinTypes.Output,
     PinTypes.IO,
@@ -30,9 +42,7 @@ export const AllPinTypes = [
     PinTypes.Passive,
     PinTypes.OpenCollector,
     PinTypes.OpenEmitter,
-    PinTypes.Power,
     PinTypes.PowerInput,
     PinTypes.PowerOutput,
-    PinTypes.Unspecified,
     PinTypes.NoConnect,
 ]

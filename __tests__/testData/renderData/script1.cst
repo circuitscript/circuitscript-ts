@@ -31,12 +31,12 @@ point tmp1
 
 tmp = create component:
     pins: 
-        1: power, "1"
-        2: power, "2"
-        3: input, "3"
-        4: output, "4"
-        5: input, "5"
-        6: output, "6"
+        1: "power", "1"
+        2: "power", "2"
+        3: "input", "3"
+        4: "output", "4"
+        5: "input", "5"
+        6: "output", "6"
     arrange:
         left: 1,2,3
         right: 6,5,4

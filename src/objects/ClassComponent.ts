@@ -312,7 +312,7 @@ export class ClassComponent {
                     pinIndex,
                     PinIdType.Int,
                     pinIndex.toString(),
-                    PinTypes.Any,
+                    PinTypes.Passive,
                 ),
             );
         }

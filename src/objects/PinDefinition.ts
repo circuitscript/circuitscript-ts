@@ -93,7 +93,7 @@ export class PinDefinition {
         id: PinId | number | string,
         idType: PinIdType,
         name: string,
-        pinType = PinTypes.Any,
+        pinType = PinTypes.Passive,
         altNames = [],
     ) {
         this.id = id instanceof PinId ? id : new PinId(id);

@@ -412,7 +412,7 @@ export abstract class SymbolGraphic {
                         break;
 
                     case PinTypes.Any:
-                    case PinTypes.Power:
+                    case PinTypes.Passive:
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth, boundsHeight,
@@ -868,24 +868,19 @@ export class SymbolPlaceholder extends SymbolGraphic {
         }
 
         let pinNameParam: string | null = null;
-        let pinType = PinTypes.Any;
+        let pinType = PinTypes.Passive;
 
-        // Store for now, not used for anything yet.
-        if (positionParams[1].type && positionParams[1].type === ReferenceTypes.pinType){
-            pinType = positionParams[1].value;
-            positionParams = [positionParams[0], ...positionParams.slice(2)];
-
-        // If the pin type param is still a string and not parsed as a PinType yet.
-        } else if (typeof positionParams[1] === 'string' && AllPinTypes.indexOf(positionParams[1]) !== -1){
+        if (typeof positionParams[1] === "string") {
+            // First string type should be the pin type
             pinType = positionParams[1] as PinTypes;
-            positionParams = [positionParams[0], ...positionParams.slice(2)];
-        }
 
-        // If the type of the second position is a string, then
-        // use the string value as the pin name
-        if (typeof positionParams[1] === 'string') {
-            pinNameParam = positionParams[1];
-            positionParams = [positionParams[0], ...positionParams.slice(2)];
+            // If this position is a string, then it must be the pin name.
+            if (typeof positionParams[2] === "string") {
+                pinNameParam = positionParams[2];
+                positionParams = [positionParams[0], ...positionParams.slice(3)];
+            } else {
+                positionParams = [positionParams[0], ...positionParams.slice(2)];
+            }
         }
 
         // create the next point
@@ -1714,7 +1709,7 @@ export class SymbolDrawing {
     }
 
     addModulePort(x: NumericValue, y: NumericValue, width: NumericValue, height: NumericValue,
-        portType = PinTypes.Any, scaleX=1, angle=0): SymbolDrawing {
+        portType = PinTypes.Passive, scaleX=1, angle=0): SymbolDrawing {
 
         // y will be the vertical center of the port
         const height2 = height.half();
@@ -1722,7 +1717,7 @@ export class SymbolDrawing {
         let path: [x: NumericValue, y: NumericValue][] = [];
         const arrowSize = milsToMM(30);
 
-        if (portType === PinTypes.Any) {
+        if (portType === PinTypes.Passive || portType === PinTypes.Any) {
             path = [
                 [numeric(0),    height2.neg()],
                 [width,         height2.neg()],
