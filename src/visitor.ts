@@ -2225,8 +2225,9 @@ export class ParserVisitor extends BaseVisitor {
                 }
 
             } else {
-                pinType = PinTypes.Passive;
-                pinName = pinDef;
+                // If just one item, then the value is the pin type
+                pinType = resolvePinType(pinDef);
+                pinName = pinId;
             }
 
             this.log('pins', pinId, pinIdType, pinName, pinType, altPinNames);
