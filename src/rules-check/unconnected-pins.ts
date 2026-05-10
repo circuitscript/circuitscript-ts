@@ -8,14 +8,11 @@ import { Edge, Graph } from "@dagrejs/graphlib";
 import { RenderItemType } from "../render/graph.js";
 import { RenderComponent, RenderWire } from "../render/layout.js";
 import { PinId } from "../objects/PinDefinition.js";
+import { PinTypes } from "../objects/PinTypes.js";
+import { ComponentPinNetPair } from "../objects/types.js";
 import { ERC_Rules } from "./rules.js";
 
-/**
- * For each component pin, check the number of other pins in the same net.
- * @param components
- * @param nets 
- */
-export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
+export function RuleCheck_UnconnectedPinsWires(graph: Graph, nets: ComponentPinNetPair[] = []) {
     const items: any[] = [];
     const allNodes = graph.nodes();
 
@@ -41,7 +38,7 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
                 } else if (edge.w === instanceName) {
                     pin = edgeInfo[3];
                 }
-                
+
                 connectedUnitPins.push(pin.getHashValue());
             });
 
@@ -49,12 +46,22 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph) {
             pinIds.forEach(pinId => {
                 const hashValue = pinId.getHashValue();
                 if (connectedUnitPins.indexOf(hashValue) === -1) {
-                    // Missing pin!
+                    // Missing pin — check for power-specific type to emit targeted rule
+                    const pinDef = componentUnit.pins.get(pinId);
+                    let ruleType = ERC_Rules.UnconnectedPin;
+                    if (pinDef) {
+                        switch (pinDef.pinType) {
+                            case PinTypes.PowerReference: ruleType = ERC_Rules.PowerReferenceUnconnected; break;
+                            case PinTypes.PowerInput:     ruleType = ERC_Rules.PowerInputUnconnected;     break;
+                            case PinTypes.PowerOutput:    ruleType = ERC_Rules.PowerOutputUnconnected;    break;
+                            case PinTypes.Power:          ruleType = ERC_Rules.PowerSymbolUnconnected;    break;
+                        }
+                    }
                     items.push({
-                        type: ERC_Rules.UnconnectedPin,
+                        type: ruleType,
                         instance: component,
                         pin: pinId,
-                    })
+                    });
                 }
             });
         } else if (nodeInfo[0] === RenderItemType.Wire){

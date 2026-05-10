@@ -17,10 +17,16 @@ export enum PinTypes {
     OpenCollector = 'open_collector',
     OpenEmitter = 'open_emitter',
     
-    // Used for supply/gnd symbol.
+    // Used for supply/GND net declaration/membership
     Power = 'power',
     
+    // Reference potential connection.
+    PowerReference = 'power_reference',
+
+    // Consumes from voltage rail.
     PowerInput = 'power_input',
+
+    // Source/drives voltage rail.
     PowerOutput = 'power_output',
     
     NoConnect = 'no_connect',
@@ -33,7 +39,11 @@ export function resolvePinType(value: string): PinTypes {
 export const AllPinTypes = [
     PinTypes.Any,
     PinTypes.Passive,
+
     PinTypes.Power,
+    PinTypes.PowerInput,
+    PinTypes.PowerOutput,
+    PinTypes.PowerReference,
     
     PinTypes.Input,
     PinTypes.Output,
@@ -42,7 +52,5 @@ export const AllPinTypes = [
     PinTypes.Passive,
     PinTypes.OpenCollector,
     PinTypes.OpenEmitter,
-    PinTypes.PowerInput,
-    PinTypes.PowerOutput,
     PinTypes.NoConnect,
 ]
