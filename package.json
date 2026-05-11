@@ -80,7 +80,8 @@
         "pack-language-server": "npm run build:release; npm pack; rm circuitscript-install.tgz; mv `ls | grep circuitscript-` circuitscript-install.tgz; cp circuitscript-install.tgz ../circuitscript-ide/language-server",
         "changelog": "auto-changelog --handlebars-setup ../changelog/helper.js -p",
         "preversion": "npm run test",
-        "version": "npm run changelog && git add CHANGELOG.md",
+        "version": "npm run changelog && npm run update-version-ts && git add CHANGELOG.md src/version.ts",
+        "update-version-ts": "node -e \"const v=require('./package.json').version; require('fs').writeFileSync('src/version.ts', \\\"export const VERSION = '\\\" + v + \\\"';\\\\n\\\");\"",
         "copy-assets": "mkdir -p dist/fonts && mkdir -p dist/libs && cp -r fonts dist/ && cp -r libs dist/",
         "license:check": "license-check-and-add check -f licensecheck.json",
         "license:add": "license-check-and-add add -f licensecheck.json"
