@@ -1,6 +1,68 @@
 # Changelog
 
-## [v0.7.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.3...v0.7.4)
+## [v0.8.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.8.0...v0.8.0)
+
+[c47c484](https://gitlab.com/circuitscript/circuitscript-ts/commit/c47c48416cf54599ff26e27795280e5b8fb48889) updated release script
+
+## [v0.8.0](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.4...v0.8.0) - 2026-05-11
+
+[209bd24](https://gitlab.com/circuitscript/circuitscript-ts/commit/209bd24235a8278c2ef55b685b373bd572ecc138)Add power net ERC rules and extend pin type handling
+- 
+- Introduces a new power-net ERC module with rules covering power symbol
+- conflicts, missing sources/references, unused nets, and unconnected
+- power pins. Extends the ERC rule set, updates unconnected-pin detection
+- to emit targeted power-specific violations, and allows null-start tokens
+- for schematic-level report items.
+
+[51415db](https://gitlab.com/circuitscript/circuitscript-ts/commit/51415db5689e0afb69351b9f8f1cbe96d8223b10)Require pin types as string literals in pin declarations
+- 
+- Pin types (passive, power, input, output, etc.) are now specified as
+- quoted strings in hpin/vpin/pin graphics commands and component pin
+- definitions. Updated visitor, BaseVisitor, and draw_symbols to handle
+- the new syntax, and migrated std.cst and all test fixtures accordingly.
+
+[705cf9e](https://gitlab.com/circuitscript/circuitscript-ts/commit/705cf9e123ea8dd3d6ac29831716521e244866db)Add ERC test cases for power net rules
+- 
+- Add test scripts and expected results for power pin validation rules: unnamed power nets, missing source/reference, multiple outputs, name conflicts, and ambiguous reference pins. Update test harness to support null start positions in ERC results.
+
+[5c407cc](https://gitlab.com/circuitscript/circuitscript-ts/commit/5c407cc68de388dbcb60bbca5e1569f8333581e6)Add pin_set_type, pin_get_type, has_pin built-in functions and array helpers
+- 
+- Introduces three new built-in methods for runtime pin manipulation:
+- - pin_set_type: change a component pin's electrical type at runtime
+- - pin_get_type: query a component pin's current type
+- - has_pin: check whether a component has a pin by numeric index or name
+- 
+- Also adds array_push, array_get, array_set to the registered built-in
+- list, moves range/enumerate/array/pin tests into a dedicated 'builtin
+- methods' describe block, and introduces NoneValue as the canonical
+- null/undefined representation in ComplexType.
+
+[e0fcc1d](https://gitlab.com/circuitscript/circuitscript-ts/commit/e0fcc1da8092adc370ca871691b1731c9103be13)Add net class support and extend pin types
+- 
+- - Add double dot assignment syntax support via lastComponentReference tracking in ExecutionScope
+- - Add net_class feature: nets can inherit display parameters (color, width, highlight) from a class net
+- - Extend PinTypes enum with HiZ, Passive, OpenCollector, OpenEmitter, PowerInput, PowerOutput, Unspecified, NoConnect
+- - Consolidate PinTypesList into AllPinTypes in PinTypes.ts and remove duplicate from globals.ts
+- - Add hasParam/getParam helpers to Net class
+- - Add getNetCombinedParameters to LayoutEngine for class-based parameter resolution
+- - Add render test script81.cst for double dot syntax and net class assignment
+
+[100b952](https://gitlab.com/circuitscript/circuitscript-ts/commit/100b952b12a98800658b719899e063c17bc0149f)Update test data for explicit pin type syntax and fix single-item pin definition handling
+- 
+- When a pin definition has only one item, treat it as the pin type rather than
+- defaulting to passive and using it as the pin name.
+
+[007db4c](https://gitlab.com/circuitscript/circuitscript-ts/commit/007db4c282814a51c6be16ea1d5bd68a1d23c674)Remove net_type parameter from net components and add net_class to std lib
+- 
+- Simplifies Net by dropping the type parameter from constructors and equality checks,
+- removes net_type from net/net2/supply definitions, and adds a net_class component
+- to std.cst. Restores strict SVG comparison in render tests.
+
+[218df39](https://gitlab.com/circuitscript/circuitscript-ts/commit/218df39f1dc7a94d9140143f2d431ce5c31c877e) fixed validation tests
+
+[829b5c2](https://gitlab.com/circuitscript/circuitscript-ts/commit/829b5c26d4bf70f7333873663d9eae3481b88bc0) updated params comparison
+
+## [v0.7.4](https://gitlab.com/circuitscript/circuitscript-ts/compare/v0.7.3...v0.7.4) - 2026-05-01
 
 [7974f79](https://gitlab.com/circuitscript/circuitscript-ts/commit/7974f7961556a86b0def74321fbee53ac61e30bc)Centralize version constant into src/version.ts
 - 
