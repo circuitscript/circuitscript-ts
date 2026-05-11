@@ -1,0 +1,14 @@
+
+gnd_pin = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "power_reference", -100, 0, 100, display_id=false
+
+dummy = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "passive", -100, 0, 100, display_id=false
+
+at gnd_pin
+wire right 200
+to dummy pin 1

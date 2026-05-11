@@ -1,0 +1,14 @@
+
+pwr_src = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "power_output", -100, 0, 100, display_id=false
+
+pwr_load = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "power_input", -100, 0, 100, display_id=false
+
+at pwr_src
+wire right 200
+to pwr_load pin 1

@@ -1,0 +1,10 @@
+[
+    {
+        "start": {
+            "line": 2,
+            "column": 0
+        },
+        "type": "POWER-REFERENCE-ON-UNNAMED-NET",
+        "message": "Pin 'power_reference' on net '/NET-(J1-1)' has no power symbol — possibly connected to a signal net"
+    }
+]

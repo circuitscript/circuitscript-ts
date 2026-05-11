@@ -1,6 +1,14 @@
 [
     {
         "start": {
+            "line": 4,
+            "column": 0
+        },
+        "type": "POWER-NET-UNUSED",
+        "message": "Power net '/GND' is declared but has no physical connections"
+    },
+    {
+        "start": {
             "line": 6,
             "column": 0
         },
@@ -38,5 +46,18 @@
         },
         "type": "UNCONNECTED-PIN",
         "message": "Unconnected pin: J1 pin 6"
+    },
+    {
+        "start": {
+            "line": 28,
+            "column": 4
+        },
+        "type": "POWER-NET-UNUSED",
+        "message": "Power net '/5V' is declared but has no physical connections"
+    },
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
     }
 ]

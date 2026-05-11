@@ -8,10 +8,7 @@ describe('ERC rules', () => {
     function extractSimpleERCResult(results: ERCReportItem[]) {
         return results.map(item => {
             return {
-                start: {
-                    line: item.start.line,
-                    column: item.start.column,
-                },
+                start: item.start ? { line: item.start.line, column: item.start.column } : null,
                 type: item.type,
                 message: item.message,
             }
@@ -22,7 +19,13 @@ describe('ERC rules', () => {
         ['unconnected pins', 'script1.cst'],
         ['unconnected wires', 'script2.cst'],
         ['connected on no_connect pin', 'script3.cst'],
-        ['multiple different items', 'script4.cst']
+        ['multiple different items', 'script4.cst'],
+        ['power pins on unnamed nets', 'script5.cst'],
+        ['power_reference on unnamed net', 'script6.cst'],
+        ['power net no source or reference', 'script7.cst'],
+        ['power net name conflict and ambiguous reference', 'script8.cst'],
+        ['multiple power outputs on same net', 'script9.cst'],
+        ['valid power net - no violations', 'script10.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

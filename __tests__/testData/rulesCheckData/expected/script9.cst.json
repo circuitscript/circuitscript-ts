@@ -1,0 +1,10 @@
+[
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "POWER-NET-MULTIPLE-OUTPUTS",
+        "message": "Power net '/VCC' has multiple power_output pins — possible power conflict"
+    }
+]

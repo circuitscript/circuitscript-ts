@@ -1,0 +1,23 @@
+[
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "POWER-NET-NO-SOURCE",
+        "message": "Power net '/VCC' has power_input pins but no power_output source"
+    },
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "POWER-NET-NO-REFERENCE",
+        "message": "Power net '/VCC' has power_input pins but no power_reference connection"
+    },
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]
