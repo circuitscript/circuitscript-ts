@@ -113,10 +113,17 @@ export type ComponentPin = [
     pinId: PinId
 ];
 
+// This is the null/undefined/None value for circuitscript.
+export class NoneValue {
+    toString(): string {
+        return "none";
+    }
+}
+
 export type ComplexType = ValueType 
                         | ClassComponent 
                         | UndeclaredReference 
-                        | null;
+                        | NoneValue;
 
 export type ValueType = boolean | number | string |
     NumericValue | PercentageValue;

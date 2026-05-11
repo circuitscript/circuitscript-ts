@@ -33,7 +33,19 @@ import {
     inlineScript59,
     inlineScript60,
     inlineScript61,
-    inlineScript62
+    inlineScript62,
+    inlineScript63,
+    inlineScript64,
+    inlineScript65,
+    inlineScript66,
+    inlineScript67,
+    inlineScript68,
+    inlineScript69,
+    inlineScript70,
+    inlineScript71,
+    inlineScript72,
+    inlineScript73,
+    inlineScript74
 } from './parseScripts.js';
 
 async function expectInlineScriptTest(description, scriptTest): Promise<void> {
@@ -415,17 +427,6 @@ print(---b)
         await expectInlineScriptTest(description, scriptTest)
     );
 
-    test.each([
-        ['range function', inlineScript51],
-        ['enumerate function', inlineScript52],
-        ['enumerate function with `for` loop', inlineScript53]
-
-        // TODO add arrayPush, arrayGet, arraySet, etc.
-
-    ])('built-in functions - %s',  async (description, scriptTest) => 
-        await expectInlineScriptTest(description, scriptTest)
-    );
-
     test('wire auto failure case', async () => {
 
         const { hasError, visitor } = await runScript(script21_);
@@ -452,13 +453,39 @@ print(---b)
             .toEqual("Wire auto length failed. Please specify a fixed wire length.");
     });
 
-    testInlineScriptTest('test builtin methods', inlineScript55);
-
     testInlineScriptTest('test component parameters', inlineScript56);
 
     testInlineScriptTest('test setting of net params', inlineScript57);
 
     testInlineScriptTest('test function return values and referenced values', inlineScript58);
+});
+
+describe('builtin methods', () => {
+
+    test.each([
+        ['range function', inlineScript51],
+        ['enumerate function', inlineScript52],
+        ['enumerate function with `for` loop', inlineScript53],
+        ['array_push basic', inlineScript63],
+        ['array_get by index', inlineScript64],
+        ['array_set overwrites element', inlineScript65],
+        ['array_push with mixed types', inlineScript66],
+
+        ['pin_get_type returns default type', inlineScript67],
+        ['pin_set_type changes pin type', inlineScript68],
+        ['pin_set_type all supported types', inlineScript69],
+        ['pin_set_type overwrite', inlineScript70],
+
+        ['has_pin returns true for existing numeric pin', inlineScript71],
+        ['has_pin returns false for non-existent numeric pin', inlineScript72],
+        ['has_pin checks boundary pins correctly', inlineScript73],
+        ['has_pin with named string pin', inlineScript74],
+
+    ])('built-in functions - %s',  async (description, scriptTest) =>
+        await expectInlineScriptTest(description, scriptTest)
+    );
+
+    testInlineScriptTest('test builtin methods', inlineScript55);
 });
 
 describe('atom expr and trailers tests', () => {

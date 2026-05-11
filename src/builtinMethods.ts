@@ -8,12 +8,14 @@ import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericValue.js";
-import { CallableParameter, CFunctionEntry, ImportedLibrary } from "./objects/types.js";
+import { CallableParameter, CFunctionEntry, ImportedLibrary, NoneValue } from "./objects/types.js";
 import { unwrapValue } from "./utils.js";
 import { RuntimeExecutionError } from "./errors.js";
 import { BaseNamespace } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
+import { PinId } from "./objects/PinDefinition.js";
+import { AllPinTypes, resolvePinType } from "./objects/PinTypes.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -23,6 +25,9 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['array_push', arrayPush],
     ['array_get', arrayGet],
     ['array_set', arraySet],
+    ['pin_set_type', pinSetType],
+    ['pin_get_type', pinGetType],
+    ['has_pin', hasPin],
     ['print', null],
 ];
 
@@ -203,4 +208,32 @@ function toString(obj: any): string {
             throw "Could not create string from object: " + obj;
         }
     }
+}
+
+function pinSetType(component: ClassComponent, pin: PinId, newType: string): void {
+    if (AllPinTypes.indexOf(newType) === -1) {
+        throw `Invalid pin type: ${newType}`;
+    }
+
+    pin = component.getPin(PinId.from(pin));
+
+    if (component.pins.has(pin)) {
+        component.pins.get(pin)!.pinType = resolvePinType(newType);
+    } else {
+        throw `Invalid pin ${pin} for component ${component}`;
+    }
+}
+
+function pinGetType(component: ClassComponent, pin: PinId): string | NoneValue {
+    pin = component.getPin(PinId.from(pin));
+
+    if (component.pins.has(pin)) {
+        return component.pins.get(pin)!.pinType;
+    }
+
+    throw `Invalid pin ${pin} for component ${component}`;
+}
+
+function hasPin(component: ClassComponent, pin: PinId): boolean {
+    return component.hasPin(PinId.from(pin));
 }

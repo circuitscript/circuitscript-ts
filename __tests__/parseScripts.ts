@@ -566,6 +566,119 @@ print(document.bom.columns)
     '["a", "b", "c"]',
 ]);
 
+
+export const inlineScript63 = new ScriptTest(`
+tmp = []
+array_push(tmp, "a")
+array_push(tmp, "b")
+array_push(tmp, "c")
+print(tmp)
+print(len(tmp))
+`, ['["a", "b", "c"]', '3']);
+
+export const inlineScript64 = new ScriptTest(`
+a = [10, 20, 30, 40]
+print(array_get(a, 0))
+print(array_get(a, 3))
+`, ['10', '40']);
+
+export const inlineScript65 = new ScriptTest(`
+a = [1, 2, 3]
+array_set(a, 0, 99)
+array_set(a, 2, 77)
+print(a)
+print(array_get(a, 0))
+print(array_get(a, 2))
+`, ['[99, 2, 77]', '99', '77']);
+
+export const inlineScript66 = new ScriptTest(`
+tmp = [1]
+array_push(tmp, "hello")
+array_push(tmp, true)
+print(tmp)
+`, ['[1, "hello", true]']);
+
+export const inlineScript67 = new ScriptTest(`
+tmp = create component:
+    pins: 2
+
+print(pin_get_type(tmp, 1))
+print(pin_get_type(tmp, 2))
+`, ['"passive"', '"passive"']);
+
+export const inlineScript68 = new ScriptTest(`
+tmp = create component:
+    pins: 3
+
+pin_set_type(tmp, 1, "input")
+pin_set_type(tmp, 2, "output")
+print(pin_get_type(tmp, 1))
+print(pin_get_type(tmp, 2))
+print(pin_get_type(tmp, 3))
+`, ['"input"', '"output"', '"passive"']);
+
+export const inlineScript69 = new ScriptTest(`
+tmp = create component:
+    pins: 6
+
+pin_set_type(tmp, 1, "power_input")
+pin_set_type(tmp, 2, "power_output")
+pin_set_type(tmp, 3, "power_reference")
+pin_set_type(tmp, 4, "no_connect")
+pin_set_type(tmp, 5, "io")
+pin_set_type(tmp, 6, "passive")
+
+print(pin_get_type(tmp, 1))
+print(pin_get_type(tmp, 2))
+print(pin_get_type(tmp, 3))
+print(pin_get_type(tmp, 4))
+print(pin_get_type(tmp, 5))
+print(pin_get_type(tmp, 6))
+`, ['"power_input"', '"power_output"', '"power_reference"', '"no_connect"', '"io"', '"passive"']);
+
+export const inlineScript70 = new ScriptTest(`
+tmp = create component:
+    pins: 1
+
+pin_set_type(tmp, 1, "input")
+print(pin_get_type(tmp, 1))
+pin_set_type(tmp, 1, "output")
+print(pin_get_type(tmp, 1))
+`, ['"input"', '"output"']);
+
+export const inlineScript71 = new ScriptTest(`
+tmp = create component:
+    pins: 3
+
+print(has_pin(tmp, 1))
+`, ['true']);
+
+export const inlineScript72 = new ScriptTest(`
+tmp = create component:
+    pins: 2
+
+print(has_pin(tmp, 5))
+`, ['false']);
+
+export const inlineScript73 = new ScriptTest(`
+tmp = create component:
+    pins: 3
+
+print(has_pin(tmp, 1))
+print(has_pin(tmp, 3))
+print(has_pin(tmp, 4))
+`, ['true', 'true', 'false']);
+
+export const inlineScript74 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "passive", "GND"
+        2: "passive", "VCC"
+
+print(has_pin(tmp, "GND"))
+print(has_pin(tmp, "MISSING"))
+`, ['true', 'false']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [
