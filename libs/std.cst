@@ -5,7 +5,7 @@ def net_class():
         pins: 1
         display: create graphic (params):
             hline: -50, 0, 100
-            vpin: 1, "power", 0, 50, -50, display_id=false
+            vpin: 1, "passive", 0, 50, -50, display_id=false
             label: params.net_name, 0, -15, name="value", fontSize=50, anchor="center"
         type: "net"
         params:

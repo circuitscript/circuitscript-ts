@@ -1,14 +1,18 @@
 [
     [
+        "--.[std].net_class",
+        "function"
+    ],
+    [
+        "--.[std].net_class_sym.params",
+        "variable"
+    ],
+    [
         "--.[std].net",
         "function"
     ],
     [
         "--.[std].net_sym.net_name",
-        "variable"
-    ],
-    [
-        "--.[std].net_sym.net_type",
         "variable"
     ],
     [
@@ -786,6 +790,10 @@
     [
         "--.[std].document",
         "variable"
+    ],
+    [
+        "--.net_class",
+        "function"
     ],
     [
         "--.net",
