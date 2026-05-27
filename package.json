@@ -6,6 +6,10 @@
     "engines": {
         "node": ">=16.0"
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/circuitscript/circuitscript-ts.git"
+    },
     "main": "./dist/cjs/index.js",
     "module": "./dist/esm/index.js",
     "types": "./dist/types/index.d.ts",
