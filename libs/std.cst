@@ -6,7 +6,8 @@ def net_class():
         display: create graphic (params):
             hline: -50, 0, 100
             vpin: 1, "passive", 0, 50, -50, display_id=false
-            label: params.net_name, 0, -15, name="value", fontSize=50, anchor="center"
+            label: params.net_name, 0, -15, name="value", \
+                fontSize=50, anchor="center"
         type: "net"
         params:
             priority: 1
@@ -18,7 +19,8 @@ def net(net_name):
         display: create graphic (params):
             hline: -50, 0, 100
             vpin: 1, "power", 0, 50, -50, display_id=false
-            label: params.net_name, 0, -15, name="value", fontSize=50, anchor="center"
+            label: params.net_name, 0, -15, name="value", \
+                fontSize=50, anchor="center"
         type: "net"
         params:
             net_name: net_name
@@ -35,7 +37,8 @@ def label(value, anchor="left"):
         followWireOrientation: false
         display: create graphic (params):
             text_color: "#222"
-            label: params.value, 0, -10, name="value", fontSize=50, anchor=anchor
+            label: params.value, 0, -10, name="value", fontSize=50, \
+                anchor=anchor
             pin: 1, "passive", 0, 0, 0, 0, display_id=false
         type: "net"
         is_label: true
@@ -50,7 +53,8 @@ def port(value, portType="input"):
         copy: true
         display: create graphic (params):
             text_color: "#222"
-            label: params.value, 0, 0, name="value", fontSize=40, anchor="left", vanchor="center", portType=portType
+            label: params.value, 0, 0, name="value", fontSize=40, \
+                anchor="left", vanchor="center", portType=portType
             pin: 1, "io", 0, 0, 0, 0, display_id=false
         type: "port"
         params:
@@ -61,15 +65,18 @@ def port(value, portType="input"):
 def res(value):
     width = 140
     height = 60
- 
+
     return create component:
         pins: 2
         display: create graphic (params):
             crect: 0, 0, width, height
             hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
             hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
-            label: params.value, 0, 0, name="value", fontSize=30, anchor="center", vanchor="center"
+            label: params.refdes, -width/2 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, \
+                anchor="center", vanchor="center"
         type: "res"
         params:
             value: value
@@ -91,8 +98,11 @@ def cap(value):
             hline: -width/2, -20, width
             vpin: 1, "passive", 0, -100, 80, display_id=false
             vpin: 2, "passive", 0, 100, -80, display_id=false
-            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
-            label: params.value, 80, 30, name="value", fontSize=50, anchor = "left", vanchor="center"
+            label: params.refdes, 80 + params.refdes_offsetx, \
+                -30 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left", vanchor="center"
+            label: params.value, 80, 30, name="value", fontSize=50, \
+                anchor = "left", vanchor="center"
         type: "cap"
         params:
             value: value
@@ -115,8 +125,11 @@ def ind(value):
             arc: 75, 0, 25, 180, 360
             hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
             hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
-            label: (params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 25 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left")
-            label: (params.value, 0, 50, name="value", fontSize=50, anchor="center", vanchor="center")
+            label: params.refdes, -width/2 + params.refdes_offsetx, \
+                -height/2 - 25 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 50, name="value", fontSize=50, \
+                anchor="center", vanchor="center"
         params:
             value: value
             refdes_offsetx: 0
@@ -136,7 +149,9 @@ def diode():
             vline: width/2, -height/2, height
             hpin: 1, "passive", -width/2-100, 0, 100    # cathode
             hpin: 2, "passive", width/2 + 100, 0, -100  # anode
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -100 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -154,10 +169,15 @@ def led(color):
             arrow: 70, 30, 130, 90, 25, 25
             arrow: 120, 30, 180, 90, 25, 25
 
-            hpin: 1, "passive", "C", width/2 + 100, 0, -100, display_name=false  # cathode
-            hpin: 2, "passive", "A", -width/2-100, 0, 100, display_name=false    # anode
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
-            label: params.color, 0, 100, fontSize=40, anchor="center", vanchor="bottom"
+            hpin: 1, "passive", "C", width/2 + 100, 0, -100, \
+                display_name=false  # cathode
+            hpin: 2, "passive", "A", -width/2-100, 0, 100, \
+                display_name=false  # anode
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -100 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="top"
+            label: params.color, 0, 100, fontSize=40, \
+                anchor="center", vanchor="bottom"
         params:
             size: "0603"
             color: color
@@ -177,7 +197,8 @@ def cgnd():
             hline: -10, 5, 20
             hline: -5, 10, 10
             vpin: 1, "power", 0, -10, 10, display_id=false
-            label: params.net_name, 0, 22, name="value", fontSize=50, anchor="center"
+            label: params.net_name, 0, 22, name="value", \
+                fontSize=50, anchor="center"
         type: "net"
         params:
             net_name: net_name
@@ -193,7 +214,8 @@ def dgnd(net_name="GND"):
         display: create graphic (params):
             triangle: 0, 0, 0, height, width
             vpin: 1, "power", 0, -50, 50, display_id=false
-            label: params.net_name, 0, height + 50, name="value", fontSize=50, anchor="center", vanchor="center"
+            label: params.net_name, 0, height + 50, name="value", \
+                fontSize=50, anchor="center", vanchor="center"
         type: "net"
         params:
             net_name: net_name
@@ -229,8 +251,8 @@ def arrow_point():
         followWireOrientation: false
         display: create graphic:
             line_width: 2
-            path: ("M", -10, -5, "L", -5, 0, "L", -10, 5)
-            path: ("M", -5, 0, "L", -20, 0)
+            path: "M", -10, -5, "L", -5, 0, "L", -10, 5
+            path: "M", -5, 0, "L", -20, 0
             hpin: 1, "unspecified", 0, 0, 0, display_id=false
 
 def no_connect(size=20):
@@ -265,9 +287,13 @@ def pot(value):
             hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
             vpin: 3, "passive", 0, height/2 + 80, -80, display_id=false
             # Arrowhead pointing up toward body (wiper indicator)
-            path: ("M", -12, height/2 + 14, "L", 0, height/2, "L", 12, height/2 + 14)
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
-            label: params.value, 0, 0, name="value", fontSize=30, anchor="center", vanchor="center"
+            path: "M", -12, height/2 + 14, "L", 0, height/2, \
+                "L", 12, height/2 + 14
+            label: params.refdes, -width/2 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, \
+                anchor="center", vanchor="center"
         params:
             value: value
             refdes_offsetx: 0
@@ -291,8 +317,11 @@ def cap_pol(value):
             line_width: 8
             hline: -50, -50, 30
             vline: -35, -65, 30
-            label: params.refdes, 80 + params.refdes_offsetx, -30 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
-            label: params.value, 80, 30, name="value", fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 80 + params.refdes_offsetx, \
+                -30 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left", vanchor="center"
+            label: params.value, 80, 30, name="value", fontSize=50, \
+                anchor="left", vanchor="center"
         params:
             value: value
             size: "0402"
@@ -314,7 +343,9 @@ def ferrite(value):
             fill: "none"
             hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
             hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
+            label: params.refdes, -width/2 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left"
         params:
             value: value
             refdes_offsetx: 0
@@ -338,8 +369,11 @@ def xtal(frequency):
             crect: 0, 0, width, height
             hpin: 1, "passive", -width/2 - 120, 0, 120, display_id=false
             hpin: 2, "passive", width/2 + 120, 0, -120, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
-            label: params.frequency, 0, height/2 + 20, fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="bottom"
+            label: params.frequency, 0, height/2 + 20, fontSize=50, \
+                anchor="center", vanchor="top"
         params:
             frequency: frequency
             refdes_offsetx: 0
@@ -358,8 +392,11 @@ def fuse(value):
             hline: -width/2, 0, width
             hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
             hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
-            label: params.refdes, -width/2 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left"
-            label: params.value, 0, 0, name="value", fontSize=30, anchor="center", vanchor="center"
+            label: params.refdes, -width/2 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, \
+                anchor="center", vanchor="center"
         params:
             value: value
             refdes_offsetx: 0
@@ -376,7 +413,9 @@ def jumper():
             arc: 0, 0, 50, 180, 360
             hpin: 1, "passive", -150, 0, 100, display_id=false
             hpin: 2, "passive", 150, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -80 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_prefix: "JP"
             refdes_offsetx: 0
@@ -402,7 +441,9 @@ def zener():
             line: width/2, height/2, width/2 + 20, height/2 + 20
             hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
             hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, -20- params.refdes_offsetx, -110 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, -20- params.refdes_offsetx, \
+                -110 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -419,11 +460,15 @@ def schottky():
             triangle: -width/2, 0, width/2, 0, height
             vline: width/2, -height/2, height
             # Schottky S-curve marks on cathode bar
-            path: ("M", width/2, -height/2, "L", width/2 - 20, -height/2, "L", width/2 - 20, -height/2 + 20)
-            path: ("M", width/2, height/2, "L", width/2 + 20, height/2, "L", width/2 + 20, height/2 - 20)
+            path: "M", width/2, -height/2, "L", width/2 - 20, -height/2, \
+                "L", width/2 - 20, -height/2 + 20
+            path: "M", width/2, height/2, "L", width/2 + 20, height/2, \
+                "L", width/2 + 20, height/2 - 20
             hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
             hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -100 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -449,7 +494,9 @@ def tvs():
             #hline: -width/2 + 20, height/2, -20
             hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
             hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -100 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -476,7 +523,9 @@ def photodiode():
 
             hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
             hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="top"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -100 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -506,9 +555,11 @@ def npn():
             # Emitter arrow — NPN: outward (away from base)
 
             hpin: 1, "input", -120, 0, 100, display_id=false     # base
-            vpin: 2, "passive", 60, -200, 100, display_id=false    # collector
-            vpin: 3, "passive", 60, 200, -100, display_id=false    # emitter
-            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
+            vpin: 2, "passive", 60, -200, 100, display_id=false   # collector
+            vpin: 3, "passive", 60, 200, -100, display_id=false   # emitter
+            label: params.refdes, 70 + params.refdes_offsetx, \
+                0 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -536,7 +587,9 @@ def pnp():
             hpin: 1, "input", -120, 0, 100, display_id=false
             vpin: 2, "passive", 60, -200, 100, display_id=false
             vpin: 3, "passive", 60, 200, -100, display_id=false
-            label: params.refdes, 70 + params.refdes_offsetx, 0 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 70 + params.refdes_offsetx, \
+                0 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -553,13 +606,13 @@ def pmos():
             crect: -75, 0, 50, 15
             vline: 75, 0, 100
             vline: -75, 0, 100
-            
+
             arrow: 0, 0, 0, 90
             vline: 0, 0, 100
-            
+
             hline: 0, 100, -100
             hline: 100, 100, -25
-            
+
             path: "M", -100, 100, "L", -100, 150, "L", 100, 150, "L", 100, 100
             arrow: 100, 150, -12.5,150
             vline: -12.5, 150-20, 40
@@ -567,9 +620,12 @@ def pmos():
             label: params.refdes, 70, -60, name="refdes", anchor="center"
             label: params.mpn, 0, 250, anchor="center"
 
-            hpin: 1, "D", "passive", 200, 100, -100, display_id=false, display_name=false
-            vpin: 2, "G", "input", 0, -100, 75, display_id=false, display_name=false
-            hpin: 3, "S", "passive", -200, 100, 100, display_id=false, display_name=false
+            hpin: 1, "D", "passive", 200, 100, -100, \
+                display_id=false, display_name=false
+            vpin: 2, "G", "input", 0, -100, 75, \
+                display_id=false, display_name=false
+            hpin: 3, "S", "passive", -200, 100, 100, \
+                display_id=false, display_name=false
 
             label: "S", -200, 70
             label: "D", 200, 70, anchor="right"
@@ -589,10 +645,10 @@ def nmos():
             crect: -75, 0, 50, 15
             vline: 75, 0, 100
             vline: -75, 0, 100
-            
+
             arrow: 0, 100, 0, 20
             vline: 0, 0, 100
-            
+
             hline: 0, 100, -100
             hline: 100, 100, -25
 
@@ -603,9 +659,12 @@ def nmos():
             label: params.refdes, 70, -60, name="refdes", anchor="center"
             label: params.mpn, 0, 250, anchor="center"
 
-            hpin: 1, "D", "passive", 200, 100, -100, display_id=false, display_name=false
-            vpin: 2, "G", "input", 0, -100, 75, display_id=false, display_name=false
-            hpin: 3, "S", "passive", -200, 100, 100, display_id=false, display_name=false
+            hpin: 1, "D", "passive", 200, 100, -100, \
+                display_id=false, display_name=false
+            vpin: 2, "G", "input", 0, -100, 75, \
+                display_id=false, display_name=false
+            hpin: 3, "S", "passive", -200, 100, 100, \
+                display_id=false, display_name=false
 
             label: "S", -200, 70
             label: "D", 200, 70, anchor="right"
@@ -626,10 +685,13 @@ def opamp():
         type: "ic"
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
-            hpin: 1, "OUT", "output", width/2 + 100, 0, -100, display_id=false, display_name = false
+            hpin: 1, "OUT", "output", width/2 + 100, 0, -100, \
+                display_id=false, display_name = false
             hpin: 2, "-", "input", -width/2 - 100, 50, 100, display_id=false
             hpin: 3, "+", "input", -width/2 - 100, -50, 100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -644,12 +706,15 @@ def comparator():
         type: "ic"
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
-            hpin: 1, "OUT", "open_collector", width/2 + 100, 0, -100, display_id=false, display_name = false
+            hpin: 1, "OUT", "open_collector", width/2 + 100, 0, -100, \
+                display_id=false, display_name = false
             hpin: 2, "-", "input", -width/2 - 100, 50, 100, display_id=false
             hpin: 3, "+", "input", -width/2 - 100, -50, 100, display_id=false
             # Open-collector circle at output
             circle: width/2 + 15, 0, 15
-            label: params.refdes, 0 + params.refdes_offsetx, -height/2 - 20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -670,7 +735,9 @@ def switch_spst():
             line: -48, 0, 45, -60
             hpin: 1, "passive", -160, 0, 100, display_id=false
             hpin: 2, "passive", 160, 0, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -80 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -80 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -693,7 +760,9 @@ def switch_pb():
 
             hpin: 1, "passive", -160, 20, 100, display_id=false
             hpin: 2, "passive", 160, 20, -100, display_id=false
-            label: params.refdes, 0 + params.refdes_offsetx, -100 + params.refdes_offsety, name="refdes", fontSize=50, anchor="center", vanchor="bottom"
+            label: params.refdes, 0 + params.refdes_offsetx, \
+                -100 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="center", vanchor="bottom"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -712,18 +781,19 @@ def conn_single_row(num_pins):
                 circle: 0, i * 100, 40
                 hpin: (i+1), "passive", -200, i * 100,   160
 
-            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, name="refdes", align="center"
+            label: params.refdes, -20 + params.refdes_offsetx, \
+                -125 + params.refdes_offsety, name="refdes", align="center"
             #label: "mpn", -20, 20 + 4, "?", vanchor="top"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
-            
+
 def conn_double_rows(num_pins, pin_order = "sequence"):
     # Generic N-pin double-row connector — half pins on left side, half on right
     # pin_order: "sequence" (left=1..N/2, right=N/2+1..N),
     #            "zig-zag"  (left=1,3,5,.., right=2,4,6,..),
     #            "down-up"  (left=1..N/2, right=N..N/2+1)
-    
+
     if num_pins % 2 != 0:
         num_pins += 1
 
@@ -751,10 +821,13 @@ def conn_double_rows(num_pins, pin_order = "sequence"):
             for i in range(0, half):
                 circle: -45, i * 100, 30
                 circle: 45, i * 100, 30
-                hpin: array_get(left_pins, i), "passive", -200, i * 100, 100
-                hpin: array_get(right_pins, i), "passive", 200, i * 100, -100
+                hpin: array_get(left_pins, i), "passive", -200, \
+                    i * 100, 100
+                hpin: array_get(right_pins, i), "passive", 200, \
+                    i * 100, -100
 
-            label: params.refdes, -20 + params.refdes_offsetx, -125 + params.refdes_offsety, name="refdes", align="center"
+            label: params.refdes, -20 + params.refdes_offsetx, \
+                -125 + params.refdes_offsety, name="refdes", align="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
@@ -772,14 +845,16 @@ def test_point():
         display: create graphic (params):
             circle: 0, -20, 20
             vpin: 1, "passive", 0, 100, -100, display_id=false
-            label: params.refdes, 40 + params.refdes_offsetx, -20 + params.refdes_offsety, name="refdes", fontSize=50, anchor="left", vanchor="center"
+            label: params.refdes, 40 + params.refdes_offsetx, \
+                -20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left", vanchor="center"
         params:
             refdes_offsetx: 0
             refdes_offsety: 0
 
-def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y, 
+def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y,
     col_display_value, row_display_value, inner_frame_margin = 50):
-    
+
     horizontal_1 = margin_x - inner_frame_margin
     horizontal_2 = paper_width - margin_x + inner_frame_margin
 
@@ -818,71 +893,81 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
         display: create graphic (params):
             fill: "none"
 
-            # outer rect 
+            # outer rect
             line_color: "#cccccc"
-            crect: (paper_width/2, paper_height/2, 
-                paper_width, paper_height, class="paper-area")
+            crect: paper_width/2, paper_height/2, \
+                paper_width, paper_height, class="paper-area"
 
             # inner rect
             line_color: "#111111"
-            crect: (paper_width/2, paper_height/2, 
-                    inner_width, inner_height, class="plot-area")
+            crect: paper_width/2, paper_height/2, \
+                inner_width, inner_height, class="plot-area"
 
-            crect: (paper_width/2, paper_height/2, 
-                    paper_width - 2 * margin_x + inner_frame_margin * 2, 
-                    paper_height - 2 * margin_y  + inner_frame_margin * 2)
+            crect: paper_width/2, paper_height/2, \
+                paper_width - 2 * margin_x + inner_frame_margin * 2, \
+                paper_height - 2 * margin_y + inner_frame_margin * 2
 
             for i in range(1, num_rows):
-                hline: horizontal_1, (tmp_y + tmp_height * ratio_y * i), inner_frame_margin
-                hline: horizontal_2, (tmp_y + tmp_height * ratio_y * i), -inner_frame_margin
+                hline: horizontal_1, \
+                    tmp_y + tmp_height * ratio_y * i, inner_frame_margin
+                hline: horizontal_2, \
+                    tmp_y + tmp_height * ratio_y * i, -inner_frame_margin
 
             for i in range(1, num_columns):
-                vline: (tmp_x + tmp_width * ratio_x * i),     vertical_1, inner_frame_margin
-                vline: (tmp_x + tmp_width * ratio_x * i),     vertical_2, -inner_frame_margin
+                vline: tmp_x + tmp_width * ratio_x * i, \
+                    vertical_1, inner_frame_margin
+                vline: tmp_x + tmp_width * ratio_x * i, \
+                    vertical_2, -inner_frame_margin
 
             # labels on the columns
             for i in col_display_value:
-                text: 
+                text:
                     content: i
-                    offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), tmp_y + inner_frame_margin * 0.5 + 2
+                    offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), \
+                        tmp_y + inner_frame_margin * 0.5 + 2
                     fontSize: fontSize
                     anchor: "center"
                     vanchor: "center"
 
-                text: 
+                text:
                     content: i
-                    offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                    offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), \
+                        tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
                     fontSize: fontSize
                     anchor: "center"
                     vanchor: "center"
 
             for index, val in enumerate(row_display_value):
-                text: 
+                text:
                     content: val
-                    offset: tmp_x + inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * (0.5 + index)
+                    offset: tmp_x + inner_frame_margin * 0.5, \
+                        tmp_y + tmp_height * ratio_y * (0.5 + index)
                     fontSize: fontSize
                     anchor: "center"
                     vanchor: "center"
 
-                text: 
+                text:
                     content: val
-                    offset: tmp_x + tmp_width - inner_frame_margin * 0.5, tmp_y + tmp_height * ratio_y * (0.5 + index)
+                    offset: tmp_x + tmp_width - inner_frame_margin * 0.5, \
+                        tmp_y + tmp_height * ratio_y * (0.5 + index)
                     fontSize: fontSize
                     anchor: "center"
                     vanchor: "center"
 
             # Draw title frame
-            text: 
+            text:
                 content: "Size: " + paper_size_name
                 offset: title_block_x + 20, title_block_y2 - 30
                 anchor: "left"
                 vanchor: "bottom"
 
             text:
-                content: "Sheet: " + params.sheet_number + "/" + params.sheet_total
+                content: "Sheet: " + params.sheet_number \
+                    + "/" + params.sheet_total
                 anchor: "left"
                 vanchor: "bottom"
-                offset: title_block_x + title_block_width / 2 + 20, title_block_y2 - 30
+                offset: title_block_x + title_block_width / 2 + 20, \
+                    title_block_y2 - 30
 
             hline: title_block_x, title_block_y2 - 100, title_block_width
             vline: title_block_x + title_block_width / 2, title_block_y2, -100
@@ -895,7 +980,7 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
 
             hline: title_block_x, title_block_y2 - 200, title_block_width
 
-            text: 
+            text:
                 content: params.title
                 offset: title_block_x + 20, title_block_y2 - 240
                 bold: true
@@ -903,10 +988,10 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
                 anchor: "left"
                 vanchor: "bottom"
 
-            crect: (title_block_x + title_block_width / 2, 
-                    title_block_y + title_block_height / 2, 
-                    title_block_width, title_block_height,
-                    class="keepout-area")
+            crect: title_block_x + title_block_width / 2, \
+                title_block_y + title_block_height / 2, \
+                title_block_width, title_block_height, \
+                class="keepout-area"
 
         params:
             title: "Sheet title"
@@ -917,10 +1002,10 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
             paper_size: paper_size_name
             paper_width: paper_width
             paper_height: paper_height
-            
+
             offset_x: margin_x
             offset_y: margin_y
-            
+
             grid_width: paper_width - 2 * margin_x
             grid_height: paper_height - 2 * margin_y
 
@@ -929,7 +1014,7 @@ def sheet_A1():
     paper_height = to_mils(594)
     margin = 400
 
-    return sheet_generator("A1", paper_width, paper_height, margin, margin, 
+    return sheet_generator("A1", paper_width, paper_height, margin, margin,
         range(1, 17), ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"])
 
 def sheet_A2():
@@ -937,7 +1022,7 @@ def sheet_A2():
     paper_height = to_mils(420)
     margin = 400
 
-    return sheet_generator("A2", paper_width, paper_height, margin, margin, 
+    return sheet_generator("A2", paper_width, paper_height, margin, margin,
         range(1, 13), ["A", "B", "C", "D", "E", "F", "G", "H"])
 
 def sheet_A3():
@@ -945,7 +1030,7 @@ def sheet_A3():
     paper_height = to_mils(297)
     margin = 400
 
-    return sheet_generator("A3", paper_width, paper_height, margin, margin, 
+    return sheet_generator("A3", paper_width, paper_height, margin, margin,
         range(1, 9), ["A", "B", "C", "D", "E", "F"])
 
 def sheet_A4():
@@ -953,7 +1038,7 @@ def sheet_A4():
     paper_height = to_mils(210)
     margin = 400
 
-    return sheet_generator("A4", paper_width, paper_height, margin, margin, 
+    return sheet_generator("A4", paper_width, paper_height, margin, margin,
         range(1, 7), ["A", "B", "C", "D"])
 
 def sheet_A5():
