@@ -57,7 +57,7 @@
         "typescript": "^5.4.5"
     },
     "scripts": {
-        "start": "node build/src/main.js",
+        "start": "node dist/esm/main.js",
         "clean": "rimraf coverage build tmp dist",
         "compile": "npm run build",
         "build": "npm run copy-assets ; npm run build:cjs ; npm run build:esm",

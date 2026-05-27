@@ -12,7 +12,7 @@ import { Assignment_exprContext, CallableExprContext,
     For_exprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
-    Create_graphic_exprContext,
+    CreateGraphicExprContext,
     TrailerContext} from "../antlr/CircuitScriptParser.js";
 
 import { buildInMethodNamesList } from "../builtinMethods.js";
@@ -459,7 +459,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         });
     }
 
-    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
+    visitCreateGraphicExpr = (ctx: CreateGraphicExprContext): void => {
         const ctxID = ctx.ID();
         if (ctxID){
             this.addSymbolVariable(ctxID.getSymbol(), ctxID.getText(), null);

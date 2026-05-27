@@ -483,7 +483,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
             if (rhsValue instanceof ClassComponent) {
                 this.linkComponentToCtx(ctx, rhsValue, creationFlag);
-                this.getScope().lastComponentReference = rhsValue;
+            }
+            if (rhsValue instanceof ClassComponent || rhsValue instanceof Net){
+                this.getScope().lastObjectReference = rhsValue;
             }
 
             this.setResult(ctx, rhsValue);
@@ -561,7 +563,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             } else {
                 itemType = ReferenceTypes.variable;
                 this.getScope().setVariable(leftSideReference.name!, rhsValue);
-                this.log2(`assigned variable ${leftSideReference.name} to ${rhsValue}`);
+                this.log2(`assigned variable "${leftSideReference.name}" to "${rhsValue}"`);
             }
 
             sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
@@ -569,11 +571,14 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             if (leftSideReference.rootValue instanceof ClassComponent) {
                 this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
 
-                this.log2(`assigned component param ${leftSideReference.rootValue} trailers: ${trailers} value: ${rhsValue}`);
+                this.log2(`assigned component param "${leftSideReference.rootValue}" trailers: "${trailers}" value: "${rhsValue}"`);
                 sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
 
             } else if (leftSideReference.rootValue instanceof Frame){
                 leftSideReference.rootValue.parameters.set(trailers[0], rhsValue);
+
+            } else if (leftSideReference.rootValue instanceof Net){
+                leftSideReference.rootValue.params.set(trailers.join('.'), rhsValue);
 
             } else if (leftSideReference.rootValue instanceof Object) {
                 // TODO: instanceof use AnyReference?
@@ -1558,7 +1563,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             }
 
             this.log2(
-                `set instance ${object.instanceName} param ${paramName} to ${value}`);
+                `set instance "${object.instanceName}" param "${paramName}" to "${value}"`);
         } else {
             // Trailers length will be more than 1.
             let reference = null;

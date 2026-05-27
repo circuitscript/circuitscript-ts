@@ -6,7 +6,6 @@
  */
 
 import { numeric } from "./objects/NumericValue.js";
-import { PinTypes } from "./objects/PinTypes.js";
 
 // Delimiter should not include chars that can be in instance name 
 // or in variable names.

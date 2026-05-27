@@ -13,8 +13,8 @@ import {
     At_component_exprContext,
     BinaryOperatorExprContext,
     Component_select_exprContext,
-    Create_component_exprContext,
-    Create_graphic_exprContext,
+    CreateComponentExprContext,
+    CreateGraphicExprContext,
     Data_expr_with_assignmentContext,
     Double_dot_property_set_exprContext,
     Frame_exprContext,
@@ -34,7 +34,7 @@ import {
     If_inner_exprContext,
     LogicalOperatorExprContext,
     Expressions_blockContext,
-    Create_module_exprContext,
+    CreateModuleExprContext,
     Property_block_exprContext,
     While_exprContext,
     For_exprContext,
@@ -53,7 +53,6 @@ import {
     Part_value_exprContext,
     Part_condition_exprContext,
     CreateExprContext,
-    Create_exprContext,
     Properties_blockContext,
     At_block_expressionsContext,
     WithBracketsPropertyContext,
@@ -323,7 +322,7 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
+    visitCreateComponentExpr = (ctx: CreateComponentExprContext): void => {
         const scope = this.getScope();
 
         // Perform validation of the properties first to catch parsing errors.
@@ -647,7 +646,7 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
+    visitCreateGraphicExpr = (ctx: CreateGraphicExprContext): void => {
         const ctxId = ctx.ID();
         const paramIds = [];
         if (ctxId !== null) {
@@ -819,7 +818,7 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, [PlaceHolderCommands.for, allCommands]);
     }
 
-    visitCreate_module_expr = (ctx: Create_module_exprContext): void => {
+    visitCreateModuleExpr = (ctx: CreateModuleExprContext): void => {
         const properties = this.getPropertyExprList(ctx.property_expr());
 
         const modulePorts = this.parseCreateModulePorts(properties.get('ports'));
@@ -1250,26 +1249,6 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, value);
     }
 
-    visitCreate_expr = (ctx: Create_exprContext):void => {
-        let value: ComplexType;
-
-        const ctxCreateComponentExpr = ctx.create_component_expr();
-        const ctxCreateGraphicExpr = ctx.create_graphic_expr();
-        const ctxCreateModuleExpr = ctx.create_module_expr();
-
-        if (ctxCreateComponentExpr) {
-            value = this.visitResult(ctxCreateComponentExpr);
-        } else if (ctxCreateGraphicExpr) {
-            value = this.visitResult(ctxCreateGraphicExpr);
-        } else if (ctxCreateModuleExpr) {
-            value = this.visitResult(ctxCreateModuleExpr);
-        } else {
-            throw "Invalid data expression";
-        }
-
-        this.setResult(ctx, value);
-    }
-
     visitCreateExpr = (ctx: CreateExprContext): void => {
         const result = this.visitResult(ctx.create_expr());
         this.setResult(ctx, result);
@@ -1694,7 +1673,7 @@ export class ParserVisitor extends BaseVisitor {
         
         const scope = this.getScope();
         const useObject = scope.currentFrameId !== -1 ?
-            scope.frames[scope.currentFrameId - 1] : scope.lastComponentReference;
+            scope.frames[scope.currentFrameId - 1] : scope.lastObjectReference;
 
         const lastReference = new AnyReference({
             found: true,

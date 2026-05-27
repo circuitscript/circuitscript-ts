@@ -7,8 +7,8 @@
 
 import { TerminalNode, Token } from "antlr4ng";
 import { CircuitScriptLexer } from "../antlr/CircuitScriptLexer.js";
-import { Function_def_exprContext, Create_component_exprContext,
-    Create_graphic_exprContext, Callable_exprContext, Property_key_exprContext,
+import { Function_def_exprContext, CreateComponentExprContext,
+    CreateGraphicExprContext, Callable_exprContext, Property_key_exprContext,
     Assignment_exprContext,
     Function_args_exprContext,
     GraphicCommandExprContext,
@@ -166,7 +166,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Visits component creation expressions
      * Example: U1 = create component: pins: 10
      */
-    visitCreate_component_expr = (ctx: Create_component_exprContext): void => {
+    visitCreateComponentExpr = (ctx: CreateComponentExprContext): void => {
         this.visitResult(ctx.properties_block());
     }
 
@@ -174,7 +174,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Visits graphic creation expressions
      * Example: create graphic: circle center (0, 0) radius 5
      */
-    visitCreate_graphic_expr = (ctx: Create_graphic_exprContext): void => {
+    visitCreateGraphicExpr = (ctx: CreateGraphicExprContext): void => {
         this.visitResult(ctx.graphic_expressions_block());
     }
 
@@ -479,8 +479,8 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
 
 /** CircuitScript language keywords for basic syntax highlighting */
 const languageKeywords = [
-    'break', 'branch', 'create', 'component',
-    'graphic', 'wire', 'pin', 'add', 'at', 'to',
+    'break', 'branch', 'createcomponent', 'creategraphic', 'createmodule',
+    'wire', 'pin', 'add', 'at', 'to',
     'point', 'join', 'parallel', 'return', 'def', 'from', 'import',
     'true', 'false', 'nc', 'sheet', 'frame', 'if', 'else', 'for', 'in',
 

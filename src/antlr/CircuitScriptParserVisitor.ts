@@ -47,10 +47,9 @@ import { TrailerContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Properties_blockContext } from "./CircuitScriptParser.js";
 import { Graphic_expressions_blockContext } from "./CircuitScriptParser.js";
-import { Create_exprContext } from "./CircuitScriptParser.js";
-import { Create_component_exprContext } from "./CircuitScriptParser.js";
-import { Create_graphic_exprContext } from "./CircuitScriptParser.js";
-import { Create_module_exprContext } from "./CircuitScriptParser.js";
+import { CreateComponentExprContext } from "./CircuitScriptParser.js";
+import { CreateGraphicExprContext } from "./CircuitScriptParser.js";
+import { CreateModuleExprContext } from "./CircuitScriptParser.js";
 import { GraphicForExprContext } from "./CircuitScriptParser.js";
 import { GraphicCommandExprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
@@ -360,29 +359,26 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitGraphic_expressions_block?: (ctx: Graphic_expressions_blockContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.create_expr`.
+     * Visit a parse tree produced by the `CreateComponentExpr`
+     * labeled alternative in `CircuitScriptParser.create_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitCreate_expr?: (ctx: Create_exprContext) => Result;
+    visitCreateComponentExpr?: (ctx: CreateComponentExprContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.create_component_expr`.
+     * Visit a parse tree produced by the `CreateGraphicExpr`
+     * labeled alternative in `CircuitScriptParser.create_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitCreate_component_expr?: (ctx: Create_component_exprContext) => Result;
+    visitCreateGraphicExpr?: (ctx: CreateGraphicExprContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.create_graphic_expr`.
+     * Visit a parse tree produced by the `CreateModuleExpr`
+     * labeled alternative in `CircuitScriptParser.create_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitCreate_graphic_expr?: (ctx: Create_graphic_exprContext) => Result;
-    /**
-     * Visit a parse tree produced by `CircuitScriptParser.create_module_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitCreate_module_expr?: (ctx: Create_module_exprContext) => Result;
+    visitCreateModuleExpr?: (ctx: CreateModuleExprContext) => Result;
     /**
      * Visit a parse tree produced by the `GraphicForExpr`
      * labeled alternative in `CircuitScriptParser.graphic_expr`.

@@ -157,8 +157,8 @@ U1 = create component:
 
         const tokens = await getSemanticTokens(script);
 
-        // 'create' keyword should be marked as 'function' with 'defaultLibrary' modifier
-        const createToken = findTokenByText(tokens, 'create');
+        // 'create component' compound keyword should be marked as 'keyword'
+        const createToken = findTokenByText(tokens, 'create component');
 
         expect(createToken).toBeDefined();
         expect(createToken?.tokenType).toBe('keyword');
@@ -261,14 +261,14 @@ U1 = create component:
         expect(inToken).toBeDefined();
         expect(inToken?.tokenType).toBe('keyword');
 
-        const createTokens = findTokensByType(tokens, 'keyword').filter(t => t.textValue === 'create');
+        const createTokens = findTokensByType(tokens, 'keyword').filter(t => t.textValue.startsWith('create '));
         expect(createTokens.length).toBeGreaterThan(0);
 
-        const componentToken = findTokenByText(tokens, 'component');
+        const componentToken = findTokenByText(tokens, 'create component');
         expect(componentToken).toBeDefined();
         expect(componentToken?.tokenType).toBe('keyword');
 
-        const graphicToken = findTokenByText(tokens, 'graphic');
+        const graphicToken = findTokenByText(tokens, 'create graphic');
         expect(graphicToken).toBeDefined();
         expect(graphicToken?.tokenType).toBe('keyword');
     });

@@ -91,7 +91,7 @@ double_dot_property_set_expr: DoubleDot ID trailer* Assign data_expr;
 
 data_expr:
     LParen data_expr RParen                             #RoundedBracketsExpr
-    | Create create_expr                                #CreateExpr
+    | create_expr                                       #CreateExpr
     | (Not | Minus) data_expr                           #UnaryOperatorExpr
     | LSquare (data_expr (Comma data_expr)*)* RSquare   #ArrayExpr
     | data_expr (Multiply | Divide | Modulus) data_expr #MultiplyExpr
@@ -138,15 +138,10 @@ properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;
 graphic_expressions_block:
     NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
-create_expr: create_component_expr
-            | create_graphic_expr
-            | create_module_expr;
-
-create_component_expr: Component Colon properties_block;
-
-create_graphic_expr: Graphic (LParen ID RParen)? Colon graphic_expressions_block;
-
-create_module_expr: Module Colon NEWLINE INDENT (property_expr | property_block_expr | NEWLINE) + DEDENT;
+create_expr: CreateComponent Colon properties_block                                                    #CreateComponentExpr
+           | CreateGraphic (LParen ID RParen)? Colon graphic_expressions_block                         #CreateGraphicExpr
+           | CreateModule Colon NEWLINE INDENT (property_expr | property_block_expr | NEWLINE)+ DEDENT  #CreateModuleExpr
+           ;
 
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                        # GraphicForExpr
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)  # GraphicCommandExpr
