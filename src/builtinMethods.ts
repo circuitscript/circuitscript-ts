@@ -28,6 +28,9 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['pin_set_type', pinSetType],
     ['pin_get_type', pinGetType],
     ['has_pin', hasPin],
+
+    // Methods that are defined at run time
+    ['net_class', null],
     ['print', null],
 ];
 
@@ -47,6 +50,16 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         visitor.printStream.push(printedValue);
 
         return [visitor, printedValue];
+    });
+
+    context.createFunction(BaseNamespace, 'net_class', (params) => {
+        const args = getPositionParams(params);
+        let netName: string | null = null;
+        if (args.length > 0){
+            netName = args[0];
+        }
+        
+        return [visitor, context.createNewNet(netName)];
     });
 
     builtInMethods.forEach(([functionName, functionImpl]) => {

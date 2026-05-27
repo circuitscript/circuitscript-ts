@@ -176,6 +176,11 @@ export class ExecutionContext {
         return tmpName;
     }
 
+    createNewNet(name: string| null, priority=1): Net {
+        name = name ?? this.getUniqueNetName();
+        return new Net(this.netNamespace, name, priority);
+    }
+
     /** Returns current insertion point within the scope */
     getCurrentPoint(): ComponentPin {
         return [this.scope.currentComponent, this.scope.currentPin];
