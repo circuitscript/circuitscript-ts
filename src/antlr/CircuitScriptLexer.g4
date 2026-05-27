@@ -75,6 +75,10 @@ DivideAssign:       '/=';
 MultiplyAssign:     '*=';
 ModulusAssign:      '%=';
 
+LINE_CONTINUATION
+ : '\\' '\r'? '\n' -> skip
+ ;
+
 NEWLINE
  : ( '\r'? '\n' | '\r' | '\f' ) SPACES? {this.onNewLine();}
  ;

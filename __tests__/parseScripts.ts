@@ -679,6 +679,44 @@ print(has_pin(tmp, "GND"))
 print(has_pin(tmp, "MISSING"))
 `, ['true', 'false']);
 
+// Line continuation tests
+export const inlineScript75 = new ScriptTest(`
+a = 1 + \
+    2
+print(a)
+`, ['3']);
+
+export const inlineScript76 = new ScriptTest(`
+a = 1
+b = 2
+c = a + \
+    b
+print(c)
+`, ['3']);
+
+export const inlineScript77 = new ScriptTest(`
+a = 10
+if a > 5 \
+    and a < 20:
+    print(1)
+`, ['1']);
+
+export const inlineScript78 = new ScriptTest(`
+result = 1 + \
+         2 + \
+         3
+print(result)
+`, ['6']);
+
+export const inlineScript79 = new ScriptTest(`
+def sum2(x, y):
+    return x + y
+
+r = sum2(1, \
+         2)
+print(r)
+`, ['3']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [

@@ -45,7 +45,12 @@ import {
     inlineScript71,
     inlineScript72,
     inlineScript73,
-    inlineScript74
+    inlineScript74,
+    inlineScript75,
+    inlineScript76,
+    inlineScript77,
+    inlineScript78,
+    inlineScript79
 } from './parseScripts.js';
 
 async function expectInlineScriptTest(description, scriptTest): Promise<void> {
@@ -486,6 +491,14 @@ describe('builtin methods', () => {
     );
 
     testInlineScriptTest('test builtin methods', inlineScript55);
+});
+
+describe('line continuation tests', () => {
+    testInlineScriptTest('basic expression continuation', inlineScript75);
+    testInlineScriptTest('variable expression continuation', inlineScript76);
+    testInlineScriptTest('condition continuation with and', inlineScript77);
+    testInlineScriptTest('multi-line continuation chain', inlineScript78);
+    testInlineScriptTest('function call argument continuation', inlineScript79);
 });
 
 describe('atom expr and trailers tests', () => {
