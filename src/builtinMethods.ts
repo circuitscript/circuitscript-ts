@@ -16,6 +16,7 @@ import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { PinId } from "./objects/PinDefinition.js";
 import { AllPinTypes, resolvePinType } from "./objects/PinTypes.js";
+import { NetClass } from "./objects/NetClass.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -194,6 +195,8 @@ function toString(obj: any): string {
         return `[component: ${obj.instanceName}]`;
     } else if (obj instanceof Net){
         return `[net: ${obj.toString()}]`
+    } else if (obj instanceof NetClass) {
+        return `[netClass: ${obj.name}]`;
     } else {
         if (obj === undefined){
             return 'undefined'; 

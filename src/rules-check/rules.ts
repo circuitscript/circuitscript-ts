@@ -268,7 +268,9 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         if (a.start === null && b.start === null) return 0;
         if (a.start === null) return 1;
         if (b.start === null) return -1;
-        return a.start.start - b.start.start;
+        return a.start.line !== b.start.line
+            ? a.start.line - b.start.line
+            : a.start.column - b.start.column;
     });
 
     return sortedReport;

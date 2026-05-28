@@ -35,6 +35,7 @@ import { ParserRuleContext } from 'antlr4ng';
 import { PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { getBlockTypeString } from './utils.js';
 import { RuntimeExecutionError } from "./errors.js";
+import { NetClass } from './objects/NetClass.js';
 
 /** Contains the current running state of the circuit graph */
 export class ExecutionContext {
@@ -1293,8 +1294,13 @@ export class ExecutionContext {
             for (let i = 0; i < trailers.length; i++) {
                 if (useValue instanceof ClassComponent) {
                     useValue = (useValue as ClassComponent).parameters.get(trailers[i]);
+                
                 } else if (useValue instanceof Net) {
                     useValue = (useValue as Net).parameters.get(trailers[i]);
+
+                } else if (useValue instanceof NetClass){
+                    useValue = (useValue as NetClass).parameters.get(trailers[i]);
+
                 } else if (useValue instanceof ImportedLibrary) {
                     // Only handle a specific case for now..
                     const funcName = trailers[0];

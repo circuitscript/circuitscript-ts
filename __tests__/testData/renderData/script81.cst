@@ -1,11 +1,12 @@
 # Test that double dot syntax is working for assignment
 from "std" import *
 
-power_class = net_class()
-..net.color = "red"
-..net.line_width = 20
-..net.highlight = "red"
-..net.highlight_width = 10
+power_class = create netclass:
+    name: "power"
+    color: "red"
+    line_width: 20
+    highlight: "red"
+    highlight_width: 10
 
 v5 = supply("V5")
 

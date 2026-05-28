@@ -29,6 +29,7 @@ import { PinDefinition, PinId } from '../objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from '../helpers.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
 import { generateLayoutPinDefinition, getWireName, RenderItemType } from './graph.js';
+import { NetClass } from 'src/objects/NetClass.js';
 
 export class LayoutEngine {
 
@@ -142,10 +143,8 @@ export class LayoutEngine {
                 const net = netComponent.getParam("net") as Net;
 
                 // Set the net parameters based on the net class component
-                const netClassComponent = netComponent.getParam("class") as ClassComponent;
-                const netClassComponentNet = netClassComponent.getParam("net") as Net;
-
-                net.class = netClassComponentNet;
+                const netClass = netComponent.getParam("class") as NetClass;
+                net.class = netClass;
             }
         });
 

@@ -12,9 +12,10 @@ tokens { INDENT, DEDENT }
 // Keywords
 Break:      'break';
 Branch:     'branch';
-CreateComponent: 'create' [ \t]+ 'component';
-CreateGraphic:   'create' [ \t]+ 'graphic';
-CreateModule:    'create' [ \t]+ 'module';
+CreateComponent:   'create' [ \t]+ 'component';
+CreateGraphic:     'create' [ \t]+ 'graphic';
+CreateModule:      'create' [ \t]+ 'module';
+CreateNetClass:    'create' [ \t]+ 'netclass';
 
 Wire:       'wire';
 

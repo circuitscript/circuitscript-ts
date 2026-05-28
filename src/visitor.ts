@@ -56,6 +56,7 @@ import {
     Properties_blockContext,
     At_block_expressionsContext,
     WithBracketsPropertyContext,
+    CreateNetClassExprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -90,6 +91,7 @@ import { ComponentAnnotater } from './annotate/ComponentAnnotater.js';
 import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
 import { NodeScriptEnvironment } from './environment/environment.js';
+import { NetClass } from './objects/NetClass.js';
 
 export class ParserVisitor extends BaseVisitor {
 
@@ -897,6 +899,17 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, moduleComponent);
+    }
+
+    visitCreateNetClassExpr = (ctx: CreateNetClassExprContext):void => {
+        const ctxPropertiesBlock = ctx.properties_block();
+        const properties = this.visitResult(ctxPropertiesBlock);
+
+        if (!properties.has('name')){
+            this.throwWithContext(ctx, "NetClass name not provided");
+        }
+
+        this.setResult(ctx, new NetClass(properties));
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {

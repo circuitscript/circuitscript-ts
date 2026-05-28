@@ -20,6 +20,7 @@ import { Property_key_exprContext } from '../antlr/CircuitScriptParser.js';
 import { BaseVisitor } from 'src/BaseVisitor.js';
 import { PinId } from './PinDefinition.js';
 import { RuntimeExecutionError } from "../errors.js";
+import { NetClass } from './NetClass.js';
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 
@@ -81,7 +82,7 @@ export class ExecutionScope {
 
     // Used to track the last component referenced in graph operations AND
     // in assignment operations.
-    lastObjectReference: ClassComponent | Net | null = null;
+    lastObjectReference: ClassComponent | Net | NetClass | null = null;
     
     // Tracks the counter for copies of each component instance
     // Copies are the same component electrically, but different symbols.

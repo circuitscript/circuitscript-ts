@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { NetClass } from "./NetClass.js";
+import { ParamsContainer } from "./ParamsContainer.js";
 import { NetTypes } from "./types.js";
 
-export class Net {
+export class Net extends ParamsContainer {
 
     name: string;
     
@@ -23,15 +25,13 @@ export class Net {
 
     type: NetTypes;
 
-    // Store parameters like net color, wire thickness, highlight, etc.
-    parameters: Map<string, any> = new Map();
-
     // If set, then the net class params are used by default.
-    class?: Net;
+    class?: NetClass;
 
     // private randomId: string;
 
     constructor(namespace: string, name: string, priority = 0) {
+        super();
         if (namespace.indexOf(' ') !== -1){
             throw "Invalid net namespace provided";
         }
@@ -51,30 +51,6 @@ export class Net {
 
     toString(): string {
         return this.namespace + this.name;
-    }
-
-    hasParam(key: string): boolean {
-        return this.parameters.has(key);
-    }
-
-    getParam(key: string): any {
-        return this.parameters.get(key);
-    }
-
-    setParam(key: string, value: any): void {
-        this.parameters.set(key, value);
-    }
-
-    setNestedParam(trailers: string[], value: any): void {
-        if (trailers.length === 1) {
-            this.parameters.set(trailers[0], value);
-            return;
-        }
-        let current: any = this.parameters.get(trailers[0]);
-        for (let i = 1; i < trailers.length - 1; i++) {
-            current = current[trailers[i]];
-        }
-        current[trailers[trailers.length - 1]] = value;
     }
 
     static isSame(netA: Net, netB: Net): boolean {
