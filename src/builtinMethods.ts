@@ -51,17 +51,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
 
         return [visitor, printedValue];
     });
-
-    context.createFunction(BaseNamespace, 'net_class', (params) => {
-        const args = getPositionParams(params);
-        let netName: string | null = null;
-        if (args.length > 0){
-            netName = args[0];
-        }
-        
-        return [visitor, context.createNewNet(netName)];
-    });
-
+    
     builtInMethods.forEach(([functionName, functionImpl]) => {
         if (functionImpl !== null){
             context.createFunction(BaseNamespace, functionName, params => {

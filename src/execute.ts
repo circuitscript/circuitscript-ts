@@ -1294,7 +1294,7 @@ export class ExecutionContext {
                 if (useValue instanceof ClassComponent) {
                     useValue = (useValue as ClassComponent).parameters.get(trailers[i]);
                 } else if (useValue instanceof Net) {
-                    useValue = (useValue as Net).params.get(trailers[i]);
+                    useValue = (useValue as Net).parameters.get(trailers[i]);
                 } else if (useValue instanceof ImportedLibrary) {
                     // Only handle a specific case for now..
                     const funcName = trailers[0];

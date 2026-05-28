@@ -193,7 +193,7 @@ export class LayoutEngine {
 
     // If the net class is set, then return the value from the net class
     private getNetCombinedParameters(net: Net): Map<string, any> {
-        const tmpParams = new Map(net.params);
+        const tmpParams = new Map(net.parameters);
 
         if (net.class) {
             const netClass = net.class;

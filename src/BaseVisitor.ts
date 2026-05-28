@@ -578,7 +578,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 leftSideReference.rootValue.parameters.set(trailers[0], rhsValue);
 
             } else if (leftSideReference.rootValue instanceof Net){
-                leftSideReference.rootValue.params.set(trailers.join('.'), rhsValue);
+                leftSideReference.rootValue.setNestedParam(trailers, rhsValue);
 
             } else if (leftSideReference.rootValue instanceof Object) {
                 // TODO: instanceof use AnyReference?
@@ -1575,7 +1575,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 } else {
                     if (reference instanceof Net){
                         const remainingTrailers = trailers.slice(i);
-                        reference.params.set(remainingTrailers.join("."), value);
+                        reference.setNestedParam(remainingTrailers, value);
                     }
                 }
             }
