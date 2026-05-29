@@ -1,35 +1,27 @@
-# Test that double dot syntax is working for assignment
+# Test setting NetClass properties via .. syntax after create block
 from "std" import *
 
 power_class = create netclass:
     name: "power"
     color: "red"
-    line_width: 20
-    highlight_width: 10
+..line_width = 20
+..highlight_width = 10
 
 v5 = supply("V5")
+..class = power_class
 
 v3v3 = supply("3V3")
 ..class = power_class
 ..net.color = "blue"
 
-v1v2 = supply("1V2")
-..class = power_class
-
 gnd = dgnd()
 
 at v5
-..class = power_class
 -- d 100 r 100
 add res(10k)
 -- r 100 d 100 to gnd
 
 at v3v3
--- d 100 r 100
-add res(1k)
--- r 100 d 100 to gnd
-
-at v1v2
 -- d 100 r 100
 add res(1k)
 -- r 100 d 100 to gnd

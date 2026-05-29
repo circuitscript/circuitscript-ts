@@ -130,7 +130,8 @@ describe('Render tests', () => {
         ['script78.cst', 'Pin selection using pin name'],
         ['script79.cst', 'correct label text alignment (anchor, vanchor) for different angles and flipxy'],
         ['script80.cst', 'brackets in properties and drawing commands are handled properly'],
-        ['script81.cst', 'double dot syntax works for assignment']
+        ['script81.cst', 'double dot syntax works for assignment'],
+        ['script82.cst', 'netclass properties set via double dot syntax after creation']
 
         // ['script35.cst', 'arrange prop with repeated pins and missing pins']
 

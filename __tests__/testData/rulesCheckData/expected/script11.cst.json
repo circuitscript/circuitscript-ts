@@ -1,0 +1,23 @@
+[
+    {
+        "start": {
+            "line": 4,
+            "column": 0
+        },
+        "type": "UNCONNECTED-PIN",
+        "message": "Unconnected pin"
+    },
+    {
+        "start": {
+            "line": 10,
+            "column": 0
+        },
+        "type": "POWER-NET-UNUSED",
+        "message": "Power net '/GND' is declared but has no physical connections"
+    },
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]

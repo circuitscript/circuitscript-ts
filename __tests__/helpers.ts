@@ -32,6 +32,7 @@ export function getTestEnvironment(): NodeScriptEnvironment {
 
 export async function runScript(script: string, scriptPath?: string, options?: {
     simplifyRefdes?: boolean,
+    skipAnnotation?: boolean,
 }): Promise<{
     visitor: ParserVisitor,
     hasError: boolean,
@@ -103,7 +104,9 @@ export async function runScript(script: string, scriptPath?: string, options?: {
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
-    visitor.annotateComponents(options?.simplifyRefdes ?? true);
+    if (!options?.skipAnnotation) {
+        visitor.annotateComponents(options?.simplifyRefdes ?? true);
+    }
 
     // Do not write cached libraries for tests
     // visitor.cacheLibraries();
@@ -211,7 +214,8 @@ type RenderCommonOptions = {
     bomConfig?: {
         columns: string[],
         group_by: string[],
-    }
+    },
+    skipAnnotation?: boolean,
 }
 
 export async function renderCommon(scriptPath: string, options?: RenderCommonOptions):
@@ -223,7 +227,7 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     }> {
 
     const script = readFileSync(scriptPath, { encoding: 'utf8' });
-    const { hasError, visitor } = await runScript(script, scriptPath);
+    const { hasError, visitor } = await runScript(script, scriptPath, { skipAnnotation: options?.skipAnnotation });
     expect(hasError).toEqual(false);
 
     visitor.applySheetFrameComponent();

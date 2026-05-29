@@ -485,8 +485,12 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             if (rhsValue instanceof ClassComponent) {
                 this.linkComponentToCtx(ctx, rhsValue, creationFlag);
             }
-            if (rhsValue instanceof ClassComponent || rhsValue instanceof Net || rhsValue instanceof NetClass){
-                this.getScope().lastObjectReference = rhsValue;
+
+            if (leftSideReference.rootValue) {
+                const { rootValue } = leftSideReference;
+                if (rootValue instanceof ClassComponent || rootValue instanceof Net || rhsValue instanceof NetClass) {
+                    this.getScope().lastObjectReference = rootValue;
+                }
             }
 
             this.setResult(ctx, rhsValue);
@@ -567,6 +571,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 this.log2(`assigned variable "${leftSideReference.name}" to "${rhsValue}"`);
             }
 
+            leftSideReference.rootValue = rhsValue;
             sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
         } else {
             if (leftSideReference.rootValue instanceof ClassComponent) {

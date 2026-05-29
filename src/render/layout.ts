@@ -166,15 +166,21 @@ export class LayoutEngine {
                 renderNet.lineWidth = milsToMM(value).toNumber();
             }
 
-            if (netParams.has(NetGraphicsParams.Highlight)) {
-                renderNet.highlight = 
-                    netParams.get(NetGraphicsParams.Highlight);
-            }
-
             if (netParams.has(NetGraphicsParams.HighlightWidth)) {
                 renderNet.highlightWidth =
                     milsToMM(netParams.get(NetGraphicsParams.HighlightWidth))
                         .toNumber();
+            }
+
+            if (netParams.has(NetGraphicsParams.Highlight)) {
+                renderNet.highlight = 
+                    netParams.get(NetGraphicsParams.Highlight);
+
+            } else if (renderNet.highlightWidth && renderNet.highlightWidth > 0){
+                
+                // If highlight width is defined, but no highlight color is
+                // defined, then use the net color.
+                renderNet.highlight = renderNet.color;
             }
 
             if (netParams.has(NetGraphicsParams.HighlightOpacity)){

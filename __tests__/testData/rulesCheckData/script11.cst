@@ -1,0 +1,12 @@
+from "std" import *
+
+gnd = dgnd()
+tmp = create component:
+    pins: 2
+    arrange:
+        left: 1
+        right: 2
+
+at gnd
+wire up 50
+to tmp pin 1

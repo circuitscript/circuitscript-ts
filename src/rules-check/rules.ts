@@ -94,10 +94,13 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                 const instance = item.instance as ClassComponent;
                 const token = getComponentFirstCtxToken(instance);
                 if (token) {
+                    const refdes = instance.assignedRefDes
+                        ? `: ${instance.assignedRefDes} pin ${item.pin}`
+                        : '';
                     reportItems.push({
                         type,
                         start: token,
-                        message: `Unconnected pin: ${instance.assignedRefDes} pin ${item.pin}`
+                        message: `Unconnected pin${refdes}`
                     });
                 }
             }
@@ -206,24 +209,39 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
             case ERC_Rules.PowerReferenceUnconnected: {
                 const instance = item.instance as ClassComponent;
                 const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
-                    message: `Unconnected power_reference pin: ${instance.assignedRefDes} pin ${item.pin}` });
+                if (token) {
+                    const refdes = instance.assignedRefDes
+                        ? `: ${instance.assignedRefDes} pin ${item.pin}`
+                        : '';
+                    reportItems.push({ type, start: token,
+                        message: `Unconnected power_reference pin${refdes}` });
+                }
             }
                 break;
 
             case ERC_Rules.PowerInputUnconnected: {
                 const instance = item.instance as ClassComponent;
                 const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
-                    message: `Unconnected power_input pin: ${instance.assignedRefDes} pin ${item.pin}` });
+                if (token) {
+                    const refdes = instance.assignedRefDes
+                        ? `: ${instance.assignedRefDes} pin ${item.pin}`
+                        : '';
+                    reportItems.push({ type, start: token,
+                        message: `Unconnected power_input pin${refdes}` });
+                }
             }
                 break;
 
             case ERC_Rules.PowerOutputUnconnected: {
                 const instance = item.instance as ClassComponent;
                 const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
-                    message: `Unconnected power_output pin: ${instance.assignedRefDes} pin ${item.pin}` });
+                if (token) {
+                    const refdes = instance.assignedRefDes
+                        ? `: ${instance.assignedRefDes} pin ${item.pin}`
+                        : '';
+                    reportItems.push({ type, start: token,
+                        message: `Unconnected power_output pin${refdes}` });
+                }
             }
                 break;
 
@@ -239,8 +257,10 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                     if (displayValue !== "") {
                         displayValue = `: ${displayValue}`;
                     }
-                    reportItems.push({ type, start: token,
-                    message: `Unconnected power symbol pin${displayValue}` })
+                    reportItems.push({
+                        type, start: token,
+                        message: `Unconnected power symbol pin${displayValue}`
+                    })
                 };
             }
                 break;
