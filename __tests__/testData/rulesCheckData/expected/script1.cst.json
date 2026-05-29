@@ -49,8 +49,8 @@
     },
     {
         "start": {
-            "line": 30,
-            "column": 4
+            "line": 12,
+            "column": 0
         },
         "type": "POWER-NET-UNUSED",
         "message": "Power net '/5V' is declared but has no physical connections"

@@ -1,19 +1,19 @@
 [
     {
         "start": {
-            "line": 4,
-            "column": 0
-        },
-        "type": "POWER-NET-UNUSED",
-        "message": "Power net '/GND' is declared but has no physical connections"
-    },
-    {
-        "start": {
             "line": 6,
             "column": 0
         },
         "type": "UNCONNECTED-PIN",
         "message": "Unconnected pin: J1 pin 5"
+    },
+    {
+        "start": {
+            "line": 12,
+            "column": 0
+        },
+        "type": "POWER-NET-UNUSED",
+        "message": "Power net '/5V' is declared but has no physical connections"
     },
     {
         "start": {
@@ -33,11 +33,11 @@
     },
     {
         "start": {
-            "line": 30,
-            "column": 4
+            "line": 24,
+            "column": 11
         },
         "type": "POWER-NET-UNUSED",
-        "message": "Power net '/5V' is declared but has no physical connections"
+        "message": "Power net '/GND' is declared but has no physical connections"
     },
     {
         "start": null,

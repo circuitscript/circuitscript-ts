@@ -353,7 +353,13 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                         console.log(`ERC found ${ercResults.length} items:`);
 
                         ercResults.forEach((item, index) => {
-                            console.log(`${(index + 1).toString().padStart(3)}. line ${item.start.line}, column ${item.start.column}: ${item.type} - ${item.message}`);
+
+                            let position = "";
+                            if (item.start){
+                                position = `line ${item.start.line}, column: ${item.start.column}: `
+                            }
+
+                            console.log(`${(index + 1).toString().padStart(3)}. ${position}${item.type} - ${item.message}`);
                         });
                     } else {
                         console.log('No ERC issues found');

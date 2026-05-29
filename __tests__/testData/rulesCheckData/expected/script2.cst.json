@@ -1,8 +1,16 @@
 [
     {
         "start": {
-            "line": 4,
+            "line": 6,
             "column": 0
+        },
+        "type": "POWER-NET-UNUSED",
+        "message": "Power net '/5V' is declared but has no physical connections"
+    },
+    {
+        "start": {
+            "line": 13,
+            "column": 7
         },
         "type": "POWER-NET-UNUSED",
         "message": "Power net '/GND' is declared but has no physical connections"
@@ -22,14 +30,6 @@
         },
         "type": "UNCONNECTED-WIRE",
         "message": "Unconnected wire end"
-    },
-    {
-        "start": {
-            "line": 30,
-            "column": 4
-        },
-        "type": "POWER-NET-UNUSED",
-        "message": "Power net '/5V' is declared but has no physical connections"
     },
     {
         "start": null,

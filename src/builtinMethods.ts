@@ -31,7 +31,6 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['has_pin', hasPin],
 
     // Methods that are defined at run time
-    ['net_class', null],
     ['print', null],
 ];
 

@@ -28,6 +28,8 @@ type NetState = {
     firstPowerOutputPin: PinId | null;
 
     netName: string;
+
+    netComponents: ClassComponent[],
 };
 
 function makeViolation(
@@ -59,6 +61,8 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
                 firstPowerOutputComponent: null,
                 firstPowerOutputPin: null,
                 netName: net.toString(),
+
+                netComponents: [],
             });
         }
 
@@ -66,6 +70,7 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
         const unit = component.getUnitForPin(pin);
         const pinKey = Array.from(unit.pins.keys()).find(k => k.equals(pin));
         if (!pinKey) continue;
+
         const pinDef = unit.pins.get(pinKey);
         if (!pinDef) continue;
 
@@ -77,7 +82,13 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
                 const declaredName = component.parameters.get('net_name');
                 state.powerSymbolNames.add(declaredName != null ? String(declaredName) : net.toString());
                 if (!state.firstPowerSymbolComponent) {
+                    // The first net instance should be the main component,
+                    // and should not be a copy.
                     state.firstPowerSymbolComponent = component;
+                }
+
+                if (state.netComponents.indexOf(component) === -1) {
+                    state.netComponents.push(component);
                 }
                 break;
             }
@@ -168,9 +179,16 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
 
         // ERC rule for: power net with only power symbol pins (no physical connections)
         if (hasPowerSymbol && !state.hasPowerInput && !state.hasPowerReference && !state.hasPowerOutput) {
+
+            // Find the first net component that is a copy. This is the instance
+            // to use for error messages.
+            const netSymbol = state.netComponents.find(component => {
+                return component._copyFrom !== null;
+            }) ?? state.firstPowerSymbolComponent!;
+
             items.push(makeViolation(
                 ERC_Rules.PowerNetUnused,
-                state.firstPowerSymbolComponent!,
+                netSymbol,
                 null,
                 state.netName
             ));
@@ -178,9 +196,16 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
 
         // ERC rule for: multiple power symbols with different names on same net
         if (state.powerSymbolNames.size > 1) {
+
+            // Find the first copy instance
+            const useComponent =
+                state.netComponents.find(
+                    component => component._copyFrom !== null)
+                ?? state.firstPowerSymbolComponent!;
+
             items.push(makeViolation(
                 ERC_Rules.PowerNetNameConflict,
-                state.firstPowerSymbolComponent!,
+                useComponent,
                 null,
                 Array.from(state.powerSymbolNames).sort().join(', ')
             ));
