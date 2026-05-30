@@ -1,0 +1,170 @@
+# Test components from the standard library.
+
+from "std" import *
+
+def tmp(comp):
+    at v5
+    wire d 100
+    add comp
+    wire d 100
+    to gnd
+
+frame:
+    ..width = 5000
+
+    # === Shared power / ground nodes ===
+    gnd = dgnd()
+    v5 = supply("5V")
+
+    # === Net / Power / Labels ===
+    at net("3V3")
+
+    at v5
+    wire right 200
+    add label("SIG")
+    wire right 200
+    to gnd
+
+    at port("IN", "input")
+    wire right 100 down 100
+    to cgnd()
+
+    # === Basic Passives ===
+    tmp(res(10k))
+    tmp(cap(100n))
+    tmp(ind(10u))
+
+    # === Diodes ===
+    tmp(diode())
+    tmp(zener())
+    tmp(schottky())
+    tmp(tvs())
+    tmp(photodiode())
+    
+    at v5
+    wire d 100
+    add led("red") pin "A"
+    wire d 100
+    to gnd
+
+    # === Passive Components ===
+
+    tmp(pot(10k))
+    tmp(cap_pol(10u))
+    tmp(ferrite(600))
+    tmp(xtal(16M))
+    tmp(fuse(500m))
+    tmp(jumper())
+
+    # === Transistors ===
+    Q1 = npn()
+
+    at v5
+    wire down 100
+    add Q1 pin "C"
+    wire down 100
+    to gnd
+
+    at Q1 pin "B"
+    wire left 100 up 100
+    to v5
+
+    Q2 = pnp()
+    at v5
+    wire d 100
+    add Q2 pin "C"
+    wire down 100
+    to gnd
+
+    at Q2 pin "B"
+    wire l 100 u 100
+    to v5
+
+    M1 = nmos()
+    at v5
+    wire down 100
+    add M1 pin "D"
+
+    at M1 pin "S"
+    wire d 100 to gnd
+
+    at M1 pin "G"
+    wire left 100 up 100 to v5
+
+    M2 = pmos()
+    at v5
+    wire down 100
+    add M2 pin "D"
+
+    at M2 pin "S"
+    wire down 100
+    to gnd
+
+    at M2 pin "G"
+    wire left 100 up 100
+    to v5
+
+    # === Integrated Circuits ===
+    U1 = opamp()
+
+    at v5
+    wire d 100 r 100
+    add U1 pin "+"
+
+    at U1 pin "-"
+    wire l 100 d 100 to gnd
+
+    at U1 pin "OUT"
+    wire right 200
+    to gnd
+
+    U2 = comparator()
+
+    at v5
+    wire d 100 r 100
+    add U2 pin "+"
+
+    at U2 pin "-"
+    wire l 100 d 100 to gnd
+
+    at U2 pin "OUT"
+    wire right 200
+    to gnd
+
+    # === Switches / Connectors ===
+
+    tmp(switch_spst())
+    tmp(switch_pb())
+
+    J1 = conn_single_row(4)
+
+    at v5
+    wire right 200
+    add J1 pin "1"
+
+    at J1 pin "2"
+    wire l 100 d 100
+    to gnd
+ 
+    J2 = conn_double_rows(4)
+
+    at v5
+    wire right 200
+    add J2 pin "1"
+
+    at J2 pin 2
+    wire l 100 d 100
+    to gnd
+
+    # === Test / Annotation ===
+    at v5
+    wire down 100
+    to test_point()
+
+    # === Graphical Helpers ===
+    at text("Hello")
+    at marker_point()
+    at arrow_point()
+    at no_connect()
+    at dnc()
+

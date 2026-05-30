@@ -60,9 +60,10 @@ describe('Render tests', () => {
 
         ['script32.cst', 'complex wire merging and intersections'],
         ['script33.cst', 'maintain current component through multiple branch levels'],
-
+        
         ['script34.cst', 'node1--node2 and node2--node1 should not be the same'],
-
+        ['script35.cst', 'pin_only=true hides pin id and name (equivalent to display_id=false, display_name=false)'],
+        
         ['script36.cst', 'data expression parsing in pin selection'],
         ['script37.cst', 'rendering circle in symbol'],
         ['script38.cst', 'net graphical properties, multi net component references same net'],
@@ -71,7 +72,7 @@ describe('Render tests', () => {
         ['script41.cst', 'string and number Pin Ids for create component'],
         ['script42.cst', 'extract PinIds from create component `display` prop'],
         ['script43.cst', 'do not move non-copy component in frame'],
-
+        
         // Refdes generation related
         ['script44.cst', 'refdes within for and while loop'],
         ['script45.cst', 'refdes within functions'],
@@ -133,9 +134,7 @@ describe('Render tests', () => {
         ['script81.cst', 'double dot syntax works for assignment'],
         ['script82.cst', 'netclass properties set via double dot syntax after creation'],
         ['script83.cst', 'pin type short-forms normalize to canonical forms'],
-        ['script35.cst', 'pin_only=true hides pin id and name (equivalent to display_id=false, display_name=false)']
-
-
+        ['script84.cst', 'all std.cst components rendered'],
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);

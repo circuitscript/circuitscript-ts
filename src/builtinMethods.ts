@@ -29,6 +29,7 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['pin_set_type', pinSetType],
     ['pin_get_type', pinGetType],
     ['has_pin', hasPin],
+    ['str', strFunction],
 
     // Methods that are defined at run time
     ['print', null],
@@ -242,4 +243,14 @@ function pinGetType(component: ClassComponent, pin: PinId): string | NoneValue {
 
 function hasPin(component: ClassComponent, pin: PinId): boolean {
     return component.hasPin(PinId.from(pin));
+}
+
+function strFunction(object: any): string {
+    if (object instanceof NumericValue){
+        return object.toDisplayString();
+    } else if (object.toString) {
+        return object.toString();
+    } else {
+        throw "str() method failed";
+    }
 }
