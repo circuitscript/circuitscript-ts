@@ -32,6 +32,16 @@ export enum PinTypes {
     NoConnect = 'no_connect',
 }
 
+export function normalizePinType(value: string): string {
+    switch (value) {
+        case 'power_in':  return 'power_input';
+        case 'power_out': return 'power_output';
+        case 'power_ref': return 'power_reference';
+        case 'nc':        return 'no_connect';
+        default:          return value;
+    }
+}
+
 export function resolvePinType(value: string): PinTypes {
     return Object.values(PinTypes).find((v) => v === value) as PinTypes;
 }

@@ -15,7 +15,7 @@ import { BaseNamespace } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { PinId } from "./objects/PinDefinition.js";
-import { AllPinTypes, resolvePinType } from "./objects/PinTypes.js";
+import { AllPinTypes, normalizePinType, resolvePinType } from "./objects/PinTypes.js";
 import { NetClass } from "./objects/NetClass.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
@@ -216,6 +216,7 @@ function toString(obj: any): string {
 }
 
 function pinSetType(component: ClassComponent, pin: PinId, newType: string): void {
+    newType = normalizePinType(newType);
     if (AllPinTypes.indexOf(newType) === -1) {
         throw `Invalid pin type: ${newType}`;
     }

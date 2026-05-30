@@ -1,0 +1,49 @@
+# Test pin type short-forms: power_in, power_out, power_ref, nc
+
+# Short-forms in hpin/vpin graphic commands
+pwr_src = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "power_out", -100, 0, 100, display_id=false
+
+pwr_load = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "power_in", -100, 0, 100, display_id=false
+
+pwr_ref_comp = create component:
+    pins: 1
+    display: create graphic:
+        vpin: 1, "power_ref", 0, -50, 50, display_id=false
+
+nc_comp = create component:
+    pins: 1
+    display: create graphic:
+        hpin: 1, "nc", -100, 0, 100, display_id=false
+
+# Short-form in pin statement declarations
+switchable = create component:
+    pins:
+        1: "power_in", "VCC"
+        2: "power_out", "OUT"
+        3: "nc", "NC"
+        4: "power_ref", "REF"
+    arrange:
+        left: 1, 4
+        right: 2, 3
+
+# Short-form via pin_set_type builtin
+dyn_comp = create component:
+    pins:
+        1: "passive", "IN"
+        2: "passive", "OUT"
+    arrange:
+        left: 1
+        right: 2
+
+pin_set_type(dyn_comp, 1, "power_in")
+pin_set_type(dyn_comp, 2, "nc")
+
+at pwr_src
+wire right 200
+to pwr_load pin 1

@@ -68,7 +68,7 @@ import {
 import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
-import { AllPinTypes, PinTypes, resolvePinType } from './objects/PinTypes.js';
+import { AllPinTypes, normalizePinType, PinTypes, resolvePinType } from './objects/PinTypes.js';
 import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
@@ -430,9 +430,9 @@ export class ParserVisitor extends BaseVisitor {
                     // If this a string, then this is the pin type
                     if (typeof command[1][1] === 'string'){
 
-                        const pinTypeString = command[1][1];
-                        if (AllPinTypes.indexOf(pinTypeString)){
-                            pinType = resolvePinType(command[1][1])!;
+                        const pinTypeString = normalizePinType(command[1][1]);
+                        if (AllPinTypes.indexOf(pinTypeString) !== -1){
+                            pinType = resolvePinType(pinTypeString)!;
                         }
 
                         // Only if pinType is specified, then parse the next
@@ -2206,7 +2206,7 @@ export class ParserVisitor extends BaseVisitor {
             if (Array.isArray(pinDef)) {
                 // pinType is the first param, followed by pinName, then 
                 // alternative pin names.
-                pinType = resolvePinType(pinDef[0]);
+                pinType = resolvePinType(normalizePinType(pinDef[0]));
 
                 if (pinDef.length > 1) {
                     pinName = pinDef[1];
@@ -2218,7 +2218,7 @@ export class ParserVisitor extends BaseVisitor {
 
             } else {
                 // If just one item, then the value is the pin type
-                pinType = resolvePinType(pinDef);
+                pinType = resolvePinType(normalizePinType(pinDef));
                 pinName = pinId;
             }
 
