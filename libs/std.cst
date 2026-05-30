@@ -6,7 +6,7 @@ def net(net_name):
         copy: true
         display: create graphic (params):
             hline: -50, 0, 100
-            vpin: 1, "power", 0, 50, -50, display_id=false
+            vpin: 1, "1", "power", 0, 50, -50, display_id=false, display_name=false
             label: params.net_name, 0, -15, name="value", \
                 fontSize=50, anchor="center"
         type: "net"
@@ -27,7 +27,7 @@ def label(value, anchor="left"):
             text_color: "#222"
             label: params.value, 0, -10, name="value", fontSize=50, \
                 anchor=anchor
-            pin: 1, "passive", 0, 0, 0, 0, display_id=false
+            pin: 1, "1", "passive", 0, 0, 0, 0, display_id=false, display_name=false
         type: "net"
         is_label: true
         params:
@@ -43,7 +43,7 @@ def port(value, portType="input"):
             text_color: "#222"
             label: params.value, 0, 0, name="value", fontSize=40, \
                 anchor="left", vanchor="center", portType=portType
-            pin: 1, "io", 0, 0, 0, 0, display_id=false
+            pin: 1, "1", "io", 0, 0, 0, 0, display_id=false, display_name=false
         type: "port"
         params:
             net_name: value
@@ -58,8 +58,8 @@ def res(value):
         pins: 2
         display: create graphic (params):
             crect: 0, 0, width, height
-            hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
-            hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, display_id=false, display_name=false
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, display_id=false, display_name=false
             label: params.refdes, -width/2 + params.refdes_offsetx, \
                 -height/2 - 20 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left"
@@ -84,8 +84,8 @@ def cap(value):
             line_width: 13
             hline: -width/2, 20, width
             hline: -width/2, -20, width
-            vpin: 1, "passive", 0, -100, 80, display_id=false
-            vpin: 2, "passive", 0, 100, -80, display_id=false
+            vpin: 1, "1", "passive", 0, -100, 80, display_id=false, display_name=false
+            vpin: 2, "2", "passive", 0, 100, -80, display_id=false, display_name=false
             label: params.refdes, 80 + params.refdes_offsetx, \
                 -30 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left", vanchor="center"
@@ -111,8 +111,8 @@ def ind(value):
             arc: -25, 0, 25, 180, 360
             arc: 25, 0, 25, 180, 360
             arc: 75, 0, 25, 180, 360
-            hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
-            hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 100, 0, 100, display_id=false, display_name=false
+            hpin: 2, "2", "passive", width/2 + 100, 0, -100, display_id=false, display_name=false
             label: params.refdes, -width/2 + params.refdes_offsetx, \
                 -height/2 - 25 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left"
@@ -135,8 +135,8 @@ def diode():
         display: create graphic (params):
             triangle: -width/2, 0, width/2, 0, height
             vline: width/2, -height/2, height
-            hpin: 1, "passive", -width/2-100, 0, 100    # cathode
-            hpin: 2, "passive", width/2 + 100, 0, -100  # anode
+            hpin: 1, "1", "passive", -width/2-100, 0, 100, display_name=false    # cathode
+            hpin: 2, "2", "passive", width/2 + 100, 0, -100, display_name=false  # anode
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -100 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="top"
@@ -157,9 +157,9 @@ def led(color):
             arrow: 70, 30, 130, 90, 25, 25
             arrow: 120, 30, 180, 90, 25, 25
 
-            hpin: 1, "passive", "C", width/2 + 100, 0, -100, \
+            hpin: 1, "C", "passive", width/2 + 100, 0, -100, \
                 display_name=false  # cathode
-            hpin: 2, "passive", "A", -width/2-100, 0, 100, \
+            hpin: 2, "A", "passive", -width/2-100, 0, 100, \
                 display_name=false  # anode
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -100 + params.refdes_offsety, \
@@ -184,7 +184,7 @@ def cgnd():
             hline: -15, 0, 30
             hline: -10, 5, 20
             hline: -5, 10, 10
-            vpin: 1, "power", 0, -10, 10, display_id=false
+            vpin: 1, "1", "power", 0, -10, 10, display_id=false
             label: params.net_name, 0, 22, name="value", \
                 fontSize=50, anchor="center"
         type: "net"
@@ -201,7 +201,7 @@ def dgnd(net_name="GND"):
         copy: true
         display: create graphic (params):
             triangle: 0, 0, 0, height, width
-            vpin: 1, "power", 0, -50, 50, display_id=false
+            vpin: 1, "1", "power", 0, -50, 50, display_id=false, display_name=false
             label: params.net_name, 0, height + 50, name="value", \
                 fontSize=50, anchor="center", vanchor="center"
         type: "net"
@@ -215,7 +215,7 @@ def text(value, offsetX = 0, offsetY = 0, fontSize = 50, bold = false, italic = 
         followWireOrientation: false
         type: "graphic"
         display: create graphic:
-            pin: 1, "unspecified", 0, 0, 0, 0, display_id=false
+            pin: 1, "1", "unspecified", 0, 0, 0, 0, display_id=false, display_name=false
             text:
                 content: value
                 offset: offsetX, offsetY
@@ -231,7 +231,7 @@ def marker_point():
         display: create graphic:
             hline: -5, 0, 10
             vline: 0, -5, 10
-            pin: 1, "unspecified", 0, 0, 0, 0, display_id=false
+            pin: 1, "1", "unspecified", 0, 0, 0, 0, display_id=false
 
 def arrow_point():
     return create component:
@@ -241,7 +241,7 @@ def arrow_point():
             line_width: 2
             path: "M", -10, -5, "L", -5, 0, "L", -10, 5
             path: "M", -5, 0, "L", -20, 0
-            hpin: 1, "unspecified", 0, 0, 0, display_id=false
+            hpin: 1, "1", "unspecified", 0, 0, 0, display_id=false
 
 def no_connect(size=20):
     return create component:
@@ -250,7 +250,7 @@ def no_connect(size=20):
         display: create graphic:
             path: "M", -size, -size, "L", size, size
             path: "M", -size, size, "L", size, -size
-            pin: 1, "no_connect", 0, 0, 0, 0, display_id=false
+            pin: 1, "1", "no_connect", 0, 0, 0, 0, display_id=false
         params:
             no_connect: true
 
@@ -271,9 +271,9 @@ def pot(value):
         type: "res"
         display: create graphic (params):
             crect: 0, 0, width, height
-            hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
-            hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
-            vpin: 3, "passive", 0, height/2 + 80, -80, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, display_id=false
+            vpin: 3, "3", "passive", 0, height/2 + 80, -80, display_id=false
             # Arrowhead pointing up toward body (wiper indicator)
             path: "M", -12, height/2 + 14, "L", 0, height/2, \
                 "L", 12, height/2 + 14
@@ -299,8 +299,8 @@ def cap_pol(value):
             line_width: 13
             hline: -width/2, 20, width
             hline: -width/2, -20, width
-            vpin: 1, "passive", 0, -100, 80, display_id=false
-            vpin: 2, "passive", 0, 100, -80, display_id=false
+            vpin: 1, "1", "passive", 0, -100, 80, display_id=false
+            vpin: 2, "2", "passive", 0, 100, -80, display_id=false
             # Plus sign near positive (top) plate
             line_width: 8
             hline: -50, -50, 30
@@ -329,8 +329,8 @@ def ferrite(value):
             fill: "#333"
             crect: 0, 0, width, height
             fill: "none"
-            hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
-            hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, display_id=false
             label: params.refdes, -width/2 + params.refdes_offsetx, \
                 -height/2 - 20 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left"
@@ -355,8 +355,8 @@ def xtal(frequency):
             # Outer case
             line_width: 5
             crect: 0, 0, width, height
-            hpin: 1, "passive", -width/2 - 120, 0, 120, display_id=false
-            hpin: 2, "passive", width/2 + 120, 0, -120, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 120, 0, 120, display_id=false
+            hpin: 2, "2", "passive", width/2 + 120, 0, -120, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -height/2 - 20 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="bottom"
@@ -378,8 +378,8 @@ def fuse(value):
         display: create graphic (params):
             crect: 0, 0, width, height
             hline: -width/2, 0, width
-            hpin: 1, "passive", -width/2 - 30, 0, 30, display_id=false
-            hpin: 2, "passive", width/2 + 30, 0, -30, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, display_id=false
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, display_id=false
             label: params.refdes, -width/2 + params.refdes_offsetx, \
                 -height/2 - 20 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left"
@@ -399,8 +399,8 @@ def jumper():
             circle: -50, 0, 20
             circle: 50, 0, 20
             arc: 0, 0, 50, 180, 360
-            hpin: 1, "passive", -150, 0, 100, display_id=false
-            hpin: 2, "passive", 150, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -150, 0, 100, display_id=false
+            hpin: 2, "2", "passive", 150, 0, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -80 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="bottom"
@@ -427,8 +427,8 @@ def zener():
             # Zener wings (bent ends on cathode bar)
             line: width/2, -height/2, width/2-20, -height/2-20
             line: width/2, height/2, width/2 + 20, height/2 + 20
-            hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
-            hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, "2", "passive", width/2 + 100, 0, -100, display_id=false
             label: params.refdes, -20- params.refdes_offsetx, \
                 -110 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="top"
@@ -452,8 +452,8 @@ def schottky():
                 "L", width/2 - 20, -height/2 + 20
             path: "M", width/2, height/2, "L", width/2 + 20, height/2, \
                 "L", width/2 + 20, height/2 - 20
-            hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
-            hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, "2", "passive", width/2 + 100, 0, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -100 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="top"
@@ -480,8 +480,8 @@ def tvs():
             #vline: -width/2, -height/2, height
             #hline: -width/2, -height/2, -20
             #hline: -width/2 + 20, height/2, -20
-            hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
-            hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, "2", "passive", width/2 + 100, 0, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -100 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="top"
@@ -509,8 +509,8 @@ def photodiode():
             #path: ("M", -25, 125, "L", 25, 75, "M", 25, 100, "L", 25, 75, "L", 0, 75)
             #path: ("M", -75, 125, "L", -25, 75, "M", -25, 100, "L", -25, 75, "L", -50, 75)
 
-            hpin: 1, "passive", -width/2 - 100, 0, 100, display_id=false
-            hpin: 2, "passive", width/2 + 100, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -width/2 - 100, 0, 100, display_id=false
+            hpin: 2, "2", "passive", width/2 + 100, 0, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -100 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="top"
@@ -542,9 +542,9 @@ def npn():
 
             # Emitter arrow — NPN: outward (away from base)
 
-            hpin: 1, "input", -120, 0, 100, display_id=false     # base
-            vpin: 2, "passive", 60, -200, 100, display_id=false   # collector
-            vpin: 3, "passive", 60, 200, -100, display_id=false   # emitter
+            hpin: 1, "B", "input", -120, 0, 100, display_id=false     # base
+            vpin: 2, "C", "passive", 60, -200, 100, display_id=false   # collector
+            vpin: 3, "E", "passive", 60, 200, -100, display_id=false   # emitter
             label: params.refdes, 70 + params.refdes_offsetx, \
                 0 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left", vanchor="center"
@@ -572,9 +572,9 @@ def pnp():
             #line: -20, 40, 60, 100
             # Emitter arrow — PNP: inward (toward base bar)
             arrow:60, 100, -20, 40
-            hpin: 1, "input", -120, 0, 100, display_id=false
-            vpin: 2, "passive", 60, -200, 100, display_id=false
-            vpin: 3, "passive", 60, 200, -100, display_id=false
+            hpin: 1, "B", "input", -120, 0, 100, display_id=false
+            vpin: 2, "C", "passive", 60, -200, 100, display_id=false
+            vpin: 3, "E", "passive", 60, 200, -100, display_id=false
             label: params.refdes, 70 + params.refdes_offsetx, \
                 0 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left", vanchor="center"
@@ -721,8 +721,8 @@ def switch_spst():
             circle: 60, 0, 12
             # Open switch line (diagonal)
             line: -48, 0, 45, -60
-            hpin: 1, "passive", -160, 0, 100, display_id=false
-            hpin: 2, "passive", 160, 0, -100, display_id=false
+            hpin: 1, "1", "passive", -160, 0, 100, display_id=false
+            hpin: 2, "2", "passive", 160, 0, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -80 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="bottom"
@@ -746,8 +746,8 @@ def switch_pb():
 
             arrow: 0, -90, 0, -35
 
-            hpin: 1, "passive", -160, 20, 100, display_id=false
-            hpin: 2, "passive", 160, 20, -100, display_id=false
+            hpin: 1, "1", "passive", -160, 20, 100, display_id=false
+            hpin: 2, "2", "passive", 160, 20, -100, display_id=false
             label: params.refdes, 0 + params.refdes_offsetx, \
                 -100 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="center", vanchor="bottom"
@@ -767,7 +767,7 @@ def conn_single_row(num_pins):
 
             for i in range(0, num_pins):
                 circle: 0, i * 100, 40
-                hpin: (i+1), "passive", -200, i * 100,   160
+                hpin: (i+1), toString(i+1), "passive", -200, i * 100,   160
 
             label: params.refdes, -20 + params.refdes_offsetx, \
                 -125 + params.refdes_offsety, name="refdes", align="center"
@@ -809,9 +809,9 @@ def conn_double_rows(num_pins, pin_order = "sequence"):
             for i in range(0, half):
                 circle: -45, i * 100, 30
                 circle: 45, i * 100, 30
-                hpin: array_get(left_pins, i), "passive", -200, \
+                hpin: array_get(left_pins, i), toString(array_get(left_pins, i)), "passive", -200, \
                     i * 100, 100
-                hpin: array_get(right_pins, i), "passive", 200, \
+                hpin: array_get(right_pins, i), toString(array_get(right_pins, i)), "passive", 200, \
                     i * 100, -100
 
             label: params.refdes, -20 + params.refdes_offsetx, \
@@ -832,7 +832,7 @@ def test_point():
         type: "TP"
         display: create graphic (params):
             circle: 0, -20, 20
-            vpin: 1, "passive", 0, 100, -100, display_id=false
+            vpin: 1, "1", "passive", 0, 100, -100, display_id=false
             label: params.refdes, 40 + params.refdes_offsetx, \
                 -20 + params.refdes_offsety, \
                 name="refdes", fontSize=50, anchor="left", vanchor="center"

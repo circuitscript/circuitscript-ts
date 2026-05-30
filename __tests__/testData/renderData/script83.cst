@@ -4,30 +4,30 @@
 pwr_src = create component:
     pins: 1
     display: create graphic:
-        hpin: 1, "power_out", -100, 0, 100, display_id=false
+        hpin: 1, "1", "power_out", -100, 0, 100, display_id=false
 
 pwr_load = create component:
     pins: 1
     display: create graphic:
-        hpin: 1, "power_in", -100, 0, 100, display_id=false
+        hpin: 1, "1", "power_in", -100, 0, 100, display_id=false
 
 pwr_ref_comp = create component:
     pins: 1
     display: create graphic:
-        vpin: 1, "power_ref", 0, -50, 50, display_id=false
+        vpin: 1, "1", "power_ref", 0, -50, 50, display_id=false
 
 nc_comp = create component:
     pins: 1
     display: create graphic:
-        hpin: 1, "nc", -100, 0, 100, display_id=false
+        hpin: 1, "1", "nc", -100, 0, 100, display_id=false
 
 # Short-form in pin statement declarations
 switchable = create component:
     pins:
-        1: "power_in", "VCC"
-        2: "power_out", "OUT"
-        3: "nc", "NC"
-        4: "power_ref", "REF"
+        1: "VCC", "power_in"
+        2: "OUT", "power_out"
+        3: "NC", "nc"
+        4: "REF", "power_ref"
     arrange:
         left: 1, 4
         right: 2, 3
@@ -35,8 +35,8 @@ switchable = create component:
 # Short-form via pin_set_type builtin
 dyn_comp = create component:
     pins:
-        1: "passive", "IN"
-        2: "passive", "OUT"
+        1: "IN"
+        2: "OUT"
     arrange:
         left: 1
         right: 2

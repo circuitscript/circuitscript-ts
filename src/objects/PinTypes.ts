@@ -34,10 +34,12 @@ export enum PinTypes {
 
 export function normalizePinType(value: string): string {
     switch (value) {
-        case 'power_in':  return 'power_input';
-        case 'power_out': return 'power_output';
-        case 'power_ref': return 'power_reference';
-        case 'nc':        return 'no_connect';
+        case 'in':        return PinTypes.Input;
+        case 'out':       return PinTypes.Output;
+        case 'power_in':  return PinTypes.PowerInput;
+        case 'power_out': return PinTypes.PowerOutput;
+        case 'power_ref': return PinTypes.PowerReference;
+        case 'nc':        return PinTypes.NoConnect;
         default:          return value;
     }
 }

@@ -18,7 +18,7 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
     Textbox, VerticalAlign,
     VerticalAlignProp} from "./geometry.js";
 import { Logger } from "../logger.js";
-import { AllPinTypes, PinTypes } from "../objects/PinTypes.js";
+import { normalizePinType, PinTypes } from "../objects/PinTypes.js";
 import { RuntimeExecutionError, throwWithContext } from "../errors.js";
 import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
@@ -871,12 +871,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
         let pinType = PinTypes.Passive;
 
         if (typeof positionParams[1] === "string") {
-            // First string type should be the pin type
-            pinType = positionParams[1] as PinTypes;
+            // First string should be the pin name
+            pinNameParam = positionParams[1] as PinTypes;
 
             // If this position is a string, then it must be the pin name.
             if (typeof positionParams[2] === "string") {
-                pinNameParam = positionParams[2];
+                pinType = normalizePinType(positionParams[2]);
                 positionParams = [positionParams[0], ...positionParams.slice(3)];
             } else {
                 positionParams = [positionParams[0], ...positionParams.slice(2)];

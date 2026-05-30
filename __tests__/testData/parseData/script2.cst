@@ -5,9 +5,9 @@ gnd = dgnd("XGND")
 def power_input():
     return create component:
         pins: 
-            1: input, "1"
-            2: any, "2"
-            3: input, "3"
+            1: "1", "input"
+            2: "2", "any"
+            3: "3", "input"
         arrange:
             left: 1,3
             right: 2

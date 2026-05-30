@@ -6,11 +6,11 @@ gnd = dgnd()
 
 tmp = create component:
     pins:
-        1: "passive", "A1"
-        2: "passive", "A2"
-        3: "passive", "A3"
-        4: "passive", "A4"
-        5: "passive", "A5"
+        1: "A1"
+        2: "A2"
+        3: "A3"
+        4: "A4"
+        5: "A5"
 
 for i in [1, 3, 5]:
     at tmp pin "A" + i

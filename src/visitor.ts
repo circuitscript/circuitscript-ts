@@ -427,18 +427,16 @@ export class ParserVisitor extends BaseVisitor {
 
                     let pinType = PinTypes.Passive;
 
-                    // If this a string, then this is the pin type
+                    // If a string follows the pin ID, it is the pin name.
+                    // An optional second string is the pin type.
                     if (typeof command[1][1] === 'string'){
+                        pinName = command[1][1];
 
-                        const pinTypeString = normalizePinType(command[1][1]);
-                        if (AllPinTypes.indexOf(pinTypeString) !== -1){
-                            pinType = resolvePinType(pinTypeString)!;
-                        }
-
-                        // Only if pinType is specified, then parse the next
-                        // parameter as the pin name.
                         if (typeof command[1][2] === 'string'){
-                            pinName = command[1][2];
+                            const pinTypeString = normalizePinType(command[1][2]);
+                            if (AllPinTypes.indexOf(pinTypeString) !== -1){
+                                pinType = resolvePinType(pinTypeString)!;
+                            }
                         }
                     }
 
@@ -2204,22 +2202,25 @@ export class ParserVisitor extends BaseVisitor {
             }
 
             if (Array.isArray(pinDef)) {
-                // pinType is the first param, followed by pinName, then 
-                // alternative pin names.
-                pinType = resolvePinType(normalizePinType(pinDef[0]));
+                // pinName is first, then optional pinType, then altNames
+                pinName = pinDef[0];
 
                 if (pinDef.length > 1) {
-                    pinName = pinDef[1];
-
-                    if (pinDef.length > 2) {
-                        altPinNames = pinDef.slice(2);
+                    const maybeType = normalizePinType(pinDef[1]);
+                    if (AllPinTypes.indexOf(maybeType) !== -1) {
+                        pinType = resolvePinType(maybeType)!;
+                        if (pinDef.length > 2) {
+                            altPinNames = pinDef.slice(2);
+                        }
+                    } else {
+                        // Second value is not a pin type — treat as alt name
+                        altPinNames = pinDef.slice(1);
                     }
                 }
 
             } else {
-                // If just one item, then the value is the pin type
-                pinType = resolvePinType(normalizePinType(pinDef));
-                pinName = pinId;
+                // Single value: it is the pin name; type defaults to passive
+                pinName = pinDef;
             }
 
             this.log('pins', pinId, pinIdType, pinName, pinType, altPinNames);

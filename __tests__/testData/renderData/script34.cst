@@ -10,8 +10,8 @@ gnd = dgnd()
 
 tmp = create component:
     pins:
-        1: "passive", "A"
-        2: "passive", "B"
+        1: "A"
+        2: "B"
 
     arrange:
         left: 2, 1

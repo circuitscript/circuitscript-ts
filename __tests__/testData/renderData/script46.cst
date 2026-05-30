@@ -6,12 +6,12 @@ gnd = dgnd()
 
 tmp = create component:
     pins: 
-        1: "passive", "A"
-        2: "passive", "B"
-        3: "passive", "C"
-        4: "passive", "D"
-        5: "passive", "E"
-        6: "passive", "F"
+        1: "A", "passive"
+        2: "B", "passive"
+        3: "C", "passive"
+        4: "D", "passive"
+        5: "E", "passive"
+        6: "F", "passive"
     arrange:
         left: 1,2,3
         right: 4,5,6
