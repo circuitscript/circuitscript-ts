@@ -849,6 +849,19 @@ export class SymbolPlaceholder extends SymbolGraphic {
         let displayPinId = true;
         let displayPinName = true;
 
+        if (keywordParams.has('pin_only')) {
+            const pinOnlyVal = keywordParams.get('pin_only');
+            const pinOnly = !(
+                (pinOnlyVal instanceof NumericValue && pinOnlyVal.toNumber() === 0)
+                || (pinOnlyVal === 0)
+                || (pinOnlyVal === false)
+            );
+            if (pinOnly) {
+                displayPinId = false;
+                displayPinName = false;
+            }
+        }
+
         if (keywordParams.has(keywordDisplayPinId)) {
             const value = keywordParams.get(keywordDisplayPinId);
             displayPinId = (

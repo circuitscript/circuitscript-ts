@@ -132,9 +132,10 @@ describe('Render tests', () => {
         ['script80.cst', 'brackets in properties and drawing commands are handled properly'],
         ['script81.cst', 'double dot syntax works for assignment'],
         ['script82.cst', 'netclass properties set via double dot syntax after creation'],
-        ['script83.cst', 'pin type short-forms normalize to canonical forms']
+        ['script83.cst', 'pin type short-forms normalize to canonical forms'],
+        ['script35.cst', 'pin_only=true hides pin id and name (equivalent to display_id=false, display_name=false)']
 
-        // ['script35.cst', 'arrange prop with repeated pins and missing pins']
+
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);

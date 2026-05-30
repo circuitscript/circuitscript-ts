@@ -1,21 +1,41 @@
-# Checks that when pin is defined but not in the arrange prop, then the pin will
-# not be displayed. When the same
-from "std" import *
+# Tests pin_only=true shorthand: should hide both pin id and pin name,
+# equivalent to display_id=false, display_name=false
 
-v3v3 = supply("3V3")
-gnd = dgnd()
+def comp_pin_only():
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            crect: 0, 0, 140, 60
+            hpin: 1, "A", "passive", -100, 0, 30, pin_only=true
+            hpin: 2, "B", "passive", 100, 0, -30, pin_only=true
+            label: params.refdes, 0, -55, name="refdes", fontSize=50, anchor="center"
 
-tmp = create component:
-    pins:
-        1: "A"
-        2: "B"
-        3: "C"
-        4: "D"
-        5: "E"
+def comp_explicit():
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            crect: 0, 0, 140, 60
+            hpin: 1, "A", "passive", -100, 0, 30, display_id=false, display_name=false
+            hpin: 2, "B", "passive", 100, 0, -30, display_id=false, display_name=false
+            label: params.refdes, 0, -55, name="refdes", fontSize=50, anchor="center"
 
-    arrange:
-        right: 4,4,4,4,4,4
-        left: 1,2,4
+def comp_default():
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            crect: 0, 0, 140, 60
+            hpin: 1, "A", "passive", -100, 0, 30
+            hpin: 2, "B", "passive", 100, 0, -30
+            label: params.refdes, 0, -55, name="refdes", fontSize=50, anchor="center"
 
-at tmp pin 1
-wire left 100
+u1 = comp_pin_only()
+u2 = comp_explicit()
+u3 = comp_default()
+
+at u1 pin 1
+wire right 100
+branch:
+    wire down 100
+    to u2 pin 1
+wire right 200
+to u3 pin 1
