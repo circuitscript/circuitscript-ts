@@ -1,6 +1,66 @@
 # Changelog
 
-## [v0.8.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.0...v0.8.1)
+## [v0.8.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.1...v0.8.2)
+
+[f870db8](https://github.com/circuitscript/circuitscript-ts/commit/f870db83278e9d73b6dd6e49027bd06650f7585b)Refactor create keywords into compound lexer tokens
+- 
+- Replace separate Create/Component/Graphic/Module tokens with compound CreateComponent/CreateGraphic/CreateModule tokens to simplify parsing and semantic token handling. Generalize lastComponentReference to lastObjectReference to also track Net objects, and add support for parameter assignment on Net objects via trailer syntax.
+
+[7da42cb](https://github.com/circuitscript/circuitscript-ts/commit/7da42cb4da9e90f8b7911ea678f1c90936b4181a)Add netclass creation syntax with 'create netclass' keyword
+- 
+- Introduces a new 'create netclass:' block syntax for defining net classes
+- with properties (name, color, line_width, highlight, etc.), replacing the
+- previous procedural assignment approach.
+
+[474542c](https://github.com/circuitscript/circuitscript-ts/commit/474542c4b2a8e034be534f26db4564e5f84ef056)Update std.cst to use pin_only shorthand, add str() builtin, and add comprehensive std render test
+- 
+- - Replace all display_id=false, display_name=false pairs in std.cst with pin_only=true shorthand
+- - Add str() builtin method for converting values to strings, used in conn_single_row and conn_double_rows
+- - Replace toString() calls with str() in connector definitions
+- - Improve cgnd() symbol: larger size, accept net_name parameter, match dgnd proportions
+- - Improve marker_point() symbol size for better visibility
+- - Simplify xtal crystal symbol with cleaner rectangular design
+- - Default mpn parameter to "" instead of "?" in MOSFET components
+- - Add script84.cst test covering all std.cst components with golden SVG
+- - Move script35.cst to correct position in render test list
+
+[773e10a](https://github.com/circuitscript/circuitscript-ts/commit/773e10aa61e34296a9bf3dcc2edb09a3928d49f0)Change pin declaration syntax: pin name before type, passive as default
+- 
+- Pin declarations now use `pin_num: "name", "type"` order instead of
+- `pin_num: "type", "name"`, and the type argument can be omitted when
+- the pin type is passive. Updated std.cst, hpin/vpin/pin graphic
+- commands, visitor parsing, and all affected test golden files.
+
+[f33c617](https://github.com/circuitscript/circuitscript-ts/commit/f33c6173336eab85be40cfc757200e4ec9bcbea2) Fix ERC messages to handle components without refdes assigned
+-  Fix lastObjectReference tracking for NetClass double-dot property assignment
+-  Default net highlight color to net color when only highlightWidth is set
+-  Add test cases and golden files for the above fixes
+
+[9fd7d74](https://github.com/circuitscript/circuitscript-ts/commit/9fd7d7419258ade963f178cc2ae1b92182506b60) Improve ERC power net error reporting: use first copy instance for better source locations
+-  Remove net_class def from std.cst and net_class builtin registration
+-  Update ERC test golden files to reflect improved source positions
+-  Fix pipeline ERC output to handle null start positions
+
+[25b0422](https://github.com/circuitscript/circuitscript-ts/commit/25b0422becdd6e07ef87673dd9fd28e81a351880)Add pin type short-form aliases and fix IndexOf check in hpin/vpin parsing
+- 
+-  Add normalizePinType() to PinTypes.ts: maps power_in, power_out, power_ref, nc to canonical forms
+-  Apply normalization in visitor.ts for hpin/vpin graphic commands and pin statement declarations
+-  Apply normalization in builtinMethods.ts pin_set_type builtin
+-  Fix AllPinTypes.indexOf() check: was truthy for index 0, now correctly checks !== -1
+-  Add render test script83.cst with golden SVG covering all three short-form usage paths
+
+[6fab820](https://github.com/circuitscript/circuitscript-ts/commit/6fab8202a0dfc07ed5fe44ae3ec573f025681123)Add pin_only=true shorthand for hpin/vpin to hide pin id and name
+- 
+- Equivalent to setting display_id=false and display_name=false together.
+- Updates script35 test to verify the new shorthand against the explicit form.
+
+[fe228f0](https://github.com/circuitscript/circuitscript-ts/commit/fe228f0fb8c9fd42682e8a3dbd25921314b799ca) Refactor Net class: rename params to parameters, add setParam/setNestedParam methods
+-  Update callers in BaseVisitor, execute.ts, and layout.ts to use new API
+-  Remove temporary net_class builtin from builtinMethods.ts
+
+[b710ace](https://github.com/circuitscript/circuitscript-ts/commit/b710aceb121b11f5f27826a2fa02ba993ff47a0c) temp builtin method for net class
+
+## [v0.8.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.0...v0.8.1) - 2026-05-27
 
 [9f073db](https://github.com/circuitscript/circuitscript-ts/commit/9f073dbd75cdb64292cb9005a54e94548f63c03d)Add backslash line continuation support to lexer
 - 
@@ -14,6 +74,8 @@
 
 [a2b1288](https://github.com/circuitscript/circuitscript-ts/commit/a2b1288c22f90db9be1b63c40589eb07b6698c93) updated github ci action versions
 -  removed dry run flag
+
+[519c031](https://github.com/circuitscript/circuitscript-ts/commit/519c03153fb759c27b818da304707e8322e114ae) updated ci and package
 
 ## [v0.8.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.7.4...v0.8.0) - 2026-05-11
 
