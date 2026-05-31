@@ -436,8 +436,19 @@ export const inlineScript53 = new ScriptTest(`
 for index, value in enumerate(["A", "B", "C", "D"]):
     print(index, value)
 
-`, ['0 "A"', '1 "B"', '2 "C"', '3 "D"']);
+for tmp in enumerate(["A", "B", "C", "D"]):
+    print(tmp)
 
+`, [
+    '0 "A"', 
+    '1 "B"', 
+    '2 "C"', 
+    '3 "D"',
+    '[0, "A"]',
+    '[1, "B"]',
+    '[2, "C"]',
+    '[3, "D"]'
+]);
 
 export const inlineScript54 = new ScriptTest(`
 a = 1

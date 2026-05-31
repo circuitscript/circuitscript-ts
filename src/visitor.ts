@@ -1875,15 +1875,20 @@ export class ParserVisitor extends BaseVisitor {
         while (keepLooping) {
             if (counter < listItems.length) {
 
-                let useValueArray: unknown[] = listItems[counter];
-                if (!Array.isArray(useValueArray)) {
-                    useValueArray = [useValueArray];
-                }
+                let itemValue: unknown[] = listItems[counter];
+                
+                if (forVariableNames.length === 1){
+                    this.getScope().setVariable(forVariableNames[0], itemValue);
+                } else {
+                    if (!Array.isArray(itemValue)){
+                        itemValue = [itemValue];
+                    }
 
-                useValueArray.forEach((value, index) => {
-                    this.getScope().setVariable(
-                        forVariableNames[index], value);
-                });
+                    itemValue.forEach((value, index) => {
+                        this.getScope().setVariable(
+                            forVariableNames[index], value);
+                    });
+                }
 
                 executor.setBreakContextIndex(counter);
                 
