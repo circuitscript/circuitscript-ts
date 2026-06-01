@@ -15,6 +15,12 @@ import { ClassComponent } from "src/objects/ClassComponent.js";
 import { Wire } from "src/objects/Wire.js";
 import { Token } from "antlr4ng";
 
+export enum ERCSeverity {
+    Error   = 'error',
+    Warning = 'warning',
+    Off     = 'off',
+}
+
 export enum ERC_Rules {
 
     // Power related
@@ -65,9 +71,30 @@ export enum ERC_Rules {
     NoConnectOnConnectedPin = 'NO-CONNECT-ON-CONNECTED-PIN'
 }
 
+export const ERC_RuleSeverity: Record<ERC_Rules, ERCSeverity> = {
+    [ERC_Rules.PowerNetWithoutDriver]:         ERCSeverity.Off,
+    [ERC_Rules.PowerReferenceOnUnnamedNet]:    ERCSeverity.Error,
+    [ERC_Rules.PowerInputOnUnnamedNet]:        ERCSeverity.Off,
+    [ERC_Rules.PowerOutputOnUnnamedNet]:       ERCSeverity.Off,
+    [ERC_Rules.PowerNetNoSource]:              ERCSeverity.Warning,
+    [ERC_Rules.PowerNetUnused]:                ERCSeverity.Warning,
+    [ERC_Rules.PowerNetNameConflict]:          ERCSeverity.Error,
+    [ERC_Rules.PowerNetMultipleOutputs]:       ERCSeverity.Warning,
+    [ERC_Rules.PowerReferenceAmbiguousNet]:    ERCSeverity.Error,
+    [ERC_Rules.PowerReferenceUnconnected]:     ERCSeverity.Error,
+    [ERC_Rules.PowerInputUnconnected]:         ERCSeverity.Error,
+    [ERC_Rules.PowerOutputUnconnected]:        ERCSeverity.Warning,
+    [ERC_Rules.PowerSymbolUnconnected]:        ERCSeverity.Warning,
+    [ERC_Rules.NoPowerReferenceInSchematic]:   ERCSeverity.Warning,
+    [ERC_Rules.UnconnectedPin]:                ERCSeverity.Warning,
+    [ERC_Rules.UnconnectedWire]:               ERCSeverity.Warning,
+    [ERC_Rules.NoConnectOnConnectedPin]:       ERCSeverity.Error,
+};
+
 export type ERCReportItem = {
     start: Token | null,
     type: ERC_Rules,
+    severity: ERCSeverity,
     message: string,
 }
 
@@ -282,8 +309,13 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         }
     });
 
+    // Attach severity and filter out off rules.
+    const withSeverity = reportItems
+        .map(item => ({ ...item, severity: ERC_RuleSeverity[item.type] }))
+        .filter(item => item.severity !== ERCSeverity.Off);
+
     // Sort the report items based on file position. Null-start items (schematic-level) sort last.
-    const sortedReport = reportItems.toSorted((a, b) => {
+    const sortedReport = withSeverity.toSorted((a, b) => {
         if (a.start === null && b.start === null) return 0;
         if (a.start === null) return 1;
         if (b.start === null) return -1;

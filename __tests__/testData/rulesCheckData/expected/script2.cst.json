@@ -5,6 +5,7 @@
             "column": 0
         },
         "type": "POWER-NET-UNUSED",
+        "severity": "warning",
         "message": "Power net '/5V' is declared but has no physical connections"
     },
     {
@@ -13,6 +14,7 @@
             "column": 7
         },
         "type": "POWER-NET-UNUSED",
+        "severity": "warning",
         "message": "Power net '/GND' is declared but has no physical connections"
     },
     {
@@ -21,6 +23,7 @@
             "column": 4
         },
         "type": "UNCONNECTED-WIRE",
+        "severity": "warning",
         "message": "Unconnected wire end"
     },
     {
@@ -29,11 +32,13 @@
             "column": 0
         },
         "type": "UNCONNECTED-WIRE",
+        "severity": "warning",
         "message": "Unconnected wire end"
     },
     {
         "start": null,
         "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
-        "message": "No power_reference pin found in schematic — no ground reference defined"
+        "severity": "warning",
+        "message": "No power_reference pin found in schematic \u2014 no ground reference defined"
     }
 ]

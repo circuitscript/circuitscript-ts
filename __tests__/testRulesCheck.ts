@@ -10,6 +10,7 @@ describe('ERC rules', () => {
             return {
                 start: item.start ? { line: item.start.line, column: item.start.column } : null,
                 type: item.type,
+                severity: item.severity,
                 message: item.message,
             }
         });

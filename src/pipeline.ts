@@ -350,16 +350,17 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     const ercResults = EvaluateERCRules(visitor, graph, nets);
 
                     if (ercResults.length > 0) {
-                        console.log(`ERC found ${ercResults.length} items:`);
+                        const errorCount = ercResults.filter(i => i.severity === 'error').length;
+                        const warningCount = ercResults.filter(i => i.severity === 'warning').length;
+                        console.log(`ERC found ${errorCount} error(s), ${warningCount} warning(s):`);
 
                         ercResults.forEach((item, index) => {
-
                             let position = "";
                             if (item.start){
                                 position = `line ${item.start.line}, column: ${item.start.column}: `
                             }
-
-                            console.log(`${(index + 1).toString().padStart(3)}. ${position}${item.type} - ${item.message}`);
+                            const label = item.severity === 'error' ? '[Error]' : '[Warning]';
+                            console.log(`${(index + 1).toString().padStart(3)}. ${label} ${position}${item.type} - ${item.message}`);
                         });
                     } else {
                         console.log('No ERC issues found');

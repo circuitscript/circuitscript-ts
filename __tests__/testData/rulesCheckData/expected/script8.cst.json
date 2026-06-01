@@ -5,6 +5,7 @@
             "column": 0
         },
         "type": "POWER-REFERENCE-AMBIGUOUS-NET",
+        "severity": "error",
         "message": "power_reference pin is on a net with conflicting power symbol names: 3V3, VCC"
     },
     {
@@ -13,6 +14,7 @@
             "column": 0
         },
         "type": "POWER-NET-NAME-CONFLICT",
+        "severity": "error",
         "message": "Power net name conflict: nets 3V3, VCC are shorted together"
     }
 ]
