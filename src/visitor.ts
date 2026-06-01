@@ -1683,8 +1683,7 @@ export class ParserVisitor extends BaseVisitor {
         const result = this.visitResult(ctx.data_expr());
         
         const scope = this.getScope();
-        const useObject = scope.currentFrameId !== -1 ?
-            scope.frames[scope.currentFrameId - 1] : scope.lastObjectReference;
+        const useObject = scope.lastObjectReference;
 
         const lastReference = new AnyReference({
             found: true,

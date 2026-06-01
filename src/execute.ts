@@ -1859,6 +1859,7 @@ export class ExecutionContext {
 
         this.scope.currentFrameId = frameId;
         this.scope.setActive(ActiveObject.Frame, frameId);
+        this.scope.lastObjectReference = frameObject;
         
         return frameId;
     }

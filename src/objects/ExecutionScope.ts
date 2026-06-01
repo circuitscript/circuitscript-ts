@@ -82,7 +82,7 @@ export class ExecutionScope {
 
     // Used to track the last component referenced in graph operations AND
     // in assignment operations.
-    lastObjectReference: ClassComponent | Net | NetClass | null = null;
+    lastObjectReference: ClassComponent | Net | NetClass | Frame | null = null;
     
     // Tracks the counter for copies of each component instance
     // Copies are the same component electrically, but different symbols.
