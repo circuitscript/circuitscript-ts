@@ -1,6 +1,35 @@
 # Changelog
 
-## [v0.8.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.2...v0.8.3)
+## [v0.8.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.3...v0.8.4)
+
+[ebfba9f](https://github.com/circuitscript/circuitscript-ts/commit/ebfba9f03b17a89c3efc5af9824c58b8a4e59c5f)Refine POWER-NET-MULTIPLE-OUTPUTS to ignore same-named and unplaced pins
+- 
+- Skip power_output pins that share the same pin name on the same component
+- (treating them as internally connected) and filter out components with
+- place=false before flagging multiple-output conflicts.
+
+[c27a8de](https://github.com/circuitscript/circuitscript-ts/commit/c27a8de05edf701d23402553e32ff98d7d2ad584)Add severity levels to ERC rules and filter off rules from output
+- 
+- Introduces ERCSeverity enum (error/warning/off) and a per-rule severity
+- table. Rules marked 'off' are filtered from results; CLI output now
+- groups findings by error/warning count. Updates test golden files to
+- include the new severity field.
+
+[6f19de9](https://github.com/circuitscript/circuitscript-ts/commit/6f19de9414bc0c813ca328e3c36bf00281574938)Remove POWER-NET-NO-REFERENCE ERC rule
+- 
+- This rule flagged power nets with power_input pins but no power_reference, which produced too many false positives in practice.
+
+[788441a](https://github.com/circuitscript/circuitscript-ts/commit/788441a5b264708d159e18caed0eb4976a456169)Fix property assignment on frame objects
+- 
+- Set lastObjectReference when creating a frame so that subsequent property
+- assignments (`.key = value`) resolve to the frame rather than falling back
+- to an incorrect frame-index lookup. Also allows Frame as a valid type for
+- lastObjectReference in ExecutionScope.
+- 
+- Updates ERC test expectation for script5 to remove false-positive warnings
+- on unnamed nets that were filtered by the recent severity/rules changes.
+
+## [v0.8.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.2...v0.8.3) - 2026-06-01
 
 [64a3e57](https://github.com/circuitscript/circuitscript-ts/commit/64a3e57ed03f6acfc690b409aed2b67567bbd0c3)Fix for-loop variable binding when iterating with a single variable
 - 
