@@ -32,9 +32,6 @@ export enum ERC_Rules {
     /** [WARNING] power net has power_input pins but no power_output source */
     PowerNetNoSource = 'POWER-NET-NO-SOURCE',
 
-    /** [WARNING] power net has power_input pins but no power_reference connection */
-    PowerNetNoReference = 'POWER-NET-NO-REFERENCE',
-
     /** [WARNING] power net is declared (has power symbol) but has no physical pin connections */
     PowerNetUnused = 'POWER-NET-UNUSED',
 
@@ -163,14 +160,6 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                 const token = getComponentFirstCtxToken(instance);
                 if (token) reportItems.push({ type, start: token,
                     message: `Power net '${item.netName}' has power_input pins but no power_output source` });
-            }
-                break;
-
-            case ERC_Rules.PowerNetNoReference: {
-                const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
-                    message: `Power net '${item.netName}' has power_input pins but no power_reference connection` });
             }
                 break;
 

@@ -167,16 +167,6 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
             ));
         }
 
-        // ERC rule for: power net with power_input but no power_reference
-        if (hasPowerSymbol && state.hasPowerInput && !state.hasPowerReference) {
-            items.push(makeViolation(
-                ERC_Rules.PowerNetNoReference,
-                state.firstPowerInputComponent!,
-                state.firstPowerInputPin,
-                state.netName
-            ));
-        }
-
         // ERC rule for: power net with only power symbol pins (no physical connections)
         if (hasPowerSymbol && !state.hasPowerInput && !state.hasPowerReference && !state.hasPowerOutput) {
 
