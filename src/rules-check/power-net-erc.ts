@@ -30,6 +30,7 @@ type NetState = {
     netName: string;
 
     netComponents: ClassComponent[],
+    powerOutputComponents: [ClassComponent,PinId][],
 };
 
 function makeViolation(
@@ -63,6 +64,7 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
                 netName: net.toString(),
 
                 netComponents: [],
+                powerOutputComponents: [],
             });
         }
 
@@ -117,6 +119,8 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
                 }
                 state.hasPowerOutput = true;
                 state.powerOutputCount++;
+
+                state.powerOutputComponents.push([component, pin]);
                 break;
         }
     }
@@ -203,12 +207,48 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
 
         // ERC rule for: multiple power_output pins on same net
         if (state.powerOutputCount > 1) {
-            items.push(makeViolation(
-                ERC_Rules.PowerNetMultipleOutputs,
-                state.firstPowerOutputComponent!,
-                state.firstPowerOutputPin,
-                state.netName
-            ));
+
+            // Only consider components that are placed
+            const seenItems: string[] = [];
+
+            const targetComponents = state.powerOutputComponents.filter(entry => {
+                const [component, pin] = entry;
+                if (component.hasParam('place') && (component.getParam('place') as boolean) === false) {
+                    return false;
+                }
+
+                const pinRef = component.getPin(pin);
+                const pinDef = component.pins.get(pinRef)!;
+
+                let usePin = pin.toString();
+                if (pinDef.name) {
+                    usePin = pinDef.name;
+                }
+
+                // If a component has pins that have the same name, then assume
+                // that they are connected internally.
+                
+                const seenKey = `${component.instanceName}-${usePin}`;
+                if (seenItems.indexOf(seenKey) === -1) {
+                    seenItems.push(seenKey);
+                } else {
+                    // component-<pin name> combination seen before, so skip it.
+                    return false
+                }
+
+                return true;
+            });
+
+            if (targetComponents.length > 1) {
+                const [component, pin] = targetComponents[0];
+
+                items.push(makeViolation(
+                    ERC_Rules.PowerNetMultipleOutputs,
+                    component!,
+                    pin,
+                    state.netName
+                ));
+            }
         }
 
         // ERC rule for: power_reference on net with conflicting power symbol names

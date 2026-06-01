@@ -27,6 +27,10 @@ describe('ERC rules', () => {
         ['power net name conflict and ambiguous reference', 'script8.cst'],
         ['multiple power outputs on same net', 'script9.cst'],
         ['valid power net - no violations', 'script10.cst'],
+        ['same-named power_output pins on one component (no violation)', 'script12.cst'],
+        ['differently-named power_output pins on one component', 'script13.cst'],
+        ['one placed, one unplaced power_output (no violation)', 'script14.cst'],
+        ['two placed, one unplaced power_output', 'script15.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

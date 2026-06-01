@@ -1,0 +1,11 @@
+[
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "POWER-OUTPUT-UNCONNECTED",
+        "severity": "warning",
+        "message": "Unconnected power_output pin: J1 pin 2"
+    }
+]
