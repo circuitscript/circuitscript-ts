@@ -1,6 +1,12 @@
 # Changelog
 
-## [v0.8.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.1...v0.8.2)
+## [v0.8.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.2...v0.8.3)
+
+[64a3e57](https://github.com/circuitscript/circuitscript-ts/commit/64a3e57ed03f6acfc690b409aed2b67567bbd0c3)Fix for-loop variable binding when iterating with a single variable
+- 
+- When only one loop variable is specified, assign the whole item (including arrays) directly rather than unpacking it. This allows enumerate() results to be captured as [index, value] pairs when using a single variable.
+
+## [v0.8.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.1...v0.8.2) - 2026-05-30
 
 [f870db8](https://github.com/circuitscript/circuitscript-ts/commit/f870db83278e9d73b6dd6e49027bd06650f7585b)Refactor create keywords into compound lexer tokens
 - 
