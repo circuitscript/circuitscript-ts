@@ -10,6 +10,7 @@ import { ParserVisitor } from "src/visitor";
 import { RuleCheck_UnconnectedPinsWires } from "./unconnected-pins.js";
 import { RuleCheck_NoConnectOnConnectedPin } from "./no-connect-on-connected-pin.js";
 import { RuleCheck_PowerNetERC } from "./power-net-erc.js";
+import { RuleCheck_PinTypeERC } from "./pin-type-erc.js";
 import { ComponentPinNetPair } from "src/objects/types";
 import { ClassComponent } from "src/objects/ClassComponent.js";
 import { Wire } from "src/objects/Wire.js";
@@ -18,6 +19,7 @@ import { Token } from "antlr4ng";
 export enum ERCSeverity {
     Error   = 'error',
     Warning = 'warning',
+    Info = 'info',
     Off     = 'off',
 }
 
@@ -68,14 +70,21 @@ export enum ERC_Rules {
     // Connections related
     UnconnectedPin = 'UNCONNECTED-PIN',
     UnconnectedWire = 'UNCONNECTED-WIRE',
-    NoConnectOnConnectedPin = 'NO-CONNECT-ON-CONNECTED-PIN'
+    NoConnectOnConnectedPin = 'NO-CONNECT-ON-CONNECTED-PIN',
+
+    // Pin type compatibility
+    PinTypeOutputMultiple           = 'PIN-TYPE-OUTPUT-MULTIPLE',
+    PinTypeInputUndriven            = 'PIN-TYPE-INPUT-UNDRIVEN',
+    PinTypePassiveOnly              = 'PIN-TYPE-PASSIVE-ONLY',
+    PinTypeBidirectionalOnPowerNet  = 'PIN-TYPE-BIDIRECTIONAL-POWER',
+    PinTypeOutputDrivingPowerInput  = 'PIN-TYPE-OUTPUT-POWER-INPUT',
 }
 
 export const ERC_RuleSeverity: Record<ERC_Rules, ERCSeverity> = {
-    [ERC_Rules.PowerNetWithoutDriver]:         ERCSeverity.Off,
+    [ERC_Rules.PowerNetWithoutDriver]:         ERCSeverity.Info,
     [ERC_Rules.PowerReferenceOnUnnamedNet]:    ERCSeverity.Error,
-    [ERC_Rules.PowerInputOnUnnamedNet]:        ERCSeverity.Off,
-    [ERC_Rules.PowerOutputOnUnnamedNet]:       ERCSeverity.Off,
+    [ERC_Rules.PowerInputOnUnnamedNet]:        ERCSeverity.Info,
+    [ERC_Rules.PowerOutputOnUnnamedNet]:       ERCSeverity.Info,
     [ERC_Rules.PowerNetNoSource]:              ERCSeverity.Warning,
     [ERC_Rules.PowerNetUnused]:                ERCSeverity.Warning,
     [ERC_Rules.PowerNetNameConflict]:          ERCSeverity.Error,
@@ -89,6 +98,11 @@ export const ERC_RuleSeverity: Record<ERC_Rules, ERCSeverity> = {
     [ERC_Rules.UnconnectedPin]:                ERCSeverity.Warning,
     [ERC_Rules.UnconnectedWire]:               ERCSeverity.Warning,
     [ERC_Rules.NoConnectOnConnectedPin]:       ERCSeverity.Error,
+    [ERC_Rules.PinTypeOutputMultiple]:          ERCSeverity.Warning,
+    [ERC_Rules.PinTypeInputUndriven]:           ERCSeverity.Warning,
+    [ERC_Rules.PinTypePassiveOnly]:             ERCSeverity.Off,
+    [ERC_Rules.PinTypeBidirectionalOnPowerNet]: ERCSeverity.Warning,
+    [ERC_Rules.PinTypeOutputDrivingPowerInput]: ERCSeverity.Warning,
 };
 
 export type ERCReportItem = {
@@ -106,7 +120,8 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
     ruleCheckItems.push(
         ...RuleCheck_UnconnectedPinsWires(graph, nets),
         ...RuleCheck_NoConnectOnConnectedPin(graph, nets),
-        ...RuleCheck_PowerNetERC(nets)
+        ...RuleCheck_PowerNetERC(nets),
+        ...RuleCheck_PinTypeERC(nets)
     );
 
     const reportItems: ERCReportItem[] = [];
@@ -304,6 +319,46 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                         message: `No connect on connected pin${extra}`
                     });
                 }
+            }
+                break;
+
+            case ERC_Rules.PinTypeOutputMultiple: {
+                const instance = item.instance as ClassComponent;
+                const token = getComponentFirstCtxToken(instance);
+                if (token) reportItems.push({ type, start: token,
+                    message: `Net '${item.netName}' has multiple output pins — possible signal conflict` });
+            }
+                break;
+
+            case ERC_Rules.PinTypeInputUndriven: {
+                const instance = item.instance as ClassComponent;
+                const token = getComponentFirstCtxToken(instance);
+                if (token) reportItems.push({ type, start: token,
+                    message: `Net '${item.netName}' has input pin(s) but no driving output` });
+            }
+                break;
+
+            case ERC_Rules.PinTypePassiveOnly: {
+                const instance = item.instance as ClassComponent;
+                const token = getComponentFirstCtxToken(instance);
+                if (token) reportItems.push({ type, start: token,
+                    message: `Net '${item.netName}' has only passive pins — no driver or typed receiver` });
+            }
+                break;
+
+            case ERC_Rules.PinTypeBidirectionalOnPowerNet: {
+                const instance = item.instance as ClassComponent;
+                const token = getComponentFirstCtxToken(instance);
+                if (token) reportItems.push({ type, start: token,
+                    message: `Bidirectional pin on power net '${item.netName}'` });
+            }
+                break;
+
+            case ERC_Rules.PinTypeOutputDrivingPowerInput: {
+                const instance = item.instance as ClassComponent;
+                const token = getComponentFirstCtxToken(instance);
+                if (token) reportItems.push({ type, start: token,
+                    message: `Signal output pin driving power net '${item.netName}' directly — missing power symbol` });
             }
                 break;
         }

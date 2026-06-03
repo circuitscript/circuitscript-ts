@@ -27,7 +27,7 @@ import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
-import { EvaluateERCRules } from "./rules-check/rules.js";
+import { ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
 import { printWarnings, generateDebugSequenceAction, 
     sequenceActionString, SimpleStopwatch} from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
@@ -350,11 +350,14 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     const ercResults = EvaluateERCRules(visitor, graph, nets);
 
                     if (ercResults.length > 0) {
-                        const errorCount = ercResults.filter(i => i.severity === 'error').length;
-                        const warningCount = ercResults.filter(i => i.severity === 'warning').length;
+
+                        const displayErcResults = ercResults.filter(i => (i.severity === ERCSeverity.Error || i.severity === ERCSeverity.Warning));
+
+                        const errorCount = displayErcResults.filter(i => i.severity === ERCSeverity.Error).length;
+                        const warningCount = displayErcResults.filter(i => i.severity === ERCSeverity.Warning).length;
                         console.log(`ERC found ${errorCount} error(s), ${warningCount} warning(s):`);
 
-                        ercResults.forEach((item, index) => {
+                        displayErcResults.forEach((item, index) => {
                             let position = "";
                             if (item.start){
                                 position = `line ${item.start.line}, column: ${item.start.column}: `

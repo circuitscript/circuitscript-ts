@@ -1,0 +1,11 @@
+drv1 = create component:
+    pins: 
+        1: "1", "out"
+
+drv2 = create component:
+    pins: 
+        1: "1", "out"
+
+at drv1
+wire right 100
+to drv2

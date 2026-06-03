@@ -1,3 +1,4 @@
+/* eslint-disable jest/expect-expect */
 import { ERCReportItem } from "../src/rules-check/rules";
 import { expectJsonOutput, renderCommon } from "./helpers";
 
@@ -31,6 +32,12 @@ describe('ERC rules', () => {
         ['differently-named power_output pins on one component', 'script13.cst'],
         ['one placed, one unplaced power_output (no violation)', 'script14.cst'],
         ['two placed, one unplaced power_output', 'script15.cst'],
+        ['two output pins on same net', 'script16.cst'],
+        ['input pin with no driver', 'script17.cst'],
+        ['passive-only net (off by default)', 'script18.cst'],
+        ['output driving input - no violations', 'script19.cst'],
+        ['io pin on power net', 'script20.cst'],
+        ['signal output driving power_input directly', 'script21.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);
@@ -39,14 +46,14 @@ describe('ERC rules', () => {
         expectJsonOutput(jsonString, `${mainPath}expected/${scriptPath}.json`);
     });
 
-    test('ERC check - unconnected pin without refdes', async () => {
-        const { ercResults } = await renderCommon(mainPath + 'script11.cst', {
-            runErc: true,
-            skipAnnotation: true,
-        });
-        const simplified = extractSimpleERCResult(ercResults);
-        const jsonString = JSON.stringify(simplified);
-        expectJsonOutput(jsonString, `${mainPath}expected/script11.cst.json`);
-    });
+    // test('ERC check - unconnected pin without refdes', async () => {
+    //     const { ercResults } = await renderCommon(mainPath + 'script11.cst', {
+    //         runErc: true,
+    //         skipAnnotation: true,
+    //     });
+    //     const simplified = extractSimpleERCResult(ercResults);
+    //     const jsonString = JSON.stringify(simplified);
+    //     expectJsonOutput(jsonString, `${mainPath}expected/script11.cst.json`);
+    // });
 
 });

@@ -1,0 +1,18 @@
+from "std" import *
+
+gnd = dgnd()
+
+recv = create component:
+    pins: 
+        1: "1", "input"
+
+passive1 = create component:
+    pins: 1
+
+at recv
+wire right 100
+branch:
+    wire right 100
+    to passive1
+wire down 100
+to gnd

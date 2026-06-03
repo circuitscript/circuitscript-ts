@@ -1,0 +1,25 @@
+from "std" import *
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+ioc = create component:
+    pins:
+        1: "io", "io"
+
+consumer = create component:
+    pins:
+        1: "pwr", "power_input"
+
+at vcc
+wire down 100
+branch:
+    wire down 100
+    to ioc
+wire right 300
+branch:
+    wire right 100
+    to consumer
+
+wire down 100
+to gnd

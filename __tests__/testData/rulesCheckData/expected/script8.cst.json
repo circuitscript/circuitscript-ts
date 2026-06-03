@@ -10,7 +10,7 @@
     },
     {
         "start": {
-            "line": 11,
+            "line": 10,
             "column": 0
         },
         "type": "POWER-NET-NAME-CONFLICT",

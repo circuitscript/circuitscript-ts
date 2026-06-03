@@ -1,8 +1,26 @@
 [
     {
+        "start": {
+            "line": 1,
+            "column": 0
+        },
+        "type": "POWER-OUTPUT-ON-UNNAMED-NET",
+        "severity": "info",
+        "message": "Power output pin on net '/NET-(J1-1)' has no power symbol declaration"
+    },
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "POWER-INPUT-ON-UNNAMED-NET",
+        "severity": "info",
+        "message": "Power input pin on net '/NET-(J1-1)' has no power symbol declaration"
+    },
+    {
         "start": null,
         "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
         "severity": "warning",
-        "message": "No power_reference pin found in schematic \u2014 no ground reference defined"
+        "message": "No power_reference pin found in schematic — no ground reference defined"
     }
 ]

@@ -1,0 +1,35 @@
+[
+    {
+        "start": {
+            "line": 6,
+            "column": 0
+        },
+        "type": "PIN-TYPE-BIDIRECTIONAL-POWER",
+        "severity": "warning",
+        "message": "Bidirectional pin on power net '/GND'"
+    },
+    {
+        "start": {
+            "line": 10,
+            "column": 0
+        },
+        "type": "POWER-NET-NO-SOURCE",
+        "severity": "warning",
+        "message": "Power net '/GND' has power_input pins but no power_output source"
+    },
+    {
+        "start": {
+            "line": 14,
+            "column": 0
+        },
+        "type": "POWER-NET-NAME-CONFLICT",
+        "severity": "error",
+        "message": "Power net name conflict: nets GND, VCC are shorted together"
+    },
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "severity": "warning",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]

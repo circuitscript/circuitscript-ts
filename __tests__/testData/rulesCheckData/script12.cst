@@ -3,11 +3,10 @@ vcc = supply("VCC")
 gnd = dgnd()
 
 src = create component:
-    pins: 2
-    display: create graphic:
-        hpin: 1, "1", "power_output", -100, 0, 100, display_id=false
-        hpin: 2, "1", "power_output", -100, 50, 100, display_id=false
-
+    pins: 
+        1: "1", "power_output"
+        2: "2", "power_output"
+        
 gnd_ref = create component:
     pins: 1
     display: create graphic:

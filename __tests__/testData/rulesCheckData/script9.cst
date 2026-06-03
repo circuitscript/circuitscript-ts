@@ -3,19 +3,16 @@ from "std" import *
 vcc = supply("VCC")
 
 src1 = create component:
-    pins: 1
-    display: create graphic:
-        hpin: 1, "1", "power_output", -100, 0, 100, display_id=false
+    pins: 
+        1: "1", "power_out"
 
 src2 = create component:
-    pins: 1
-    display: create graphic:
-        hpin: 1, "1", "power_output", -100, 0, 100, display_id=false
+    pins: 
+        1: "1", "power_out"
 
 gnd_ref = create component:
-    pins: 1
-    display: create graphic:
-        vpin: 1, "1", "power_reference", 0, -50, 50, display_id=false
+    pins: 
+        1: "1", "power_ref"
 
 gnd = dgnd()
 at gnd_ref
@@ -27,5 +24,5 @@ wire right 100
 branch:
     wire right 100
     to src1
-wire right 100 down 100
+wire down 100
 to src2

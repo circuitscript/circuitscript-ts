@@ -3,9 +3,8 @@ from "std" import *
 vcc = supply("VCC")
 
 ic = create component:
-    pins: 1
-    display: create graphic:
-        hpin: 1, "1", "power_input", -100, 0, 100, display_id=false
+    pins: 
+        1: "1", "power_input"
 
 at vcc
 wire right 200
