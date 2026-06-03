@@ -1,6 +1,16 @@
 # Changelog
 
-## [v0.8.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.3...v0.8.4)
+## [v0.8.5](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.4...v0.8.5)
+
+[037d652](https://github.com/circuitscript/circuitscript-ts/commit/037d652e2a4a4a3422f58c0e5aa2c480bdbb1b64)Add pin-type ERC rules for signal compatibility checking
+- 
+- Introduces a new pin-type-erc module with five rules: multiple output pins on same net, undriven input pins, passive-only nets, bidirectional pins on power nets, and signal outputs driving power_input directly. Adds Info severity level and updates test scripts 5–15 to use the new inline pin declaration syntax, with new test cases 16–21 covering all new rules.
+- 
+- Co-Authored-By: Weihao &lt;mail@weihao.dev&gt;
+
+[7fcac7e](https://github.com/circuitscript/circuitscript-ts/commit/7fcac7e2b644f7ac1de8c461c3b60b649adcbe8d) updated test generation script
+
+## [v0.8.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.3...v0.8.4) - 2026-06-01
 
 [ebfba9f](https://github.com/circuitscript/circuitscript-ts/commit/ebfba9f03b17a89c3efc5af9824c58b8a4e59c5f)Refine POWER-NET-MULTIPLE-OUTPUTS to ignore same-named and unplaced pins
 - 
