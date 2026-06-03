@@ -8,7 +8,7 @@ import fs from 'fs';
 import { renderScript } from "./pipeline.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 
-const mainDir = './__tests__/testData/renderData/';
+const defaultMainDir = './__tests__/testData/renderData/';
 
 const env = new NodeScriptEnvironment();
 env.getPackageVersion = (): string => {
@@ -17,7 +17,7 @@ env.getPackageVersion = (): string => {
 
 NodeScriptEnvironment.setInstance(env);
 
-async function regenerateTests(extra = "", fileList: string[] = []): Promise<string[]> {
+async function regenerateTests(extra = "", fileList: string[] = [], mainDir = defaultMainDir): Promise<string[]> {
     await env.prepareSVGEnvironment();
 
     const cstFiles: string[] = [];
@@ -35,7 +35,11 @@ async function regenerateTests(extra = "", fileList: string[] = []): Promise<str
         const inputPath = mainDir + file;
         const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
-        const outputPath = mainDir + 'svgs/' + file + extra + '.svg';
+        const svgsDir = mainDir + 'svgs/';
+        if (!fs.existsSync(svgsDir)) {
+            fs.mkdirSync(svgsDir, { recursive: true });
+        }
+        const outputPath = svgsDir + file + extra + '.svg';
         env.setModuleDirectory(mainDir);
         env.setDefaultLibsPath(mainDir + '../../../libs/');
 
@@ -71,9 +75,17 @@ async function regenerateTests(extra = "", fileList: string[] = []): Promise<str
         console.log('filtering to files: ', fileList);
     }
 
+    const pathIndex = process.argv.indexOf('--path');
+    const mainDir = pathIndex !== -1 && process.argv[pathIndex + 1]
+        ? process.argv[pathIndex + 1]
+        : defaultMainDir;
+    if (pathIndex !== -1) {
+        console.log('using path: ', mainDir);
+    }
+
     const nextExtra = generateDiff ? '.next' : '';
 
-    const cstFiles = await regenerateTests(nextExtra, fileList);
+    const cstFiles = await regenerateTests(nextExtra, fileList, mainDir);
 
     const allFiles = [];
 
@@ -134,7 +146,7 @@ async function regenerateTests(extra = "", fileList: string[] = []): Promise<str
                 </body>
             </html>`;
 
-        fs.writeFileSync(mainDir + "compiled.html", result);
+        fs.writeFileSync(mainDir + 'compiled.html', result);
     }
 })()
 
