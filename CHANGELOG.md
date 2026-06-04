@@ -1,6 +1,8 @@
 # Changelog
 
-## [v0.8.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.5...v0.8.6)
+## [v0.8.7](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.6...v0.8.7)
+
+## [v0.8.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.5...v0.8.6) - 2026-06-04
 
 [4bb068b](https://github.com/circuitscript/circuitscript-ts/commit/4bb068bb4765d6e6b0457e2371d2daef9abf8a70)Allow per-rule ERC severity overrides via document.rules
 - 
