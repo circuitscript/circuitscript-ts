@@ -15,95 +15,10 @@ import { ComponentPinNetPair } from "src/objects/types";
 import { ClassComponent } from "src/objects/ClassComponent.js";
 import { Wire } from "src/objects/Wire.js";
 import { Token } from "antlr4ng";
+import { RuntimeExecutionError } from "../errors.js";
+import { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js';
 
-export enum ERCSeverity {
-    Error   = 'error',
-    Warning = 'warning',
-    Info = 'info',
-    Off     = 'off',
-}
-
-export enum ERC_Rules {
-
-    // Power related
-    PowerNetWithoutDriver = 'POWER-NET-WITHOUT-DRIVER', // legacy — remove after migration
-
-    /** [ERROR] power_reference pin is connected to a signal/unnamed net with no power symbol */
-    PowerReferenceOnUnnamedNet = 'POWER-REFERENCE-ON-UNNAMED-NET',
-
-    /** [WARNING] power_input pin is connected to a net with no power symbol declaration */
-    PowerInputOnUnnamedNet = 'POWER-INPUT-ON-UNNAMED-NET',
-
-    /** [WARNING] power_output pin is driving a net with no power symbol declaration */
-    PowerOutputOnUnnamedNet = 'POWER-OUTPUT-ON-UNNAMED-NET',
-
-    /** [WARNING] power net has power_input pins but no power_output source */
-    PowerNetNoSource = 'POWER-NET-NO-SOURCE',
-
-    /** [WARNING] power net is declared (has power symbol) but has no physical pin connections */
-    PowerNetUnused = 'POWER-NET-UNUSED',
-
-    /** [ERROR] two differently-named power symbols are shorted onto the same net */
-    PowerNetNameConflict = 'POWER-NET-NAME-CONFLICT',
-
-    /** [WARNING] multiple power_output pins on the same net — possible power conflict */
-    PowerNetMultipleOutputs = 'POWER-NET-MULTIPLE-OUTPUTS',
-
-    /** [ERROR] power_reference pin is on a net with conflicting power symbol names */
-    PowerReferenceAmbiguousNet = 'POWER-REFERENCE-AMBIGUOUS-NET',
-
-    /** [ERROR] power_reference pin is not wired to any net */
-    PowerReferenceUnconnected = 'POWER-REFERENCE-UNCONNECTED',
-
-    /** [ERROR] power_input pin is not wired to any net */
-    PowerInputUnconnected = 'POWER-INPUT-UNCONNECTED',
-
-    /** [WARNING] power_output pin is not wired to any net */
-    PowerOutputUnconnected = 'POWER-OUTPUT-UNCONNECTED',
-
-    /** [WARNING] power symbol pin is not wired to any net */
-    PowerSymbolUnconnected = 'POWER-SYMBOL-UNCONNECTED',
-
-    /** [WARNING] no power_reference pins found anywhere in the schematic — no ground reference defined */
-    NoPowerReferenceInSchematic = 'NO-POWER-REFERENCE-IN-SCHEMATIC',
-
-    // Connections related
-    UnconnectedPin = 'UNCONNECTED-PIN',
-    UnconnectedWire = 'UNCONNECTED-WIRE',
-    NoConnectOnConnectedPin = 'NO-CONNECT-ON-CONNECTED-PIN',
-
-    // Pin type compatibility
-    PinTypeOutputMultiple           = 'PIN-TYPE-OUTPUT-MULTIPLE',
-    PinTypeInputUndriven            = 'PIN-TYPE-INPUT-UNDRIVEN',
-    PinTypePassiveOnly              = 'PIN-TYPE-PASSIVE-ONLY',
-    PinTypeBidirectionalOnPowerNet  = 'PIN-TYPE-BIDIRECTIONAL-POWER',
-    PinTypeOutputDrivingPowerInput  = 'PIN-TYPE-OUTPUT-POWER-INPUT',
-}
-
-export const ERC_RuleSeverity: Record<ERC_Rules, ERCSeverity> = {
-    [ERC_Rules.PowerNetWithoutDriver]:         ERCSeverity.Info,
-    [ERC_Rules.PowerReferenceOnUnnamedNet]:    ERCSeverity.Error,
-    [ERC_Rules.PowerInputOnUnnamedNet]:        ERCSeverity.Info,
-    [ERC_Rules.PowerOutputOnUnnamedNet]:       ERCSeverity.Info,
-    [ERC_Rules.PowerNetNoSource]:              ERCSeverity.Warning,
-    [ERC_Rules.PowerNetUnused]:                ERCSeverity.Warning,
-    [ERC_Rules.PowerNetNameConflict]:          ERCSeverity.Error,
-    [ERC_Rules.PowerNetMultipleOutputs]:       ERCSeverity.Warning,
-    [ERC_Rules.PowerReferenceAmbiguousNet]:    ERCSeverity.Error,
-    [ERC_Rules.PowerReferenceUnconnected]:     ERCSeverity.Error,
-    [ERC_Rules.PowerInputUnconnected]:         ERCSeverity.Error,
-    [ERC_Rules.PowerOutputUnconnected]:        ERCSeverity.Warning,
-    [ERC_Rules.PowerSymbolUnconnected]:        ERCSeverity.Warning,
-    [ERC_Rules.NoPowerReferenceInSchematic]:   ERCSeverity.Warning,
-    [ERC_Rules.UnconnectedPin]:                ERCSeverity.Warning,
-    [ERC_Rules.UnconnectedWire]:               ERCSeverity.Warning,
-    [ERC_Rules.NoConnectOnConnectedPin]:       ERCSeverity.Error,
-    [ERC_Rules.PinTypeOutputMultiple]:          ERCSeverity.Warning,
-    [ERC_Rules.PinTypeInputUndriven]:           ERCSeverity.Warning,
-    [ERC_Rules.PinTypePassiveOnly]:             ERCSeverity.Off,
-    [ERC_Rules.PinTypeBidirectionalOnPowerNet]: ERCSeverity.Warning,
-    [ERC_Rules.PinTypeOutputDrivingPowerInput]: ERCSeverity.Warning,
-};
+export { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js';
 
 export type ERCReportItem = {
     start: Token | null,
@@ -113,7 +28,7 @@ export type ERCReportItem = {
 }
 
 export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
-    nets: ComponentPinNetPair[]): ERCReportItem[] {
+    nets: ComponentPinNetPair[], documentRules: Record<string, string> = {}): ERCReportItem[] {
     const ruleCheckItems = [];
     const creationCtx = visitor.creationCtx;
 
@@ -364,9 +279,20 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         }
     });
 
-    // Attach severity and filter out off rules.
+    // Attach severity (with optional per-rule override) and filter out off rules.
+    const validSeverities = new Set<string>(Object.values(ERCSeverity));
     const withSeverity = reportItems
-        .map(item => ({ ...item, severity: ERC_RuleSeverity[item.type] }))
+        .map(item => {
+            const override = documentRules[item.type];
+            if (override !== undefined && !validSeverities.has(override)) {
+                throw new RuntimeExecutionError(
+                    `Invalid severity '${override}' for rule '${item.type}'. ` +
+                    `Valid values: ${[...validSeverities].join(', ')}`
+                );
+            }
+            const severity = (override as ERCSeverity | undefined) ?? ERC_RuleSeverity[item.type];
+            return { ...item, severity };
+        })
         .filter(item => item.severity !== ERCSeverity.Off);
 
     // Sort the report items based on file position. Null-start items (schematic-level) sort last.

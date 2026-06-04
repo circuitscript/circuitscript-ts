@@ -253,7 +253,8 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     options = options ?? {};
     const {runErc = false, generateBom: generateBomOption = false} = options;
 
-    const ercResults = runErc ? EvaluateERCRules(visitor, graph, nets) : [];
+    const documentRules = (documentVariable as any).rules as Record<string, string> | undefined;
+    const ercResults = runErc ? EvaluateERCRules(visitor, graph, nets, documentRules ?? {}) : [];
 
     let bomCsvOutput:string[][] = [];
     if (generateBomOption){

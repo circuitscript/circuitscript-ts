@@ -1,6 +1,6 @@
 /* eslint-disable jest/expect-expect */
 import { ERCReportItem } from "../src/rules-check/rules";
-import { expectJsonOutput, renderCommon } from "./helpers";
+import { expectJsonOutput, renderCommon, runScript } from "./helpers";
 
 const mainPath = '__tests__/testData/rulesCheckData/';
 
@@ -38,6 +38,8 @@ describe('ERC rules', () => {
         ['output driving input - no violations', 'script19.cst'],
         ['io pin on power net', 'script20.cst'],
         ['signal output driving power_input directly', 'script21.cst'],
+        ['erc_set raises UNCONNECTED-PIN to error', 'script22.cst'],
+        ['erc_set suppresses UNCONNECTED-PIN (off)', 'script23.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);
@@ -55,5 +57,51 @@ describe('ERC rules', () => {
     //     const jsonString = JSON.stringify(simplified);
     //     expectJsonOutput(jsonString, `${mainPath}expected/script11.cst.json`);
     // });
+
+    describe('erc_get and erc_set built-ins', () => {
+        const scriptPath = '__tests__/testData/rulesCheckData/';
+
+        test('erc_get returns default severity', async () => {
+            const { visitor, hasError } = await runScript(
+                'from "std" import *\nprint(erc_get("UNCONNECTED-PIN"))',
+                scriptPath
+            );
+            expect(hasError).toBe(false);
+            expect(visitor.printStream.join(' ')).toContain('warning');
+        });
+
+        test('erc_get reflects a previous erc_set', async () => {
+            const { visitor, hasError } = await runScript(
+                'from "std" import *\nerc_set("UNCONNECTED-PIN", "error")\nprint(erc_get("UNCONNECTED-PIN"))',
+                scriptPath
+            );
+            expect(hasError).toBe(false);
+            expect(visitor.printStream.join(' ')).toContain('error');
+        });
+
+        test('erc_set with invalid rule name throws RuntimeExecutionError', async () => {
+            const { hasError } = await runScript(
+                'from "std" import *\nerc_set("NOT-A-REAL-RULE", "error")',
+                scriptPath
+            );
+            expect(hasError).toBe(true);
+        });
+
+        test('erc_set with invalid severity level throws RuntimeExecutionError', async () => {
+            const { hasError } = await runScript(
+                'from "std" import *\nerc_set("UNCONNECTED-PIN", "critical")',
+                scriptPath
+            );
+            expect(hasError).toBe(true);
+        });
+
+        test('erc_get with invalid rule name throws RuntimeExecutionError', async () => {
+            const { hasError } = await runScript(
+                'from "std" import *\nerc_get("NOT-A-REAL-RULE")',
+                scriptPath
+            );
+            expect(hasError).toBe(true);
+        });
+    });
 
 });

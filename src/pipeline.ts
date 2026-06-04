@@ -347,7 +347,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     containerFrames, nets);
 
                 if (enableErc) {
-                    const ercResults = EvaluateERCRules(visitor, graph, nets);
+                    const documentRules = (documentVariable as any).rules as Record<string, string>;
+                    const ercResults = EvaluateERCRules(visitor, graph, nets, documentRules);
 
                     if (ercResults.length > 0) {
 

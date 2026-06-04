@@ -11,12 +11,13 @@ import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericV
 import { CallableParameter, CFunctionEntry, ImportedLibrary, NoneValue } from "./objects/types.js";
 import { unwrapValue } from "./utils.js";
 import { RuntimeExecutionError } from "./errors.js";
-import { BaseNamespace } from "./globals.js";
+import { BaseNamespace, GlobalDocumentName } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { PinId } from "./objects/PinDefinition.js";
 import { AllPinTypes, normalizePinType, resolvePinType } from "./objects/PinTypes.js";
 import { NetClass } from "./objects/NetClass.js";
+import { AcceptedSeverityLevels, ERC_RuleSeverity } from "./rules-check/severity-defaults.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -30,9 +31,11 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['pin_get_type', pinGetType],
     ['has_pin', hasPin],
     ['str', strFunction],
-
+    
     // Methods that are defined at run time
     ['print', null],
+    ['erc_set', null],
+    ['erc_get', null],
 ];
 
 export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0]);
@@ -51,6 +54,41 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         visitor.printStream.push(printedValue);
 
         return [visitor, printedValue];
+    });
+
+    context.createFunction(BaseNamespace, 'erc_set', (params) => {
+        const ruleName = params[0][2];
+        const severityLevel = params[1][2];
+
+        // Check that rule exists
+        if (ERC_RuleSeverity[ruleName] === undefined){
+            throw new RuntimeExecutionError("Invalid rule: " + ruleName);
+        }
+
+        if (AcceptedSeverityLevels.indexOf(severityLevel) === -1){
+            throw new RuntimeExecutionError("Invalid severity level: " + severityLevel);
+        }
+
+        // For initial stage, only have global ERC rules
+        const globalDocument = visitor.getScope().variables.get(GlobalDocumentName);
+        globalDocument.rules[ruleName] = severityLevel;
+
+        return [visitor];
+    });
+
+    context.createFunction(BaseNamespace, 'erc_get', (params) => {
+        const ruleName = params[0][2];
+
+        // Check that rule exists
+        if (ERC_RuleSeverity[ruleName] === undefined){
+            throw new RuntimeExecutionError("Invalid rule: " + ruleName);
+        }
+
+        // For initial stage, only have global ERC rules
+        const globalDocument = visitor.getScope().variables.get(GlobalDocumentName);
+        const result = globalDocument.rules[ruleName] ?? "unknown";
+
+        return [visitor, result];
     });
     
     builtInMethods.forEach(([functionName, functionImpl]) => {
