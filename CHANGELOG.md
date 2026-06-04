@@ -1,6 +1,14 @@
 # Changelog
 
-## [v0.8.5](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.4...v0.8.5)
+## [v0.8.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.5...v0.8.6)
+
+[4bb068b](https://github.com/circuitscript/circuitscript-ts/commit/4bb068bb4765d6e6b0457e2371d2daef9abf8a70)Allow per-rule ERC severity overrides via document.rules
+- 
+- Extract ERC enums and defaults into severity-defaults.ts, expose
+- document.rules on the global document object so scripts can override
+- individual rule severities at the schematic level.
+
+## [v0.8.5](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.4...v0.8.5) - 2026-06-03
 
 [037d652](https://github.com/circuitscript/circuitscript-ts/commit/037d652e2a4a4a3422f58c0e5aa2c480bdbb1b64)Add pin-type ERC rules for signal compatibility checking
 - 
