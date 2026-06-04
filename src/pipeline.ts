@@ -27,7 +27,7 @@ import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
-import { ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
+import { ERCReportItem, ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
 import { printWarnings, generateDebugSequenceAction, 
     sequenceActionString, SimpleStopwatch} from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
@@ -256,6 +256,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     }
     
     let svgOutput = "";
+    let ercResults: ERCReportItem[] = [];
 
     if (errors.length === 0 && throwError === undefined){
         const { frameComponent } = visitor.applySheetFrameComponent();
@@ -309,6 +310,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
         dumpData && environment.writeFileSync(dumpDirectory + 'raw-sequence.txt', tmpSequence.join('\n'));
 
+        
         try {
             // Track which output paths have been handled by a parse handler.
             const handledPaths = new Set<string>();
@@ -337,6 +339,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             // graphEngine.generateNetGraph(nets);
 
             let sheetFrames;
+
             try {
                 graphEngine.setStyles(styles);
 
@@ -348,7 +351,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
                 if (enableErc) {
                     const documentRules = (documentVariable as any).rules as Record<string, string>;
-                    const ercResults = EvaluateERCRules(visitor, graph, nets, documentRules);
+                    ercResults = EvaluateERCRules(visitor, graph, nets, documentRules);
 
                     if (ercResults.length > 0) {
 
@@ -476,8 +479,13 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         }
     }
 
-    return {
-        svgOutput, 
-        errors
+    const results: RenderScriptReturn = {
+        svgOutput, errors
     }
+
+    if (enableErc && ercResults) {
+        results.ercResults = ercResults;
+    }
+
+    return results;
 }

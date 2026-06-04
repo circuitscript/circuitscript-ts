@@ -22,6 +22,7 @@ export type SVGWindow = any;
 import { NumericValue, resolveToNumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ImportedLibrary } from "./objects/types.js";
+import { ERCReportItem } from "./rules-check/rules.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -119,7 +120,8 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
 
 export type RenderScriptReturn = {
     svgOutput: string | null,
-    errors: BaseError[]
+    errors: BaseError[],
+    ercResults?: ERCReportItem[]
 };
 
 export type ExternalLibAnnotationFile = {
