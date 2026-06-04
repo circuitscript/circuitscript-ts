@@ -383,8 +383,10 @@ export class ClassComponent {
      */
     getNextPinAfter(pinId: PinId): PinId {
         const pins = Array.from(this.pins.keys());
+        const sortedPins = pins.sort();
+
         const foundPin = this.getPin(pinId);
-        const index  = pins.findIndex(tmp => tmp.equals(foundPin));
+        const index  = sortedPins.findIndex(tmp => tmp.equals(foundPin));
 
         if (index + 1 < pins.length) {
             return pins[index + 1];

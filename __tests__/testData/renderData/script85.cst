@@ -1,0 +1,51 @@
+# Test that pin order declaration does not affect the next pin selected
+
+from "std" import *
+
+def esd_diode():
+    width = 100
+    height = 100
+
+    # Diode is drawn horizontally
+    #  -|>|-
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
+
+            # pin definition order is 1, 2
+            hpin: 1, width/2 + 100, 0, -100  # cathode
+            hpin: 2, -width/2-100, 0, 100    # anode
+            label: params.refdes, 0, -100, fontSize=50, anchor="middle", vanchor="top"
+
+def esd_diode2():
+    width = 100
+    height = 100
+
+    # Diode is drawn horizontally
+    #  -|>|-
+    return create component:
+        pins: 2
+        type: "diode"
+        display: create graphic (params):
+            triangle: -width/2, 0, width/2, 0, height
+            vline: width/2, -height/2, height
+
+            # pin definition order is 2, 1
+            hpin: 2, -width/2-100, 0, 100    # anode
+            hpin: 1, width/2 + 100, 0, -100  # cathode
+            label: params.refdes, 0, -100, fontSize=50, anchor="middle", vanchor="top"
+
+
+at v5 = supply("5V")
+wire down 100
+add esd_diode()
+wire down 100
+to gnd = dgnd()
+
+at v5
+wire d 100
+add esd_diode2()
+wire d 100 to gnd
