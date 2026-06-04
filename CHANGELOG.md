@@ -1,6 +1,22 @@
 # Changelog
 
-## [v0.8.7](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.6...v0.8.7)
+## [v0.8.8](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.7...v0.8.8)
+
+[eea68ff](https://github.com/circuitscript/circuitscript-ts/commit/eea68ff2d2a3da426e74cdee4d0753c01f27161e)Fix pin order independence in getNextPinAfter by sorting pins before lookup
+- 
+- Ensures that the pin traversal order in getNextPinAfter is deterministic
+- and based on pin ID sort order, not insertion order — so pin declaration
+- order in component definitions does not affect which pin is selected next.
+- 
+- Adds test case (script85) with two diode variants whose pin order differs.
+
+[3853fb8](https://github.com/circuitscript/circuitscript-ts/commit/3853fb8244ca972cbea105099b98ce82cacb05f6)Expose ERC results in renderScriptCustom return value
+- 
+- - Add ercResults field to RenderScriptReturn type
+- - Export ERCReportItem and KiCadSchOutputHandler from public API
+- - Add render test for pin order declaration independence
+
+## [v0.8.7](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.6...v0.8.7) - 2026-06-04
 
 ## [v0.8.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.5...v0.8.6) - 2026-06-04
 
