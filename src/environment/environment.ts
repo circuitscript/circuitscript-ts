@@ -7,6 +7,7 @@
 import { Dom, registerWindow, SVG } from "@svgdotjs/svg.js";
 import fs from 'fs';
 import path from "path";
+import os from 'os';
 import CryptoJs from "crypto-js";
 
 import { VERSION } from "../version.js";
@@ -259,5 +260,25 @@ export class NodeScriptEnvironment {
     // Returns the directory where the script was called from.
     getCurrentDirectory(): string {
         return process.cwd();
+    }
+
+    getTmpDir(): string {
+        return os.tmpdir();
+    }
+
+    mkdtempSync(prefix: string): string {
+        return fs.mkdtempSync(prefix);
+    }
+
+    readdirSync(dirPath: string): string[] {
+        return fs.readdirSync(dirPath) as string[];
+    }
+
+    readFileSync(filePath: string, encoding: BufferEncoding): string {
+        return fs.readFileSync(filePath, encoding);
+    }
+
+    rmSync(dirPath: string, options?: { recursive?: boolean; force?: boolean }): void {
+        fs.rmSync(dirPath, options);
     }
 }
