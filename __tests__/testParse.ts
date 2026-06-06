@@ -50,7 +50,13 @@ import {
     inlineScript76,
     inlineScript77,
     inlineScript78,
-    inlineScript79
+    inlineScript79,
+    inlineScript80,
+    inlineScript81,
+    inlineScript82,
+    inlineScript83,
+    inlineScript84,
+    inlineScript85
 } from './parseScripts.js';
 
 async function expectInlineScriptTest(description, scriptTest): Promise<void> {
@@ -499,6 +505,12 @@ describe('line continuation tests', () => {
     testInlineScriptTest('condition continuation with and', inlineScript77);
     testInlineScriptTest('multi-line continuation chain', inlineScript78);
     testInlineScriptTest('function call argument continuation', inlineScript79);
+    testInlineScriptTest('.. as sole positional argument', inlineScript80);
+    testInlineScriptTest('.. as first of multiple positional arguments', inlineScript81);
+    testInlineScriptTest('.. used in consecutive calls', inlineScript82);
+    testInlineScriptTest('.. as keyword argument value', inlineScript83);
+    testInlineScriptTest('.. after reassignment reflects new last object', inlineScript84);
+    testInlineScriptTest('.. full example2 reproduction', inlineScript85);
 });
 
 describe('atom expr and trailers tests', () => {

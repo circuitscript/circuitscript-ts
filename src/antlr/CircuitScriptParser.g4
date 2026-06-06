@@ -83,9 +83,11 @@ at_block_expressions_inner: at_block_pin_expr | expression;
 // Expression to allow direct pin assignment
 at_block_pin_expr: property_key_expr Colon (non_newline_expression+ | expressions_block | NOT_CONNECTED);
 
-keyword_assignment_expr: ID Assign data_expr;
+data_expr_with_doubledot: data_expr | DoubleDot;
 
-parameters: ((data_expr (Comma data_expr)*) | keyword_assignment_expr) (Comma keyword_assignment_expr)*;
+keyword_assignment_expr: ID Assign data_expr_with_doubledot;
+
+parameters: ((data_expr_with_doubledot (Comma data_expr_with_doubledot)*) | keyword_assignment_expr) (Comma keyword_assignment_expr)*;
 
 double_dot_property_set_expr: DoubleDot ID trailer* Assign data_expr;
 

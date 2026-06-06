@@ -23,6 +23,7 @@ import { At_blockContext } from "./CircuitScriptParser.js";
 import { At_block_expressionsContext } from "./CircuitScriptParser.js";
 import { At_block_expressions_innerContext } from "./CircuitScriptParser.js";
 import { At_block_pin_exprContext } from "./CircuitScriptParser.js";
+import { Data_expr_with_doubledotContext } from "./CircuitScriptParser.js";
 import { Keyword_assignment_exprContext } from "./CircuitScriptParser.js";
 import { ParametersContext } from "./CircuitScriptParser.js";
 import { Double_dot_property_set_exprContext } from "./CircuitScriptParser.js";
@@ -205,6 +206,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitAt_block_pin_expr?: (ctx: At_block_pin_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.data_expr_with_doubledot`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitData_expr_with_doubledot?: (ctx: Data_expr_with_doubledotContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.keyword_assignment_expr`.
      * @param ctx the parse tree

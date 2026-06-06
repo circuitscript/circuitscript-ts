@@ -728,6 +728,54 @@ r = sum2(1, \
 print(r)
 `, ['3']);
 
+// DoubleDot (..) in function parameters tests
+export const inlineScript80 = new ScriptTest(`
+tmp = create component:
+    pins: 3
+print(has_pin(.., 1))
+`, ['true']);
+
+export const inlineScript81 = new ScriptTest(`
+tmp = create component:
+    pins: 6
+pin_set_type(.., 1, "input")
+print(pin_get_type(.., 1))
+`, ['"input"']);
+
+export const inlineScript82 = new ScriptTest(`
+tmp = create component:
+    pins: 3
+print(has_pin(.., 1))
+print(has_pin(.., 2))
+print(has_pin(.., 4))
+`, ['true', 'true', 'false']);
+
+export const inlineScript83 = new ScriptTest(`
+def check(comp, idx):
+    return has_pin(comp, idx)
+
+tmp = create component:
+    pins: 2
+print(check(comp=.., idx=1))
+`, ['true']);
+
+export const inlineScript84 = new ScriptTest(`
+tmp1 = create component:
+    pins: 2
+tmp2 = create component:
+    pins: 5
+print(has_pin(.., 3))
+print(has_pin(.., 5))
+print(has_pin(.., 6))
+`, ['true', 'true', 'false']);
+
+export const inlineScript85 = new ScriptTest(`
+tmp = create component:
+    pins: 6
+pin_set_type(.., 2, "output")
+print(pin_get_type(.., 2))
+`, ['"output"']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [

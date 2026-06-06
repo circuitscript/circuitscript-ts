@@ -9,7 +9,7 @@ import { Big } from 'big.js';
 
 import {
     ArrayExprContext, Assignment_exprContext, Callable_exprContext,
-    CallableExprContext, Double_dot_property_set_exprContext, ExpressionContext, Flow_expressionsContext,
+    CallableExprContext, Data_expr_with_doubledotContext, Double_dot_property_set_exprContext, ExpressionContext, Flow_expressionsContext,
     Function_args_exprContext, Function_exprContext, Function_return_exprContext, Import_exprContext,
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext,
     Non_newline_expressionContext,
@@ -942,24 +942,30 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         this.setResult(ctx, result);
     }
 
+    visitData_expr_with_doubledot = (ctx: Data_expr_with_doubledotContext): void => {
+        if (ctx.DoubleDot()) {
+            this.setResult(ctx, this.getScope().lastObjectReference)
+        } else {
+            this.setResult(ctx, this.visitResult(ctx.data_expr()!));
+        }
+    }
+
     visitKeyword_assignment_expr = (ctx: Keyword_assignment_exprContext): void => {
         const id = ctx.ID().getText();
-        const value = this.visitResult(ctx.data_expr());
-        
+        const value = this.visitResult(ctx.data_expr_with_doubledot());
+
         this.setResult(ctx, [id, value]);
     }
 
     visitParameters = (ctx: ParametersContext): void => {
-        const dataExpressions = ctx.data_expr();
+        const dataExpressions = ctx.data_expr_with_doubledot();
         const keywordAssignmentExpressions = ctx.keyword_assignment_expr();
-
-        const returnList: CallableParameter[] = [];
 
         // Values are wrapped if they are a reference, and this method
         // assumes that the values are to be used.
-        dataExpressions.forEach((item, index) => {
+        const returnList: CallableParameter[] = dataExpressions.map((item, index) => {
             const value = this.visitResult(item);
-            returnList.push(['position', index, unwrapValue(value)]);
+            return ['position', index, unwrapValue(value)];
         });
 
         keywordAssignmentExpressions.forEach((item) => {
