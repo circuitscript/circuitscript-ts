@@ -1,6 +1,13 @@
 # Changelog
 
-## [v0.8.9](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.8...v0.8.9)
+## [v0.8.10](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.9...v0.8.10)
+
+[9b7aad5](https://github.com/circuitscript/circuitscript-ts/commit/9b7aad52e3187a6a22e0cfb6754bd258e8768aea)Add filesystem utility methods to NodeScriptEnvironment
+- 
+- Expose tmpdir, mkdtempSync, readdirSync, readFileSync, and rmSync through
+- the environment interface to support temporary directory operations.
+
+## [v0.8.9](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.8...v0.8.9) - 2026-06-06
 
 [5eaddbd](https://github.com/circuitscript/circuitscript-ts/commit/5eaddbd90621f6c6fc4b554582645d321c5fa060)Allow .. (last object reference) as function call arguments
 - 
