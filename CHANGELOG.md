@@ -1,6 +1,13 @@
 # Changelog
 
-## [v0.8.8](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.7...v0.8.8)
+## [v0.8.9](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.8...v0.8.9)
+
+[5eaddbd](https://github.com/circuitscript/circuitscript-ts/commit/5eaddbd90621f6c6fc4b554582645d321c5fa060)Allow .. (last object reference) as function call arguments
+- 
+- Adds data_expr_with_doubledot grammar rule so .. can appear as positional
+- or keyword argument values in function calls, with visitor support and tests.
+
+## [v0.8.8](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.7...v0.8.8) - 2026-06-04
 
 [eea68ff](https://github.com/circuitscript/circuitscript-ts/commit/eea68ff2d2a3da426e74cdee4d0753c01f27161e)Fix pin order independence in getNextPinAfter by sorting pins before lookup
 - 
