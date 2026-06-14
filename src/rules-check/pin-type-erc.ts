@@ -57,6 +57,7 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
         const inputPins  = signalPins.filter(p => p.pinType === PinTypes.Input);
         const ioPins     = signalPins.filter(p => p.pinType === PinTypes.IO);
         const hasDriver  = signalPins.some(p => DRIVER_TYPES.has(p.pinType));
+        const hasPowerIn = powerPins.some(p => p.pinType === PinTypes.PowerInput);
 
         if (outputPins.length >= 2) {
             for (const p of outputPins.slice(1)) {
@@ -64,7 +65,8 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
             }
         }
 
-        if (inputPins.length > 0 && !hasDriver) {
+        // Net has input pins, but no signal outputs and no power inputs.
+        if (inputPins.length > 0 && !hasDriver && !hasPowerIn) {
             const first = inputPins[0];
             items.push(makeViolation(ERC_Rules.PinTypeInputUndriven, first.component, first.pin, netName));
         }

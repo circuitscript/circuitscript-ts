@@ -40,6 +40,8 @@ describe('ERC rules', () => {
         ['signal output driving power_input directly', 'script21.cst'],
         ['erc_set raises UNCONNECTED-PIN to error', 'script22.cst'],
         ['erc_set suppresses UNCONNECTED-PIN (off)', 'script23.cst'],
+        ['input pin driven by power_input (no violation)', 'script24.cst'],
+        ['input pin undriven - no power_input present', 'script25.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

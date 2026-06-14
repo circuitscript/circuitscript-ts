@@ -1,0 +1,20 @@
+from "std" import *
+
+gnd = dgnd()
+
+consumer = create component:
+    pins:
+        1: "vcc", "power_input"
+
+recv = create component:
+    pins:
+        1: "in", "input"
+
+at consumer
+wire right 100
+branch:
+    wire right 100
+    to recv
+
+wire down 100
+to gnd

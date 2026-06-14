@@ -1,0 +1,17 @@
+[
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "POWER-NET-NO-SOURCE",
+        "severity": "warning",
+        "message": "Power net '/GND' has power_input pins but no power_output source"
+    },
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "severity": "warning",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]
