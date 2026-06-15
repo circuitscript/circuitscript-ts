@@ -1,6 +1,8 @@
 # Changelog
 
-## [v0.8.11](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.10...v0.8.11)
+## [v0.8.12](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.11...v0.8.12)
+
+## [v0.8.11](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.10...v0.8.11) - 2026-06-15
 
 [e9610e0](https://github.com/circuitscript/circuitscript-ts/commit/e9610e0ceb637d95e406ef435eb50285c3e0752f)Enhance BOM generation with unplaced item tracking and missing value reporting
 - 
