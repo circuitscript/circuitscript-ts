@@ -1,0 +1,32 @@
+[
+    [
+        "Refdes",
+        "Mpn",
+        "Manufacturer"
+    ],
+    [
+        "R1",
+        "PART-RES-10R",
+        "MAKER1"
+    ],
+    [
+        "R2",
+        "PART-RES-100R",
+        "MAKER1"
+    ],
+    [
+        "R3",
+        "PART-RES-33R",
+        "MAKER2"
+    ],
+    [
+        "R4",
+        "PART-RES-1K",
+        "MAKER3"
+    ],
+    [
+        "R5",
+        null,
+        null
+    ]
+]

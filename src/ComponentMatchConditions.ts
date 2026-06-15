@@ -130,7 +130,7 @@ export function partMatchesConditions(instance: ClassComponent, partConditions: 
             }
 
             if (useKey === 'type') {
-                // Special case, type is not in parms, so this handled
+                // Special case, type is not in params, so this handled
                 // differently.
                 return (instance.typeProp !== values[0]);
 
@@ -145,10 +145,16 @@ export function partMatchesConditions(instance: ClassComponent, partConditions: 
 
                     if (typeof compareValue === "string") {
                         return (compareValue !== paramValue);
+                    
                     } else if (compareValue instanceof NumericValue) {
                         return !compareValue.eq(paramValue as NumericValue);
-                    } else if (typeof compareValue === 'number'){
-                        return compareValue !== paramValue;
+
+                    } else if (typeof compareValue === "number"){
+                        if (paramValue instanceof NumericValue){
+                            return compareValue !== paramValue.toNumber();    
+                        } else {
+                            return compareValue !== paramValue;
+                        }
                     }
                 }
             }

@@ -20,7 +20,7 @@ import { LayoutEngine, SheetFrame } from '../src/render/layout.js';
 import { NetGraph } from '../src/render/graph.js';
 import { Logger } from '../src/logger.js';
 import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
-import { generateBom, generateBomCSV } from '../src/BomGeneration.js';
+import { generateBom, generateBomCSV, BomGenerationResult } from '../src/BomGeneration.js';
 import { GlobalDocumentName } from '../src/globals.js';
 import { getStylesFromDocument } from '../src/styles.js';
 
@@ -214,15 +214,17 @@ type RenderCommonOptions = {
     bomConfig?: {
         columns: string[],
         group_by: string[],
+        only_placed?: boolean,
     },
     skipAnnotation?: boolean,
 }
 
 export async function renderCommon(scriptPath: string, options?: RenderCommonOptions):
-    Promise<{ 
-        sheetFrames: SheetFrame[], 
+    Promise<{
+        sheetFrames: SheetFrame[],
         ercResults: ERCReportItem[],
-        bomCsvOutput: string[][], 
+        bomCsvOutput: string[][],
+        bomResult: BomGenerationResult | undefined,
         documentVariable: DocumentVariable
     }> {
 
@@ -256,17 +258,18 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     const documentRules = (documentVariable as any).rules as Record<string, string> | undefined;
     const ercResults = runErc ? EvaluateERCRules(visitor, graph, nets, documentRules ?? {}) : [];
 
-    let bomCsvOutput:string[][] = [];
-    if (generateBomOption){
-        const bomData = generateBom(options.bomConfig, visitor.getScope().getInstances());
-        bomCsvOutput = generateBomCSV(bomData);
+    let bomCsvOutput: string[][] = [];
+    let bomResult: BomGenerationResult | undefined;
+    if (generateBomOption) {
+        bomResult = generateBom(options.bomConfig, visitor.getScope().getInstances());
+        bomCsvOutput = generateBomCSV(bomResult.bom);
     }
-    
 
     return {
         sheetFrames,
         ercResults,
         bomCsvOutput,
+        bomResult,
         documentVariable
     }
 }

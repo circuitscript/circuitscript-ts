@@ -9,9 +9,29 @@ import * as csv from '@fast-csv/format';
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from './environment/environment.js';
+import { RuntimeExecutionError } from './errors.js';
 
 export type BomConfig = {
-    columns: string[], // Specifies paramKeys that will be used in the columns of the BOM
+    // Specifies paramKeys that will be used in the columns of the BOM.
+    columns: string[],
+
+    // ParamKeys that are used to sort/group instances.
+    group_by: string[],
+
+    // If true, only display placed items in the BOM.
+    only_placed?: boolean,
+}
+
+type BomExtractionResult = {
+    resultRows: Record<string, unknown>[],
+    unplacedItems: string[],
+    missingValues: Map<string, string[]>,
+}
+
+export type BomGenerationResult = {
+    bom: Record<string, unknown>[],
+    unplacedItems: string[],
+    missingValues: Map<string, string[]>,
 }
 
 // Determines the sort order in the BOM.
@@ -26,14 +46,19 @@ const TypeSortOrder = {
 }
 
 /**
- * Generate the full list of parts on indivdual rows
- * @param bomConfig 
- * @param instances 
- * @returns 
+ * Generate the full list of parts on individual rows
+ * @param bomConfig
+ * @param instances
+ * @param verbose - when true, print warnings and totals to console
+ * @returns
  */
-export function generateBom(bomConfig: BomConfig, instances: ClassComponent[]): Record<string, unknown>[] {
-    const bomComponents = extractComponentValuesForBom(bomConfig, instances);
-    const tmpGroupedComponents = groupComponents(bomConfig, bomComponents);
+export function generateBom(
+    bomConfig: BomConfig,
+    instances: ClassComponent[],
+    verbose = false
+): BomGenerationResult {
+    const { resultRows, unplacedItems, missingValues } = extractComponentValuesForBom(bomConfig, instances);
+    const tmpGroupedComponents = groupComponents(bomConfig, resultRows);
 
     const groupedBom: Record<string, unknown>[] = [];
     tmpGroupedComponents.forEach(value => {
@@ -51,7 +76,21 @@ export function generateBom(bomConfig: BomConfig, instances: ClassComponent[]): 
         return typeSortA - typeSortB;
     });
 
-    return sortedGroupedBom;
+    if (verbose) {
+        for (const [key, items] of missingValues) {
+            const sortedItems = items.sort();
+            console.log(`Warning: Missing values for parameters: ${key}:\n  ${sortedItems.join(", ")}`);
+        }
+
+        if (unplacedItems.length > 0) {
+            const sortedUnplaced = unplacedItems.sort();
+            console.log(`Not placed: ${sortedUnplaced.join(", ")}`);
+        }
+
+        console.log(`Total items: ${resultRows.length}`);
+    }
+
+    return { bom: sortedGroupedBom, unplacedItems, missingValues };
 }
 
 type GroupEntry = {
@@ -59,7 +98,16 @@ type GroupEntry = {
     items: Record<string, unknown>[],
 }
 export function groupComponents(bomConfig: BomConfig, bomComponents: Record<string, unknown>[]): Map<string, GroupEntry> {
-    const { group_by } = bomConfig;
+    const { group_by, columns } = bomConfig;
+
+    // group_by parameter keys must be present in columns.
+    const missingColumns = group_by.filter(key => {
+        return columns.indexOf(key) === -1;
+    });
+
+    if (missingColumns.length > 0){
+        throw new RuntimeExecutionError("Invalid group_by keys: " + missingColumns);
+    }
 
     const grouped = new Map<string, GroupEntry>();
 
@@ -97,11 +145,12 @@ export function groupComponents(bomConfig: BomConfig, bomComponents: Record<stri
  * @param instances 
  * @returns 
  */
-function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComponent[]): Record<string, unknown>[] {
-    const { columns = [] } = bomConfig;
-    // console.log('Generating BOM with columns: ' + columns.join(', '));
+function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComponent[]): BomExtractionResult {
+    const { columns = [], only_placed = true } = bomConfig;
 
     const resultRows: Record<string, unknown>[] = [];
+    const missingValues = new Map<string, string[]>();
+    const unplacedItems: string[] = [];
 
     instances.forEach(instance => {
         if (instance.assignedRefDes !== null) {
@@ -110,33 +159,58 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
                 '.type': instance.typeProp,
             };
 
-            columns.forEach(paramKey => {
-                let useValue: any = '';
+            let instancePlaced = true;
+            if (instance.hasParam('place') && only_placed) {
+                instancePlaced = instance.getParam('place') ?? true;
+            }
 
-                if (paramKey === 'refdes') {
-                    useValue = instance.assignedRefDes;
-                } else {
-                    if (instance.hasParam(paramKey)) {
-                        useValue = instance.getParam(paramKey);
+            if (instancePlaced) {
+                const keysUndefined: string[] = [];
+                columns.forEach(paramKey => {
+                    let useValue: any = undefined;
 
-                        // If paramValue is a string, it might be a template 
-                        // string, so try to resolve values
-                        if (typeof useValue === 'string') {
-                            useValue = resolveValuesInTemplate(instance, useValue);
-                        } else if (useValue instanceof NumericValue) {
-                            useValue = useValue.toDisplayString();
+                    if (paramKey === 'refdes') {
+                        useValue = instance.assignedRefDes;
+
+                    } else {
+                        if (instance.hasParam(paramKey)) {
+                            useValue = instance.getParam(paramKey);
+
+                            // If paramValue is a string, it might be a template
+                            // string, so try to resolve values
+                            if (typeof useValue === 'string') {
+                                useValue = resolveValuesInTemplate(instance, useValue);
+                            } else if (useValue instanceof NumericValue) {
+                                useValue = useValue.toDisplayString();
+                            }
                         }
                     }
+
+                    if (useValue === undefined) {
+                        keysUndefined.push(paramKey);
+                    }
+
+                    // Expand value
+                    row[paramKey] = useValue;
+                });
+
+                if (keysUndefined.length > 0) {
+                    const useKey = keysUndefined.join(", ");
+                    if (!missingValues.has(useKey)) {
+                        missingValues.set(useKey, []);
+                    }
+
+                    missingValues.get(useKey)!.push(instance.assignedRefDes);
                 }
 
-                // Expand value
-                row[paramKey] = useValue;
-            });
-            resultRows.push(row);
+                resultRows.push(row);
+            } else {
+                unplacedItems.push(instance.assignedRefDes);
+            }
         }
     });
 
-    return resultRows;
+    return { resultRows, unplacedItems, missingValues };
 }
 
 function resolveValuesInTemplate(instance: ClassComponent, templateString: string): string {
@@ -162,6 +236,8 @@ export function generateBomCSV(bomData: Record<string, GroupEntry>[]): string[][
     if (bomData.length > 0) {
         const [firstRow] = bomData;
         for (const key in firstRow) {
+            // Keys that start with '.' are temp keys and should not be in the
+            // final bom.
             if (key.startsWith('.')) {
                 continue;
             }

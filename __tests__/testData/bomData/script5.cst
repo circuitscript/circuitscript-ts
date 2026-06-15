@@ -1,0 +1,51 @@
+from "std" import *
+
+v5 = supply("5V")
+gnd = dgnd()
+
+at v5
+wire down 100
+
+for i in range(0, 5):
+    if i > 0:
+        wire right 300
+
+    branch:
+        wire down 100
+        add res(10k)
+        wire down 100
+        to gnd
+
+at v5
+wire down 100
+
+for i in range(0, 5):
+    if i > 0:
+        wire right 300
+
+    branch:
+        wire down 100
+        add res(100)
+        wire down 100
+        to gnd
+
+at v5
+wire down 100
+
+for i in range(0, 5):
+    if i > 0:
+        wire right 300
+
+    branch:
+        wire down 100
+        add cap(100n)
+        wire down 100
+        to gnd
+
+
+set: "mpn", "manufacturer":
+    type: "res", value:
+        100: "PART-RES-100", "MAKER1"
+        10k: "PART-RES-10K", "MAKER2"
+    type: "cap", value:
+        100n: "PART-CAP-100N", "MAKER1"

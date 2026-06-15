@@ -1,0 +1,22 @@
+[
+    [
+        "Refdes",
+        "Mpn",
+        "Manufacturer"
+    ],
+    [
+        "R1_1, R1_2, R1_3, R1_4, R1_5",
+        "PART-RES-10K",
+        "MAKER2"
+    ],
+    [
+        "R2_1, R2_2, R2_3, R2_4, R2_5",
+        "PART-RES-100",
+        "MAKER1"
+    ],
+    [
+        "C1_1, C1_2, C1_3, C1_4, C1_5",
+        "PART-CAP-100N",
+        "MAKER1"
+    ]
+]

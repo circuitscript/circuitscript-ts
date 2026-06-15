@@ -1,0 +1,31 @@
+from "std" import *
+
+v5 = supply("5V")
+gnd = dgnd()
+
+at v5
+wire down 100
+branch:
+    wire down 100
+    add res(10k)
+    ..mpn = "RC0402FR-0710KL"
+    ..manufacturer = "Yageo"
+    wire down 100
+    to gnd
+
+wire down 100
+branch:
+    wire down 100
+    add res(4.7k)
+    wire down 100
+    to gnd
+
+wire down 100
+branch:
+    wire down 100
+    add res(1k)
+    ..mpn = "RC0402FR-071KL"
+    ..manufacturer = "Yageo"
+    ..place = false
+    wire down 100
+    to gnd
