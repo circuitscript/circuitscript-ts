@@ -1,6 +1,26 @@
 # Changelog
 
-## [v0.8.10](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.9...v0.8.10)
+## [v0.8.11](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.10...v0.8.11)
+
+[e9610e0](https://github.com/circuitscript/circuitscript-ts/commit/e9610e0ceb637d95e406ef435eb50285c3e0752f)Enhance BOM generation with unplaced item tracking and missing value reporting
+- 
+- - Add BomGenerationResult type exposing bom rows, unplacedItems, and missingValues
+- - Respect place=false property to exclude components from BOM output
+- - Track components with missing column values grouped by missing key combinations
+- - Add verbose mode to print warnings and totals to console in pipeline
+- - Fix groupComponents to validate group_by keys are present in columns
+- - Fix ComponentMatchConditions to handle numeric value comparison against NumericValue
+- - Change missing BOM values from empty string to null
+- - Add test scripts (script3–5) and expected outputs for new BOM behaviors
+
+[d1f2494](https://github.com/circuitscript/circuitscript-ts/commit/d1f2494ec0e5ede13dfb2b1674128b44325f9e66)Fix false positive ERC warning when power_input drives an input pin
+- 
+- A net with `input` pins driven by a `power_input` pin was incorrectly
+- flagged as PIN-TYPE-INPUT-UNDRIVEN. Adds the check for a `power_input`
+- driver so the violation is only raised when the net has no signal-level
+- or power-level driver. Covers the fix with two new ERC test cases.
+
+## [v0.8.10](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.9...v0.8.10) - 2026-06-06
 
 [9b7aad5](https://github.com/circuitscript/circuitscript-ts/commit/9b7aad52e3187a6a22e0cfb6754bd258e8768aea)Add filesystem utility methods to NodeScriptEnvironment
 - 
