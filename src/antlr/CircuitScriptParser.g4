@@ -81,7 +81,7 @@ at_block_expressions: NEWLINE INDENT at_block_expressions_inner+ DEDENT;
 at_block_expressions_inner: at_block_pin_expr | expression;
 
 // Expression to allow direct pin assignment
-at_block_pin_expr: property_key_expr Colon (non_newline_expression+ | expressions_block | NOT_CONNECTED);
+at_block_pin_expr: property_key_expr (Comma property_key_expr)* Colon (non_newline_expression+ | expressions_block | NOT_CONNECTED);
 
 data_expr_with_doubledot: data_expr | DoubleDot;
 
@@ -150,7 +150,7 @@ graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block   
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)  # GraphicCommandExpr
               ;
 
-property_expr: property_key_expr Colon property_value_expr;
+property_expr: property_key_expr (Comma property_key_expr)* Colon property_value_expr;
 
 property_key_expr: ID | INTEGER_VALUE | STRING_VALUE;
 property_value_expr: properties_block                 # nested_properties

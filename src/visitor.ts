@@ -919,31 +919,38 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperty_expr = (ctx: Property_exprContext): void => {
-        const ctxKey = ctx.property_key_expr();
+        // Handle multiple keys
+        const ctxKeys = ctx.property_key_expr();
         const ctxValue = ctx.property_value_expr();
-        
+
         const scope = this.getScope();
-
-        this.getScope().enterContext(ctxKey);
-        this.getScope().enterContext(ctxValue);
-
-        const keyName = this.visitResult(ctxKey);
-        const value = this.visitResult(ctxValue);
-
-        scope.triggerPropertyHandler(this, value, ctxValue);
-
-        this.getScope().exitContext();
-        this.getScope().exitContext();
-
-        if (value instanceof UndeclaredReference && (
-            value.reference.rootValue === undefined
-            && value.reference.value === undefined
-        )) {
-            throw value.throwMessage();
-        }
-
         const map = new Map<string, unknown>();
-        map.set(keyName, value);
+
+        // The value of each key is re-parsed each time.
+        ctxKeys.forEach(ctxKey => {
+            this.getScope().enterContext(ctxKey);
+            this.getScope().enterContext(ctxValue);
+
+            const keyName = this.visitResult(ctxKey);
+            const value = this.visitResult(ctxValue);
+
+            scope.triggerPropertyHandler(this, value, ctxValue);
+
+            this.getScope().exitContext();
+            this.getScope().exitContext();
+
+            if (value instanceof UndeclaredReference && (
+                value.reference.rootValue === undefined
+                && value.reference.value === undefined
+            )) {
+                throw value.throwMessage();
+            }
+
+            // Map stores the result of key and value.
+            map.set(keyName, value);
+        });
+        
+        // Return result to higher contexts.
         this.setResult(ctx, map);
     }
 
@@ -1485,23 +1492,28 @@ export class ParserVisitor extends BaseVisitor {
         // saves the correct location within the `at` block.
         executor.closeOpenPathBlocks(); 
 
-        const propKey = this.visitResult(ctx.property_key_expr());
-        const atPin: PinId = new PinId(propKey);
-
-        executor.atComponent(useComponent, atPin, {
-            addSequence: true
+        const allPropKeys = ctx.property_key_expr().map(ctxPropKey => {
+            return this.visitResult(ctxPropKey);
         });
 
-        executor.log(`at block pin expressions, pin id: ${atPin}`);
+        allPropKeys.forEach(propKey => {
+            const atPin: PinId = new PinId(propKey);
 
-        const ctxExpression = ctx.non_newline_expression();
-        const ctxExpressionsBlock = ctx.expressions_block();
+            executor.atComponent(useComponent, atPin, {
+                addSequence: true
+            });
 
-        if (ctxExpression.length > 0) {
-            this.runExpressions(executor, ctxExpression);
-        } else if (ctxExpressionsBlock) {
-            this.visit(ctxExpressionsBlock);
-        }
+            executor.log(`at block pin expressions, pin id: ${atPin}`);
+
+            const ctxExpression = ctx.non_newline_expression();
+            const ctxExpressionsBlock = ctx.expressions_block();
+
+            if (ctxExpression.length > 0) {
+                this.runExpressions(executor, ctxExpression);
+            } else if (ctxExpressionsBlock) {
+                this.visit(ctxExpressionsBlock);
+            }
+        });
 
         // Do not go back at the end of the expression, let the upper context
         // reset the current point.

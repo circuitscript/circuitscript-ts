@@ -135,7 +135,9 @@ describe('Render tests', () => {
         ['script82.cst', 'netclass properties set via double dot syntax after creation'],
         ['script83.cst', 'pin type short-forms normalize to canonical forms'],
         ['script84.cst', 'all std.cst components rendered'],
-        ['script85.cst', 'Pin order declaration does not affect the next pin selected']
+        ['script85.cst', 'Pin order declaration does not affect the next pin selected'],
+        ['script86.cst', 'Multiple pin ids/keys in the at command block.'],
+        ['script87.cst', 'Multiple keys in the create components pins assignment.']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
