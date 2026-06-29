@@ -1,6 +1,23 @@
 # Changelog
 
-## [v0.8.12](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.11...v0.8.12)
+## [v0.8.13](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.12...v0.8.13)
+
+[cfde558](https://github.com/circuitscript/circuitscript-ts/commit/cfde5587a75a2db2047456a4b6dfc688dd2a36e4)Support multiple pin keys in at block and property expressions
+- 
+- Allow comma-separated pin identifiers in at block pin expressions and
+- property key expressions, enabling syntax like `1,2,3: no_connect()`
+- to apply the same block to multiple pins at once.
+
+[1188d29](https://github.com/circuitscript/circuitscript-ts/commit/1188d29a40891195e9f1c2439622172e451052f2)Add string literal syntax for point expressions
+- 
+- - point expressions now accept string literals: point "name"
+- - to/at expressions resolve string literals as point references
+- - add validation for point ids: alphanumeric and underscores only
+- - update test scripts to use string syntax
+- - add test script88 for dynamic point names via string concatenation
+- - remove unused atPointBlock and toPointBlock methods
+
+## [v0.8.12](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.11...v0.8.12) - 2026-06-15
 
 ## [v0.8.11](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.10...v0.8.11) - 2026-06-15
 
