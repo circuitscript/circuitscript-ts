@@ -46,12 +46,12 @@ at tmp2:
 at tmp3 pin 1
 wire right 100 add res(10k)
 wire right 100 down 300
-point tmp1
+point "tmp1"
 
 at tmp3 pin 3
 wire right 100
 wire auto
-to tmp1
+to "tmp1"
 
 wire down 100
 to gnd

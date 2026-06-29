@@ -1015,21 +1015,6 @@ export class ExecutionContext {
         this.tmpPointId += 1;
     }
 
-    atPointBlock(): void {
-        const [component, pin,] = this.getPointBlockLocation();
-        this.atComponent(component, pin, {
-            addSequence: true
-        });
-    }
-
-    toPointBlock(): void {
-        // Point has been specifically created for block, wireId should be -1
-        const [component, pin,] = this.getPointBlockLocation();
-        this.toComponent(component, pin, {
-            addSequence: true
-        });
-    }
-
     getPointBlockLocation(): [component: ClassComponent, pin: number, wireId: number] {
         // Returns the position at the nearest `point:` block, searches within
         // previous block stacks
@@ -1662,6 +1647,15 @@ export class ExecutionContext {
     }
 
     addPoint(pointId: string, userDefined = true): ComponentPin {
+        // User-defined point ids must only contain alphanumeric characters
+        // and underscores (no spaces or other punctuation).
+        if (userDefined && !/^[A-Za-z0-9_]+$/.test(pointId)) {
+            throw new RuntimeExecutionError(
+                `Invalid point id '${pointId}': only alphanumeric characters ` +
+                `and underscores are allowed`
+            );
+        }
+
         if (this.scope.instances.has(pointId)) {
             this.log('Warning: ' + pointId + ' is being redefined');
         }
@@ -1681,7 +1675,8 @@ export class ExecutionContext {
         componentPoint.addDefaultUnit(this.getPointSymbol(useName));
 
         componentPoint._isInternalPathObject = true;
-
+        
+        // the pointId itself is set as an instance name.
         this.scope.instances.set(pointId, componentPoint);
         this.toComponent(componentPoint, 1, { addSequence: true });
 

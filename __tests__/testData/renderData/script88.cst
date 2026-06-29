@@ -1,0 +1,34 @@
+# Test the string syntax for points
+
+from "std" import *
+
+at v5 = supply("5V")
+gnd = dgnd()
+wire d 100
+
+names = []
+gnds = []
+
+for i in range(0, 5):
+    point "hello_" + i
+    array_push(names, "hello_" + i)
+
+    if i < 5-1:
+        wire right 300
+
+for i in range(0, 5):
+    at array_get(names, i)
+
+    wire down 100
+    add cap(100n)
+    wire down 100
+
+    tmp_name = "gnd_" + i
+    array_push(gnds, tmp_name)
+
+    point tmp_name
+
+for i in range(0, 5):
+    at gnd
+    wire up 100
+    to array_get(gnds, i)

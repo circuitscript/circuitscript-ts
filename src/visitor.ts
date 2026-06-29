@@ -1048,6 +1048,8 @@ export class ParserVisitor extends BaseVisitor {
                     
                     dataResult = rootValue;
                     this.placeModuleContains(dataResult as ModuleComponent);
+                } else {
+                    dataResult = reference;
                 }
             }
 
@@ -1056,8 +1058,14 @@ export class ParserVisitor extends BaseVisitor {
             componentCtx = ctxAssignmentExpr;
         }
 
+        if (typeof dataResult === "string"){
+            // Handle as a point ID
+            dataResult = this.getExecutor().resolveVariable(
+                this.executionStack, dataResult);
+        }
+
         // Unwrap the reference, if it is a reference.
-        dataResult = unwrapValue(dataResult);
+        dataResult = unwrapValue(dataResult);        
 
         if (dataResult === null || dataResult === undefined) {
             if (componentCtx){
@@ -1673,6 +1681,7 @@ export class ParserVisitor extends BaseVisitor {
     visitPoint_expr = (ctx: Point_exprContext): ComponentPin => {
         const ctxDataExpr = ctx.data_expr();
 
+        // Visit expression to get the name/reference.
         this.setResult(ctxDataExpr, { keepReference: true });
         const result = this.visitResult(ctxDataExpr);
 
@@ -1685,7 +1694,13 @@ export class ParserVisitor extends BaseVisitor {
                 throw new RuntimeExecutionError('Invalid value for point');
             }
         } else {
-            pointValue = result.name;
+            if (typeof result === "string") {
+                pointValue = result;
+            } else {
+                // Parse the identifier
+                pointValue = result.name;
+                throw new RuntimeExecutionError("No longer supported", ctx);
+            }
         }
 
         return this.getExecutor().addPoint(pointValue);

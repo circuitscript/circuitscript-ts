@@ -27,7 +27,7 @@ branch:
     to gnd
 
 wire right 200
-point tmp1
+point "tmp1"
 
 tmp = create component:
     pins: 
@@ -43,7 +43,7 @@ tmp = create component:
 
 at tmp:
     1:
-        to tmp1
+        to "tmp1"
     4:
         wire right 100 down 100
         to gnd
