@@ -92,7 +92,9 @@ export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
     }
 
     return result;
-}export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
+}
+
+export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
     if (messageOrError instanceof BaseError) {
         throw messageOrError;
     }

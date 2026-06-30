@@ -1,4 +1,4 @@
-import { runScript } from "./helpers.js";
+import { runScript, runScriptExpectError } from "./helpers.js";
 
 const inlineScript1 = `
 b = 10
@@ -120,5 +120,64 @@ describe('Simple operator tests', () => {
         }
 
         expect(useValue).toEqual(expectedResult);
+    });
+})
+
+describe('Undefined operand error tests', () => {
+    test.each([
+        // Unary operators
+        ['unary negation of undefined variable', 'a = -undeclaredVar'],
+        ['unary not of undefined variable',      'a = !undeclaredVar'],
+
+        // Multiply expression (*, /, %)
+        ['multiply with undefined lhs',          'a = undeclaredVar * 5'],
+        ['multiply with undefined rhs',          'a = 5 * undeclaredVar'],
+        ['divide with undefined lhs',            'a = undeclaredVar / 2'],
+        ['divide with undefined rhs',            'a = 10 / undeclaredVar'],
+        ['modulus with undefined lhs',           'a = undeclaredVar % 3'],
+        ['modulus with undefined rhs',           'a = 10 % undeclaredVar'],
+
+        // Addition expression (+, -)
+        ['addition with undefined lhs',          'a = undeclaredVar + 1'],
+        ['addition with undefined rhs',          'a = 1 + undeclaredVar'],
+        ['subtraction with undefined lhs',       'a = undeclaredVar - 1'],
+        ['subtraction with undefined rhs',       'a = 1 - undeclaredVar'],
+
+        // Comparison / logical binary operators
+        ['equality with undefined lhs',          'a = undeclaredVar == 1'],
+        ['equality with undefined rhs',          'a = 1 == undeclaredVar'],
+        ['less-than with undefined lhs',         'a = undeclaredVar < 1'],
+        ['logical and with undefined lhs',       'a = undeclaredVar && true'],
+        ['logical or with undefined rhs',        'a = false || undeclaredVar'],
+    ])('error - %s', async (_description, script) => {
+        const { hasError } = await runScript(script);
+        expect(hasError).toBe(true);
+    });
+
+    test('undefined operand error includes variable name', async () => {
+        const msg = await runScriptExpectError('a = -undeclaredVar');
+        expect(msg).toContain('undeclaredVar');
+    });
+})
+
+describe('Unary operator type error tests', () => {
+    test('negation of string literal throws', async () => {
+        const { hasError } = await runScript('x = "hello"\na = -x');
+        expect(hasError).toBe(true);
+    });
+
+    test('negation error message is correct', async () => {
+        const msg = await runScriptExpectError('x = "hello"\na = -x');
+        expect(msg).toContain('Failed to do Negation operator');
+    });
+
+    test('not operator on string literal throws', async () => {
+        const { hasError } = await runScript('x = "hello"\na = !x');
+        expect(hasError).toBe(true);
+    });
+
+    test('not operator error message is correct', async () => {
+        const msg = await runScriptExpectError('x = "hello"\na = !x');
+        expect(msg).toContain('Failed to do Not operation');
     });
 })

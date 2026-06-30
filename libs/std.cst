@@ -233,14 +233,22 @@ def marker_point():
             pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
 
 def arrow_point():
+    arrow_size = 30
     return create component:
         pins: 1
         followWireOrientation: false
-        display: create graphic:
-            line_width: 2
-            path: "M", -10, -5, "L", -5, 0, "L", -10, 5
-            path: "M", -5, 0, "L", -20, 0
+        display: create graphic(params):
+            line_width: 5
+            path: "M", params.offset_x, params.offset_y, \
+                  "m", -arrow_size, -arrow_size,         \
+                  "l", arrow_size, arrow_size,           \
+                  "l", -arrow_size, arrow_size,          \
+                  "M", params.offset_x, params.offset_y, \
+                  "l", -100, 0
             hpin: 1, "1", "unspecified", 0, 0, 0, pin_only=true
+        params:
+            offset_x: 0
+            offset_y: 0
 
 def no_connect(size=20):
     return create component:

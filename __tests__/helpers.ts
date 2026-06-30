@@ -96,7 +96,7 @@ export async function runScript(script: string, scriptPath?: string, options?: {
         visitor.visit(tree);
     } catch (err) {
         // Error should be internally handled in visitor
-        console.log(err);
+        // console.log(err);
         hasError = true;
     }
 
@@ -327,6 +327,39 @@ export function compareSvgToFile(svgFilePath: string, svgString: string, thresho
         img1,
         img2,
     };
+}
+
+export async function runScriptExpectError(script: string): Promise<string> {
+    const chars = CharStream.fromString(script);
+    const lexer = new MainLexer(chars);
+    const tokens = new CommonTokenStream(lexer);
+
+    const env = new ESMNodeScriptEnvironment();
+    NodeScriptEnvironment.setInstance(env);
+    await env.prepareSVGEnvironment();
+
+    const visitor = new ParserVisitor(true, null, env);
+    visitor.printToConsole = false;
+
+    const parser = new CircuitScriptParser(tokens);
+    parser.removeErrorListeners();
+    const errorListener = new CircuitscriptParserErrorListener(visitor.onErrorHandler);
+    parser.addErrorListener(errorListener);
+
+    const tree = parser.script();
+
+    let capturedMessage: string | null = null;
+    try {
+        visitor.visit(tree);
+    } catch (err) {
+        capturedMessage = (err as any).message ?? String(err);
+    }
+
+    if (capturedMessage === null) {
+        throw new Error(`Expected script to fail but it succeeded:\n${script}`);
+    }
+
+    return capturedMessage;
 }
 
 export function expectJsonOutput(inputString: string, targetPath: string): void {

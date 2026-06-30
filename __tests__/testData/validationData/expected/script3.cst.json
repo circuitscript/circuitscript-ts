@@ -220,6 +220,14 @@
         "function"
     ],
     [
+        "--.[std].arrow_point_sym.arrow_size",
+        "variable"
+    ],
+    [
+        "--.[std].arrow_point_sym.params",
+        "variable"
+    ],
+    [
         "--.[std].no_connect",
         "function"
     ],

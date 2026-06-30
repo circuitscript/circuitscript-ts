@@ -138,7 +138,8 @@ describe('Render tests', () => {
         ['script85.cst', 'Pin order declaration does not affect the next pin selected'],
         ['script86.cst', 'Multiple pin ids/keys in the at command block.'],
         ['script87.cst', 'Multiple keys in the create components pins assignment.'],
-        ['script88.cst', 'String literal syntax for points']
+        ['script88.cst', 'String literal syntax for points'],
+        ['script89.cst', 'Graphical path commands for m and l']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);

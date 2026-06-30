@@ -1255,6 +1255,7 @@ export class ParserVisitor extends BaseVisitor {
 
     visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
         let value = this.visitResult(ctx.data_expr());
+        this.checkValueUndefined(value, ctx.data_expr());
 
         if (ctx.Not()) {
             if (typeof value === "boolean") {
@@ -1262,13 +1263,13 @@ export class ParserVisitor extends BaseVisitor {
             } else if (value instanceof NumericValue){
                 value = (value.toNumber() === 0) ? true: false;
             } else {
-                throw "Failed to do Not operator";
+                this.throwWithContext(ctx, 'Failed to do Not operation');
             }
         } else if (ctx.Minus()) {
             if (value instanceof NumericValue){
                 value = value.neg();
             } else {
-                throw "Failed to do Negation operator";
+                this.throwWithContext(ctx, 'Failed to do Negation operator');
             }
         }
 
@@ -1294,6 +1295,9 @@ export class ParserVisitor extends BaseVisitor {
         if (value2 instanceof NumericValue) {
             value2 = value2.toNumber();
         }
+
+        this.checkValueUndefined(value1, ctx.data_expr(0)!);
+        this.checkValueUndefined(value2, ctx.data_expr(1)!);
 
         let result: boolean | null = null;
 
@@ -1340,6 +1344,9 @@ export class ParserVisitor extends BaseVisitor {
                 value2 = value2.toNumber();
             }    
         }
+
+        this.checkValueUndefined(value1, ctx.data_expr(0)!);
+        this.checkValueUndefined(value2, ctx.data_expr(1)!);
         
         let result: number | boolean | null = null;
 
@@ -1357,6 +1364,12 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, result);
     }
 
+    private checkValueUndefined(value: any, ctx: Data_exprContext): void {
+        if (value === undefined) {
+            this.throwWithContext(ctx, 'Undefined value: ' + ctx.getText());
+        }
+    }
+
     visitMultiplyExpr = (ctx: MultiplyExprContext): void => {
         const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
         const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
@@ -1364,6 +1377,9 @@ export class ParserVisitor extends BaseVisitor {
         const operator = new NumberOperator();
         const tmpValue1 = operator.prepare(value1);
         const tmpValue2 = operator.prepare(value2);
+
+        this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
+        this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
 
         let result: number | null | NumberOperatorType = null;
         if (ctx.Multiply()) {
@@ -1396,6 +1412,9 @@ export class ParserVisitor extends BaseVisitor {
                 tmpValue2 = value2.toDisplayString();
             }
 
+            this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
+            this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
+
             const result = tmpValue1 + tmpValue2;
             this.setResult(ctx, result);
 
@@ -1403,6 +1422,9 @@ export class ParserVisitor extends BaseVisitor {
             const operator = new NumberOperator();
             const tmpValue1 = operator.prepare(value1);
             const tmpValue2 = operator.prepare(value2);
+
+            this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
+            this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
 
             let result: number | null | NumberOperatorType = null;
             if (ctx.Addition()) {
@@ -1462,7 +1484,7 @@ export class ParserVisitor extends BaseVisitor {
             
             // Function execution is completed, get the last executor
             const lastExecution = this.handlePopContext(executor,
-                executionStack,
+                executionStack, 
                 executionContextName
             );
 

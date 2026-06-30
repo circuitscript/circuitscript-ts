@@ -655,148 +655,152 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 keywordParams = tmpKeywordParams;
             }
 
-            switch (commandName) {
-                case PlaceHolderCommands.rect:
-                    drawing.log('add rect', ...positionParams);
-                    // @ts-ignore
-                    drawing.addRect(...positionParams);
-                    break;
+            try {
+                switch (commandName) {
+                    case PlaceHolderCommands.rect:
+                        drawing.log('add rect', ...positionParams);
+                        // @ts-ignore
+                        drawing.addRect(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.hline:
-                    drawing.log('add hline', ...positionParams);
-                    // @ts-ignore
-                    drawing.addHLine(...positionParams);
-                    break;
+                    case PlaceHolderCommands.hline:
+                        drawing.log('add hline', ...positionParams);
+                        // @ts-ignore
+                        drawing.addHLine(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.vline:
-                    drawing.log('add vline', ...positionParams);
-                    // @ts-ignore
-                    drawing.addVLine(...positionParams);
-                    break;
+                    case PlaceHolderCommands.vline:
+                        drawing.log('add vline', ...positionParams);
+                        // @ts-ignore
+                        drawing.addVLine(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.line:
-                    drawing.log('add line', ...positionParams);
-                    // @ts-ignore
-                    drawing.addLine(...positionParams);
-                    break;
+                    case PlaceHolderCommands.line:
+                        drawing.log('add line', ...positionParams);
+                        // @ts-ignore
+                        drawing.addLine(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.path:
-                    // @ts-ignore
-                    drawing.addPath(...positionParams);
-                    break;
+                    case PlaceHolderCommands.path:
+                        // @ts-ignore
+                        drawing.addPath(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.lineWidth:
-                    // @ts-ignore
-                    drawing.addSetLineWidth(...positionParams);
-                    break;
+                    case PlaceHolderCommands.lineWidth:
+                        // @ts-ignore
+                        drawing.addSetLineWidth(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.fill:
-                    // @ts-ignore
-                    drawing.addSetFillColor(...positionParams);
-                    break;
+                    case PlaceHolderCommands.fill:
+                        // @ts-ignore
+                        drawing.addSetFillColor(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.lineColor:
-                    // @ts-ignore
-                    drawing.addSetLineColor(...positionParams);
-                    lineColor = positionParams[0];
-                    break;
+                    case PlaceHolderCommands.lineColor:
+                        // @ts-ignore
+                        drawing.addSetLineColor(...positionParams);
+                        lineColor = positionParams[0];
+                        break;
 
-                case PlaceHolderCommands.textColor:
-                    // @ts-ignore
-                    drawing.addSetTextColor(...positionParams);
-                    textColor = positionParams[0];
-                    break;
+                    case PlaceHolderCommands.textColor:
+                        // @ts-ignore
+                        drawing.addSetTextColor(...positionParams);
+                        textColor = positionParams[0];
+                        break;
 
-                case PlaceHolderCommands.arc:
-                    // @ts-ignore
-                    drawing.addArc(...positionParams);
-                    break;
+                    case PlaceHolderCommands.arc:
+                        // @ts-ignore
+                        drawing.addArc(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.circle:
-                    // circle params: center x, center y, radius
-                    // Circle consists of drawing two arcs of 180 degrees each
-                    // @ts-ignore
-                    drawing.addCircle(...positionParams);
-                    break;
+                    case PlaceHolderCommands.circle:
+                        // circle params: center x, center y, radius
+                        // Circle consists of drawing two arcs of 180 degrees each
+                        // @ts-ignore
+                        drawing.addCircle(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.triangle:
-                    // @ts-ignore
-                    drawing.addTriangle(...positionParams);
-                    break;
+                    case PlaceHolderCommands.triangle:
+                        // @ts-ignore
+                        drawing.addTriangle(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.arrow:
-                    // @ts-ignore
-                    drawing.addArrow(...positionParams);
-                    break;
+                    case PlaceHolderCommands.arrow:
+                        // @ts-ignore
+                        drawing.addArrow(...positionParams);
+                        break;
 
-                case PlaceHolderCommands.pin: 
-                case PlaceHolderCommands.hpin:
-                case PlaceHolderCommands.vpin:
-                {
-                    this.drawPinParams(drawing, commandName, 
-                        keywordParams, positionParams, lineColor, textColor);
-                    break;
+                    case PlaceHolderCommands.pin: 
+                    case PlaceHolderCommands.hpin:
+                    case PlaceHolderCommands.vpin:
+                    {
+                        this.drawPinParams(drawing, commandName, 
+                            keywordParams, positionParams, lineColor, textColor);
+                        break;
+                    }
+
+                    case PlaceHolderCommands.label: {
+                        // Extract name property if it is defined.
+                        let labelName = undefined;
+
+                        const useParams = new Map(keywordParams as Map<string, string>);
+                        if (useParams.has('name')){
+                            labelName = useParams.get('name');
+                            useParams.delete('name');
+                        }
+
+                        const style = this.parseLabelStyle(useParams);
+
+                        if (style['textColor'] === undefined) {
+                            style['textColor'] = textColor;
+                        }
+
+                        const tmpPositionParams: unknown[] = [
+                                positionParams[1], positionParams[2],
+                                positionParams[0], style
+                            ];
+
+                        if (labelName){
+                            tmpPositionParams.push(labelName);
+                        }
+
+                        drawing.log('add label', JSON.stringify(tmpPositionParams));
+
+                        //@ts-ignore
+                        try {
+                            drawing.addLabelMils(...tmpPositionParams);
+                        } catch (err) {
+                            throwWithContext(ctx, err);
+                        }
+                        break;
+                    }
+
+                    case PlaceHolderCommands.text: {
+                        const style = this.parseLabelStyle(keywordParams);
+                        
+                        // TODO: also support positional parameters
+                        const content = keywordParams.get('content');
+                        
+                        let offsetX = numeric(0);
+                        let offsetY = numeric(0);
+
+                        if (keywordParams.has('offset')){
+                            const offset = keywordParams.get('offset');
+                            offsetX = offset[0];
+                            offsetY = offset[1];
+                        }
+
+                        drawing.addTextbox(offsetX, offsetY, content, style);
+                        break;
+                    }
+
+                    case PlaceHolderCommands.units: {
+                        drawing.addSetUnits(...positionParams);
+                        break;
+                    }
                 }
-
-                case PlaceHolderCommands.label: {
-                    // Extract name property if it is defined.
-                    let labelName = undefined;
-
-                    const useParams = new Map(keywordParams as Map<string, string>);
-                    if (useParams.has('name')){
-                        labelName = useParams.get('name');
-                        useParams.delete('name');
-                    }
-
-                    const style = this.parseLabelStyle(useParams);
-
-                    if (style['textColor'] === undefined) {
-                        style['textColor'] = textColor;
-                    }
-
-                    const tmpPositionParams: unknown[] = [
-                            positionParams[1], positionParams[2],
-                            positionParams[0], style
-                        ];
-
-                    if (labelName){
-                        tmpPositionParams.push(labelName);
-                    }
-
-                    drawing.log('add label', JSON.stringify(tmpPositionParams));
-
-                    //@ts-ignore
-                    try {
-                        drawing.addLabelMils(...tmpPositionParams);
-                    } catch (err) {
-                        throwWithContext(ctx, err);
-                    }
-                    break;
-                }
-
-                case PlaceHolderCommands.text: {
-                    const style = this.parseLabelStyle(keywordParams);
-                    
-                    // TODO: also support positional parameters
-                    const content = keywordParams.get('content');
-                    
-                    let offsetX = numeric(0);
-                    let offsetY = numeric(0);
-
-                    if (keywordParams.has('offset')){
-                        const offset = keywordParams.get('offset');
-                        offsetX = offset[0];
-                        offsetY = offset[1];
-                    }
-
-                    drawing.addTextbox(offsetX, offsetY, content, style);
-                    break;
-                }
-
-                case PlaceHolderCommands.units: {
-                    drawing.addSetUnits(...positionParams);
-                    break;
-                }
+            } catch (err){
+                throwWithContext(ctx!, "Error while parsing graphic expressions: " + err);
             }
         });
 
@@ -1788,7 +1792,10 @@ export class SymbolDrawing {
                 accum = accum.concat(tmp.split(" "));
             } else if (typeof tmp === "number") {
                 accum.push(numeric(tmp));
-            } else if (tmp instanceof NumericValue) {
+            } else {
+                if (tmp === undefined){
+                    throw "Invalid path parameters";
+                }
                 accum.push(tmp);
             }
             return accum;
@@ -1796,6 +1803,9 @@ export class SymbolDrawing {
 
         const geomObjects = [];
         let currentObj: [x: NumericValue, y: NumericValue][] = null;
+
+        let currentX = numeric(0);
+        let currentY = numeric(0);
 
         for (let i = 0; i < parts.length; i++) {
             const command = parts[i];
@@ -1812,6 +1822,9 @@ export class SymbolDrawing {
 
                 i += 2;
 
+                currentX = x;
+                currentY = y;
+
             } else if (command === 'L') {
                 const x = milsToMM(parts[i + 1]);
                 const y = milsToMM(parts[i + 2]);
@@ -1819,10 +1832,38 @@ export class SymbolDrawing {
 
                 i += 2;
 
+                currentX = x;
+                currentY = y;
+
             } else if (command === 'Z'){
                 // Return back to first point in path
                 const firstPoint = currentObj[0];
                 currentObj.push(firstPoint);
+
+                currentX = firstPoint[0];
+                currentY = firstPoint[1];
+            
+            } else if (command === 'm'){
+                // Close previous
+                if (currentObj !== null) {
+                    geomObjects.push(currentObj);
+                }
+
+                // Move relative to current point
+                currentX = currentX.add(milsToMM(parts[i+1]));
+                currentY = currentY.add(milsToMM(parts[i+2]));
+
+                currentObj = [[currentX, currentY]];
+                i += 2;
+            
+            } else if (command === 'l'){
+                currentX = currentX.add(milsToMM(parts[i + 1]));
+                currentY = currentY.add(milsToMM(parts[i + 2]));
+                currentObj.push([currentX, currentY]);
+
+                i += 2;
+            } else {
+                throw `Unsupported path command: ${command}`;
             }
         }
 
@@ -1835,13 +1876,15 @@ export class SymbolDrawing {
             const [first] = coords;
             const last = coords[coords.length - 1];
 
-            if (first[0] === last[0] && first[1] === last[1]){
-                // If both are the same, then this is a polygon
-                this.items.push(Geometry.polygon(coords));
-            } else {
-                this.items.push(Geometry.multiline(coords));
+            if (coords.length > 1){
+                if (first[0] === last[0] && first[1] === last[1]){
+                    // If both are the same, then this is a polygon
+                    this.items.push(Geometry.polygon(coords));
+                } else {
+                    this.items.push(Geometry.multiline(coords));
+                }
             }
-        })
+        });
 
         return this;
     }
