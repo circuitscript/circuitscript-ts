@@ -140,10 +140,11 @@ properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;
 graphic_expressions_block:
     NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
-create_expr: CreateComponent Colon properties_block                                                    #CreateComponentExpr
-           | CreateGraphic (LParen ID RParen)? Colon graphic_expressions_block                         #CreateGraphicExpr
+create_expr: CreateComponent Colon properties_block                                                     #CreateComponentExpr
+           | CreateNetClass Colon properties_block                                                      #CreateNetClassExpr
+           | CreateBus Colon properties_block                                                           #CreateBusExpr
+           | CreateGraphic (LParen ID RParen)? Colon graphic_expressions_block                          #CreateGraphicExpr
            | CreateModule Colon NEWLINE INDENT (property_expr | property_block_expr | NEWLINE)+ DEDENT  #CreateModuleExpr
-           | CreateNetClass Colon properties_block                                                     #CreateNetClassExpr
            ;
 
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                        # GraphicForExpr

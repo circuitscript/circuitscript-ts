@@ -23,6 +23,7 @@ import { NumericValue, resolveToNumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ImportedLibrary } from "./objects/types.js";
 import { ERCReportItem } from "./rules-check/rules.js";
+import { PinId, PinIdType } from "./objects/PinDefinition.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -205,4 +206,79 @@ export function milsToMM(value: NumericValue | number): NumericValue {
     return resolveToNumericValue(
         value.toBigNumber().mul(new Big(MilsToMM)).round(6)
     );
+}
+
+/** Sort precedence group for a pin id: '__'-containing values first,
+ * then plain numbers, then alphanumeric (e.g. 'A1', 'A2', ..., 'A10'). */
+function getPinSortGroup(pinId: PinId): number {
+    const value = pinId.getValue();
+
+    if (pinId.getType() === PinIdType.Str && (value as string).includes('__')) {
+        return 0;
+    }
+
+    if (pinId.getType() === PinIdType.Int) {
+        return 1;
+    }
+
+    return 2;
+}
+
+/** Splits a pin id string into alternating text/number chunks so that
+ * numeric suffixes compare by value instead of lexicographically
+ * (e.g. 'A2' before 'A10'). */
+function naturalComparePinIds(a: string, b: string): number {
+    const aParts = a.match(/(\d+|\D+)/g) ?? [];
+    const bParts = b.match(/(\d+|\D+)/g) ?? [];
+
+    const len = Math.max(aParts.length, bParts.length);
+    for (let i = 0; i < len; i++) {
+        const aPart = aParts[i] ?? '';
+        const bPart = bParts[i] ?? '';
+
+        if (aPart === bPart) {
+            continue;
+        }
+
+        const aIsNumeric = /^\d+$/.test(aPart);
+        const bIsNumeric = /^\d+$/.test(bPart);
+
+        if (aIsNumeric && bIsNumeric) {
+            const diff = parseInt(aPart, 10) - parseInt(bPart, 10);
+            if (diff !== 0) {
+                return diff;
+            }
+        } else if (aPart < bPart) {
+            return -1;
+        } else if (aPart > bPart) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/** Orders pin ids so that '__'-prefixed/containing values come first,
+ * followed by plain numbers (in numeric order), followed by alphanumeric
+ * ids in natural order (e.g. 'A1', 'A2', ..., 'A10', 'A20'). */
+export function comparePinIds(a: PinId, b: PinId): number {
+    const groupA = getPinSortGroup(a);
+    const groupB = getPinSortGroup(b);
+
+    if (groupA !== groupB) {
+        return groupA - groupB;
+    }
+
+    if (groupA === 1) {
+        const aValue = a.getType() === PinIdType.Int
+            ? a.getValue() as number
+            : parseInt(a.getValue() as string, 10);
+        const bValue = b.getType() === PinIdType.Int
+            ? b.getValue() as number
+            : parseInt(b.getValue() as string, 10);
+
+        return aValue - bValue;
+    }
+
+    return naturalComparePinIds(a.toString(), b.toString());
 }

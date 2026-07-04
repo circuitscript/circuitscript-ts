@@ -23,7 +23,7 @@ import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from '../obj
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
     printBounds, resizeBounds, resizeToNearestGrid, 
     toNearestGrid} from '../utils.js';
-import { AutoWireFailedError_ } from "../errors.js";
+import { AutoWireFailedError_, RuntimeExecutionError } from "../errors.js";
 import { ComponentPinNetPair, Direction } from '../objects/types.js';
 import { PinDefinition, PinId } from '../objects/PinDefinition.js';
 import { milsToMM, UnitDimension } from '../helpers.js';
@@ -1190,23 +1190,16 @@ export class LayoutEngine {
             const [, node1]: [string, RenderItem] = graph.node(firstNodeId);
 
             // By default align pin first pin of the component unit to the grid.
-            let defaultPin = new PinId(1);
             if (node1 instanceof RenderComponent) {
                 const unitId = node1.unitId;
                 const componentUnit = node1.component.getUnit(unitId);
-                // Get the first pin
-                defaultPin = componentUnit.pinsFlat[0].id;
+
+                // Get the first pin of the unit.
+                const defaultPin = componentUnit.pinsFlat[0].id;
+                this.placeNodeAtPosition(numeric(0), numeric(0), node1, defaultPin);
             }
-
-            this.placeNodeAtPosition(numeric(0), numeric(0), node1, defaultPin);
             return;
-        }
-
-        let fixedNode: RenderItem;
-        let fixedNodePin: number;
-
-        let floatingNode: RenderItem;
-        let floatingNodePin: number;
+        }        
 
         subgraphEdges.forEach(edge => {
             const [nodeId1, pin1, nodeId2, pin2]:
@@ -1217,6 +1210,12 @@ export class LayoutEngine {
 
             this.print('edge:', '[', node1, pin1, node1.isFloating, ']',
                 '[', node2, pin2, node2.isFloating, ']');
+
+            let fixedNode: RenderItem | null = null;
+            let fixedNodePin: number | null = null;
+
+            let floatingNode: RenderItem | null = null;
+            let floatingNodePin: number | null = null;
 
             if (!node1.isFloating && node2.isFloating) {
                 fixedNode = node1;
@@ -1264,16 +1263,17 @@ export class LayoutEngine {
                         originNodeGroups,
                     );
                 } else {
+                    this.print('both nodes have same origin');
                     // If have same node, then compare their position
                     const [x1, y1] = getNodePositionAtPin(node1, pin1);
                     const [x2, y2] = getNodePositionAtPin(node2, pin2);
 
-                    if (!x1.eq(x2) && !y1.eq(y2)) {
+                    // Check if the locations match up, otherwise show a warning
+                    if (!x1.eq(x2) || !y1.eq(y2)) {
                         if (node1 instanceof RenderWire &&
                             node2 instanceof RenderComponent) {
-
                             const refdes = node2.component.assignedRefDes;
-                            this.layoutWarnings.push(`component ${refdes} may not be placed correctly`);
+                            this.layoutWarnings.push(`component ${refdes} may not be placed correctly at pin ${pin2}`);
                         }
                     }
                 }
@@ -1304,6 +1304,10 @@ export class LayoutEngine {
 
             [node1, node2].forEach(item => {
                 if (item instanceof RenderWire && item.isEndAutoLength()) {
+                    if(item.getEndAuto() === undefined){
+                        throw new RuntimeExecutionError("Failed to find component for wire auto");
+                    }
+
                     const [component, pin] = item.getEndAuto();
                     const instance = component.getUnitForPin(pin);
                     

@@ -36,6 +36,7 @@ import { PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbol
 import { getBlockTypeString } from './utils.js';
 import { RuntimeExecutionError } from "./errors.js";
 import { NetClass } from './objects/NetClass.js';
+import { PinTypes } from './objects/PinTypes.js';
 
 /** Contains the current running state of the circuit graph */
 export class ExecutionContext {
@@ -365,8 +366,7 @@ export class ExecutionContext {
                     tmpNet.namespace, tmpNet.name);
             }
 
-            // Assume net is on 1 pin for now
-            const defaultPin = new PinId(1);
+            const defaultPin = component.getDefaultPin();
             this.scope.setNet(component, defaultPin, tmpNet);
             this.log('set net', netName, 'component', component, defaultPin);
 
@@ -648,6 +648,9 @@ export class ExecutionContext {
 
         const { addSequence = false } = options ?? {};
         
+        const currentComponent = this.scope.currentComponent!;
+        const currentPin = this.scope.currentPin!;
+
         if (!(component instanceof ClassComponent)){
             throw new RuntimeExecutionError("Not a valid component!");
         }
@@ -669,26 +672,85 @@ export class ExecutionContext {
             }
         }
 
-        if (
-            this.scope.hasNet(
-                this.scope.currentComponent,
-                this.scope.currentPin,
-            )
-        ) {
-            this.log(
-                'net: ',
-                this.scope
-                    .getNet(this.scope.currentComponent, this.scope.currentPin)
-                    .toString(),
-            );
+        const toPinDef = component.pins.get(component.getPin(pinId))!;
+        const fromPinDef = currentComponent.pins.get(
+            currentComponent.getPin(currentPin)
+        )!;
+
+        let isBusConnection = false;
+
+        // If pin is of bus type.
+        if (toPinDef.pinType === PinTypes.Bus || fromPinDef.pinType === PinTypes.Bus) {
+            if (toPinDef.pinType !== fromPinDef.pinType) {
+                throw new RuntimeExecutionError("Bus wire cannot be connected with wire");
+            } else {
+                const useComponent1 = 
+                    component._pointLinkComponent ? component._pointLinkComponent : component;
+                const useComponent2 = 
+                    currentComponent._pointLinkComponent ? currentComponent._pointLinkComponent: currentComponent;
+
+                // Check if both buses are the same.
+                const pin1Names = Array.from(useComponent1.pins.values()).filter(pin => {
+                    return pin.id.getValue() !== 1; 
+                }).map(pinDef => pinDef.name);
+
+                const pin2Names = Array.from(useComponent2.pins.values()).filter(pin => {
+                    return pin.id.getValue() !== 1; 
+                }).map(pinDef => pinDef.name);
+
+                // Sort pin names so that the order does not matter.
+                const sortedPin1Names = pin1Names.sort();
+                const sortedPin2Names = pin2Names.sort();
+
+                // Check that both matches
+                let numMatches = 0;
+                for (let i = 0; i < sortedPin1Names.length; i++) {
+                    if (sortedPin1Names[i] === sortedPin2Names[i]) {
+                        numMatches++;
+                    }
+                }
+
+                if (numMatches !== sortedPin1Names.length || numMatches !== sortedPin2Names.length) {
+                    throw new RuntimeExecutionError("Buses are different");
+                }
+
+                isBusConnection = true;
+            }
+        }
+
+        if (this.scope.hasNet(currentComponent, currentPin)) {
+            this.log('net: ',this.scope.getNet(currentComponent, currentPin)
+                                .toString());
         }
 
         const linkedNet = this.linkComponentPinNet(
-            this.scope.currentComponent,
-            this.scope.currentPin,
-            component,
-            pinId,
+            currentComponent, currentPin, component, pinId
         );
+
+        if (isBusConnection) {
+            const useComponent1 = component._pointLinkComponent ? component._pointLinkComponent : component;
+            const useComponent2 = currentComponent._pointLinkComponent ? currentComponent._pointLinkComponent: currentComponent;
+
+            // Connect up all the bus connections by finding the matching pairs
+            const pins1 = Array.from(useComponent1.pins.values());
+            const pins2 = Array.from(useComponent2.pins.values());
+
+            for (let i = 0; i < pins1.length; i++) {
+                const targetPin = pins1[i];
+                const matchingPin = pins2.find(pin => {
+                    return targetPin.id.equals(pin.id);
+                });
+
+                if (matchingPin === undefined) {
+                    throw new RuntimeExecutionError("Failed to find matching bus pin: " + targetPin.id.toString());
+                }
+                
+                this.linkComponentPinNet(
+                    useComponent1, targetPin.id,
+                    useComponent2, matchingPin.id
+                );
+            }
+        }
 
         // If wire is connected, then apply the wire orientation, if 
         // applicable.
@@ -700,7 +762,7 @@ export class ExecutionContext {
 
         if (addSequence) {
             if (this.scope.sequence.length > 0) {
-                
+
                 // Prevent component pin from being connected to multiple
                 // wires at the same time. This happens if the user tries
                 // to add the same (non-net) component at multiple places.
@@ -721,7 +783,7 @@ export class ExecutionContext {
                 component.pinWires.set(pinId, segments);
             }
 
-            this.scope.sequence.push([SequenceAction.To, component, 
+            this.scope.sequence.push([SequenceAction.To, component,
                 pinId, linkedNet]);
         }
 
@@ -759,14 +821,15 @@ export class ExecutionContext {
                 this.getUniqueNetName()
             );
 
+            // Set property if it is a bus pin.
+            const pinDef = component.pins.get(component.getPin(usePinId))!;
+            if (pinDef.pinType === PinTypes.Bus) {
+                tmpNet.busNet = true;
+            }
+
             this.scope.setNet(component, usePinId, tmpNet);
         }
 
-        // If component is first referenced by this at command, then do not
-        // allow it's orientation to be set by wires any more.
-        // if (!component.didSetWireOrientationAngle) {
-        //     component.didSetWireOrientationAngle = true;
-        // }
 
         // Insertion point is currently at a component pin, so clear
         // any wire/frame selected.
@@ -808,7 +871,7 @@ export class ExecutionContext {
             componentCopy);
         componentCopy.instanceName = cloneInstanceName;
 
-        const defaultPin = new PinId(1);
+        const defaultPin = component.getDefaultPin();
 
         if(this.scope.getNet(component, defaultPin) === null){
             // If component is not in the same scope, then need to 
@@ -1476,13 +1539,14 @@ export class ExecutionContext {
         // be connected to the current component/pin of the parent
         const linkRootComponent = true;
 
-        const tmpRoot = childScope.componentRoot;
+        const tmpRoot = childScope.componentRoot!;
 
         if (linkRootComponent) {
             // Join the child_scope's __root net to the current component / pin
 
-            // Get the net of the child scope's root
-            const netConnectedToRoot = childScope.getNet(tmpRoot!, new PinId(1));
+            // Get the net of the child scope's root.
+            // Pin 1 is always the default for the root component.
+            const netConnectedToRoot = childScope.getNet(tmpRoot, tmpRoot.getDefaultPin());
 
             if (netConnectedToRoot !== null){
                 // Only if the child scope root component is connected 
@@ -1675,6 +1739,17 @@ export class ExecutionContext {
         componentPoint.addDefaultUnit(this.getPointSymbol(useName));
 
         componentPoint._isInternalPathObject = true;
+
+        const currentNet = this.scope.getNet(
+            this.scope.currentComponent,
+            this.scope.currentPin
+        );
+
+        if (currentNet && currentNet.busNet){
+            // Force change the point's pin to a bus type
+            componentPoint.pins.get(componentPoint.getDefaultPin())
+                .pinType = PinTypes.Bus;
+        }
         
         // the pointId itself is set as an instance name.
         this.scope.instances.set(pointId, componentPoint);
@@ -1754,6 +1829,8 @@ export class ExecutionContext {
             && !targetUnit.didSetWireOrientationAngle
             && this.scope.currentWireId !== -1) {
 
+            this.printPoint();
+
             const currentWire = this.scope.wires[this.scope.currentWireId];
             
             let useSegment = currentWire.path[currentWire.path.length - 1];
@@ -1811,7 +1888,7 @@ export class ExecutionContext {
                 this.log('set component unit angle from wire, target angle:', targetAngle,
                     ', component unit angle:', targetUnit.angleProp, 'pin angle:',
                     pinAngle);
-
+                    
                 let useAngle = (targetAngle - pinAngle) % 360;
                 if (useAngle < 0) {
                     useAngle += 360;

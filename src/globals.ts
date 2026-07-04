@@ -84,8 +84,14 @@ export const defaultZoomScale = 2.5; // Convert language units into output units
 // A font size of 10 (before applying scale), should fit around 50 mils
 export const fontDisplayScale = 0.032;
 
+// Values are in Mils.
 export const Defaults = {
     WireLineWidth:  numeric(6),
+    JunctionSize: numeric(20),
+    
+    BusWireLineWidth:  numeric(12),
+    BusJunctionSize: numeric(40),
+
     LineWidth:      numeric(5),
 }
 
@@ -115,6 +121,8 @@ export const defaultFontSize = 10;
 
 export const junctionSize = numeric(MilsToMM).mul(20);
 
+export const busJunctionSize = numeric(MilsToMM).mul(40);
+
 export const PortArrowSize = MilsToMM * 50;
 export const PortPaddingHorizontal = MilsToMM * 10;
 export const PortPaddingVertical = MilsToMM * 10;
@@ -142,6 +150,8 @@ export enum ComponentTypes {
 
     /** Component is a module and contains an internal circuit */
     module = 'module',
+
+    bus = 'bus',
 
     resistor = 'res',
 }
@@ -195,3 +205,4 @@ export const TrailerArrayIndex = 'index';
 
 export const DefaultComponentUnit = '__default';
 
+export const BusMainPinName = '__BUS';

@@ -52,6 +52,10 @@ export enum FrameParamKeys {
 
     WireColor = 'wire_color',
     WireWidth = 'wire_width',
+    JunctionSize = 'junction_size',
+
+    BusWireWidth = 'bus_wire_width',
+    BusJunctionSize = 'bus_junction_size',
 
     TitleAlign = 'title_align',
 

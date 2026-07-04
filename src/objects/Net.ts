@@ -28,6 +28,9 @@ export class Net extends ParamsContainer {
     // If set, then the net class params are used by default.
     class?: NetClass;
 
+    // If true, this net is a bus net.
+    busNet = false;
+
     // private randomId: string;
 
     constructor(namespace: string, name: string, priority = 0) {

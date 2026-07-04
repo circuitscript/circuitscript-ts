@@ -16,6 +16,7 @@ CreateComponent:   'create' [ \t]+ 'component';
 CreateGraphic:     'create' [ \t]+ 'graphic';
 CreateModule:      'create' [ \t]+ 'module';
 CreateNetClass:    'create' [ \t]+ 'netclass';
+CreateBus:         'create' [ \t]+ 'bus';
 
 Wire:       'wire';
 

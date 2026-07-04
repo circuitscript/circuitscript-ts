@@ -20,6 +20,10 @@ export class Styles {
 
     // in Mils
     wireWidth?: NumericValue;
+    junctionSize? : NumericValue;
+
+    busWireWidth?: NumericValue;
+    busJunctionSize?: NumericValue;
 }
 
 export function getStylesFromDocument(document: DocumentVariable): Styles {
@@ -33,6 +37,10 @@ export function getStylesFromDocument(document: DocumentVariable): Styles {
     styles.wireColor = document[FrameParamKeys.WireColor] ?? ColorScheme.WireColor;
     
     styles.wireWidth = document[FrameParamKeys.WireWidth] ?? Defaults.WireLineWidth;
+    styles.junctionSize = document[FrameParamKeys.JunctionSize] ?? Defaults.JunctionSize;
+    
+    styles.busWireWidth = document[FrameParamKeys.BusWireWidth] ?? Defaults.BusWireLineWidth;
+    styles.busJunctionSize = document[FrameParamKeys.BusJunctionSize] ?? Defaults.BusJunctionSize;
 
     return styles;
 }

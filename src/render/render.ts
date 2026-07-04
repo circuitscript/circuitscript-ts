@@ -17,9 +17,7 @@ import {
     ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, MilsToMM,ParamKeys, 
     RenderFlags, defaultGridSizeUnits,
     defaultPageSpacingMM,
-    fontDisplayScale,
-    junctionSize
-} from '../globals.js';
+    fontDisplayScale} from '../globals.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
 import { BoundBox, combineMaps, getBoundsSize } from '../utils.js';
 import { milsToMM } from '../helpers.js';
@@ -345,6 +343,10 @@ function generateSVGChild(canvas: Svg | G,
     styles = styles ?? {};
     const defaultWireColor = styles.wireColor;
     const defaultWireLineWidth = milsToMM(styles.wireWidth!).toNumber();
+    const defaultJunctionSize = milsToMM(styles.junctionSize!);
+
+    const defaultBusWireLineWidth = milsToMM(styles.busWireWidth!);
+    const defaultBusJunctionSize = milsToMM(styles.busJunctionSize!);
     
     // draw the merged wires
     mergedWires.forEach(tmpItem => {
@@ -358,10 +360,19 @@ function generateSVGChild(canvas: Svg | G,
         let displayHighlightOpacity = 0.3;
         let displayHighlightWidth = 5 * MilsToMM;
 
+        let isBusNet = false;
+
         if (net !== null) {
+
+            // Apply net parameters if exists.
             useColor = net.color ?? defaultWireColor;
             useJunctionColor = net.color ?? ColorScheme.JunctionColor;
             useLineWidth = net.lineWidth ?? defaultWireLineWidth;
+
+            if (net.net.busNet){
+                isBusNet = true;
+                useLineWidth = defaultBusWireLineWidth.toNumber();
+            }
 
             if (net.highlight !== null) {
                 displayHighlight = true;
@@ -405,9 +416,10 @@ function generateSVGChild(canvas: Svg | G,
                 linecap: 'butt' })
             .fill('none');
 
-        const halfJunctionSize = junctionSize.half();
+        const useJunctionSize = isBusNet ? defaultBusJunctionSize: defaultJunctionSize;
+        const halfJunctionSize = useJunctionSize.half();
 
-        const highlightJunctionSize = numeric(junctionSize.toNumber() + displayHighlightWidth);
+        const highlightJunctionSize = numeric(useJunctionSize.toNumber() + displayHighlightWidth);
         const tmpHighlightExtraSize = highlightJunctionSize.half();
 
         intersectPoints.forEach(point => {
@@ -427,7 +439,7 @@ function generateSVGChild(canvas: Svg | G,
                     .stroke('none');
             }
 
-            mergedWireGroup.circle(junctionSize.toNumber())
+            mergedWireGroup.circle(useJunctionSize.toNumber())
                 .translate(translateX.toNumber(), translateY.toNumber())
                 .fill(useJunctionColor)
                 .stroke('none');

@@ -1,4 +1,5 @@
-import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, 
+    unlinkSync, writeFileSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
@@ -139,7 +140,8 @@ describe('Render tests', () => {
         ['script86.cst', 'Multiple pin ids/keys in the at command block.'],
         ['script87.cst', 'Multiple keys in the create components pins assignment.'],
         ['script88.cst', 'String literal syntax for points'],
-        ['script89.cst', 'Graphical path commands for m and l']
+        ['script89.cst', 'Graphical path commands for m and l'],
+        ['script90.cst', 'Bus creation and nets linking through buses']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);

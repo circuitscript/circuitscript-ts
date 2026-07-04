@@ -16,6 +16,7 @@ import { ExecutionContext } from '../execute.js';
 import { NumericValue } from './NumericValue.js';
 import { DefaultComponentUnit, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from "../errors.js";
+import { comparePinIds } from '../helpers.js';
 
 export class ComponentUnit {
     parent: ClassComponent;
@@ -236,6 +237,9 @@ export class ClassComponent {
     _cachedPins: string;
     _cachedParams: string;
 
+    // Caches default pin
+    _defaultPinId: PinId;
+
     /** For nets, labels and gnds, this can be used to identify different 
      * copies of the same symbol on the schematic */
     _copyID?: number = null;
@@ -318,14 +322,22 @@ export class ClassComponent {
         }
 
         this.refreshPinsCache();
+        this.refreshDefaultPin();
+    }
+
+    refreshDefaultPin(): void {
+        // Return id of the default pin
+        const pins = Array.from(this.pins.keys());
+        pins.sort(comparePinIds);
+
+        this._defaultPinId = pins[0];
     }
 
     getDefaultPin(): PinId {
-        // Return id of the default pin
-        const pins = Array.from(this.pins.keys());
-        pins.sort();
-
-        return pins[0];
+        if (this._defaultPinId === null || this._defaultPinId === undefined) {
+            this.refreshDefaultPin();
+        }
+        return this._defaultPinId;
     }
 
     hasPin(pinId: PinId): boolean {
@@ -383,7 +395,7 @@ export class ClassComponent {
      */
     getNextPinAfter(pinId: PinId): PinId {
         const pins = Array.from(this.pins.keys());
-        const sortedPins = pins.sort();
+        const sortedPins = pins.sort(comparePinIds);
 
         const foundPin = this.getPin(pinId);
         const index  = sortedPins.findIndex(tmp => tmp.equals(foundPin));

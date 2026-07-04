@@ -30,6 +30,9 @@ export enum PinTypes {
     PowerOutput = 'power_output',
     
     NoConnect = 'no_connect',
+
+    // Not user settable. This is only used internally.
+    Bus = 'bus',
 }
 
 export function normalizePinType(value: string): string {

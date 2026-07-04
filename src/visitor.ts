@@ -57,6 +57,7 @@ import {
     At_block_expressionsContext,
     WithBracketsPropertyContext,
     CreateNetClassExprContext,
+    CreateBusExprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -73,7 +74,7 @@ import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
+import { BusMainPinName, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
     WireAutoDirection} from './globals.js';
@@ -908,6 +909,97 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, new NetClass(properties));
+    }
+
+    visitCreateBusExpr = (ctx: CreateBusExprContext): void => {
+        const properties = this.visitResult(ctx.properties_block());
+
+        // Create a custom component...
+        if (!properties.get("pins")) {
+            this.throwWithContext(ctx, "Bus pins not defined");
+        }
+
+        const typeProp = ComponentTypes.bus;
+
+        const pins = properties.get("pins");
+        const pinsDef:PinDefinition[] = pins.map(pinId => {
+            return new PinDefinition(pinId, PinIdType.Str, pinId, PinTypes.Passive)
+        });
+        const numSignalPins = pinsDef.length;
+
+        // Generate the drawing commands
+        const drawingCommands = [];
+
+         // Main pin used to generate the bus.
+        // This needs to be unique.
+        const mainBusPin = new PinDefinition(BusMainPinName, PinIdType.Str, 
+            BusMainPinName, PinTypes.Bus);
+
+        // Find the y-position
+        const useBusPinY = Math.floor((numSignalPins - 1) / 2) * 100;
+        drawingCommands.push([
+            PlaceHolderCommands.pin,
+            [mainBusPin.id, 
+                numeric(0), numeric(useBusPinY), 
+                numeric(-0.1), numeric(useBusPinY)],
+            new Map([["pin_only", true]]),
+            null
+        ]);
+
+        pinsDef.forEach((pinDef, index) => {
+            drawingCommands.push([
+                PlaceHolderCommands.hpin,
+                [pinDef.id, numeric(-200), numeric(index * 100), numeric(150)],
+                new Map([["display_name", true]]), null
+            ]);
+        });
+
+        const usePinsDef = [
+            mainBusPin,
+            ...pinsDef
+        ];
+
+        for (let i = 0; i < numSignalPins; i++) {
+            drawingCommands.push([
+                PlaceHolderCommands.line,
+                [
+                    numeric(-50), numeric(i * 100),
+                    numeric(0), numeric(useBusPinY)
+                ]
+            ])
+        }
+
+        if (properties.has('name')){
+            const name = properties.get('name');
+    
+            drawingCommands.push([
+                PlaceHolderCommands.label,
+                [name, numeric(0), numeric(useBusPinY - 20)]
+            ])
+        }
+
+        const blankParams: ParamDefinition[] = [];
+        const props = {
+            units: [[
+                'unit', {
+                    pins: usePinsDef,
+                    arrange: null,
+                    display: new SymbolDrawingCommands(() => {
+                        return drawingCommands;
+                    }),
+                    width: 100,
+
+                    followWireOrientation: true,
+                }
+            ]],
+        }
+
+        const moduleInstanceName = this.getExecutor().getUniqueInstanceName();
+        const busComponent = this.getExecutor().createComponent(
+            moduleInstanceName, usePinsDef, blankParams, props);
+        busComponent.typeProp = typeProp;
+
+        this.setResult(ctx, busComponent);
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {
@@ -2461,8 +2553,9 @@ export class ParserVisitor extends BaseVisitor {
         // If the __root component is not connected to any nets, then remove
         // it as the first action in the sequence. Otherwise it will occupy
         // some space in the final graphical output.
+        const componentRoot = executor.scope.componentRoot!;
         const tmpNet = executor.scope.getNet(
-            executor.scope.componentRoot!, new PinId(1)
+            componentRoot, componentRoot.getDefaultPin()
         );
 
         const sequence = (tmpNet === null) 
