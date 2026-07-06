@@ -776,6 +776,138 @@ pin_set_type(.., 2, "output")
 print(pin_get_type(.., 2))
 `, ['"output"']);
 
+// pin_set_type / pin_get_type - explicit component/pin args
+export const inlineScript86 = `
+tmp = create component:
+    pins: 4
+
+pin_set_type(tmp, 1, "input")
+print(pin_get_type(tmp, 1))
+`;
+
+export const inlineScript87 = `
+tmp = create component:
+    pins: 4
+
+print("marker")
+pin_set_type(tmp, 1, "not_a_type")
+`;
+
+export const inlineScript88 = `
+tmp = create component:
+    pins: 4
+
+pin_set_type(tmp, 99, "input")
+`;
+
+export const inlineScript89 = `
+tmp = create component:
+    pins: 4
+
+print(pin_get_type(tmp, 99))
+`;
+
+export const inlineScript90 = `
+tmp = create component:
+    pins: 4
+
+pin_set_type(tmp, "input")
+`;
+
+export const inlineScript91 = `
+tmp = create component:
+    pins: 4
+
+print(pin_get_type(tmp))
+`;
+
+// pin_set_type / pin_get_type - cursor form
+export const inlineScript92 = `
+tmp = create component:
+    pins: 4
+
+at tmp pin 1
+pin_set_type("output")
+print(pin_get_type())
+`;
+
+export const inlineScript93 = `
+tmp = create component:
+    pins: 4
+
+print(pin_get_type())
+`;
+
+// net_get
+export const inlineScript94 = `
+compA = create component:
+    pins: 2
+compB = create component:
+    pins: 2
+
+at compA pin 1
+wire right 100
+to compB pin 1
+
+net_get(compA, 1).color = "blue"
+print(net_get(compB, 1).color)
+`;
+
+export const inlineScript95 = `
+compA = create component:
+    pins: 2
+compB = create component:
+    pins: 2
+
+at compA pin 1
+wire right 100
+to compB pin 1
+
+net_get(compA, 1).color = "green"
+at compA pin 1
+print(net_get().color)
+`;
+
+export const inlineScript96 = `
+compA = create component:
+    pins: 2
+compB = create component:
+    pins: 2
+
+at compA pin 1
+wire right 100
+to compB pin 1
+
+net_get(compA, 1).color = "yellow"
+print(net_get(compA).color)
+`;
+
+export const inlineScript97 = `
+compA = create component:
+    pins: 2
+
+print(net_get(compA, 1))
+`;
+
+export const inlineScript98 = `
+print(net_get("not_a_component"))
+`;
+
+// has_pin - malformed arity
+export const inlineScript99 = `
+tmp = create component:
+    pins: 4
+
+has_pin(tmp)
+`;
+
+export const inlineScript100 = `
+tmp = create component:
+    pins: 4
+
+has_pin(tmp, 1, 2)
+`;
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [

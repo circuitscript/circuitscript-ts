@@ -449,6 +449,20 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         } else if (ctxLParam) {
             nextReference = this.handleFunctionCall(reference, netNamespace, ctx);
+
+            // NOTE: Deliberately disabled. This branch runs for every function-call
+            // trailer, so updating lastObjectReference (the `..` target) here would
+            // point `..` at any function's return value (including non-objects like
+            // range()/toString() and nested sub-calls), breaking its "last drawn
+            // object" meaning. `..` is advanced only at real placements (setCurrent,
+            // component/net assignment, frame creation).
+            // let useResultValue;
+            // if (isReference(nextReference)) {
+            //     useResultValue = unwrapValue(nextReference);
+            // } else {
+            //     useResultValue = nextReference as any;
+            // }
+            // this.getScope().lastObjectReference = useResultValue;
         }
 
         this.setResult(ctx, nextReference);
@@ -495,6 +509,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 const { rootValue } = leftSideReference;
                 if (rootValue instanceof ClassComponent || rootValue instanceof Net || rhsValue instanceof NetClass) {
                     this.getScope().lastObjectReference = rootValue;
+                    this.log('lastObjectReference:', rootValue);
                 }
             }
 

@@ -4,12 +4,12 @@ import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
 import { ComponentPinNet } from '../src/objects/types.js';
-import { findItem, findItemByRefDes, runScript } from './helpers.js';
+import { expectInlineScriptTest, findItem, findItemByRefDes, runScript, ScriptTest } from './helpers.js';
 import {
-    inlineScript17, inlineScript18, inlineScript19, 
+    inlineScript17, inlineScript18, inlineScript19,
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
-    inlineScript27, inlineScript28, inlineScript29, inlineScript30, inlineScript31, inlineScript32, 
-    inlineScript33, inlineScript34, inlineScript35, inlineScript36, inlineScript37, inlineScript38, inlineScript39, 
+    inlineScript27, inlineScript28, inlineScript29, inlineScript30, inlineScript31, inlineScript32,
+    inlineScript33, inlineScript34, inlineScript35, inlineScript36, inlineScript37, inlineScript38, inlineScript39,
     script21_,
     inlineScript40,
     inlineScript41,
@@ -22,11 +22,7 @@ import {
     inlineScript48,
     inlineScript49,
     inlineScript50,
-    inlineScript51,
-    inlineScript52,
-    inlineScript53,
     inlineScriptTests,
-    inlineScript55,
     inlineScript56,
     inlineScript57,
     inlineScript58,
@@ -34,18 +30,6 @@ import {
     inlineScript60,
     inlineScript61,
     inlineScript62,
-    inlineScript63,
-    inlineScript64,
-    inlineScript65,
-    inlineScript66,
-    inlineScript67,
-    inlineScript68,
-    inlineScript69,
-    inlineScript70,
-    inlineScript71,
-    inlineScript72,
-    inlineScript73,
-    inlineScript74,
     inlineScript75,
     inlineScript76,
     inlineScript77,
@@ -59,14 +43,8 @@ import {
     inlineScript85
 } from './parseScripts.js';
 
-async function expectInlineScriptTest(description, scriptTest): Promise<void> {
-    const { hasError, visitor } = await runScript(scriptTest.script);
-    expect(hasError).toEqual(false);
-    expect(visitor.printStream).toStrictEqual(scriptTest.expected);
-}
-
-async function testInlineScriptTest(description, scriptTest){
-    return test(description, async() => {
+function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
+    test(description, async () => {
         await expectInlineScriptTest(description, scriptTest);
     });
 }
@@ -469,34 +447,6 @@ print(---b)
     testInlineScriptTest('test setting of net params', inlineScript57);
 
     testInlineScriptTest('test function return values and referenced values', inlineScript58);
-});
-
-describe('builtin methods', () => {
-
-    test.each([
-        ['range function', inlineScript51],
-        ['enumerate function', inlineScript52],
-        ['enumerate function with `for` loop', inlineScript53],
-        ['array_push basic', inlineScript63],
-        ['array_get by index', inlineScript64],
-        ['array_set overwrites element', inlineScript65],
-        ['array_push with mixed types', inlineScript66],
-
-        ['pin_get_type returns default type', inlineScript67],
-        ['pin_set_type changes pin type', inlineScript68],
-        ['pin_set_type all supported types', inlineScript69],
-        ['pin_set_type overwrite', inlineScript70],
-
-        ['has_pin returns true for existing numeric pin', inlineScript71],
-        ['has_pin returns false for non-existent numeric pin', inlineScript72],
-        ['has_pin checks boundary pins correctly', inlineScript73],
-        ['has_pin with named string pin', inlineScript74],
-
-    ])('built-in functions - %s',  async (description, scriptTest) =>
-        await expectInlineScriptTest(description, scriptTest)
-    );
-
-    testInlineScriptTest('test builtin methods', inlineScript55);
 });
 
 describe('line continuation tests', () => {

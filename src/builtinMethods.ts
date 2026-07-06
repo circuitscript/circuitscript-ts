@@ -24,18 +24,31 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['to_mils', toMils],
     ['range', range],
     ['len', objectLength],
+    ['str', strFunction],
     ['array_push', arrayPush],
     ['array_get', arrayGet],
     ['array_set', arraySet],
-    ['pin_set_type', pinSetType],
-    ['pin_get_type', pinGetType],
-    ['has_pin', hasPin],
-    ['str', strFunction],
+
+    // Set pin type
+    ['pin_set_type', null],
+
+    // Get pin type
+    ['pin_get_type', null],
+    
+    // Returns true if component has given pin
+    ['has_pin', null],
     
     // Methods that are defined at run time
     ['print', null],
+
+    // Sets the ERC level fror the given ERC config
     ['erc_set', null],
+
+    // Returns the ERC level for the given ERC config
     ['erc_get', null],
+
+    // Returns the net of the current cursor
+    ['net_get', null],
 ];
 
 export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0]);
@@ -90,7 +103,126 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
 
         return [visitor, result];
     });
-    
+
+    context.createFunction(BaseNamespace, 'net_get', (params) => {
+        let componentParam;
+        let useComponent: ClassComponent;
+        let usePinId: PinId;
+
+        if (params.length === 0) {
+            // No params specified
+            useComponent = visitor.getScope().currentComponent!;
+            usePinId = visitor.getScope().currentPin!;
+        } else {
+            componentParam = params[0][2];
+            if (!(componentParam instanceof ClassComponent)) {
+                throw new RuntimeExecutionError("Invalid parameter for net_get function, expected a component");
+            }
+
+            useComponent = (componentParam as ClassComponent);
+            usePinId = useComponent.getDefaultPin();
+
+            if (params.length > 1) {
+                const pinId = params[1][2];
+                usePinId = useComponent.getPin(PinId.from(pinId));
+            }
+        }
+
+        const result = visitor.getScope().getNet(useComponent, usePinId);
+        return [visitor, result];
+    });
+
+    context.createFunction(BaseNamespace, 'pin_set_type', (params) => {
+        let useComponent: ClassComponent;
+        let usePinId: PinId;
+
+        let newType: string;
+
+        if (params.length === 1) {
+            useComponent = visitor.getScope().currentComponent!;
+            usePinId = visitor.getScope().currentPin!.getValue();
+            newType = params[0][2] as string;
+        } else if (params.length === 2){
+            useComponent = visitor.getScope().currentComponent!;
+            usePinId = params[0][2] as string;
+            newType = params[1][2] as string;
+        } else {
+            useComponent = params[0][2] as ClassComponent;
+            usePinId = params[1][2] as string;
+            newType = params[2][2] as string;
+        }
+
+        if (!(useComponent instanceof ClassComponent)) {
+            throw `Invalid parameters for pin_set_type method`;
+        }
+
+        newType = normalizePinType(newType);
+        if (AllPinTypes.indexOf(newType) === -1) {
+            throw `Invalid pin type: ${newType}`;
+        }
+
+        usePinId = useComponent.getPin(PinId.from(usePinId));
+
+        if (useComponent.pins.has(usePinId)) {
+            useComponent.pins.get(usePinId)!.pinType = resolvePinType(newType);
+
+            // Nothing returned.
+            return [visitor];
+        }
+
+        throw `Invalid pin ${usePinId} for component ${useComponent}`;
+    });
+
+    context.createFunction(BaseNamespace, 'pin_get_type', (params) => {
+        let useComponent: ClassComponent;
+        let usePinId: PinId;
+
+        if (params.length === 0) {
+            useComponent = visitor.getScope().currentComponent!;
+            usePinId = visitor.getScope().currentPin!.getValue();
+        } else if (params.length === 1) {
+            useComponent = visitor.getScope().currentComponent!;
+            usePinId = params[0][2] as string;
+        } else {
+            useComponent = params[0][2] as ClassComponent;
+            usePinId = params[1][2] as string;
+        }
+
+        if (!(useComponent instanceof ClassComponent)) {
+            throw `Invalid parameters for pin_get_type method`;
+        }
+
+        usePinId = useComponent.getPin(PinId.from(usePinId));
+
+        if (useComponent.pins.has(usePinId)) {
+            return [visitor, useComponent.pins.get(usePinId)!.pinType];
+        }
+
+        throw `Invalid pin ${usePinId} for component ${useComponent}`;
+    });
+
+    context.createFunction(BaseNamespace, 'has_pin', (params) => {
+        let useComponent!: ClassComponent;
+        let usePinId!: PinId;
+
+        if (params.length === 1) {
+            useComponent = visitor.getScope().currentComponent!;
+            usePinId = PinId.from(params[0][2]);
+        } else if (params.length === 2) {
+            useComponent = params[0][2] as ClassComponent;
+            usePinId = PinId.from(params[1][2]);
+        } else {
+            throw `Invalid parameters for has_pin method`;
+        }
+
+        if (!(useComponent instanceof ClassComponent) ||
+            (!(usePinId instanceof PinId))) {
+            throw `Invalid parameters for has_pin method`;
+        }
+
+        return [visitor, useComponent.hasPin(usePinId)];
+    });
+
     builtInMethods.forEach(([functionName, functionImpl]) => {
         if (functionImpl !== null){
             context.createFunction(BaseNamespace, functionName, params => {
@@ -252,35 +384,6 @@ function toString(obj: any): string {
             throw "Could not create string from object: " + obj;
         }
     }
-}
-
-function pinSetType(component: ClassComponent, pin: PinId, newType: string): void {
-    newType = normalizePinType(newType);
-    if (AllPinTypes.indexOf(newType) === -1) {
-        throw `Invalid pin type: ${newType}`;
-    }
-
-    pin = component.getPin(PinId.from(pin));
-
-    if (component.pins.has(pin)) {
-        component.pins.get(pin)!.pinType = resolvePinType(newType);
-    } else {
-        throw `Invalid pin ${pin} for component ${component}`;
-    }
-}
-
-function pinGetType(component: ClassComponent, pin: PinId): string | NoneValue {
-    pin = component.getPin(PinId.from(pin));
-
-    if (component.pins.has(pin)) {
-        return component.pins.get(pin)!.pinType;
-    }
-
-    throw `Invalid pin ${pin} for component ${component}`;
-}
-
-function hasPin(component: ClassComponent, pin: PinId): boolean {
-    return component.hasPin(PinId.from(pin));
 }
 
 function strFunction(object: any): string {

@@ -362,6 +362,12 @@ export async function runScriptExpectError(script: string): Promise<string> {
     return capturedMessage;
 }
 
+export async function expectInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): Promise<void> {
+    const { hasError, visitor } = await runScript(scriptTest.script);
+    expect(hasError).toEqual(false);
+    expect(visitor.printStream).toStrictEqual(scriptTest.expected);
+}
+
 export function expectJsonOutput(inputString: string, targetPath: string): void {
     const expectedJsonString = readFileSync(targetPath, { encoding: 'utf8' });
             
