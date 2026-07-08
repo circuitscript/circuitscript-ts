@@ -141,7 +141,8 @@ describe('Render tests', () => {
         ['script87.cst', 'Multiple keys in the create components pins assignment.'],
         ['script88.cst', 'String literal syntax for points'],
         ['script89.cst', 'Graphical path commands for m and l'],
-        ['script90.cst', 'Bus creation and nets linking through buses']
+        ['script90.cst', 'Bus creation and nets linking through buses'],
+        ['script91.cst', 'multiple buses']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);

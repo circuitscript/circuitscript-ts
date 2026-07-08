@@ -89,7 +89,7 @@ export const Defaults = {
     WireLineWidth:  numeric(6),
     JunctionSize: numeric(20),
     
-    BusWireLineWidth:  numeric(12),
+    BusWireLineWidth:  numeric(18),
     BusJunctionSize: numeric(40),
 
     LineWidth:      numeric(5),
@@ -131,6 +131,8 @@ export const ColorScheme = {
     BodyColor: 'rgb(255, 255, 194)',
     JunctionColor: 'rgb(0, 132, 0)',
     WireColor: 'rgb(0, 132, 0)',
+    BusWireColor: 'rgb(0,0,250)',
+    BusJunctionColor: 'rgb(0,0,250)',
 
     PinLineColor: '#333',
     PinNameColor: '#333',

@@ -250,7 +250,7 @@ function range(...args) {
 
     const returnArray = [];
     for (let i = startValueNum; i < endValueNum; i++) {
-        returnArray.push(i);
+        returnArray.push(numeric(i));
     }
 
     return returnArray;

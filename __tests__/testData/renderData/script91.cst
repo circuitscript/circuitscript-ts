@@ -1,0 +1,36 @@
+# Test for multiple buses
+from "std" import *
+v5 = supply("5V")
+
+frame:
+    ..direction = "column"
+    ..border = 0
+    ..padding = 0
+
+    frame:
+        ..padding = 0
+        ..border = 0
+
+        for i in range(1, 11):
+            tmp = create bus:
+                pins: i
+
+            at v5
+            wire down 100 right 100 to tmp pin 1
+
+            at tmp 
+            wire right 100
+    frame:
+        ..padding = 0
+        ..border = 0
+
+        for i in range(1, 11):
+            tmp = create bus:
+                pins: i
+                style: "up"
+
+            at v5
+            wire down 100 right 100 to tmp pin 1
+
+            at tmp 
+            wire right 100

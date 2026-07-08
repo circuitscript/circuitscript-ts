@@ -372,6 +372,8 @@ function generateSVGChild(canvas: Svg | G,
             if (net.net.busNet){
                 isBusNet = true;
                 useLineWidth = defaultBusWireLineWidth.toNumber();
+                useColor = ColorScheme.BusWireColor;
+                useJunctionColor = ColorScheme.BusJunctionColor;
             }
 
             if (net.highlight !== null) {

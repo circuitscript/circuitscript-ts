@@ -74,7 +74,7 @@ import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BusMainPinName, ComponentTypes, Delimiter1, FrameType, GlobalDocumentName,
+import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
     WireAutoDirection} from './globals.js';
@@ -913,18 +913,45 @@ export class ParserVisitor extends BaseVisitor {
 
     visitCreateBusExpr = (ctx: CreateBusExprContext): void => {
         const properties = this.visitResult(ctx.properties_block());
+        const gridSize = 100;
+        let style = "down"; // Default style
 
         // Create a custom component...
         if (!properties.get("pins")) {
             this.throwWithContext(ctx, "Bus pins not defined");
         }
 
+        if (properties.has("style")){
+            if (properties.get("style") === "up"){
+                style = "up";
+            }
+        }
+        const directionMultipler = (style === "down") ? 1 : -1;
         const typeProp = ComponentTypes.bus;
 
         const pins = properties.get("pins");
-        const pinsDef:PinDefinition[] = pins.map(pinId => {
+        let usePins = [];
+
+        // Pins is a single number, then generate an increasing list starting from 1.
+        if ((pins instanceof NumericValue)) {
+            const numPins = pins.toNumber();
+            for (let i = 0; i < numPins; i++) {
+                usePins.push(i + 1);
+            }
+        } else {
+            usePins = pins;
+        }
+
+        const pinsDef: PinDefinition[] = usePins.map(pinId => {
+            if (typeof pinId === "number" || (pinId instanceof NumericValue)) {
+                if (pinId instanceof NumericValue) {
+                    pinId = pinId.toNumber();
+                }
+                return new PinDefinition(pinId, PinIdType.Int, pinId.toString(), PinTypes.Passive);
+            }
             return new PinDefinition(pinId, PinIdType.Str, pinId, PinTypes.Passive)
         });
+
         const numSignalPins = pinsDef.length;
 
         // Generate the drawing commands
@@ -936,37 +963,59 @@ export class ParserVisitor extends BaseVisitor {
             BusMainPinName, PinTypes.Bus);
 
         // Find the y-position
-        const useBusPinY = Math.floor((numSignalPins - 1) / 2) * 100;
+
+        const busLineStart = directionMultipler * 0.5 * gridSize;
+        const busLineEnd = busLineStart + gridSize * (numSignalPins - 1);
+        let useBusPinY = gridSize * (Math.floor(numSignalPins/2)) + (directionMultipler === -1 ? -gridSize: 0);
+
+        // let useBusPinY = Math.floor(numSignalPins  / 2) * gridSize;
+
+        if (numSignalPins === 1){
+            useBusPinY = 0;
+        }
+
+        // Draw main bus signal pin
         drawingCommands.push([
-            PlaceHolderCommands.pin,
+            PlaceHolderCommands.hpin,
             [mainBusPin.id, 
                 numeric(0), numeric(useBusPinY), 
-                numeric(-0.1), numeric(useBusPinY)],
+                numeric(-0.1)],
             new Map([["pin_only", true]]),
             null
         ]);
 
+        // Draw each bus signal pin
         pinsDef.forEach((pinDef, index) => {
             drawingCommands.push([
                 PlaceHolderCommands.hpin,
-                [pinDef.id, numeric(-200), numeric(index * 100), numeric(150)],
+                [pinDef.id, 
+                    numeric(-2 * gridSize), numeric(index * gridSize), 
+                    numeric(1.5 * gridSize)],
                 new Map([["display_name", true]]), null
             ]);
         });
 
-        const usePinsDef = [
-            mainBusPin,
-            ...pinsDef
-        ];
+        const usePinsDef = [mainBusPin, ...pinsDef];
 
-        for (let i = 0; i < numSignalPins; i++) {
+        if (numSignalPins === 1) {
             drawingCommands.push([
                 PlaceHolderCommands.line,
                 [
-                    numeric(-50), numeric(i * 100),
-                    numeric(0), numeric(useBusPinY)
+                    numeric(-0.5 * gridSize), numeric(0),
+                    numeric(0), numeric(0),
                 ]
             ])
+        } else {
+            for (let i = 0; i < numSignalPins; i++) {
+                drawingCommands.push([
+                    PlaceHolderCommands.path,
+                    [
+                        'M', numeric(-0.7 * gridSize), numeric(i * gridSize),
+                        'L', numeric(-0.5 * gridSize), numeric(i * gridSize),
+                        'l', numeric(gridSize * 0.5), numeric(gridSize * 0.5 * directionMultipler),
+                    ]
+                ])
+            }
         }
 
         if (properties.has('name')){
@@ -974,10 +1023,29 @@ export class ParserVisitor extends BaseVisitor {
     
             drawingCommands.push([
                 PlaceHolderCommands.label,
-                [name, numeric(0), numeric(useBusPinY - 20)]
+                [name, numeric(20), numeric(useBusPinY - 20)]
             ])
         }
 
+        drawingCommands.push(...[
+            [   // Set the main bus width
+                PlaceHolderCommands.lineWidth,
+                [Defaults.BusWireLineWidth]
+            ],
+            [   // Set the bus color
+                PlaceHolderCommands.lineColor,
+                [ColorScheme.BusWireColor],
+            ],
+            [
+                // Draw the main bus line down
+                PlaceHolderCommands.line,
+                [
+                    numeric(0), numeric(busLineStart),
+                    numeric(0), numeric(busLineEnd),
+                ]
+            ]
+        ]);
+        
         const blankParams: ParamDefinition[] = [];
         const props = {
             units: [[
