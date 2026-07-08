@@ -1,6 +1,41 @@
 # Changelog
 
-## [v0.8.13](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.12...v0.8.13)
+## [v0.9.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.13...v0.9.0)
+
+[7a45e8d](https://github.com/circuitscript/circuitscript-ts/commit/7a45e8d1858796b23277049801f9076b551b190a)Add bus wire/net support
+- 
+- Adds create bus definitions with a new grammar rule, bus pin type,
+- bus net linking with matching-pin validation, and dedicated bus wire
+- line width/junction size styling. Also adds natural pin id ordering
+- (comparePinIds) used for default pin selection and pin iteration, and
+- fixes default pin selection to use the component's actual default pin
+- instead of always assuming pin 1.
+
+[9863cb5](https://github.com/circuitscript/circuitscript-ts/commit/9863cb56c371a4bfa3548fa433c72eb5914e8e00)Add net_get builtin and cursor-based forms for pin_set_type/pin_get_type/has_pin
+- 
+- Move pin_set_type, pin_get_type, and has_pin from plain function
+- implementations into createFunction handlers so they can accept
+- variable arity: no-arg/cursor form, component+pin form, and the
+- original explicit form. Add net_get to look up the net attached to
+- a component pin or the current cursor pin.
+- 
+- Add corresponding inline script tests and a dedicated
+- testBuiltinMethods.ts suite, migrated out of testParse.ts.
+
+[f87123a](https://github.com/circuitscript/circuitscript-ts/commit/f87123a7051d4b6cbe2b7c91e0cbcac7af8f7fd1)Improve error context for operator and graphic expression evaluation
+- 
+- - Add checkValueUndefined guards in comparison, multiply, and add
+- expression visitors so undefined operands throw with source context
+- - Replace raw string throws in unary operator with contextual errors
+- - Wrap symbol graphic command parsing in try/catch to attach context
+- - Parameterize arrow_point symbol with offset params in std.cst
+- - Add runScriptExpectError helper and tests covering error cases
+
+[7731b60](https://github.com/circuitscript/circuitscript-ts/commit/7731b60a7d80b486e117aa90de2409ee0239d814)Support numeric pin counts and up/down style for bus creation
+- 
+- Bus creation now accepts a plain pin count in addition to a pin id list, and a style property to draw the bus pointing up or down. Adds distinct bus wire/junction coloring and adjusts default bus wire width.
+
+## [v0.8.13](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.12...v0.8.13) - 2026-06-29
 
 [cfde558](https://github.com/circuitscript/circuitscript-ts/commit/cfde5587a75a2db2047456a4b6dfc688dd2a36e4)Support multiple pin keys in at block and property expressions
 - 
