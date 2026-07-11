@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.9.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.13...v0.9.0)
+## [v0.9.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.0...v0.9.1)
+
+[1357979](https://github.com/circuitscript/circuitscript-ts/commit/135797979199db74f69c7190b0afc186152639f4)Sort BOM rows and merge component params within groups
+
+## [v0.9.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.8.13...v0.9.0) - 2026-07-08
 
 [7a45e8d](https://github.com/circuitscript/circuitscript-ts/commit/7a45e8d1858796b23277049801f9076b551b190a)Add bus wire/net support
 - 
