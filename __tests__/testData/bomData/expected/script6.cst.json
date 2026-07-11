@@ -1,0 +1,42 @@
+[
+    [
+        "Refdes",
+        "Value",
+        "Footprint"
+    ],
+    [
+        "R3, R5, R10, R20",
+        "10k",
+        "Resistor_SMD:R_0402_1005Metric"
+    ],
+    [
+        "R9",
+        "10k",
+        "Resistor_SMD:R_0603_1005Metric"
+    ],
+    [
+        "C1",
+        "1n",
+        "Capacitor_SMD:C_0402_1005Metric"
+    ],
+    [
+        "C2",
+        "1u",
+        "Capacitor_SMD:C_0402_1005Metric"
+    ],
+    [
+        "C3",
+        "50n",
+        "Capacitor_SMD:C_0402_1005Metric"
+    ],
+    [
+        "C22",
+        "100n",
+        "Capacitor_SMD:C_0402_1005Metric"
+    ],
+    [
+        "C78",
+        "20n",
+        "Capacitor_SMD:C_0402_1005Metric"
+    ]
+]

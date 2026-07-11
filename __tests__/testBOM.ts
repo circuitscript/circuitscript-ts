@@ -21,6 +21,10 @@ describe('BOM generation', () => {
             columns: ['refdes', 'mpn', 'manufacturer'],
             group_by: ['mpn', 'manufacturer'],
         }],
+        ['script6', 'script6.cst', {
+            columns: ['refdes', 'value', 'footprint'],
+            group_by: ['value', 'footprint'],
+        }],
     ])('script - %s (%s)', async (title, scriptPath, bomConfig) => {
         const { bomCsvOutput } = await renderCommon(mainPath + scriptPath, {
             generateBom: true,

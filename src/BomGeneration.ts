@@ -58,13 +58,17 @@ export function generateBom(
     verbose = false
 ): BomGenerationResult {
     const { resultRows, unplacedItems, missingValues } = extractComponentValuesForBom(bomConfig, instances);
-    const tmpGroupedComponents = groupComponents(bomConfig, resultRows);
+
+    // Sort all items by natural order first, then by the type.
+    const sortedResultRows = sortByTypeNaturalOrder(resultRows)
+    
+    const tmpGroupedComponents = groupComponents(bomConfig, sortedResultRows);
 
     const groupedBom: Record<string, unknown>[] = [];
     tmpGroupedComponents.forEach(value => {
+        const useParams = mergeComponentParams(value.items);
         groupedBom.push({
-            // Use properties from the first item.
-            ...value.items[0],
+            ...useParams,
             refdes: value.allRefdes.join(', ')
         });
     });
@@ -287,4 +291,82 @@ export async function saveBomOutputCsv(environment:NodeScriptEnvironment,
 
         csvStream.end();
     });
+}
+
+/**
+ * Sorts BOM rows by refdes in natural order (e.g. R1, R2, R10), then
+ * groups the result by component type using TypeSortOrder.
+ * @param items
+ * @returns
+ */
+function sortByTypeNaturalOrder(items: Record<string, unknown>[]): Record<string, unknown>[] {
+    // Sort items by natural sort order first (alpha numerical)
+    items = items.toSorted((a, b) => {
+        const refdesA = String(a.refdes ?? '');
+        const refdesB = String(b.refdes ?? '');
+
+        const [, prefixA, numA] = refdesA.match(/^([A-Za-z]*)(\d*)/) ?? [];
+        const [, prefixB, numB] = refdesB.match(/^([A-Za-z]*)(\d*)/) ?? [];
+
+        if (prefixA !== prefixB) {
+            return prefixA.localeCompare(prefixB);
+        }
+
+        if (numA !== numB) {
+            return Number(numA) - Number(numB);
+        }
+
+        return refdesA.localeCompare(refdesB);
+    });
+
+    // Sort the items by type
+    items = items.toSorted((a, b) => {
+        const typeSortA = TypeSortOrder[a['.type']] ?? 100;
+        const typeSortB = TypeSortOrder[b['.type']] ?? 100;
+        return typeSortA - typeSortB;
+    });
+
+    return items;
+}
+
+/**
+ * Merges parameter values from a group of components into a single row,
+ * combining distinct values per key into a comma-separated string.
+ * @param items
+ * @returns
+ */
+function mergeComponentParams(items: Record<string, unknown>[]): Record<string, unknown> {
+    // Ignore the refdes and .type field only
+    const collection: Record<string, unknown[]> = {};
+    items.forEach(item => {
+        for (const key in item) {
+            if (key === 'refdes' || key === '.type') {
+                continue;
+            }
+
+            if (collection[key] === undefined) {
+                collection[key] = [];
+            }
+
+            const value = item[key];
+            if (value !== undefined && collection[key].indexOf(value) === -1) {
+                collection[key].push(value);
+            }
+        }
+    });
+
+    // Flatten the final result
+    const result: Record<string, unknown> = {
+        "refdes": undefined,
+    };
+
+    for (const key in collection) {
+        if (collection[key].length > 0) {
+            result[key] = collection[key].join(", ");
+        } else {
+            result[key] = undefined;
+        }
+    }
+
+    return result;
 }
