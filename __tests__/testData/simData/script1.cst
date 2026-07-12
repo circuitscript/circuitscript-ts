@@ -1,0 +1,78 @@
+# Test passive sim components (R, C, D, etc.)
+from "std" import *
+
+sim = false
+v5 = supply("5V")
+gnd = dgnd()
+
+def sim_v_source(voltage):
+    return create component:
+        pins: 
+            1: "+", "power_output"
+            2: "-", "power_ref"
+        type: "sim"
+        params:
+            refdes_prefix: "V"
+        sim:
+            type: "voltage_source"
+            voltage: voltage
+
+tmp = create component:
+    pins:
+        1: "OUT", "power_out"
+        2: "GND", "power_ref"
+
+at tmp pin 1
+wire right 100 
+
+branch:
+    wire right 100 up 100
+    to v5
+
+wire down 100
+add diode()
+wire down 100
+add res(10k)
+wire down 100
+to gnd
+
+at tmp pin 2
+wire left 100 down 100 to gnd
+
+at v5
+wire down 100
+add diode()
+..sim_model = "D(IS=1e-14 N=1 RS=1.2 BV=5.1 IBV=5m)"
+wire down 100
+add res(10k)
+wire down 100
+to gnd
+
+at v5
+wire down 100
+add diode()
+..sim_model = "D(IS=1e-14 N=1 RS=1.2 BV=5.1 IBV=5m)"
+wire down 100
+add res(10k)
+wire down 100
+to gnd
+
+at v5
+wire down 100
+add res(10k)
+wire down 100
+branch:
+    wire right 200 down 100
+    add cap(100n)
+    wire down 100 to gnd
+wire down 100
+add res(10k)
+wire down 100
+to gnd
+
+at sim_v_source("SIN(0, 5, 10k)"):
+    1: wire right 100 up 100 to v5
+    2: wire left 100 down 100 to gnd
+
+document.sim.title = "Simulation test"
+document.sim.analysis = ".tran 100ns 500us"

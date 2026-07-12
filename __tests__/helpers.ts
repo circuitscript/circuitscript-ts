@@ -23,6 +23,7 @@ import { ERCReportItem, EvaluateERCRules } from '../src/rules-check/rules.js';
 import { generateBom, generateBomCSV, BomGenerationResult } from '../src/BomGeneration.js';
 import { GlobalDocumentName } from '../src/globals.js';
 import { getStylesFromDocument } from '../src/styles.js';
+import { NgSpiceNetListOutputHandler } from '../src/render/NgSpiceNetListOutputHandler.js';
 
 export function getTestEnvironment(): NodeScriptEnvironment {
     const env = new ESMNodeScriptEnvironment();
@@ -272,6 +273,17 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         bomResult,
         documentVariable
     }
+}
+
+export async function renderSimNetList(scriptPath: string, outputPath: string): Promise<string> {
+    const script = readFileSync(scriptPath, { encoding: 'utf8' });
+    const { hasError, visitor } = await runScript(script, scriptPath);
+    expect(hasError).toEqual(false);
+
+    const handler = new NgSpiceNetListOutputHandler();
+    handler.parse(visitor, outputPath, 'cir');
+
+    return readFileSync(outputPath, { encoding: 'utf8' });
 }
 
 export type SvgDiffResult = {

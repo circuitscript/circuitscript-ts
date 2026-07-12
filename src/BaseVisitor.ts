@@ -150,6 +150,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             'bom': {},
             'version': VERSION,
             'rules': defaultRules,
+            'sim': {},
         });
         
         this.setupBuiltInFunctions(this.startingContext);

@@ -35,6 +35,7 @@ import { getStylesFromDocument } from "./styles.js";
 import { BaseError, RuntimeExecutionError, ParseSyntaxError, ParseError, 
     RenderError, AutoWireFailedError, 
     AutoWireFailedError_} from "./errors.js";
+import { NgSpiceNetListOutputHandler } from "./render/NgSpiceNetListOutputHandler.js";
 
 export async function renderScript(scriptData: string, outputPaths: string[],
     options: ScriptOptions): Promise<RenderScriptReturn> {
@@ -45,6 +46,7 @@ export async function renderScript(scriptData: string, outputPaths: string[],
     const parseHandlers = [
         new KiCadNetListOutputHandler(),
         new KiCadSchOutputHandler(kiCadVersion, env.getPackageVersion()),
+        new NgSpiceNetListOutputHandler(),
     ];
 
     return renderScriptCustom(scriptData, outputPaths, options, parseHandlers,

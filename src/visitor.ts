@@ -377,6 +377,10 @@ export class ParserVisitor extends BaseVisitor {
             props.is_label = properties.get('is_label');
         }
 
+        if (properties.has('sim')){
+            props.sim = properties.get('sim');
+        }
+
         try {
             const createdComponent = this.getExecutor().createComponent(instanceName,
                 [], params, props);
@@ -2600,7 +2604,8 @@ export class ParserVisitor extends BaseVisitor {
             pinNets.forEach((item) => {
                 componentItem.pins[item.pin.id] = {
                     netName: item.netName,
-                    netBaseName: item.netBaseName
+                    netBaseName: item.netBaseName,
+                    net: item,
                 }
             });
 
@@ -2877,7 +2882,15 @@ export const ComponentRefDesPrefixes: { [key: string]: string } = {
 export type NetListItem = {
     instanceName: string,
     instance: ClassComponent,
-    pins: { [key: string | number]: string },
+    pins: {
+        [key: string | number]: NetListItemPin
+    },
+}
+
+export type NetListItemPin = {
+    netName: string,
+    netBaseName: string,
+    net: Net
 }
 
 export class VisitorExecutionException {

@@ -312,6 +312,8 @@ export class ExecutionContext {
             
             followWireOrientation: boolean,
             units: [string, ComponentUnitDefinition][],
+
+            sim?: Map<string, any>,
         },
         isModule = false
     ): ClassComponent {
@@ -334,6 +336,7 @@ export class ExecutionContext {
 
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
+        component.simProp = props.sim ?? null;
 
         component.isNetLabel = props.is_label ?? false;
 

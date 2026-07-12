@@ -301,6 +301,9 @@ export class ClassComponent {
     // component is a kicad label.
     isNetLabel = false;
 
+    // Store simulation properties
+    simProp: Map<string, unknown> | null = null;
+
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;
