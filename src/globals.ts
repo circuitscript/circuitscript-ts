@@ -136,6 +136,23 @@ export const ColorScheme = {
 
     PinLineColor: '#333',
     PinNameColor: '#333',
+
+    GridColor: '#000',
+}
+
+// Equivalents of ColorScheme used under `prefers-color-scheme: dark` - only
+// applied to colors still at their ColorScheme default (see svgClasses.ts),
+// so a document that explicitly customizes a color keeps it in both themes.
+export const DarkColorScheme = {
+    JunctionColor: 'rgb(0, 200, 0)',
+    WireColor: 'rgb(0, 200, 0)',
+    BusWireColor: 'rgb(110,110,255)',
+    BusJunctionColor: 'rgb(110,110,255)',
+
+    PinLineColor: '#ccc',
+    PinNameColor: '#ccc',
+
+    GridColor: '#888',
 }
 
 

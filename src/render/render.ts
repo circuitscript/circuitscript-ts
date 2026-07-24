@@ -30,6 +30,8 @@ import { ClassComponent } from '../objects/ClassComponent.js';
 import { Logger } from '../logger.js';
 import { DocumentVariable } from 'src/objects/types.js';
 import { Styles } from 'src/styles.js';
+import { addDefaultStyleClasses, applyClassWithOverrides, 
+    expandStyleOverridesForPdf } from './svgClasses.js';
 
 function componentTooltip(component: ClassComponent): string | null {
     const creation = component.ctxReferences.find(r => r.creationFlag)
@@ -171,8 +173,15 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
             mergedWires, allFrames, textObjects, gridProperties, styles, logger);
 
         sheetElements.translate(xOffset, yOffset);
-        sheetGroup.translate(0, sheetYOffset.toNumber());    
+        sheetGroup.translate(0, sheetYOffset.toNumber());
     });
+
+    // Added after all sheets are drawn, so only the default-style classes
+    // actually used somewhere in the document get emitted as `<style>` rules.
+    // theme: true makes colors follow prefers-color-scheme: dark - safe here
+    // since this <style> tag only ends up in SVG output (PDF export rebuilds
+    // its own per-sheet <style> tag below, without theme support).
+    addDefaultStyleClasses(canvas, styles, { theme: true });
 
     return canvas;
 }
@@ -195,11 +204,12 @@ export function generateSvgOutput(canvas: Svg, zoomScale = 1): string {
 }
 
 export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
-    sheetSize: string, sheetSizeDefined: boolean, zoomScale = 1): void {
+    sheetSize: string, sheetSizeDefined: boolean, styles: Styles, zoomScale = 1): void {
 
-    // Split the canvas up into different canvases
-
-    const children = canvas.children();
+    // Split the canvas up into different canvases. The <style> element added by
+    // addDefaultStyleClasses() is a sibling of the sheet groups, not a sheet itself
+    // - exclude it from pagination.
+    const children = canvas.children().filter(child => child.node.tagName === 'g');
     const numChildren = children.length;
 
     // 1 mil = 0.0254mm
@@ -213,6 +223,18 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
     children.forEach((child, index) => {
         const sheetCanvas = createSvgCanvas();
         sheetCanvas.add(child);
+
+        // svg-to-pdfkit doesn't follow standard CSS precedence (a class rule
+        // beats even a `style=` override there), so elements whose actual
+        // attributes diverge from their default-style class need those fully
+        // resolved as explicit presentation attributes instead.
+        expandStyleOverridesForPdf(sheetCanvas, styles);
+
+        // Re-inject the style rules after the child is added (and overrides
+        // expanded), since each sheet is rendered in a fresh canvas that
+        // doesn't otherwise carry the document's <style> tag along - and only
+        // classes still actually used on this sheet should be emitted.
+        addDefaultStyleClasses(sheetCanvas, styles);
 
         const { x, y, width, height } = sheetCanvas.bbox();
 
@@ -336,9 +358,9 @@ function generateSVGChild(canvas: Svg | G,
     }
 
     // Create group first so that the highlight graphics are below the wires.
-    const mergedWireHighlightGroup = canvas.group();
+    const mergedWireHighlightGroup = canvas.group().addClass('wires-highlight');
 
-    const mergedWireGroup = canvas.group();
+    const mergedWireGroup = canvas.group().addClass('wires');
 
     styles = styles ?? {};
     const defaultWireColor = styles.wireColor;
@@ -400,7 +422,8 @@ function generateSVGChild(canvas: Svg | G,
             });
         });
 
-        if (displayHighlight) {
+        // Only if display highlight and color is set.
+        if (displayHighlight && displayHighlightColor !== null) {
             mergedWireHighlightGroup.path(pathItems)
                 .stroke({
                     width: useLineWidth + displayHighlightWidth,
@@ -411,12 +434,19 @@ function generateSVGChild(canvas: Svg | G,
                 .fill('none');
         }
 
-        mergedWireGroup.path(pathItems)
-            .stroke({ 
-                width: useLineWidth, 
-                color: useColor, 
-                linecap: 'butt' })
-            .fill('none');
+        const defaultColorForNetType = isBusNet ? ColorScheme.BusWireColor : defaultWireColor;
+        const defaultWidthForNetType = isBusNet ? defaultBusWireLineWidth.toNumber() : defaultWireLineWidth;
+
+        const wireOverrides: Record<string, string> = {};
+        if (useColor !== defaultColorForNetType) {
+            wireOverrides['stroke'] = useColor!;
+        }
+        if (useLineWidth !== defaultWidthForNetType) {
+            wireOverrides['stroke-width'] = useLineWidth.toString();
+        }
+
+        applyClassWithOverrides(mergedWireGroup.path(pathItems),
+            isBusNet ? 'busWire' : 'wire', wireOverrides);
 
         const useJunctionSize = isBusNet ? defaultBusJunctionSize: defaultJunctionSize;
         const halfJunctionSize = useJunctionSize.half();
@@ -441,11 +471,18 @@ function generateSVGChild(canvas: Svg | G,
                     .stroke('none');
             }
 
-            mergedWireGroup.circle(useJunctionSize.toNumber())
-                .translate(translateX.toNumber(), translateY.toNumber())
-                .fill(useJunctionColor)
-                .stroke('none');
-                            
+            const defaultJunctionColorForNetType = isBusNet ? ColorScheme.BusJunctionColor : ColorScheme.JunctionColor;
+
+            const junctionOverrides: Record<string, string> = {};
+            if (useJunctionColor !== defaultJunctionColorForNetType) {
+                junctionOverrides['fill'] = useJunctionColor;
+            }
+
+            applyClassWithOverrides(
+                mergedWireGroup.circle(useJunctionSize.toNumber())
+                    .translate(translateX.toNumber(), translateY.toNumber()),
+                isBusNet ? 'busJunction' : 'junction', junctionOverrides);
+
             // mergedWireGroup.text(count.toString())
             //                 .translate(x + 2, y + 2)
             //                 .font({
@@ -466,7 +503,7 @@ function generateSVGChild(canvas: Svg | G,
     //     tmpRect.translate(box.xmin, box.ymin);
     // });
 
-    const frameGroup = canvas.group();
+    const frameGroup = canvas.group().addClass('frames');
 
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
@@ -524,7 +561,7 @@ function drawGrid(group: G,
     const { gridBounds: canvasSize,
         extendGrid,
         style: gridStyle = "dots",
-        color: gridColor = "#000",
+        color: gridColor = ColorScheme.GridColor,
 
         backgroundColor = "",
     } = gridProperties;
@@ -585,16 +622,14 @@ function drawGrid(group: G,
             .translate(gridStartX.toNumber(), gridStartY.toNumber());
     }
     
-    const strokeSize = milsToMM(3);
-    group.addClass('grid')
-        .path(lines.join(" "))
-        .attr({
-            'stroke-dasharray': `${strokeSize.toNumber()},${numericGridSize.sub(strokeSize).toNumber()}`,
-        })
-        .stroke({
-            width: strokeSize.toNumber(),
-            color: useGridColor
-        });
+    const gridPath = group.addClass('grid').path(lines.join(" "));
+
+    const gridOverrides: Record<string, string> = {};
+    if (useGridColor !== ColorScheme.GridColor) {
+        gridOverrides['stroke'] = useGridColor;
+    }
+
+    applyClassWithOverrides(gridPath, 'grid', gridOverrides);
 }
 
 function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {

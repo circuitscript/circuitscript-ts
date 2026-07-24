@@ -10,8 +10,8 @@ import { G } from "@svgdotjs/svg.js";
 import { milsToMM } from "../helpers.js";
 import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 
     CustomSymbolRefDesSize, Defaults, PortArrowSize, PortPaddingHorizontal,
-    PortPaddingVertical, ReferenceTypes, RenderFlags, SymbolPinSide, 
-    defaultFont, defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
+    PortPaddingVertical, RenderFlags, SymbolPinSide, 
+    defaultPinIdTextSize, defaultPinNameTextSize, defaultSymbolLineWidth,
     fontDisplayScale} from "../globals.js";
 import Flatten from '@flatten-js/core';
 import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, LabelStyle,
@@ -25,6 +25,7 @@ import { ParserRuleContext } from "antlr4ng";
 import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { Styles } from "src/styles.js";
+import { applyClassWithOverrides, DefaultStyleClassName } from "./svgClasses.js";
 
 
 export type PathDrawItem = {
@@ -74,6 +75,11 @@ export abstract class SymbolGraphic {
     labelTexts = new Map<string, string>();
 
     styles?: Styles;
+
+    // Set true for components representing net/wire labels (component.isNetLabel),
+    // so drawLabels() can tell their label/text apart from decorative custom-symbol
+    // text drawn via the same graphics primitives.
+    isNetLabel = false;
 
     constructor(){
         this.drawing = new SymbolDrawing();
@@ -142,15 +148,14 @@ export abstract class SymbolGraphic {
 
     draw(group: G, extra?: unknown): void {
         // Assume that the symbol is vertical
-        const innerGroup = group.group();
 
-        this.drawBody(innerGroup);
+        this.drawBody(group);
 
-        this.drawPins(innerGroup);
+        this.drawPins(group);
 
-        this.drawLabels(innerGroup);
+        this.drawLabels(group);
 
-        this.drawPlaceRemove(innerGroup, extra);
+        this.drawPlaceRemove(group, extra);
 
         this.displayBounds && this.drawBounds(group);
     }
@@ -218,9 +223,12 @@ export abstract class SymbolGraphic {
         // Draws the symbol body
 
         const items = this.drawing.getPaths();
+        const resolvedLineColor = this.styles?.lineColor ?? ColorScheme.PinLineColor;
+        const resolvedLineWidth = milsToMM(this.styles?.lineWidth ?? Defaults.LineWidth).toNumber();
+
         items.forEach(item => {
             if (item.kind === 'circle') {
-                const {cx, cy, radius, lineColor, fillColor, lineWidth} = item;
+                const { cx, cy, radius, lineColor, fillColor, lineWidth } = item;
                 group.circle(radius * 2)
                     .cx(cx)
                     .cy(cy)
@@ -230,13 +238,27 @@ export abstract class SymbolGraphic {
                     })
                     .fill(fillColor);
             } else {
-                const {path, lineColor, fillColor, lineWidth} = item;
-                group.path(path)
-                    .stroke({
-                        width: lineWidth.toNumber(),
-                        color: lineColor,
-                    })
-                    .fill(fillColor);
+                const { path, lineColor, fillColor, lineWidth } = item;
+
+                // Open paths (hline/vline/line/path/arc/etc.) always draw with
+                // fillColor 'none' (see getPaths()); closed polygons always have
+                // an actual fill, which always diverges from the class's fixed
+                // 'fill: none'.
+                const overrides: Record<string, string> = {};
+                if (lineColor !== resolvedLineColor) {
+                    overrides['stroke'] = lineColor;
+                }
+                if (lineWidth.toNumber() !== resolvedLineWidth) {
+                    overrides['stroke-width'] = lineWidth.toNumber().toString();
+                }
+
+                // By default fill is "none";
+                if (fillColor !== 'none') {
+                    overrides['fill'] = fillColor;
+                }
+
+                applyClassWithOverrides(group.path(path), 
+                    'graphicLine', overrides);
             }
         });
     }
@@ -244,12 +266,15 @@ export abstract class SymbolGraphic {
     protected drawPins(group: G): void {
         // Draw pins
         const pinPaths = this.drawing.getPinsPath();
+        const resolvedLineColor = this.styles?.lineColor ?? ColorScheme.PinLineColor;
+
         pinPaths.forEach(({ path, lineColor }) => {
-            group.path(path)
-                .stroke({
-                    width: defaultSymbolLineWidth,
-                    color: lineColor
-                })
+            const overrides: Record<string, string> = {};
+            if (lineColor !== resolvedLineColor) {
+                overrides['stroke'] = lineColor;
+            }
+
+            applyClassWithOverrides(group.path(path), 'pin', overrides);
         });
     }
 
@@ -346,7 +371,6 @@ export abstract class SymbolGraphic {
                 position[1] = position[1].neg();
             }
 
-            const useFont = defaultFont;
             const textContainer = group.group();
 
             let translateX: NumericValue, translateY: NumericValue;
@@ -494,12 +518,17 @@ export abstract class SymbolGraphic {
                     .rotate(useLabelAngle, -boundsX, -boundsY);
             }
 
-            const fontProperties = {
-                family: useFont,
-                size: fontSize.toNumber() * fontDisplayScale,
+            // font-family is never overridden per-instance - it's covered document-wide
+            // by the `text { font-family: ... }` rule, so it's never set here.
+            const fontProperties: {
+                anchor: string,
+                'dominant-baseline': string,
+                size?: number,
+                weight?: string,
+                style?: string,
+            } = {
                 anchor: anchorStyle,
                 'dominant-baseline': dominantBaseline,
-                weight: fontWeight,
             }
 
             if (fontStyle !== 'normal'){
@@ -507,8 +536,38 @@ export abstract class SymbolGraphic {
                 fontProperties.style = fontStyle;
             }
 
-            textContainer.text(tmpLabel.text)
-                .fill(textColor)
+            const labelClassDefault = this.getLabelClassDefault(tmpLabel);
+
+            const textElement = textContainer.text(tmpLabel.text);
+
+            const overrides: Record<string, string> = {};
+            if (textColor !== labelClassDefault.fill) {
+                overrides['fill'] = textColor;
+            }
+
+            // font-size/weight are only governed by the class for pin name/id
+            // and net labels, which have a fixed default - diverging values are
+            // inlined via style, same as fill. Decorative text (the text
+            // fallback) has no such default, so these always stay explicit
+            // attributes, set per instance.
+            if (labelClassDefault.fontSize !== undefined) {
+                if (fontSize.toNumber() !== labelClassDefault.fontSize) {
+                    overrides['font-size'] = (fontSize.toNumber() * fontDisplayScale).toString();
+                }
+            } else {
+                fontProperties.size = fontSize.toNumber() * fontDisplayScale;
+            }
+
+            if (labelClassDefault.fontWeight !== undefined) {
+                if (fontWeight !== labelClassDefault.fontWeight) {
+                    overrides['font-weight'] = fontWeight;
+                }
+            } else {
+                fontProperties.weight = fontWeight;
+            }
+
+            applyClassWithOverrides(textElement, labelClassDefault.className, overrides);
+            textElement
                 .font(fontProperties)
                 .css("white-space", "pre")
                 .rotate(useLabelAngle, 0, 0);
@@ -535,6 +594,48 @@ export abstract class SymbolGraphic {
                     .fill('green');
             }
         }
+    }
+
+    /**
+     * Resolves which default-style CSS class applies to a given label, based
+     * on its role: pin name, pin id, net/wire label text, or (falling through)
+     * generic text - which only has a default color, since font-size/weight
+     * always vary per instance for decorative custom-symbol text.
+     */
+    private getLabelClassDefault(label: Textbox):
+        { className: DefaultStyleClassName, fill: string, fontSize?: number, fontWeight?: string } {
+
+        if (label.id === 'pin-name_*') {
+            return {
+                className: 'pinName',
+                fill: this.styles?.textColor ?? ColorScheme.PinNameColor,
+                fontSize: defaultPinNameTextSize,
+                fontWeight: 'regular',
+            };
+        }
+
+        if (label.id === 'pin-id_*') {
+            return {
+                className: 'pinId',
+                fill: this.styles?.lineColor ?? ColorScheme.PinLineColor,
+                fontSize: defaultPinIdTextSize,
+                fontWeight: 'regular',
+            };
+        }
+
+        if (this.isNetLabel) {
+            return {
+                className: 'label',
+                fill: this.styles?.textColor ?? ColorScheme.PinNameColor,
+                fontSize: 50, // matches Textbox fallback default, see fontSize destructure above
+                fontWeight: 'regular',
+            };
+        }
+
+        return {
+            className: 'text',
+            fill: this.styles?.textColor ?? ColorScheme.PinNameColor,
+        };
     }
 
     flipTextAnchor(value: HorizontalAlign): HorizontalAlign {
@@ -1125,7 +1226,8 @@ export class SymbolCustom extends SymbolGraphic {
 
         const { bodyWidth, bodyHeight } = this.calculateSize();
 
-        const defaultLineColor = ColorScheme.PinLineColor;
+        const defaultLineColor = this.styles?.lineColor ?? ColorScheme.PinLineColor;
+        const defaultTextColor = this.styles?.textColor ?? ColorScheme.PinNameColor;
         drawing.addSetLineColor(defaultLineColor);
         // drawing.addSetFillColor(ColorScheme.BodyColor);
 
@@ -1138,7 +1240,7 @@ export class SymbolCustom extends SymbolGraphic {
         this.generateDrawingPins(drawing, bodyWidth, bodyHeight,
             {
                 left: leftPins, right: rightPins, top: topPins, bottom: bottomPins
-            }, defaultLineColor);
+            }, defaultLineColor, defaultTextColor);
 
         this.drawing = drawing;
 
@@ -1161,11 +1263,13 @@ export class SymbolCustom extends SymbolGraphic {
         pins: {
             left: SymbolPinDefintion[],
             right: SymbolPinDefintion[],
-            top: SymbolPinDefintion[], 
+            top: SymbolPinDefintion[],
             bottom: SymbolPinDefintion[],
-        }, defaultLineColor: string): void {
+        }, 
+        defaultLineColor: string, 
+        defaultPinNameColor: string = ColorScheme.PinNameColor): void {
 
-        const {left: leftPins, right: rightPins, 
+        const {left: leftPins, right: rightPins,
             top: topPins, bottom: bottomPins} = pins;
 
         // Setup the pins
@@ -1192,7 +1296,7 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
+                textColor: defaultPinNameColor,
             }, "pin-name_*");
 
             // Add the pin number
@@ -1214,7 +1318,7 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
+                textColor: defaultPinNameColor,
             }, "pin-name_*");
 
             // Add the pin number
@@ -1238,7 +1342,7 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
+                textColor: defaultPinNameColor,
                 angle: numeric(-90),
             }, "pin-name_*");
 
@@ -1263,7 +1367,7 @@ export class SymbolCustom extends SymbolGraphic {
                 fontSize: numeric(CustomSymbolPinTextSize),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
+                textColor: defaultPinNameColor,
                 angle: numeric(-90),
             }, "pin-name_*");
 
@@ -1371,9 +1475,11 @@ export class SymbolCustomModule extends SymbolCustom {
         pins: {
             left: SymbolPinDefintion[],
             right: SymbolPinDefintion[],
-            top: SymbolPinDefintion[], 
+            top: SymbolPinDefintion[],
             bottom: SymbolPinDefintion[],
-        }, defaultLineColor: string): void {
+        }, 
+        defaultLineColor: string, 
+        defaultPinNameColor: string = ColorScheme.PinNameColor): void {
 
         // Values should already be in mm
 
@@ -1404,8 +1510,8 @@ export class SymbolCustomModule extends SymbolCustom {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
-            });
+                textColor: defaultPinNameColor,
+            }, "pin-name_*");
         });
 
         rightPins.forEach(pin => {
@@ -1420,15 +1526,15 @@ export class SymbolCustomModule extends SymbolCustom {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
-            });
+                textColor: defaultPinNameColor,
+            }, "pin-name_*");
         });
 
         topPins.forEach(pin => {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(pin.pinId, 
-                pinX, topPinStart.sub(this.pinLength), 
+            drawing.addPinMM(pin.pinId,
+                pinX, topPinStart.sub(this.pinLength),
                 pinX, topPinStart, defaultLineColor);
 
             drawing.addModulePort(pinX, topPinStart, this.portWidth, this.portHeight, pin.pinType, 1, 90);
@@ -1437,16 +1543,16 @@ export class SymbolCustomModule extends SymbolCustom {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Right,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
+                textColor: defaultPinNameColor,
                 angle: numeric(-90),
-            });
+            }, "pin-name_*");
         });
 
         bottomPins.forEach(pin => {
             const position = pin.position;
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
-            drawing.addPinMM(pin.pinId, 
-                pinX, bottomPinStart, 
+            drawing.addPinMM(pin.pinId,
+                pinX, bottomPinStart,
                 pinX, bottomPinStart.sub(this.pinLength), defaultLineColor);
 
             drawing.addModulePort(pinX, bottomPinStart, this.portWidth, this.portHeight, pin.pinType, 1, -90);
@@ -1455,9 +1561,9 @@ export class SymbolCustomModule extends SymbolCustom {
                 fontSize: numeric(40),
                 anchor: HorizontalAlign.Left,
                 vanchor: VerticalAlign.Center,
-                textColor: ColorScheme.PinNameColor,
+                textColor: defaultPinNameColor,
                 angle: numeric(-90),
-            });
+            }, "pin-name_*");
         });
 
     }

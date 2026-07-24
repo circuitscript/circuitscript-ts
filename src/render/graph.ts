@@ -107,8 +107,6 @@ export class NetGraph {
 
                         if (displayProp instanceof SymbolDrawing) {
                             tmpSymbol = new SymbolPlaceholder(displayProp);
-                            tmpSymbol.setStyles(this.styles);
-
                             tmpSymbol.drawing.logger = this.logger;
 
                         } else {
@@ -122,6 +120,9 @@ export class NetGraph {
                                     componentUnit.pinsMaxPositions);
                             }
                         }
+                        
+                        tmpSymbol.setStyles(this.styles);
+                        tmpSymbol.isNetLabel = component.isNetLabel ?? false;
 
                         // TODO: change this to take the params from the
                         // component unit.

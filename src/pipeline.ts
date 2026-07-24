@@ -336,14 +336,14 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             const layoutEngine = new LayoutEngine(logger);
             const layoutTimer = new SimpleStopwatch();
 
-            const styles = getStylesFromDocument(documentVariable);
+            const documentStyles = getStylesFromDocument(documentVariable);
 
             // graphEngine.generateNetGraph(nets);
 
             let sheetFrames;
 
             try {
-                graphEngine.setStyles(styles);
+                graphEngine.setStyles(documentStyles);
 
                 const { graph, containerFrames } =
                     graphEngine.generateLayoutGraph(sequence, nets);
@@ -420,7 +420,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 const renderLogger = new Logger();
                 let svgCanvas;
                 try {
-                    svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, styles);
+                    svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, documentStyles);
                 } catch (err) {
                     throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
                 }
@@ -461,7 +461,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                                 });
                                 const outputStream = environment.createWriteStream(outPath);
 
-                                generatePdfOutput(doc, svgCanvas, sheetSize, sheetSizeDefined, 1);
+                                generatePdfOutput(doc, svgCanvas, sheetSize, sheetSizeDefined, documentStyles, 1);
 
                                 doc.pipe(outputStream);
                                 doc.end();
