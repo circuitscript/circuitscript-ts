@@ -538,7 +538,7 @@ export abstract class SymbolGraphic {
 
             const labelClassDefault = this.getLabelClassDefault(tmpLabel);
 
-            const textElement = textContainer.text(tmpLabel.text);
+            const textElement = textContainer.plain(tmpLabel.text);
 
             const overrides: Record<string, string> = {};
             if (textColor !== labelClassDefault.fill) {
