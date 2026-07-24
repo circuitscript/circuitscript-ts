@@ -18,7 +18,7 @@ const defaultLabelTextSize = 50;
 
 export type DefaultStyleClassName = 'wire' | 'busWire' | 'junction'
     | 'busJunction' | 'pin' | 'graphicLine'
-    | 'pinName' | 'pinId' | 'label' | 'grid' | 'text';
+    | 'pinName' | 'pinId' | 'label' | 'grid' | 'text' | 'frame';
 
 // Marker class added alongside a default-style class whenever an element's
 // actual attributes diverge from that class's rule - see applyClassWithOverrides().
@@ -97,6 +97,10 @@ export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, 
         text: {
             fill: styles.textColor!,
         },
+        frame: {
+            stroke: ColorScheme.FrameBorderColor,
+            fill: 'none',
+        },
     };
 }
 
@@ -111,6 +115,7 @@ const ThemeVarNames = {
     lineColor: '--cs-line-color',
     textColor: '--cs-text-color',
     grid: '--cs-grid-color',
+    frame: '--cs-frame-border-color',
 } as const;
 
 /**
@@ -129,6 +134,7 @@ function getThemeVariableCss(styles: Styles): string {
         [ThemeVarNames.lineColor]: styles.lineColor!,
         [ThemeVarNames.textColor]: styles.textColor!,
         [ThemeVarNames.grid]: ColorScheme.GridColor,
+        [ThemeVarNames.frame]: ColorScheme.FrameBorderColor,
     };
 
     const dark: Record<string, string> = {
@@ -136,6 +142,7 @@ function getThemeVariableCss(styles: Styles): string {
         [ThemeVarNames.junction]: DarkColorScheme.JunctionColor,
         [ThemeVarNames.busJunction]: DarkColorScheme.BusJunctionColor,
         [ThemeVarNames.grid]: DarkColorScheme.GridColor,
+        [ThemeVarNames.frame]: DarkColorScheme.FrameBorderColor,
     };
     if (styles.wireColor === ColorScheme.WireColor) {
         dark[ThemeVarNames.wire] = DarkColorScheme.WireColor;
@@ -177,6 +184,7 @@ function getThemedClassDefaults(styles: Styles): Record<DefaultStyleClassName, R
         label: { ...defaults.label, fill: `var(${ThemeVarNames.textColor})` },
         grid: { ...defaults.grid, stroke: `var(${ThemeVarNames.grid})` },
         text: { ...defaults.text, fill: `var(${ThemeVarNames.textColor})` },
+        frame: { ...defaults.frame, stroke: `var(${ThemeVarNames.frame})` },
     };
 }
 

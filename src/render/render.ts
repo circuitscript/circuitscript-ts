@@ -513,7 +513,7 @@ function generateSVGChild(canvas: Svg | G,
         const useHeight = roundValue(height).toNumber();
         const useBorderWidth = roundValue(borderWidth).toNumber();
 
-        let strokeColor = item.borderColor ?? '#111';
+        let strokeColor = item.borderColor ?? ColorScheme.FrameBorderColor;
 
         if (item.frame.frameType === FrameType.Sheet) {
             drawSheetFrameBorder(frameGroup, item);
@@ -526,12 +526,14 @@ function generateSVGChild(canvas: Svg | G,
                     }
                 }
 
+                const frameOverrides: Record<string, string> = {};
+                if (strokeColor !== ColorScheme.FrameBorderColor) {
+                    frameOverrides.stroke = strokeColor;
+                }
+
                 const tmpRect = frameGroup.rect(useWidth, useHeight)
-                    .fill('none')
-                    .stroke({ 
-                        width: milsToMM(useBorderWidth).toNumber(), 
-                        color: strokeColor 
-                    });
+                    .attr({ 'stroke-width': `${milsToMM(useBorderWidth).toNumber()}px` });
+                applyClassWithOverrides(tmpRect, 'frame', frameOverrides);
 
                 tmpRect.translate(
                     item.x.toNumber(), item.y.toNumber());

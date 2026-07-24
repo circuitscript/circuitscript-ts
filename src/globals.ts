@@ -138,6 +138,7 @@ export const ColorScheme = {
     PinNameColor: '#333',
 
     GridColor: '#000',
+    FrameBorderColor: '#111',
 }
 
 // Equivalents of ColorScheme used under `prefers-color-scheme: dark` - only
@@ -153,6 +154,7 @@ export const DarkColorScheme = {
     PinNameColor: '#ccc',
 
     GridColor: '#888',
+    FrameBorderColor: '#444',
 }
 
 

@@ -196,8 +196,8 @@ describe('Render tests', () => {
         // First, generate the PDF
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
 
-        const styles = getStylesFromDocument(documentVariable);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
+        const documentStyles = getStylesFromDocument(documentVariable);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, documentStyles);
 
         // Full ISO time string is given, because the CI server might
         // have a different timezone
@@ -212,7 +212,7 @@ describe('Render tests', () => {
             }
         });
 
-        generatePdfOutput(doc, svgCanvas, sheetSize, false, 1);
+        generatePdfOutput(doc, svgCanvas, sheetSize, false, documentStyles, 1);
         const outputStream = createWriteStream(targetPdf);
         doc.pipe(outputStream);
         doc.end();
@@ -242,6 +242,6 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('6f406981eb7a8746047fa851579c206e');
+        expect(result).toEqual('c580ba4d297fbd5d045c72a81232b399');
     });
 });
