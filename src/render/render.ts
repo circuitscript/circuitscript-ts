@@ -15,7 +15,7 @@ import {
 import { applyFontsToSVG } from '../sizing.js';
 import {
     ColorScheme, ComponentTypes, FrameType, MMToPt, MMToPx, MilsToMM,ParamKeys, 
-    RenderFlags, defaultGridSizeUnits,
+    RenderFlags, defaultFont, defaultGridSizeUnits,
     defaultPageSpacingMM,
     fontDisplayScale} from '../globals.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
@@ -71,8 +71,14 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
     
     const canvas = createSvgCanvas();
 
+    // Set the default font family
+    const canvasGroup = canvas.group();
+    canvasGroup.font({
+        family: defaultFont
+    });
+
     sheetFrames.forEach((sheet, index) => {
-        const sheetGroup = canvas.group();
+        const sheetGroup = canvasGroup.group();
         sheetGroup.id('sheet-' + index).addClass('sheet');
 
         logger.add('rendering sheet: sheet-' + index);

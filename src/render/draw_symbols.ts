@@ -518,17 +518,21 @@ export abstract class SymbolGraphic {
                     .rotate(useLabelAngle, -boundsX, -boundsY);
             }
 
-            // font-family is never overridden per-instance - it's covered document-wide
-            // by the `text { font-family: ... }` rule, so it's never set here.
+            // Font family, size and weight must be set as presentation
+            // attributes, because values from the class are not used
+            // during the bbox calculation.
             const fontProperties: {
                 anchor: string,
                 'dominant-baseline': string,
                 size?: number,
                 weight?: string,
                 style?: string,
+                family?: string,
             } = {
                 anchor: anchorStyle,
                 'dominant-baseline': dominantBaseline,
+                size: fontSize.toNumber() * fontDisplayScale,
+                weight: fontWeight,
             }
 
             if (fontStyle !== 'normal'){
@@ -543,27 +547,6 @@ export abstract class SymbolGraphic {
             const overrides: Record<string, string> = {};
             if (textColor !== labelClassDefault.fill) {
                 overrides['fill'] = textColor;
-            }
-
-            // font-size/weight are only governed by the class for pin name/id
-            // and net labels, which have a fixed default - diverging values are
-            // inlined via style, same as fill. Decorative text (the text
-            // fallback) has no such default, so these always stay explicit
-            // attributes, set per instance.
-            if (labelClassDefault.fontSize !== undefined) {
-                if (fontSize.toNumber() !== labelClassDefault.fontSize) {
-                    overrides['font-size'] = (fontSize.toNumber() * fontDisplayScale).toString();
-                }
-            } else {
-                fontProperties.size = fontSize.toNumber() * fontDisplayScale;
-            }
-
-            if (labelClassDefault.fontWeight !== undefined) {
-                if (fontWeight !== labelClassDefault.fontWeight) {
-                    overrides['font-weight'] = fontWeight;
-                }
-            } else {
-                fontProperties.weight = fontWeight;
             }
 
             applyClassWithOverrides(textElement, labelClassDefault.className, overrides);
