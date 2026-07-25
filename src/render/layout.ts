@@ -367,6 +367,10 @@ export class LayoutEngine {
             }
 
             this.placeAndSizeFrame(baseFrame);
+        } else {
+            // If no subgraphs, it means that there are no components placed
+            // in the canvas.
+            throw "Empty sheet";
         }
        
         // All items in the frames are now ready for final placement.   

@@ -75,7 +75,7 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
     const canvasGroup = canvas.group();
     canvasGroup.font({
         family: defaultFont
-    });
+    }).css('color-scheme', 'light dark');
 
     sheetFrames.forEach((sheet, index) => {
         const sheetGroup = canvasGroup.group();

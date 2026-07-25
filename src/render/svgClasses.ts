@@ -246,7 +246,15 @@ export function applyClassWithOverrides(el: Element, className: DefaultStyleClas
 
     if (Object.keys(overrides).length > 0) {
         el.addClass(StyleOverrideClass);
-        el.css(overrides);
+
+        // Set as a single `style` attribute rather than via el.css() (which sets
+        // each property individually through the element's live style object).
+        // This is needed because svgdom has bug that causes css functions to be
+        // mangled in the style attribute if .css() is used.
+        const cssText = Object.entries(overrides)
+            .map(([prop, value]) => `${prop}: ${value};`)
+            .join(' ');
+        el.attr('style', cssText);
     }
 }
 
@@ -278,4 +286,15 @@ export function expandStyleOverridesForPdf(canvas: Svg, styles: Styles): void {
             Object.keys(overrides).forEach(prop => el.css(prop, null));
         });
     }
+}
+
+export function parseLightDarkProps(value: string | string[]): string {
+    let result: string;
+    if (Array.isArray(value) && value.length === 2) {
+        result = `light-dark(${value[0]}, ${value[1]})`;
+    } else {
+        result = value as string;
+    }
+
+    return result;
 }

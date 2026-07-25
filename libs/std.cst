@@ -837,6 +837,10 @@ def test_point():
             refdes_offsetx: 0
             refdes_offsety: 0
 
+# ============================================================
+# Sheet generation
+# ============================================================
+
 def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin_y,
     col_display_value, row_display_value, inner_frame_margin = 50):
 
@@ -879,12 +883,12 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
             fill: "none"
 
             # outer rect
-            line_color: "#cccccc"
+            line_color: "#cccccc", "#333333"
             crect: paper_width/2, paper_height/2, \
                 paper_width, paper_height, class="paper-area"
 
             # inner rect
-            line_color: "#111111"
+            line_color: "#111111", "#dddddd"
             crect: paper_width/2, paper_height/2, \
                 inner_width, inner_height, class="plot-area"
 

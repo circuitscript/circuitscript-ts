@@ -25,7 +25,7 @@ import { ParserRuleContext } from "antlr4ng";
 import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { Styles } from "src/styles.js";
-import { applyClassWithOverrides, DefaultStyleClassName } from "./svgClasses.js";
+import { applyClassWithOverrides, DefaultStyleClassName, parseLightDarkProps } from "./svgClasses.js";
 
 
 export type PathDrawItem = {
@@ -247,7 +247,7 @@ export abstract class SymbolGraphic {
                 // 'fill: none'.
                 const overrides: Record<string, string> = {};
                 if (lineColor !== resolvedLineColor) {
-                    overrides['stroke'] = lineColor;
+                    overrides['stroke'] = parseLightDarkProps(lineColor);
                 }
                 if (lineWidth.toNumber() !== resolvedLineWidth) {
                     overrides['stroke-width'] = lineWidth.toNumber().toString();
@@ -260,7 +260,7 @@ export abstract class SymbolGraphic {
 
                 let extraClass = "";
 
-                // If closed polygon, then add the additioanl class and 
+                // If closed polygon, then add the additional class and 
                 // also check the fill override again.
                 if (isClosedPolygon) {
                     extraClass = " graphicPolygon";
@@ -286,7 +286,7 @@ export abstract class SymbolGraphic {
         pinPaths.forEach(({ path, lineColor }) => {
             const overrides: Record<string, string> = {};
             if (lineColor !== resolvedLineColor) {
-                overrides['stroke'] = lineColor;
+                overrides['stroke'] = parseLightDarkProps(lineColor);
             }
 
             applyClassWithOverrides(group.path(path), 'pin', overrides);
@@ -799,8 +799,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                     case PlaceHolderCommands.lineColor:
                         // @ts-ignore
-                        drawing.addSetLineColor(...positionParams);
-                        lineColor = positionParams[0];
+                        if (positionParams.length > 1) {
+                            lineColor = positionParams;
+                        } else {
+                            lineColor = positionParams[0];
+                        }
+                        drawing.addSetLineColor(lineColor);
                         break;
 
                     case PlaceHolderCommands.textColor:
