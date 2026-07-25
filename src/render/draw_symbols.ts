@@ -255,7 +255,7 @@ export abstract class SymbolGraphic {
 
                 // By default fill is "none";
                 if (fillColor !== 'none') {
-                    overrides['fill'] = fillColor;
+                    overrides['fill'] = parseLightDarkProps(fillColor);
                 }
 
                 let extraClass = "";
@@ -266,7 +266,7 @@ export abstract class SymbolGraphic {
                     extraClass = " graphicPolygon";
 
                     if (fillColor !== ColorScheme.BodyColor) {
-                        overrides['fill'] = fillColor;
+                        overrides['fill'] = parseLightDarkProps(fillColor);
                     } else {
                         delete overrides['fill'];
                     }
@@ -794,7 +794,13 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                     case PlaceHolderCommands.fill:
                         // @ts-ignore
-                        drawing.addSetFillColor(...positionParams);
+                        let useColor;
+                        if (positionParams.length > 1) {
+                            useColor = positionParams;
+                        } else {
+                            useColor = positionParams[0];
+                        }
+                        drawing.addSetFillColor(useColor);
                         break;
 
                     case PlaceHolderCommands.lineColor:

@@ -1,0 +1,29 @@
+# Example with stroke and fill color for light/dark mode
+
+def res(value):
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            line_color: "blue", "red"
+            fill: "red", "blue"
+            crect: 0, 0, width, height
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, pin_only=true
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, pin_only=true
+            label: params.refdes, -width/2 + params.refdes_offsetx, \
+                -height/2 - 20 + params.refdes_offsety, \
+                name="refdes", fontSize=50, anchor="left"
+            label: params.value, 0, 0, name="value", fontSize=30, \
+                anchor="center", vanchor="center"
+        type: "res"
+        params:
+            value: value
+            size: "0402"
+            footprint: "Resistor_SMD:R_0402_1005Metric"
+            description: "RES {value} OHM {size}"
+            refdes_offsetx: 0
+            refdes_offsety: 0
+
+at res(10k)
