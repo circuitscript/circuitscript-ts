@@ -238,7 +238,8 @@ export abstract class SymbolGraphic {
                     })
                     .fill(fillColor);
             } else {
-                const { path, lineColor, fillColor, lineWidth } = item;
+                const { path, lineColor, fillColor, 
+                    lineWidth, isClosedPolygon } = item;
 
                 // Open paths (hline/vline/line/path/arc/etc.) always draw with
                 // fillColor 'none' (see getPaths()); closed polygons always have
@@ -257,8 +258,22 @@ export abstract class SymbolGraphic {
                     overrides['fill'] = fillColor;
                 }
 
+                let extraClass = "";
+
+                // If closed polygon, then add the additioanl class and 
+                // also check the fill override again.
+                if (isClosedPolygon) {
+                    extraClass = " graphicPolygon";
+
+                    if (fillColor !== ColorScheme.BodyColor) {
+                        overrides['fill'] = fillColor;
+                    } else {
+                        delete overrides['fill'];
+                    }
+                }
+
                 applyClassWithOverrides(group.path(path), 
-                    'graphicLine', overrides);
+                    `graphicLine${extraClass}`, overrides);
             }
         });
     }
@@ -453,12 +468,14 @@ export abstract class SymbolGraphic {
                         boundsTranslateX = paddingHorizontal;
                     }
 
+                    // Port symbol should alos have background fill and is
+                    // also consider a polygon.
                     textContainer.path(path)
+                        .addClass('graphicPolygon')
                         .stroke({
                             width: milsToMM(5).toNumber(),
                             color: '#333'
                         })
-                        .fill('none')
                         .scale(flip, 1, 0, 0)
                         .translate(boundsTranslateX, boundsY - paddingVert)
                         ;
@@ -713,7 +730,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
             // Set as transparent, so that the mouseover/hitarea will include
             // the component background.
-            [PlaceHolderCommands.fill, ['transparent']],  
+            [PlaceHolderCommands.fill, [ColorScheme.BodyColor]],  
             ...drawing.getCommands()
             ];
 
@@ -1212,7 +1229,7 @@ export class SymbolCustom extends SymbolGraphic {
         const defaultLineColor = this.styles?.lineColor ?? ColorScheme.PinLineColor;
         const defaultTextColor = this.styles?.textColor ?? ColorScheme.PinNameColor;
         drawing.addSetLineColor(defaultLineColor);
-        // drawing.addSetFillColor(ColorScheme.BodyColor);
+        drawing.addSetFillColor(ColorScheme.BodyColor);
 
         drawing.addSetLineWidth(numeric(5));
 

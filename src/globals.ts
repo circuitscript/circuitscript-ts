@@ -128,7 +128,7 @@ export const PortPaddingHorizontal = MilsToMM * 10;
 export const PortPaddingVertical = MilsToMM * 10;
 
 export const ColorScheme = {
-    BodyColor: 'rgb(255, 255, 194)',
+    BodyColor: 'rgb(255, 255, 255)',
     JunctionColor: 'rgb(0, 132, 0)',
     WireColor: 'rgb(0, 132, 0)',
     BusWireColor: 'rgb(0,0,250)',
@@ -145,6 +145,7 @@ export const ColorScheme = {
 // applied to colors still at their ColorScheme default (see svgClasses.ts),
 // so a document that explicitly customizes a color keeps it in both themes.
 export const DarkColorScheme = {
+    BodyColor: 'rgb(0, 0, 0)',
     JunctionColor: 'rgb(0, 200, 0)',
     WireColor: 'rgb(0, 200, 0)',
     BusWireColor: 'rgb(110,110,255)',

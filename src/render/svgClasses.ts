@@ -17,7 +17,7 @@ import { Styles } from '../styles.js';
 const defaultLabelTextSize = 50;
 
 export type DefaultStyleClassName = 'wire' | 'busWire' | 'junction'
-    | 'busJunction' | 'pin' | 'graphicLine'
+    | 'busJunction' | 'pin' | 'graphicLine' | 'graphicPolygon'
     | 'pinName' | 'pinId' | 'label' | 'grid' | 'text' | 'frame';
 
 // Marker class added alongside a default-style class whenever an element's
@@ -71,6 +71,9 @@ export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, 
             stroke: styles.lineColor!,
             fill: 'none',
         },
+        graphicPolygon: {
+            fill: ColorScheme.BodyColor,
+        },
         pinName: {
             fill: styles.textColor!,
             'font-size': `${defaultPinNameTextSize * fontDisplayScale}px`,
@@ -116,6 +119,7 @@ const ThemeVarNames = {
     textColor: '--cs-text-color',
     grid: '--cs-grid-color',
     frame: '--cs-frame-border-color',
+    bodyColor: '--cs-body-color',
 } as const;
 
 /**
@@ -135,6 +139,7 @@ function getThemeVariableCss(styles: Styles): string {
         [ThemeVarNames.textColor]: styles.textColor!,
         [ThemeVarNames.grid]: ColorScheme.GridColor,
         [ThemeVarNames.frame]: ColorScheme.FrameBorderColor,
+        [ThemeVarNames.bodyColor]: ColorScheme.BodyColor,
     };
 
     const dark: Record<string, string> = {
@@ -143,6 +148,7 @@ function getThemeVariableCss(styles: Styles): string {
         [ThemeVarNames.busJunction]: DarkColorScheme.BusJunctionColor,
         [ThemeVarNames.grid]: DarkColorScheme.GridColor,
         [ThemeVarNames.frame]: DarkColorScheme.FrameBorderColor,
+        [ThemeVarNames.bodyColor]: DarkColorScheme.BodyColor,
     };
     if (styles.wireColor === ColorScheme.WireColor) {
         dark[ThemeVarNames.wire] = DarkColorScheme.WireColor;
@@ -179,6 +185,7 @@ function getThemedClassDefaults(styles: Styles): Record<DefaultStyleClassName, R
         busJunction: { ...defaults.busJunction, fill: `var(${ThemeVarNames.busJunction})` },
         pin: { ...defaults.pin, stroke: `var(${ThemeVarNames.lineColor})` },
         graphicLine: { ...defaults.graphicLine, stroke: `var(${ThemeVarNames.lineColor})` },
+        graphicPolygon: { ...defaults.graphicPolygon, fill: `var(${ThemeVarNames.bodyColor})` },
         pinName: { ...defaults.pinName, fill: `var(${ThemeVarNames.textColor})` },
         pinId: { ...defaults.pinId, fill: `var(${ThemeVarNames.lineColor})` },
         label: { ...defaults.label, fill: `var(${ThemeVarNames.textColor})` },
