@@ -1,6 +1,56 @@
 # Changelog
 
-## [v0.9.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.0...v0.9.1)
+## [v0.9.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.1...v0.9.2)
+
+[ab4b109](https://github.com/circuitscript/circuitscript-ts/commit/ab4b109a389b2730c2f4e4b868946d8006f9a218)Use shared CSS classes for SVG output and support dark mode
+- 
+- Wires, junctions, pins, and their labels now render with class-based
+- styling instead of inline attributes on every element, reducing SVG
+- output size. Colors still at their default (not customized by the
+- document) follow prefers-color-scheme: dark via CSS variables.
+- 
+- PDF export resolves each element's final attributes explicitly, since
+- svg-to-pdfkit doesn't follow standard CSS class/style precedence.
+
+[7a43195](https://github.com/circuitscript/circuitscript-ts/commit/7a43195a653d10413346b8e0f9051a61bb54664a)Add ngspice netlist export for circuit simulation
+- 
+- Adds a new NgSpiceNetListOutputHandler that generates .cir SPICE
+- netlists from the parsed circuit graph, covering two-terminal
+- passives (res/cap/ind/diode) and a sim voltage source component.
+- Components can now carry sim properties (diode sim_model override,
+- voltage source waveform), and the document exposes a sim.title /
+- sim.analysis block for netlist headers.
+
+[71e36ea](https://github.com/circuitscript/circuitscript-ts/commit/71e36ea468ceb935dcb73fbc31ca8312663f11cf)Support light-dark line colors for custom symbol graphics
+- 
+- - Allow line_color to accept a [light, dark] pair, rendered via CSS
+- light-dark() for graphic paths and pins
+- - Apply style overrides as a single style attribute instead of
+- el.css() to work around an svgdom bug that mangles CSS functions
+- - Set color-scheme on the root canvas group so light-dark() resolves
+- - Throw when a sheet has no placed components instead of silently
+- producing an empty layout
+
+[079be80](https://github.com/circuitscript/circuitscript-ts/commit/079be80d06abbcc21847e441af095b341318c1cd)Fix font attributes not applying to text bbox calculation
+- 
+- Font family, size and weight need to be set as presentation attributes
+- on text elements since class-based values are not available during
+- bbox calculation. Also wrap sheets in a group with the default font
+- family set.
+
+[aae80c5](https://github.com/circuitscript/circuitscript-ts/commit/aae80c5c77d9c2fbeacc1540e78d7338da722d17)Add graphicPolygon CSS class for themed closed-polygon fills
+- 
+- Change default body color to white/black for light/dark themes and
+- give closed polygons their own shared CSS class so their fill follows
+- the theme instead of being hardcoded.
+
+[2a8c76a](https://github.com/circuitscript/circuitscript-ts/commit/2a8c76a84fbe64024802904cbe38af222947aa05)Extend shared CSS class system to frame borders
+
+[4c23b54](https://github.com/circuitscript/circuitscript-ts/commit/4c23b5434a59223836342fc09a350a2418508d60)Use plain text nodes instead of tspan-wrapped text for SVG labels
+
+[30ed5aa](https://github.com/circuitscript/circuitscript-ts/commit/30ed5aa25b9cc378dabefb68aff6d602e9ffcc12)Support light-dark fill colors for custom symbol graphics
+
+## [v0.9.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.0...v0.9.1) - 2026-07-11
 
 [1357979](https://github.com/circuitscript/circuitscript-ts/commit/135797979199db74f69c7190b0afc186152639f4)Sort BOM rows and merge component params within groups
 
