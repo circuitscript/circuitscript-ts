@@ -8,7 +8,7 @@
 import { Box, SVGTypeMapping } from '@svgdotjs/svg.js';
 import { Big } from 'big.js';
 
-import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp } from './render/geometry.js';
+import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp, resolveDominantBaseline } from './render/geometry.js';
 import { defaultFont } from './globals.js';
 import { NodeScriptEnvironment } from "./environment/environment.js";
 
@@ -43,20 +43,7 @@ export function measureTextSize2(
     const key = `${text}-${fontFamily}-${fontSize}-${fontWeight}-${fontStyle}-${anchor}-${vanchor}`;
 
     if (measureTextSizeCache[key] === undefined) {
-        let dominantBaseline = VerticalAlignProp.Hanging;
-        switch (vanchor) {
-            case VerticalAlign.Top:
-                dominantBaseline = VerticalAlignProp.Hanging;
-                break;
-
-            case VerticalAlign.Center:
-                dominantBaseline = VerticalAlignProp.Central;
-                break;
-
-            case VerticalAlign.Bottom:
-                dominantBaseline = VerticalAlignProp.TextTop;
-                break;
-        }
+        const dominantBaseline = resolveDominantBaseline(vanchor);
 
         let useAnchor = HorizontalAlignProp.Start;
         switch(anchor){

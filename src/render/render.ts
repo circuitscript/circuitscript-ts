@@ -652,6 +652,7 @@ function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
 
         if (displayProp) {
             const sheetFrameGroup = frameGroup.group();
+            sheetFrameGroup.addClass('sheet');
 
             const symbol = new SymbolPlaceholder(displayProp);
 

@@ -16,7 +16,8 @@ import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSy
 import Flatten from '@flatten-js/core';
 import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, LabelStyle,
     Textbox, VerticalAlign,
-    VerticalAlignProp} from "./geometry.js";
+    VerticalAlignProp,
+    resolveDominantBaseline} from "./geometry.js";
 import { Logger } from "../logger.js";
 import { normalizePinType, PinTypes } from "../objects/PinTypes.js";
 import { RuntimeExecutionError, throwWithContext } from "../errors.js";
@@ -358,14 +359,8 @@ export abstract class SymbolGraphic {
                     anchorStyle = HorizontalAlignProp.Start;
                 }
             }
-
-            if (useDominantBaseline === VerticalAlign.Center) {
-                dominantBaseline = VerticalAlignProp.Central;
-            } else if (useDominantBaseline === VerticalAlign.Top) {
-                dominantBaseline = VerticalAlignProp.Hanging;
-            } else if (useDominantBaseline === VerticalAlign.Bottom) {
-                dominantBaseline = VerticalAlignProp.Alphabetic;
-            }
+            
+            dominantBaseline = resolveDominantBaseline(useDominantBaseline);
             
             // Similar logic as above.
             if ((isHorizontalLabel && this.flipY) || (isVerticalLabel && this.flipX)){
@@ -401,8 +396,15 @@ export abstract class SymbolGraphic {
             // The port type will add some padding to the component
             const { portType = null } = tmpLabel.style;
 
+            const box = tmpLabel.box;
+            const debugLabelBounds = [
+                [box.xmin, box.ymin],
+                [box.xmax, box.ymax],
+            ];
+
             if (portType !== null) {
-                const { x: boundsX, y: boundsY }
+                // Use the text measurement bounds.
+                const { x: boundsX, y: boundsY, width: measurementWidth}
                     = tmpLabel.textMeasurementBounds;
 
                 const paddingHorizontal = PortPaddingHorizontal;
@@ -415,9 +417,16 @@ export abstract class SymbolGraphic {
 
                 let path: (string | number)[] = [];
                 let boundsTranslateX = -paddingHorizontal;
-
+               
                 switch (portType) {
                     case PinTypes.Input:
+                        /*
+                            [0]-------[1]
+                            /          |
+                         [4]           |
+                            \          |
+                            [3]-------[2]
+                        */
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth, boundsHeight,
@@ -439,6 +448,13 @@ export abstract class SymbolGraphic {
                         break;
 
                     case PinTypes.IO:
+                        /*
+                            [0]-------[1]
+                            /           \
+                         [5]             [2]
+                            \           /
+                            [4]-------[3]
+                        */
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth + PortArrowSize, 
@@ -452,6 +468,13 @@ export abstract class SymbolGraphic {
 
                     case PinTypes.Any:
                     case PinTypes.Passive:
+                        /*
+                            [0]-------[1]
+                             |         |
+                             |         |
+                             |         |
+                            [3]-------[2]
+                        */
                         path = ['M', 0, 0,
                             'L', boundsWidth, 0,
                             'L', boundsWidth, boundsHeight,
@@ -468,40 +491,73 @@ export abstract class SymbolGraphic {
                         boundsTranslateX = paddingHorizontal;
                     }
 
-                    // Port symbol should alos have background fill and is
+                    /**
+                     * translate y by:
+                     *      boundsY: because port text is usually vertically 
+                     *      aligned to center, so boundsY will be ymin, usually 
+                     *      top half of the text
+                     * 
+                     *      paddingVert: each side of the port will have
+                     *      vertical padding.
+                     */
+
+                    // Port symbol should also have background fill and is
                     // also consider a polygon.
                     textContainer.path(path)
-                        .addClass('graphicPolygon')
+                        .addClass('graphicLine graphicPolygon')
                         .stroke({
                             width: milsToMM(5).toNumber(),
                             color: '#333'
                         })
-                        .scale(flip, 1, 0, 0)
                         .translate(boundsTranslateX, boundsY - paddingVert)
+                        .scale(flip, 1, 0, 0)
                         ;
+
+                    // Update debug bounds for the port
+                    const width = box.xmax - box.xmin;
+                    const height = box.ymax - box.ymin;
+
+                    let xmin = - paddingHorizontal - PortArrowSize;
+                    if (this.flipX !== 0) {
+                        xmin = - paddingHorizontal - measurementWidth;
+                    }
+
+                    debugLabelBounds[0] = [xmin, boundsY - paddingVert];
+                    debugLabelBounds[1] = [xmin + width, boundsY - paddingVert + height];
                 }
             }
 
             if (RenderFlags.ShowLabelBoxBounds) {
-                const box = tmpLabel.box;
-                
+                const [[xmin, ymin], [xmax, ymax]] = debugLabelBounds;
+                const width = xmax - xmin;
+                const height = ymax - ymin;
+
                 textContainer.rect(
-                    box.width,
-                    box.height
+                    width,
+                    height
                 )
                     .fill('none')
                     .stroke({
                         width: 0.1,
                         color: 'blue',
                     })
-                    .translate(box.xmin, box.ymin)
-                    .rotate(labelAngle, -box.xmin, -box.ymin);
+                    .translate(xmin, ymin)
+                    .rotate(labelAngle, -xmin, -ymin);
+
+                // textContainer.line([-2, 0, 2, 0])
+                //     .stroke({
+                //         width: 0.1,
+                //         color: 'red'
+                //     });
             }
 
+            let containerX = translateX.toNumber();
+            let containerY = translateY.toNumber() - 0.1;
+
             textContainer.translate(
-                    translateX.toNumber(), translateY.toNumber())
+                containerX, containerY)
                 .rotate(useRotateAngle,
-                    -translateX.toNumber(), -translateY.toNumber());
+                    -containerX, -containerY);
 
             let useLabelAngle = labelAngle;
             if (isRotation180) {
@@ -528,7 +584,7 @@ export abstract class SymbolGraphic {
                 )
                     .fill('none')
                     .stroke({
-                        width: 0.1,
+                        width: 0.05,
                         color: 'red',
                     })
                     .translate(boundsX, boundsY)
@@ -563,7 +619,7 @@ export abstract class SymbolGraphic {
 
             const overrides: Record<string, string> = {};
             if (textColor !== labelClassDefault.fill) {
-                overrides['fill'] = textColor;
+                overrides['fill'] = parseLightDarkProps(textColor);
             }
 
             applyClassWithOverrides(textElement, labelClassDefault.className, overrides);
@@ -815,8 +871,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                     case PlaceHolderCommands.textColor:
                         // @ts-ignore
-                        drawing.addSetTextColor(...positionParams);
-                        textColor = positionParams[0];
+                        if (positionParams.length > 1) {
+                            textColor = positionParams;
+                        } else {
+                            textColor = positionParams[0];
+                        }
+                        drawing.addSetTextColor(textColor);
                         break;
 
                     case PlaceHolderCommands.arc:

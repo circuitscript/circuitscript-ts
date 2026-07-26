@@ -55,11 +55,15 @@ export class Textbox extends Flatten.Polygon {
 
     style: LabelStyle;
 
+    // Raw box from measureTextSize2 at construction time - the measured text glyph
+    // bounds, before port padding/arrow-size offsets and before rotation/transform.
     textMeasurementBounds: Box;
 
     // Use to indicate if this is a label or a textbox.
     label: boolean;
 
+    // Bounding box of the final drawn polygon (includes port padding/arrow
+    // size, and stays in sync after rotate/transform).
     get box() {
         return this.polygon.box;
     }
@@ -123,6 +127,7 @@ export class Textbox extends Flatten.Polygon {
         let anchorOffsetY = 0;
 
         if (portType === null){
+            // Not port, use simple coordinates to define the bounding box.
             polygonCoords = [
                 [box.x, box.y],
                 [box.x2, box.y],
@@ -135,7 +140,10 @@ export class Textbox extends Flatten.Polygon {
             const paddingHorizontal = PortPaddingHorizontal;
             const paddingVert = PortPaddingVertical;
 
-            // Need to account for the arrow head
+            // Draw polygon to cover only the text area within the port and also
+            // account for the arrow head. But polygon does not include path of
+            // the arrow head.
+
             if (portType === PinTypes.Input) {
                 polygonCoords = [
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
@@ -144,6 +152,7 @@ export class Textbox extends Flatten.Polygon {
                     [box.x - paddingHorizontal - PortArrowSize, box.y2 + paddingVert],
                     [box.x - paddingHorizontal - PortArrowSize, box.y - paddingVert],
                 ];
+
                 anchorOffsetX += (PortArrowSize + paddingHorizontal);
             } else if (portType === PinTypes.Output) {
                 polygonCoords = [
@@ -174,7 +183,7 @@ export class Textbox extends Flatten.Polygon {
                 anchorOffsetX += paddingHorizontal;
             }
 
-            anchorOffsetY += paddingVert/2;
+            anchorOffsetY = PortPaddingVertical/2;
         }
 
         const polygon = new Flatten.Polygon(polygonCoords);
@@ -868,4 +877,18 @@ function getArcPointRadians(centerX: number, centerY: number,
         centerX + dx * radius,
         centerY + dy * radius
     ];
+}
+
+export function resolveDominantBaseline(vAlign: VerticalAlign): VerticalAlignProp {
+    let dominantBaseline = VerticalAlignProp.Alphabetic;
+
+    if (vAlign === VerticalAlign.Center) {
+        dominantBaseline = VerticalAlignProp.Central;
+    } else if (vAlign === VerticalAlign.Top) {
+        dominantBaseline = VerticalAlignProp.Hanging;
+    } else if (vAlign === VerticalAlign.Bottom) {
+        dominantBaseline = VerticalAlignProp.Alphabetic;
+    }
+
+    return dominantBaseline;
 }
