@@ -576,8 +576,8 @@ export abstract class SymbolGraphic {
                 const flipHAnchor = (isHorizontalLabel && this.flipX) || (isVerticalLabel && this.flipY);
                 const flipVAnchor = (isHorizontalLabel && this.flipY) || (isVerticalLabel && this.flipX);
 
-                const boundsX = flipHAnchor ? -textBounds.x2 : textBounds.x;
-                const boundsY = flipVAnchor ? textBounds.y : -textBounds.y2;
+                const boundsX = flipHAnchor ? textBounds.x2 : textBounds.x;
+                const boundsY = flipVAnchor ? textBounds.y2 : textBounds.y;
 
                 textContainer.rect(
                     textBounds.width, textBounds.height
@@ -588,7 +588,7 @@ export abstract class SymbolGraphic {
                         color: 'red',
                     })
                     .translate(boundsX, boundsY)
-                    .rotate(useLabelAngle, -boundsX, -boundsY);
+                    // .rotate(useLabelAngle, -boundsX, -boundsY);
             }
 
             // Font family, size and weight must be set as presentation
@@ -614,18 +614,15 @@ export abstract class SymbolGraphic {
             }
 
             const labelClassDefault = this.getLabelClassDefault(tmpLabel);
-
-            const textElement = textContainer.plain(tmpLabel.text);
-
             const overrides: Record<string, string> = {};
             if (textColor !== labelClassDefault.fill) {
                 overrides['fill'] = parseLightDarkProps(textColor);
             }
-
+            
+            const textElement = textContainer.text(tmpLabel.text);
             applyClassWithOverrides(textElement, labelClassDefault.className, overrides);
             textElement
                 .font(fontProperties)
-                .css("white-space", "pre")
                 .rotate(useLabelAngle, 0, 0);
 
             const { a, b, c, d, e, f } = textContainer.matrix();

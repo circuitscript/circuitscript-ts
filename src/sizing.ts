@@ -60,7 +60,7 @@ export function measureTextSize2(
 
         fontFamily = defaultFont;
 
-        const tmpTextElement = mainCanvas.plain(text).font({
+        const tmpTextElement = mainCanvas.text(text).font({
             family: fontFamily,
             size: fontSize,
             anchor: useAnchor,

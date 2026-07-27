@@ -143,7 +143,8 @@ describe('Render tests', () => {
         ['script89.cst', 'Graphical path commands for m and l'],
         ['script90.cst', 'Bus creation and nets linking through buses'],
         ['script91.cst', 'multiple buses'],
-        ['script92.cst', 'Custom symbol with stroke and fill color for light/dark mode']
+        ['script92.cst', 'Custom symbol with stroke and fill color for light/dark mode'],
+        ['script93.cst', 'multi-line text with newlines and blank-space lines renders correctly (regression)']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
@@ -243,6 +244,30 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('1c88693e47cba8bfa90ec6a495175cf3');
+        expect(result).toEqual('08998adfaedf1ea9ae6e29bb8953c49b');
+    });
+
+    test('text newline handling - svg height regression', async () => {
+        const scriptPath = 'script93.cst';
+
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
+        const styles = getStylesFromDocument(documentVariable);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+        const widthMatch = svgOutput.match(/width="([\d.]+)"/);
+        const heightMatch = svgOutput.match(/height="([\d.]+)"/);
+
+        expect(widthMatch).not.toBeNull();
+        expect(heightMatch).not.toBeNull();
+
+        const width = Number(widthMatch![1]);
+        const height = Number(heightMatch![1]);
+
+        // Values captured once the multi-line text height regression (`.plain()` not
+        // measuring `\n`-separated lines) is fixed. A height regression that collapses
+        // the 6-line text block back down will fail this bound.
+        expect(width).toBeCloseTo(335.9776364, 1);
+        expect(height).toBeCloseTo(265.062356717, 1);
     });
 });

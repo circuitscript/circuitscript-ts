@@ -1,0 +1,18 @@
+from "std" import *
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+at vcc
+wire down 100
+
+add text(
+"This is some text!
+Something else is here?
+Or now
+More lines              and spaces?
+    line 1
+line2", 200, 100, fontSize=50)
+
+wire down 100
+to gnd

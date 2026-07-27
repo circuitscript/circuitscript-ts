@@ -230,6 +230,10 @@ export function addDefaultStyleClasses(canvas: Svg, styles: Styles, opts: { them
         styleTag.rule('text', {
             'font-family': defaultFont,
         });
+
+        styleTag.rule('text tspan', {
+            'white-space': 'pre'
+        });
     }
 }
 
