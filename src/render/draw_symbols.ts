@@ -26,14 +26,15 @@ import { ParserRuleContext } from "antlr4ng";
 import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { Styles } from "src/styles.js";
-import { applyClassWithOverrides, DefaultStyleClassName, parseLightDarkProps } from "./svgClasses.js";
+import { applyClassWithOverrides, CustomColorVarRegistry, DefaultStyleClassName,
+    resolveThemedColor, ThemedColor } from "./svgClasses.js";
 
 
 export type PathDrawItem = {
     kind: 'path';
     path: string;
-    fillColor: string;
-    lineColor: string;
+    fillColor: ThemedColor;
+    lineColor: ThemedColor;
     lineWidth: NumericValue;
     isClosedPolygon: boolean;
 };
@@ -44,8 +45,8 @@ export type CircleDrawItem = {
     cy: number;
     radius: number;
     lineWidth: NumericValue;
-    lineColor: string;
-    fillColor: string;
+    lineColor: ThemedColor;
+    fillColor: ThemedColor;
 };
 
 export type DrawItem = PathDrawItem | CircleDrawItem;
@@ -76,6 +77,14 @@ export abstract class SymbolGraphic {
     labelTexts = new Map<string, string>();
 
     styles?: Styles;
+
+    // Collects `var=`-named custom colors used while drawing this symbol,
+    // shared across all symbols in a single render pass. Set by the render
+    // pipeline right before draw(), alongside setStyles(). Defaults to a
+    // private, empty registry so resolveThemedColor() always has a map to
+    // read/write - if setColorVarRegistry() is never called, `var=` colors used
+    // by this symbol just won't be shared with the rest of the document.
+    colorVarRegistry: CustomColorVarRegistry = new Map();
 
     // Set true for components representing net/wire labels (component.isNetLabel),
     // so drawLabels() can tell their label/text apart from decorative custom-symbol
@@ -122,7 +131,7 @@ export abstract class SymbolGraphic {
         height: NumericValue
     } {
         const { width, height } = this.drawing.getBoundingBox();
-        this.width = numeric(width);
+        this.width = numeric(width); 
         this.height = numeric(height);
 
         return {
@@ -135,6 +144,10 @@ export abstract class SymbolGraphic {
 
     setStyles(styles: Styles): void {
         this.styles = styles;
+    }
+
+    setColorVarRegistry(colorRegistry: CustomColorVarRegistry): void {
+        this.colorVarRegistry = colorRegistry;
     }
 
     // Subclasses should implement this
@@ -226,6 +239,7 @@ export abstract class SymbolGraphic {
         const items = this.drawing.getPaths();
         const resolvedLineColor = this.styles?.lineColor ?? ColorScheme.PinLineColor;
         const resolvedLineWidth = milsToMM(this.styles?.lineWidth ?? Defaults.LineWidth).toNumber();
+        const registry = this.colorVarRegistry;
 
         items.forEach(item => {
             if (item.kind === 'circle') {
@@ -235,11 +249,11 @@ export abstract class SymbolGraphic {
                     .cy(cy)
                     .stroke({
                         width: lineWidth.toNumber(),
-                        color: lineColor,
+                        color: resolveThemedColor(lineColor, registry),
                     })
-                    .fill(fillColor);
+                    .fill(resolveThemedColor(fillColor, registry));
             } else {
-                const { path, lineColor, fillColor, 
+                const { path, lineColor, fillColor,
                     lineWidth, isClosedPolygon } = item;
 
                 // Open paths (hline/vline/line/path/arc/etc.) always draw with
@@ -248,7 +262,7 @@ export abstract class SymbolGraphic {
                 // 'fill: none'.
                 const overrides: Record<string, string> = {};
                 if (lineColor !== resolvedLineColor) {
-                    overrides['stroke'] = parseLightDarkProps(lineColor);
+                    overrides['stroke'] = resolveThemedColor(lineColor, registry);
                 }
                 if (lineWidth.toNumber() !== resolvedLineWidth) {
                     overrides['stroke-width'] = lineWidth.toNumber().toString();
@@ -256,24 +270,24 @@ export abstract class SymbolGraphic {
 
                 // By default fill is "none";
                 if (fillColor !== 'none') {
-                    overrides['fill'] = parseLightDarkProps(fillColor);
+                    overrides['fill'] = resolveThemedColor(fillColor, registry);
                 }
 
                 let extraClass = "";
 
-                // If closed polygon, then add the additional class and 
+                // If closed polygon, then add the additional class and
                 // also check the fill override again.
                 if (isClosedPolygon) {
                     extraClass = " graphicPolygon";
 
                     if (fillColor !== ColorScheme.BodyColor) {
-                        overrides['fill'] = parseLightDarkProps(fillColor);
+                        overrides['fill'] = resolveThemedColor(fillColor, registry);
                     } else {
                         delete overrides['fill'];
                     }
                 }
 
-                applyClassWithOverrides(group.path(path), 
+                applyClassWithOverrides(group.path(path),
                     `graphicLine${extraClass}`, overrides);
             }
         });
@@ -283,11 +297,12 @@ export abstract class SymbolGraphic {
         // Draw pins
         const pinPaths = this.drawing.getPinsPath();
         const resolvedLineColor = this.styles?.lineColor ?? ColorScheme.PinLineColor;
+        const registry = this.colorVarRegistry;
 
         pinPaths.forEach(({ path, lineColor }) => {
             const overrides: Record<string, string> = {};
             if (lineColor !== resolvedLineColor) {
-                overrides['stroke'] = parseLightDarkProps(lineColor);
+                overrides['stroke'] = resolveThemedColor(lineColor, registry);
             }
 
             applyClassWithOverrides(group.path(path), 'pin', overrides);
@@ -616,7 +631,7 @@ export abstract class SymbolGraphic {
             const labelClassDefault = this.getLabelClassDefault(tmpLabel);
             const overrides: Record<string, string> = {};
             if (textColor !== labelClassDefault.fill) {
-                overrides['fill'] = parseLightDarkProps(textColor);
+                overrides['fill'] = resolveThemedColor(textColor, this.colorVarRegistry);
             }
             
             const textElement = textContainer.text(tmpLabel.text);
@@ -770,9 +785,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
             lineWidth: Defaults.LineWidth,
         };
 
-        const defaultLineColor = styles.lineColor;
+        const defaultLineColor = styles.lineColor ?? ColorScheme.PinLineColor;
         const defaultLineWidth = styles.lineWidth;
-        const defaultTextColor = styles.textColor;
+        const defaultTextColor = styles.textColor ?? ColorScheme.PinNameColor;
 
         // Add default commands at the start to provide consistent style
         const commands = [
@@ -789,9 +804,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
         drawing.log('id: ', drawing.id, 'angle: ', this._angle, "commands:", commands.length);
 
-        let lineColor = defaultLineColor;
-        let textColor = defaultTextColor;
-        
+        let lineColor: ThemedColor = defaultLineColor;
+        let textColor: ThemedColor = defaultTextColor;
+
         commands.forEach(([commandName, positionParams, keywordParams, ctx]) => {
 
             // evaluate any declared references in the position and keywork params
@@ -845,34 +860,19 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         drawing.addSetLineWidth(...positionParams);
                         break;
 
-                    case PlaceHolderCommands.fill:
-                        // @ts-ignore
-                        let useColor;
-                        if (positionParams.length > 1) {
-                            useColor = positionParams;
-                        } else {
-                            useColor = positionParams[0];
-                        }
+                    case PlaceHolderCommands.fill: {
+                        const useColor = this.parseThemedColorArgs(commandName, positionParams, keywordParams);
                         drawing.addSetFillColor(useColor);
                         break;
+                    }
 
                     case PlaceHolderCommands.lineColor:
-                        // @ts-ignore
-                        if (positionParams.length > 1) {
-                            lineColor = positionParams;
-                        } else {
-                            lineColor = positionParams[0];
-                        }
+                        lineColor = this.parseThemedColorArgs(commandName, positionParams, keywordParams);
                         drawing.addSetLineColor(lineColor);
                         break;
 
                     case PlaceHolderCommands.textColor:
-                        // @ts-ignore
-                        if (positionParams.length > 1) {
-                            textColor = positionParams;
-                        } else {
-                            textColor = positionParams[0];
-                        }
+                        textColor = this.parseThemedColorArgs(commandName, positionParams, keywordParams);
                         drawing.addSetTextColor(textColor);
                         break;
 
@@ -975,6 +975,40 @@ export class SymbolPlaceholder extends SymbolGraphic {
         drawing.log("=== end generate drawing ===");
     }
 
+    /**
+     * Parses the color argument to `fill`/`line_color`/`text_color`: a
+     * single literal color, or (via `dark=`/`var=` keyword args) a
+     * light/dark themed color, optionally named. The old bare two-positional
+     * form (`line_color: "#ccc", "#333"`) is no longer supported - it's
+     * ambiguous with a genuine light/dark pair and silently drops dark
+     * theming if left unhandled, so it's rejected outright instead.
+     */
+    private parseThemedColorArgs(commandName: any, positionParams: any,
+        keywordParams: Map<string, any> | unknown): ThemedColor {
+
+        if (positionParams.length > 1) {
+            throw new RuntimeExecutionError(
+                `${commandName}: only one positional color value is supported - `
+                + `use \`dark=\`/\`var=\` keyword args for a light/dark pair, `
+                + `e.g. ${commandName}: "${positionParams[0]}", dark="${positionParams[1]}"`);
+        }
+
+        const light = positionParams[0];
+
+        if (!(keywordParams instanceof Map)) {
+            return light;
+        }
+
+        const dark = keywordParams.get('dark');
+        const varName = keywordParams.get('var');
+
+        if (dark === undefined && varName === undefined) {
+            return light;
+        }
+
+        return { light, dark: dark ?? light, varName };
+    }
+
     private resolveReference(param: any): any {
         if (param instanceof DeclaredReference) {
             return param.value;
@@ -1009,7 +1043,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
     
     drawPinParams(drawing: SymbolDrawingCommands,
         commandName: string, keywordParams: Map<string, any>,
-        positionParams: any[], lineColor: string, pinNameColor: string): void {
+        positionParams: any[], lineColor: ThemedColor, pinNameColor: ThemedColor): void {
 
         drawing.log('add pin', ...positionParams);
 
@@ -1685,7 +1719,7 @@ export class SymbolDrawing {
     }
 
     addPinMM(pinId: PinId, startXMM: NumericValue, startYMM: NumericValue,
-        endXMM: NumericValue, endYMM: NumericValue, lineColor: string,
+        endXMM: NumericValue, endYMM: NumericValue, lineColor: ThemedColor,
         displayId = true, displayName = true, pinName: string | null = null): SymbolDrawing {
         // Values should be in mm
 
@@ -2068,17 +2102,17 @@ export class SymbolDrawing {
         return this;
     }
 
-    addSetLineColor(value: string): SymbolDrawing {
+    addSetLineColor(value: ThemedColor): SymbolDrawing {
         this.items.push(new GeometryProp('lineColor', value));
         return this;
     }
 
-    addSetTextColor(value: string): SymbolDrawing {
+    addSetTextColor(value: ThemedColor): SymbolDrawing {
         this.items.push(new GeometryProp('textColor', value));
         return this;
     }
 
-    addSetFillColor(value: string): SymbolDrawing {
+    addSetFillColor(value: ThemedColor): SymbolDrawing {
         this.items.push(new GeometryProp('fillColor', value));
         return this;
     }
@@ -2118,9 +2152,9 @@ export class SymbolDrawing {
 
     getPaths(): DrawItem[] {
 
-        let currentFill = "#fff";
+        let currentFill: ThemedColor = "#fff";
         let currentLineWidth = numeric(1);
-        let currentLineColor = '#333';
+        let currentLineColor: ThemedColor = '#333';
 
         const pathItems: DrawItem[] = [];
 
@@ -2130,9 +2164,9 @@ export class SymbolDrawing {
                     if (item.name === 'lineWidth'){
                         currentLineWidth = item.value as NumericValue;
                     } else if (item.name === 'lineColor'){
-                        currentLineColor = item.value as string;
+                        currentLineColor = item.value as ThemedColor;
                     } else if (item.name === 'fillColor'){
-                        currentFill = item.value as string;
+                        currentFill = item.value as ThemedColor;
                     }
                 } else {
                     let tmpResult = Geometry.groupFlip([item], this.flipX, this.flipY);
@@ -2171,7 +2205,7 @@ export class SymbolDrawing {
         return pathItems;
     }
 
-    getPinsPath(): { path: string, lineColor: string }[] {
+    getPinsPath(): { path: string, lineColor: ThemedColor }[] {
         return this.pins.map(item => {
             let features = Geometry.groupFlip([item[1]], this.flipX, this.flipY);
             features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
@@ -2321,4 +2355,5 @@ export type SymbolPinDefintion = {
 }
 
 export type PinRenderInfo =
-    [PinId, Feature, angle: NumericValue, lineColor: string, displayId: boolean, displayName: boolean, pinName: string | null];
+    [PinId, Feature, angle: NumericValue, lineColor: ThemedColor, 
+        displayId: boolean, displayName: boolean, pinName: string | null];

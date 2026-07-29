@@ -144,7 +144,8 @@ describe('Render tests', () => {
         ['script90.cst', 'Bus creation and nets linking through buses'],
         ['script91.cst', 'multiple buses'],
         ['script92.cst', 'Custom symbol with stroke and fill color for light/dark mode'],
-        ['script93.cst', 'multi-line text with newlines and blank-space lines renders correctly (regression)']
+        ['script93.cst', 'multi-line text with newlines and blank-space lines renders correctly (regression)'],
+        ['script94.cst', 'named var= custom color hooks, alongside a plain dark= only color']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
@@ -173,7 +174,7 @@ describe('Render tests', () => {
 
             expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
         } else {
-            // expect(svgOutput).toEqual(expectedSvgOutput);
+            expect(svgOutput).toEqual(expectedSvgOutput);
             
             // Do not spit out all the differences
             expect(svgOutput === expectedSvgOutput).toEqual(true);
@@ -269,5 +270,44 @@ describe('Render tests', () => {
         // the 6-line text block back down will fail this bound.
         expect(width).toBeCloseTo(335.9776364, 1);
         expect(height).toBeCloseTo(265.062356717, 1);
+    });
+
+    test('var= custom color compiles to var(--cs-<name>) with a :root declaration', async () => {
+        const scriptPath = 'script94.cst';
+
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
+        const styles = getStylesFromDocument(documentVariable);
+        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+        expect(svgOutput).toContain('var(--cs-my-line)');
+        expect(svgOutput).toContain('--cs-my-line:light-dark(blue, red);');
+
+        expect(svgOutput).toContain('var(--cs-my-text)');
+        expect(svgOutput).toContain('--cs-my-text:light-dark(purple, pink);');
+
+        // fill uses dark= only (no var=) - stays an inline light-dark(), unchanged
+        expect(svgOutput).toContain('light-dark(green, orange)');
+        expect(svgOutput).not.toContain('--cs-my-fill');
+    });
+
+    // PDF-safe color resolution (no light-dark()/var() surviving into the
+    // PDF-bound SVG) is covered separately in testRenderPdfColors.ts, which
+    // mocks svg-to-pdfkit to inspect the string handed to it - doing that
+    // here would break this file's 'pdf output' MD5 hash test below.
+
+    test('the old bare two-positional-value color syntax throws a clear error', async () => {
+        const scriptPath = 'script95.cst';
+
+        await expect(renderCommon(mainPath + scriptPath)).rejects.toThrow();
+    });
+
+    test('var= colliding with a built-in theme variable name throws', async () => {
+        const scriptPath = 'script96.cst';
+
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
+        const styles = getStylesFromDocument(documentVariable);
+
+        expect(() => renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles)).toThrow();
     });
 });

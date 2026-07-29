@@ -15,6 +15,7 @@ import { Id, RawAtom, raw, printTree } from './s_expressions.js';
 import { FrameParamKeys } from '../objects/Frame.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import Flatten from '@flatten-js/core';
+import { resolveToLiteralColor, ThemedColor } from './svgClasses.js';
 
 export enum KiCadVersion {
     V9 = 9,
@@ -291,7 +292,10 @@ export class KiCadSchGenerator {
         // the current selected style properties.
         for (const item of drawing.items) {
             if (item.name === 'fillColor') {
-                const fc = item.value as string;
+                // KiCad schematic symbols have no light/dark theming concept
+                // - a themed color (dark=/var=) always resolves to its light
+                // value here.
+                const fc = resolveToLiteralColor(item.value as string | ThemedColor);
                 fillType = fc === 'none' ? 'none'
                     : (fc === '#fff' || fc === 'white') ? 'background' : 'outline';
             } else if (item.name === 'lineWidth') {

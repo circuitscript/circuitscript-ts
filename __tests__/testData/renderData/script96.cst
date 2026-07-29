@@ -1,0 +1,20 @@
+# var= name colliding with a built-in ThemeVarNames prefix ("line-color" ->
+# --cs-line-color) must throw instead of silently shadowing the built-in
+# theme variable.
+
+def res(value):
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            line_color: "blue", dark="red", var="line-color"
+            crect: 0, 0, width, height
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, pin_only=true
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, pin_only=true
+        type: "res"
+        params:
+            value: value
+
+at res(10k)

@@ -1,0 +1,22 @@
+# fillType resolution for KiCad export must use the *light* value of a
+# themed (dark=/var=) fill color, not the ThemedColor object itself -
+# otherwise fillType silently falls through to 'outline' regardless of the
+# actual color chosen.
+
+def res(value):
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            fill: "none", dark="black", var="my-fill"
+            crect: 0, 0, width, height
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, pin_only=true
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, pin_only=true
+        type: "res"
+        params:
+            value: value
+            footprint: "Resistor_SMD:R_0402_1005Metric"
+
+at res(10k)

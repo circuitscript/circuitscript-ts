@@ -1,0 +1,20 @@
+# The old bare two-positional-value light/dark syntax is no longer
+# supported - line_color/text_color/fill must throw a clear error instead of
+# silently degrading to only the light color.
+
+def res(value):
+    width = 140
+    height = 60
+
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            line_color: "blue", "red"
+            crect: 0, 0, width, height
+            hpin: 1, "1", "passive", -width/2 - 30, 0, 30, pin_only=true
+            hpin: 2, "2", "passive", width/2 + 30, 0, -30, pin_only=true
+        type: "res"
+        params:
+            value: value
+
+at res(10k)

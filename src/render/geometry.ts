@@ -12,6 +12,7 @@ import { Box } from '@svgdotjs/svg.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
 import { AllPinTypes, PinTypes } from '../objects/PinTypes.js';
 import { SimplePoint } from './draw_symbols.js';
+import { ThemedColor } from './svgClasses.js';
 
 export type Segment = Flatten.Segment;
 export type Polygon = Flatten.Polygon;
@@ -34,7 +35,7 @@ export type LabelStyle = {
     anchor?: HorizontalAlign.Left | HorizontalAlign.Center | HorizontalAlign.Right, // Horizontal anchor
     vanchor?: VerticalAlign.Top | VerticalAlign.Center | VerticalAlign.Bottom, // Vertical anchor
 
-    textColor?: string,
+    textColor?: ThemedColor,
 
     portType?: null | PinTypes;
 }
@@ -250,7 +251,7 @@ export class Textbox extends Flatten.Polygon {
 
 export class GeometryProp {
     name: string;
-    value: string | number;
+    value: string | number | ThemedColor;
     constructor(name, value) {
         this.name = name;
         this.value = value;

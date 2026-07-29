@@ -30,8 +30,16 @@ import { ClassComponent } from '../objects/ClassComponent.js';
 import { Logger } from '../logger.js';
 import { DocumentVariable } from 'src/objects/types.js';
 import { Styles } from 'src/styles.js';
-import { addDefaultStyleClasses, applyClassWithOverrides, 
-    expandStyleOverridesForPdf } from './svgClasses.js';
+import { addDefaultStyleClasses, applyClassWithOverrides, CustomColorVarRegistry,
+    expandStyleOverridesForPdf, resolvePdfSafeColors } from './svgClasses.js';
+
+/* Key used to stash the per-document CustomColorVarRegistry on the rendered
+* canvas via svg.js's remember()/remembered() - the simplest way to carry it
+* from renderSheetsToSVG() through to generatePdfOutput() without changing
+* the signature of every call site in between (svgCanvas is reused for both
+* SVG and PDF output from a single render pass, see pipeline.ts).
+*/
+const ColorRegistryMemoryKey = 'cs-color-registry';
 
 function componentTooltip(component: ClassComponent): string | null {
     const creation = component.ctxReferences.find(r => r.creationFlag)
@@ -66,10 +74,11 @@ function createSvgCanvas(): Svg {
     return canvas;
 }
 
-export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger, 
+export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
     documentVariable: DocumentVariable, styles: Styles): Svg {
-    
+
     const canvas = createSvgCanvas();
+    const colorRegistry: CustomColorVarRegistry = new Map();
 
     // Set the default font family
     const canvasGroup = canvas.group();
@@ -176,7 +185,7 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
 
         // Draw all SVG children within the grid bounds only
         generateSVGChild(sheetElements, components, wires, junctions,
-            mergedWires, allFrames, textObjects, gridProperties, styles, logger);
+            mergedWires, allFrames, textObjects, gridProperties, styles, logger, colorRegistry);
 
         sheetElements.translate(xOffset, yOffset);
         sheetGroup.translate(0, sheetYOffset.toNumber());
@@ -187,7 +196,12 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
     // theme: true makes colors follow prefers-color-scheme: dark - safe here
     // since this <style> tag only ends up in SVG output (PDF export rebuilds
     // its own per-sheet <style> tag below, without theme support).
-    addDefaultStyleClasses(canvas, styles, { theme: true });
+    addDefaultStyleClasses(canvas, styles, { theme: true, colorRegistry });
+
+    // Stashed so generatePdfOutput() (called separately, later, on this same
+    // canvas - see pipeline.ts) can resolve away the light-dark()/var()
+    // values baked into element attributes during this render pass.
+    canvas.remember(ColorRegistryMemoryKey, colorRegistry);
 
     return canvas;
 }
@@ -218,6 +232,11 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
     const children = canvas.children().filter(child => child.node.tagName === 'g');
     const numChildren = children.length;
 
+    // Registry stashed by renderSheetsToSVG() on this same canvas - needed to
+    // resolve `var(--cs-<name>)` values baked into element attributes during
+    // the single shared render pass back to their light literal.
+    const colorRegistry: CustomColorVarRegistry = canvas.remember(ColorRegistryMemoryKey) ?? new Map();
+
     // 1 mil = 0.0254mm
     // 10 mils = 0.254mm
     // 100 mils = 2.54mm
@@ -241,6 +260,13 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
         // doesn't otherwise carry the document's <style> tag along - and only
         // classes still actually used on this sheet should be emitted.
         addDefaultStyleClasses(sheetCanvas, styles);
+
+        // svg-to-pdfkit understands neither `light-dark()` nor `var()` -
+        // resolve every remaining occurrence (default-class attributes stay
+        // literal already; this catches the override-merged stroke/fill
+        // attributes expandStyleOverridesForPdf() just wrote) down to a
+        // literal light color.
+        resolvePdfSafeColors(sheetCanvas, colorRegistry);
 
         const { x, y, width, height } = sheetCanvas.bbox();
 
@@ -273,13 +299,14 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
     });
 }
 
-function generateSVGChild(canvas: Svg | G, 
-    components: RenderComponent[], wires: RenderWire[], 
+function generateSVGChild(canvas: Svg | G,
+    components: RenderComponent[], wires: RenderWire[],
     junctions: RenderJunction[], mergedWires:MergedWire[],
-    frameObjects:RenderFrame[], textObjects: RenderText[], 
+    frameObjects:RenderFrame[], textObjects: RenderText[],
     gridProperties: GridProperties,
     styles: Styles,
-    logger: Logger): void {
+    logger: Logger,
+    colorRegistry: CustomColorVarRegistry): void {
 
     const displayWireId = false;
     
@@ -336,6 +363,7 @@ function generateSVGChild(canvas: Svg | G,
                 extra.place = true; // Default is to place the item
             }
 
+            symbol.setColorVarRegistry(colorRegistry);
             symbol.draw(symbolGroup, extra);
 
         } else {
@@ -522,7 +550,7 @@ function generateSVGChild(canvas: Svg | G,
         let strokeColor = item.borderColor ?? ColorScheme.FrameBorderColor;
 
         if (item.frame.frameType === FrameType.Sheet) {
-            drawSheetFrameBorder(frameGroup, item);
+            drawSheetFrameBorder(frameGroup, item, colorRegistry);
         } else {
             if (useBorderWidth > 0) {
                 if (item.renderType === RenderFrameType.Elements) {
@@ -551,6 +579,7 @@ function generateSVGChild(canvas: Svg | G,
         const {x, y, symbol} = item;
         const innerGroup = canvas.group();
         innerGroup.translate(x.toNumber(), y.toNumber());
+        symbol.setColorVarRegistry(colorRegistry);
         symbol.draw(innerGroup);
     });
 
@@ -640,7 +669,7 @@ function drawGrid(group: G,
     applyClassWithOverrides(gridPath, 'grid', gridOverrides);
 }
 
-function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
+function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame, colorRegistry: CustomColorVarRegistry): void {
     const frameParams = frame.frame.parameters;
     if (frameParams.has(FrameParamKeys.SheetType)) {
         const frameComponent: ClassComponent = frameParams.get(FrameParamKeys.SheetType);
@@ -661,6 +690,7 @@ function drawSheetFrameBorder(frameGroup: G, frame: RenderFrame): void {
                 frameParams);
 
             symbol.refreshDrawing();
+            symbol.setColorVarRegistry(colorRegistry);
             symbol.draw(sheetFrameGroup);
 
             const offsetX = milsToMM(frameComponent.getParam('offset_x'));

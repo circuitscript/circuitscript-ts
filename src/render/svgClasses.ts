@@ -107,6 +107,22 @@ export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, 
     };
 }
 
+/**
+ * A color value produced by a `fill`/`line_color`/`text_color` graphic
+ * command: either a plain literal (unchanged legacy behavior), or a
+ * light/dark pair - optionally named via `var=`, in which case it compiles
+ * to a `var(--cs-<varName>)` reference backed by a registered `:root` custom
+ * property instead of an inline `light-dark()` value.
+ */
+export type ThemedColor = string | { light: string; dark: string; varName?: string };
+
+/**
+ * Collects `var=<name>` registrations for a single render pass, keyed by
+ * name (without the `--cs-` prefix), so the emitted `:root` block only ever
+ * contains vars actually used in that document.
+ */
+export type CustomColorVarRegistry = Map<string, { light: string; dark: string }>;
+
 // CSS custom property names carrying the themeable colors - one per color
 // that varies between light/dark, shared between the :root declarations and
 // the class rules that reference them via var().
@@ -168,6 +184,24 @@ function getThemeVariableCss(styles: Styles): string {
 }
 
 /**
+ * Builds the `:root` declarations for custom `var=<name>`-named colors
+ * collected in the registry during the render pass - additive to (never a
+ * replacement for) the `:root` block emitted by getThemeVariableCss(). Empty
+ * (no declarations emitted) when the document never uses `var=`.
+ */
+function getCustomColorVarCss(registry: CustomColorVarRegistry): string {
+    if (registry.size === 0) {
+        return '';
+    }
+
+    const decls = Array.from(registry.entries())
+        .map(([name, { light, dark }]) => `--cs-${name}:light-dark(${light}, ${dark});`)
+        .join('');
+
+    return `:root{${decls}}`;
+}
+
+/**
  * Same shape as getClassDefaults(), but color properties reference the
  * `--cs-*` CSS variables (via var()) instead of literal values, so they
  * respond to the `prefers-color-scheme: dark` override emitted by
@@ -207,13 +241,21 @@ function getThemedClassDefaults(styles: Styles): Record<DefaultStyleClassName, R
  * `theme: true` makes the emitted colors follow `prefers-color-scheme: dark`
  * (see getThemedClassDefaults()/getThemeVariableCss()) - only safe for SVG
  * output, since PDF export (svg-to-pdfkit) doesn't resolve CSS variables.
+ * `colorRegistry`, when provided alongside `theme: true`, also emits the
+ * `--cs-<name>` declarations collected for any `var=` custom colors used in
+ * the document.
  */
-export function addDefaultStyleClasses(canvas: Svg, styles: Styles, opts: { theme?: boolean } = {}): void {
+export function addDefaultStyleClasses(canvas: Svg, styles: Styles,
+    opts: { theme?: boolean, colorRegistry?: CustomColorVarRegistry } = {}): void {
+
     const styleTag = canvas.style();
     const classDefaults = opts.theme ? getThemedClassDefaults(styles) : getClassDefaults(styles);
 
     if (opts.theme) {
         styleTag.addText(getThemeVariableCss(styles));
+        if (opts.colorRegistry) {
+            styleTag.addText(getCustomColorVarCss(opts.colorRegistry));
+        }
     }
 
     for (const className in classDefaults) {
@@ -292,13 +334,94 @@ export function expandStyleOverridesForPdf(canvas: Svg, styles: Styles): void {
     }
 }
 
-export function parseLightDarkProps(value: string | string[]): string {
-    let result: string;
-    if (Array.isArray(value) && value.length === 2) {
-        result = `light-dark(${value[0]}, ${value[1]})`;
-    } else {
-        result = value as string;
+/**
+ * Resolves a color value produced by `fill`/`line_color`/`text_color` to the
+ * literal CSS value that should be written into the SVG. Plain strings pass
+ * through unchanged. A light/dark pair collapses to the light value alone if
+ * both sides are identical (keeps trivial cases readable); otherwise it
+ * either registers a named `--cs-<varName>` custom property (returning
+ * `var(--cs-<varName>)`) or resolves inline to `light-dark(light, dark)`.
+ */
+export function resolveThemedColor(value: ThemedColor, registry: CustomColorVarRegistry): string {
+    if (typeof value === 'string') {
+        return value;
     }
 
-    return result;
+    const { light, dark, varName } = value;
+
+    if (light === dark) {
+        return light;
+    }
+
+    if (varName !== undefined) {
+        registerCustomColorVar(registry, varName, light, dark);
+        return `var(--cs-${varName})`;
+    }
+
+    return `light-dark(${light}, ${dark})`;
+}
+
+function registerCustomColorVar(registry: CustomColorVarRegistry, name: string,
+    light: string, dark: string): void {
+
+    const fullName = `--cs-${name}`;
+    if ((Object.values(ThemeVarNames) as string[]).includes(fullName)) {
+        throw new Error(
+            `var="${name}" collides with the built-in theme variable ${fullName} - choose a different name`);
+    }
+
+    const existing = registry.get(name);
+    if (existing) {
+        if (existing.light !== light || existing.dark !== dark) {
+            throw new Error(
+                `var="${name}" was already registered with a different light/dark color pair `
+                + `(${existing.light}, ${existing.dark}) vs (${light}, ${dark})`);
+        }
+        return;
+    }
+
+    registry.set(name, { light, dark });
+}
+
+/**
+ * Resolves a color value to a single literal, discarding any dark-theme
+ * variant - used where there's no light/dark concept at all (KiCad export,
+ * PDF export's fallback when a `var()` name can't be found in the registry).
+ */
+export function resolveToLiteralColor(value: string | ThemedColor): string {
+    return typeof value === 'string' ? value : value.light;
+}
+
+const LightDarkPattern = /light-dark\(\s*([^,]+?)\s*,\s*[^)]+?\s*\)/g;
+const CustomColorVarPattern = /var\(--cs-([a-zA-Z0-9_-]+)\)/g;
+
+/**
+ * Post-processing pass for PDF export: walks every element in the
+ * (already-rendered) canvas and replaces any `light-dark(light, dark)` or
+ * `var(--cs-<name>)` substring in its `style`/`stroke`/`fill` attributes with
+ * a literal color - svg-to-pdfkit understands neither construct. Must run
+ * after expandStyleOverridesForPdf(), since that's what moves override
+ * colors into plain presentation attributes in the first place.
+ */
+export function resolvePdfSafeColors(canvas: Svg, registry: CustomColorVarRegistry): void {
+    const colorAttrs = ['style', 'stroke', 'fill'];
+
+    canvas.find('*').forEach(el => {
+        colorAttrs.forEach(attr => {
+            const value = el.attr(attr);
+            if (typeof value !== 'string'
+                || (!value.includes('light-dark(') && !value.includes('var(--cs-'))) {
+                return;
+            }
+
+            const resolved = value
+                .replace(LightDarkPattern, (_match, light: string) => light)
+                .replace(CustomColorVarPattern, (_match, name: string) => {
+                    const entry = registry.get(name);
+                    return entry ? entry.light : _match;
+                });
+
+            el.attr(attr, resolved);
+        });
+    });
 }

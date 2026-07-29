@@ -1,5 +1,14 @@
+import { readFileSync } from 'fs';
 import { _id, generateKiCadNetList, SExpObject } from "../src/render/export.js";
 import { runScript } from "./helpers";
+import { GlobalDocumentName } from '../src/globals.js';
+import { getStylesFromDocument } from '../src/styles.js';
+import { Logger } from '../src/logger.js';
+import { NetGraph } from '../src/render/graph.js';
+import { LayoutEngine } from '../src/render/layout.js';
+import { KiCadSchGenerator, KiCadVersion } from '../src/render/KiCadSchGenerator.js';
+import { printTree } from '../src/render/s_expressions.js';
+import { DocumentVariable } from '../src/objects/types.js';
 
 describe('export to KiCad', () => {
 
@@ -111,6 +120,41 @@ describe('export to KiCad', () => {
             { refdes: 'J1', instanceName: 'COMP-1' }
         ]);
 
+    });
+
+    test('KiCad schematic export resolves a themed (dark=/var=) fill color to its light value', async () => {
+        const scriptPath = '__tests__/testData/renderData/script97.cst';
+        const script = readFileSync(scriptPath, { encoding: 'utf8' });
+        const { hasError, visitor } = await runScript(script, scriptPath);
+        expect(hasError).toBe(false);
+
+        visitor.applySheetFrameComponent();
+        const { sequence, nets } = visitor.getGraph();
+
+        const documentVariable = visitor.getScope()
+            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+        const styles = getStylesFromDocument(documentVariable);
+
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        graphEngine.setStyles(styles);
+
+        const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+
+        const layoutEngine = new LayoutEngine(logger);
+        const sheetFrames = await layoutEngine.runLayout(graph, containerFrames, nets);
+
+        const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
+        const { output } = generator.generate(visitor, sheetFrames, 'script97')[0];
+
+        const outputText = printTree(output);
+
+        // fill: "none", dark="black", var="my-fill" must resolve to its
+        // light value ("none") for KiCad's fillType, not silently fall
+        // through to 'outline' because the ThemedColor object doesn't
+        // strictly-equal the literal string 'none'.
+        expect(outputText).toContain('(type none)');
+        expect(outputText).not.toContain('(type outline)');
     });
 });
 
