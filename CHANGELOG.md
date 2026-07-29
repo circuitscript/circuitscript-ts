@@ -1,6 +1,47 @@
 # Changelog
 
-## [v0.9.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.1...v0.9.2)
+## [v0.9.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.2...v0.9.3)
+
+[c584a37](https://github.com/circuitscript/circuitscript-ts/commit/c584a371dadeada6e400ff9605cf650f083c5d5e)Support named var= custom color hooks for symbol graphics
+- 
+- Extends the existing dark= light/dark color pairs on fill/line_color/
+- text_color with an optional var= name, compiling to a shared
+- var(--cs-&lt;name&gt;) CSS custom property instead of an inline
+- light-dark(). Colliding var names must share the same light/dark
+- pair; colliding with a built-in theme variable name throws.
+- 
+- Rejects the old ambiguous bare two-positional-value color syntax
+- (e.g. line_color: "#ccc", "#333") with a clear error directing to
+- dark=/var=.
+- 
+- Resolves themed colors down to their light literal for KiCad export
+- (no light/dark concept there) and for PDF export, which post-
+- processes the rendered SVG to strip any light-dark()/var(--cs-*)
+- that survived, since svg-to-pdfkit understands neither construct.
+
+[f66765e](https://github.com/circuitscript/circuitscript-ts/commit/f66765ea49090b1c7db50b34be7fd001be3db33f)Fix multi-line text rendering using tspan elements
+- 
+- Switch from plain() to text() for label rendering so that multi-line
+- strings (separated by newlines) are measured and rendered correctly
+- via SVG tspans, instead of collapsing onto a single line. Move the
+- white-space: pre rule to a text tspan CSS rule to match.
+- 
+- Also corrects the debug label-bounds rectangle to use non-negated
+- bounds coordinates.
+- 
+- Add script93.cst regression test covering multi-line text with blank
+- and indented lines, and update golden SVG fixtures.
+
+[6c9ed8b](https://github.com/circuitscript/circuitscript-ts/commit/6c9ed8bb47cf8995971ffb37308bb619de860de8)Fix port label bounds and text baseline calculation
+- 
+- Extract dominant baseline resolution into shared resolveDominantBaseline
+- helper used by both draw_symbols and sizing, fixing inconsistent
+- baseline mapping between text measurement and rendering. Correct port
+- polygon debug bounds to reflect actual drawn shape, apply light-dark
+- color resolution to overridden text fill, and tag sheet frame groups
+- with a sheet class.
+
+## [v0.9.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.1...v0.9.2) - 2026-07-25
 
 [ab4b109](https://github.com/circuitscript/circuitscript-ts/commit/ab4b109a389b2730c2f4e4b868946d8006f9a218)Use shared CSS classes for SVG output and support dark mode
 - 
