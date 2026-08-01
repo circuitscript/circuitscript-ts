@@ -23,6 +23,8 @@ export class NumericValue {
     valuePart: Big;
     prefixPart: number;
 
+    tolerances: (NumericValue | PercentageValue)[] = [];
+
     constructor(value: string | number | Big, prefix = 0) {
         this.value = value;
         if (typeof value === 'string') {
@@ -54,11 +56,24 @@ export class NumericValue {
 
     toDisplayString(): string {
         if (typeof this.value  === 'number'){
-            return this.value.toString();
+            return this.value.toString() + this.getToleranceString();
         } else {
             return this.valuePart.toString() 
-                + getNumberExponentialText(this.prefixPart);
+                + getNumberExponentialText(this.prefixPart) + this.getToleranceString();
         } 
+    }
+
+    getToleranceString(): string {
+        if (this.tolerances.length > 0){
+            if (this.tolerances.length === 1){
+                return ' +- ' + this.tolerances[0].toString();
+
+            } else if (this.tolerances.length === 2){
+                return ' +' + this.tolerances[0].toString() + '/-' + this.tolerances[1].toString();
+            }
+        }
+
+        return '';
     }
 
     toNumber(): number {
@@ -147,11 +162,43 @@ export class NumericValue {
     roundDp(): NumericValue {
         return roundValue(this.toNumber());
     }
+
+    hasTolerances(): boolean {
+        return this.tolerances.length > 0;
+    }
+
+    setTolerances(tolerances: (PercentageValue| NumericValue)[]): void {
+        if (Array.isArray(tolerances)) {
+            tolerances.forEach(item => {
+                if (item instanceof NumericValue && item.hasTolerances()) {
+                    throw "Invalid tolerance value";
+                }
+            });
+
+            this.tolerances = [...tolerances];
+
+        } else {
+            throw "Invalid format for tolerances";
+        }
+    }
 }
 
-export type NumberOperatorType = NumericValue | PercentageValue 
+export type NumberOperatorType = NumericValue | PercentageValue
                                 | WrappedNumber;
 
+function isPercentage(value: NumberOperatorType): value is PercentageValue {
+    return value instanceof PercentageValue;
+}
+
+// Resolves a PercentageValue operand against a numeric "base" operand,
+// returning the equivalent absolute Big value: (pct/100) * base.
+function percentAgainstBase(pct: PercentageValue, base: NumberOperatorType): Big {
+    return new Big(pct.toNumber()).div(100).mul(new Big(base.toNumber()));
+}
+
+function resolveToPercentageValue(value: Big): PercentageValue {
+    return new PercentageValue(value.toNumber());
+}
 
 export class NumberOperator {
 
@@ -168,9 +215,24 @@ export class NumberOperator {
     multiply(value1: NumberOperatorType, value2: NumberOperatorType)
         : NumberOperatorType {
 
+        if (isPercentage(value1) && isPercentage(value2)) {
+            // fraction * fraction, converted back to percent
+            const frac1 = new Big(value1.toNumber()).div(100);
+            const frac2 = new Big(value2.toNumber()).div(100);
+            return resolveToPercentageValue(frac1.mul(frac2).mul(100));
+        }
+
+        if (isPercentage(value1)) {
+            return resolveToNumericValue(percentAgainstBase(value1, value2));
+        }
+
+        if (isPercentage(value2)) {
+            return resolveToNumericValue(percentAgainstBase(value2, value1));
+        }
+
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
-        
+
         return resolveToNumericValue(
             big1.mul(big2)
         );
@@ -178,6 +240,27 @@ export class NumberOperator {
 
     divide(value1: NumberOperatorType, value2: NumberOperatorType)
         : NumberOperatorType {
+
+        if (isPercentage(value1) && isPercentage(value2)) {
+            // % cancels: plain ratio
+            const frac1 = new Big(value1.toNumber()).div(100);
+            const frac2 = new Big(value2.toNumber()).div(100);
+            return resolveToNumericValue(frac1.div(frac2));
+        }
+
+        if (isPercentage(value1)) {
+            // Percent ÷ Numeric: scale the percent by a plain number
+            const frac1 = new Big(value1.toNumber()).div(100);
+            const scaled = frac1.div(new Big(value2.toNumber()));
+            return resolveToPercentageValue(scaled.mul(100));
+        }
+
+        if (isPercentage(value2)) {
+            // Numeric ÷ Percent
+            const frac2 = new Big(value2.toNumber()).div(100);
+            return resolveToNumericValue(new Big(value1.toNumber()).div(frac2));
+        }
+
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 
@@ -188,6 +271,21 @@ export class NumberOperator {
 
     addition(value1: NumberOperatorType, value2: NumberOperatorType)
         : NumberOperatorType {
+
+        if (isPercentage(value1) && isPercentage(value2)) {
+            return resolveToPercentageValue(
+                new Big(value1.toNumber()).add(new Big(value2.toNumber())));
+        }
+
+        if (isPercentage(value1)) {
+            return resolveToNumericValue(
+                new Big(value2.toNumber()).add(percentAgainstBase(value1, value2)));
+        }
+
+        if (isPercentage(value2)) {
+            return resolveToNumericValue(
+                new Big(value1.toNumber()).add(percentAgainstBase(value2, value1)));
+        }
 
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
@@ -200,6 +298,23 @@ export class NumberOperator {
     subtraction(value1: NumberOperatorType, value2: NumberOperatorType)
         : NumberOperatorType {
 
+        if (isPercentage(value1) && isPercentage(value2)) {
+            return resolveToPercentageValue(
+                new Big(value1.toNumber()).sub(new Big(value2.toNumber())));
+        }
+
+        if (isPercentage(value1)) {
+            // Percent - Numeric: base is the numeric operand (value2)
+            return resolveToNumericValue(
+                percentAgainstBase(value1, value2).sub(new Big(value2.toNumber())));
+        }
+
+        if (isPercentage(value2)) {
+            // Numeric - Percent: base is value1
+            return resolveToNumericValue(
+                new Big(value1.toNumber()).sub(percentAgainstBase(value2, value1)));
+        }
+
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 
@@ -210,7 +325,22 @@ export class NumberOperator {
 
     modulus(value1: NumberOperatorType, value2: NumberOperatorType)
         : NumberOperatorType {
-        
+
+        if (isPercentage(value1) && isPercentage(value2)) {
+            return resolveToPercentageValue(
+                new Big(value1.toNumber()).mod(new Big(value2.toNumber())));
+        }
+
+        if (isPercentage(value1)) {
+            return resolveToNumericValue(
+                percentAgainstBase(value1, value2).mod(new Big(value2.toNumber())));
+        }
+
+        if (isPercentage(value2)) {
+            return resolveToNumericValue(
+                new Big(value1.toNumber()).mod(percentAgainstBase(value2, value1)));
+        }
+
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 

@@ -18,6 +18,7 @@ import { PinId } from "./objects/PinDefinition.js";
 import { AllPinTypes, normalizePinType, resolvePinType } from "./objects/PinTypes.js";
 import { NetClass } from "./objects/NetClass.js";
 import { AcceptedSeverityLevels, ERC_RuleSeverity } from "./rules-check/severity-defaults.js";
+import { PercentageValue } from "./objects/PercentageValue.js";
 
 const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -356,7 +357,9 @@ function toString(obj: any): string {
         return "[" + inner + "]";
     } else if (obj instanceof NumericValue) {
         // Display as a big number string, instead of numeric value
-        return obj.toBigNumber().toString();
+        return obj.toDisplayString();
+    } else if (obj instanceof PercentageValue) {
+        return obj.toString();
     } else if (obj instanceof CFunctionEntry){
         return obj.toString();
     } else if (obj instanceof ImportedLibrary){

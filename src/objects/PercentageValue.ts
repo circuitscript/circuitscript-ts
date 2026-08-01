@@ -5,18 +5,34 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import Big from "big.js";
+
 export class PercentageValue {
-    value: string | number;
+    value: Big;
 
     constructor(value: string | number) {
-        this.value = value;
+        let useNumber = 0;
+        if (typeof value === 'string') {
+            if (value.lastIndexOf('%') === value.length - 1) {
+                // remove the '%' char
+                useNumber = Number(value.substring(0, value.length - 1));
+            }
+        } else {
+            useNumber = value;
+        }
+
+        if (isNaN(useNumber)) {
+            throw "Invalid percentage value";
+        }
+
+        this.value = new Big(useNumber);
     }
 
     toString(): string {
-        return this.value.toString();
+        return this.value.toString() + '%';
     }
 
     toNumber(): number {
-        return 0;
+        return this.value.toNumber();
     }
 }

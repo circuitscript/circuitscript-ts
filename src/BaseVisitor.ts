@@ -905,8 +905,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             result = this.prepareStringValue(ctxStringValue.getText());
 
         } else if (ctxPercentageValue) {
-            result = new PercentageValue(ctxPercentageValue.getText());
-
+            try {
+                result = new PercentageValue(ctxPercentageValue.getText());
+            } catch (err) {
+                this.throwWithContext(ctx, err);
+            }
         }
 
         this.setResult(ctx, result);

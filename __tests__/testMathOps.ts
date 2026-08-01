@@ -123,6 +123,52 @@ describe('Simple operator tests', () => {
     });
 })
 
+describe('Percentage operator tests', () => {
+    test.each([
+        ['a = 10k * 5%', 'number', 500],
+        ['a = 5% * 10k', 'number', 500],
+        ['a = 100 / 5%', 'number', 2000],
+        ['a = 10% / 2', 'percentage', '5%'],
+        ['a = 100 + 5%', 'number', 105],
+        ['a = 100 - 5%', 'number', 95],
+        ['a = 5% + 100', 'number', 105],
+        ['a = 5% - 100', 'number', -95],
+        ['a = 5% + 5%', 'percentage', '10%'],
+        ['a = 5% - 2%', 'percentage', '3%'],
+        ['a = 5% * 2%', 'percentage', '0.1%'],
+        ['a = 10% / 5%', 'number', 2],
+        ['a = 13 % 7%', 'number', 0.26],
+        ['a = 5% % 2%', 'percentage', '1%'],
+    ])('percentage math test - %s', async (script, kind, expectedResult) => {
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const variables = visitor.dumpVariables();
+        const value = variables.get('a');
+
+        if (kind === 'percentage') {
+            expect(value.toString()).toEqual(expectedResult);
+        } else {
+            expect(value.toNumber()).toEqual(expectedResult);
+        }
+    });
+
+    test('compound assignment with percent literal', async () => {
+        const script = `
+a = 100
+a += 5%
+a *= 10%
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const variables = visitor.dumpVariables();
+        const value = variables.get('a');
+
+        expect(value.toNumber()).toEqual(10.5);
+    });
+});
+
 describe('Undefined operand error tests', () => {
     test.each([
         // Unary operators

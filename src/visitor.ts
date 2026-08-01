@@ -1582,6 +1582,15 @@ export class ParserVisitor extends BaseVisitor {
             const result = tmpValue1 + tmpValue2;
             this.setResult(ctx, result);
 
+        } else if (ctx.Addition() && (value1 instanceof NumericValue) && Array.isArray(value2)){
+            // This sets the tolerance for a given number.
+            try {
+                value1.setTolerances(value2);
+            } catch (err) {
+                this.throwWithContext(ctx, err);
+            }
+            const result = value1;
+            this.setResult(ctx, result);
         } else {
             const operator = new NumberOperator();
             const tmpValue1 = operator.prepare(value1);
