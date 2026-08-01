@@ -1,4 +1,6 @@
 import { runScript, runScriptExpectError } from "./helpers.js";
+import { NumericValue, numeric, roundValue } from "../src/objects/NumericValue.js";
+import { PercentageValue } from "../src/objects/PercentageValue.js";
 
 const inlineScript1 = `
 b = 10
@@ -227,3 +229,167 @@ describe('Unary operator type error tests', () => {
         expect(msg).toContain('Failed to do Not operation');
     });
 })
+
+function getToleranceBounds(value: NumericValue): { plus: number; minus: number } {
+    if (!value.hasTolerances()) {
+        return { plus: 0, minus: 0 };
+    }
+    if (value.tolerances.length === 1) {
+        const t = value.tolerances[0].toNumber();
+        return { plus: t, minus: t };
+    }
+    return {
+        plus: value.tolerances[0].toNumber(),
+        minus: value.tolerances[1].toNumber(),
+    };
+}
+
+describe('Tolerance propagation tests', () => {
+    test('symmetric tolerance addition combines absolute bounds', async () => {
+        const script = `
+v1 = 10k + [5%]
+v2 = 20k + [1%]
+a = v1 + v2
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const a = visitor.dumpVariables().get('a');
+        expect(a.toNumber()).toEqual(30000);
+        expect(getToleranceBounds(a)).toEqual({ plus: 700, minus: 700 });
+    });
+
+    test('subtraction pairs plus of one operand with minus of the other (cross term)', async () => {
+        const script = `
+v1 = 10k + [5%, 2%]
+v2 = 20k + [4%, 1%]
+b = v1 - v2
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const b = visitor.dumpVariables().get('b');
+        expect(b.toNumber()).toEqual(-10000);
+        // plus = v1.plus + v2.minus = 500 + 200; minus = v1.minus + v2.plus = 200 + 800
+        expect(getToleranceBounds(b)).toEqual({ plus: 700, minus: 1000 });
+    });
+
+    test('multiplication of two toleranced values adds relative tolerances', async () => {
+        const script = `
+v1 = 10k + [5%]
+v2 = 2 + [1%]
+c = v1 * v2
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const c = visitor.dumpVariables().get('c');
+        expect(c.toNumber()).toEqual(20000);
+        expect(getToleranceBounds(c)).toEqual({ plus: 1200, minus: 1200 });
+    });
+
+    test('division pairs numerator plus with denominator minus (cross term)', async () => {
+        const script = `
+v1 = 10k + [5%, 2%]
+v2 = 2 + [3%, 1%]
+d = v1 / v2
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const d = visitor.dumpVariables().get('d');
+        expect(d.toNumber()).toEqual(5000);
+        // relPlus = 0.05 + 0.01 = 0.06 => 300; relMinus = 0.02 + 0.03 = 0.05 => 250
+        expect(getToleranceBounds(d)).toEqual({ plus: 300, minus: 250 });
+    });
+
+    test('asymmetric tolerance stays independently tracked through addition', async () => {
+        const script = `
+v1 = 10k + [5%, 2%]
+a = v1 + 1k
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const a = visitor.dumpVariables().get('a');
+        expect(a.toNumber()).toEqual(11000);
+        expect(getToleranceBounds(a)).toEqual({ plus: 500, minus: 200 });
+    });
+
+    test('asymmetric tolerance stays independently tracked through multiplication', async () => {
+        const script = `
+v1 = 10k + [5%, 2%]
+c = v1 * 3
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const c = visitor.dumpVariables().get('c');
+        expect(c.toNumber()).toEqual(30000);
+        expect(getToleranceBounds(c)).toEqual({ plus: 1500, minus: 600 });
+    });
+
+    test('one-sided tolerance in addition equals the toleranced operand alone', async () => {
+        const script = `
+v1 = 10k + [5%]
+v2 = 5k
+a = v1 + v2
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const a = visitor.dumpVariables().get('a');
+        expect(a.toNumber()).toEqual(15000);
+        expect(getToleranceBounds(a)).toEqual({ plus: 500, minus: 500 });
+    });
+
+    test('one-sided tolerance in multiplication equals the toleranced operand alone', async () => {
+        const script = `
+v1 = 10k + [5%]
+m = v1 * 2
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const m = visitor.dumpVariables().get('m');
+        expect(m.toNumber()).toEqual(20000);
+        expect(getToleranceBounds(m)).toEqual({ plus: 1000, minus: 1000 });
+    });
+
+    test('negation swaps plus and minus tolerance', async () => {
+        const script = `
+v1 = 10k + [5%, 2%]
+a = -v1
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const a = visitor.dumpVariables().get('a');
+        expect(a.toNumber()).toEqual(-10000);
+        expect(getToleranceBounds(a)).toEqual({ plus: 200, minus: 500 });
+    });
+
+    test('modulus on a toleranced operand drops tolerance on the result', async () => {
+        const script = `
+v2 = 100 + [5%]
+e = v2 % 30
+`;
+        const { visitor, hasError } = await runScript(script);
+        expect(hasError).toBe(false);
+
+        const e = visitor.dumpVariables().get('e');
+        expect(e.toNumber()).toEqual(10);
+        expect(e.hasTolerances()).toBe(false);
+    });
+
+    test('roundDp preserves tolerance onto the rounded result', () => {
+        const value = numeric('10.123456789');
+        value.setTolerances([new PercentageValue(5)]);
+
+        const rounded = value.roundDp();
+
+        expect(rounded.hasTolerances()).toBe(true);
+        expect(rounded.tolerances).toEqual(value.tolerances);
+        expect(rounded.toNumber()).toEqual(roundValue(10.123456789).toNumber());
+    });
+});

@@ -66,13 +66,12 @@ export class NumericValue {
     getToleranceString(): string {
         if (this.tolerances.length > 0){
             if (this.tolerances.length === 1){
-                return ' +- ' + this.tolerances[0].toString();
+                return ' +- ' + this.tolerances[0].toDisplayString();
 
             } else if (this.tolerances.length === 2){
-                return ' +' + this.tolerances[0].toString() + '/-' + this.tolerances[1].toString();
+                return ' +' + this.tolerances[0].toDisplayString() + '/-' + this.tolerances[1].toDisplayString();
             }
         }
-
         return '';
     }
 
@@ -91,9 +90,10 @@ export class NumericValue {
             value = numeric(value);
         }
 
-        return resolveToNumericValue(
+        const result = resolveToNumericValue(
             this.toBigNumber().div(value.toBigNumber())
         );
+        return propagateMultiplicative(this, value, true, result);
     }
 
     half(): NumericValue {
@@ -105,9 +105,10 @@ export class NumericValue {
             value = numeric(value);
         }
 
-        return resolveToNumericValue(
+        const result = resolveToNumericValue(
             this.toBigNumber().mul(value.toBigNumber())
         );
+        return propagateMultiplicative(this, value, false, result);
     }
 
     add(value: NumericValue | number): NumericValue {
@@ -115,9 +116,10 @@ export class NumericValue {
             value = numeric(value);
         }
 
-        return resolveToNumericValue(
+        const result = resolveToNumericValue(
             this.toBigNumber().add(value.toBigNumber())
         );
+        return propagateAdditive(this, value, false, result);
     }
 
     sub(value: NumericValue | number): NumericValue {
@@ -125,9 +127,10 @@ export class NumericValue {
             value = numeric(value);
         }
 
-        return resolveToNumericValue(
+        const result = resolveToNumericValue(
             this.toBigNumber().sub(value.toBigNumber())
         );
+        return propagateAdditive(this, value, true, result);
     }
 
     mod(value: NumericValue | number): NumericValue {
@@ -141,9 +144,11 @@ export class NumericValue {
     }
 
     neg(): NumericValue {
-        return resolveToNumericValue(
+        const result = resolveToNumericValue(
             this.toBigNumber().neg()
-        )
+        );
+        const t = getAbsoluteTolerance(this);
+        return applyAbsoluteTolerance(result, t.minus, t.plus);
     }
 
     eq(value: NumericValue): boolean {
@@ -160,7 +165,11 @@ export class NumericValue {
 
     // Change the value to a rounded dp with fixed precision.
     roundDp(): NumericValue {
-        return roundValue(this.toNumber());
+        const rounded = roundValue(this.toNumber());
+        if (this.hasTolerances()) {
+            rounded.setTolerances(this.tolerances);
+        }
+        return rounded;
     }
 
     hasTolerances(): boolean {
@@ -200,6 +209,102 @@ function resolveToPercentageValue(value: Big): PercentageValue {
     return new PercentageValue(value.toNumber());
 }
 
+// Resolves a NumericValue's tolerances into absolute Big plus/minus bounds
+// relative to its own nominal value. Zero tolerances => {plus: 0, minus: 0}.
+function getAbsoluteTolerance(value: NumericValue): { plus: Big; minus: Big } {
+    const base = value.toBigNumber();
+    const resolveOne = (item: NumericValue | PercentageValue): Big => {
+        if (item instanceof PercentageValue) {
+            return new Big(item.toNumber()).div(100).mul(base).abs();
+        }
+        return item.toBigNumber().abs();
+    };
+
+    if (value.tolerances.length === 0) {
+        return { plus: new Big(0), minus: new Big(0) };
+    } else if (value.tolerances.length === 1) {
+        const t = resolveOne(value.tolerances[0]);
+        return { plus: t, minus: t };
+    } else {
+        return {
+            plus: resolveOne(value.tolerances[0]),
+            minus: resolveOne(value.tolerances[1]),
+        };
+    }
+}
+
+// Attaches absolute plus/minus tolerance bounds to a result NumericValue,
+// collapsing to a single symmetric entry when plus === minus.
+function applyAbsoluteTolerance(result: NumericValue, plus: Big, minus: Big): NumericValue {
+    if (plus.eq(0) && minus.eq(0)) {
+        return result;
+    }
+    if (plus.eq(minus)) {
+        result.setTolerances([resolveToNumericValue(plus)]);
+    } else {
+        result.setTolerances([resolveToNumericValue(plus), resolveToNumericValue(minus)]);
+    }
+    return result;
+}
+
+// Only a NumericValue can carry tolerance; everything else (WrappedNumber,
+// PercentageValue) contributes zero tolerance to a propagation.
+function getOperandTolerance(v: NumberOperatorType): { plus: Big; minus: Big } {
+    if (v instanceof NumericValue) {
+        return getAbsoluteTolerance(v);
+    }
+    return { plus: new Big(0), minus: new Big(0) };
+}
+
+// Worst-case linear propagation for addition/subtraction: absolute
+// tolerances add. For subtraction (v1 - v2), v1's plus pairs with v2's
+// minus (and vice versa) since that's the combination that maximizes /
+// minimizes the result.
+function propagateAdditive(
+    value1: NumberOperatorType,
+    value2: NumberOperatorType,
+    isSubtraction: boolean,
+    result: NumericValue
+): NumericValue {
+    const t1 = getOperandTolerance(value1);
+    const t2 = getOperandTolerance(value2);
+
+    const plus = isSubtraction ? t1.plus.add(t2.minus) : t1.plus.add(t2.plus);
+    const minus = isSubtraction ? t1.minus.add(t2.plus) : t1.minus.add(t2.minus);
+
+    return applyAbsoluteTolerance(result, plus, minus);
+}
+
+// Worst-case linear propagation for multiplication/division: relative
+// (percentage) tolerances add. For division (v1 / v2), v1's plus pairs
+// with v2's minus (denominator tolerating low inflates the quotient).
+function propagateMultiplicative(
+    value1: NumberOperatorType,
+    value2: NumberOperatorType,
+    isDivision: boolean,
+    result: NumericValue
+): NumericValue {
+    const t1 = getOperandTolerance(value1);
+    const t2 = getOperandTolerance(value2);
+
+    const mag1 = new Big(value1.toNumber()).abs();
+    const mag2 = new Big(value2.toNumber()).abs();
+
+    const relPlus1 = mag1.eq(0) ? new Big(0) : t1.plus.div(mag1);
+    const relMinus1 = mag1.eq(0) ? new Big(0) : t1.minus.div(mag1);
+    const relPlus2 = mag2.eq(0) ? new Big(0) : t2.plus.div(mag2);
+    const relMinus2 = mag2.eq(0) ? new Big(0) : t2.minus.div(mag2);
+
+    const relPlus = isDivision ? relPlus1.add(relMinus2) : relPlus1.add(relPlus2);
+    const relMinus = isDivision ? relMinus1.add(relPlus2) : relMinus1.add(relMinus2);
+
+    const magResult = result.toBigNumber().abs();
+    const plus = relPlus.mul(magResult);
+    const minus = relMinus.mul(magResult);
+
+    return applyAbsoluteTolerance(result, plus, minus);
+}
+
 export class NumberOperator {
 
     prepare(value: number | NumberOperatorType): NumberOperatorType {
@@ -223,19 +328,21 @@ export class NumberOperator {
         }
 
         if (isPercentage(value1)) {
-            return resolveToNumericValue(percentAgainstBase(value1, value2));
+            return propagateMultiplicative(value1, value2, false, resolveToNumericValue(
+                percentAgainstBase(value1, value2)));
         }
 
         if (isPercentage(value2)) {
-            return resolveToNumericValue(percentAgainstBase(value2, value1));
+            return propagateMultiplicative(value1, value2, false, resolveToNumericValue(
+                percentAgainstBase(value2, value1)));
         }
 
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 
-        return resolveToNumericValue(
+        return propagateMultiplicative(value1, value2, false, resolveToNumericValue(
             big1.mul(big2)
-        );
+        ));
     }
 
     divide(value1: NumberOperatorType, value2: NumberOperatorType)
@@ -257,16 +364,16 @@ export class NumberOperator {
 
         if (isPercentage(value2)) {
             // Numeric ÷ Percent
-            const frac2 = new Big(value2.toNumber()).div(100);
-            return resolveToNumericValue(new Big(value1.toNumber()).div(frac2));
+            return propagateMultiplicative(value1, value2, true, resolveToNumericValue(
+                new Big(value1.toNumber()).div(new Big(value2.toNumber()).div(100))));
         }
 
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 
-        return resolveToNumericValue(
+        return propagateMultiplicative(value1, value2, true, resolveToNumericValue(
             big1.div(big2)
-        );
+        ));
     }
 
     addition(value1: NumberOperatorType, value2: NumberOperatorType)
@@ -290,9 +397,9 @@ export class NumberOperator {
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 
-        return resolveToNumericValue(
+        return propagateAdditive(value1, value2, false, resolveToNumericValue(
             big1.add(big2)
-        );
+        ));
     }
 
     subtraction(value1: NumberOperatorType, value2: NumberOperatorType)
@@ -318,11 +425,14 @@ export class NumberOperator {
         const big1 = new Big(value1.toNumber());
         const big2 = new Big(value2.toNumber());
 
-        return resolveToNumericValue(
+        return propagateAdditive(value1, value2, true, resolveToNumericValue(
             big1.sub(big2)
-        );
+        ));
     }
 
+    // Tolerance is intentionally not propagated through modulus: there is no
+    // well-defined worst-case bound for an interval-valued modulus without
+    // full interval arithmetic, so the result always has empty tolerances.
     modulus(value1: NumberOperatorType, value2: NumberOperatorType)
         : NumberOperatorType {
 

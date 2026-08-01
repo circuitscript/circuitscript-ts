@@ -28,6 +28,10 @@ export class PercentageValue {
         this.value = new Big(useNumber);
     }
 
+    toDisplayString(): string {
+        return this.toString();
+    }
+
     toString(): string {
         return this.value.toString() + '%';
     }
