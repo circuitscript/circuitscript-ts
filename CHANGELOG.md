@@ -1,6 +1,26 @@
 # Changelog
 
-## [v0.9.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.2...v0.9.3)
+## [v0.9.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.3...v0.9.4)
+
+[0e59942](https://github.com/circuitscript/circuitscript-ts/commit/0e59942486dcd1f835df941aa68fe1c1cf13745a)Propagate tolerance through numeric operators
+- 
+- Add worst-case tolerance propagation for add/sub/mul/div/neg/roundDp in NumericValue, and a toDisplayString helper on PercentageValue.
+
+[c984451](https://github.com/circuitscript/circuitscript-ts/commit/c984451e50aa81649ac449985dd9fa8296df8dcd)Support referencing pins by name in arrange property
+- 
+- Arrange entries can now match a pin by name in addition to pin id,
+- resolved before duplicate removal so id/name references to the same
+- pin are correctly flagged as duplicates. An arrange entry matching
+- neither a pin id nor name now raises a hard error instead of being
+- silently dropped with a warning.
+
+[ff29605](https://github.com/circuitscript/circuitscript-ts/commit/ff2960555928e2c91c6194368a13832fa5cae3e8)Add percentage arithmetic support in NumberOperator
+- 
+- Support percentage operands in multiply/divide/add/subtract/modulus
+- operations, tolerance values on NumericValue (e.g. 10k +- 5%), and
+- proper string parsing/formatting for PercentageValue.
+
+## [v0.9.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.2...v0.9.3) - 2026-07-29
 
 [c584a37](https://github.com/circuitscript/circuitscript-ts/commit/c584a371dadeada6e400ff9605cf650f083c5d5e)Support named var= custom color hooks for symbol graphics
 - 
