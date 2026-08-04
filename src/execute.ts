@@ -448,7 +448,10 @@ export class ExecutionContext {
 
             // Remove duplicates from component.arrangeProps
             if (unitDef.arrange !== null) {
+                unitDef.arrange = this.parseArrangePropPinIds(unitDef.arrange);
+                unitDef.arrange = this.resolveArrangePropsStrPinIds(pins, unitDef.arrange);
                 unitDef.arrange = this.removeArrangePropDuplicates(unitDef.arrange);
+
                 const arrangePropPins = this.getArrangePropPins(unitDef.arrange);
 
                 pins.forEach(pin => {
@@ -505,9 +508,61 @@ export class ExecutionContext {
         });
     }
 
-    private removeArrangePropDuplicates(arrangeProp: Map<string, PinId[]>)
+    /**
+     * Resolves the entries of an `arrange` property to valid pin ids. An entry
+     * may reference a pin by id or by pin name; names are replaced with the
+     * matching pin id, and entries matching neither are dropped.
+     *
+     * @param pinDefinitions - Pins of the component unit being built.
+     * @param arrangeProps - Map of side to pin ids; mutated in place.
+     */
+    private resolveArrangePropsStrPinIds(pinDefinitions: PinDefinition[], arrangeProps: Map<string, PinId[]>): Map<string, PinId[]> {
+        const arrangeKeys = Array.from(arrangeProps.keys());
+
+        for (const arrangeKey of arrangeKeys) {
+            const pinIds = arrangeProps.get(arrangeKey) ?? [];
+            const resolvedPinIds: PinId[] = [];
+
+            for (const pinId of pinIds) {
+
+                // Preserve the blank markers
+                if (Array.isArray(pinId)){
+                    resolvedPinIds.push(pinId);
+                    continue;
+                }
+
+                const matchedPin = pinDefinitions.find(pinDef => pinDef.id.equals(pinId));
+                if (matchedPin) {
+                    resolvedPinIds.push(pinId);
+                    continue;
+                }
+                const matchedByName = pinDefinitions.find(pinDef => pinDef.name === pinId.getValue());
+                if (matchedByName) {
+                    resolvedPinIds.push(matchedByName.id);
+                    continue;
+                }
+
+                // Does not match anything
+                this.logWarning(`Item in arrange list does not match pin definition: ${pinId}`);
+            }
+
+            arrangeProps.set(arrangeKey, resolvedPinIds);
+        }
+
+        return arrangeProps;
+    }
+
+    /**
+     * Converts each `arrange` entry into a PinId, wrapping a lone value in an
+     * array first. Entries that are not valid pin id types, which mark blank
+     * slots, are kept as-is.
+     *
+     * @param arrangeProp - Map of side to the specified pin ids.
+     * @returns A new map with one entry per side, items parsed into PinIds.
+     */
+    private parseArrangePropPinIds(arrangeProp: Map<string, PinId[]>)
         : Map<string, PinId[]> {
-        
+
         const sides = [
             SymbolPinSide.Left,
             SymbolPinSide.Right,
@@ -516,7 +571,6 @@ export class ExecutionContext {
         ];
 
         const result = new Map();
-        const seenIds: PinId[] = [];
 
         sides.forEach(side => {
             let items = arrangeProp.get(side) ?? [];
@@ -542,9 +596,36 @@ export class ExecutionContext {
                 return item;
             });
 
-            arrangeProp.set(side, items);
+            result.set(side, items);
+        });
 
-            
+        return result;
+    }
+
+    /**
+     * Removes pins that appear more than once across all four sides, warning
+     * for each duplicate. Non-PinId entries, which mark blank slots, are
+     * kept as-is.
+     *
+     * @param arrangeProp - Map of side to the parsed pin ids.
+     * @returns A new map with one entry per side, duplicates removed.
+     */
+    private removeArrangePropDuplicates(arrangeProp: Map<string, PinId[]>)
+        : Map<string, PinId[]> {
+
+        const sides = [
+            SymbolPinSide.Left,
+            SymbolPinSide.Right,
+            SymbolPinSide.Top,
+            SymbolPinSide.Bottom
+        ];
+
+        const result = new Map();
+        const seenIds: PinId[] = [];
+
+        sides.forEach(side => {
+            let items = arrangeProp.get(side) ?? [];
+
             if (!Array.isArray(items)) {
                 items = [items];
             }
@@ -1967,6 +2048,7 @@ export function getPortSide(pins: Map<PinId, PinDefinition>, arrangeProps: null 
     // Takes the arrangeProps and determines how to arrange pins in the symbol.
 
     const result = [];
+    const pinDefs = Array.from(pins.values());
 
     const maxPositions: Map<string, number> = new Map();
     maxPositions.set(SymbolPinSide.Left, 0);
@@ -2004,7 +2086,7 @@ export function getPortSide(pins: Map<PinId, PinDefinition>, arrangeProps: null 
         const existingPinIds = Array.from(pins.keys());
 
         for (const [key, items] of arrangeProps) {
-            let useItems;
+            let useItems: PinId[];
             if (!Array.isArray(items)){
                 useItems = [items];
             } else {
@@ -2035,9 +2117,18 @@ export function getPortSide(pins: Map<PinId, PinDefinition>, arrangeProps: null 
                     // This is for blank spaces
                     position += (item[0] as NumericValue).toNumber();
                 } else {
-                    if (existingPinIds.find(id => id.equals(item))) {
+
+                    let matchPinId = existingPinIds.find(id => id.equals(item));
+                    if (matchPinId === undefined){
+                        const tmpPinDef = pinDefs.find(pinDef => pinDef.name === item.getValue());
+                        if (tmpPinDef){
+                            matchPinId = tmpPinDef.id;
+                        }
+                    } 
+
+                    if (matchPinId) {
                         result.push({
-                            pinId: item,
+                            pinId: matchPinId,
                             side: useSide,
                             position,
                             order: counter

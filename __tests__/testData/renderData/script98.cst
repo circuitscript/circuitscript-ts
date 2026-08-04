@@ -1,0 +1,26 @@
+# Arrange entries reference pins by name instead of by pin id. All four
+# sides are used so the name fallback is not left/right specific.
+
+u1 = create component:
+    pins:
+        1: "VCC"
+        2: "GND"
+        3: "IN"
+        4: "OUT"
+    arrange:
+        left: "IN"
+        right: "OUT"
+        top: "VCC"
+        bottom: "GND"
+
+at u1 pin "IN"
+wire left 100
+
+at u1 pin "OUT"
+wire right 100
+
+at u1 pin "VCC"
+wire up 100
+
+at u1 pin "GND"
+wire down 100

@@ -4,7 +4,7 @@ import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render/render.js";
-import { compareSvgToFile, renderCommon } from "./helpers.js";
+import { compareSvgToFile, renderCommon, runScript, runScriptExpectError } from "./helpers.js";
 import { PNG } from 'pngjs';
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
@@ -145,7 +145,11 @@ describe('Render tests', () => {
         ['script91.cst', 'multiple buses'],
         ['script92.cst', 'Custom symbol with stroke and fill color for light/dark mode'],
         ['script93.cst', 'multi-line text with newlines and blank-space lines renders correctly (regression)'],
-        ['script94.cst', 'named var= custom color hooks, alongside a plain dark= only color']
+        ['script94.cst', 'named var= custom color hooks, alongside a plain dark= only color'],
+
+        ['script98.cst',  'arrange entries reference pins by name on all four sides'],
+        ['script99.cst',  'arrange list mixes pin ids, pin names and blank slots'],
+        ['script100.cst', 'pin referenced by both id and name is de-duplicated'],
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
@@ -309,5 +313,39 @@ describe('Render tests', () => {
         const styles = getStylesFromDocument(documentVariable);
 
         expect(() => renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles)).toThrow();
+    });
+
+    test('arrange entries resolved cleanly by name emit no arrange warnings', async () => {
+        const scriptPath = mainPath + 'script98.cst';
+        const { hasError, visitor } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+
+        const messages = visitor.getWarnings().map(warning => warning.message);
+        expect(messages).not.toContainEqual(
+            expect.stringMatching(/arrange property/));
+        expect(messages).not.toContainEqual(
+            expect.stringMatching(/does not match pin definition/));
+    });
+
+    test('arrange entry matching no pin id or name throws', async () => {
+        const scriptPath = mainPath + 'script101.cst';
+        const message = await runScriptExpectError(
+            readFileSync(scriptPath, { encoding: 'utf8' }));
+
+        expect(message).toContain('Could not find pin MISSING');
+    });
+
+    test('pin referenced by both id and name warns as a duplicate', async () => {
+        const scriptPath = mainPath + 'script100.cst';
+        const { hasError, visitor } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+
+        const messages = visitor.getWarnings().map(warning => warning.message);
+        expect(messages).toContainEqual(
+            expect.stringContaining('specified more than once in arrange property'));
     });
 });

@@ -505,7 +505,10 @@ export class ParserVisitor extends BaseVisitor {
 
     // Creates a validator for the component property definition.
     private createComponentPropertyValidator(): ((path: PropertyTreeKey[], value: any, ctx: ParserRuleContext) => void) {
-        const definedPinIds: number[] = []; // Store pin IDs defined
+        const definedPinIds: number[] = [];     // Store pin IDs defined
+        const definedPinNames: string[] = [];   // Store pin names defined
+        const pinNamesIdMap = new Map<string, PinId>();
+
         const arrangedPinIds: number[] = []; //Store pin IDs defined in arrange props
 
         // Either `arrange` or `display` can be specified, but not both.
@@ -513,10 +516,13 @@ export class ParserVisitor extends BaseVisitor {
         let didDefineDisplayProp = false;
 
         const checkPinExistsAndNotDuplicated = (pinId: number, ctx: ParserRuleContext): void => {
-            if (definedPinIds.indexOf(pinId) === -1) {
-                this.warnings.push({
-                    message: `Invalid pin ${pinId}`, ctx
-                });
+            let usePinId = pinId;
+            if (definedPinNames.indexOf(pinId) !== -1 && pinNamesIdMap.has(pinId)) {
+                usePinId = pinNamesIdMap.get(pinId);
+            }
+
+            if (definedPinIds.indexOf(usePinId) === -1) {
+                this.throwWithContext(ctx, `Could not find pin ${pinId}`);
             }
 
             if (arrangedPinIds.indexOf(pinId) !== -1) {
@@ -637,14 +643,22 @@ export class ParserVisitor extends BaseVisitor {
 
                         const idName = path[1][1];  // The property key token
                         definedPinIds.push(idName);
+                        let pinName = '';
 
-                        if (value.length === 2) {
+                        if (Array.isArray(value) && value.length === 2) {
                             // Pin type is defined as the first item 
-                            const [pinType,] = value;
+                            const [, pinType] = value;
+                            pinName = value[0];
                             if (pinType instanceof UndeclaredReference) {
                                 throw new RuntimeExecutionError(`Invalid pin type: ${pinType.reference.name}`, ctx);
                             }
+                        } else {
+                            pinName = value;
+                            definedPinNames.push(value);
                         }
+
+                        definedPinNames.push(pinName);
+                        pinNamesIdMap.set(pinName, idName);
                     }
                 }
             }

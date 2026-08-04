@@ -1,0 +1,14 @@
+# The same pin referenced once by id and once by name is a duplicate. Since
+# duplicate removal now runs after name resolution, the second reference is
+# dropped and warned about, so pin 1 appears on the left only.
+
+u1 = create component:
+    pins:
+        1: "VCC"
+        2: "GND"
+    arrange:
+        left:  1
+        right: "VCC", "GND"
+
+at u1 pin 1
+wire left 100

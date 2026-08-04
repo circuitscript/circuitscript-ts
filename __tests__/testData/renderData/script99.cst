@@ -1,0 +1,19 @@
+# A single arrange list mixes numeric pin ids, string pin ids and pin names,
+# and includes blank-slot markers, which must survive name resolution and
+# still offset the pin positions.
+
+u1 = create component:
+    pins:
+        1: "VCC"
+        2: "GND"
+        3: "IN"
+        "P4": "OUT"
+    arrange:
+        left:  1, [1], "IN"
+        right: "OUT", [2], 2
+
+at u1 pin "IN"
+wire left 100
+
+at u1 pin "OUT"
+wire right 100

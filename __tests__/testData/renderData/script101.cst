@@ -1,0 +1,14 @@
+# An arrange entry that matches neither a pin id nor a pin name now raises
+# a hard error at property-validation time (before layout runs), instead of
+# being dropped with a warning.
+
+u1 = create component:
+    pins:
+        1: "VCC"
+        2: "GND"
+    arrange:
+        left:  "MISSING", 1
+        right: 2
+
+at u1 pin 1
+wire left 100
