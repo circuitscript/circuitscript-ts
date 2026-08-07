@@ -4,7 +4,7 @@ import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render/render.js";
-import { compareSvgToFile, renderCommon, runScript, runScriptExpectError } from "./helpers.js";
+import { compareSvgToFile, orderNets, parseNets, renderCommon, runScript, runScriptExpectError } from "./helpers.js";
 import { PNG } from 'pngjs';
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
@@ -69,7 +69,7 @@ describe('Render tests', () => {
         ['script37.cst', 'rendering circle in symbol'],
         ['script38.cst', 'net graphical properties, multi net component references same net'],
         ['script39.cst', 'Path blocks nested within for loop'],
-        ['script40.cst', 'Test corrcet graph when `at` block contains `point` path block'],
+        ['script40.cst', 'Test correct graph when `at` block contains `point` path block'],
         ['script41.cst', 'string and number Pin Ids for create component'],
         ['script42.cst', 'extract PinIds from create component `display` prop'],
         ['script43.cst', 'do not move non-copy component in frame'],
@@ -152,7 +152,7 @@ describe('Render tests', () => {
         ['script100.cst', 'pin referenced by both id and name is de-duplicated'],
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
-        const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
+        const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
 
         const styles = getStylesFromDocument(documentVariable);
         const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
@@ -162,7 +162,12 @@ describe('Render tests', () => {
         if (extra !== ""){
             useSvgPath = extra;
         }
-        
+
+        const netFileBase = useSvgPath.endsWith('.cst') ? useSvgPath.slice(0, -'.cst'.length) : useSvgPath;
+        const expectedNets = parseNets(
+            readFileSync(mainPath + "nets/" + netFileBase + ".cst.net", { encoding: 'utf8' }));
+        expect(orderNets(componentPinNets)).toStrictEqual(orderNets(expectedNets));
+
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + useSvgPath + ".svg", { encoding: 'utf8' });
         const doPixelCheck = false;
 

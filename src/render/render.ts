@@ -185,7 +185,8 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
 
         // Draw all SVG children within the grid bounds only
         generateSVGChild(sheetElements, components, wires, junctions,
-            mergedWires, allFrames, textObjects, gridProperties, styles, logger, colorRegistry);
+            mergedWires, allFrames, textObjects, gridProperties, styles, 
+            logger, colorRegistry);
 
         sheetElements.translate(xOffset, yOffset);
         sheetGroup.translate(0, sheetYOffset.toNumber());
@@ -403,7 +404,8 @@ function generateSVGChild(canvas: Svg | G,
 
     const defaultBusWireLineWidth = milsToMM(styles.busWireWidth!);
     const defaultBusJunctionSize = milsToMM(styles.busJunctionSize!);
-    
+    logger.add(`merged wires, len: ${mergedWires.length}`);
+
     // draw the merged wires
     mergedWires.forEach(tmpItem => {
         const { intersectPoints, net = null, lines = null } = tmpItem;

@@ -1,0 +1,10 @@
+/5v | supply-0.net-0.COMP-1-5v | 1
+/5v | led-0.COMP-1-0603 | 2
+/5v | supply-0.net-0.COMP-1-5v:0 | 1
+/5v | supply-0.net-0.COMP-1-5v:1 | 1
+/5v | led-1.COMP-1-0603 | 2
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | led-0.COMP-1-0603 | 1
+/GND | led-1.COMP-1-0603 | 1
+/GND | dgnd-0.COMP-1-GND:1 | 1

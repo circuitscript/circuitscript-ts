@@ -62,4 +62,14 @@ export class Net extends ParamsContainer {
             netA.baseName === netB.baseName &&
             netA.priority === netB.priority;
     }
+
+    clone(): Net {
+        const cloned = new Net(this.namespace, this.name, this.priority);
+        cloned.baseName = this.baseName;
+        cloned.type = this.type;
+        cloned.class = this.class;
+        cloned.busNet = this.busNet;
+        cloned.parameters = new Map(this.parameters);
+        return cloned;
+    }
 }

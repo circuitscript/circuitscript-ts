@@ -209,6 +209,18 @@ export function createParseTest(rootFolder: string, scriptName: string): ScriptT
     );
 }
 
+export function orderNets(componentPinNets: ComponentPinNet[]): ComponentPinNet[] {
+    const tmp = [...componentPinNets];
+    tmp.sort((a, b) => {
+        const valueA = `${a[0]} ${a[1]} ${a[2]}`;
+        const valueB = `${b[0]} ${b[1]} ${b[2]}`;
+        if (valueA < valueB) return -1;
+        if (valueA > valueB) return 1;
+        return 0;
+    });
+    return tmp;
+}
+
 type RenderCommonOptions = {
     runErc?: boolean,
     generateBom?: boolean,
@@ -226,11 +238,12 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         ercResults: ERCReportItem[],
         bomCsvOutput: string[][],
         bomResult: BomGenerationResult | undefined,
-        documentVariable: DocumentVariable
+        documentVariable: DocumentVariable,
+        componentPinNets: ComponentPinNet[]
     }> {
 
     const script = readFileSync(scriptPath, { encoding: 'utf8' });
-    const { hasError, visitor } = await runScript(script, scriptPath, { skipAnnotation: options?.skipAnnotation });
+    const { hasError, visitor, componentPinNets } = await runScript(script, scriptPath, { skipAnnotation: options?.skipAnnotation });
     expect(hasError).toEqual(false);
 
     visitor.applySheetFrameComponent();
@@ -271,7 +284,8 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         ercResults,
         bomCsvOutput,
         bomResult,
-        documentVariable
+        documentVariable,
+        componentPinNets
     }
 }
 

@@ -1,0 +1,17 @@
+/3V3 | supply-0.net-0.COMP-1-3V3 | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/SIG_1 | COMP-1 | 1
+/SIG_1 | label-0.COMP-1-SIG_1 | 1
+/SIG_1 | label-0.COMP-1-SIG_1:0 | 1
+/SIG_2 | COMP-1 | 2
+/SIG_2 | label-3.COMP-1-SIG_2 | 1
+/SIG_2 | label-3.COMP-1-SIG_2:0 | 1
+/SIG_3 | COMP-1 | 3
+/SIG_3 | label-1.COMP-1-SIG_3 | 1
+/SIG_3 | label-1.COMP-1-SIG_3:0 | 1
+/SIG_4 | COMP-1 | 4
+/SIG_4 | label-4.COMP-1-SIG_4 | 1
+/SIG_4 | label-4.COMP-1-SIG_4:0 | 1
+/SIG_5 | COMP-1 | 5
+/SIG_5 | label-2.COMP-1-SIG_5 | 1
+/SIG_5 | label-2.COMP-1-SIG_5:0 | 1

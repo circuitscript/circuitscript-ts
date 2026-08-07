@@ -1,0 +1,4 @@
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | COMP-1 | 10
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/NET-(J1-1) | COMP-1 | 1

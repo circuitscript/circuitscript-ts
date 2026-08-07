@@ -3,8 +3,7 @@
 import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
-import { ComponentPinNet } from '../src/objects/types.js';
-import { expectInlineScriptTest, findItem, findItemByRefDes, runScript, ScriptTest } from './helpers.js';
+import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, ScriptTest } from './helpers.js';
 import {
     inlineScript17, inlineScript18, inlineScript19,
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
@@ -50,24 +49,6 @@ function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknow
 }
 
 describe('test parsing', () => {
-
-    function orderNets(componentPinNets: ComponentPinNet): ComponentPinNet[] {
-        const tmp = [...componentPinNets];
-        tmp.sort((a, b) => {
-            const valueA = `${a[0]} ${a[1]} ${a[2]}`;
-            const valueB = `${b[0]} ${b[1]} ${b[2]}`;
-            if (valueA < valueB) {
-                return -1;
-            } else if (valueA > valueB) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-
-        return tmp;
-    }
-
 
     test.each(inlineScriptTests)('parse script - %s', async (description, scriptTest) => {
         // Test only parsing, does not check the correctness of the 

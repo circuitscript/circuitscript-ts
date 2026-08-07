@@ -1,0 +1,12 @@
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | res-0.COMP-1-100 | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/NET-(J1-1) | COMP-1 | 1
+/NET-(J1-1) | res-0.COMP-1-100 | 1
+/NET-(J1-6) | COMP-1 | 6
+/NET-(J1-6) | -branch.--.0 | 1
+/NET-(J1-6) | -branch.--.1 | 1
+/NET-(J1-6) | -branch.--.2 | 1
+/NET-(J1-6) | COMP-1 | 4
+/NET-(J1-6) | COMP-1 | 5
+/NET-(J1-6) | COMP-1 | 2

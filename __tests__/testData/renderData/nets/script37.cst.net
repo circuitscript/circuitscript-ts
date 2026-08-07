@@ -1,0 +1,9 @@
+/3V | supply-0.net-0.COMP-1-3V | 1
+/3V | supply-0.net-0.COMP-1-3V:0 | 1
+/3V | -branch.--.0 | 1
+/3V | push_button-0.COMP-1 | 1
+/3V | push_button-1.COMP-1 | 1
+/3V | push_button-2.COMP-1 | 1
+/NET-(J1-2) | push_button-0.COMP-1 | 2
+/NET-(J2-2) | push_button-1.COMP-1 | 2
+/NET-(J3-2) | push_button-2.COMP-1 | 2

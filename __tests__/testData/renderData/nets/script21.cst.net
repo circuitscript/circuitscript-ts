@@ -1,0 +1,12 @@
+/3V3 | supply-0.net-0.COMP-1-3V3 | 1
+/5V | supply-1.net-1.COMP-1-5V | 1
+/5V | res-0.COMP-1-10k | 2
+/5V | -point.--.1 | 1
+/5V | supply-1.net-1.COMP-1-5V:0 | 1
+/5V | -branch.--.2 | 1
+/5V | conn3x2-0.COMP-1 | 2
+/GND | dgnd-0.COMP-1-GND | 1
+/NET-(U1-1) | COMP-1-ATMEGA8U2-MU | 1
+/NET-(U1-1) | -branch.--.0 | 1
+/NET-(U1-1) | conn3x2-0.COMP-1 | 5
+/NET-(U1-1) | res-0.COMP-1-10k | 1

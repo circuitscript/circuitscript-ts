@@ -21,7 +21,7 @@ import { LengthUnit, MilsToMM, PxToMM } from "./globals.js";
 export type SVGWindow = any;
 import { NumericValue, resolveToNumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
-import { ImportedLibrary } from "./objects/types.js";
+import { ComponentPinNet, ImportedLibrary } from "./objects/types.js";
 import { ERCReportItem } from "./rules-check/rules.js";
 import { PinId, PinIdType } from "./objects/PinDefinition.js";
 
@@ -122,7 +122,8 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
 export type RenderScriptReturn = {
     svgOutput: string | null,
     errors: BaseError[],
-    ercResults?: ERCReportItem[]
+    ercResults?: ERCReportItem[],
+    nets?: ComponentPinNet[],
 };
 
 export type ExternalLibAnnotationFile = {

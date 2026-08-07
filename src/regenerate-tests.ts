@@ -30,9 +30,12 @@ async function regenerateTests(extra = "", fileList: string[] = [], mainDir = de
             }
         }
     });
-    for (let i = 0; i < cstFiles.length; i++) {
-        const file = cstFiles[i];
-        const inputPath = mainDir + file;
+    const netsDir = mainDir + 'nets/';
+    if (extra === '' && !fs.existsSync(netsDir)) {
+        fs.mkdirSync(netsDir, { recursive: true });
+    }
+
+    async function renderAndWriteNets(file: string, inputPath: string, netFileName: string): Promise<void> {
         const scriptData = fs.readFileSync(inputPath, { encoding: 'utf-8' });
 
         const svgsDir = mainDir + 'svgs/';
@@ -43,17 +46,44 @@ async function regenerateTests(extra = "", fileList: string[] = [], mainDir = de
         env.setModuleDirectory(mainDir);
         env.setDefaultLibsPath(mainDir + '../../../libs/');
 
-        const {errors} = await renderScript(scriptData, [outputPath], {
-            inputPath,
-            dumpNets: false,
-            dumpData: false,
-            showStats: false,
-            environment: env,
-        });
+        let errors;
+        let nets;
+        try {
+            ({errors, nets} = await renderScript(scriptData, [outputPath], {
+                inputPath,
+                dumpNets: true,
+                dumpData: false,
+                showStats: false,
+                environment: env,
+            }));
+        } catch (err) {
+            // Some scripts (e.g. script95, script96, script101) are intentionally
+            // invalid and are used to test error reporting - skip regenerating
+            // golden output for them.
+            console.log(`Skipping ${inputPath}, rendering threw: ${err}`);
+            return;
+        }
 
         if (errors.length > 0) {
+            console.log(`Error while parsing: ${inputPath}`)
             console.log(errors);
         }
+
+        if (extra === '' && nets) {
+            fs.writeFileSync(netsDir + netFileName, nets.map(item => item.join(' | ')).join('\n'));
+        }
+    }
+
+    for (let i = 0; i < cstFiles.length; i++) {
+        const file = cstFiles[i];
+        const inputPath = mainDir + file;
+        await renderAndWriteNets(file, inputPath, file + '.net');
+    }
+
+    // script59 lives in a subdirectory and is not picked up by the flat
+    // top-level scan above, so it needs an explicit pass here.
+    if (mainDir === defaultMainDir && (fileList.length === 0 || fileList.includes('script59'))) {
+        await renderAndWriteNets('script59', mainDir + 'script59/main.cst', 'script59.cst.net');
     }
 
     return cstFiles;

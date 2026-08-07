@@ -1,0 +1,11 @@
+/3V3 | supply-1.net-1.COMP-1-3V3 | 1
+/3V3 | supply-1.net-1.COMP-1-3V3:0 | 1
+/3V3 | res-1.COMP-1-1k | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | res-0.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | res-1.COMP-1-1k | 2
+/GND | dgnd-0.COMP-1-GND:1 | 1
+/V5 | supply-0.net-0.COMP-1-V5 | 1
+/V5 | supply-0.net-0.COMP-1-V5:0 | 1
+/V5 | res-0.COMP-1-10k | 1

@@ -1,0 +1,17 @@
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | cap-0.COMP-1-100n | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | cap-1.COMP-1-100n | 2
+/GND | dgnd-0.COMP-1-GND:1 | 1
+/GND | cap-2.COMP-1-100n | 2
+/GND | dgnd-0.COMP-1-GND:2 | 1
+/VCC | supply-0.net-0.COMP-1-VCC | 1
+/VCC | supply-0.net-0.COMP-1-VCC:0 | 1
+/VCC | -branch.--.0 | 1
+/VCC | cap-0.COMP-1-100n | 1
+/VCC | cap-1.COMP-1-100n | 1
+/VCC | -branch.--.1 | 1
+/VCC | cap-2.COMP-1-100n | 1
+/VCC | cap-3.COMP-1-100n | 1
+/VCC | cap-3.COMP-1-100n | 2
+/VCC | supply-0.net-0.COMP-1-VCC:1 | 1

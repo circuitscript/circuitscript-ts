@@ -1,0 +1,4 @@
+/3V3 | supply-0.net-0.COMP-1-3V3 | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/NET-(J1-1) | COMP-1 | 1
+/NET-(J1-1) | COMP-1 | 2

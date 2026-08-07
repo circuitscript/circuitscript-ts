@@ -304,6 +304,9 @@ export class ClassComponent {
     // Store simulation properties
     simProp: Map<string, unknown> | null = null;
 
+    /** Stores behavioral prop */
+    behaviorProp: Map | null = null;
+
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
         this.numPins = numPins;

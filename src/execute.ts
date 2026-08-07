@@ -115,7 +115,10 @@ export class ExecutionContext {
         this.executionLevel = executionLevel;
         this.logger = logger;
 
-        this.scope = ExecutionScope.create();
+        this.scope = ExecutionScope.create((...params) => {
+            this.log(...params);
+        });
+        
         this.scope.scopeLevel = scopeLevel;
 
         this.setupRoot();
@@ -178,11 +181,6 @@ export class ExecutionContext {
         return tmpName;
     }
 
-    createNewNet(name: string| null, priority=1): Net {
-        name = name ?? this.getUniqueNetName();
-        return new Net(this.netNamespace, name, priority);
-    }
-
     /** Returns current insertion point within the scope */
     getCurrentPoint(): ComponentPin {
         return [this.scope.currentComponent, this.scope.currentPin];
@@ -198,74 +196,12 @@ export class ExecutionContext {
         component2: ClassComponent,
         component2Pin: PinId,
     ): Net {
-        const net1 = this.scope.getNet(component1, component1Pin);
-        const net2 = this.scope.getNet(component2, component2Pin);
 
-        this.log('link nets', component1, component1Pin, net1, 'priority:' + net1?.priority,
-            'to', component2, component2Pin, net2, 'priority:' + net2?.priority);
-
-        let returnNet: Net;
-
-        if (net1 === null && net2 === null) {
-            // Both nets do not exist yet, so create a new one
-            // that both will use.
-            const tmpNet = new Net(this.netNamespace, this.getUniqueNetName());
-
-            this.scope.setNet(component1, component1Pin, tmpNet);
-            this.scope.setNet(component2, component2Pin, tmpNet);
-
-            returnNet = tmpNet;
-
-        } else if (net1 === null && net2 !== null) {
-            // If net1 does not exist, but net2 exists
-            this.scope.setNet(component1, component1Pin, net2);
-            returnNet = net2;
-
-        } else if (net1 !== null && net2 === null) {
-            // If net1 exists, but net2 does not exist
-            this.scope.setNet(component2, component2Pin, net1);
-            returnNet = net1;
-
-        } else {
-            if (net1 !== net2) {
-                returnNet = this.mergeNets(net1, net2);
-            } else {
-                // Otherwise, both nets are the same.
-                returnNet = net1;
-            }
-        }
-
-        this.log('final net after link: ', returnNet, returnNet.priority);
-
-        return returnNet!;
-    }
-
-    /** Combines 2 nets into a single net. Component-pin pairs in the nets will
-     * also be merged. By default net2 will be merged into net1 and net2 will
-     * no longer be used. */
-    private mergeNets(net1: Net, net2: Net): Net {
-        if (net1 === net2) {
-            return net1;
-        }
-
-        // Check priority to ensure that net1 always
-        // has the higher priority. Swap both nets
-        // if this is not the case.
-        if (net2.priority > net1.priority) {
-            const tmpNet = net1;
-            net1 = net2;
-            net2 = tmpNet;
-        }
-
-        // Get all (component, pin) pairs that are linked to net2
-        // and change them to net1
-        this.scope.getNets().forEach(([component, pin, net]) => {
-            if (Net.isSame(net, net2)) {
-                this.scope.setNet(component, pin, net1);
-            }
-        });
-
-        return net1;
+        return this.scope.netMap.linkComponentPinNet(
+            component1, component1Pin,
+            component2, component2Pin,
+            this.netNamespace
+        )
     }
 
     /**
@@ -313,6 +249,8 @@ export class ExecutionContext {
             followWireOrientation: boolean,
             units: [string, ComponentUnitDefinition][],
 
+            behavior?: any,
+
             sim?: Map<string, any>,
         },
         isModule = false
@@ -337,6 +275,7 @@ export class ExecutionContext {
         component.typeProp = props.type ?? null;
         component.copyProp = props.copy ?? false;
         component.simProp = props.sim ?? null;
+        component.behaviorProp = props.behavior ?? null;
 
         component.isNetLabel = props.is_label ?? false;
 
@@ -364,14 +303,14 @@ export class ExecutionContext {
                 this.log('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
-                tmpNet = new Net(this.netNamespace, netName, priority);
+                tmpNet = this.scope.netMap.newNet(
+                    this.netNamespace, netName, priority);
                 this.log('net not found, added net instance', 
                     tmpNet.namespace, tmpNet.name);
             }
 
             const defaultPin = component.getDefaultPin();
             this.scope.setNet(component, defaultPin, tmpNet);
-            this.log('set net', netName, 'component', component, defaultPin);
 
             // Assign the net to a property of the component.
             component.setParam('net', tmpNet);
@@ -714,7 +653,7 @@ export class ExecutionContext {
         this.toComponent(component, pin, {addSequence: true});
 
         // Continue the circuit graph from the next pin of the component
-        this.log('move to next pin: ' + nextPin);
+        this.log(`move to next pin: ${nextPin}`);
         this.atComponent(component, nextPin, {
             addSequence: true
         });
@@ -897,13 +836,10 @@ export class ExecutionContext {
         }
 
         this.scope.setCurrent(component, usePinId);
-
+        
         // Check if there is an existing net, otherwise create the net
         if (!this.scope.hasNet(component, usePinId)) {
-            const tmpNet = new Net(
-                this.netNamespace,
-                this.getUniqueNetName()
-            );
+            const tmpNet = this.scope.netMap.newNet(this.netNamespace);
 
             // Set property if it is a bus pin.
             const pinDef = component.pins.get(component.getPin(usePinId))!;
@@ -1607,8 +1543,8 @@ export class ExecutionContext {
             if (net.priority === 0 
                 && this.scope.getNetWithNamespacePath(net.namespace, net.name) !== null){
                 this.log('net namespace and name already used in parent scope', net);
-                
-                const newNetName = this.getUniqueNetName();
+
+                const newNetName = this.scope.netMap.getUniqueNetName();
                 net.name = newNetName;
                 this.log('assigned new name: ', net);
             }
@@ -1641,9 +1577,10 @@ export class ExecutionContext {
 
                 if (currentNet === null){
                     // Current net does not exist yet, so create it
-                    const tmpNet = new Net(this.netNamespace, 
+                    const tmpNet = this.scope.netMap.newNet(
+                        this.netNamespace,
                         this.getUniqueNetName());
-                    
+
                     this.scope.setNet(
                         currentComponent, currentPin, netConnectedToRoot);
                     currentNet = tmpNet

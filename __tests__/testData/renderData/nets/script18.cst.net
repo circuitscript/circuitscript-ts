@@ -1,0 +1,10 @@
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | res-1.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/NET-(R1-2) | res-0.COMP-1-10k | 2
+/NET-(R1-2) | -branch.--.0 | 1
+/NET-(R1-2) | tp-0.COMP-1 | 1
+/NET-(R1-2) | res-1.COMP-1-10k | 1
+/VCC | supply-0.net-0.COMP-1-VCC | 1
+/VCC | supply-0.net-0.COMP-1-VCC:0 | 1
+/VCC | res-0.COMP-1-10k | 1

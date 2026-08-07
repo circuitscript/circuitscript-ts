@@ -1,0 +1,10 @@
+/5V | supply-0.net-0.COMP-1-5V | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | res-0.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | res-1.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:1 | 1
+/NET-(J3-1) | COMP-1 | 1
+/NET-(J3-1) | -branch.--.0 | 1
+/NET-(J3-1) | res-0.COMP-1-10k | 1
+/NET-(J3-1) | res-1.COMP-1-10k | 1

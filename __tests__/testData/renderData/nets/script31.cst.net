@@ -1,0 +1,5 @@
+/5V | supply-0.net-0.COMP-1-5V | 1
+/5V | supply-0.net-0.COMP-1-5V:0 | 1
+/5V | cap_gnd-0.--root | 1
+/5V | cap_gnd-0.-branch.cap_gnd-0.0 | 1
+/GND | dgnd-0.COMP-1-GND | 1

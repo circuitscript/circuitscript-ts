@@ -1,0 +1,17 @@
+/3V3 | supply-0.net-0.COMP-1-3V3 | 1
+/NET-(D1-1) | led-0.COMP-1-0603 | 1
+/NET-(D10-1) | led-9.COMP-1-0603 | 1
+/NET-(D11-1) | led-10.COMP-1-0603 | 1
+/NET-(D12-1) | led-11.COMP-1-0603 | 1
+/NET-(D13-1) | led-12.COMP-1-0603 | 1
+/NET-(D14-1) | led-13.COMP-1-0603 | 1
+/NET-(D15-1) | led-14.COMP-1-0603 | 1
+/NET-(D16-1) | led-15.COMP-1-0603 | 1
+/NET-(D2-1) | led-1.COMP-1-0603 | 1
+/NET-(D3-1) | led-2.COMP-1-0603 | 1
+/NET-(D4-1) | led-3.COMP-1-0603 | 1
+/NET-(D5-1) | led-4.COMP-1-0603 | 1
+/NET-(D6-1) | led-5.COMP-1-0603 | 1
+/NET-(D7-1) | led-6.COMP-1-0603 | 1
+/NET-(D8-1) | led-7.COMP-1-0603 | 1
+/NET-(D9-1) | led-8.COMP-1-0603 | 1

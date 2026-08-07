@@ -22,7 +22,7 @@ import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Frame, FrameParamKeys } from "./objects/Frame.js";
 import { FrameAction, SequenceAction } from "./objects/ExecutionScope.js";
-import { DocumentVariable, ImportedLibrary } from "./objects/types.js";
+import { ComponentPinNet, DocumentVariable, ImportedLibrary } from "./objects/types.js";
 import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
@@ -245,9 +245,10 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     visitor.cacheLibraries();
     
+    let dumpedNets: ComponentPinNet[] | undefined;
     if (dumpNets) {
-        const nets = visitor.dumpNets();
-        nets.forEach(item => console.log(item.join(" | ")));
+        dumpedNets = visitor.dumpNets();
+        dumpedNets.forEach(item => console.log(item.join(" | ")));
     }
 
     dumpData && environment.writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));
@@ -487,6 +488,10 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     if (enableErc && ercResults) {
         results.ercResults = ercResults;
+    }
+
+    if (dumpedNets) {
+        results.nets = dumpedNets;
     }
 
     return results;

@@ -1,0 +1,6 @@
+/NET-(U1-1) | my_component-0.COMP-1 | 1
+/NET-(U1-1) | tmp_component-0.yet_another_component-0.COMP-1 | 1
+/NET-(U1-2) | my_component-0.COMP-1 | 2
+/NET-(U1-2) | -branch.--.0 | 1
+/NET-(U1-2) | comp1-0.COMP-1 | 1
+/NET-(U1-2) | comp2-0.COMP-1 | 1

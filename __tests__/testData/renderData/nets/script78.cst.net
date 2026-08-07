@@ -1,0 +1,14 @@
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | res-0.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | res-1.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:1 | 1
+/NET-(D1-1) | led-0.COMP-1-0603 | 1
+/NET-(D1-1) | res-0.COMP-1-10k | 1
+/NET-(D2-1) | led-1.COMP-1-0603 | 1
+/NET-(D2-1) | res-1.COMP-1-10k | 1
+/VCC | supply-0.net-0.COMP-1-VCC | 1
+/VCC | supply-0.net-0.COMP-1-VCC:0 | 1
+/VCC | led-0.COMP-1-0603 | 2
+/VCC | supply-0.net-0.COMP-1-VCC:1 | 1
+/VCC | led-1.COMP-1-0603 | 2

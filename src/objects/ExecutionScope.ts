@@ -19,8 +19,8 @@ import { ParserRuleContext } from 'antlr4ng';
 import { Property_key_exprContext } from '../antlr/CircuitScriptParser.js';
 import { BaseVisitor } from 'src/BaseVisitor.js';
 import { PinId } from './PinDefinition.js';
-import { RuntimeExecutionError } from "../errors.js";
 import { NetClass } from './NetClass.js';
+import { NetMap } from './NetMap.js';
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 
@@ -38,7 +38,7 @@ export type PropertyTreeKey = [ctx: ParserRuleContext, value: any] | ['index', n
 
 export class ExecutionScope {
     scopeId: number;
-    private nets: ComponentPinNetPair[] = [];
+    netMap = new NetMap();
 
     instances: Map<string, ClassComponent> = new Map();
 
@@ -98,104 +98,53 @@ export class ExecutionScope {
      */
     sequence: SequenceItem[] = [];
 
-    private constructor(scopeId: number) {
+    scenarioStates = new Map();
+    scenarioCurrentComponent: ClassComponent | null = null;
+
+    private constructor(scopeId: number, logCallback: any) {
         this.scopeId = scopeId;
+        this.netMap.logCallback = logCallback;
     }
 
     static scopeId = 0;
 
-    static create(): ExecutionScope {
-        const scope = new ExecutionScope(ExecutionScope.scopeId);
+    static create(logCallback: any): ExecutionScope {
+        const scope = new ExecutionScope(ExecutionScope.scopeId, logCallback);
         ExecutionScope.scopeId += 1;
         return scope;
     }
 
-    /** Returns the component pin net pair, if the component pin pair matches */
-    private findNet(component: ClassComponent, pin: PinId): ComponentPinNetPair | undefined {
-        if (!(pin instanceof PinId)){
-            throw new RuntimeExecutionError('Invalid value for PinId: ' + pin);
-        }
-
-        return this.nets.find(([tmpComponent, tmpPin]) => {
-            // Use manual equality, much faster than using lodash
-            return tmpComponent.isEqual(component) &&  tmpPin.equals(pin);
-        });
-    }
-
     getNetWithName(name: string): Net {
-        const found = this.nets.find(([,, net]) => {
-            return net.name === name;
-        });
-        
-        return found ? found[2]: null;
+        return this.netMap.getNetWithName(name);
     }
 
     getNetWithNamespacePath(namespace: string, name: string): Net | null {
-        const found = this.nets.find(([, , net]) => {
-            return net.namespace === namespace && net.name === name
-        });
-
-        return found ? found[2] : null;
+        return this.netMap.getNetWithNamespacePath(namespace, name);
     }
 
-    hasNet(component: ClassComponent, pin: PinId): boolean {
-        return this.findNet(component, pin) !== undefined;
+    hasNet(instance: ClassComponent, pin: PinId): boolean {
+        return this.netMap.hasNet(instance, pin);
     }
 
     /** Returns net if found, otherwise returns null */
-    getNet(component: ClassComponent, pin: PinId): Net | null {
-        const result = this.findNet(component, pin);
-        return result ? result[2] : null;
+    getNet(instance: ClassComponent, pin: PinId): Net | null {
+        return this.netMap.get(instance, pin);
     }
 
-    setNet(component: ClassComponent, pin: PinId, net: Net): void {
-        const pair = this.findNet(component, pin)!;
-        const result = this.nets.indexOf(pair);
-
-        if (result === -1) {
-            this.nets.push([component, pin, net]);
-        } else {
-            this.nets[result][2] = net;
-        }
-
-        component.pinNets.set(pin, net);
+    setNet(instance: ClassComponent, pin: PinId, net: Net): void {
+        return this.netMap.set(instance, pin, net);
     }
 
-    removeNet(component: ClassComponent, pin: PinId): void {
-        const pair = this.findNet(component, pin)!;
-        const result = this.nets.indexOf(pair);
-
-        if (result !== -1) {
-            this.nets.splice(result, 1);
-        }
-
-        component.pinNets.delete(pin);
+    removeNet(instance: ClassComponent, pin: PinId): void {
+        return this.netMap.remove(instance, pin);
     }
 
     getNets(): ComponentPinNetPair[] {
-        return this.nets;
+        return this.netMap.getNets();
     }
 
     dumpNets(): ComponentPinNet[] {
-        const sortedNet = [...this.nets].sort((a, b) => {
-            const netA = a[2];
-            const netB = b[2];
-
-            const netAId = netA.toString();
-            const netBId = netB.toString();
-
-            if (netAId > netBId) {
-                return 1;
-            } else if (netAId < netBId) {
-                return -1;
-            } else {
-                return 0;
-            }
-        });
-
-        return sortedNet.map(([component, pin, net]) => {
-            return [net.toString(), component.instanceName, pin.value];
-        });
+        return this.netMap.dump();
     }
 
     printNets(): void {
