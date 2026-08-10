@@ -339,8 +339,6 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
             const documentStyles = getStylesFromDocument(documentVariable);
 
-            // graphEngine.generateNetGraph(nets);
-
             let sheetFrames;
 
             try {

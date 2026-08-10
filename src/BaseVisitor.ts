@@ -114,6 +114,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     // Provides a numerical index when each component is created.
     protected componentCreationIndex = 0;
 
+    functionCallCtx?: ParserRuleContext;
+
     constructor(silent = false, 
         onErrorHandler: OnErrorHandler | null = null,
         environment: NodeScriptEnvironment) {
@@ -716,6 +718,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 this.log('copy library context scope');
                 importedLibraryContext.scope.copyTo(newExecutor.scope);
             }
+
+            this.functionCallCtx = ctx;
 
             const [, functionResult] =
                 executor.callFunction(

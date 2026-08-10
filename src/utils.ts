@@ -11,7 +11,6 @@ import { SequenceAction, SequenceActionAssign, SequenceActionAtTo, SequenceItem 
 import { UnitDimension } from './helpers.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { DeclaredReference, AnyReference } from './objects/types.js';
-import { getLinePositionAsString } from "./errors.js";
 import { roundValue } from "./objects/NumericValue.js";
 
 export class SimpleStopwatch {
@@ -287,4 +286,37 @@ export function unwrapValue(value: AnyReference | DeclaredReference | any): any 
 export function isReference(value: any): boolean {
     return (value instanceof AnyReference || 
             value instanceof DeclaredReference);
+}
+export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
+    if (ctx === null || ctx === undefined) {
+        return null;
+    }
+
+    const { start: startToken, stop: stopToken } = ctx;
+    let result: string | null = null;
+
+    if (startToken) {
+        const { line, column } = startToken;
+
+        let stopLine = 0;
+        let stopCol = 0;
+
+        if (stopToken && (stopToken.line !== startToken.line || stopToken.column !== startToken.column)) {
+            stopLine = stopToken.line;
+            stopCol = stopToken.column + (stopToken.stop - stopToken.start);
+        } else if (startToken === stopToken || startToken) {
+            // If both tokens are the same, then it is only a single token.
+            stopLine = line;
+            stopCol = column + 1 + (startToken.stop - startToken.start);
+        } else {
+            stopCol = -1;
+        }
+
+        result = ` at ${line}:${column + 1}`;
+        if (stopCol !== -1) {
+            result += `-${stopLine}:${stopCol + 1}`;
+        }
+    }
+
+    return result;
 }

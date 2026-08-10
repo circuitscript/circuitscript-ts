@@ -25,6 +25,7 @@ non_newline_expression: flow_expressions
     | double_dot_property_set_expr
     | assignment_expr
     | callable_expr
+    | create_scenario_expr
     ;
 
 // Changes flow of the program
@@ -141,11 +142,18 @@ graphic_expressions_block:
     NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
 create_expr: CreateComponent Colon properties_block                                                     #CreateComponentExpr
-           | CreateNetClass Colon properties_block                                                      #CreateNetClassExpr
-           | CreateBus Colon properties_block                                                           #CreateBusExpr
+           | CreateNetClass  Colon properties_block                                                     #CreateNetClassExpr
+           | CreateBus       Colon properties_block                                                     #CreateBusExpr
+           | CreateBehavior  Colon behavior_block                                                       #CreateBehaviorExpr
            | CreateGraphic (LParen ID RParen)? Colon graphic_expressions_block                          #CreateGraphicExpr
            | CreateModule Colon NEWLINE INDENT (property_expr | property_block_expr | NEWLINE)+ DEDENT  #CreateModuleExpr
            ;
+
+
+behavior_state_expr: State data_expr Colon expressions_block;
+behavior_block: NEWLINE INDENT behavior_state_expr+ DEDENT;
+
+create_scenario_expr: CreateScenario Colon expressions_block;
 
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                        # GraphicForExpr
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)  # GraphicCommandExpr

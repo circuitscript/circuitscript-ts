@@ -17,6 +17,8 @@ CreateGraphic:     'create' [ \t]+ 'graphic';
 CreateModule:      'create' [ \t]+ 'module';
 CreateNetClass:    'create' [ \t]+ 'netclass';
 CreateBus:         'create' [ \t]+ 'bus';
+CreateBehavior:    'create' [ \t]+ 'behavior';
+CreateScenario:    'create' [ \t]+ 'scenario';
 
 Wire:       'wire';
 
@@ -45,6 +47,7 @@ Not:        '!' | 'not';
 Frame:      'frame';
 Sheet:      'sheet';
 Set:        'set';
+State:      'state';
 
 // Punctuation and operators
 Colon:              ':';

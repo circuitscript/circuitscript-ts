@@ -21,6 +21,8 @@ import { BaseVisitor } from 'src/BaseVisitor.js';
 import { PinId } from './PinDefinition.js';
 import { NetClass } from './NetClass.js';
 import { NetMap } from './NetMap.js';
+import { HighImpedanceValue } from 'src/behavior.js';
+import { NumericValue } from './NumericValue.js';
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 
@@ -98,8 +100,14 @@ export class ExecutionScope {
      */
     sequence: SequenceItem[] = [];
 
-    scenarioStates = new Map();
+    // Stores net => voltage mapping
+    scenarioStates = new Map<Net, NumericValue | HighImpedanceValue>();
     scenarioCurrentComponent: ClassComponent | null = null;
+
+    // Used for virtual components created in the scenario (0R resistors, etc.)
+    scenarioVirtualCounter = 0;
+
+    scenarioEvaluateCalled = false;
 
     private constructor(scopeId: number, logCallback: any) {
         this.scopeId = scopeId;

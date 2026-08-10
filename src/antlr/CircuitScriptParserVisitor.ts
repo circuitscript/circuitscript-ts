@@ -51,8 +51,12 @@ import { Graphic_expressions_blockContext } from "./CircuitScriptParser.js";
 import { CreateComponentExprContext } from "./CircuitScriptParser.js";
 import { CreateNetClassExprContext } from "./CircuitScriptParser.js";
 import { CreateBusExprContext } from "./CircuitScriptParser.js";
+import { CreateBehaviorExprContext } from "./CircuitScriptParser.js";
 import { CreateGraphicExprContext } from "./CircuitScriptParser.js";
 import { CreateModuleExprContext } from "./CircuitScriptParser.js";
+import { Behavior_state_exprContext } from "./CircuitScriptParser.js";
+import { Behavior_blockContext } from "./CircuitScriptParser.js";
+import { Create_scenario_exprContext } from "./CircuitScriptParser.js";
 import { GraphicForExprContext } from "./CircuitScriptParser.js";
 import { GraphicCommandExprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
@@ -389,6 +393,13 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitCreateBusExpr?: (ctx: CreateBusExprContext) => Result;
     /**
+     * Visit a parse tree produced by the `CreateBehaviorExpr`
+     * labeled alternative in `CircuitScriptParser.create_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitCreateBehaviorExpr?: (ctx: CreateBehaviorExprContext) => Result;
+    /**
      * Visit a parse tree produced by the `CreateGraphicExpr`
      * labeled alternative in `CircuitScriptParser.create_expr`.
      * @param ctx the parse tree
@@ -402,6 +413,24 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitCreateModuleExpr?: (ctx: CreateModuleExprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.behavior_state_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitBehavior_state_expr?: (ctx: Behavior_state_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.behavior_block`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitBehavior_block?: (ctx: Behavior_blockContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.create_scenario_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitCreate_scenario_expr?: (ctx: Create_scenario_exprContext) => Result;
     /**
      * Visit a parse tree produced by the `GraphicForExpr`
      * labeled alternative in `CircuitScriptParser.graphic_expr`.

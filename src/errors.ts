@@ -11,6 +11,7 @@
 
 import { Token, ParserRuleContext } from "antlr4ng";
 import { Wire } from "./objects/Wire.js";
+import { getLinePositionAsString } from "./utils.js";
 
 /**
  * Errors that have a ParserRuleContext associated.
@@ -60,45 +61,11 @@ export class BaseError extends Error {
     }
 }
 
-export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
-    if (ctx === null || ctx === undefined) {
-        return null;
-    }
-
-    const { start: startToken, stop: stopToken } = ctx;
-    let result: string | null = null;
-
-    if (startToken) {
-        const { line, column } = startToken;
-
-        let stopLine = 0;
-        let stopCol = 0;
-
-        if (stopToken && (stopToken.line !== startToken.line || stopToken.column !== startToken.column)) {
-            stopLine = stopToken.line;
-            stopCol = stopToken.column + (stopToken.stop - stopToken.start);
-        } else if (startToken === stopToken || startToken) {
-            // If both tokens are the same, then it is only a single token.
-            stopLine = line;
-            stopCol = column + 1 + (startToken.stop - startToken.start);
-        } else {
-            stopCol = -1;
-        }
-
-        result = ` at ${line}:${column + 1}`;
-        if (stopCol !== -1) {
-            result += `-${stopLine}:${stopCol + 1}`;
-        }
-    }
-
-    return result;
-}
-
 export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
-    if (messageOrError instanceof BaseError) {
+    if (messageOrError instanceof BaseError && messageOrError.startToken) {
         throw messageOrError;
     }
-    throwWithTokenRange(messageOrError as string, context.start!, context.stop!);
+    throwWithTokenRange(messageOrError.message, context.start!, context.stop!);
 }
 
 export function throwWithTokenRange(message: string, startToken: Token, endToken?: Token): void {

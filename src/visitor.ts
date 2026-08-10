@@ -58,6 +58,8 @@ import {
     WithBracketsPropertyContext,
     CreateNetClassExprContext,
     CreateBusExprContext,
+    CreateBehaviorExprContext,
+    Create_scenario_exprContext,
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -93,6 +95,7 @@ import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
+import { ComponentBehavior, HighImpedanceValue, prepareScenarioNets } from './behavior.js';
 
 export class ParserVisitor extends BaseVisitor {
 
@@ -379,6 +382,10 @@ export class ParserVisitor extends BaseVisitor {
 
         if (properties.has('sim')){
             props.sim = properties.get('sim');
+        }
+
+        if (properties.has('behavior')){
+            props.behavior = properties.get('behavior');
         }
 
         try {
@@ -1086,6 +1093,48 @@ export class ParserVisitor extends BaseVisitor {
         busComponent.typeProp = typeProp;
 
         this.setResult(ctx, busComponent);
+    }
+
+    visitCreateBehaviorExpr = (ctx: CreateBehaviorExprContext): void => {
+        const behavior = new ComponentBehavior(ctx.behavior_block(), 
+            conditionCtx => {
+                return this.visitResult(conditionCtx);
+            },
+            expressionsBlockCtx => {
+                return this.visit(expressionsBlockCtx);
+            }
+        );
+        this.setResult(ctx, behavior);
+    }
+
+    visitCreate_scenario_expr = (ctx: Create_scenario_exprContext): void => {
+        this.log('created scenario');
+        const scope = this.getScope();
+
+        // clear all scenario states first
+        const scenarioStates = scope.scenarioStates;
+        scenarioStates.clear();
+
+        scope.scenarioVirtualCounter = 0;
+        scope.scenarioEvaluateCalled = false;
+
+        const originalNetMap = scope.netMap;
+        const clonedNetMap = originalNetMap.clone();
+
+        clonedNetMap.getNets().forEach(([, , net]) => {
+            scenarioStates.set(net, new HighImpedanceValue());
+        });
+
+        scope.netMap = clonedNetMap;
+        this.log('scenario net map set up');
+
+        console.log("Scenario:")
+
+        this.visit(ctx.expressions_block());
+
+        // restore
+        scope.netMap = originalNetMap;
+        scope.scenarioCurrentComponent = null;
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {
