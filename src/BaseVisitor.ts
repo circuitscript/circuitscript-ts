@@ -195,7 +195,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
             for (let i = 0; i < reversed.length; i++) {
                 const context = reversed[i];
-                const net = context.scope.getNetWithName(netName);
+                const net = context.scope.netMap.getNetWithName(netName);
 
                 if (net !== null && net.namespace === netNamespace) {
                     return {
@@ -221,7 +221,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
             for (let i = 0; i < reversed.length; i++) {
                 const context = reversed[i];
-                const net = context.scope.getNet(component, pin);
+                const net = context.scope.netMap.get(component, pin);
                 if (net !== null) {
                     return net;
                 }
@@ -1448,7 +1448,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
                         // Add the component nets into the local scope
                         for(const [pinNumber, net] of component.pinNets){
-                            executor.scope.setNet(component, pinNumber, net);
+                            executor.scope.netMap.set(component, pinNumber, net);
                         }
                     }
                 } else if (tmpPassedInArgs[0] === 'keyword') {

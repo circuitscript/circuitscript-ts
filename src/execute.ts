@@ -310,7 +310,7 @@ export class ExecutionContext {
             }
 
             const defaultPin = component.getDefaultPin();
-            this.scope.setNet(component, defaultPin, tmpNet);
+            this.scope.netMap.set(component, defaultPin, tmpNet);
 
             // Assign the net to a property of the component.
             component.setParam('net', tmpNet);
@@ -627,12 +627,12 @@ export class ExecutionContext {
             return;
         }
 
-        if (this.scope.hasNet(
+        if (this.scope.netMap.hasNet(
             this.scope.currentComponent,
             this.scope.currentPin
         )) {
             netString = this.scope
-                .getNet(this.scope.currentComponent, this.scope.currentPin)
+                .netMap.get(this.scope.currentComponent, this.scope.currentPin)
                 .toString();
         }
 
@@ -741,8 +741,8 @@ export class ExecutionContext {
             }
         }
 
-        if (this.scope.hasNet(currentComponent, currentPin)) {
-            this.log('net: ',this.scope.getNet(currentComponent, currentPin)
+        if (this.scope.netMap.hasNet(currentComponent, currentPin)) {
+            this.log('net: ',this.scope.netMap.get(currentComponent, currentPin)
                                 .toString());
         }
 
@@ -838,7 +838,7 @@ export class ExecutionContext {
         this.scope.setCurrent(component, usePinId);
         
         // Check if there is an existing net, otherwise create the net
-        if (!this.scope.hasNet(component, usePinId)) {
+        if (!this.scope.netMap.hasNet(component, usePinId)) {
             const tmpNet = this.scope.netMap.newNet(this.netNamespace);
 
             // Set property if it is a bus pin.
@@ -847,7 +847,7 @@ export class ExecutionContext {
                 tmpNet.busNet = true;
             }
 
-            this.scope.setNet(component, usePinId, tmpNet);
+            this.scope.netMap.set(component, usePinId, tmpNet);
         }
 
 
@@ -893,13 +893,13 @@ export class ExecutionContext {
 
         const defaultPin = component.getDefaultPin();
 
-        if(this.scope.getNet(component, defaultPin) === null){
+        if(this.scope.netMap.get(component, defaultPin) === null){
             // If component is not in the same scope, then need to 
             // copy the net in the scope itself.
             const foundNet = this.resolveComponentPinNet(component, defaultPin);
             if (foundNet !== null){
                 this.log('found net in upper scopes', foundNet);
-                this.scope.setNet(component, defaultPin, foundNet);
+                this.scope.netMap.set(component, defaultPin, foundNet);
             }
         }
 
@@ -1506,7 +1506,7 @@ export class ExecutionContext {
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
-        const tmpNets = childScope.getNets();
+        const tmpNets = childScope.netMap.getNets();
 
         const mergedInstances: ClassComponent[] = [];
 
@@ -1541,7 +1541,7 @@ export class ExecutionContext {
             // If the same net exists, then rename it with a new unique name.
             // Net with priority 0 are generated nets (not user-defined).
             if (net.priority === 0 
-                && this.scope.getNetWithNamespacePath(net.namespace, net.name) !== null){
+                && this.scope.netMap.getNetWithNamespacePath(net.namespace, net.name) !== null){
                 this.log('net namespace and name already used in parent scope', net);
 
                 const newNetName = this.scope.netMap.getUniqueNetName();
@@ -1552,7 +1552,7 @@ export class ExecutionContext {
 
         // Merge all nets into parent scope
         tmpNets.forEach(([component, pin, net]) => {
-            this.scope.setNet(component, pin, net);
+            this.scope.netMap.set(component, pin, net);
         });
 
         // If true, then __root component of the child_scope will
@@ -1566,12 +1566,12 @@ export class ExecutionContext {
 
             // Get the net of the child scope's root.
             // Pin 1 is always the default for the root component.
-            const netConnectedToRoot = childScope.getNet(tmpRoot, tmpRoot.getDefaultPin());
+            const netConnectedToRoot = childScope.netMap.get(tmpRoot, tmpRoot.getDefaultPin());
 
             if (netConnectedToRoot !== null){
                 // Only if the child scope root component is connected 
                 // to a net, then merge them together.
-                let currentNet = this.scope.getNet(
+                let currentNet = this.scope.netMap.get(
                     currentComponent, currentPin
                 );
 
@@ -1581,7 +1581,7 @@ export class ExecutionContext {
                         this.netNamespace,
                         this.getUniqueNetName());
 
-                    this.scope.setNet(
+                    this.scope.netMap.set(
                         currentComponent, currentPin, netConnectedToRoot);
                     currentNet = tmpNet
                 }
@@ -1657,7 +1657,7 @@ export class ExecutionContext {
         this.log('-- nets --');
 
         // dump the list of nets in the current scope
-        const currentNets = this.scope.getNets();
+        const currentNets = this.scope.netMap.getNets();
 
         currentNets.reduce((accum, [,,net]) => {
             if (accum.indexOf(net) === -1){
@@ -1761,7 +1761,7 @@ export class ExecutionContext {
 
         componentPoint._isInternalPathObject = true;
 
-        const currentNet = this.scope.getNet(
+        const currentNet = this.scope.netMap.get(
             this.scope.currentComponent,
             this.scope.currentPin
         );

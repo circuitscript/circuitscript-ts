@@ -122,41 +122,8 @@ export class ExecutionScope {
         return scope;
     }
 
-    getNetWithName(name: string): Net {
-        return this.netMap.getNetWithName(name);
-    }
-
-    getNetWithNamespacePath(namespace: string, name: string): Net | null {
-        return this.netMap.getNetWithNamespacePath(namespace, name);
-    }
-
-    hasNet(instance: ClassComponent, pin: PinId): boolean {
-        return this.netMap.hasNet(instance, pin);
-    }
-
-    /** Returns net if found, otherwise returns null */
-    getNet(instance: ClassComponent, pin: PinId): Net | null {
-        return this.netMap.get(instance, pin);
-    }
-
-    setNet(instance: ClassComponent, pin: PinId, net: Net): void {
-        return this.netMap.set(instance, pin, net);
-    }
-
-    removeNet(instance: ClassComponent, pin: PinId): void {
-        return this.netMap.remove(instance, pin);
-    }
-
-    getNets(): ComponentPinNetPair[] {
-        return this.netMap.getNets();
-    }
-
-    dumpNets(): ComponentPinNet[] {
-        return this.netMap.dump();
-    }
-
     printNets(): void {
-        this.dumpNets().forEach(item => {
+        this.netMap.dump().forEach(item => {
             const [netName, instanceName, pin] = item;
             console.log(netName.padEnd(10), '=>', instanceName, pin);
         });

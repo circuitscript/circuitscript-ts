@@ -65,7 +65,8 @@ export function throwWithContext(context: ParserRuleContext, messageOrError: str
     if (messageOrError instanceof BaseError && messageOrError.startToken) {
         throw messageOrError;
     }
-    throwWithTokenRange(messageOrError.message, context.start!, context.stop!);
+    const message = messageOrError instanceof BaseError ? messageOrError.message : messageOrError;
+    throwWithTokenRange(message, context.start!, context.stop!);
 }
 
 export function throwWithTokenRange(message: string, startToken: Token, endToken?: Token): void {

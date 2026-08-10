@@ -145,7 +145,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
             }
         }
 
-        const result = visitor.getScope().getNet(useComponent, usePinId);
+        const result = visitor.getScope().netMap.get(useComponent, usePinId);
         return [visitor, result];
     });
 
@@ -262,7 +262,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         }
 
         const scope = visitor.getScope();
-        const net = scope.getNet(instance, pinId)!;
+        const net = scope.netMap.get(instance, pinId)!;
 
         const netVoltage = scope.scenarioStates.get(net);
         if (netVoltage instanceof NumericValue){
@@ -303,7 +303,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
             pinId = useComponent.getPin(PinId.from(pinIdArg));
         }
 
-        const net = visitor.getScope().getNet(useComponent, pinId);
+        const net = visitor.getScope().netMap.get(useComponent, pinId);
         const voltageValue = visitor.getScope().scenarioStates.get(net);
 
         return [visitor, voltageValue];
@@ -565,15 +565,15 @@ function toString(obj: any): string {
         return `[netClass: ${obj.name}]`;
     } else {
         if (obj === undefined){
-            return 'undefined'; 
+            return 'undefined';
         } else if (obj === null){
             return 'null';
         } else if (obj.toDisplayString) {
             return obj.toDisplayString();
-        } else if (obj.toString) {
-            return obj.toString();
         } else if (typeof obj === 'object'){
             return JSON.stringify(obj);
+        } else if (obj.toString) {
+            return obj.toString();
         } else {
             throw "Could not create string from object: " + obj;
         }

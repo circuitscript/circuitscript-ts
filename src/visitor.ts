@@ -2609,11 +2609,11 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     dumpNets(): ComponentPinNet[]  {
-        return this.getScope().dumpNets();
+        return this.getScope().netMap.dump();
     }
 
     dumpUniqueNets(): Net[] {
-        const nets = this.getScope().getNets();
+        const nets = this.getScope().netMap.getNets();
         return nets.reduce((accum, [, , net]) => {
             accum.push(net);
             return accum;
@@ -2699,14 +2699,14 @@ export class ParserVisitor extends BaseVisitor {
         // it as the first action in the sequence. Otherwise it will occupy
         // some space in the final graphical output.
         const componentRoot = executor.scope.componentRoot!;
-        const tmpNet = executor.scope.getNet(
+        const tmpNet = executor.scope.netMap.get(
             componentRoot, componentRoot.getDefaultPin()
         );
 
-        const sequence = (tmpNet === null) 
+        const sequence = (tmpNet === null)
             ? fullSequence.slice(1) : fullSequence;
-        
-        const nets = executor.scope.getNets();
+
+        const nets = executor.scope.netMap.getNets();
 
         return {
             sequence,
@@ -2813,7 +2813,7 @@ export class ParserVisitor extends BaseVisitor {
      * based on the first component and component pin that it is connected to.
      */
     private renameNetsWithRefdes(): void {
-        const nets = this.getScope().getNets();
+        const nets = this.getScope().netMap.getNets();
         const seenNets:Net[] = [];
 
         // Get all net names first
@@ -2887,8 +2887,8 @@ export class ParserVisitor extends BaseVisitor {
             let netName = NoNetText;
             let netBaseName = NoNetText;
 
-            if (scope.hasNet(instance, pinId)) {
-                const netObject = scope.getNet(instance, pinId)!;
+            if (scope.netMap.hasNet(instance, pinId)) {
+                const netObject = scope.netMap.get(instance, pinId)!;
                 netName = netObject.namespace + netObject.name;
                 netBaseName = netObject.baseName;
             }
