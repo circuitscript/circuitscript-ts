@@ -42,3 +42,15 @@ export class Scenario {
         return result;
     }
 }
+
+export function formatScenarioResults(scenarios: Scenario[]): string[] {
+    const lines: string[] = [];
+    for (const scenario of scenarios) {
+        const result = scenario.getResultString();
+        lines.push('  ' + result[0]);
+        for (let i = 1; i < result.length; i++) {
+            lines.push('    ' + result[i]);
+        }
+    }
+    return lines;
+}

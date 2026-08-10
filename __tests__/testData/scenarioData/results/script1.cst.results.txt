@@ -1,0 +1,3 @@
+  ✓ Control is on
+  ✓ Control is off
+  ✓ Control is off and no voltage

@@ -48,8 +48,9 @@ async function regenerateTests(extra = "", fileList: string[] = [], mainDir = de
 
         let errors;
         let nets;
+        let scenarioResults;
         try {
-            ({errors, nets} = await renderScript(scriptData, [outputPath], {
+            ({errors, nets, scenarioResults} = await renderScript(scriptData, [outputPath], {
                 inputPath,
                 dumpNets: true,
                 dumpData: false,
@@ -71,6 +72,14 @@ async function regenerateTests(extra = "", fileList: string[] = [], mainDir = de
 
         if (extra === '' && nets) {
             fs.writeFileSync(netsDir + netFileName, nets.map(item => item.join(' | ')).join('\n'));
+        }
+
+        if (extra === '' && scenarioResults) {
+            const resultsDir = mainDir + 'results/';
+            if (!fs.existsSync(resultsDir)) {
+                fs.mkdirSync(resultsDir, { recursive: true });
+            }
+            fs.writeFileSync(resultsDir + file + '.results.txt', scenarioResults.join('\n'));
         }
     }
 

@@ -124,6 +124,7 @@ export type RenderScriptReturn = {
     errors: BaseError[],
     ercResults?: ERCReportItem[],
     nets?: ComponentPinNet[],
+    scenarioResults?: string[],
 };
 
 export type ExternalLibAnnotationFile = {

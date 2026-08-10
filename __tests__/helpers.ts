@@ -24,6 +24,9 @@ import { generateBom, generateBomCSV, BomGenerationResult } from '../src/BomGene
 import { GlobalDocumentName } from '../src/globals.js';
 import { getStylesFromDocument } from '../src/styles.js';
 import { NgSpiceNetListOutputHandler } from '../src/render/NgSpiceNetListOutputHandler.js';
+import { renderSheetsToSVG, generateSvgOutput } from '../src/render/render.js';
+import { defaultZoomScale } from '../src/globals.js';
+import { formatScenarioResults } from '../src/objects/Scenario.js';
 
 export function getTestEnvironment(): NodeScriptEnvironment {
     const env = new ESMNodeScriptEnvironment();
@@ -287,6 +290,37 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
         documentVariable,
         componentPinNets
     }
+}
+
+export async function renderScenarioCommon(scriptPath: string): Promise<{
+    svgOutput: string,
+    scenarioResultsText: string,
+}> {
+    const script = readFileSync(scriptPath, { encoding: 'utf8' });
+    const { hasError, visitor } = await runScript(script, scriptPath);
+    expect(hasError).toEqual(false);
+
+    visitor.applySheetFrameComponent();
+    const { sequence, nets } = visitor.getGraph();
+
+    const logger = new Logger();
+    const graphEngine = new NetGraph(logger);
+    const layoutEngine = new LayoutEngine(logger);
+
+    const documentVariable = visitor.getScope()
+        .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+    const styles = getStylesFromDocument(documentVariable);
+    graphEngine.setStyles(styles);
+
+    const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+    const sheetFrames = await layoutEngine.runLayout(graph, containerFrames, nets);
+
+    const svgCanvas = renderSheetsToSVG(sheetFrames, logger, documentVariable, styles);
+    const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+    const scenarioResultsText = formatScenarioResults(visitor.scenarios).join('\n');
+
+    return { svgOutput, scenarioResultsText };
 }
 
 export async function renderSimNetList(scriptPath: string, outputPath: string): Promise<string> {

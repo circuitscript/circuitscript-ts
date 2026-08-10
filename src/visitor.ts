@@ -96,7 +96,7 @@ import { applyPartConditions, ConditionNode, extractPartConditions, flattenCondi
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
 import { ComponentBehavior, HighImpedanceValue } from './behavior.js';
-import { Scenario } from './objects/Scenario.js';
+import { Scenario, formatScenarioResults } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
 export class ParserVisitor extends BaseVisitor {
@@ -2964,14 +2964,8 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         console.log("Scenario results:");
-        for (const scenario of this.scenarios) {
-            const result = scenario.getResultString();
-            console.log('  ' + result[0]);
-            if (result.length > 1) {
-                for (let i = 1; i < result.length; i++) {
-                    console.log('    ' + result[i]);
-                }
-            }
+        for (const line of formatScenarioResults(this.scenarios)) {
+            console.log(line);
         }
     }
 }

@@ -1,0 +1,97 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+spst = create component:
+    pins:
+        1: "A"
+        2: "B"
+        3: "GND"
+        4: "C"
+        5: "VCC"
+    
+    arrange:
+        left: "C", "A", "GND"
+        right: "VCC", "B"
+
+    behavior: create behavior:
+        state (voltage("VCC") > 1.6 and voltage("VCC") < 5.5 and voltage("C") > 3):
+            short("A", "B")
+            
+        state voltage("VCC") < 1.6: 
+            open("A", "B")
+            
+
+in_conn = create component:
+    pins:
+        1: "VIN"
+        2: "CONTROL"
+        3: "INPUT"
+        4: "GND"
+    arrange:
+        left: 1,2,3,4
+
+out_conn = create component:
+    pins:
+        1: "OUTPUT"
+        2: "GND"
+    arrange:
+        right: 1,2
+
+at in_conn:
+    1: wire right 100 up 100 to v5
+    4: wire right 100 down 100 to gnd
+    
+    2: wire right 1000 to spst pin "C"
+    3:
+        wire right 100
+        add res(20k)
+        wire right 100
+        branch:
+            wire down 100
+            add res(10k)
+            add res(10k)
+            wire down 100
+            to gnd
+        wire auto to spst pin "A"
+
+at spst:
+    "VCC": wire right 100 up 100 to v5
+    "GND": wire left 100 down 100 to gnd
+
+    "B": wire right 400 to out_conn pin "OUTPUT"
+
+at out_conn pin "GND"
+wire left 100 down 100 to gnd
+
+create scenario "Control is on":
+
+    set_voltage(v5, 5)
+    set_voltage(in_conn, "CONTROL", 3.3)
+    set_voltage(in_conn, "INPUT", 1.5)
+
+    evaluate()
+
+    expect(voltage(out_conn, "OUTPUT") >= 0.7 and voltage(out_conn, "OUTPUT") < 1)
+    expect(voltage(in_conn, "INPUT") == 1.5)
+
+create scenario "Control is off":
+
+    set_voltage(v5, 5)
+    set_voltage(in_conn, "CONTROL", 0)
+    set_voltage(in_conn, "INPUT", 1.5)
+
+    evaluate()
+
+    expect(is_z(voltage(out_conn, "OUTPUT")))
+
+create scenario "Control is off and no voltage":
+
+    set_voltage(v5, 0.2)
+    set_voltage(in_conn, "CONTROL", 0)
+    set_voltage(in_conn, "INPUT", 1.5)
+
+    evaluate()
+
+    expect(is_z(voltage(out_conn, "OUTPUT")))

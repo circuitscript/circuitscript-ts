@@ -20,6 +20,7 @@ import { ScriptOptions, RenderScriptReturn } from "./helpers.js";
 import { LayoutEngine } from "./render/layout.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
+import { formatScenarioResults } from "./objects/Scenario.js";
 import { Frame, FrameParamKeys } from "./objects/Frame.js";
 import { FrameAction, SequenceAction } from "./objects/ExecutionScope.js";
 import { ComponentPinNet, DocumentVariable, ImportedLibrary } from "./objects/types.js";
@@ -492,6 +493,10 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     if (dumpedNets) {
         results.nets = dumpedNets;
+    }
+
+    if (visitor.scenarios.length > 0) {
+        results.scenarioResults = formatScenarioResults(visitor.scenarios);
     }
 
     return results;

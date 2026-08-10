@@ -373,10 +373,6 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const args = getPositionParams(params);
         if (!args[0]) {
             throw new ScenarioRuntimeError('expect: condition is false');
-        } else {
-            const linePosition = visitor.functionCallCtx ?
-                `${getLinePositionAsAtString(visitor.functionCallCtx)}` : '';
-            console.log(`expect${linePosition}: passed`);
         }
 
         return [visitor];
