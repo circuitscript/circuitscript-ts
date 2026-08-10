@@ -96,6 +96,8 @@ import { applyPartConditions, ConditionNode, extractPartConditions, flattenCondi
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
 import { ComponentBehavior, HighImpedanceValue, prepareScenarioNets } from './behavior.js';
+import { Scenario } from './objects/Scenario.js';
+import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
 export class ParserVisitor extends BaseVisitor {
 
@@ -1111,18 +1113,18 @@ export class ParserVisitor extends BaseVisitor {
         this.log('created scenario');
         const scope = this.getScope();
 
-        // clear all scenario states first
-        const scenarioStates = scope.scenarioStates;
-        scenarioStates.clear();
+        // setup the scenario methods
+        linkScenarioFunctions(this.getExecutor(), this);
+        this.log('done linking scenario functions');
 
-        scope.scenarioVirtualCounter = 0;
-        scope.scenarioEvaluateCalled = false;
+        const originalScenario = scope.scenario;
+        scope.scenario = new Scenario();
 
         const originalNetMap = scope.netMap;
         const clonedNetMap = originalNetMap.clone();
 
         clonedNetMap.getNets().forEach(([, , net]) => {
-            scenarioStates.set(net, new HighImpedanceValue());
+            scope.scenario.voltageStates.set(net, new HighImpedanceValue());
         });
 
         scope.netMap = clonedNetMap;
@@ -1134,7 +1136,9 @@ export class ParserVisitor extends BaseVisitor {
 
         // restore
         scope.netMap = originalNetMap;
-        scope.scenarioCurrentComponent = null;
+        scope.scenario = originalScenario;
+
+        unlinkScenarioFunctions(this.getExecutor());
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {

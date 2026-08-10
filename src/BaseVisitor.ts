@@ -36,7 +36,7 @@ import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, ParamKeys, 
     ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
-import { linkBuiltInMethods } from './builtinMethods.js';
+import { linkBuiltInFunctions } from './builtinMethods.js';
 import { VERSION } from './version.js';
 import { BaseError, throwWithContext, RuntimeExecutionError } from './errors.js';
 import { ExecutionScope, SequenceAction } from './objects/ExecutionScope.js';
@@ -180,7 +180,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
     protected setupBuiltInFunctions(context: ExecutionContext): void {
-        linkBuiltInMethods(context, this);
+        linkBuiltInFunctions(context, this);
     }
 
     createNetResolver(executionStack: ExecutionContext[]): 

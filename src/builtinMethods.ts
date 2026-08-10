@@ -22,7 +22,7 @@ import { PercentageValue } from "./objects/PercentageValue.js";
 import { ComponentBehavior, HighImpedanceValue } from "./behavior.js";
 import { calculateNodeVoltages } from "./render/nodal-analysis.js";
 
-const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
+const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
     ['to_mils', toMils],
     ['range', range],
@@ -52,23 +52,19 @@ const builtInMethods: [name: string, impl: ((args: any) => any) | null][] = [
 
     // Returns the net of the current cursor
     ['net_get', null],
-
-    // For behavior states
-    ['is_high', () => {}],
-    ['is_low', () => {}],
-    ['is_z', null],
-
+    
     // For scenarios
     ['set_voltage', null],
     ['evaluate', null],
     ['expect', null],
-
+    
+    ['is_z', null],
     ['short', null]
 ];
 
-export const buildInMethodNamesList:string[] = builtInMethods.map(item => item[0]);
+export const buildInFunctionsNamesList:string[] = builtInFunctions.map(item => item[0]);
 
-export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisitor): void {
+export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVisitor): void {
 
     context.createFunction(BaseNamespace, 'print', (params) => {
         const args = getPositionParams(params);
@@ -246,17 +242,29 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         return [visitor, useComponent.hasPin(usePinId)];
     });
 
+    builtInFunctions.forEach(([functionName, functionImpl]) => {
+        if (functionImpl !== null){
+            context.createFunction(BaseNamespace, functionName, params => {
+                const args = getPositionParams(params);
+                const functionReturn = functionImpl(...args);
+                return [visitor, functionReturn];
+            });
+        }
+    });
+}
+
+export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVisitor): void {
     context.createFunction(BaseNamespace, 'set_voltage', (params) => {
         const args = getPositionParams(params);
         const instance: ClassComponent = args[0] as ClassComponent;
         let pinId!: PinId;
         let voltage!: NumericValue;
 
-        if (args.length === 2){
+        if (args.length === 2) {
             // Default pin
             pinId = instance.getDefaultPin();
             voltage = args[1] as NumericValue;
-        } else if (args.length === 3){
+        } else if (args.length === 3) {
             pinId = instance.getPin(PinId.from(args[1]));
             voltage = args[2] as NumericValue;
         }
@@ -264,15 +272,15 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         const scope = visitor.getScope();
         const net = scope.netMap.get(instance, pinId)!;
 
-        const netVoltage = scope.scenarioStates.get(net);
-        if (netVoltage instanceof NumericValue){
-            const linePosition = visitor.functionCallCtx ? 
-                `${getLinePositionAsString(visitor.functionCallCtx)}`: '';
+        const netVoltage = scope.scenario.voltageStates.get(net);
+        if (netVoltage instanceof NumericValue) {
+            const linePosition = visitor.functionCallCtx ?
+                `${getLinePositionAsString(visitor.functionCallCtx)}` : '';
 
             console.log(`Warning${linePosition}: net already has voltage set`);
         }
 
-        scope.scenarioStates.set(net, voltage);
+        scope.scenario.voltageStates.set(net, voltage);
         net.type = NetTypes.Source;
 
         return [visitor];
@@ -290,11 +298,11 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
             useComponent = args[0];
             pinIdArg = args[1];
         } else {
-            if (visitor.getScope().scenarioCurrentComponent === null) {
+            if (visitor.getScope().scenario.currentComponent === null) {
                 throw new RuntimeExecutionError("failed to get voltage");
             }
 
-            useComponent = visitor.getScope().scenarioCurrentComponent!;
+            useComponent = visitor.getScope().scenario.currentComponent!;
         }
 
         if (typeof pinIdArg === "string") {
@@ -304,7 +312,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         }
 
         const net = visitor.getScope().netMap.get(useComponent, pinId);
-        const voltageValue = visitor.getScope().scenarioStates.get(net);
+        const voltageValue = visitor.getScope().scenario.voltageStates.get(net);
 
         return [visitor, voltageValue];
     });
@@ -312,34 +320,34 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
     context.createFunction(BaseNamespace, 'evaluate', (params) => {
         const scope = visitor.getScope();
 
-        if (scope.scenarioEvaluateCalled){
+        if (scope.scenario.evaluateCalled) {
             throw new RuntimeExecutionError('evaluate: already called');
         }
 
-        scope.scenarioEvaluateCalled = true;
+        scope.scenario.evaluateCalled = true;
         const instances = scope.getInstances();
 
         // Apply all states for the instances
         instances.forEach(instance => {
-            scope.scenarioCurrentComponent = instance;
-            if (instance.behaviorProp !== null){
+            scope.scenario.currentComponent = instance;
+            if (instance.behaviorProp !== null) {
                 const behaviorProp = instance.behaviorProp as ComponentBehavior;
                 behaviorProp.evaluate();
             }
-            scope.scenarioCurrentComponent = null;
+            scope.scenario.currentComponent = null;
         });
 
         // set the GND voltage net to be 0
         const gndNet = scope.netMap.getNetWithName("GND");
-        scope.scenarioStates.set(gndNet, numeric(0));
+        scope.scenario.voltageStates.set(gndNet, numeric(0));
 
-        const voltageResults = calculateNodeVoltages(scope.netMap, scope.scenarioStates);
+        const voltageResults = calculateNodeVoltages(scope.netMap, scope.scenario.voltageStates);
         voltageResults.netVoltages.forEach((voltage, net) => {
             // Set the voltages back
-            const currentVoltage = scope.scenarioStates.get(net)!;
+            const currentVoltage = scope.scenario.voltageStates.get(net)!;
             if (currentVoltage instanceof HighImpedanceValue) {
-                scope.scenarioStates.set(net, numeric(voltage));
-            } else if (currentVoltage instanceof NumericValue && currentVoltage.toNumber() !== voltage){
+                scope.scenario.voltageStates.set(net, numeric(voltage));
+            } else if (currentVoltage instanceof NumericValue && currentVoltage.toNumber() !== voltage) {
                 console.log('evaluate: failed to set voltage, because net has different voltage');
             }
         });
@@ -350,14 +358,14 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
     // Returns true if the passed in argument is a high impedance value
     context.createFunction(BaseNamespace, 'is_z', (params) => {
         const args = getPositionParams(params);
-        if (args.length > 1){
+        if (args.length > 1) {
             throw new RuntimeExecutionError('Invalid parameters');
         }
         return [visitor, args[0] instanceof HighImpedanceValue];
     });
 
     context.createFunction(BaseNamespace, 'expect', (params) => {
-        if (!visitor.getScope().scenarioEvaluateCalled){
+        if (!visitor.getScope().scenario.evaluateCalled) {
             throw new RuntimeExecutionError('expect: evaluate() has not been called');
         }
 
@@ -365,8 +373,8 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         if (!args[0]) {
             throw new RuntimeExecutionError('expect: condition is false');
         } else {
-            const linePosition = visitor.functionCallCtx ? 
-                `${getLinePositionAsString(visitor.functionCallCtx)}`: '';
+            const linePosition = visitor.functionCallCtx ?
+                `${getLinePositionAsString(visitor.functionCallCtx)}` : '';
             console.log(`expect${linePosition}: passed`);
         }
 
@@ -377,7 +385,7 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
     context.createFunction(BaseNamespace, 'short', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const activeComponent = scope.scenarioCurrentComponent;
+        const activeComponent = scope.scenario.currentComponent;
         if (activeComponent === null) {
             throw new RuntimeExecutionError('short function failed: invalid component');
         }
@@ -399,8 +407,8 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
         // Create virtual 0R resistors to bridge nets. Nets are not merged so
         // that individual nets are still preserved.
         for (let i = 1; i < pinIds.length; i++) {
-            const virtualRes = ClassComponent.simple("VIRTUAL-" + scope.scenarioVirtualCounter, 2);
-            scope.scenarioVirtualCounter++;
+            const virtualRes = ClassComponent.simple("VIRTUAL-" + scope.scenario.virtualCounter, 2);
+            scope.scenario.virtualCounter++;
             virtualRes.setParam('value', numeric(0));
             virtualRes.typeProp = ComponentTypes.resistor;
 
@@ -416,14 +424,24 @@ export function linkBuiltInMethods(context: ExecutionContext, visitor: BaseVisit
     context.createFunction(BaseNamespace, 'open', (params) => {
         return [visitor];
     });
+}
 
-    builtInMethods.forEach(([functionName, functionImpl]) => {
-        if (functionImpl !== null){
-            context.createFunction(BaseNamespace, functionName, params => {
-                const args = getPositionParams(params);
-                const functionReturn = functionImpl(...args);
-                return [visitor, functionReturn];
-            });
+export function unlinkScenarioFunctions(context: ExecutionContext): void {
+    // Assume that the functions are in the correct context level
+    const functions = [
+        'set_voltage',
+        'voltage',
+        'evaluate',
+        'expect',
+        'open',
+        'short',
+        'is_z',
+    ];
+
+    functions.forEach(functionName => {
+        const functionPath = `${context.namespace}${functionName}`;
+        if (context.scope.functions.has(functionPath)) {
+            context.scope.functions.delete(functionPath);
         }
     });
 }

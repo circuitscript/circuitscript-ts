@@ -7,7 +7,7 @@
 
 import { ClassComponent } from './ClassComponent.js';
 import { Net } from './Net.js';
-import { CFunction, CFunctionEntry, ComponentPinNet, ComponentPinNetPair, 
+import { CFunction, CFunctionEntry, 
     ComponentPinWireId, 
     ImportedLibrary, 
     ValueType } from './types.js';
@@ -21,8 +21,7 @@ import { BaseVisitor } from 'src/BaseVisitor.js';
 import { PinId } from './PinDefinition.js';
 import { NetClass } from './NetClass.js';
 import { NetMap } from './NetMap.js';
-import { HighImpedanceValue } from 'src/behavior.js';
-import { NumericValue } from './NumericValue.js';
+import { Scenario } from './Scenario.js';
 
 /** 
  * Handler when property key/value pairs are being parsed. This allows validation 
@@ -100,14 +99,7 @@ export class ExecutionScope {
      */
     sequence: SequenceItem[] = [];
 
-    // Stores net => voltage mapping
-    scenarioStates = new Map<Net, NumericValue | HighImpedanceValue>();
-    scenarioCurrentComponent: ClassComponent | null = null;
-
-    // Used for virtual components created in the scenario (0R resistors, etc.)
-    scenarioVirtualCounter = 0;
-
-    scenarioEvaluateCalled = false;
+    scenario = new Scenario();
 
     private constructor(scopeId: number, logCallback: any) {
         this.scopeId = scopeId;

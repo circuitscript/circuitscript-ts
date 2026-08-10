@@ -15,7 +15,7 @@ import { Assignment_exprContext, CallableExprContext,
     CreateGraphicExprContext,
     TrailerContext} from "../antlr/CircuitScriptParser.js";
 
-import { buildInMethodNamesList } from "../builtinMethods.js";
+import { buildInFunctionsNamesList } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
 import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionHandling, ParseSymbolType } from "../objects/types.js";
 import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
@@ -141,7 +141,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         if (this.symbolTable.exists(executor, atomId)) {
             tmpSymbol = this.symbolTable.get(executor, atomId);
         } else {
-            if (buildInMethodNamesList.indexOf(atomId) !== -1) {
+            if (buildInFunctionsNamesList.indexOf(atomId) !== -1) {
                 // If it's built-in method and the symbol does not exist
                 // in the symbol table yet, then add it
                 tmpSymbol = this.symbolTable.addFunction(
