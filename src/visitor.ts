@@ -87,7 +87,7 @@ import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from '
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
-import { BaseError, RuntimeExecutionError } from './errors.js';
+import { BaseError, RuntimeExecutionError, ScenarioRuntimeError } from './errors.js';
 import { UnitDimension } from './helpers.js';
 import { FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './annotate/ComponentAnnotater.js';
@@ -95,7 +95,7 @@ import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
-import { ComponentBehavior, HighImpedanceValue, prepareScenarioNets } from './behavior.js';
+import { ComponentBehavior, HighImpedanceValue } from './behavior.js';
 import { Scenario } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
@@ -119,6 +119,9 @@ export class ParserVisitor extends BaseVisitor {
     
     // TODO: this should be in the scope object?
     creationCtx = new Map<Wire | ClassComponent, ParserRuleContext>();
+
+    // Stores the scenarios that have been executed.
+    scenarios: Scenario[] = [];
 
 
     visitPin_select_expr = (ctx: Pin_select_exprContext): void => {
@@ -1098,14 +1101,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitCreateBehaviorExpr = (ctx: CreateBehaviorExprContext): void => {
-        const behavior = new ComponentBehavior(ctx.behavior_block(), 
-            conditionCtx => {
-                return this.visitResult(conditionCtx);
-            },
-            expressionsBlockCtx => {
-                return this.visit(expressionsBlockCtx);
-            }
-        );
+        const behavior = new ComponentBehavior(ctx.behavior_block(), this);
         this.setResult(ctx, behavior);
     }
 
@@ -1113,30 +1109,55 @@ export class ParserVisitor extends BaseVisitor {
         this.log('created scenario');
         const scope = this.getScope();
 
+        if (scope.scenario !== null) {
+            this.throwWithContext(ctx, 'Nested scenarios not allowed');
+        }
+
+        const scenario = new Scenario();
+        scope.scenario = scenario;
+        this.scenarios.push(scenario);
+
+        let testDescp: string| null = null;
+        const ctxDataExpr = ctx.data_expr();
+
+        // resolve the data expr
+        if (ctxDataExpr) {
+            testDescp = this.visitResult(ctxDataExpr);
+            if (typeof testDescp !== "string") {
+                this.throwWithContext(ctx, "Invalid description for scenario");
+            }
+            scenario.description = testDescp;
+        }
+
         // setup the scenario methods
         linkScenarioFunctions(this.getExecutor(), this);
         this.log('done linking scenario functions');
-
-        const originalScenario = scope.scenario;
-        scope.scenario = new Scenario();
 
         const originalNetMap = scope.netMap;
         const clonedNetMap = originalNetMap.clone();
 
         clonedNetMap.getNets().forEach(([, , net]) => {
-            scope.scenario.voltageStates.set(net, new HighImpedanceValue());
+            scenario.voltageStates.set(net, new HighImpedanceValue());
         });
 
         scope.netMap = clonedNetMap;
         this.log('scenario net map set up');
 
-        console.log("Scenario:")
-
-        this.visit(ctx.expressions_block());
+        try {
+            this.visit(ctx.expressions_block());
+            scenario.finalPass = true;
+        } catch (err) {
+            if (err instanceof ScenarioRuntimeError) {
+                scenario.failError = err;
+                scenario.finalPass = false;
+            } else {
+                throw err;
+            }
+        }
 
         // restore
         scope.netMap = originalNetMap;
-        scope.scenario = originalScenario;
+        scope.scenario = null;
 
         unlinkScenarioFunctions(this.getExecutor());
     }
@@ -2935,6 +2956,23 @@ export class ParserVisitor extends BaseVisitor {
 
     getWarnings(): ExecutionWarning[] {
         return this.warnings;
+    }
+
+    printScenarioResults(): void {
+        if (this.scenarios.length === 0) {
+            return;
+        }
+
+        console.log("Scenario results:");
+        for (const scenario of this.scenarios) {
+            const result = scenario.getResultString();
+            console.log('  ' + result[0]);
+            if (result.length > 1) {
+                for (let i = 1; i < result.length; i++) {
+                    console.log('    ' + result[i]);
+                }
+            }
+        }
     }
 }
 

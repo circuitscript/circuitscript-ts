@@ -9,8 +9,8 @@ import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericValue.js";
 import { CallableParameter, CFunctionEntry, ImportedLibrary, NetTypes } from "./objects/types.js";
-import { getLinePositionAsString, unwrapValue } from "./utils.js";
-import { RuntimeExecutionError } from "./errors.js";
+import { getLinePositionAsAtString, unwrapValue } from "./utils.js";
+import { RuntimeExecutionError, ScenarioRuntimeError } from "./errors.js";
 import { BaseNamespace, ComponentTypes, GlobalDocumentName } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
@@ -272,15 +272,15 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const scope = visitor.getScope();
         const net = scope.netMap.get(instance, pinId)!;
 
-        const netVoltage = scope.scenario.voltageStates.get(net);
+        const netVoltage = scope.scenario!.voltageStates.get(net);
         if (netVoltage instanceof NumericValue) {
             const linePosition = visitor.functionCallCtx ?
-                `${getLinePositionAsString(visitor.functionCallCtx)}` : '';
+                `${getLinePositionAsAtString(visitor.functionCallCtx)}` : '';
 
             console.log(`Warning${linePosition}: net already has voltage set`);
         }
 
-        scope.scenario.voltageStates.set(net, voltage);
+        scope.scenario!.voltageStates.set(net, voltage);
         net.type = NetTypes.Source;
 
         return [visitor];
@@ -288,6 +288,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 
     context.createFunction(BaseNamespace, 'voltage', (params) => {
         const args = getPositionParams(params);
+        const scope = visitor.getScope();
 
         let useComponent: ClassComponent;
         let pinId: PinId;
@@ -298,11 +299,11 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             useComponent = args[0];
             pinIdArg = args[1];
         } else {
-            if (visitor.getScope().scenario.currentComponent === null) {
-                throw new RuntimeExecutionError("failed to get voltage");
+            if (scope.scenario!.currentComponent === null) {
+                throw new RuntimeExecutionError("voltage: no active component");
             }
 
-            useComponent = visitor.getScope().scenario.currentComponent!;
+            useComponent = scope.scenario!.currentComponent!;
         }
 
         if (typeof pinIdArg === "string") {
@@ -311,8 +312,8 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             pinId = useComponent.getPin(PinId.from(pinIdArg));
         }
 
-        const net = visitor.getScope().netMap.get(useComponent, pinId);
-        const voltageValue = visitor.getScope().scenario.voltageStates.get(net);
+        const net = scope.netMap.get(useComponent, pinId);
+        const voltageValue = scope.scenario!.voltageStates.get(net);
 
         return [visitor, voltageValue];
     });
@@ -320,35 +321,35 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'evaluate', (params) => {
         const scope = visitor.getScope();
 
-        if (scope.scenario.evaluateCalled) {
+        if (scope.scenario!.evaluateCalled) {
             throw new RuntimeExecutionError('evaluate: already called');
         }
 
-        scope.scenario.evaluateCalled = true;
+        scope.scenario!.evaluateCalled = true;
         const instances = scope.getInstances();
 
         // Apply all states for the instances
         instances.forEach(instance => {
-            scope.scenario.currentComponent = instance;
+            scope.scenario!.currentComponent = instance;
             if (instance.behaviorProp !== null) {
                 const behaviorProp = instance.behaviorProp as ComponentBehavior;
                 behaviorProp.evaluate();
             }
-            scope.scenario.currentComponent = null;
+            scope.scenario!.currentComponent = null;
         });
 
         // set the GND voltage net to be 0
         const gndNet = scope.netMap.getNetWithName("GND");
-        scope.scenario.voltageStates.set(gndNet, numeric(0));
+        scope.scenario!.voltageStates.set(gndNet, numeric(0));
 
-        const voltageResults = calculateNodeVoltages(scope.netMap, scope.scenario.voltageStates);
+        const voltageResults = calculateNodeVoltages(scope.netMap, scope.scenario!.voltageStates);
         voltageResults.netVoltages.forEach((voltage, net) => {
             // Set the voltages back
-            const currentVoltage = scope.scenario.voltageStates.get(net)!;
+            const currentVoltage = scope.scenario!.voltageStates.get(net)!;
             if (currentVoltage instanceof HighImpedanceValue) {
-                scope.scenario.voltageStates.set(net, numeric(voltage));
+                scope.scenario!.voltageStates.set(net, numeric(voltage));
             } else if (currentVoltage instanceof NumericValue && currentVoltage.toNumber() !== voltage) {
-                console.log('evaluate: failed to set voltage, because net has different voltage');
+                throw new ScenarioRuntimeError('evaluate: failed to set voltage, because net has different voltage');
             }
         });
 
@@ -365,16 +366,16 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     });
 
     context.createFunction(BaseNamespace, 'expect', (params) => {
-        if (!visitor.getScope().scenario.evaluateCalled) {
+        if (!visitor.getScope().scenario!.evaluateCalled) {
             throw new RuntimeExecutionError('expect: evaluate() has not been called');
         }
 
         const args = getPositionParams(params);
         if (!args[0]) {
-            throw new RuntimeExecutionError('expect: condition is false');
+            throw new ScenarioRuntimeError('expect: condition is false');
         } else {
             const linePosition = visitor.functionCallCtx ?
-                `${getLinePositionAsString(visitor.functionCallCtx)}` : '';
+                `${getLinePositionAsAtString(visitor.functionCallCtx)}` : '';
             console.log(`expect${linePosition}: passed`);
         }
 
@@ -385,7 +386,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'short', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const activeComponent = scope.scenario.currentComponent;
+        const activeComponent = scope.scenario!.currentComponent;
         if (activeComponent === null) {
             throw new RuntimeExecutionError('short function failed: invalid component');
         }
@@ -407,8 +408,8 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         // Create virtual 0R resistors to bridge nets. Nets are not merged so
         // that individual nets are still preserved.
         for (let i = 1; i < pinIds.length; i++) {
-            const virtualRes = ClassComponent.simple("VIRTUAL-" + scope.scenario.virtualCounter, 2);
-            scope.scenario.virtualCounter++;
+            const virtualRes = ClassComponent.simple("VIRTUAL-" + scope.scenario!.virtualCounter, 2);
+            scope.scenario!.virtualCounter++;
             virtualRes.setParam('value', numeric(0));
             virtualRes.typeProp = ComponentTypes.resistor;
 

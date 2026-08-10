@@ -251,7 +251,7 @@ export function printWarnings(warnings: ExecutionWarning[]): void {
     warnings.forEach(item => {
         const { message } = item;
 
-        const linePosition = getLinePositionAsString(item.ctx);
+        const linePosition = getLinePositionAsAtString(item.ctx);
 
         const parts = [message];
 
@@ -287,6 +287,12 @@ export function isReference(value: any): boolean {
     return (value instanceof AnyReference || 
             value instanceof DeclaredReference);
 }
+
+export function getLinePositionAsAtString(ctx: ParserRuleContext): string | null {
+    const result = getLinePositionAsString(ctx);
+    return (result !== null) ? `at ${result}` : null;
+}
+
 export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
     if (ctx === null || ctx === undefined) {
         return null;
@@ -312,7 +318,7 @@ export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
             stopCol = -1;
         }
 
-        result = ` at ${line}:${column + 1}`;
+        result = `${line}:${column + 1}`;
         if (stopCol !== -1) {
             result += `-${stopLine}:${stopCol + 1}`;
         }

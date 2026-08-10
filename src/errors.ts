@@ -11,7 +11,7 @@
 
 import { Token, ParserRuleContext } from "antlr4ng";
 import { Wire } from "./objects/Wire.js";
-import { getLinePositionAsString } from "./utils.js";
+import { getLinePositionAsAtString } from "./utils.js";
 
 /**
  * Errors that have a ParserRuleContext associated.
@@ -47,7 +47,7 @@ export class BaseError extends Error {
     toString(): string {
         const parts = [this.name];
 
-        const linePosition = getLinePositionAsString({
+        const linePosition = getLinePositionAsAtString({
             start: this.startToken,
             stop: this.endToken
         });
@@ -62,7 +62,9 @@ export class BaseError extends Error {
 }
 
 export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
-    if (messageOrError instanceof BaseError && messageOrError.startToken) {
+    if (messageOrError instanceof BaseError && messageOrError.startToken || messageOrError instanceof ScenarioRuntimeError) {
+        messageOrError.startToken = context.start;
+        messageOrError.endToken = context.stop;
         throw messageOrError;
     }
     const message = messageOrError instanceof BaseError ? messageOrError.message : messageOrError;
@@ -104,6 +106,10 @@ export class AutoWireFailedError extends BaseError {
  */
 export class RuntimeExecutionError extends BaseError {
     name = 'RuntimeExecutionError';
+}
+
+export class ScenarioRuntimeError extends BaseError {
+    name = 'ScenarioRuntimeError';
 }
 
 /** Errors that occur within the lexing of tokens */

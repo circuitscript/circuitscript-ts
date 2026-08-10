@@ -153,7 +153,7 @@ create_expr: CreateComponent Colon properties_block                             
 behavior_state_expr: State data_expr Colon expressions_block;
 behavior_block: NEWLINE INDENT behavior_state_expr+ DEDENT;
 
-create_scenario_expr: CreateScenario Colon expressions_block;
+create_scenario_expr: CreateScenario data_expr? Colon expressions_block;
 
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                        # GraphicForExpr
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)  # GraphicCommandExpr

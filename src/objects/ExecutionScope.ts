@@ -99,7 +99,7 @@ export class ExecutionScope {
      */
     sequence: SequenceItem[] = [];
 
-    scenario = new Scenario();
+    scenario: Scenario| null = null;
 
     private constructor(scopeId: number, logCallback: any) {
         this.scopeId = scopeId;

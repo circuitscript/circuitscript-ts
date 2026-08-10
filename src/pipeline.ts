@@ -257,6 +257,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     if (throwError){
         errors.push(throwError);
     }
+
+    visitor.printScenarioResults();
     
     let svgOutput = "";
     let ercResults: ERCReportItem[] = [];
