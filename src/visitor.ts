@@ -1137,7 +1137,7 @@ export class ParserVisitor extends BaseVisitor {
         const clonedNetMap = originalNetMap.clone();
 
         clonedNetMap.getNets().forEach(([, , net]) => {
-            scenario.voltageStates.set(net, new HighImpedanceValue());
+            scenario.solvedVoltages.set(net, new HighImpedanceValue());
         });
 
         scope.netMap = clonedNetMap;

@@ -11,7 +11,7 @@ import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericV
 import { CallableParameter, CFunctionEntry, ImportedLibrary, NetTypes } from "./objects/types.js";
 import { getLinePositionAsAtString, unwrapValue } from "./utils.js";
 import { RuntimeExecutionError, ScenarioRuntimeError } from "./errors.js";
-import { BaseNamespace, ComponentTypes, GlobalDocumentName } from "./globals.js";
+import { BaseNamespace, GlobalDocumentName } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { PinId } from "./objects/PinDefinition.js";
@@ -54,12 +54,12 @@ const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
     ['net_get', null],
     
     // For scenarios
-    ['set_voltage', null],
-    ['evaluate', null],
-    ['expect', null],
+    // ['set_voltage', null],
+    // ['evaluate', null],
+    // ['expect', null],
     
-    ['is_z', null],
-    ['short', null]
+    // ['is_z', null],
+    // ['short', null]
 ];
 
 export const buildInFunctionsNamesList:string[] = builtInFunctions.map(item => item[0]);
@@ -254,33 +254,89 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
 }
 
 export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVisitor): void {
+
+    context.createFunction(BaseNamespace, 'set_voltage_diff', (params) => {
+        const args = getPositionParams(params);
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+        const useInstance = scenario.currentComponent!;
+
+        const diffAmt = args[2] as NumericValue;
+
+        const pinId1 = useInstance.getPin(PinId.from(args[0]));
+        const net1 = scope.netMap.get(useInstance, pinId1)!;
+
+        const pinId2 = useInstance.getPin(PinId.from(args[1]));
+        const net2 = scope.netMap.get(useInstance, pinId2)!;
+
+        /*
+         * Register the constraint (net1 - net2 = diffAmt) so this
+         * iteration's nodal solve can couple the two nets directly, even
+         * when neither is otherwise a fixed source (e.g. a diode pulling
+         * on the node upstream of it while it conducts).
+         */
+        scenario.voltageSourceBranches.push({ net1, net2, diff: diffAmt.toNumber() });
+
+        /*
+         * Also derive an immediate estimate when one side is already known,
+         * so behavior conditions reading voltage() later this same pass see
+         * a fresh value rather than last iteration's stale solve.
+         */
+        const value1 = scenario.sourceVoltages.get(net1) ?? scenario.solvedVoltages.get(net1);
+        const value2 = scenario.sourceVoltages.get(net2) ?? scenario.solvedVoltages.get(net2);
+        const known1 = value1 instanceof NumericValue;
+        const known2 = value2 instanceof NumericValue;
+
+        if (known1 && !known2) {
+            scenario.sourceVoltages.set(net2, (value1 as NumericValue).sub(diffAmt));
+        } else if (!known1 && known2) {
+            scenario.sourceVoltages.set(net1, (value2 as NumericValue).add(diffAmt));
+        }
+
+        return [visitor];
+    });
+
     context.createFunction(BaseNamespace, 'set_voltage', (params) => {
         const args = getPositionParams(params);
-        const instance: ClassComponent = args[0] as ClassComponent;
+
+        let useInstance!: ClassComponent;
+        if (args[0] instanceof ClassComponent) {
+            useInstance = args[0] as ClassComponent;
+        } else {
+            useInstance = visitor.getScope().scenario!.currentComponent!;
+        }
+
         let pinId!: PinId;
         let voltage!: NumericValue;
 
-        if (args.length === 2) {
-            // Default pin
-            pinId = instance.getDefaultPin();
-            voltage = args[1] as NumericValue;
-        } else if (args.length === 3) {
-            pinId = instance.getPin(PinId.from(args[1]));
+        if (args.length === 3) {
+            // First param is ClassComponent
+            pinId = useInstance.getPin(PinId.from(args[1]));
             voltage = args[2] as NumericValue;
+        } else if (args.length === 2) {
+            if (args[0] instanceof ClassComponent) {
+                // ClassComponent, voltage
+                pinId = useInstance.getDefaultPin();
+                voltage = args[1] as NumericValue;
+            } else {
+                // PinId, coltage
+                pinId = useInstance.getPin(PinId.from(args[0]));
+                voltage = args[1] as NumericValue;
+            }
         }
 
         const scope = visitor.getScope();
-        const net = scope.netMap.get(instance, pinId)!;
+        const net = scope.netMap.get(useInstance, pinId)!;
 
-        const netVoltage = scope.scenario!.voltageStates.get(net);
+        const netVoltage = scope.scenario!.solvedVoltages.get(net);
         if (netVoltage instanceof NumericValue) {
             const linePosition = visitor.functionCallCtx ?
                 `${getLinePositionAsAtString(visitor.functionCallCtx)}` : '';
 
-            console.log(`Warning${linePosition}: net already has voltage set`);
+            console.log(`Warning ${linePosition}: net already has voltage set`);
         }
 
-        scope.scenario!.voltageStates.set(net, voltage);
+        scope.scenario!.sourceVoltages.set(net, voltage);
         net.type = NetTypes.Source;
 
         return [visitor];
@@ -297,7 +353,12 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 
         if (args[0] instanceof ClassComponent) {
             useComponent = args[0];
-            pinIdArg = args[1];
+
+            if (args.length === 1){
+                pinIdArg = useComponent.getDefaultPin();
+            } else {
+                pinIdArg = args[1];
+            }
         } else {
             if (scope.scenario!.currentComponent === null) {
                 throw new RuntimeExecutionError("voltage: no active component");
@@ -310,48 +371,103 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             pinId = useComponent.getPin(PinId.from(pinIdArg));
         } else if (pinIdArg instanceof NumericValue) {
             pinId = useComponent.getPin(PinId.from(pinIdArg));
+        } else if (pinIdArg instanceof PinId){
+            pinId = pinIdArg;
         }
 
         const net = scope.netMap.get(useComponent, pinId);
-        const voltageValue = scope.scenario!.voltageStates.get(net);
+
+        let voltageValue;
+        if (scope.scenario!.sourceVoltages.has(net)) {
+            voltageValue = scope.scenario!.sourceVoltages.get(net);
+
+        } else if (scope.scenario!.solvedVoltages.has(net)) {
+            voltageValue = scope.scenario!.solvedVoltages.get(net);
+        } else {
+            voltageValue = new HighImpedanceValue();
+        }
 
         return [visitor, voltageValue];
     });
 
     context.createFunction(BaseNamespace, 'evaluate', (params) => {
         const scope = visitor.getScope();
+        const scenario = scope.scenario!;
 
-        if (scope.scenario!.evaluateCalled) {
+        if (scenario.evaluateCalled) {
             throw new RuntimeExecutionError('evaluate: already called');
         }
 
-        scope.scenario!.evaluateCalled = true;
+        scenario.evaluateCalled = true;
         const instances = scope.getInstances();
-
-        // Apply all states for the instances
-        instances.forEach(instance => {
-            scope.scenario!.currentComponent = instance;
-            if (instance.behaviorProp !== null) {
-                const behaviorProp = instance.behaviorProp as ComponentBehavior;
-                behaviorProp.evaluate();
-            }
-            scope.scenario!.currentComponent = null;
-        });
-
-        // set the GND voltage net to be 0
         const gndNet = scope.netMap.getNetWithName("GND");
-        scope.scenario!.voltageStates.set(gndNet, numeric(0));
 
-        const voltageResults = calculateNodeVoltages(scope.netMap, scope.scenario!.voltageStates);
-        voltageResults.netVoltages.forEach((voltage, net) => {
-            // Set the voltages back
-            const currentVoltage = scope.scenario!.voltageStates.get(net)!;
-            if (currentVoltage instanceof HighImpedanceValue) {
-                scope.scenario!.voltageStates.set(net, numeric(voltage));
-            } else if (currentVoltage instanceof NumericValue && currentVoltage.toNumber() !== voltage) {
-                throw new ScenarioRuntimeError('evaluate: failed to set voltage, because net has different voltage');
+        /*
+         * Voltages fixed by the scenario itself (its own
+         * set_voltage calls, made before evaluate() runs) plus GND. These
+         * are the only voltages that persist across iterations. Anything a
+         * component's behavior clamps via set_voltage during evaluate() is
+         * scoped to that single iteration, so a clamp that no longer
+         * applies (e.g. a diode that stops conducting) doesn't linger.
+         */
+        const scenarioInitialVoltages = new Map(scenario.sourceVoltages);
+        scenarioInitialVoltages.set(gndNet, numeric(0));
+
+        const convergenceThreshold = 1e-6;
+        let previousVoltages: Map<Net, number> | null = null;
+
+        for (let i = 0; i < 100; i++) {
+            console.log(`-- Run ${i} --`);
+
+            // Reset source voltages to the original state.
+            scenario.sourceVoltages = new Map(scenarioInitialVoltages);
+            scenario.voltageSourceBranches = [];
+            scenario.driveConstraints = [];
+
+            // Apply all states for the instances
+            for (const instance of instances) {
+                scenario.currentComponent = instance;
+                if (instance.behaviorProp !== null) {
+                    const behaviorProp = instance.behaviorProp as ComponentBehavior;
+
+                    // Changes to voltage states will be accumulated
+                    behaviorProp.evaluate();
+                }
+                scenario.currentComponent = null;
             }
-        });
+
+            const { netVoltages } = calculateNodeVoltages(
+                scope.netMap, scenario.sourceVoltages, scenario.voltageSourceBranches, scenario.driveConstraints);
+
+            for (const [net, voltage] of netVoltages) {
+                scenario.solvedVoltages.set(net, numeric(voltage));
+                console.log(net.toString(), voltage);
+            }
+
+            // A net that dropped out of this iteration's solve (e.g. it
+            // became a floating island) no longer has a real voltage;
+            // revert it so the next iteration's behavior evaluation sees
+            // high impedance instead of a stale solved value.
+            for (const net of scenario.solvedVoltages.keys()) {
+                if (!netVoltages.has(net)) {
+                    scenario.solvedVoltages.set(net, new HighImpedanceValue());
+                }
+            }
+
+            if (previousVoltages !== null) {
+                let maxDiff = 0;
+                for (const [net, voltage] of netVoltages) {
+                    const previousVoltage = previousVoltages.get(net) ?? 0;
+                    maxDiff = Math.max(maxDiff, Math.abs(voltage - previousVoltage));
+                }
+
+                if (maxDiff < convergenceThreshold) {
+                    break;
+                }
+            }
+
+            previousVoltages = netVoltages;
+        }
 
         return [visitor];
     });
@@ -395,30 +511,49 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             throw new RuntimeExecutionError('short failed: invalid number of parameters');
         }
 
-        const firstPinId = pinIds[0];
         const netMap = scope.netMap;
-        let resultNet!: Net;
+        const firstNet = netMap.get(activeComponent, pinIds[0])!;
 
-        const firstNet = netMap.get(activeComponent, firstPinId)!;
-
-        // Create virtual 0R resistors to bridge nets. Nets are not merged so
-        // that individual nets are still preserved.
+        /*
+         * Register a zero-diff branch constraint (net1 - net2 = 0) rather
+         * than inserting a persistent virtual resistor. This is scoped to
+         * the current evaluate() iteration.
+         */
         for (let i = 1; i < pinIds.length; i++) {
-            const virtualRes = ClassComponent.simple("VIRTUAL-" + scope.scenario!.virtualCounter, 2);
-            scope.scenario!.virtualCounter++;
-            virtualRes.setParam('value', numeric(0));
-            virtualRes.typeProp = ComponentTypes.resistor;
-
             const secondNet = netMap.get(activeComponent, pinIds[i])!;
-
-            netMap.set(virtualRes, PinId.from(1), firstNet);
-            netMap.set(virtualRes, PinId.from(2), secondNet);
+            scope.scenario!.voltageSourceBranches.push({ net1: firstNet, net2: secondNet, diff: 0 });
         }
 
-        return [visitor, resultNet];
+        return [visitor];
     });
 
     context.createFunction(BaseNamespace, 'open', (params) => {
+        return [visitor];
+    });
+
+    context.createFunction(BaseNamespace, 'drive', (params) => {
+        const args = getPositionParams(params);
+
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+        const activeComponent = scenario.currentComponent!;
+
+        const outPin = activeComponent.getPin(PinId.from(args[0] as string));
+        const checkPin = activeComponent.getPin(PinId.from(args[1] as string));
+        const haltValue = (args[2] as NumericValue).toNumber();
+
+        const outNet = scope.netMap.get(activeComponent, outPin)!;
+        const checkNet = scope.netMap.get(activeComponent, checkPin)!;
+
+        /*
+         * Register the constraint so this iteration's nodal solve pins
+         * checkNet's voltage to haltValue via an unknown current injected
+         * at outNet, resolved by the single calculateNodeVoltages() call
+         * already made at the end of the current evaluate() iteration -
+         * same as short()'s zero-diff branches.
+         */
+        scenario.driveConstraints.push({ driveNet: outNet, targetNet: checkNet, targetValue: haltValue });
+
         return [visitor];
     });
 }
@@ -427,12 +562,14 @@ export function unlinkScenarioFunctions(context: ExecutionContext): void {
     // Assume that the functions are in the correct context level
     const functions = [
         'set_voltage',
+        'set_voltage_diff',
         'voltage',
         'evaluate',
         'expect',
         'open',
         'short',
         'is_z',
+        'drive',
     ];
 
     functions.forEach(functionName => {
@@ -559,6 +696,7 @@ function toString(obj: any): string {
     if (typeof obj === 'string') {
         return `"${obj}"`;
     } else if (typeof obj === 'number') {
+        obj = Object.is(obj, -0) ? 0 : obj;
         return obj.toString();
     } else if (Array.isArray(obj)) {
         const inner = obj.map(item => toString(item)).join(", ");

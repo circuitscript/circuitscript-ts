@@ -1,0 +1,101 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+reg1 = create component:
+    pins:
+        1: "VIN"
+        2: "EN"
+        3: "GND"
+        4: "VOUT"
+        5: "FB"
+
+    arrange:
+        left: "VIN", "EN", "GND"
+        right: "VOUT", [1], "FB"
+
+    behavior: create behavior:
+        state (voltage("EN") > 1):
+            drive("VOUT", "FB", 1)
+
+at reg1:
+    "VIN": wire left 100 up 100 to v5
+    "GND": wire left 100 down 100 to gnd
+    "EN": wire left 300
+
+    "VOUT":
+        wire right 100
+        branch:
+            wire down 100
+            add res(10k)
+            wire down 100
+            branch:
+                wire auto to reg1 pin "FB"
+            wire down 100
+            add res(10k)
+            wire down 100
+            to gnd
+
+reg2 = create component:
+    pins:
+        1: "VIN"
+        2: "EN"
+        3: "GND"
+        4: "VOUT"
+        5: "FB"
+        6: "TRIM"
+
+    arrange:
+        left: "VIN", "EN", "GND"
+        right: "VOUT", [1], "FB", "TRIM"
+
+    behavior: create behavior:
+        state (voltage("EN") > 1):
+            drive("VOUT", "FB", 1)
+            short("VOUT", "TRIM")
+
+at reg2:
+    "VIN": wire left 100 up 100 to v5
+    "GND": wire left 100 down 100 to gnd
+    "EN": wire left 300
+
+    "VOUT":
+        wire right 100
+        branch:
+            wire down 100
+            add res(10k)
+            wire down 100
+            branch:
+                wire auto to reg2 pin "FB"
+            wire down 100
+            add res(10k)
+            wire down 100
+            to gnd
+
+    "TRIM":
+        wire right 200
+        wire down 300
+        add res(10k)
+        wire down 100
+        wire auto to reg2 pin "FB"
+
+create scenario "Basic divider drive":
+    set_voltage(v5, 5)
+    set_voltage(reg1, "EN", 3.3)
+    set_voltage(reg2, "EN", 0)
+
+    evaluate()
+
+    expect(voltage(reg1, "VOUT") >= 1.9 and voltage(reg1, "VOUT") < 2.1)
+    expect(voltage(reg1, "FB") >= 0.95 and voltage(reg1, "FB") < 1.05)
+
+create scenario "Drive with concurrent short constraint":
+    set_voltage(v5, 5)
+    set_voltage(reg1, "EN", 0)
+    set_voltage(reg2, "EN", 3.3)
+
+    evaluate()
+
+    expect(voltage(reg2, "VOUT") >= 1.4 and voltage(reg2, "VOUT") < 1.6)
+    expect(voltage(reg2, "FB") >= 0.95 and voltage(reg2, "FB") < 1.05)

@@ -18,10 +18,6 @@ spst = create component:
     behavior: create behavior:
         state (voltage("VCC") > 1.6 and voltage("VCC") < 5.5 and voltage("C") > 3):
             short("A", "B")
-            
-        state voltage("VCC") < 1.6: 
-            open("A", "B")
-            
 
 in_conn = create component:
     pins:

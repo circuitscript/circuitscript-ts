@@ -7,6 +7,7 @@ describe('Scenario tests', () => {
     test.each([
         ['script1.cst', 'behavior-gated switch, all scenarios pass'],
         ['script2.cst', 'behavior-gated switch, one scenario fails'],
+        ['script3.cst', 'drive() constraint, alone and alongside a concurrent short()'],
     ])('scenario - %s (%s)', async (scriptPath, _title) => {
         const { svgOutput, scenarioResultsText } = await renderScenarioCommon(mainPath + scriptPath);
 

@@ -6,15 +6,36 @@ import { BaseError } from "src/errors";
 import { getLinePositionAsString } from "../utils.js";
 
 export class Scenario {
-    // Stores net => voltage mapping
-    voltageStates = new Map<Net, NumericValue | HighImpedanceValue>();
+
+    /** Fixed/forced net voltages fed into the nodal solver as inputs, e.g. GND,
+     * scenario-level set_voltage() calls made before evaluate() runs ("hard"
+     * sources that persist across iterations), and clamps applied by component
+     * behavior during evaluate() (rebuilt from the hard sources each iteration,
+     * so a clamp that no longer applies doesn't linger). voltage() prefers this
+     * map over solvedVoltages, since a forced value should read back as itself
+     * rather than the solver's last computed estimate for that net. */
+    sourceVoltages = new Map<Net, NumericValue|HighImpedanceValue>();
+
+    /** Per-net voltages computed as the *output* of calculateNodeVoltages() for
+     * the current iteration of evaluate()'s solve loop. Overwritten every
+     * iteration; used as the fallback in voltage() for nets that aren't a
+     * fixed source. */
+    solvedVoltages = new Map<Net, NumericValue|HighImpedanceValue>();
+
+    /** Two-terminal fixed-voltage-offset constraints (net1 - net2 = diff)
+     * registered by component behavior during the current evaluate() pass,
+     * e.g. via set_voltage_diff(). Reset at the start of every iteration. */
+    voltageSourceBranches: { net1: Net, net2: Net, diff: number }[] = [];
+
+    /** Drive constraints registered by component behavior during the
+     * current evaluate() pass via drive(): one unknown current injected at
+     * driveNet, paired with an equation pinning targetNet's voltage to
+     * targetValue. Reset at the start of every iteration. */
+    driveConstraints: { driveNet: Net, targetNet: Net, targetValue: number }[] = [];
 
     description: string | null = null;
 
     currentComponent: ClassComponent | null = null;
-
-    // Used for virtual components created in the scenario (0R resistors, etc.)
-    virtualCounter = 0;
 
     evaluateCalled = false;
 
