@@ -53,7 +53,7 @@ export class NetMap {
         return result ? result[2] : null;
     }
 
-    getNetWithName(name: string): Net {
+    getNetWithName(name: string): Net | null {
         const found = this.items.find(([, , net]) => {
             return net.name === name;
         });

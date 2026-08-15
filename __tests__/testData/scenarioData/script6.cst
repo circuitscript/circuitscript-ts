@@ -1,0 +1,51 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+spst = create component:
+    pins:
+        1: "A"
+        2: "B"
+        3: "EN"
+
+    arrange:
+        left: "A", "EN"
+        right: "B"
+
+    behavior: create behavior:
+        state (voltage("EN") > 1.6):
+            short("A", "B")
+
+        state (voltage("EN") <= 1.6):
+            open("A", "B")
+
+out = create component:
+    pins:
+        1: "OUT"
+    arrange:
+        right: "OUT"
+
+at v5
+wire right 100
+to spst pin "A"
+
+at spst:
+    "B": wire right 100 to out pin "OUT"
+    "EN": wire left 200
+
+create scenario "Switch closed":
+    set_voltage(v5, 5)
+    set_voltage(spst, "EN", 3.3)
+
+    evaluate()
+
+    expect(voltage(out, "OUT") >= 4.9 and voltage(out, "OUT") <= 5)
+
+create scenario "Switch open":
+    set_voltage(v5, 5)
+    set_voltage(spst, "EN", 0)
+
+    evaluate()
+
+    expect(is_z(voltage(out, "OUT")))

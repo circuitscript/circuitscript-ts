@@ -389,7 +389,7 @@ export function compareSvgToFile(svgFilePath: string, svgString: string, thresho
     };
 }
 
-export async function runScriptExpectError(script: string): Promise<string> {
+export async function runScriptExpectError(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst'): Promise<string> {
     const chars = CharStream.fromString(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -397,6 +397,7 @@ export async function runScriptExpectError(script: string): Promise<string> {
     const env = new ESMNodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
     await env.prepareSVGEnvironment();
+    env.setCurrentFile(scriptPath);
 
     const visitor = new ParserVisitor(true, null, env);
     visitor.printToConsole = false;
@@ -408,12 +409,25 @@ export async function runScriptExpectError(script: string): Promise<string> {
 
     const tree = parser.script();
 
+    visitor.onImportFile = (visitor: BaseVisitor, filePath: string, fileData: string,
+        errorHandler: OnErrorHandler, fileLineOffset = 0): { hasError: boolean, hasParseError: boolean } => {
+        const { hasError, hasParseError } = parseFileWithVisitor(visitor, fileData, {
+            lineOffset: fileLineOffset
+        });
+        return { hasError, hasParseError };
+    }
+
+    visitor.enterFile(scriptPath);
+    await visitor.resolveImportsAndLoad(scriptPath, script);
+
     let capturedMessage: string | null = null;
     try {
         visitor.visit(tree);
     } catch (err) {
         capturedMessage = (err as any).message ?? String(err);
     }
+
+    visitor.exitFile();
 
     if (capturedMessage === null) {
         throw new Error(`Expected script to fail but it succeeded:\n${script}`);

@@ -1,0 +1,38 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+pulltest = create component:
+    pins:
+        1: "IN"
+        2: "VCC"
+        3: "GND"
+
+    arrange:
+        left: "IN"
+        right: "VCC", "GND"
+
+    behavior: create behavior:
+        state:
+            set_pull("IN", "VCC", 10k)
+
+at v5
+wire down 100 right 100
+to pulltest pin "VCC"
+
+at pulltest pin "GND"
+wire left 100 down 100 to gnd
+
+at pulltest pin "IN"
+wire right 100 down 100
+add res(100k)
+wire down 100
+to gnd
+
+create scenario "Pull-up divides against the load":
+    set_voltage(v5, 5)
+
+    evaluate()
+
+    expect(voltage(pulltest, "IN") >= 4.4 and voltage(pulltest, "IN") <= 4.7)

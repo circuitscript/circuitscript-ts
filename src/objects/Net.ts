@@ -11,8 +11,11 @@ import { NetTypes } from "./types.js";
 
 export class Net extends ParamsContainer {
 
+    // Current name of the net, qualified within its namespace. This may
+    // differ from baseName if the net was renamed (e.g. merged with another
+    // net) after creation.
     name: string;
-    
+
     // Name that is specified when the net was defined. 
     baseName: string;
 

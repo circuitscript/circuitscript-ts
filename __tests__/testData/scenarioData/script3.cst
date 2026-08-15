@@ -22,7 +22,9 @@ reg1 = create component:
 at reg1:
     "VIN": wire left 100 up 100 to v5
     "GND": wire left 100 down 100 to gnd
-    "EN": wire left 300
+    "EN": 
+        wire left 300
+        add label("EN1")
 
     "VOUT":
         wire right 100
@@ -58,15 +60,18 @@ reg2 = create component:
 at reg2:
     "VIN": wire left 100 up 100 to v5
     "GND": wire left 100 down 100 to gnd
-    "EN": wire left 300
+    "EN": 
+        wire left 300
+        add label("EN2")
 
     "VOUT":
-        wire right 100
+        wire right 600
         branch:
             wire down 100
             add res(10k)
             wire down 100
             branch:
+                wire left 200 up 200 
                 wire auto to reg2 pin "FB"
             wire down 100
             add res(10k)
@@ -74,16 +79,15 @@ at reg2:
             to gnd
 
     "TRIM":
-        wire right 200
-        wire down 300
+        wire right 100 down 100
         add res(10k)
-        wire down 100
+        wire down 100 right 200 up 500
         wire auto to reg2 pin "FB"
 
 create scenario "Basic divider drive":
     set_voltage(v5, 5)
-    set_voltage(reg1, "EN", 3.3)
-    set_voltage(reg2, "EN", 0)
+    set_net_voltage("EN1", 3.3)
+    set_net_voltage("EN2", 0)
 
     evaluate()
 
@@ -92,8 +96,8 @@ create scenario "Basic divider drive":
 
 create scenario "Drive with concurrent short constraint":
     set_voltage(v5, 5)
-    set_voltage(reg1, "EN", 0)
-    set_voltage(reg2, "EN", 3.3)
+    set_net_voltage("EN1", 0)
+    set_net_voltage("EN2", 3.3)
 
     evaluate()
 

@@ -81,7 +81,7 @@ import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, Delimiter1, Fram
     ValidPinSides,
     WireAutoDirection} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
-import { ExecutionWarning, unwrapValue } from "./utils.js";
+import { ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
@@ -1129,6 +1129,11 @@ export class ParserVisitor extends BaseVisitor {
             scenario.description = testDescp;
         }
 
+        if (scenario.description === null){
+            // Create description from the line number
+            scenario.description = 'Scenario at line ' + getLinePositionAsString(ctx);
+        }
+
         // setup the scenario methods
         linkScenarioFunctions(this.getExecutor(), this);
         this.log('done linking scenario functions');
@@ -1151,7 +1156,8 @@ export class ParserVisitor extends BaseVisitor {
                 scenario.failError = err;
                 scenario.finalPass = false;
             } else {
-                throw err;
+                scenario.errorWhenEvaluate = true;
+                this.throwWithContext(ctx, err);
             }
         }
 

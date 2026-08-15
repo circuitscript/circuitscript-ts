@@ -1,4 +1,4 @@
   ✓ Control is on
   ✕ Control is off
-    line 85:11-85:43 - expect: condition is false
+    line 81:11-81:43 - expect: condition is false
   ✓ Control is off and no voltage

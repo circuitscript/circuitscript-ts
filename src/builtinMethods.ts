@@ -11,7 +11,7 @@ import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericV
 import { CallableParameter, CFunctionEntry, ImportedLibrary, NetTypes } from "./objects/types.js";
 import { getLinePositionAsAtString, unwrapValue } from "./utils.js";
 import { RuntimeExecutionError, ScenarioRuntimeError } from "./errors.js";
-import { BaseNamespace, GlobalDocumentName } from "./globals.js";
+import { BaseNamespace, ComponentTypes, GlobalDocumentName } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
 import { PinId } from "./objects/PinDefinition.js";
@@ -319,7 +319,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
                 pinId = useInstance.getDefaultPin();
                 voltage = args[1] as NumericValue;
             } else {
-                // PinId, coltage
+                // PinId, voltage
                 pinId = useInstance.getPin(PinId.from(args[0]));
                 voltage = args[1] as NumericValue;
             }
@@ -339,6 +339,22 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         scope.scenario!.sourceVoltages.set(net, voltage);
         net.type = NetTypes.Source;
 
+        return [visitor];
+    });
+
+    context.createFunction(BaseNamespace, 'set_net_voltage', (params) => {
+        const args = getPositionParams(params);
+        const netName = args[0] as string;
+        const voltage = args[1] as NumericValue;
+
+        const scope = visitor.getScope();
+        const net = scope.netMap.getNetWithName(netName);
+        if (net !== null) {
+            const scenario = scope.scenario!;
+            scenario.sourceVoltages.set(net, voltage);
+        } else {
+            throw new RuntimeExecutionError(`net not found: ${netName}`);
+        }
         return [visitor];
     });
 
@@ -400,6 +416,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 
         scenario.evaluateCalled = true;
         const instances = scope.getInstances();
+        const originalNetMap = scope.netMap.clone();
         const gndNet = scope.netMap.getNetWithName("GND");
 
         /*
@@ -417,12 +434,14 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         let previousVoltages: Map<Net, number> | null = null;
 
         for (let i = 0; i < 100; i++) {
-            console.log(`-- Run ${i} --`);
+            // console.log(`-- Run ${i} --`);
 
             // Reset source voltages to the original state.
             scenario.sourceVoltages = new Map(scenarioInitialVoltages);
             scenario.voltageSourceBranches = [];
             scenario.driveConstraints = [];
+
+            scope.netMap = originalNetMap.clone();
 
             // Apply all states for the instances
             for (const instance of instances) {
@@ -437,11 +456,12 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             }
 
             const { netVoltages } = calculateNodeVoltages(
-                scope.netMap, scenario.sourceVoltages, scenario.voltageSourceBranches, scenario.driveConstraints);
+                scope.netMap, scenario.sourceVoltages, 
+                scenario.voltageSourceBranches,
+                scenario.driveConstraints);
 
             for (const [net, voltage] of netVoltages) {
                 scenario.solvedVoltages.set(net, numeric(voltage));
-                console.log(net.toString(), voltage);
             }
 
             // A net that dropped out of this iteration's solve (e.g. it
@@ -556,6 +576,36 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 
         return [visitor];
     });
+
+    /**
+     * Creates a pull condition from a given pin to another pin. This can be 
+     * used to create pull-ups or pull-downs between pins.
+     */
+    context.createFunction(BaseNamespace, 'set_pull', (params) => {
+        const args = getPositionParams(params);
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+
+        const activeComponent = scenario.currentComponent!;
+        const pinId1 = activeComponent.getPin(PinId.from(args[0] as string)); // Target pin
+        const pinId2 = activeComponent.getPin(PinId.from(args[1] as string)); // Pull to pin
+        const value = args[2] as NumericValue;
+
+        const tmpRes = ClassComponent.simple('VIRTUAL-RES-' + scenario.virtualCounter, 2);
+        tmpRes.typeProp = ComponentTypes.resistor;
+        scenario.virtualCounter++;
+
+        tmpRes.setParam('value', value);
+
+        const netNamespace = visitor.getExecutor().netNamespace;
+
+        scope.netMap.linkComponentPinNet(activeComponent, pinId1, tmpRes,
+            tmpRes.getPin(PinId.from(1)), netNamespace);
+        scope.netMap.linkComponentPinNet(activeComponent, pinId2,
+            tmpRes, tmpRes.getPin(PinId.from(2)), netNamespace);
+
+        return [visitor];
+    });
 }
 
 export function unlinkScenarioFunctions(context: ExecutionContext): void {
@@ -563,6 +613,8 @@ export function unlinkScenarioFunctions(context: ExecutionContext): void {
     const functions = [
         'set_voltage',
         'set_voltage_diff',
+        'set_pull',
+        'set_net_voltage',
         'voltage',
         'evaluate',
         'expect',
@@ -716,14 +768,16 @@ function toString(obj: any): string {
         return `[net: ${obj.toString()}]`
     } else if (obj instanceof NetClass) {
         return `[netClass: ${obj.name}]`;
+    } else if (obj instanceof HighImpedanceValue) {
+        return obj.toString()
     } else {
-        if (obj === undefined){
+        if (obj === undefined) {
             return 'undefined';
-        } else if (obj === null){
+        } else if (obj === null) {
             return 'null';
         } else if (obj.toDisplayString) {
             return obj.toDisplayString();
-        } else if (typeof obj === 'object'){
+        } else if (typeof obj === 'object') {
             return JSON.stringify(obj);
         } else if (obj.toString) {
             return obj.toString();

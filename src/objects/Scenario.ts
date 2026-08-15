@@ -39,9 +39,15 @@ export class Scenario {
 
     evaluateCalled = false;
 
+    errorWhenEvaluate = false;
+
     finalPass = false;
 
+
     failError: BaseError | null = null;
+
+
+    virtualCounter = 0;
 
     getResultString(): string[] {
         const icon = this.finalPass ? "✓" : "✕";
@@ -51,13 +57,16 @@ export class Scenario {
         ];
 
         if (!this.finalPass) {
-            const err = this.failError!;
-            const position = getLinePositionAsString({
-                start: err.startToken!,
-                stop: err.endToken!
-            });
-
-            result.push(`line ${position} - ${err.message}`);
+            if (this.errorWhenEvaluate){
+                result.push('evaluate() had an error');
+            } else if (this.failError !== null){
+                const err = this.failError!;
+                const position = getLinePositionAsString({
+                    start: err.startToken!,
+                    stop: err.endToken!
+                });
+                result.push(`line ${position} - ${err.message}`);
+            }
         }
 
         return result;

@@ -62,7 +62,10 @@ export class BaseError extends Error {
 }
 
 export function throwWithContext(context: ParserRuleContext, messageOrError: string | BaseError): void {
-    if (messageOrError instanceof BaseError && messageOrError.startToken || messageOrError instanceof ScenarioRuntimeError) {
+    if (messageOrError instanceof BaseError && messageOrError.startToken 
+        || messageOrError instanceof ScenarioRuntimeError
+        || messageOrError instanceof RuntimeExecutionError) {
+        
         messageOrError.startToken = context.start;
         messageOrError.endToken = context.stop;
         throw messageOrError;

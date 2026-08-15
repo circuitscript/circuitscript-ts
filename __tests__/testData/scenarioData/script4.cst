@@ -1,0 +1,41 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+zdrop = create component:
+    pins:
+        1: "A"
+        2: "B"
+
+    arrange:
+        left: "A"
+        right: "B"
+
+    behavior: create behavior:
+        state:
+            set_voltage_diff("A", "B", 0.7)
+
+at v5
+wire right 100
+add res(1k)
+wire right 100
+to zdrop pin "A"
+
+at zdrop pin "B"
+wire right 100
+add res(1k)
+wire right 100
+to gnd
+
+create scenario "Diode drop clamps the difference":
+    set_voltage(v5, 5)
+
+    evaluate()
+
+    expect(
+        voltage(zdrop, "A") - voltage(zdrop, "B") >= 0.65 
+        and voltage(zdrop, "A") - voltage(zdrop, "B") <= 0.75
+    )
+    
+    expect(voltage(zdrop, "A") > voltage(zdrop, "B"))

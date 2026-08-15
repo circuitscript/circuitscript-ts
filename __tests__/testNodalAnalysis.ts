@@ -1,4 +1,5 @@
-import { calculateNodeVoltages } from '../src/render/nodal-analysis.js';
+import { calculateNodeVoltages, calculateNodeVoltagesLegacy, 
+    calculateNodeVoltagesV2 } from '../src/render/nodal-analysis.js';
 import { RuntimeExecutionError } from '../src/errors.js';
 import { numeric, NumericValue } from '../src/objects/NumericValue.js';
 import { PinId } from '../src/objects/PinDefinition.js';
@@ -333,5 +334,292 @@ describe('calculateNodeVoltages - drive constraints', () => {
 
         expectClose(netVoltages.get(outNetA)!, 2 * 1);
         expectClose(netVoltages.get(outNetB)!, 2 * 3);
+    });
+});
+
+// Zero-ohm short: r1 has value 0, folding out_pin and mid_pin into one
+// representative net before the divider (r2) sets the voltage.
+const ZERO_OHM_SHORT_SCRIPT = `
+    from "std" import *
+    gnd = dgnd()
+    out_pin = net("OUT")
+    mid_pin = net("MID")
+
+    r1 = res(0)
+    r2 = res(10k)
+
+    at out_pin
+    wire right 100
+    to r1 pin 1
+
+    at r1 pin 2
+    wire right 10
+    to mid_pin
+
+    at mid_pin
+    wire right 100
+    to r2 pin 1
+
+    at r2 pin 2
+    wire down 100
+    to gnd
+`;
+
+// A chain of three zero-ohm resistors shorting four distinct nets
+// (a_pin - b_pin - c_pin - d_pin) together, then a divider off the end of
+// the chain, exercising a multi-net (3+) transitive-short group.
+const TRANSITIVE_SHORT_CHAIN_SCRIPT = `
+    from "std" import *
+    gnd = dgnd()
+    a_pin = net("A")
+    b_pin = net("B")
+    c_pin = net("C")
+    d_pin = net("D")
+
+    r0 = res(0)
+    r0b = res(0)
+    r0c = res(0)
+    r2 = res(10k)
+
+    at a_pin
+    wire right 10
+    to r0 pin 1
+
+    at r0 pin 2
+    wire right 10
+    to b_pin
+
+    at b_pin
+    wire right 10
+    to r0b pin 1
+
+    at r0b pin 2
+    wire right 10
+    to c_pin
+
+    at c_pin
+    wire right 10
+    to r0c pin 1
+
+    at r0c pin 2
+    wire right 10
+    to d_pin
+
+    at d_pin
+    wire right 100
+    to r2 pin 1
+
+    at r2 pin 2
+    wire down 100
+    to gnd
+`;
+
+// A diode-style forward-drop clamp between two otherwise-unknown nets,
+// folded into the linear system as a voltage-source (MNA) edge.
+const VOLTAGE_SOURCE_CLAMP_SCRIPT = `
+    from "std" import *
+    gnd = dgnd()
+    out_pin = net("OUT")
+    clamp_pin = net("CLAMP")
+
+    r1 = res(10k)
+    r2 = res(10k)
+
+    at out_pin
+    wire right 100
+    to r1 pin 1
+
+    at r1 pin 2
+    wire right 10
+    to clamp_pin
+
+    at clamp_pin
+    wire right 100
+    to r2 pin 1
+
+    at r2 pin 2
+    wire down 100
+    to gnd
+`;
+
+describe('calculateNodeVoltages - legacy vs V2 parity', () => {
+    function expectParity(
+        netVoltagesA: Map<Net, number>,
+        netVoltagesB: Map<Net, number>,
+    ): void {
+        expect(netVoltagesA.size).toEqual(netVoltagesB.size);
+        for (const [net, voltage] of netVoltagesA) {
+            expect(netVoltagesB.has(net)).toEqual(true);
+            expectClose(netVoltagesB.get(net)!, voltage);
+        }
+    }
+
+    test('simple resistor divider driven to a target voltage', async () => {
+        const { netMap, net } = await buildNetwork(DIVIDER_SCRIPT);
+        const outNet = net('out_pin', 1);
+        const checkNet = net('r1', 2);
+        const gndNet = netMap.getNetWithName('GND');
+        const voltages = new Map<Net, NumericValue>([[gndNet, numeric(0)]]);
+        const constraints = [{ driveNet: outNet, targetNet: checkNet, targetValue: 1 }];
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, [], constraints);
+        const v2 = calculateNodeVoltagesV2(netMap, voltages, [], constraints);
+
+        expectParity(legacy.netVoltages, v2.netVoltages);
+    });
+
+    test('drive constraint that is the only voltage reference in its component (floating reference)', async () => {
+        const { netMap, net } = await buildNetwork(`
+            from "std" import *
+            out_pin = net("OUT")
+            r1 = res(10k)
+
+            at out_pin
+            wire right 100
+            to r1 pin 1
+
+            at r1 pin 2
+            wire right 10
+        `);
+
+        const outNet = net('out_pin', 1);
+        const checkNet = net('r1', 2);
+        const voltages = new Map<Net, NumericValue>();
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, [], [
+            { driveNet: outNet, targetNet: checkNet, targetValue: 2.5 },
+        ]);
+        const v2 = calculateNodeVoltagesV2(netMap, voltages, [], [
+            { driveNet: outNet, targetNet: checkNet, targetValue: 2.5 },
+        ]);
+
+        expectParity(legacy.netVoltages, v2.netVoltages);
+    });
+
+    test('two electrically independent components each with their own drive constraint', async () => {
+        const { netMap, net } = await buildNetwork(`
+            from "std" import *
+            gnd = dgnd()
+
+            out_a = net("OUTA")
+            out_b = net("OUTB")
+
+            r1a = res(10k)
+            r2a = res(10k)
+
+            r1b = res(10k)
+            r2b = res(10k)
+
+            at out_a
+            wire right 100
+            to r1a pin 1
+
+            at r1a pin 2
+            wire right 100
+            to r2a pin 1
+
+            at r2a pin 2
+            wire down 100
+            to gnd
+
+            at out_b
+            wire right 100
+            to r1b pin 1
+
+            at r1b pin 2
+            wire right 100
+            to r2b pin 1
+
+            at r2b pin 2
+            wire down 100
+            to gnd
+        `);
+
+        const outNetA = net('out_a', 1);
+        const checkNetA = net('r1a', 2);
+        const outNetB = net('out_b', 1);
+        const checkNetB = net('r1b', 2);
+        const gndNet = netMap.getNetWithName('GND');
+
+        const voltages = new Map<Net, NumericValue>([[gndNet, numeric(0)]]);
+        const constraints = [
+            { driveNet: outNetA, targetNet: checkNetA, targetValue: 1 },
+            { driveNet: outNetB, targetNet: checkNetB, targetValue: 3 },
+        ];
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, [], constraints);
+        const v2 = calculateNodeVoltagesV2(netMap, voltages, [], constraints);
+
+        expectParity(legacy.netVoltages, v2.netVoltages);
+    });
+
+    test('zero-ohm short merges two nets into one representative before solving', async () => {
+        const { netMap, net } = await buildNetwork(ZERO_OHM_SHORT_SCRIPT);
+
+        const outNet = net('out_pin', 1);
+        const gndNet = netMap.getNetWithName('GND');
+        const voltages = new Map<Net, NumericValue>([
+            [gndNet, numeric(0)],
+            [outNet, numeric(5)],
+        ]);
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, [], []);
+        const v2 = calculateNodeVoltagesV2(netMap, voltages, [], []);
+
+        expectParity(legacy.netVoltages, v2.netVoltages);
+
+        const midNet = net('r1', 2);
+        expectClose(legacy.netVoltages.get(midNet)!, 5);
+        expectClose(v2.netVoltages.get(midNet)!, 5);
+    });
+
+    test('multi-net (3+) transitive short chain merges into a single representative', async () => {
+        const { netMap, net } = await buildNetwork(TRANSITIVE_SHORT_CHAIN_SCRIPT);
+
+        const aNet = net('a_pin', 1);
+        const gndNet = netMap.getNetWithName('GND');
+        const voltages = new Map<Net, NumericValue>([
+            [gndNet, numeric(0)],
+            [aNet, numeric(5)],
+        ]);
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, [], []);
+        const v2 = calculateNodeVoltagesV2(netMap, voltages, [], []);
+
+        expectParity(legacy.netVoltages, v2.netVoltages);
+
+        const dNet = net('r0c', 2);
+        expectClose(legacy.netVoltages.get(dNet)!, 5);
+        expectClose(v2.netVoltages.get(dNet)!, 5);
+    });
+
+    test('voltage-source (diode-clamp style) constraint between two otherwise-unknown nets', async () => {
+        const { netMap, net } = await buildNetwork(VOLTAGE_SOURCE_CLAMP_SCRIPT);
+
+        const outNet = net('out_pin', 1);
+        const clampNet = net('r1', 2);
+        const gndNet = netMap.getNetWithName('GND');
+        const voltages = new Map<Net, NumericValue>([[gndNet, numeric(0)]]);
+        const voltageSources = [{ net1: outNet, net2: clampNet, diff: 0.7 }];
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, voltageSources, []);
+        const v2 = calculateNodeVoltagesV2(netMap, voltages, voltageSources, []);
+
+        expectParity(legacy.netVoltages, v2.netVoltages);
+    });
+
+    test('the exported calculateNodeVoltages wrapper matches the legacy implementation', async () => {
+        const { netMap, net } = await buildNetwork(DIVIDER_SCRIPT);
+
+        const outNet = net('out_pin', 1);
+        const checkNet = net('r1', 2);
+        const gndNet = netMap.getNetWithName('GND');
+        const voltages = new Map<Net, NumericValue>([[gndNet, numeric(0)]]);
+        const constraints = [{ driveNet: outNet, targetNet: checkNet, targetValue: 1 }];
+
+        const legacy = calculateNodeVoltagesLegacy(netMap, voltages, [], constraints);
+        const wrapped = calculateNodeVoltages(netMap, voltages, [], constraints);
+
+        expectParity(legacy.netVoltages, wrapped.netVoltages);
     });
 });
