@@ -1,0 +1,27 @@
+from "std" import *
+
+tmp = led("GREEN")
+tmp.behavior = create behavior:
+    state:
+        set_voltage_diff(2, 1, 2.1)
+
+vcc = supply("3V3")
+gnd = dgnd()
+
+at vcc
+wire down 100
+add tmp pin 2
+wire down 100
+add label("mid-pt")
+
+wire down 100
+add res(1k)
+wire down 100
+to gnd
+
+create scenario "LED behavior sets a fixed voltage drop, instance param overrides class behavior":
+    set_voltage(vcc, 3.3)
+
+    evaluate()
+
+    expect(1.15 < voltage_net("mid-pt") < 1.25)

@@ -521,8 +521,15 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             // Apply all states for the instances
             for (const instance of instances) {
                 scenario.currentComponent = instance;
-                if (instance.behaviorProp !== null) {
-                    const behaviorProp = instance.behaviorProp as ComponentBehavior;
+
+                // The behavior param can be overridden. Check if first before
+                // the behavior prop.
+                const useBehaviorProp = (instance.hasParam('behavior') ? 
+                    instance.getParam('behavior') : null) ?? 
+                    (instance.behaviorProp ??  null);
+
+                if (useBehaviorProp) {
+                    const behaviorProp = useBehaviorProp as ComponentBehavior;
 
                     // Changes to voltage states will be accumulated
                     behaviorProp.evaluate();

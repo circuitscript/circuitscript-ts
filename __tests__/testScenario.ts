@@ -13,6 +13,7 @@ describe('Scenario tests', () => {
         ['script6.cst', 'open() and is_z() on a floating pin'],
         ['script7.cst', 'resistance() and resistance_net()'],
         ['script8.cst', 'voltage_net()'],
+        ['script9.cst', 'instance-level behavior override sets a fixed voltage drop'],
     ])('scenario - %s (%s)', async (scriptPath, _title) => {
         const { svgOutput, scenarioResultsText } = await renderScenarioCommon(mainPath + scriptPath);
 
