@@ -44,5 +44,5 @@ create scenario "Resistance builtins match declared/derived values":
     set_voltage(v5, 5)
     evaluate()
     
-    expect(resistance_net("RES_NET") > 9090 and resistance_net("RES_NET") < 9091)
-    expect(resistance(tmp, "IN") > 9090 and resistance(tmp, "IN") < 9091)
+    expect(9090 < resistance_net("RES_NET") < 9091)
+    expect(9090 < resistance(tmp, "IN") < 9091)

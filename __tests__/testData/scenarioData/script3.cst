@@ -91,8 +91,8 @@ create scenario "Basic divider drive":
 
     evaluate()
 
-    expect(voltage(reg1, "VOUT") >= 1.9 and voltage(reg1, "VOUT") < 2.1)
-    expect(voltage(reg1, "FB") >= 0.95 and voltage(reg1, "FB") < 1.05)
+    expect(1.9 <= voltage(reg1, "VOUT") < 2.1)
+    expect(0.95 <= voltage(reg1, "FB") < 1.05)
 
 create scenario "Drive with concurrent short constraint":
     set_voltage(v5, 5)
@@ -101,5 +101,5 @@ create scenario "Drive with concurrent short constraint":
 
     evaluate()
 
-    expect(voltage(reg2, "VOUT") >= 1.4 and voltage(reg2, "VOUT") < 1.6)
-    expect(voltage(reg2, "FB") >= 0.95 and voltage(reg2, "FB") < 1.05)
+    expect(1.4 <= voltage(reg2, "VOUT") < 1.6)
+    expect(0.95 <= voltage(reg2, "FB") < 1.05)

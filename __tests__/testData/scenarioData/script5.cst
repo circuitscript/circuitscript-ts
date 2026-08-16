@@ -35,4 +35,4 @@ create scenario "Pull-up divides against the load":
 
     evaluate()
 
-    expect(voltage(pulltest, "IN") >= 4.4 and voltage(pulltest, "IN") <= 4.7)
+    expect(4.4 <= voltage(pulltest, "IN") <= 4.7)

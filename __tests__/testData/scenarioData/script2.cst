@@ -16,7 +16,7 @@ spst = create component:
         right: "VCC", "B"
 
     behavior: create behavior:
-        state (voltage("VCC") > 1.6 and voltage("VCC") < 5.5 and voltage("C") > 3):
+        state (1.6 < voltage("VCC") < 5.5 and voltage("C") > 3):
             short("A", "B")
 
 in_conn = create component:
@@ -68,7 +68,7 @@ create scenario "Control is on":
 
     evaluate()
 
-    expect(voltage(out_conn, "OUTPUT") >= 0.7 and voltage(out_conn, "OUTPUT") < 1)
+    expect(0.7 <= voltage(out_conn, "OUTPUT") < 1)
     expect(voltage(in_conn, "INPUT") == 1.5)
 
 create scenario "Control is off":

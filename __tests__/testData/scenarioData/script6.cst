@@ -40,7 +40,7 @@ create scenario "Switch closed":
 
     evaluate()
 
-    expect(voltage(out, "OUT") >= 4.9 and voltage(out, "OUT") <= 5)
+    expect(4.9 <= voltage(out, "OUT") <= 5)
 
 create scenario "Switch open":
     set_voltage(v5, 5)

@@ -33,9 +33,6 @@ create scenario "Diode drop clamps the difference":
 
     evaluate()
 
-    expect(
-        voltage(zdrop, "A") - voltage(zdrop, "B") >= 0.65 
-        and voltage(zdrop, "A") - voltage(zdrop, "B") <= 0.75
-    )
+    expect(0.65 <= voltage(zdrop, "A") - voltage(zdrop, "B") <= 0.75)
     
     expect(voltage(zdrop, "A") > voltage(zdrop, "B"))

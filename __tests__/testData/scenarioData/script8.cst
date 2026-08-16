@@ -20,4 +20,4 @@ create scenario "voltage_net() reads source and solved voltages by net name":
 
     expect(voltage_net("5V") == 5)
     expect(voltage_net("GND") == 0)
-    expect(voltage_net("MID") > 2.4 and voltage_net("MID") < 2.6)
+    expect(2.4 < voltage_net("MID") < 2.6)
