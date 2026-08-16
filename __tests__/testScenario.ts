@@ -11,6 +11,8 @@ describe('Scenario tests', () => {
         ['script4.cst', 'set_voltage_diff() and two-arg voltage()'],
         ['script5.cst', 'set_pull()'],
         ['script6.cst', 'open() and is_z() on a floating pin'],
+        ['script7.cst', 'resistance() and resistance_net()'],
+        ['script8.cst', 'voltage_net()'],
     ])('scenario - %s (%s)', async (scriptPath, _title) => {
         const { svgOutput, scenarioResultsText } = await renderScenarioCommon(mainPath + scriptPath);
 
@@ -69,5 +71,35 @@ create scenario "Expect before evaluate":
 
         const message = await runScriptExpectError(script);
         expect(message).toMatch(/expect: evaluate\(\) has not been called/);
+    });
+
+    test('resistance_net() on a net not found throws', async () => {
+        const script = `${minimalCircuit}
+create scenario "Unknown net":
+    evaluate()
+    expect(resistance_net("NOT_A_REAL_NET") > 0)
+`;
+        const message = await runScriptExpectError(script);
+        expect(message).toMatch(/resistance_net: net not found/);
+    });
+
+    test('resistance() on a directly driven net throws', async () => {
+        const script = `${minimalCircuit}
+create scenario "Driven net":
+    set_voltage(v5, 5)
+    evaluate()
+    expect(resistance(v5) > 0)
+`;
+        const message = await runScriptExpectError(script);
+        expect(message).toMatch(/resistance: net is directly driven/);
+    });
+
+    test('resistance() before evaluate() throws', async () => {
+        const script = `${minimalCircuit}
+create scenario "Before evaluate":
+    expect(resistance(v5) > 0)
+`;
+        const message = await runScriptExpectError(script);
+        expect(message).toMatch(/resistance: evaluate\(\) has not been called/);
     });
 });

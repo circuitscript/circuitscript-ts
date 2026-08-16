@@ -743,6 +743,13 @@ export function calculateNodeVoltagesLegacy(
     }
 }
 
+export type ConductanceInfo = {
+    conductanceMatrix: Matrix,
+    representativeOf: Map<Net, Net>,
+    representatives: Net[],
+    netGroups: Map<Net, Net[]>,
+};
+
 /** Solves for the voltage of every net given a set of fixed net voltages.
  * Nets not present in `voltages`, or explicitly set to a `HighImpedanceValue`,
  * are treated as unknown/floating and solved for via nodal analysis.
@@ -773,6 +780,7 @@ export function calculateNodeVoltagesV2(
 ): {
     nets: ComponentPinNetPair[],
     netVoltages: Map<Net, number>,
+    conductance: ConductanceInfo,
 } {
 
     const netVoltages = new Map<Net, number>();
@@ -907,7 +915,10 @@ export function calculateNodeVoltagesV2(
     }
 
     if (unknownIndices.length === 0) {
-        return { nets: instancePinNets, netVoltages };
+        return {
+            nets: instancePinNets, netVoltages,
+            conductance: { conductanceMatrix, representativeOf, representatives, netGroups },
+        };
     }
 
     /* Guu: conductance between unknown nets. Guk: conductance between
@@ -978,7 +989,10 @@ export function calculateNodeVoltagesV2(
     }
 
     if (solvableIndices.length === 0) {
-        return { nets: instancePinNets, netVoltages };
+        return {
+            nets: instancePinNets, netVoltages,
+            conductance: { conductanceMatrix, representativeOf, representatives, netGroups },
+        };
     }
 
     /* Iu = 0, since only resistors (no independent current sources) are
@@ -1154,7 +1168,128 @@ export function calculateNodeVoltagesV2(
     return {
         nets: instancePinNets,
         netVoltages,
+        conductance: { conductanceMatrix, representativeOf, representatives, netGroups },
     }
+}
+
+/** Computes the Thevenin/driving-point resistance seen looking into `net`,
+ * treating every net present in `voltages` as a fixed reference shorted to
+ * the others at 0V (the standard "zero all independent sources" Thevenin
+ * convention). Ignores the actual voltage values, since resistance is purely
+ * topological - the known/unknown partition here is computed independently
+ * from `voltages` (the caller's own known-net map) and only needs to be
+ * self-consistent with the caller, not literally identical machinery to
+ * whatever partition evaluate()/calculateNodeVoltagesV2 used internally to
+ * produce the cached `conductance`. Solves Guu . x = e_i for the connected
+ * component containing net's representative, and returns x_i.
+ *
+ * `conductance` is expected to be the matrix/representative bookkeeping
+ * already computed by a prior calculateNodeVoltagesV2() call on the same
+ * netMap (e.g. cached on Scenario after evaluate()) - this function does
+ * not rebuild it, so it must come from a solve over the exact netMap state
+ * the caller wants resistance figures for.
+ *
+ * LIMITATION: `conductanceMatrix` contains only stamped resistor
+ * conductances (from buildConductanceMatrixV2). Voltage-source branches
+ * (set_voltage_diff) and drive() constraints are folded into a separate,
+ * larger augmented MNA system built fresh inside calculateNodeVoltagesV2's
+ * solve loop and are NOT reflected in the cached conductance matrix. This
+ * means resistance()/resistance_net() report the driving-point resistance
+ * of the bare resistor topology only - a net connected to a voltage-source
+ * branch or drive() constraint will NOT have that constraint's effect
+ * (e.g. a low-impedance driven path) reflected in its computed resistance,
+ * and this function does not detect or warn about that case. Acceptable
+ * for this feature's initial scope (plain resistor networks and set_pull()
+ * virtual resistors), but do not use these builtins to reason about
+ * resistance across nets touched by set_voltage_diff()/drive() without
+ * accounting for this gap.
+ *
+ * Throws if `net` cannot be found, if it resolves to a known/reference net
+ * itself (driving-point resistance from a source isn't defined), or if it
+ * has no resistor path - direct or indirect - to any reference net. */
+export function calculateNetResistance(
+    conductance: ConductanceInfo,
+    net: Net,
+    voltages: Map<Net, NumericValue | HighImpedanceValue>
+): number {
+    const { conductanceMatrix, representativeOf, representatives, netGroups } = conductance;
+
+    const targetRep = representativeOf.get(net);
+    if (!targetRep) {
+        throw new RuntimeExecutionError('resistance: net not found in circuit');
+    }
+
+    const knownReps = new Set<Net>();
+    for (const rep of representatives) {
+        const netGroup = netGroups.get(rep) as Net[];
+        if (netGroup.some(n => voltages.get(n) instanceof NumericValue)) {
+            knownReps.add(rep);
+        }
+    }
+
+    if (knownReps.has(targetRep)) {
+        throw new RuntimeExecutionError(
+            'resistance: net is directly driven to a fixed voltage, driving-point resistance is not defined');
+    }
+
+    const repIndex = new Map<Net, number>();
+    representatives.forEach((rep, i) => repIndex.set(rep, i));
+
+    const unknownReps = representatives.filter(rep => !knownReps.has(rep));
+    const unknownIndices = unknownReps.map(rep => repIndex.get(rep)!);
+    const knownIndices = representatives
+        .map((_, i) => i)
+        .filter(i => knownReps.has(representatives[i]));
+
+    const Guu = conductanceMatrix.selection(unknownIndices, unknownIndices);
+
+    const localIndexOf = new Map<number, number>();
+    unknownIndices.forEach((globalIdx, local) => localIndexOf.set(globalIdx, local));
+    const targetLocal = localIndexOf.get(repIndex.get(targetRep)!)!;
+
+    // BFS within Guu's nonzero off-diagonals to find just the connected
+    // component containing targetLocal - avoids solving/inverting the
+    // full (possibly disjoint) unknown-net matrix.
+    const adjacency: number[][] = unknownIndices.map(() => []);
+    for (let i = 0; i < unknownIndices.length; i++) {
+        for (let j = i + 1; j < unknownIndices.length; j++) {
+            if (Guu.get(i, j) !== 0) {
+                adjacency[i].push(j);
+                adjacency[j].push(i);
+            }
+        }
+    }
+
+    const visited = new Set<number>([targetLocal]);
+    const stack = [targetLocal];
+    while (stack.length > 0) {
+        const current = stack.pop()!;
+        for (const neighbor of adjacency[current]) {
+            if (!visited.has(neighbor)) {
+                visited.add(neighbor);
+                stack.push(neighbor);
+            }
+        }
+    }
+    const component = Array.from(visited).sort((a, b) => a - b);
+
+    const isReferenced = component.some(localIdx => {
+        const globalIdx = unknownIndices[localIdx];
+        return knownIndices.some(kIdx => conductanceMatrix.get(globalIdx, kIdx) !== 0);
+    });
+
+    if (!isReferenced) {
+        throw new RuntimeExecutionError('resistance: net has no resistor path to a reference/fixed-voltage net');
+    }
+
+    const componentGuu = Guu.selection(component, component);
+    const targetInComponent = component.indexOf(targetLocal);
+
+    const unitCurrent = Matrix.zeros(component.length, 1);
+    unitCurrent.set(targetInComponent, 0, 1);
+
+    const solution = solve(componentGuu, unitCurrent);
+    return solution.get(targetInComponent, 0);
 }
 
 // Delegates to V2 by default. Rollback: change the body to call
@@ -1167,6 +1302,7 @@ export function calculateNodeVoltages(
 ): {
     nets: ComponentPinNetPair[],
     netVoltages: Map<Net, number>,
+    conductance: ConductanceInfo,
 } {
     return calculateNodeVoltagesV2(netMap, voltages, voltageSources, driveConstraints);
 }

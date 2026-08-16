@@ -1,0 +1,23 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+at v5
+wire down 100 right 100
+add res(1k)
+wire down 100
+add label("MID")
+wire down 100
+add res(1k)
+wire down 100
+to gnd
+
+create scenario "voltage_net() reads source and solved voltages by net name":
+    set_voltage(v5, 5)
+
+    evaluate()
+
+    expect(voltage_net("5V") == 5)
+    expect(voltage_net("GND") == 0)
+    expect(voltage_net("MID") > 2.4 and voltage_net("MID") < 2.6)

@@ -1,0 +1,1 @@
+  ✓ Resistance builtins match declared/derived values

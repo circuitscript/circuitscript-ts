@@ -20,7 +20,8 @@ import { NetClass } from "./objects/NetClass.js";
 import { AcceptedSeverityLevels, ERC_RuleSeverity } from "./rules-check/severity-defaults.js";
 import { PercentageValue } from "./objects/PercentageValue.js";
 import { ComponentBehavior, HighImpedanceValue } from "./behavior.js";
-import { calculateNodeVoltages } from "./render/nodal-analysis.js";
+import { calculateNodeVoltages, calculateNetResistance } from "./render/nodal-analysis.js";
+import { ExecutionScope } from "./objects/ExecutionScope.js";
 
 const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
@@ -253,6 +254,44 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
     });
 }
 
+/** Resolves the `(pinOrComponent, pin?)`-style args shared by `voltage()`,
+ * `resistance()`, etc. into a concrete component/pin, falling back to the
+ * scenario's currently-active component when no component arg is given.
+ * `callerName` is used only to attribute error messages to the actual
+ * calling builtin. */
+function resolveComponentPin(scope: ExecutionScope, args: unknown[], callerName: string): { useComponent: ClassComponent, pinId: PinId } {
+    let useComponent: ClassComponent;
+    let pinId: PinId;
+
+    let pinIdArg = args[0];
+
+    if (args[0] instanceof ClassComponent) {
+        useComponent = args[0];
+
+        if (args.length === 1){
+            pinIdArg = useComponent.getDefaultPin();
+        } else {
+            pinIdArg = args[1];
+        }
+    } else {
+        if (scope.scenario!.currentComponent === null) {
+            throw new RuntimeExecutionError(`${callerName}: no active component`);
+        }
+
+        useComponent = scope.scenario!.currentComponent!;
+    }
+
+    if (typeof pinIdArg === "string") {
+        pinId = useComponent.getPin(PinId.from(pinIdArg));
+    } else if (pinIdArg instanceof NumericValue) {
+        pinId = useComponent.getPin(PinId.from(pinIdArg));
+    } else if (pinIdArg instanceof PinId){
+        pinId = pinIdArg;
+    }
+
+    return { useComponent, pinId };
+}
+
 export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVisitor): void {
 
     context.createFunction(BaseNamespace, 'set_voltage_diff', (params) => {
@@ -362,35 +401,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const args = getPositionParams(params);
         const scope = visitor.getScope();
 
-        let useComponent: ClassComponent;
-        let pinId: PinId;
-
-        let pinIdArg = args[0];
-
-        if (args[0] instanceof ClassComponent) {
-            useComponent = args[0];
-
-            if (args.length === 1){
-                pinIdArg = useComponent.getDefaultPin();
-            } else {
-                pinIdArg = args[1];
-            }
-        } else {
-            if (scope.scenario!.currentComponent === null) {
-                throw new RuntimeExecutionError("voltage: no active component");
-            }
-
-            useComponent = scope.scenario!.currentComponent!;
-        }
-
-        if (typeof pinIdArg === "string") {
-            pinId = useComponent.getPin(PinId.from(pinIdArg));
-        } else if (pinIdArg instanceof NumericValue) {
-            pinId = useComponent.getPin(PinId.from(pinIdArg));
-        } else if (pinIdArg instanceof PinId){
-            pinId = pinIdArg;
-        }
-
+        const { useComponent, pinId } = resolveComponentPin(scope, args, 'voltage');
         const net = scope.netMap.get(useComponent, pinId);
 
         let voltageValue;
@@ -404,6 +415,70 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         }
 
         return [visitor, voltageValue];
+    });
+
+    context.createFunction(BaseNamespace, 'voltage_net', (params) => {
+        const args = getPositionParams(params);
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+
+        const netName = args[0] as string;
+        const net = scope.netMap.getNetWithName(netName);
+
+        let voltageValue = null;
+        if (net !== null) {
+            voltageValue =
+                scenario.sourceVoltages.get(net) ?? (scenario.solvedVoltages.get(net) ?? new HighImpedanceValue());
+        }
+
+        return [visitor, voltageValue];
+    });
+
+    context.createFunction(BaseNamespace, 'resistance', (params) => {
+        const args = getPositionParams(params);
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+
+        if (!scenario.evaluateCalled || !scenario.lastConductance) {
+            throw new RuntimeExecutionError('resistance: evaluate() has not been called');
+        }
+
+        const { useComponent, pinId } = resolveComponentPin(scope, args, 'resistance');
+        const net = scope.netMap.get(useComponent, pinId)!;
+
+        const knownVoltages = new Map(scenario.sourceVoltages);
+        const gndNet = scope.netMap.getNetWithName('GND');
+        if (gndNet) {
+            knownVoltages.set(gndNet, numeric(0));
+        }
+
+        const resistanceValue = calculateNetResistance(scenario.lastConductance!, net, knownVoltages);
+        return [visitor, numeric(resistanceValue)];
+    });
+
+    context.createFunction(BaseNamespace, 'resistance_net', (params) => {
+        const args = getPositionParams(params);
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+
+        if (!scenario.evaluateCalled || !scenario.lastConductance) {
+            throw new RuntimeExecutionError('resistance_net: evaluate() has not been called');
+        }
+
+        const netName = args[0] as string;
+        const net = scope.netMap.getNetWithName(netName);
+        if (net === null) {
+            throw new RuntimeExecutionError(`resistance_net: net not found: ${netName}`);
+        }
+
+        const knownVoltages = new Map(scenario.sourceVoltages);
+        const gndNet = scope.netMap.getNetWithName('GND');
+        if (gndNet) {
+            knownVoltages.set(gndNet, numeric(0));
+        }
+
+        const resistanceValue = calculateNetResistance(scenario.lastConductance!, net, knownVoltages);
+        return [visitor, numeric(resistanceValue)];
     });
 
     context.createFunction(BaseNamespace, 'evaluate', (params) => {
@@ -455,10 +530,12 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
                 scenario.currentComponent = null;
             }
 
-            const { netVoltages } = calculateNodeVoltages(
-                scope.netMap, scenario.sourceVoltages, 
+            const { netVoltages, conductance } = calculateNodeVoltages(
+                scope.netMap, scenario.sourceVoltages,
                 scenario.voltageSourceBranches,
                 scenario.driveConstraints);
+
+            scenario.lastConductance = conductance;
 
             for (const [net, voltage] of netVoltages) {
                 scenario.solvedVoltages.set(net, numeric(voltage));
@@ -611,17 +688,24 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 export function unlinkScenarioFunctions(context: ExecutionContext): void {
     // Assume that the functions are in the correct context level
     const functions = [
+        // setter methods
         'set_voltage',
         'set_voltage_diff',
         'set_pull',
         'set_net_voltage',
-        'voltage',
-        'evaluate',
-        'expect',
-        'open',
         'short',
-        'is_z',
         'drive',
+        'open',
+
+        'evaluate',
+
+        // evaluate/getter functions
+        'voltage',
+        'voltage_net',
+        'resistance',
+        'resistance_net',
+        'is_z',
+        'expect',
     ];
 
     functions.forEach(functionName => {

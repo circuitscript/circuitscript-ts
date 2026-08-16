@@ -4,6 +4,7 @@ import { Net } from "./Net";
 import { NumericValue } from "./NumericValue";
 import { BaseError } from "src/errors";
 import { getLinePositionAsString } from "../utils.js";
+import { ConductanceInfo } from "../render/nodal-analysis.js";
 
 export class Scenario {
 
@@ -48,6 +49,12 @@ export class Scenario {
 
 
     virtualCounter = 0;
+
+    /** Conductance matrix/representative bookkeeping from the final evaluate()
+     * iteration's calculateNodeVoltagesV2() solve - reused by resistance() and
+     * resistance_net() instead of rebuilding the matrix on every call. null
+     * until evaluate() has run at least once. */
+    lastConductance: ConductanceInfo | null = null;
 
     getResultString(): string[] {
         const icon = this.finalPass ? "✓" : "✕";

@@ -1,0 +1,48 @@
+from "std" import *
+
+v5 = supply("5V", 5)
+gnd = dgnd()
+
+tmp = create component:
+    pins:
+        1: "IN"
+        2: "VCC"
+        3: "GND"
+
+    arrange:
+        left: "IN"
+        right: "VCC", "GND"
+
+at v5
+wire down 100 right 100
+to tmp pin "VCC"
+
+at tmp pin "GND"
+wire left 100 down 100 to gnd
+
+at tmp pin "IN"
+wire right 100 
+
+branch:
+    wire down 100
+    add res(100k)
+    wire down 100
+    to gnd
+
+wire right 200 
+
+branch:
+    wire down 100
+    add res(10k)
+    wire down 100
+    to gnd
+
+wire right 200
+add label("RES_NET")
+
+create scenario "Resistance builtins match declared/derived values":
+    set_voltage(v5, 5)
+    evaluate()
+    
+    expect(resistance_net("RES_NET") > 9090 and resistance_net("RES_NET") < 9091)
+    expect(resistance(tmp, "IN") > 9090 and resistance(tmp, "IN") < 9091)
