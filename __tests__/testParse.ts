@@ -39,7 +39,23 @@ import {
     inlineScript82,
     inlineScript83,
     inlineScript84,
-    inlineScript85
+    inlineScript85,
+    inlineScriptChain1,
+    inlineScriptChain2,
+    inlineScriptChain3,
+    inlineScriptChain4,
+    inlineScriptChain5,
+    inlineScriptChain6,
+    inlineScriptChain7,
+    inlineScriptChain8,
+    inlineScriptChain9,
+    inlineScriptChain10,
+    inlineScriptChain11,
+    inlineScriptChain12,
+    inlineScriptChain13,
+    inlineScriptChain14,
+    inlineScriptChain15,
+    inlineScriptChain16
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -442,6 +458,25 @@ describe('line continuation tests', () => {
     testInlineScriptTest('.. as keyword argument value', inlineScript83);
     testInlineScriptTest('.. after reassignment reflects new last object', inlineScript84);
     testInlineScriptTest('.. full example2 reproduction', inlineScript85);
+});
+
+describe('chained comparison tests', () => {
+    testInlineScriptTest('simple chain, all true', inlineScriptChain1);
+    testInlineScriptTest('simple chain, first comparison false short-circuits', inlineScriptChain2);
+    testInlineScriptTest('simple chain, second comparison false', inlineScriptChain3);
+    testInlineScriptTest('three-way chain, all true', inlineScriptChain4);
+    testInlineScriptTest('three-way chain, false comparison short-circuits rest', inlineScriptChain5);
+    testInlineScriptTest('chained greater than, all true', inlineScriptChain6);
+    testInlineScriptTest('chained greater than, false', inlineScriptChain7);
+    testInlineScriptTest('chained less-or-equal, all true', inlineScriptChain8);
+    testInlineScriptTest('chained less-or-equal, false', inlineScriptChain9);
+    testInlineScriptTest('mixed operators in chain (< and <=)', inlineScriptChain10);
+    testInlineScriptTest('chained equality', inlineScriptChain11);
+    testInlineScriptTest('chain with variables', inlineScriptChain12);
+    testInlineScriptTest('chain with numeric unit values, all true', inlineScriptChain13);
+    testInlineScriptTest('chain with numeric unit values, false', inlineScriptChain14);
+    testInlineScriptTest('chained comparison used as if condition, true branch', inlineScriptChain15);
+    testInlineScriptTest('chained comparison used as if condition, false branch', inlineScriptChain16);
 });
 
 describe('atom expr and trailers tests', () => {

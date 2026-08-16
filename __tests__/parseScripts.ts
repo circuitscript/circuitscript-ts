@@ -776,6 +776,84 @@ pin_set_type(.., 2, "output")
 print(pin_get_type(.., 2))
 `, ['"output"']);
 
+// Chained comparison tests (e.g. `1 < 2 < 3`)
+export const inlineScriptChain1 = new ScriptTest(`
+print(1 < 2 < 3)
+`, ['true']);
+
+export const inlineScriptChain2 = new ScriptTest(`
+print(3 < 2 < 1)
+`, ['false']);
+
+export const inlineScriptChain3 = new ScriptTest(`
+print(1 < 5 < 3)
+`, ['false']);
+
+export const inlineScriptChain4 = new ScriptTest(`
+print(1 < 2 < 3 < 4)
+`, ['true']);
+
+export const inlineScriptChain5 = new ScriptTest(`
+print(1 < 5 < 3 < 10)
+`, ['false']);
+
+export const inlineScriptChain6 = new ScriptTest(`
+print(3 > 2 > 1)
+`, ['true']);
+
+export const inlineScriptChain7 = new ScriptTest(`
+print(1 > 2 > 3)
+`, ['false']);
+
+export const inlineScriptChain8 = new ScriptTest(`
+print(1 <= 2 <= 2)
+`, ['true']);
+
+export const inlineScriptChain9 = new ScriptTest(`
+print(2 <= 2 <= 1)
+`, ['false']);
+
+export const inlineScriptChain10 = new ScriptTest(`
+print(1 < 2 <= 2)
+`, ['true']);
+
+export const inlineScriptChain11 = new ScriptTest(`
+print(1 == 1 == 1)
+`, ['true']);
+
+export const inlineScriptChain12 = new ScriptTest(`
+a = 5
+b = 10
+c = 15
+print(a < b < c)
+`, ['true']);
+
+export const inlineScriptChain13 = new ScriptTest(`
+print(10k < 20k < 30k)
+`, ['true']);
+
+export const inlineScriptChain14 = new ScriptTest(`
+print(30k < 20k < 10k)
+`, ['false']);
+
+export const inlineScriptChain15 = new ScriptTest(`
+a = 0
+if 1 < 2 < 3:
+    a = 1
+else:
+    a = 2
+print(a)
+`, ['1']);
+
+export const inlineScriptChain16 = new ScriptTest(`
+a = 0
+if 3 < 2 < 1:
+    a = 1
+else:
+    a = 2
+print(a)
+`, ['2']);
+
 // pin_set_type / pin_get_type - explicit component/pin args
 export const inlineScript86 = `
 tmp = create component:

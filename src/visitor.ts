@@ -59,7 +59,7 @@ import {
     CreateNetClassExprContext,
     CreateBusExprContext,
     CreateBehaviorExprContext,
-    Create_scenario_exprContext,
+    Create_scenario_exprContext
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -85,7 +85,7 @@ import { ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
-import { ParserRuleContext } from 'antlr4ng';
+import { ParserRuleContext, Token } from 'antlr4ng';
 import { getPortType } from './utils.js';
 import { BaseError, RuntimeExecutionError, ScenarioRuntimeError } from './errors.js';
 import { UnitDimension } from './helpers.js';
@@ -1538,7 +1538,7 @@ export class ParserVisitor extends BaseVisitor {
         const result = this.visitResult(ctx.create_expr());
         this.setResult(ctx, result);
     }
-
+    
     visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): void => {
         const ctx0 = ctx.data_expr(0)!;
         const ctx1 = ctx.data_expr(1)!;
@@ -1546,16 +1546,41 @@ export class ParserVisitor extends BaseVisitor {
         let value1: number | boolean | NumericValue = this.visitResult(ctx0);
         let value2: number | boolean | NumericValue = this.visitResult(ctx1);
 
-        if (value1 instanceof NumericValue) {
-            value1 = value1.toNumber();
+        const extraData = this.resultMetaData.get(ctx0);
+        if (Array.isArray(extraData) && extraData.length === 2) {
+            // chained comparison handling
+            if (!value1) {
+                // If false then stop parsing further and do not pass an 
+                // extra result data.
+                this.setResult(ctx, false);
+                return;
+            }
+            value1 = extraData[1] as number;
+            
+        } else {
+            if (value1 instanceof NumericValue) {
+                value1 = value1.toNumber();
+            }
+
+            this.checkValueUndefined(value1, ctx.data_expr(0)!);
         }
 
         if (value2 instanceof NumericValue) {
             value2 = value2.toNumber();
         }
 
-        this.checkValueUndefined(value1, ctx.data_expr(0)!);
         this.checkValueUndefined(value2, ctx.data_expr(1)!);
+
+        const result = this.commonBinaryCompare(value1, value2, ctx);
+        this.setResult(ctx, result);
+
+        this.resultMetaData.set(ctx, [value1, value2]);
+    }
+
+    private commonBinaryCompare(
+        value1: number | boolean,
+        value2: number | boolean,
+        ctx: BinaryOperatorExprContext): boolean | null {
 
         let result: boolean | null = null;
 
@@ -1573,8 +1598,9 @@ export class ParserVisitor extends BaseVisitor {
             result = value1 <= value2;
         }
 
-        this.setResult(ctx, result);
+        return result;
     }
+
 
     visitLogicalOperatorExpr = (ctx: LogicalOperatorExprContext): void => {
         const ctx0 = ctx.data_expr(0)!;

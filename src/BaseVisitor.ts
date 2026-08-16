@@ -81,6 +81,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     // Store results before or after a visitor method is called.
     protected resultData = new Map<ParserRuleContext, any>;
 
+    // This is used to store meta data for results.
+    protected resultMetaData = new Map<ParserRuleContext, any>;
+
     // Mapping of contexts to ClassComponent instances. This is used for 
     // refdes annotation comments and only graph related (at, to) rule contexts
     // are tracked.
@@ -1111,6 +1114,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             this.setResult(innerCtx, params);
         }
         this.setResult(ctx, this.visitResult(innerCtx));
+
+        // Pass extra result values as well.
+        if (this.resultMetaData.has(innerCtx)) {
+            this.resultMetaData.set(ctx, this.resultMetaData.get(innerCtx));
+        }
     }
 
     protected handleImportFile(name: string, 
