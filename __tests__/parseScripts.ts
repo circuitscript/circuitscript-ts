@@ -1019,20 +1019,22 @@ export const inlineScriptTests = [
     ["assignment in at/to/add statement", createParseTest(scriptPath, 'script10')],
     ["net namespace local and global", createParseTest(scriptPath, 'script11')],
     ["create component with copy and is net", createParseTest(scriptPath, 'script12')],
-
+    
     /*
     After a function call, the correct graph position should be resumed from.
     This test also checks the join keyword
     */
-    ["correct nets after function call and also `join` keyword", createParseTest(scriptPath, 'script13')],
-    
-    ["path with 'point' keyword", createParseTest(scriptPath, 'script14')],
-    ["path with 'parallel' keyword", createParseTest(scriptPath, 'script15')],
+   ["correct nets after function call and also `join` keyword", createParseTest(scriptPath, 'script13')],
+   
+   ["path with 'point' keyword", createParseTest(scriptPath, 'script14')],
+   ["path with 'parallel' keyword", createParseTest(scriptPath, 'script15')],
+   
+   /*
+   Test that consecutive blocks with different block type
+   are parsed correctly.
+   */
+  ["consecutive blocks with 'join' then 'point'", createParseTest(scriptPath, 'script16')],
+  ['module nets', script20_],
 
-    /*
-    Test that consecutive blocks with different block type
-    are parsed correctly.
-    */
-    ["consecutive blocks with 'join' then 'point'", createParseTest(scriptPath, 'script16')],
-    ['module nets', script20_]
+  ["net namespace computed/string/variable", createParseTest(scriptPath, 'script17')],
 ];

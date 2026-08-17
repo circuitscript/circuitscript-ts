@@ -390,6 +390,11 @@ export function compareSvgToFile(svgFilePath: string, svgString: string, thresho
 }
 
 export async function runScriptExpectError(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst'): Promise<string> {
+    const err = await runScriptExpectErrorObject(script, scriptPath);
+    return (err as any).message ?? String(err);
+}
+
+export async function runScriptExpectErrorObject(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst'): Promise<any> {
     const chars = CharStream.fromString(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -420,20 +425,20 @@ export async function runScriptExpectError(script: string, scriptPath = '__tests
     visitor.enterFile(scriptPath);
     await visitor.resolveImportsAndLoad(scriptPath, script);
 
-    let capturedMessage: string | null = null;
+    let capturedError: any = null;
     try {
         visitor.visit(tree);
     } catch (err) {
-        capturedMessage = (err as any).message ?? String(err);
+        capturedError = err;
     }
 
     visitor.exitFile();
 
-    if (capturedMessage === null) {
+    if (capturedError === null) {
         throw new Error(`Expected script to fail but it succeeded:\n${script}`);
     }
 
-    return capturedMessage;
+    return capturedError;
 }
 
 export async function expectInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): Promise<void> {

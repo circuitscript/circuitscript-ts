@@ -1,0 +1,22 @@
+from "std" import *
+
+anchor = net("ANCHOR")
+
+def sub():
+    add res(0)
+    add res(0)
+    add net("SIG")
+
+at anchor
+for i in range(3):
+    branch:
+        /("ch" + i) sub()
+
+at anchor
+branch:
+    /"lit0" sub()
+
+chname = "var0"
+at anchor
+branch:
+    /chname sub()

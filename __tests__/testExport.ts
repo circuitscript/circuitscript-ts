@@ -122,6 +122,43 @@ describe('export to KiCad', () => {
 
     });
 
+    test('computed net namespace produces three distinct nets per loop iteration', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+anchor = net("ANCHOR")
+
+def sub():
+    add res(0)
+    add res(0)
+    add net("SIG")
+
+at anchor
+for i in range(3):
+    branch:
+        /("ch" + i) sub()
+`);
+        expect(hasError).toBe(false);
+
+        const { tree: kiCadNetList } = generateKiCadNetList(visitor.getNetList());
+        const sExp = new SExpObject(kiCadNetList);
+        const nets = new SExpObject(sExp.getWithId('nets')!);
+        const tmpNets = nets.getJSON() as { nets: { net: { name: string }[] } };
+
+        const netNames = tmpNets.nets.net.map((net) => net.name);
+
+        // Each iteration's SIG net must be distinct and namespaced, not
+        // collapsed onto a single shared/undefined net.
+        expect(netNames).toContain('/ch0/SIG');
+        expect(netNames).toContain('/ch1/SIG');
+        expect(netNames).toContain('/ch2/SIG');
+        expect(netNames.some((name) => name.includes('undefined'))).toBe(false);
+
+        // Exactly one net per iteration should carry the SIG name, and no
+        // net should merge nodes across iterations.
+        expect(netNames.filter((name) => name.endsWith('/SIG'))).toHaveLength(3);
+    });
+
     test('KiCad schematic export resolves a themed (dark=/var=) fill color to its light value', async () => {
         const scriptPath = '__tests__/testData/renderData/script97.cst';
         const script = readFileSync(scriptPath, { encoding: 'utf8' });

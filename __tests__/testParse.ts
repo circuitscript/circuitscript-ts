@@ -3,7 +3,7 @@
 import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
-import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, ScriptTest } from './helpers.js';
+import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
 import {
     inlineScript17, inlineScript18, inlineScript19,
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
@@ -416,6 +416,37 @@ print(---b)
     ])('while, for loop - %s',  async (description, scriptTest) => 
         await expectInlineScriptTest(description, scriptTest)
     );
+
+    test('net namespace with non-string computed expression throws with source position', async () => {
+        const err = await runScriptExpectErrorObject(`
+from "std" import *
+
+def sub():
+    add res(0)
+    add net("SIG")
+
+/(1 + 2) sub()
+`);
+
+        expect(err.message).toContain('did not evaluate to a string');
+        expect(err.startToken).toBeDefined();
+        expect(err.startToken.line).toBeGreaterThan(0);
+    });
+
+    test('net namespace with bare undeclared identifier still resolves (does not throw)', async () => {
+        const { hasError, componentPinNets } = await runScript(`
+from "std" import *
+
+def sub():
+    add res(0)
+    add net("SIG")
+
+/undeclaredVar sub()
+`);
+
+        expect(hasError).toEqual(false);
+        expect(componentPinNets.some(([net]) => net.startsWith('/undeclaredVar/'))).toEqual(true);
+    });
 
     test('wire auto failure case', async () => {
 

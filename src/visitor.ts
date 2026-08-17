@@ -2096,7 +2096,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitNet_namespace_expr = (ctx: Net_namespace_exprContext): void => {
-        let dataValue: AnyReference;
+        let dataValue: AnyReference | string;
 
         let netNamespace = null;
         const hasPlus = ctx.Addition();
@@ -2107,12 +2107,25 @@ export class ParserVisitor extends BaseVisitor {
             this.setResult(ctxDataExpr, {keepReference: true});
             dataValue = this.visitResult(ctxDataExpr);
 
-            if (!dataValue.found) {
-                netNamespace = "/" + dataValue.name;
-            } else if (typeof dataValue === "string") {
+            if (typeof dataValue === "string") {
+                // String literal or computed (e.g. concatenation) expression -
+                // the common case for parametric namespaces such as /("ch" + i).
                 netNamespace = "/" + dataValue;
+            } else if (dataValue instanceof AnyReference && dataValue.found &&
+                       typeof dataValue.value === "string") {
+                // A declared variable holding a string, e.g. `chname = "ch0"` then
+                // `/chname`.
+                netNamespace = "/" + dataValue.value;
+            } else if (dataValue instanceof AnyReference && dataValue.name) {
+                // Bare namespace tag, e.g. `/scope1` - resolveVariable finds no
+                // such declared variable (found === false), but `.name` carries
+                // the identifier text itself, which is the intended namespace
+                // string for this syntax.
+                netNamespace = "/" + dataValue.name;
             } else {
-                throw "Failed to resolve net namespace value";
+                this.throwWithContext(ctxDataExpr,
+                    "Failed to resolve net namespace value: '" +
+                    ctxDataExpr.getText() + "' did not evaluate to a string");
             }
 
         } else {

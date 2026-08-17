@@ -1,0 +1,19 @@
+# Test computed net namespaces produce distinct nets per loop iteration
+from "std" import *
+
+sim = false
+
+anchor = net("ANCHOR")
+
+def sub():
+    add res(0)
+    add res(0)
+    add net("SIG")
+
+at anchor
+for i in range(3):
+    branch:
+        /("ch" + i) sub()
+
+document.sim.title = "Computed net namespace test"
+document.sim.analysis = ".tran 100ns 500us"
