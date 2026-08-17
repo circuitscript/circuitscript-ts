@@ -34,6 +34,10 @@ export class Scenario {
      * targetValue. Reset at the start of every iteration. */
     driveConstraints: { driveNet: Net, targetNet: Net, targetValue: number }[] = [];
 
+    // Drive constraints are reset during the solver/evaluate loop, so this stores
+    // any additional drive constraints that the scenario adds.
+    modifiedDriveConstraints: { driveNet: Net, targetNet: Net, targetValue: number }[] = [];
+    
     description: string | null = null;
 
     currentComponent: ClassComponent | null = null;

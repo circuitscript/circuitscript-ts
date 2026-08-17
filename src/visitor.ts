@@ -1547,16 +1547,24 @@ export class ParserVisitor extends BaseVisitor {
         let value2: number | boolean | NumericValue = this.visitResult(ctx1);
 
         const extraData = this.resultMetaData.get(ctx0);
+        if (extraData === false) {
+            // An earlier link in this chain already short-circuited to false.
+            this.setResult(ctx, false);
+            this.resultMetaData.set(ctx, false);
+            return;
+        }
+
         if (Array.isArray(extraData) && extraData.length === 2) {
             // chained comparison handling
             if (!value1) {
-                // If false then stop parsing further and do not pass an 
+                // If false then stop parsing further and do not pass an
                 // extra result data.
                 this.setResult(ctx, false);
+                this.resultMetaData.set(ctx, false);
                 return;
             }
             value1 = extraData[1] as number;
-            
+
         } else {
             if (value1 instanceof NumericValue) {
                 value1 = value1.toNumber();

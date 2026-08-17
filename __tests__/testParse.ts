@@ -55,7 +55,11 @@ import {
     inlineScriptChain13,
     inlineScriptChain14,
     inlineScriptChain15,
-    inlineScriptChain16
+    inlineScriptChain16,
+    inlineScriptChain17,
+    inlineScriptChain18,
+    inlineScriptChain19,
+    inlineScriptChain20
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -477,6 +481,10 @@ describe('chained comparison tests', () => {
     testInlineScriptTest('chain with numeric unit values, false', inlineScriptChain14);
     testInlineScriptTest('chained comparison used as if condition, true branch', inlineScriptChain15);
     testInlineScriptTest('chained comparison used as if condition, false branch', inlineScriptChain16);
+    testInlineScriptTest('four-way chain, short-circuit on first link', inlineScriptChain17);
+    testInlineScriptTest('four-way chain, short-circuit on first link (descending)', inlineScriptChain18);
+    testInlineScriptTest('five-way chain, all true', inlineScriptChain19);
+    testInlineScriptTest('six-way chain, short-circuit on non-terminal interior link', inlineScriptChain20);
 });
 
 describe('atom expr and trailers tests', () => {

@@ -514,7 +514,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             // Reset source voltages to the original state.
             scenario.sourceVoltages = new Map(scenarioInitialVoltages);
             scenario.voltageSourceBranches = [];
-            scenario.driveConstraints = [];
+            scenario.driveConstraints = [...scenario.modifiedDriveConstraints];
 
             scope.netMap = originalNetMap.clone();
 
@@ -649,17 +649,47 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const outNet = scope.netMap.get(activeComponent, outPin)!;
         const checkNet = scope.netMap.get(activeComponent, checkPin)!;
 
-        /*
-         * Register the constraint so this iteration's nodal solve pins
-         * checkNet's voltage to haltValue via an unknown current injected
-         * at outNet, resolved by the single calculateNodeVoltages() call
-         * already made at the end of the current evaluate() iteration -
-         * same as short()'s zero-diff branches.
-         */
-        scenario.driveConstraints.push({ driveNet: outNet, targetNet: checkNet, targetValue: haltValue });
+        const constraint = scenario.driveConstraints.find(item => {
+            return item.driveNet === outNet && item.targetNet === checkNet
+        });
+
+        if (constraint === undefined) {
+            /*
+            * Register the constraint so this iteration's nodal solve pins
+            * checkNet's voltage to haltValue via an unknown current injected
+            * at outNet, resolved by the single calculateNodeVoltages() call
+            * already made at the end of the current evaluate() iteration -
+            * same as short()'s zero-diff branches.
+            */
+            scenario.driveConstraints.push({ driveNet: outNet, targetNet: checkNet, targetValue: haltValue });
+        }
 
         return [visitor];
     });
+
+
+    context.createFunction(BaseNamespace, 'drive_modify', (params) => {
+        const args = getPositionParams(params);
+
+        const scope = visitor.getScope();
+        const scenario = scope.scenario!;
+
+        const useComponent = args[0] as ClassComponent;
+
+        const outPin = useComponent.getPin(PinId.from(args[1] as string));
+        const checkPin = useComponent.getPin(PinId.from(args[2] as string));
+        const modifiedValue = (args[3] as NumericValue).toNumber();
+
+        const outNet = scope.netMap.get(useComponent, outPin)!;
+        const checkNet = scope.netMap.get(useComponent, checkPin)!;
+
+        scenario.modifiedDriveConstraints.push({ 
+            driveNet: outNet, targetNet: checkNet, 
+            targetValue: modifiedValue });
+
+        return [visitor];
+    });
+
 
     /**
      * Creates a pull condition from a given pin to another pin. This can be 

@@ -854,6 +854,26 @@ else:
 print(a)
 `, ['2']);
 
+export const inlineScriptChain17 = new ScriptTest(`
+print(5 < 1 < 2 < 3)
+`, ['false']);
+
+export const inlineScriptChain18 = new ScriptTest(`
+print(9 < 8 < 7 < 6)
+`, ['false']);
+
+export const inlineScriptChain19 = new ScriptTest(`
+print(1 < 2 < 3 < 4 < 5)
+`, ['true']);
+
+// 6-term chain, short-circuits on the interior 3rd link (3 < 1 is false).
+// Without the fix, that false is lost and coerced to 0, letting the 5th
+// link wrongly compute 0 < 6 = true. This is the case that actually
+// exercises the new extraData === false branch.
+export const inlineScriptChain20 = new ScriptTest(`
+print(1 < 2 < 3 < 1 < 5 < 6)
+`, ['false']);
+
 // pin_set_type / pin_get_type - explicit component/pin args
 export const inlineScript86 = `
 tmp = create component:
