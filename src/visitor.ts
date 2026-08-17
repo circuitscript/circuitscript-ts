@@ -89,7 +89,7 @@ import { ParserRuleContext, Token } from 'antlr4ng';
 import { getPortType } from './utils.js';
 import { BaseError, RuntimeExecutionError, ScenarioRuntimeError } from './errors.js';
 import { UnitDimension } from './helpers.js';
-import { FrameParamKeys } from './objects/Frame.js';
+import { Frame, FrameParamKeys } from './objects/Frame.js';
 import { ComponentAnnotater } from './annotate/ComponentAnnotater.js';
 import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
@@ -2043,6 +2043,16 @@ export class ParserVisitor extends BaseVisitor {
         });
 
         const firstId = ctx.ID().getText();
+
+        if (useObject instanceof Frame
+            && !(Object.values(FrameParamKeys) as string[]).includes(firstId)) {
+            this.warnings.push({
+                message: `Unknown frame property "..${firstId}" is not a recognized frame/sheet `
+                    + `parameter and will be ignored`,
+                ctx,
+            });
+        }
+
         const referenceWithFirstID = this.getExecutor().resolveTrailers(
             null, lastReference.value, [firstId]);
 

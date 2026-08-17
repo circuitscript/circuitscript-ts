@@ -1,0 +1,14 @@
+from "std" import *
+
+vcc = net("3v3")
+gnd = dgnd()
+
+frame:
+    ..widht = 9400
+    ..dirction = "column"
+
+    at vcc
+    wire down 100
+    add res(10k) angle:90
+    wire down 100
+    to gnd

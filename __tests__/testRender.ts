@@ -353,4 +353,31 @@ describe('Render tests', () => {
         expect(messages).toContainEqual(
             expect.stringContaining('specified more than once in arrange property'));
     });
+
+    test('unknown frame property name warns instead of being silently dropped', async () => {
+        const scriptPath = mainPath + 'script102.cst';
+        const { hasError, visitor } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+
+        const messages = visitor.getWarnings().map(warning => warning.message);
+        expect(messages).toContainEqual(
+            expect.stringContaining('Unknown frame property "..widht"'));
+        expect(messages).toContainEqual(
+            expect.stringContaining('Unknown frame property "..dirction"'));
+    });
+
+    test.each(['script3.cst', 'script23.cst'])(
+        'valid frame/sheet property names do not warn (%s)', async (fixture) => {
+        const scriptPath = mainPath + fixture;
+        const { hasError, visitor } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+
+        const messages = visitor.getWarnings().map(warning => warning.message);
+        expect(messages).not.toContainEqual(
+            expect.stringMatching(/Unknown frame property/));
+    });
 });
