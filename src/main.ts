@@ -13,10 +13,9 @@ import figlet from 'figlet';
 
 import { watch } from 'fs';
 
-import { ScriptOptions} from './helpers.js';
+import { ScriptOptions, renderResultHasFailure } from './helpers.js';
 import { renderScript } from "./pipeline.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
-import { _id } from './render/export.js';
 import { printErrorChain } from './errors.js';
 import { VERSION } from './version.js';
 
@@ -93,6 +92,7 @@ export default async function main(): Promise<void> {
                 scriptData = await env.readFile(inputFilePath, { encoding: 'utf-8' });
             } else {
                 console.error("Error: File could not be found");
+                process.exitCode = 1;
                 return;
             }
         }
@@ -159,7 +159,13 @@ export default async function main(): Promise<void> {
                 const scriptData = await env.readFile(inputFilePath,
                     {encoding: 'utf-8'});
 
-                parseFile(scriptData, outputPaths, scriptOptions);
+                // Watch mode is a long-running dev loop; a failure on reload
+                // shouldn't affect the process exit code. parseFile always
+                // sets process.exitCode on failure, so save and restore it
+                // around the reload to isolate this call's effect.
+                const exitCodeBeforeReload = process.exitCode;
+                await parseFile(scriptData, outputPaths, scriptOptions);
+                process.exitCode = exitCodeBeforeReload;
             }
         });
     }
@@ -169,8 +175,8 @@ async function parseFile(scriptData: string, outputPaths: string[],
     scriptOptions: ScriptOptions): Promise<string | null> {
 
     try {
-        const { svgOutput: output, errors } =
-            await renderScript(scriptData, outputPaths, scriptOptions);
+        const result = await renderScript(scriptData, outputPaths, scriptOptions);
+        const { svgOutput: output, errors } = result;
 
         errors.forEach((err, index) => {
             console.log(`[${index}] ${err}`);
@@ -180,10 +186,16 @@ async function parseFile(scriptData: string, outputPaths: string[],
             console.log('Render failed due to syntax or parsing errors');
         }
 
+        if (renderResultHasFailure(result)) {
+            process.exitCode = 1;
+        }
+
         return output;
     } catch (error) {
         console.error(`Unexpected Error:`);
         printErrorChain(error);
+
+        process.exitCode = 1;
     }
 
     return null;

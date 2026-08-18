@@ -22,7 +22,7 @@ export type SVGWindow = any;
 import { NumericValue, resolveToNumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ComponentPinNet, ImportedLibrary } from "./objects/types.js";
-import { ERCReportItem } from "./rules-check/rules.js";
+import { ERCReportItem, ERCSeverity } from "./rules-check/rules.js";
 import { PinId, PinIdType } from "./objects/PinDefinition.js";
 
 export enum JSModuleType {
@@ -125,7 +125,21 @@ export type RenderScriptReturn = {
     ercResults?: ERCReportItem[],
     nets?: ComponentPinNet[],
     scenarioResults?: string[],
+    scenarioFailureCount?: number,
 };
+
+export function renderResultHasFailure(result: RenderScriptReturn): boolean {
+    if (result.errors.length > 0) {
+        return true;
+    }
+    if (result.ercResults?.some(item => item.severity === ERCSeverity.Error)) {
+        return true;
+    }
+    if ((result.scenarioFailureCount ?? 0) > 0) {
+        return true;
+    }
+    return false;
+}
 
 export type ExternalLibAnnotationFile = {
     name: string,

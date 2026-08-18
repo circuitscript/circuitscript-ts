@@ -115,6 +115,16 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     environment.setCurrentFile(inputPath);
     visitor.log(`current file: ${inputPath}`);
 
+    if (options.updateSource) {
+        // When source needs to be updated, disable reading from 
+        // cache to load the full context.
+        visitor.enableCachedImportsRead = false;
+        visitor.enableCacheImports = false;
+
+        // Allow cache to be updated still.
+        visitor.enableCachedImportsWrite = true;
+    }
+
     visitor.onImportFile = (visitor: BaseVisitor, filePath:string, 
         fileData: string, errorHandler, fileLineOffset=0)
         : ImportFileResult => {
@@ -497,6 +507,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     if (visitor.scenarios.length > 0) {
         results.scenarioResults = formatScenarioResults(visitor.scenarios);
+        results.scenarioFailureCount = visitor.scenarios.filter(s => !s.finalPass).length;
     }
 
     return results;

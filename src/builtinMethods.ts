@@ -732,6 +732,7 @@ export function unlinkScenarioFunctions(context: ExecutionContext): void {
         'set_net_voltage',
         'short',
         'drive',
+        'drive_modify',
         'open',
 
         'evaluate',

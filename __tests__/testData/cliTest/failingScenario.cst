@@ -1,0 +1,16 @@
+from "std" import *
+
+vcc = supply("3V3")
+gnd = dgnd()
+
+at vcc
+wire down 100
+add res(1k)
+wire down 100
+to gnd
+
+create scenario:
+    set_voltage(vcc, 3.3)
+    evaluate()
+
+    expect(1 == 2)

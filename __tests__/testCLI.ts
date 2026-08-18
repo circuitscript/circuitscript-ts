@@ -146,4 +146,47 @@ describe('test cli program', () => {
         
         expect(result.trim()).toEqual(expectedSvgOutput.trim());
     });
+
+    describe('exit codes', () => {
+        const rulesCheckPath = '__tests__/testData/rulesCheckData/';
+
+        const runAndGetStatus = (cmd: string): number | undefined => {
+            try {
+                execSync(cmd, { stdio: 'pipe' });
+                return 0;
+            } catch (error) {
+                return (error as { status?: number }).status;
+            }
+        };
+
+        test('exits with status 1 on syntax error', () => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${mainPath}syntaxError.cst -x`);
+            expect(status).toEqual(1);
+        });
+
+        test('exits with status 1 on failing scenario', () => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${mainPath}failingScenario.cst -x`);
+            expect(status).toEqual(1);
+        });
+
+        test('exits with status 1 on ERC error when -e is used', () => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${rulesCheckPath}script6.cst -x -e`);
+            expect(status).toEqual(1);
+        });
+
+        test('exits with status 0 on ERC error when -e is not used', () => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${rulesCheckPath}script6.cst -x`);
+            expect(status).toEqual(0);
+        });
+
+        test('exits with status 0 on a clean script', () => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${renderPath}script1.cst -x`);
+            expect(status).toEqual(0);
+        });
+    });
 });
