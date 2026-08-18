@@ -1,6 +1,111 @@
 # Changelog
 
-## [v0.9.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.3...v0.9.4)
+## [v0.10.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.4...v0.10.0)
+
+[4ba06f9](https://github.com/circuitscript/circuitscript-ts/commit/4ba06f9984ac698cdebd0049c18a3bf16e5c2542)Add behavior states and scenario-based nodal voltage analysis
+- 
+- Introduces behavior blocks for components (is_high/is_low/is_z conditions)
+- and a scenario evaluation system with set_voltage/voltage/short/expect
+- builtins backed by a new nodal analysis solver (src/render/nodal-analysis.ts).
+- Also refactors builtin method argument handling to consistently use
+- getPositionParams instead of indexing raw param tuples.
+
+[6b5721d](https://github.com/circuitscript/circuitscript-ts/commit/6b5721d6961ebd4142086af42a5f238d9378a718)Extract net tracking into NetMap and add golden net test data
+- 
+- Moves component-pin/net bookkeeping out of ExecutionScope and
+- ExecutionContext into a dedicated NetMap class. Render tests now
+- assert against golden .cst.net files in addition to SVG output, and
+- regenerate-tests writes these net dumps alongside the SVGs.
+
+[9657392](https://github.com/circuitscript/circuitscript-ts/commit/96573929c1a86177911ef656ec2b1e3821576dc6)Add pull conditions, net voltage sources, and default behavior states
+- 
+- - set_pull() creates virtual pull-up/down resistors between pins
+- - set_net_voltage() lets scenarios pin a net's voltage directly
+- - Behavior states without a condition now act as a default/fallback
+- applied alongside matched states instead of always requiring one
+- - Rework nodal-analysis net grouping to use graphlib-based connectivity
+- and synthetic node ids instead of Net.toString() for group identity
+- - Reset the net map from a clone each solver iteration so pull resistors
+- and other per-iteration changes don't accumulate across iterations
+- - Distinguish evaluate()-time errors from assertion failures in scenario
+- result reporting
+- - Add script4/5/6 scenario golden-file tests
+
+[cb68ba7](https://github.com/circuitscript/circuitscript-ts/commit/cb68ba728302655d744a74ba27ac033720a2add5)Add named scenarios with pass/fail results and scenario-scoped errors
+- 
+- - Support optional description expression on scenario declarations
+- - Track scenario results (pass/fail with error location) and print a summary after execution
+- - Add ScenarioRuntimeError so expect/evaluate failures surface with source position instead of aborting the run
+- - Reject nested scenarios
+- - Refactor ComponentBehavior to use the visitor directly instead of callback params
+- - Rename getLinePositionAsString's "at " prefix into a separate getLinePositionAsAtString helper
+
+[15b3c7a](https://github.com/circuitscript/circuitscript-ts/commit/15b3c7ad3ce0d399ca5f5de9a5827a7ea5ead231)Rework scenario nodal analysis to an iterative solver with voltage branch and drive constraints
+- 
+- Replace the single-pass voltageStates map with separate sourceVoltages/solvedVoltages maps, add set_voltage_diff, drive, and short-as-branch-constraint support, and iterate evaluate() to convergence so behaviors like conducting diodes settle correctly.
+
+[d54c77a](https://github.com/circuitscript/circuitscript-ts/commit/d54c77a0ef9f5c4eadbb485cbc9c7c3c34538e01)Add resistance() and resistance_net() scenario builtins
+- 
+- Cache the conductance matrix from the final nodal-analysis solve on
+- Scenario so driving-point resistance can be computed for a net without
+- rebuilding the matrix. Also adds voltage_net() and refactors pin/component
+- argument resolution shared by voltage()/resistance() into a helper.
+
+[4adc8db](https://github.com/circuitscript/circuitscript-ts/commit/4adc8db458e9fe63af0cba973ad73a2bc137a9d2)Add golden-file tests for scenario evaluation results
+- 
+- Extract formatScenarioResults() from ParserVisitor and Scenario into a
+- shared helper, expose scenario results through the render pipeline and
+- regenerate-tests script, and add testScenario.ts with SVG and results
+- golden fixtures.
+
+[d731630](https://github.com/circuitscript/circuitscript-ts/commit/d7316301877aa3bdfad8153ecac4424c37ed9ad3)Fix net namespace resolution for computed/string expressions and undeclared identifiers
+- 
+- Previously computed namespaces like /("ch" + i) or variable-held strings
+- could silently collapse onto shared/undefined nets; now they resolve
+- correctly and non-string expressions throw with source position info.
+
+[d26ec69](https://github.com/circuitscript/circuitscript-ts/commit/d26ec6905e4ac4c71b92038af46c00bfc72a9eda)Add support for chained comparison expressions (e.g. 1 &lt; 2 &lt; 3)
+
+[d684075](https://github.com/circuitscript/circuitscript-ts/commit/d6840759e047b17970bd39dd442c41eaf8003492)Scope scenario state into a Scenario object and register scenario functions per-scenario
+- 
+- Extracts scenario-related state (voltage states, current component,
+- virtual counter, evaluate flag) from ExecutionScope into a new
+- Scenario class. Scenario functions (set_voltage, evaluate, expect,
+- etc.) are now linked/unlinked around scenario execution instead of
+- being registered globally alongside other built-ins.
+- 
+- Also renames builtInMethods/linkBuiltInMethods to
+- builtInFunctions/linkBuiltInFunctions for clarity.
+
+[2af8230](https://github.com/circuitscript/circuitscript-ts/commit/2af8230334c33299642e00c3cdf53e9bc0aabf25)Set process exit code on CLI failures and fix cache bypass when updating source
+- 
+- Make main.ts set process.exitCode = 1 on syntax errors, ERC errors, and
+- scenario evaluation failures so CI and scripts can detect failures. Also
+- bypass reading/importing from cache when updateSource is set so the full
+- context loads, while still allowing the cache to be written.
+
+[2295b7a](https://github.com/circuitscript/circuitscript-ts/commit/2295b7a1c9ba4653d9a7694ebe1b8e327ea76066)Access NetMap directly instead of through ExecutionScope wrapper methods
+
+[4713ae7](https://github.com/circuitscript/circuitscript-ts/commit/4713ae7dba66c18657242fae040eb1b2215d2fb5)Fix chained comparison short-circuit propagation and add drive constraint modification support
+- 
+- Chained comparisons like 1 &lt; 2 &lt; 3 &lt; 1 &lt; 5 could incorrectly evaluate
+- to true when an interior link short-circuited to false but the result
+- was later coerced back to a number. Also adds drive_modify to let
+- scenarios persist additional drive constraints across the reset that
+- happens each solver iteration.
+
+[f8f939e](https://github.com/circuitscript/circuitscript-ts/commit/f8f939e41d7d07a1ffd51eb7bb5bd95c5f191c76)Warn on unknown frame/sheet property names instead of silently dropping them
+- 
+- Typos like ..widht or ..dirction were previously ignored without feedback.
+
+[38ff401](https://github.com/circuitscript/circuitscript-ts/commit/38ff401dd22f76fe05f1fe465525a77b1ab52273)Allow instance-level behavior param to override class behavior in scenarios
+- 
+- Adds script9 scenario test covering an LED instance overriding its
+- class behavior to set a fixed voltage drop.
+
+[567bb28](https://github.com/circuitscript/circuitscript-ts/commit/567bb28936e66c9de4f33d92cd102417ffa53c62)Simplify range checks in scenario test scripts using chained comparisons
+
+## [v0.9.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.3...v0.9.4) - 2026-08-04
 
 [0e59942](https://github.com/circuitscript/circuitscript-ts/commit/0e59942486dcd1f835df941aa68fe1c1cf13745a)Propagate tolerance through numeric operators
 - 
