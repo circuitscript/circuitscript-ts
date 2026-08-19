@@ -53,7 +53,7 @@ export class BaseError extends Error {
         });
 
         if(linePosition !== null){
-            parts.push(linePosition);
+            parts.push(` ${linePosition}`);
         }
 
         parts.push(`: ${this.message}`);

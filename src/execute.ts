@@ -37,6 +37,7 @@ import { getBlockTypeString } from './utils.js';
 import { RuntimeExecutionError } from "./errors.js";
 import { NetClass } from './objects/NetClass.js';
 import { PinTypes } from './objects/PinTypes.js';
+import { Scenario } from './objects/Scenario.js';
 
 /** Contains the current running state of the circuit graph */
 export class ExecutionContext {
@@ -67,6 +68,8 @@ export class ExecutionContext {
     }) = null;
 
     resolveComponentPinNet!: (component: ClassComponent, pin: PinId) => Net | null;
+    
+    resolveScenario!: () => Scenario | null;
 
     /** If true, then do no evaluate further expressions. 
      * Used for function state control */

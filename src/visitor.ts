@@ -1618,26 +1618,33 @@ export class ParserVisitor extends BaseVisitor {
         if (value1 instanceof NumericValue){
             value1 = value1.toNumber();
         }
+        this.checkValueUndefined(value1, ctx.data_expr(0)!);
 
-        let value2: number | boolean = false;
-
-        let skipNext = false;
+        
+        // Skip evaluating value2 when value1 already determines the result
+        let skipEvalValue2 = false;
 
         const isLogicalOr = ctx.LogicalOr();
+        const isLogicalAnd = ctx.LogicalAnd();
 
-        if (isLogicalOr && value1){
-            // Since evaluated true already, can skip the parsing of the next
-            skipNext = true;
+        // `||` short-circuits only when value1 is truthy
+        if (isLogicalOr && value1) {
+            skipEvalValue2 = true;
         }
 
-        if (!skipNext){
+        // `&&` short-circuits only when value1 is falsy
+        if (isLogicalAnd && !value1) {
+            skipEvalValue2 = true;
+        }
+        
+        let value2: number | boolean = false;
+        if (!skipEvalValue2){
             value2 = this.visitResult(ctx1);
             if (value2 instanceof NumericValue){
                 value2 = value2.toNumber();
             }    
         }
 
-        this.checkValueUndefined(value1, ctx.data_expr(0)!);
         this.checkValueUndefined(value2, ctx.data_expr(1)!);
         
         let result: number | boolean | null = null;

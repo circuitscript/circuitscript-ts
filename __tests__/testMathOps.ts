@@ -97,7 +97,7 @@ describe('Simple operator tests', () => {
         ['a = 10 && 20', 20],
         ['a = 20 && 10', 10],
         ['a = 10 && 0',  0],
-        ['a = 0  && 10', 0],
+        ['a = 0 && 10', 0],
 
         // Logical Or operator (||) tests
         ['a = 10 || 20', 10],

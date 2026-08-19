@@ -11,6 +11,10 @@ import { ComponentPinNet, ComponentPinNetPair } from "./types.js";
 export class NetMap {
     protected items: ComponentPinNetPair[] = [];
 
+    // Resolver function to find component pin net pairs from parent contexts.
+    componentPinNetPairResolver!: 
+        (instance: ClassComponent, pin: PinId) => ComponentPinNetPair | undefined;
+
     netCounter = 1;
 
     logCallback!: () => void;
@@ -80,15 +84,26 @@ export class NetMap {
         component.pinNets.delete(pin);
     }
 
-    findNet(instance: ClassComponent, pin: PinId): ComponentPinNetPair | undefined {
+    findNet(instance: ClassComponent, pin: PinId, resolve = true): ComponentPinNetPair | undefined {
         if (!(pin instanceof PinId)) {
             throw new RuntimeExecutionError('Invalid value for PinId: ' + pin);
         }
-
-        return this.items.find(([tmpComponent, tmpPin]) => {
+        
+        const found = this.items.find(([tmpComponent, tmpPin]) => {
             // Use manual equality, much faster than using lodash
             return tmpComponent.isEqual(instance) && tmpPin.equals(pin);
         });
+
+        if (found) {
+            return found;
+        }
+        
+        // If resolve is true, then search the parent contexts.
+        if (resolve && found === undefined) {
+            return this.componentPinNetPairResolver(instance, pin);
+        }
+
+        return undefined;
     }
 
     hasNet(instance: ClassComponent, pin: PinId): boolean {
@@ -175,6 +190,7 @@ export class NetMap {
         const cloned = new NetMap();
         cloned.items = this.items.map(([instance, pin, net]) => [instance, pin, net] as ComponentPinNetPair);
         cloned.logCallback = this.logCallback;
+        cloned.componentPinNetPairResolver = this.componentPinNetPairResolver;
         return cloned;
     }
 
