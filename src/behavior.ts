@@ -38,3 +38,5 @@ export class HighImpedanceValue {
         return "[HighImpedance]";
     }
 }
+
+export const HIGH_IMPEDANCE = new HighImpedanceValue();

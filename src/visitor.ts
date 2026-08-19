@@ -95,7 +95,7 @@ import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
-import { ComponentBehavior, HighImpedanceValue } from './behavior.js';
+import { ComponentBehavior, HIGH_IMPEDANCE } from './behavior.js';
 import { Scenario, formatScenarioResults } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
@@ -1142,7 +1142,7 @@ export class ParserVisitor extends BaseVisitor {
         const clonedNetMap = originalNetMap.clone();
 
         clonedNetMap.getNets().forEach(([, , net]) => {
-            scenario.solvedVoltages.set(net, new HighImpedanceValue());
+            scenario.solvedVoltages.set(net, HIGH_IMPEDANCE);
         });
 
         scope.netMap = clonedNetMap;

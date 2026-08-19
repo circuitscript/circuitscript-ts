@@ -19,7 +19,7 @@ import { AllPinTypes, normalizePinType, resolvePinType } from "./objects/PinType
 import { NetClass } from "./objects/NetClass.js";
 import { AcceptedSeverityLevels, ERC_RuleSeverity } from "./rules-check/severity-defaults.js";
 import { PercentageValue } from "./objects/PercentageValue.js";
-import { ComponentBehavior, HighImpedanceValue } from "./behavior.js";
+import { ComponentBehavior, HighImpedanceValue, HIGH_IMPEDANCE } from "./behavior.js";
 import { calculateNodeVoltages, calculateNetResistance } from "./render/nodal-analysis.js";
 import { Scenario } from "./objects/Scenario.js";
 
@@ -413,7 +413,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         } else if (scenario.solvedVoltages.has(net)) {
             voltageValue = scenario.solvedVoltages.get(net);
         } else {
-            voltageValue = new HighImpedanceValue();
+            voltageValue = HIGH_IMPEDANCE;
         }
 
         return [visitor, voltageValue];
@@ -430,7 +430,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         let voltageValue = null;
         if (net !== null) {
             voltageValue =
-                scenario.sourceVoltages.get(net) ?? (scenario.solvedVoltages.get(net) ?? new HighImpedanceValue());
+                scenario.sourceVoltages.get(net) ?? (scenario.solvedVoltages.get(net) ?? HIGH_IMPEDANCE);
         }
 
         return [visitor, voltageValue];
@@ -556,7 +556,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             // high impedance instead of a stale solved value.
             for (const net of scenario.solvedVoltages.keys()) {
                 if (!netVoltages.has(net)) {
-                    scenario.solvedVoltages.set(net, new HighImpedanceValue());
+                    scenario.solvedVoltages.set(net, HIGH_IMPEDANCE);
                 }
             }
 
