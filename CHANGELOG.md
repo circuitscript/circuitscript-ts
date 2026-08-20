@@ -1,6 +1,32 @@
 # Changelog
 
-## [v0.10.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.4...v0.10.0)
+## [v0.10.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.0...v0.10.1)
+
+[3cbbe6e](https://github.com/circuitscript/circuitscript-ts/commit/3cbbe6e3d4921f035aeef1bcf472bc3f8d364338)Allow top-level expressions and optional state titles in behavior blocks
+- 
+- Behavior blocks can now mix plain assignments/calls/flow control alongside
+- state: conditions, and state: accepts an optional title before the
+- condition expression. Update grammar, visitor, and behavior evaluation
+- accordingly, and simplify scenario test scripts that no longer need a
+- bare state: wrapper for unconditional behavior.
+
+[c6b3290](https://github.com/circuitscript/circuitscript-ts/commit/c6b3290fd69d7434a4b2d44d57135c208132c428)Move HighImpedanceValue into NumericValue and propagate it through arithmetic and comparisons
+- 
+- Relocates the Hi-Z sentinel out of behavior.ts to avoid a circular import,
+- adds NaN-like semantics so arithmetic operators and comparisons propagate
+- or short-circuit on Hi-Z operands instead of throwing.
+
+[591ae50](https://github.com/circuitscript/circuitscript-ts/commit/591ae50e0119d1a4c95a1331cfb388f972a0b422)Resolve scenario and component pin nets through parent execution contexts
+- 
+- Fixes scenario functions (set_voltage, evaluate, resistance, etc.) and
+- net lookups losing access to the active scenario/net data when called
+- from nested function contexts. Also fixes && short-circuit evaluation
+- skipping its right-hand side and adds a missing space before line
+- position info in error messages.
+
+[fb4dc9f](https://github.com/circuitscript/circuitscript-ts/commit/fb4dc9fd8e2f6e42763263fc45096dfc8eb441fd)Reuse a shared HighImpedanceValue instance instead of allocating new ones
+
+## [v0.10.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.9.4...v0.10.0) - 2026-08-18
 
 [4ba06f9](https://github.com/circuitscript/circuitscript-ts/commit/4ba06f9984ac698cdebd0049c18a3bf16e5c2542)Add behavior states and scenario-based nodal voltage analysis
 - 
