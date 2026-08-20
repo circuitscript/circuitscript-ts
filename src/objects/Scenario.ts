@@ -1,7 +1,6 @@
-import { HighImpedanceValue } from "src/behavior";
 import { ClassComponent } from "./ClassComponent";
 import { Net } from "./Net";
-import { NumericValue } from "./NumericValue";
+import { HighImpedanceValue, NumericValue } from "./NumericValue";
 import { BaseError } from "src/errors";
 import { getLinePositionAsString } from "../utils.js";
 import { ConductanceInfo } from "../render/nodal-analysis.js";

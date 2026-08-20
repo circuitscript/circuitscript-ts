@@ -12,6 +12,27 @@ import { Big } from 'big.js';
 import { PercentageValue } from "./PercentageValue.js";
 import { WrappedNumber } from "./WrappedNumber.js";
 
+// NaN-like sentinel: represents an unsolved/floating net voltage. Propagates
+// through arithmetic and short-circuits comparisons to false, mirroring
+// IEEE-754 NaN semantics.
+export class HighImpedanceValue {
+    // Nominal brand: without a unique member, this class has no fields and is
+    // structurally compatible with any type (every object satisfies
+    // `toString(): string` via Object.prototype), which breaks TS's ability
+    // to narrow it out of a union in `instanceof`-based type guards.
+    private readonly __brand = "HighImpedanceValue";
+
+    toString(): string {
+        return "[HighImpedance]";
+    }
+}
+
+export const HIGH_IMPEDANCE = new HighImpedanceValue();
+
+export function isHighImpedance(value: unknown): value is HighImpedanceValue {
+    return value instanceof HighImpedanceValue;
+}
+
 export class NumericValue {
     /**
      * This type wraps around values that are parsed from circuitscript code.
@@ -151,7 +172,13 @@ export class NumericValue {
         return applyAbsoluteTolerance(result, t.minus, t.plus);
     }
 
-    eq(value: NumericValue): boolean {
+    eq(value: NumericValue | number | HighImpedanceValue): boolean {
+        if (isHighImpedance(value)) {
+            return false;
+        }
+        if (typeof value === 'number') {
+            value = numeric(value);
+        }
         return this.toBigNumber().eq(value.toBigNumber());
     }
 
@@ -307,9 +334,11 @@ function propagateMultiplicative(
 
 export class NumberOperator {
 
-    prepare(value: number | NumberOperatorType): NumberOperatorType {
+    prepare(value: number | NumberOperatorType | HighImpedanceValue): NumberOperatorType | HighImpedanceValue {
         if (typeof value === 'number') {
             return new WrappedNumber(value);
+        } else if (isHighImpedance(value)) {
+            return value;
         } else if (isReference(value)){
             return value.value;
         } else {
@@ -317,8 +346,12 @@ export class NumberOperator {
         }
     }
 
-    multiply(value1: NumberOperatorType, value2: NumberOperatorType)
-        : NumberOperatorType {
+    multiply(value1: NumberOperatorType | HighImpedanceValue, value2: NumberOperatorType | HighImpedanceValue)
+        : NumberOperatorType | HighImpedanceValue {
+
+        if (isHighImpedance(value1) || isHighImpedance(value2)) {
+            return HIGH_IMPEDANCE;
+        }
 
         if (isPercentage(value1) && isPercentage(value2)) {
             // fraction * fraction, converted back to percent
@@ -345,8 +378,12 @@ export class NumberOperator {
         ));
     }
 
-    divide(value1: NumberOperatorType, value2: NumberOperatorType)
-        : NumberOperatorType {
+    divide(value1: NumberOperatorType | HighImpedanceValue, value2: NumberOperatorType | HighImpedanceValue)
+        : NumberOperatorType | HighImpedanceValue {
+
+        if (isHighImpedance(value1) || isHighImpedance(value2)) {
+            return HIGH_IMPEDANCE;
+        }
 
         if (isPercentage(value1) && isPercentage(value2)) {
             // % cancels: plain ratio
@@ -376,8 +413,12 @@ export class NumberOperator {
         ));
     }
 
-    addition(value1: NumberOperatorType, value2: NumberOperatorType)
-        : NumberOperatorType {
+    addition(value1: NumberOperatorType | HighImpedanceValue, value2: NumberOperatorType | HighImpedanceValue)
+        : NumberOperatorType | HighImpedanceValue {
+
+        if (isHighImpedance(value1) || isHighImpedance(value2)) {
+            return HIGH_IMPEDANCE;
+        }
 
         if (isPercentage(value1) && isPercentage(value2)) {
             return resolveToPercentageValue(
@@ -402,8 +443,12 @@ export class NumberOperator {
         ));
     }
 
-    subtraction(value1: NumberOperatorType, value2: NumberOperatorType)
-        : NumberOperatorType {
+    subtraction(value1: NumberOperatorType | HighImpedanceValue, value2: NumberOperatorType | HighImpedanceValue)
+        : NumberOperatorType | HighImpedanceValue {
+
+        if (isHighImpedance(value1) || isHighImpedance(value2)) {
+            return HIGH_IMPEDANCE;
+        }
 
         if (isPercentage(value1) && isPercentage(value2)) {
             return resolveToPercentageValue(
@@ -433,8 +478,12 @@ export class NumberOperator {
     // Tolerance is intentionally not propagated through modulus: there is no
     // well-defined worst-case bound for an interval-valued modulus without
     // full interval arithmetic, so the result always has empty tolerances.
-    modulus(value1: NumberOperatorType, value2: NumberOperatorType)
-        : NumberOperatorType {
+    modulus(value1: NumberOperatorType | HighImpedanceValue, value2: NumberOperatorType | HighImpedanceValue)
+        : NumberOperatorType | HighImpedanceValue {
+
+        if (isHighImpedance(value1) || isHighImpedance(value2)) {
+            return HIGH_IMPEDANCE;
+        }
 
         if (isPercentage(value1) && isPercentage(value2)) {
             return resolveToPercentageValue(

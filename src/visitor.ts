@@ -65,6 +65,8 @@ import {
 import { ExecutionContext } from './execute.js';
 import { ClassComponent, ModuleComponent } from './objects/ClassComponent.js';
 import {
+    HighImpedanceValue,
+    HIGH_IMPEDANCE,
     NumberOperator,
     NumberOperatorType,
     NumericValue} from './objects/NumericValue.js';
@@ -95,7 +97,7 @@ import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
-import { ComponentBehavior, HIGH_IMPEDANCE } from './behavior.js';
+import { ComponentBehavior } from './behavior.js';
 import { Scenario, formatScenarioResults } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
@@ -1526,6 +1528,8 @@ export class ParserVisitor extends BaseVisitor {
         } else if (ctx.Minus()) {
             if (value instanceof NumericValue){
                 value = value.neg();
+            } else if (value instanceof HighImpedanceValue) {
+                // Hi-Z propagates unchanged through negation.
             } else {
                 this.throwWithContext(ctx, 'Failed to do Negation operator');
             }
@@ -1543,8 +1547,8 @@ export class ParserVisitor extends BaseVisitor {
         const ctx0 = ctx.data_expr(0)!;
         const ctx1 = ctx.data_expr(1)!;
 
-        let value1: number | boolean | NumericValue = this.visitResult(ctx0);
-        let value2: number | boolean | NumericValue = this.visitResult(ctx1);
+        let value1: number | boolean | NumericValue | HighImpedanceValue = this.visitResult(ctx0);
+        let value2: number | boolean | NumericValue | HighImpedanceValue = this.visitResult(ctx1);
 
         const extraData = this.resultMetaData.get(ctx0);
         if (extraData === false) {
@@ -1578,6 +1582,17 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.checkValueUndefined(value2, ctx.data_expr(1)!);
+
+        if (value1 instanceof HighImpedanceValue || value2 instanceof HighImpedanceValue) {
+            // NaN-mirroring: any comparison touching Hi-Z is false, except !=
+            // which is true (Hi-Z never equals anything, including itself).
+            // Store a `false` sentinel (not the raw operands) so a chained
+            // comparison (a < HiZ < b) short-circuits the whole chain to false.
+            const result = ctx.NotEquals() ? true : false;
+            this.setResult(ctx, result);
+            this.resultMetaData.set(ctx, false);
+            return;
+        }
 
         const result = this.commonBinaryCompare(value1, value2, ctx);
         this.setResult(ctx, result);
@@ -1680,7 +1695,7 @@ export class ParserVisitor extends BaseVisitor {
         this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
         this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
 
-        let result: number | null | NumberOperatorType = null;
+        let result: number | null | NumberOperatorType | HighImpedanceValue = null;
         if (ctx.Multiply()) {
             result = operator.multiply(tmpValue1, tmpValue2);
         } else if (ctx.Divide()) {
@@ -1734,7 +1749,7 @@ export class ParserVisitor extends BaseVisitor {
             this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
             this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
 
-            let result: number | null | NumberOperatorType = null;
+            let result: number | null | NumberOperatorType | HighImpedanceValue = null;
             if (ctx.Addition()) {
                 result = operator.addition(tmpValue1, tmpValue2);
             } else if (ctx.Minus()) {

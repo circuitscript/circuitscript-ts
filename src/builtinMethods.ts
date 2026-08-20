@@ -7,7 +7,7 @@
 import Big from "big.js";
 import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
-import { NumericValue, numeric, resolveToNumericValue } from "./objects/NumericValue.js";
+import { HighImpedanceValue, HIGH_IMPEDANCE, NumericValue, numeric, resolveToNumericValue } from "./objects/NumericValue.js";
 import { CallableParameter, CFunctionEntry, ImportedLibrary, NetTypes } from "./objects/types.js";
 import { getLinePositionAsAtString, unwrapValue } from "./utils.js";
 import { RuntimeExecutionError, ScenarioRuntimeError } from "./errors.js";
@@ -19,7 +19,7 @@ import { AllPinTypes, normalizePinType, resolvePinType } from "./objects/PinType
 import { NetClass } from "./objects/NetClass.js";
 import { AcceptedSeverityLevels, ERC_RuleSeverity } from "./rules-check/severity-defaults.js";
 import { PercentageValue } from "./objects/PercentageValue.js";
-import { ComponentBehavior, HighImpedanceValue, HIGH_IMPEDANCE } from "./behavior.js";
+import { ComponentBehavior } from "./behavior.js";
 import { calculateNodeVoltages, calculateNetResistance } from "./render/nodal-analysis.js";
 import { Scenario } from "./objects/Scenario.js";
 

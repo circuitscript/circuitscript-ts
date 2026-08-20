@@ -32,11 +32,3 @@ export class ComponentBehavior {
         }
     }
 }
-
-export class HighImpedanceValue {
-    toString(): string {
-        return "[HighImpedance]";
-    }
-}
-
-export const HIGH_IMPEDANCE = new HighImpedanceValue();

@@ -22,7 +22,7 @@ import { ExecutionContext } from "./execute.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
-import { NumberOperator, NumberOperatorType, numeric, NumericValue, 
+import { HighImpedanceValue, NumberOperator, NumberOperatorType, numeric, NumericValue,
     resolveToNumericValue } from "./objects/NumericValue.js";
 import { PercentageValue } from "./objects/PercentageValue.js";
 import { CallableParameter, ComplexType, 
@@ -569,7 +569,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
             const trailers = leftSideReference.trailers ?? [];
 
-            let currentValue: NumberOperatorType | number | null = null;
+            let currentValue: NumberOperatorType | HighImpedanceValue | number | null = null;
 
             if (trailers.length === 0) {
                 currentValue = this.getExecutor().scope.variables.get(leftSideReference.name) as number;
@@ -586,24 +586,24 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                     'Operator assignment failed: could not get value');
             }
 
-            let newValue: number | NumberOperatorType = 0;
+            let newValue: number | NumberOperatorType | HighImpedanceValue = 0;
 
             const operator = new NumberOperator();
             if (ctx.AdditionAssign()) {
                 newValue = operator.addition(
-                    currentValue as NumberOperatorType, value);
+                    currentValue as NumberOperatorType | HighImpedanceValue, value);
             } else if (ctx.MinusAssign()) {
                 newValue = operator.subtraction(
-                    currentValue as NumberOperatorType, value);
+                    currentValue as NumberOperatorType | HighImpedanceValue, value);
             } else if (ctx.MultiplyAssign()) {
                 newValue = operator.multiply(
-                    currentValue as NumberOperatorType, value);
+                    currentValue as NumberOperatorType | HighImpedanceValue, value);
             } else if (ctx.DivideAssign()) {
                 newValue = operator.divide(
-                    currentValue as NumberOperatorType, value);
+                    currentValue as NumberOperatorType | HighImpedanceValue, value);
             } else if (ctx.ModulusAssign()) {
                 newValue = operator.modulus(
-                    currentValue as NumberOperatorType, value);
+                    currentValue as NumberOperatorType | HighImpedanceValue, value);
             } else {
                 this.throwWithContext(ctx,
                     'Operator assignment failed: could not perform operator');
