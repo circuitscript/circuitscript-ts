@@ -55,6 +55,7 @@ import { CreateBehaviorExprContext } from "./CircuitScriptParser.js";
 import { CreateGraphicExprContext } from "./CircuitScriptParser.js";
 import { CreateModuleExprContext } from "./CircuitScriptParser.js";
 import { Behavior_state_exprContext } from "./CircuitScriptParser.js";
+import { Behavior_block_exprContext } from "./CircuitScriptParser.js";
 import { Behavior_blockContext } from "./CircuitScriptParser.js";
 import { Create_scenario_exprContext } from "./CircuitScriptParser.js";
 import { GraphicForExprContext } from "./CircuitScriptParser.js";
@@ -419,6 +420,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitBehavior_state_expr?: (ctx: Behavior_state_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.behavior_block_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitBehavior_block_expr?: (ctx: Behavior_block_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.behavior_block`.
      * @param ctx the parse tree

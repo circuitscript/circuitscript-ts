@@ -13,8 +13,7 @@ zdrop = create component:
         right: "B"
 
     behavior: create behavior:
-        state:
-            set_voltage_diff("A", "B", 0.7)
+        set_voltage_diff("A", "B", 0.7)
 
 at v5
 wire right 100

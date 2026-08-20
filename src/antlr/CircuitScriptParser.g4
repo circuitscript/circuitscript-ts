@@ -147,11 +147,16 @@ create_expr: CreateComponent Colon properties_block                             
            | CreateBehavior  Colon behavior_block                                                       #CreateBehaviorExpr
            | CreateGraphic (LParen ID RParen)? Colon graphic_expressions_block                          #CreateGraphicExpr
            | CreateModule Colon NEWLINE INDENT (property_expr | property_block_expr | NEWLINE)+ DEDENT  #CreateModuleExpr
-           ;
+;
 
-
-behavior_state_expr: State data_expr? Colon expressions_block;
-behavior_block: NEWLINE INDENT behavior_state_expr+ DEDENT;
+behavior_state_expr: State data_expr+ Colon expressions_block;
+behavior_block_expr:
+	assignment_expr
+	| flow_expressions
+	| callable_expr
+	| behavior_state_expr;
+behavior_block:
+	NEWLINE INDENT (behavior_block_expr | NEWLINE)+ DEDENT;
 
 create_scenario_expr: CreateScenario data_expr? Colon expressions_block;
 

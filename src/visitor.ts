@@ -59,7 +59,9 @@ import {
     CreateNetClassExprContext,
     CreateBusExprContext,
     CreateBehaviorExprContext,
-    Create_scenario_exprContext
+    Create_scenario_exprContext,
+    Behavior_state_exprContext,
+    Behavior_blockContext
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -1168,6 +1170,58 @@ export class ParserVisitor extends BaseVisitor {
         scope.scenario = null;
 
         unlinkScenarioFunctions(this.getExecutor());
+    }
+
+    visitBehavior_block = (ctx: Behavior_blockContext): void => {
+        const items = ctx.behavior_block_expr();
+        for (let i = 0; i < items.length; i++) {
+            const innerCtx = items[i];
+            const ctxAssignmentExpr = innerCtx.assignment_expr();
+            const ctxFlowExpressions = innerCtx.flow_expressions();
+            const ctxCallableExpr = innerCtx.callable_expr();
+            const ctxBehaviorStateExpr = innerCtx.behavior_state_expr();
+
+            if (ctxAssignmentExpr) {
+                this.visit(ctxAssignmentExpr);
+            } else if (ctxFlowExpressions) {
+                this.visit(ctxFlowExpressions);
+            } else if (ctxCallableExpr) {
+                this.visit(ctxCallableExpr);
+            } else if (ctxBehaviorStateExpr) {
+                this.visit(ctxBehaviorStateExpr);
+                
+                // If the state condition is true, then it is match, so 
+                // stop running further expressions.
+                if (this.getResult(ctxBehaviorStateExpr) === true) {
+                    break;
+                }
+            }
+        }
+    }
+
+    visitBehavior_state_expr = (ctx: Behavior_state_exprContext): void => {
+        const ctxDataExpr = ctx.data_expr();
+        if (ctxDataExpr.length > 2) {
+            this.throwWithContext(ctx, 'Invalid state syntax');
+        }
+
+        let ctxCondition: Data_exprContext;
+        let ctxTitle: Data_exprContext | null = null;
+
+        if (ctxDataExpr.length === 2) {
+            ctxTitle = ctxDataExpr[0];
+            ctxCondition = ctxDataExpr[1];
+        } else {
+            ctxCondition = ctxDataExpr[0];
+        }
+
+        const result = this.visitResult(ctxCondition);
+        if (result) {
+            this.visit(ctx.expressions_block());
+            this.setResult(ctx, true);
+        } else {
+            this.setResult(ctx, false);
+        }
     }
 
     visitProperty_block_expr = (ctx: Property_block_exprContext): void  => {

@@ -14,8 +14,7 @@ pulltest = create component:
         right: "VCC", "GND"
 
     behavior: create behavior:
-        state:
-            set_pull("IN", "VCC", 10k)
+        set_pull("IN", "VCC", 10k)
 
 at v5
 wire down 100 right 100

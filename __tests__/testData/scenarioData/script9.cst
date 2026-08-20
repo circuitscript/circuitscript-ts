@@ -2,8 +2,7 @@ from "std" import *
 
 tmp = led("GREEN")
 tmp.behavior = create behavior:
-    state:
-        set_voltage_diff(2, 1, 2.1)
+    set_voltage_diff(2, 1, 2.1)
 
 vcc = supply("3V3")
 gnd = dgnd()
