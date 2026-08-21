@@ -248,14 +248,23 @@ export class SemanticTokensVisitor extends BaseVisitor {
 
         // Check if this is a function call (has parentheses trailer)
         const trailers = ctx.trailer();
-        if (trailers && trailers.length > 0) {
-            // Check if the first trailer is a function call (has LParen)
-            const firstTrailer = trailers[0];
-            if (firstTrailer.LParen()) {
-                this.addSemanticToken(id, [], 'function');
-                return;
+        trailers.forEach((trailer, index) => {
+            if (trailer.LParen() && trailer.RParen()) {
+                if (index === 0) {
+                    this.addSemanticToken(id, [], 'function');
+                }
+
+                const params = trailer.parameters();
+                if (params) {
+                    this.visit(params);
+                }
+            } else {
+                const ctxDataExpr = trailer.data_expr();
+                if (ctxDataExpr) {
+                    this.visit(ctxDataExpr);
+                }
             }
-        }
+        });
     }
 
     /**
@@ -479,7 +488,9 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
 
 /** CircuitScript language keywords for basic syntax highlighting */
 const languageKeywords = [
-    'break', 'branch', 'createcomponent', 'creategraphic', 'createmodule',
+    'break', 'branch', 
+    'createcomponent', 'creategraphic', 'createmodule',
+    'createbehavior', 'createscenario',
     'wire', 'pin', 'add', 'at', 'to',
     'point', 'join', 'parallel', 'return', 'def', 'from', 'import',
     'true', 'false', 'nc', 'sheet', 'frame', 'if', 'else', 'for', 'in',

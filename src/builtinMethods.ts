@@ -53,17 +53,29 @@ const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
 
     // Returns the net of the current cursor
     ['net_get', null],
-    
-    // For scenarios
-    // ['set_voltage', null],
-    // ['evaluate', null],
-    // ['expect', null],
-    
-    // ['is_z', null],
-    // ['short', null]
 ];
 
-export const buildInFunctionsNamesList:string[] = builtInFunctions.map(item => item[0]);
+export const builtInFunctionsNamesList:string[] = builtInFunctions.map(item => item[0]);
+export const builtInBehaviorFunctionsNamesList: string[] = [
+    'set_voltage',
+    'set_voltage_diff',
+    'set_pull',
+    'set_net_voltage',
+    'short',
+    'drive',
+    'drive_modify',
+    'open',
+
+    'evaluate',
+
+    // evaluate/getter functions
+    'voltage',
+    'voltage_net',
+    'resistance',
+    'resistance_net',
+    'is_z',
+    'expect'
+];
 
 export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVisitor): void {
 
@@ -727,29 +739,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 
 export function unlinkScenarioFunctions(context: ExecutionContext): void {
     // Assume that the functions are in the correct context level
-    const functions = [
-        // setter methods
-        'set_voltage',
-        'set_voltage_diff',
-        'set_pull',
-        'set_net_voltage',
-        'short',
-        'drive',
-        'drive_modify',
-        'open',
-
-        'evaluate',
-
-        // evaluate/getter functions
-        'voltage',
-        'voltage_net',
-        'resistance',
-        'resistance_net',
-        'is_z',
-        'expect',
-    ];
-
-    functions.forEach(functionName => {
+    builtInBehaviorFunctionsNamesList.forEach(functionName => {
         const functionPath = `${context.namespace}${functionName}`;
         if (context.scope.functions.has(functionPath)) {
             context.scope.functions.delete(functionPath);

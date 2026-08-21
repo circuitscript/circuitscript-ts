@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { TerminalNode, Token } from "antlr4ng";
-import { Assignment_exprContext, CallableExprContext,
+import { Assignment_exprContext,
     UnaryOperatorExprContext,
     MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext,
     Function_def_exprContext,
@@ -13,9 +13,12 @@ import { Assignment_exprContext, CallableExprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
     CreateGraphicExprContext,
-    TrailerContext} from "../antlr/CircuitScriptParser.js";
+    TrailerContext,
+    CreateBehaviorExprContext,
+    Create_scenario_exprContext,
+    Callable_exprContext} from "../antlr/CircuitScriptParser.js";
 
-import { buildInFunctionsNamesList } from "../builtinMethods.js";
+import { builtInBehaviorFunctionsNamesList, builtInFunctionsNamesList, linkScenarioFunctions, unlinkScenarioFunctions } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
 import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionHandling, ParseSymbolType } from "../objects/types.js";
 import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
@@ -66,6 +69,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
     /** @brief Symbol table maintaining all variables, functions, and undefined references */
     symbolTable = new SymbolTable();
+
+    builtInMethods: string[] = [...builtInFunctionsNamesList];
 
     /**
      * @brief Adds a variable symbol to the symbol table in the specified execution context
@@ -141,7 +146,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         if (this.symbolTable.exists(executor, atomId)) {
             tmpSymbol = this.symbolTable.get(executor, atomId);
         } else {
-            if (buildInFunctionsNamesList.indexOf(atomId) !== -1) {
+            if (this.builtInMethods.indexOf(atomId) !== -1) {
                 // If it's built-in method and the symbol does not exist
                 // in the symbol table yet, then add it
                 tmpSymbol = this.symbolTable.addFunction(
@@ -316,25 +321,27 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * since both parse as `callable_expr` in the grammar. Resolves the symbol
      * and visits any call parameters for scope analysis.
      */
-    visitCallableExpr = (ctx: CallableExprContext): void => {
-        const innerCtx = ctx.callable_expr();
-
-        const innerCtxID = innerCtx.ID();
-        if (AllPinTypes.indexOf(innerCtxID.getText()) !== -1 && innerCtx.trailer().length === 0) {
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
+        const ctxID = ctx.ID();
+        if (AllPinTypes.indexOf(ctx.getText()) !== -1 && ctx.trailer().length === 0) {
             // Ignore pin types constants.
             return;
         } else {
-            const tmpSymbol = this.handleAtomSymbol(innerCtxID);
-            innerCtx.trailer().forEach(trailer => {
+            const tmpSymbol = this.handleAtomSymbol(ctxID);
+            ctx.trailer().forEach(trailer => {
                 if (trailer.LParen() && trailer.RParen()) {
-                    
                     const params = trailer.parameters();
                     if (params) {
                         this.visit(params);
                     }
+                } else {
+                    const ctxDataExpr = trailer.data_expr();
+                    if (ctxDataExpr) {
+                        this.visit(ctxDataExpr);
+                    }
                 }
             });
-    
+
             this.setResult(ctx, tmpSymbol);
         }
     };
@@ -467,7 +474,40 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     }
     
     visitTrailer = (ctx: TrailerContext): void => {
-        // Do nothing
+        const ctxParameters = ctx.parameters();
+        const ctxDataExpr = ctx.data_expr();
+        if (ctxParameters) {
+            this.visit(ctxParameters);
+        } else if (ctxDataExpr) {
+            this.visit(ctxDataExpr);
+        }
+    }
+
+    private withScenarioFunctions(callback: () => void): void {
+        linkScenarioFunctions(this.getExecutor(), this);
+        this.builtInMethods = [
+            ...builtInFunctionsNamesList,
+            ...builtInBehaviorFunctionsNamesList,
+        ];
+
+        callback();
+
+        unlinkScenarioFunctions(this.getExecutor());
+        this.builtInMethods = [
+            ...builtInFunctionsNamesList
+        ];
+    }
+
+    visitCreateBehaviorExpr = (ctx: CreateBehaviorExprContext): void => {
+        this.withScenarioFunctions(() => {
+            this.visit(ctx.behavior_block());
+        });
+    }
+
+    visitCreate_scenario_expr = (ctx: Create_scenario_exprContext): void => {
+        this.withScenarioFunctions(() => {
+            this.visit(ctx.expressions_block());
+        });
     }
 
     //

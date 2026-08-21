@@ -9,7 +9,7 @@
 
 import { program } from 'commander';
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync } from 'fs';
 
 import { getSemanticTokens } from "./semantic-tokens/getSemanticTokens.js";
 import { validateScript } from "./validate/validateScript.js";
@@ -19,6 +19,8 @@ import { Token } from 'antlr4ng';
 import { ParseSymbolType } from './objects/types.js';
 import { SymbolTableItemDefined } from './validate/SymbolTable.js';
 import { VERSION } from './version.js';
+import { buildTokenAnnotations } from './validate/buildValidationHtmlData.js';
+import { renderValidationHtml } from './validate/renderValidationHtml.js';
 
 export default async function validate(): Promise<void> {
     const env = new NodeScriptEnvironment();
@@ -35,7 +37,8 @@ export default async function validate(): Promise<void> {
         .option('-n, --dump-nets', 'Dump out net information')
         .option('-d, --dump-data', 'Dump data during parsing')
         .option('-s, --stats', 'Show stats during generation')
-        .option('-x, --skip-output', 'Skip output generation');
+        .option('-x, --skip-output', 'Skip output generation')
+        .option('-o, --output-format <format>', 'Output format: text or html', 'text');
 
     if (process.argv.length < 3){
         program.help();
@@ -67,6 +70,11 @@ export default async function validate(): Promise<void> {
         return;
     }
 
+    if (options.outputFormat === 'html' && !args[1]) {
+        console.error("Error: Output path is required for html format");
+        return;
+    }
+
     let scriptData: string;
     if (args.length > 0 && args[0]) {
         inputFilePath = args[0];
@@ -94,49 +102,64 @@ export default async function validate(): Promise<void> {
     const visitor = await validateScript(inputFilePath, scriptData, scriptOptions);
     const symbols = visitor.getSymbols().getSymbols();
 
-    const undefinedSymbols = [];
-
-    console.log('----- symbols -----');
-    symbols.forEach((value, key) => {
-        if (value.type !== ParseSymbolType.Undefined) {
-            value = value as SymbolTableItemDefined;
-
-            const token = (value.token as Token);
-            console.log(key, value.fileName, token !== null ? (token.line + ":" + token.column) : "");
-
-            value.instances.forEach(instance => {
-                console.log("    " + instance.line + ":" + instance.column+ " " + instance.start);
-            });
-        } else {
-            undefinedSymbols.push(value);
-        }
-    });
-
-    console.log('----- tokens -----');
-    const { parsedTokens} = await getSemanticTokens(inputFilePath, 
+    const { parsedTokens } = await getSemanticTokens(inputFilePath,
         scriptData, scriptOptions);
 
-    console.log('----- dump tokens -----')
-    parsedTokens.forEach(item => {
-        const {line, column, tokenType, tokenModifiers, textValue} = item;
-        console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);
-    });
+    if (options.outputFormat === 'html') {
+        const annotations = buildTokenAnnotations(parsedTokens, symbols);
+        const html = renderValidationHtml(scriptData, annotations, inputFilePath);
+        const outputPath = args[1];
+        writeFileSync(outputPath, html);
+        console.log(`Wrote validation HTML to ${outputPath}`);
+    } else {
+        const undefinedSymbols = [];
 
-    console.log('--- undefined ---');
-    undefinedSymbols.forEach(symbol => {
-        const {token} = symbol;
-        const info = {
-            start: {
-                line: (token?.line || 1),
-                character: token?.column || 0
-            },
-            end: {
-                line: (token?.line || 1),
-                character: (token?.column || 0) + ((token?.stop || 0) - (token?.start || 0) + 1)
+        console.log('----- symbols -----');
+        symbols.forEach((value, key) => {
+            if (value.type !== ParseSymbolType.Undefined) {
+                value = value as SymbolTableItemDefined;
+
+                const token = (value.token as Token);
+                console.log(key, value.fileName, token !== null ? (token.line + ":" + token.column) : "");
+
+                value.instances.forEach(instance => {
+                    console.log("    " + instance.line + ":" + instance.column+ " " + instance.start);
+                });
+            } else {
+                undefinedSymbols.push(value);
             }
+        });
+
+        console.log('----- tokens -----');
+
+        console.log('----- dump tokens -----')
+        parsedTokens.forEach(item => {
+            const {line, column, tokenType, tokenModifiers, textValue} = item;
+            console.log(`${line}:${column} - ${textValue} - ${tokenType} | ${tokenModifiers.join(',')}`);
+        });
+
+        console.log('--- undefined ---');
+
+        if (undefinedSymbols.length === 0){
+            console.log('( no undefined symbols )');
         }
-        console.log(token.text, info);
-    })
+
+
+        undefinedSymbols.forEach(symbol => {
+            const {token} = symbol;
+            const info = {
+                start: {
+                    line: (token?.line || 1),
+                    character: token?.column || 0
+                },
+                end: {
+                    line: (token?.line || 1),
+                    character: (token?.column || 0) + ((token?.stop || 0) - (token?.start || 0) + 1)
+                }
+            }
+            console.log(token.text, info);
+        })
+    }
 }
 
 validate();

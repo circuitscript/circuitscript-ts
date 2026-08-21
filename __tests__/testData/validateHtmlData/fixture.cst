@@ -1,0 +1,4 @@
+myVar = 10
+result = myVar + 5
+check = myVar < 20 && result > 0
+missing = undefinedThing

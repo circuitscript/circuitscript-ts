@@ -61,7 +61,11 @@ export async function validateScript(filePath: string, scriptData: string,
     };
 
     // First pass defines variables, functions
-    visitor.visit(tree);
+    try {
+        visitor.visit(tree);
+    } catch (err) {
+        throw new ParseError(`Error parsing validation in file: ${err}`);
+    }
 
     const symbolTable = visitor.getSymbols();
     symbolTable.clearUndefined();
@@ -80,7 +84,11 @@ export async function validateScript(filePath: string, scriptData: string,
     visitorResolver.onImportFile = visitor.onImportFile;
 
     // Second pass to resolve variables, functions
-    visitorResolver.visit(tree);
+    try {
+        visitorResolver.visit(tree);
+    } catch (err) {
+        throw new ParseError(`Error resolving validation in file: ${err}`);
+    }
 
     return visitorResolver;
 }
