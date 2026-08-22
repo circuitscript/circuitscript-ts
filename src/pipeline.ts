@@ -28,6 +28,8 @@ import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
+import { generateComponentMetadata } from "./render/generateComponentMetadata.js";
+import { generateHtmlOutput } from "./render/generateHtmlOutput.js";
 import { ERCReportItem, ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
 import { printWarnings, generateDebugSequenceAction, 
     sequenceActionString, SimpleStopwatch} from "./utils.js";
@@ -479,6 +481,14 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                                 doc.end();
                             } catch (err) {
                                 throw new RenderError(`Error generating PDF file: ${err}`, 'pdf_output');
+                            }
+                        } else if (ext === 'html') {
+                            try {
+                                const componentMeta = generateComponentMetadata(sheetFrames);
+                                const htmlOutput = generateHtmlOutput(svgOutput, componentMeta, environment);
+                                environment.writeFileSync(outPath, htmlOutput);
+                            } catch (err) {
+                                throw new RenderError(`Error generating HTML file: ${err}`, 'html_output');
                             }
                         } else {
                             throw new RenderError(`Invalid output format: ${ext}`, 'file_output');

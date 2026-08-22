@@ -13,6 +13,12 @@ import { BlockTypes } from "./objects/BlockTypes.js";
 import { DeclaredReference, AnyReference } from './objects/types.js';
 import { roundValue } from "./objects/NumericValue.js";
 
+/** Replaces any character not valid/safe in an unescaped HTML `id` attribute
+ * with `-`, so generated component identifiers are safe to embed in the DOM. */
+export function sanitizeDomId(raw: string): string {
+    return raw.replace(/[^A-Za-z0-9_-]/g, '-');
+}
+
 export class SimpleStopwatch {
     startTime: number;
 

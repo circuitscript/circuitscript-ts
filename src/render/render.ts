@@ -19,7 +19,7 @@ import {
     defaultPageSpacingMM,
     fontDisplayScale} from '../globals.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
-import { BoundBox, combineMaps, getBoundsSize } from '../utils.js';
+import { BoundBox, combineMaps, getBoundsSize, sanitizeDomId } from '../utils.js';
 import { milsToMM } from '../helpers.js';
 import { getPaperSize } from "./PaperSizes.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
@@ -185,8 +185,8 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
 
         // Draw all SVG children within the grid bounds only
         generateSVGChild(sheetElements, components, wires, junctions,
-            mergedWires, allFrames, textObjects, gridProperties, styles, 
-            logger, colorRegistry);
+            mergedWires, allFrames, textObjects, gridProperties, styles,
+            logger, colorRegistry, index);
 
         sheetElements.translate(xOffset, yOffset);
         sheetGroup.translate(0, sheetYOffset.toNumber());
@@ -307,7 +307,8 @@ function generateSVGChild(canvas: Svg | G,
     gridProperties: GridProperties,
     styles: Styles,
     logger: Logger,
-    colorRegistry: CustomColorVarRegistry): void {
+    colorRegistry: CustomColorVarRegistry,
+    sheetIndex: number): void {
 
     const displayWireId = false;
     
@@ -331,6 +332,8 @@ function generateSVGChild(canvas: Svg | G,
     components.forEach(item => {
         const { x, y, width, height } = item;
         const symbolGroup = canvas.group();
+        symbolGroup.id(sanitizeDomId(`comp-${sheetIndex}-${item.component.instanceName}`));
+        symbolGroup.addClass('cs-component');
         symbolGroup.translate(x.toNumber(), y.toNumber());
 
         const tooltip = componentTooltip(item.component);

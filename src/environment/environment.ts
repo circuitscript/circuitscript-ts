@@ -125,6 +125,14 @@ export class NodeScriptEnvironment {
         return path.normalize(this.getToolsPath() + "fonts");
     }
 
+    getViewerAssetsPath(): string {
+        return path.normalize(this.getToolsPath() + "viewer");
+    }
+
+    getRelativeToViewerAssets(filePath: string): string {
+        return path.join(this.getViewerAssetsPath(), filePath);
+    }
+
     getDefaultLibsPath(): string {
         if (this.useDefaultLibsPath !== null) {
             return this.useDefaultLibsPath;

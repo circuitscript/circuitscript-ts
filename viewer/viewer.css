@@ -1,0 +1,97 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#cs-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    background: #fafafa;
+    cursor: grab;
+}
+#cs-viewport.cs-dragging {
+    cursor: grabbing;
+}
+#cs-pan-zoom {
+    transform-origin: 0 0;
+    width: 0;
+    height: 0;
+}
+#cs-pan-zoom svg {
+    overflow: visible;
+    display: block;
+}
+.cs-component {
+    cursor: pointer;
+}
+#cs-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    background: #fff;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+    transform: translateX(0);
+    transition: transform 0.2s ease;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 8px;
+    z-index: 10;
+}
+#cs-panel.cs-hidden {
+    transform: translateX(100%);
+}
+#cs-panel-close {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    border: none;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 8px;
+}
+#cs-panel-content h2 {
+    margin: 0 24px 4px 0;
+    font-size: 18px;
+}
+#cs-panel-content h3 {
+    margin: 16px 0 4px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: #666;
+}
+#cs-panel-content table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+#cs-panel-content th, #cs-panel-content td {
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid #eee;
+    word-break: break-all;
+}
+
+#cs-panel-content table.parameters td:nth-child(1) {
+    width: 30%;
+}
+#cs-panel-content .instance-name {
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
+    word-break: break-all;
+}
+
+#cs-panel-content table tr th:nth-child(1), #cs-panel-content table tr td:nth-child(1){
+    padding-left: 0;
+}

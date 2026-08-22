@@ -26,7 +26,7 @@ export default async function main(): Promise<void> {
     const collectOutputPaths = (val: string, prev: string[]) => [...prev, val];
 
     program
-        .description('generate graphical output from circuitscript files (supported output formats: svg, pdf, kicad_sch, net, cir)')
+        .description('generate graphical output from circuitscript files (supported output formats: svg, pdf, kicad_sch, net, cir, html)')
         .version(VERSION)
         .argument('[input path]', 'Input path')
         .argument('[output path]', 'Output path (extension selects format, see below)')
@@ -61,6 +61,7 @@ Supported output formats (selected by output path extension):
   .kicad_sch   KiCad schematic file
   .pdf         PDF schematic drawing
   .cir         ngspice simulation netlist
+  .html        Interactive HTML viewer (pan/zoom, click-to-inspect)
 `);
 
     if (process.argv.length < 3){
