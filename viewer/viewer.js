@@ -10,6 +10,9 @@
     var panel = document.getElementById('cs-panel');
     var panelContent = document.getElementById('cs-panel-content');
     var panelClose = document.getElementById('cs-panel-close');
+    var zoomInBtn = document.getElementById('cs-zoom-in');
+    var zoomOutBtn = document.getElementById('cs-zoom-out');
+    var zoomFitBtn = document.getElementById('cs-zoom-fit');
 
     var scale = 1;
     var translate = { x: 0, y: 0 };
@@ -183,6 +186,18 @@
     document.addEventListener('pointerup', endDrag);
     document.addEventListener('pointercancel', endDrag);
 
+    function zoomBy(factor, centerPoint) {
+        var newScale = scale * factor;
+        newScale = Math.min(10, Math.max(0.1, newScale));
+
+        translate.x = centerPoint.x - (centerPoint.x - translate.x) * (newScale / scale);
+        translate.y = centerPoint.y - (centerPoint.y - translate.y) * (newScale / scale);
+        scale = newScale;
+
+        applyTransform();
+        refreshHighlightPositions();
+    }
+
     viewport.addEventListener('wheel', function (event) {
         event.preventDefault();
 
@@ -190,16 +205,67 @@
         var cursor = { x: event.clientX - rect.left, y: event.clientY - rect.top };
 
         var zoomFactor = Math.exp(-event.deltaY * 0.001);
-        var newScale = scale * zoomFactor;
-        newScale = Math.min(10, Math.max(0.1, newScale));
+        zoomBy(zoomFactor, cursor);
+    }, { passive: false });
 
-        translate.x = cursor.x - (cursor.x - translate.x) * (newScale / scale);
-        translate.y = cursor.y - (cursor.y - translate.y) * (newScale / scale);
-        scale = newScale;
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function () {
+            var rect = viewport.getBoundingClientRect();
+            zoomBy(1.2, { x: rect.width / 2, y: rect.height / 2 });
+        });
+    }
+
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function () {
+            var rect = viewport.getBoundingClientRect();
+            zoomBy(1 / 1.2, { x: rect.width / 2, y: rect.height / 2 });
+        });
+    }
+
+    function fitToView() {
+        var svg = panZoom.querySelector('svg');
+        if (!svg) return;
+
+        var bbox = svg.getBBox();
+        var contentWidth = bbox.width * svgInternalScale;
+        var contentHeight = bbox.height * svgInternalScale;
+        var contentX = bbox.x * svgInternalScale;
+        var contentY = bbox.y * svgInternalScale;
+
+        if (contentWidth <= 0 || contentHeight <= 0) {
+            scale = 1;
+            translate = { x: 0, y: 0 };
+            applyTransform();
+            refreshHighlightPositions();
+            return;
+        }
+
+        var vrect = viewport.getBoundingClientRect();
+        var fitScale = Math.min(vrect.width / contentWidth, vrect.height / contentHeight) * 0.9;
+
+        if (!isFinite(fitScale) || fitScale <= 0) {
+            scale = 1;
+            translate = { x: 0, y: 0 };
+            applyTransform();
+            refreshHighlightPositions();
+            return;
+        }
+
+        fitScale = Math.min(10, Math.max(0.1, fitScale));
+
+        translate.x = vrect.width / 2 - (contentX + contentWidth / 2) * fitScale;
+        translate.y = vrect.height / 2 - (contentY + contentHeight / 2) * fitScale;
+        scale = fitScale;
 
         applyTransform();
         refreshHighlightPositions();
-    }, { passive: false });
+    }
+
+    if (zoomFitBtn) {
+        zoomFitBtn.addEventListener('click', function () {
+            fitToView();
+        });
+    }
 
     panZoom.addEventListener('pointerover', function (event) {
         var target = event.target.closest ? event.target.closest('.cs-component') : null;

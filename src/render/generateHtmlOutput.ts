@@ -6,6 +6,7 @@
  */
 import { ComponentMeta } from './generateComponentMetadata.js';
 import { NodeScriptEnvironment } from '../environment/environment.js';
+import { VERSION } from '../version.js';
 
 export function generateHtmlOutput(
     svgOutput: string,
@@ -34,6 +35,15 @@ export function generateHtmlOutput(
 <body>
   <div id="cs-viewport">
     <div id="cs-pan-zoom">${svgOutput}</div>
+  </div>
+  <div id="cs-hint">
+    <p>Scroll/pinch to zoom &middot; drag to pan &middot; click an item to inspect</p>
+    <div id="cs-hint-controls">
+        <button id="cs-zoom-in" type="button" title="Zoom in">+</button>
+        <button id="cs-zoom-out" type="button" title="Zoom out">&minus;</button>
+        <button id="cs-zoom-fit" type="button" title="Show all">Show all</button>
+    </div>
+    <p id="cs-hint-version">CircuitScript v${VERSION}</p>
   </div>
   <div id="cs-panel" class="cs-hidden">
     <button id="cs-panel-close">&times;</button>
