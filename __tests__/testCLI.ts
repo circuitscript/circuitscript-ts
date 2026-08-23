@@ -39,17 +39,22 @@ describe('test cli program', () => {
                                     (default: "9")
   --no-simplify-refdes              Disable simplification of single-instance
                                     indexed refdes (e.g. R1_1 → R1)
-  --o <fileName>                    Additional output path (can be repeated),
-                                    see below (default: [])
+  --o <fileName>                    Additional output paths, see below
+                                    (default: [])
   -h, --help                        display help for command
 
 Supported output formats (selected by output path extension):
-  .svg         Scalable Vector Graphics schematic drawing
+  .svg         SVG schematic drawing
   .net         KiCad netlist file (for PCB import)
   .kicad_sch   KiCad schematic file
+  .html        Interactive HTML viewer (pan/zoom, click-to-inspect)
   .pdf         PDF schematic drawing
   .cir         ngspice simulation netlist
 `
+
+        if (!result.includes(options)){
+            console.log('failed comparison, got: ', result);
+        }
 
         expect(result.includes(options)).toBe(true);
     });

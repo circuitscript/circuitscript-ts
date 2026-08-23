@@ -37,9 +37,16 @@ import { addDefaultStyleClasses, applyClassWithOverrides, CustomColorVarRegistry
 * canvas via svg.js's remember()/remembered() - the simplest way to carry it
 * from renderSheetsToSVG() through to generatePdfOutput() without changing
 * the signature of every call site in between (svgCanvas is reused for both
-* SVG and PDF output from a single render pass, see pipeline.ts).
+* SVG and PDF output from a single render pass, see pipeline.ts). Note that
+* HTML viewer output comes from a *second*, separate render pass with
+* interactiveAttributes enabled, so SVG/PDF stay free of viewer-only markup.
 */
 const ColorRegistryMemoryKey = 'cs-color-registry';
+
+/* Stroke width (mm) of the transparent highlight layer drawn for every net
+* when interactive attributes are enabled - wide enough to read as a halo
+* behind the wire once the viewer's CSS colours it in. */
+const interactiveHighlightWidth = 15 * MilsToMM;
 
 function componentTooltip(component: ClassComponent): string | null {
     const creation = component.ctxReferences.find(r => r.creationFlag)
@@ -75,7 +82,8 @@ function createSvgCanvas(): Svg {
 }
 
 export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
-    documentVariable: DocumentVariable, styles: Styles): Svg {
+    documentVariable: DocumentVariable, styles: Styles,
+    interactiveAttributes = false): Svg {
 
     const canvas = createSvgCanvas();
     const colorRegistry: CustomColorVarRegistry = new Map();
@@ -186,7 +194,7 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
         // Draw all SVG children within the grid bounds only
         generateSVGChild(sheetElements, components, wires, junctions,
             mergedWires, allFrames, textObjects, gridProperties, styles,
-            logger, colorRegistry, index);
+            logger, colorRegistry, index, interactiveAttributes);
 
         sheetElements.translate(xOffset, yOffset);
         sheetGroup.translate(0, sheetYOffset.toNumber());
@@ -308,7 +316,8 @@ function generateSVGChild(canvas: Svg | G,
     styles: Styles,
     logger: Logger,
     colorRegistry: CustomColorVarRegistry,
-    sheetIndex: number): void {
+    sheetIndex: number,
+    interactiveAttributes = false): void {
 
     const displayWireId = false;
     
@@ -332,8 +341,10 @@ function generateSVGChild(canvas: Svg | G,
     components.forEach(item => {
         const { x, y, width, height } = item;
         const symbolGroup = canvas.group();
-        symbolGroup.id(sanitizeDomId(`comp-${sheetIndex}-${item.component.instanceName}`));
-        symbolGroup.addClass('cs-component');
+        if (interactiveAttributes) {
+            symbolGroup.id(sanitizeDomId(`comp-${sheetIndex}-${item.component.instanceName}`));
+            symbolGroup.addClass('cs-component');
+        }
         symbolGroup.translate(x.toNumber(), y.toNumber());
 
         const tooltip = componentTooltip(item.component);
@@ -413,6 +424,8 @@ function generateSVGChild(canvas: Svg | G,
     mergedWires.forEach(tmpItem => {
         const { intersectPoints, net = null, lines = null } = tmpItem;
 
+        const netKey = net !== null ? `${sheetIndex}-${sanitizeDomId(net.net.name)}` : null;
+
         let useJunctionColor = ColorScheme.JunctionColor;
         let useColor = defaultWireColor;
         let useLineWidth = defaultWireLineWidth;
@@ -449,6 +462,16 @@ function generateSVGChild(canvas: Svg | G,
                     displayHighlightWidth = net.highlightWidth;
                 }
             }
+
+            // net.highlight is optional, so the block above can set
+            // displayHighlight with a null colour - treat that as "no explicit
+            // highlight" and fall back to the transparent interactive layer.
+            if (interactiveAttributes
+                && (!displayHighlight || displayHighlightColor === null)) {
+                displayHighlight = true;
+                displayHighlightColor = 'transparent';
+                displayHighlightWidth = interactiveHighlightWidth;
+            }
         }
 
         const pathItems:(string|number)[] = [];
@@ -463,7 +486,7 @@ function generateSVGChild(canvas: Svg | G,
 
         // Only if display highlight and color is set.
         if (displayHighlight && displayHighlightColor !== null) {
-            mergedWireHighlightGroup.path(pathItems)
+            const highlightEl = mergedWireHighlightGroup.path(pathItems)
                 .stroke({
                     width: useLineWidth + displayHighlightWidth,
                     color: displayHighlightColor,
@@ -471,6 +494,9 @@ function generateSVGChild(canvas: Svg | G,
                     linecap: 'butt'
                 })
                 .fill('none');
+            if (interactiveAttributes && netKey !== null) {
+                highlightEl.attr('data-net', netKey);
+            }
         }
 
         const defaultColorForNetType = isBusNet ? ColorScheme.BusWireColor : defaultWireColor;
@@ -484,8 +510,11 @@ function generateSVGChild(canvas: Svg | G,
             wireOverrides['stroke-width'] = useLineWidth.toString();
         }
 
-        applyClassWithOverrides(mergedWireGroup.path(pathItems),
-            isBusNet ? 'busWire' : 'wire', wireOverrides);
+        const wireEl = mergedWireGroup.path(pathItems);
+        applyClassWithOverrides(wireEl, isBusNet ? 'busWire' : 'wire', wireOverrides);
+        if (interactiveAttributes && netKey !== null) {
+            wireEl.attr('data-net', netKey);
+        }
 
         const useJunctionSize = isBusNet ? defaultBusJunctionSize: defaultJunctionSize;
         const halfJunctionSize = useJunctionSize.half();
@@ -503,11 +532,15 @@ function generateSVGChild(canvas: Svg | G,
                 const tmpTranslateX = numeric(x).sub(tmpHighlightExtraSize);
                 const tmpTranslateY = numeric(y).sub(tmpHighlightExtraSize);
 
-                mergedWireHighlightGroup.circle(highlightJunctionSize.toNumber())
+                const highlightCircleEl = mergedWireHighlightGroup
+                    .circle(highlightJunctionSize.toNumber())
                     .translate(tmpTranslateX.toNumber(), tmpTranslateY.toNumber())
                     .fill(displayHighlightColor)
                     .opacity(0.3)
                     .stroke('none');
+                if (interactiveAttributes && netKey !== null) {
+                    highlightCircleEl.attr('data-net', netKey);
+                }
             }
 
             const defaultJunctionColorForNetType = isBusNet ? ColorScheme.BusJunctionColor : ColorScheme.JunctionColor;
@@ -517,10 +550,12 @@ function generateSVGChild(canvas: Svg | G,
                 junctionOverrides['fill'] = useJunctionColor;
             }
 
-            applyClassWithOverrides(
-                mergedWireGroup.circle(useJunctionSize.toNumber())
-                    .translate(translateX.toNumber(), translateY.toNumber()),
-                isBusNet ? 'busJunction' : 'junction', junctionOverrides);
+            const junctionEl = mergedWireGroup.circle(useJunctionSize.toNumber())
+                .translate(translateX.toNumber(), translateY.toNumber());
+            applyClassWithOverrides(junctionEl, isBusNet ? 'busJunction' : 'junction', junctionOverrides);
+            if (interactiveAttributes && netKey !== null) {
+                junctionEl.attr('data-net', netKey);
+            }
 
             // mergedWireGroup.text(count.toString())
             //                 .translate(x + 2, y + 2)

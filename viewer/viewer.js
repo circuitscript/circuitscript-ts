@@ -57,6 +57,40 @@
     var selectedHighlight = makeHighlightRect('#ff5722');
     var hoverHighlight = makeHighlightRect('#2196f3');
 
+    var NET_HIGHLIGHT_CLASS = 'cs-net-highlighted';
+    var highlightedNetEls = [];
+
+    function clearNetHighlight() {
+        for (var i = 0; i < highlightedNetEls.length; i++) {
+            highlightedNetEls[i].classList.remove(NET_HIGHLIGHT_CLASS);
+        }
+        highlightedNetEls = [];
+    }
+
+    function highlightNet(netKey) {
+        clearNetHighlight();
+        if (!netKey) return;
+        var matches = panZoom.querySelectorAll('.wires-highlight [data-net="' + CSS.escape(netKey) + '"]');
+        for (var i = 0; i < matches.length; i++) {
+            matches[i].classList.add(NET_HIGHLIGHT_CLASS);
+            highlightedNetEls.push(matches[i]);
+        }
+    }
+
+    /* Mirrors sanitizeDomId() in src/utils.ts - there is no shared source of
+       truth between the TS and JS copies, so keep this regex in sync if that
+       function changes. */
+    function sanitizeNetKey(name) {
+        return String(name).replace(/[^A-Za-z0-9_-]/g, '-');
+    }
+    function sheetIndexFromDomId(domId) {
+        var m = /^comp-(\d+)-/.exec(domId || '');
+        return m ? m[1] : '0';
+    }
+    function buildNetKey(sheetIndex, rawNetName) {
+        return sheetIndex + '-' + sanitizeNetKey(rawNetName);
+    }
+
     /* A component's own geometry never changes, so its bbox is cached after
        the first measurement rather than re-measured via getBBox() on every
        reposition (e.g. each zoom tick). This also sidesteps a feedback loop:
@@ -222,25 +256,40 @@
     }
 
     function renderPanel(meta) {
+        clearNetHighlight();
+
         var html = '';
+        var sheetIndex = sheetIndexFromDomId(meta.domId);
 
         let displayName = meta.refDes || meta.instanceName;
         if (meta.type === "net") {
             /* find the net name */
             let netNameItem = meta.params.find(item => item.key === 'net_name');
             displayName = "Net: " + netNameItem.value;
+        } else if (meta.type === "graphic"){
+            displayName = 'Graphic';
         }
 
-        html += '<h2>' + escapeHtml(displayName) + '</h2>';
+        if (meta.type === "net") {
+            let netNameItem = meta.params.find(item => item.key === 'net_name');
+            html += '<h2><span class="cs-net-link" data-net-name="' + escapeHtml(netNameItem.value) +
+                '" data-sheet-index="' + sheetIndex + '">' + escapeHtml(displayName) + '</span></h2>';
+        } else {
+            html += '<h2>' + escapeHtml(displayName) + '</h2>';
+        }
         html += '<p class="instance-name">ID: ' + escapeHtml(meta.instanceName) + '</p>';
 
         html += '<h3>Pins</h3>';
         html += '<table><thead><tr><th>ID</th><th>Name</th><th>Pin Type</th><th>Net</th></tr></thead><tbody>';
         for (var i = 0; i < meta.pins.length; i++) {
             var pin = meta.pins[i];
+            var netCell = pin.netName === null || pin.netName === undefined
+                ? '<td></td>'
+                : '<td class="cs-net-link" data-net-name="' + escapeHtml(pin.netName) +
+                  '" data-sheet-index="' + sheetIndex + '">' + escapeHtml(pin.netName) + '</td>';
             html += '<tr><td>' + escapeHtml(pin.id) + '</td><td>' + escapeHtml(pin.name) +
                 '</td><td>' + escapeHtml(formatPinType(pin.type)) +
-                '</td><td>' + escapeHtml(pin.netName) + '</td></tr>';
+                '</td>' + netCell + '</tr>';
         }
         html += '</tbody></table>';
 
@@ -262,6 +311,7 @@
     }
 
     function deselect() {
+        clearNetHighlight();
         if (selectedEl) {
             removeHighlight(selectedHighlight);
             selectedEl = null;
@@ -295,5 +345,14 @@
 
     panelClose.addEventListener('click', function () {
         deselect();
+    });
+
+    panelContent.addEventListener('click', function (event) {
+        var target = event.target.closest ? event.target.closest('.cs-net-link') : null;
+        if (!target) return;
+        var netName = target.getAttribute('data-net-name');
+        var sheetIndex = target.getAttribute('data-sheet-index') || '0';
+        if (!netName) return;
+        highlightNet(buildNetKey(sheetIndex, netName));
     });
 })();

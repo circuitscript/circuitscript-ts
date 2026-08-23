@@ -386,7 +386,13 @@ export abstract class SymbolGraphic {
                 }
             }
                         
-            const position = tmpLabel.getLabelPosition();
+            // Copy: getLabelPosition() returns the Textbox's own anchorPoint
+            // array by reference, and the label objects are shared across
+            // render passes (SVG and the interactive HTML viewer each run a
+            // full pass) - negating in place would flip them again each time.
+            const labelPosition = tmpLabel.getLabelPosition();
+            const position: [NumericValue, NumericValue] =
+                [labelPosition[0], labelPosition[1]];
 
             if (this.flipX !== 0) {
                 position[0] = position[0].neg();

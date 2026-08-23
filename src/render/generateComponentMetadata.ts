@@ -7,7 +7,7 @@
 import { SheetFrame } from './layout.js';
 import { NumericValue } from '../objects/NumericValue.js';
 import { sanitizeDomId } from '../utils.js';
-import { ComponentTypes } from 'src/globals.js';
+import { ComponentTypes } from '../globals.js';
 
 export type ComponentPinMeta = {
     id: string;
@@ -37,7 +37,21 @@ function stringifyParamValue(value: number | string | NumericValue): string {
 export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentMeta[] {
     const result: ComponentMeta[] = [];
 
+    const nc_nets: string[] = [];
+
     sheetFrames.forEach((sheet, sheetIndex) => {
+        // Get nets that have NC component.
+        for (const item of sheet.components) {
+            const { component } = item;
+            if (component.typeProp === ComponentTypes.graphic
+                && component.hasParam('no_connect')
+                && component.getParam('no_connect') === true
+            ) {
+                nc_nets.push(
+                    component.pinNets.get(component.getDefaultPin())!.toString());
+            }
+        }
+
         for (const item of sheet.components) {
             const c = item.component;
 
@@ -50,9 +64,18 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                     key,
                     value: stringifyParamValue(value),
                 })),
-                pins: Array.from(c.pins.values()).map(p => {
+                pins: Array.from(c.pins.values()).sort((a, b) => {
+                    const av = Number(a.id.toString());
+                    const bv = Number(b.id.toString());
+                    const aNum = Number.isFinite(av);
+                    const bNum = Number.isFinite(bv);
+                    if (aNum && bNum) return av - bv;
+                    if (aNum) return -1;
+                    if (bNum) return 1;
+                    return a.id.toString().localeCompare(b.id.toString());
+                }).map(p => {
                     let usePinName = p.name;
-                    if (p.name instanceof NumericValue){
+                    if (p.name instanceof NumericValue) {
                         usePinName = (p.name as NumericValue).toNumber().toString();
                     }
 
@@ -60,6 +83,11 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                     for (const [pinId, net] of c.pinNets) {
                         if (pinId.equals(p.id)) {
                             netName = net.name;
+                            // If pin is on a NC net, then do not display the 
+                            // net name.
+                            if (nc_nets.indexOf(net.toString()) !== -1) {
+                                netName = null;
+                            }
                             break;
                         }
                     }

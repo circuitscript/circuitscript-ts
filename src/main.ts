@@ -47,7 +47,7 @@ export default async function main(): Promise<void> {
         // .option('--lexer-summary', 'Print lexer operation summary (requires -l)')
         .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
         .option('--no-simplify-refdes', 'Disable simplification of single-instance indexed refdes (e.g. R1_1 → R1)')
-        .option('--o <fileName>', 'Additional output path (can be repeated), see below', collectOutputPaths, [])
+        .option('--o <fileName>', 'Additional output paths, see below', collectOutputPaths, [])
         ;
 
     program.addHelpText('before', figlet.textSync('circuitscript', {
@@ -56,12 +56,12 @@ export default async function main(): Promise<void> {
 
     program.addHelpText('after', `
 Supported output formats (selected by output path extension):
-  .svg         Scalable Vector Graphics schematic drawing
+  .svg         SVG schematic drawing
   .net         KiCad netlist file (for PCB import)
   .kicad_sch   KiCad schematic file
+  .html        Interactive HTML viewer (pan/zoom, click-to-inspect)
   .pdf         PDF schematic drawing
   .cir         ngspice simulation netlist
-  .html        Interactive HTML viewer (pan/zoom, click-to-inspect)
 `);
 
     if (process.argv.length < 3){

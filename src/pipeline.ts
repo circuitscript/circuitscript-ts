@@ -427,26 +427,57 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
             // Determine which paths still need SVG/PDF rendering.
             const remainingPaths = outputPaths.filter(p => !handledPaths.has(p));
+            const htmlPaths = remainingPaths.filter(p => path.extname(p) === '.html');
 
             if (remainingPaths.length > 0 || outputPaths.length === 0) {
-                const generateSvgTimer = new SimpleStopwatch();
+                // The base SVG render is only needed for .svg/.pdf output, or
+                // when no output path was given (the SVG string is returned to
+                // the caller). HTML output uses its own interactive render pass.
+                const needsBaseSvg = outputPaths.length === 0 ||
+                    remainingPaths.some(p => {
+                        const ext = path.extname(p).substring(1);
+                        return ext === 'svg' || ext === 'pdf';
+                    });
 
-                const renderLogger = new Logger();
                 let svgCanvas;
-                try {
-                    svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, documentStyles);
-                } catch (err) {
-                    throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
+                if (needsBaseSvg) {
+                    const generateSvgTimer = new SimpleStopwatch();
+
+                    const renderLogger = new Logger();
+                    try {
+                        svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, documentStyles);
+                    } catch (err) {
+                        throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
+                    }
+
+                    showStats && console.log('Render took:', generateSvgTimer.lap());
+
+                    dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
+
+                    try {
+                        svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+                    } catch (err) {
+                        throw new RenderError(`Error generating SVG output: ${err}`, 'svg_output');
+                    }
                 }
 
-                showStats && console.log('Render took:', generateSvgTimer.lap());
+                // Second, separate render pass for the interactive HTML viewer.
+                // Must run before the output loop below: generatePdfOutput()
+                // moves the sheet groups out of svgCanvas and re-registers the
+                // global svg.js window.
+                let interactiveSvgOutput: string | null = null;
+                if (htmlPaths.length > 0) {
+                    const interactiveTimer = new SimpleStopwatch();
+                    const interactiveLogger = new Logger();
+                    try {
+                        const interactiveCanvas = renderSheetsToSVG(
+                            sheetFrames, interactiveLogger, documentVariable, documentStyles, true);
+                        interactiveSvgOutput = generateSvgOutput(interactiveCanvas, defaultZoomScale);
+                    } catch (err) {
+                        throw new RenderError(`Error during interactive SVG generation: ${err}`, 'svg_generation');
+                    }
 
-                dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
-
-                try {
-                    svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
-                } catch (err) {
-                    throw new RenderError(`Error generating SVG output: ${err}`, 'svg_output');
+                    showStats && console.log('Interactive render took:', interactiveTimer.lap());
                 }
 
                 if (remainingPaths.length === 0) {
@@ -475,7 +506,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                                 });
                                 const outputStream = environment.createWriteStream(outPath);
 
-                                generatePdfOutput(doc, svgCanvas, sheetSize, sheetSizeDefined, documentStyles, 1);
+                                generatePdfOutput(doc, svgCanvas!, sheetSize, sheetSizeDefined, documentStyles, 1);
 
                                 doc.pipe(outputStream);
                                 doc.end();
@@ -485,7 +516,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                         } else if (ext === 'html') {
                             try {
                                 const componentMeta = generateComponentMetadata(sheetFrames);
-                                const htmlOutput = generateHtmlOutput(svgOutput, componentMeta, environment);
+                                const htmlOutput = generateHtmlOutput(
+                                    interactiveSvgOutput ?? svgOutput, componentMeta, environment);
                                 environment.writeFileSync(outPath, htmlOutput);
                             } catch (err) {
                                 throw new RenderError(`Error generating HTML file: ${err}`, 'html_output');

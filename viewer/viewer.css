@@ -95,3 +95,17 @@ html, body {
 #cs-panel-content table tr th:nth-child(1), #cs-panel-content table tr td:nth-child(1){
     padding-left: 0;
 }
+
+.cs-net-link {
+    cursor: pointer;
+    text-decoration: underline;
+}
+.cs-net-link:hover {
+    color: #4caf50;
+}
+.wires-highlight path.cs-net-highlighted {
+    stroke: #4caf50 !important;
+}
+.wires-highlight circle.cs-net-highlighted {
+    fill: #4caf50 !important;
+}
