@@ -1,6 +1,38 @@
 # Changelog
 
-## [v0.10.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.0...v0.10.1)
+## [v0.10.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.1...v0.10.2)
+
+[20896f1](https://github.com/circuitscript/circuitscript-ts/commit/20896f1c4f8f54fbf0aec6aee24cf1fd099332f2)Add interactive HTML viewer output format
+- 
+- Generates a standalone HTML file embedding the rendered SVG with a
+- pan/zoom viewport and a click-to-inspect side panel showing component
+- pins, nets, and parameters.
+
+[e517de7](https://github.com/circuitscript/circuitscript-ts/commit/e517de7a0b1aa9cb98684293d3fbb90499559409)Add HTML validation output with symbol/token annotations
+- 
+- Resolve behavior/scenario builtin functions and trailer data expressions
+- during symbol validation, and support -o html on the validate CLI to
+- render an annotated HTML view of a script with hover tooltips for
+- token types and symbol definitions.
+
+[38dc524](https://github.com/circuitscript/circuitscript-ts/commit/38dc524ef33163dabf7ab3e54023a2234d4995da)Add net highlighting and click-to-navigate to HTML viewer
+- 
+- Render a separate interactive SVG pass with per-net data attributes
+- so clicking a net name in the panel highlights all its wires/junctions.
+- Also fixes label position mutation across render passes, sorts pin
+- listings numerically, and suppresses net names on no-connect nets.
+
+[9990e0a](https://github.com/circuitscript/circuitscript-ts/commit/9990e0a9f6c0d515156a0b1850a83922f9dceb69)Add zoom controls and version hint to HTML viewer
+- 
+- Adds zoom in/out/fit buttons and a usage hint overlay showing the
+- CircuitScript version to the interactive HTML output.
+
+[6563e7b](https://github.com/circuitscript/circuitscript-ts/commit/6563e7b6219bdc5d2acec2264596ece5b0610f0b)Document supported output formats in CLI help text
+- 
+- Lists the file extensions (svg, pdf, kicad_sch, net, cir) that select
+- output format when specifying an output path.
+
+## [v0.10.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.0...v0.10.1) - 2026-08-20
 
 [3cbbe6e](https://github.com/circuitscript/circuitscript-ts/commit/3cbbe6e3d4921f035aeef1bcf472bc3f8d364338)Allow top-level expressions and optional state titles in behavior blocks
 - 
