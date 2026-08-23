@@ -63,6 +63,11 @@ export type ScriptOptions = {
 
     // If false, disables simplification of single-instance indexed refdes (e.g. R1_1 → R1)
     simplifyRefdes?: boolean,
+
+    // Selects which rendered output (SVG or interactive HTML) is generated and
+    // returned via `outputReturn` when `outputPaths` doesn't already force it
+    // via a matching file extension. Defaults to 'svg'.
+    outputReturnType?: 'svg' | 'html',
 };
 
 export function prepareFile(textData: string): {
@@ -120,7 +125,8 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
 }
 
 export type RenderScriptReturn = {
-    svgOutput: string | null,
+    // The SVG or HTML string requested via `outputReturnType`, or "" if nothing was generated.
+    outputReturn: string,
     errors: BaseError[],
     ercResults?: ERCReportItem[],
     nets?: ComponentPinNet[],

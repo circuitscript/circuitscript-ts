@@ -86,7 +86,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         inputPath = '',
 
         bomOutputPath = undefined,
-        environment
+        environment,
+
+        outputReturnType = 'svg'
     } = options;
     
     const errors: BaseError[] = [];
@@ -274,6 +276,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     visitor.printScenarioResults();
     
     let svgOutput = "";
+    let htmlOutput: string | null = null;
     let ercResults: ERCReportItem[] = [];
 
     if (errors.length === 0 && throwError === undefined){
@@ -428,16 +431,17 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             // Determine which paths still need SVG/PDF rendering.
             const remainingPaths = outputPaths.filter(p => !handledPaths.has(p));
             const htmlPaths = remainingPaths.filter(p => path.extname(p) === '.html');
+            const wantsHtmlOutput = outputReturnType === 'html' || htmlPaths.length > 0;
 
-            if (remainingPaths.length > 0 || outputPaths.length === 0) {
+            if (remainingPaths.length > 0 || outputPaths.length === 0 || wantsHtmlOutput) {
                 // The base SVG render is only needed for .svg/.pdf output, or
-                // when no output path was given (the SVG string is returned to
-                // the caller). HTML output uses its own interactive render pass.
-                const needsBaseSvg = outputPaths.length === 0 ||
-                    remainingPaths.some(p => {
+                // when no output path was given and the caller wants the SVG
+                // string back. HTML output uses its own interactive render pass.
+                const needsBaseSvg = remainingPaths.some(p => {
                         const ext = path.extname(p).substring(1);
                         return ext === 'svg' || ext === 'pdf';
-                    });
+                    }) ||
+                    (outputPaths.length === 0 && outputReturnType === 'svg');
 
                 let svgCanvas;
                 if (needsBaseSvg) {
@@ -466,7 +470,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 // moves the sheet groups out of svgCanvas and re-registers the
                 // global svg.js window.
                 let interactiveSvgOutput: string | null = null;
-                if (htmlPaths.length > 0) {
+                if (wantsHtmlOutput) {
                     const interactiveTimer = new SimpleStopwatch();
                     const interactiveLogger = new Logger();
                     try {
@@ -478,6 +482,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     }
 
                     showStats && console.log('Interactive render took:', interactiveTimer.lap());
+
+                    const componentMeta = generateComponentMetadata(sheetFrames);
+                    htmlOutput = generateHtmlOutput(interactiveSvgOutput ?? svgOutput, componentMeta, environment);
                 }
 
                 if (remainingPaths.length === 0) {
@@ -515,10 +522,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                             }
                         } else if (ext === 'html') {
                             try {
-                                const componentMeta = generateComponentMetadata(sheetFrames);
-                                const htmlOutput = generateHtmlOutput(
-                                    interactiveSvgOutput ?? svgOutput, componentMeta, environment);
-                                environment.writeFileSync(outPath, htmlOutput);
+                                environment.writeFileSync(outPath, htmlOutput!);
                             } catch (err) {
                                 throw new RenderError(`Error generating HTML file: ${err}`, 'html_output');
                             }
@@ -535,8 +539,10 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         }
     }
 
+    const outputReturn = outputReturnType === 'html' ? (htmlOutput ?? "") : svgOutput;
+
     const results: RenderScriptReturn = {
-        svgOutput, errors
+        outputReturn, errors
     }
 
     if (enableErc && ercResults) {

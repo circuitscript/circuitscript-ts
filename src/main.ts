@@ -186,7 +186,7 @@ async function parseFile(scriptData: string, outputPaths: string[],
 
     try {
         const result = await renderScript(scriptData, outputPaths, scriptOptions);
-        const { svgOutput: output, errors } = result;
+        const { outputReturn: output, errors } = result;
 
         errors.forEach((err, index) => {
             console.log(`[${index}] ${err}`);
