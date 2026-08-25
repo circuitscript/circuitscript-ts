@@ -53,54 +53,55 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
         }
 
         for (const item of sheet.components) {
-            const c = item.component;
+            const { component: instance } = item;
+            const pins = Array.from(instance.pins.values()).sort((a, b) => {
+                const av = Number(a.id.toString());
+                const bv = Number(b.id.toString());
+                const aNum = Number.isFinite(av);
+                const bNum = Number.isFinite(bv);
+                if (aNum && bNum) return av - bv;
+                if (aNum) return -1;
+                if (bNum) return 1;
+                return a.id.toString().localeCompare(b.id.toString());
+            }).map(p => {
+                let usePinName = p.name;
+                if (p.name instanceof NumericValue) {
+                    usePinName = (p.name as NumericValue).toNumber().toString();
+                }
+
+                let netName: string | null = null;
+                for (const [pinId, net] of instance.pinNets) {
+                    if (pinId.equals(p.id)) {
+                        netName = net.name;
+                        // If pin is on a NC net, then do not display the 
+                        // net name.
+                        if (nc_nets.indexOf(net.toString()) !== -1) {
+                            netName = null;
+                        }
+                        break;
+                    }
+                }
+
+                return {
+                    id: p.id.toString(),
+                    name: usePinName,
+                    type: p.pinType,
+                    side: p.side,
+                    position: p.position,
+                    netName,
+                }
+            });
 
             result.push({
-                domId: sanitizeDomId(`comp-${sheetIndex}-${c.instanceName}`),
-                type: c.typeProp,
-                refDes: c.assignedRefDes,
-                instanceName: c.instanceName,
-                params: Array.from(c.parameters.entries()).map(([key, value]) => ({
+                domId: sanitizeDomId(`comp-${sheetIndex}-${instance.instanceName}`),
+                type: instance.typeProp,
+                refDes: instance.assignedRefDes,
+                instanceName: instance.instanceName,
+                params: Array.from(instance.parameters.entries()).map(([key, value]) => ({
                     key,
                     value: stringifyParamValue(value),
                 })),
-                pins: Array.from(c.pins.values()).sort((a, b) => {
-                    const av = Number(a.id.toString());
-                    const bv = Number(b.id.toString());
-                    const aNum = Number.isFinite(av);
-                    const bNum = Number.isFinite(bv);
-                    if (aNum && bNum) return av - bv;
-                    if (aNum) return -1;
-                    if (bNum) return 1;
-                    return a.id.toString().localeCompare(b.id.toString());
-                }).map(p => {
-                    let usePinName = p.name;
-                    if (p.name instanceof NumericValue) {
-                        usePinName = (p.name as NumericValue).toNumber().toString();
-                    }
-
-                    let netName: string | null = null;
-                    for (const [pinId, net] of c.pinNets) {
-                        if (pinId.equals(p.id)) {
-                            netName = net.name;
-                            // If pin is on a NC net, then do not display the 
-                            // net name.
-                            if (nc_nets.indexOf(net.toString()) !== -1) {
-                                netName = null;
-                            }
-                            break;
-                        }
-                    }
-
-                    return {
-                        id: p.id.toString(),
-                        name: usePinName,
-                        type: p.pinType,
-                        side: p.side,
-                        position: p.position,
-                        netName,
-                    }
-                }),
+                pins,
             });
         }
     });

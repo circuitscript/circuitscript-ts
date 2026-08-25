@@ -28,7 +28,7 @@ import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
-import { generateComponentMetadata } from "./render/generateComponentMetadata.js";
+import { generateComponentMetadata, type ComponentMeta } from "./render/generateComponentMetadata.js";
 import { generateHtmlOutput } from "./render/generateHtmlOutput.js";
 import { ERCReportItem, ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
 import { printWarnings, generateDebugSequenceAction, 
@@ -277,6 +277,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     
     let svgOutput = "";
     let htmlOutput: string | null = null;
+    let componentMeta: ComponentMeta[] | null = null;
+    let dataSvgOutput: string | null = null;
     let ercResults: ERCReportItem[] = [];
 
     if (errors.length === 0 && throwError === undefined){
@@ -431,9 +433,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             // Determine which paths still need SVG/PDF rendering.
             const remainingPaths = outputPaths.filter(p => !handledPaths.has(p));
             const htmlPaths = remainingPaths.filter(p => path.extname(p) === '.html');
-            const wantsHtmlOutput = outputReturnType === 'html' || htmlPaths.length > 0;
+            const wantsDataSvg = outputReturnType === 'html' || outputReturnType === 'data-svg' || htmlPaths.length > 0;
 
-            if (remainingPaths.length > 0 || outputPaths.length === 0 || wantsHtmlOutput) {
+            if (remainingPaths.length > 0 || outputPaths.length === 0 || wantsDataSvg) {
                 // The base SVG render is only needed for .svg/.pdf output, or
                 // when no output path was given and the caller wants the SVG
                 // string back. HTML output uses its own interactive render pass.
@@ -469,22 +471,23 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 // Must run before the output loop below: generatePdfOutput()
                 // moves the sheet groups out of svgCanvas and re-registers the
                 // global svg.js window.
-                let interactiveSvgOutput: string | null = null;
-                if (wantsHtmlOutput) {
+                if (wantsDataSvg) {
                     const interactiveTimer = new SimpleStopwatch();
                     const interactiveLogger = new Logger();
                     try {
                         const interactiveCanvas = renderSheetsToSVG(
                             sheetFrames, interactiveLogger, documentVariable, documentStyles, true);
-                        interactiveSvgOutput = generateSvgOutput(interactiveCanvas, defaultZoomScale);
+                        dataSvgOutput = generateSvgOutput(interactiveCanvas, defaultZoomScale);
                     } catch (err) {
                         throw new RenderError(`Error during interactive SVG generation: ${err}`, 'svg_generation');
                     }
 
                     showStats && console.log('Interactive render took:', interactiveTimer.lap());
 
-                    const componentMeta = generateComponentMetadata(sheetFrames);
-                    htmlOutput = generateHtmlOutput(interactiveSvgOutput ?? svgOutput, componentMeta, environment);
+                    componentMeta = generateComponentMetadata(sheetFrames);
+                    if (outputReturnType === 'html' || htmlPaths.length > 0) {
+                        htmlOutput = generateHtmlOutput(dataSvgOutput, componentMeta, environment);
+                    }
                 }
 
                 if (remainingPaths.length === 0) {
@@ -539,10 +542,20 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         }
     }
 
-    const outputReturn = outputReturnType === 'html' ? (htmlOutput ?? "") : svgOutput;
+    let outputReturn: string;
+    let outputExtra: ComponentMeta[] | null = null;
+
+    if (outputReturnType === 'html') {
+        outputReturn = htmlOutput ?? "";
+    } else if (outputReturnType === 'data-svg') {
+        outputReturn = dataSvgOutput ?? "";
+        outputExtra = componentMeta;
+    } else {
+        outputReturn = svgOutput;
+    }
 
     const results: RenderScriptReturn = {
-        outputReturn, errors
+        outputReturn, outputExtra, errors
     }
 
     if (enableErc && ercResults) {

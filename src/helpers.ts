@@ -24,6 +24,7 @@ import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ComponentPinNet, ImportedLibrary } from "./objects/types.js";
 import { ERCReportItem, ERCSeverity } from "./rules-check/rules.js";
 import { PinId, PinIdType } from "./objects/PinDefinition.js";
+import { ComponentMeta } from "./render/generateComponentMetadata.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -64,10 +65,13 @@ export type ScriptOptions = {
     // If false, disables simplification of single-instance indexed refdes (e.g. R1_1 → R1)
     simplifyRefdes?: boolean,
 
-    // Selects which rendered output (SVG or interactive HTML) is generated and
-    // returned via `outputReturn` when `outputPaths` doesn't already force it
-    // via a matching file extension. Defaults to 'svg'.
-    outputReturnType?: 'svg' | 'html',
+    /* Selects which rendered output (SVG, interactive HTML, or the raw
+       interactive SVG) is generated and returned via `outputReturn` when
+       `outputPaths` doesn't already force it via a matching file extension.
+       'data-svg' returns the interactive SVG string (with the accompanying
+       ComponentMeta[] via `outputExtra`) without the HTML wrapper. Defaults
+       to 'svg'. */
+    outputReturnType?: 'svg' | 'html' | 'data-svg',
 };
 
 export function prepareFile(textData: string): {
@@ -125,8 +129,12 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
 }
 
 export type RenderScriptReturn = {
-    // The SVG or HTML string requested via `outputReturnType`, or "" if nothing was generated.
+    /* The SVG, HTML, or interactive SVG string requested via `outputReturnType`
+       ('svg', 'html', or 'data-svg' respectively), or "" if nothing was generated. */
     outputReturn: string,
+    /* Additional data accompanying `outputReturn`. 'svg'/'html' -> null;
+       'data-svg' -> the ComponentMeta[] produced by generateComponentMetadata. */
+    outputExtra: ComponentMeta[] | null,
     errors: BaseError[],
     ercResults?: ERCReportItem[],
     nets?: ComponentPinNet[],
