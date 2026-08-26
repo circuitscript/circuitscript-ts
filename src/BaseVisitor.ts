@@ -298,16 +298,18 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     async resolveImportsAndLoad(inputPath: string, scriptData: string): Promise<void> {
         this.log('resolve and load imports');
 
-        const importedFiles = await resolveAllImportFilepaths(inputPath,
+        const { filepaths: importedFiles, contents } = await resolveAllImportFilepaths(inputPath,
             scriptData, this.environment);
         this.log('resolved all referenced imports');
 
-        // Load all the files
+        // Load all the files (content already read during import resolution)
         const loadedFiles = new Map<string, string>();
         for (const importFilePath of importedFiles) {
             this.log(`reading file: ${importFilePath}`);
-            const importFileData = await this.environment.readFile(importFilePath);
-            loadedFiles.set(importFilePath, importFileData);
+            const importFileData = contents.get(importFilePath);
+            if (importFileData !== undefined) {
+                loadedFiles.set(importFilePath, importFileData);
+            }
         }
 
         // Check if the main refdes file exists

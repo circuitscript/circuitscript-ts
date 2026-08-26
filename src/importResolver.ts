@@ -72,9 +72,10 @@ export async function resolveAllImportFilepaths(
     rootFilePath: string | null,
     scriptData: string | null,
     environment: NodeScriptEnvironment
-): Promise<string[]> {
+): Promise<{ filepaths: string[]; contents: Map<string, string> }> {
     const visited = new Set<string>();
     const result: string[] = [];
+    const contents = new Map<string, string>();
 
     async function walk(filePath: string | null, passedInScriptData?: string | null): Promise<void> {
                 if (filePath !== undefined && filePath !== null && filePath !== ''){
@@ -89,6 +90,9 @@ export async function resolveAllImportFilepaths(
                                 fileData = await environment.readFile(filePath!, { encoding: 'utf8' });
             } catch {
                                 return;
+            }
+            if (filePath) {
+                contents.set(filePath, fileData);
             }
         } else {
             fileData = passedInScriptData;
@@ -120,27 +124,5 @@ export async function resolveAllImportFilepaths(
 
     // Is there some order?
     const uniqueResults = new Set(result);
-    return Array.from(uniqueResults);
-}
-
-/**
- * Loads the contents of the given filepaths into a memory store (Map<filepath, content>).
- */
-export async function loadImportsIntoMemoryStore(
-    filepaths: string[],
-    environment: NodeScriptEnvironment
-): Promise<Map<string, string>> {
-    const store = new Map<string, string>();
-
-    for (const filePath of filepaths) {
-        if (store.has(filePath)) continue;
-        try {
-            const content = await environment.readFile(filePath, { encoding: 'utf8' });
-            store.set(filePath, content);
-        } catch {
-            // File not readable; skip
-        }
-    }
-
-    return store;
+    return { filepaths: Array.from(uniqueResults), contents };
 }
