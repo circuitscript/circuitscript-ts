@@ -39,4 +39,8 @@ export class PercentageValue {
     toNumber(): number {
         return this.value.toNumber();
     }
+
+    toBigNumber(): Big {
+        return this.value;
+    }
 }

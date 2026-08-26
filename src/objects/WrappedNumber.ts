@@ -8,6 +8,8 @@
  * Wraps the native number type, so that the same operations can be used.
  */
 
+import Big from "big.js";
+
 export class WrappedNumber {
     value: number;
 
@@ -21,5 +23,9 @@ export class WrappedNumber {
 
     toNumber(): number {
         return this.value;
+    }
+
+    toBigNumber(): Big {
+        return new Big(this.value);
     }
 }

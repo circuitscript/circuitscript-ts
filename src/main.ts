@@ -8,6 +8,10 @@
  */
 
 
+// Imported first so the V8 compile cache is active before the rest of the
+// module graph is loaded - see enableCompileCache.ts.
+import './enableCompileCache.js';
+
 import { program } from 'commander';
 import figlet from 'figlet';
 

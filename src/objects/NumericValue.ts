@@ -100,10 +100,18 @@ export class NumericValue {
         return this.toBigNumber().toNumber();
     }
 
+    // valuePart and prefixPart are only ever assigned in the constructor, so
+    // the scaled Big is stable for the lifetime of the instance and is worth
+    // caching - toBigNumber() sits on the hot path of every arithmetic op.
+    private scaledValue: Big | undefined;
+
     toBigNumber(): Big {
-        return this.valuePart.mul(
-            new Big(
-                Math.pow(10, this.prefixPart)))
+        if (this.scaledValue === undefined) {
+            this.scaledValue = this.valuePart.mul(
+                new Big(
+                    Math.pow(10, this.prefixPart)));
+        }
+        return this.scaledValue;
     }
 
     div(value: NumericValue | number): NumericValue {
@@ -229,7 +237,7 @@ function isPercentage(value: NumberOperatorType): value is PercentageValue {
 // Resolves a PercentageValue operand against a numeric "base" operand,
 // returning the equivalent absolute Big value: (pct/100) * base.
 function percentAgainstBase(pct: PercentageValue, base: NumberOperatorType): Big {
-    return new Big(pct.toNumber()).div(100).mul(new Big(base.toNumber()));
+    return pct.toBigNumber().div(100).mul(base.toBigNumber());
 }
 
 function resolveToPercentageValue(value: Big): PercentageValue {
@@ -242,7 +250,7 @@ function getAbsoluteTolerance(value: NumericValue): { plus: Big; minus: Big } {
     const base = value.toBigNumber();
     const resolveOne = (item: NumericValue | PercentageValue): Big => {
         if (item instanceof PercentageValue) {
-            return new Big(item.toNumber()).div(100).mul(base).abs();
+            return item.toBigNumber().div(100).mul(base).abs();
         }
         return item.toBigNumber().abs();
     };
@@ -314,8 +322,8 @@ function propagateMultiplicative(
     const t1 = getOperandTolerance(value1);
     const t2 = getOperandTolerance(value2);
 
-    const mag1 = new Big(value1.toNumber()).abs();
-    const mag2 = new Big(value2.toNumber()).abs();
+    const mag1 = value1.toBigNumber().abs();
+    const mag2 = value2.toBigNumber().abs();
 
     const relPlus1 = mag1.eq(0) ? new Big(0) : t1.plus.div(mag1);
     const relMinus1 = mag1.eq(0) ? new Big(0) : t1.minus.div(mag1);
@@ -355,8 +363,8 @@ export class NumberOperator {
 
         if (isPercentage(value1) && isPercentage(value2)) {
             // fraction * fraction, converted back to percent
-            const frac1 = new Big(value1.toNumber()).div(100);
-            const frac2 = new Big(value2.toNumber()).div(100);
+            const frac1 = value1.toBigNumber().div(100);
+            const frac2 = value2.toBigNumber().div(100);
             return resolveToPercentageValue(frac1.mul(frac2).mul(100));
         }
 
@@ -370,8 +378,8 @@ export class NumberOperator {
                 percentAgainstBase(value2, value1)));
         }
 
-        const big1 = new Big(value1.toNumber());
-        const big2 = new Big(value2.toNumber());
+        const big1 = value1.toBigNumber();
+        const big2 = value2.toBigNumber();
 
         return propagateMultiplicative(value1, value2, false, resolveToNumericValue(
             big1.mul(big2)
@@ -387,26 +395,26 @@ export class NumberOperator {
 
         if (isPercentage(value1) && isPercentage(value2)) {
             // % cancels: plain ratio
-            const frac1 = new Big(value1.toNumber()).div(100);
-            const frac2 = new Big(value2.toNumber()).div(100);
+            const frac1 = value1.toBigNumber().div(100);
+            const frac2 = value2.toBigNumber().div(100);
             return resolveToNumericValue(frac1.div(frac2));
         }
 
         if (isPercentage(value1)) {
             // Percent ÷ Numeric: scale the percent by a plain number
-            const frac1 = new Big(value1.toNumber()).div(100);
-            const scaled = frac1.div(new Big(value2.toNumber()));
+            const frac1 = value1.toBigNumber().div(100);
+            const scaled = frac1.div(value2.toBigNumber());
             return resolveToPercentageValue(scaled.mul(100));
         }
 
         if (isPercentage(value2)) {
             // Numeric ÷ Percent
             return propagateMultiplicative(value1, value2, true, resolveToNumericValue(
-                new Big(value1.toNumber()).div(new Big(value2.toNumber()).div(100))));
+                value1.toBigNumber().div(value2.toBigNumber().div(100))));
         }
 
-        const big1 = new Big(value1.toNumber());
-        const big2 = new Big(value2.toNumber());
+        const big1 = value1.toBigNumber();
+        const big2 = value2.toBigNumber();
 
         return propagateMultiplicative(value1, value2, true, resolveToNumericValue(
             big1.div(big2)
@@ -422,21 +430,21 @@ export class NumberOperator {
 
         if (isPercentage(value1) && isPercentage(value2)) {
             return resolveToPercentageValue(
-                new Big(value1.toNumber()).add(new Big(value2.toNumber())));
+                value1.toBigNumber().add(value2.toBigNumber()));
         }
 
         if (isPercentage(value1)) {
             return resolveToNumericValue(
-                new Big(value2.toNumber()).add(percentAgainstBase(value1, value2)));
+                value2.toBigNumber().add(percentAgainstBase(value1, value2)));
         }
 
         if (isPercentage(value2)) {
             return resolveToNumericValue(
-                new Big(value1.toNumber()).add(percentAgainstBase(value2, value1)));
+                value1.toBigNumber().add(percentAgainstBase(value2, value1)));
         }
 
-        const big1 = new Big(value1.toNumber());
-        const big2 = new Big(value2.toNumber());
+        const big1 = value1.toBigNumber();
+        const big2 = value2.toBigNumber();
 
         return propagateAdditive(value1, value2, false, resolveToNumericValue(
             big1.add(big2)
@@ -452,23 +460,23 @@ export class NumberOperator {
 
         if (isPercentage(value1) && isPercentage(value2)) {
             return resolveToPercentageValue(
-                new Big(value1.toNumber()).sub(new Big(value2.toNumber())));
+                value1.toBigNumber().sub(value2.toBigNumber()));
         }
 
         if (isPercentage(value1)) {
             // Percent - Numeric: base is the numeric operand (value2)
             return resolveToNumericValue(
-                percentAgainstBase(value1, value2).sub(new Big(value2.toNumber())));
+                percentAgainstBase(value1, value2).sub(value2.toBigNumber()));
         }
 
         if (isPercentage(value2)) {
             // Numeric - Percent: base is value1
             return resolveToNumericValue(
-                new Big(value1.toNumber()).sub(percentAgainstBase(value2, value1)));
+                value1.toBigNumber().sub(percentAgainstBase(value2, value1)));
         }
 
-        const big1 = new Big(value1.toNumber());
-        const big2 = new Big(value2.toNumber());
+        const big1 = value1.toBigNumber();
+        const big2 = value2.toBigNumber();
 
         return propagateAdditive(value1, value2, true, resolveToNumericValue(
             big1.sub(big2)
@@ -487,21 +495,21 @@ export class NumberOperator {
 
         if (isPercentage(value1) && isPercentage(value2)) {
             return resolveToPercentageValue(
-                new Big(value1.toNumber()).mod(new Big(value2.toNumber())));
+                value1.toBigNumber().mod(value2.toBigNumber()));
         }
 
         if (isPercentage(value1)) {
             return resolveToNumericValue(
-                percentAgainstBase(value1, value2).mod(new Big(value2.toNumber())));
+                percentAgainstBase(value1, value2).mod(value2.toBigNumber()));
         }
 
         if (isPercentage(value2)) {
             return resolveToNumericValue(
-                new Big(value1.toNumber()).mod(percentAgainstBase(value2, value1)));
+                value1.toBigNumber().mod(percentAgainstBase(value2, value1)));
         }
 
-        const big1 = new Big(value1.toNumber());
-        const big2 = new Big(value2.toNumber());
+        const big1 = value1.toBigNumber();
+        const big2 = value2.toBigNumber();
 
         return resolveToNumericValue(
             big1.mod(big2)

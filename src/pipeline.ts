@@ -6,7 +6,6 @@
  */
 
 import path from "path";
-import PDFDocument from "pdfkit";
 
 import { CommonTokenStream, ParserRuleContext, RecognitionException } from "antlr4ng";
 import { DefaultPostAnnotationCallback } from "./annotate/DefaultPostAnnotationCallback.js";
@@ -361,37 +360,50 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
             let sheetFrames;
 
+            // Handlers that run in the beforeRender phase (e.g. the KiCad and
+            // ngspice netlist writers) produce their output straight from the
+            // visitor and never look at the laid-out sheets. If they satisfied
+            // every requested output path there is nothing left downstream that
+            // consumes sheetFrames, so the whole layout pass can be skipped.
+            // ERC still needs the graph, and an empty outputPaths means the
+            // caller wants the rendered SVG back.
+            const layoutNeeded = enableErc || outputPaths.length === 0 ||
+                outputReturnType === 'html' || outputReturnType === 'data-svg' ||
+                outputPaths.some(p => !handledPaths.has(p));
+
             try {
                 graphEngine.setStyles(documentStyles);
 
-                const { graph, containerFrames } =
-                    graphEngine.generateLayoutGraph(sequence, nets);
+                if (layoutNeeded) {
+                    const { graph, containerFrames } =
+                        graphEngine.generateLayoutGraph(sequence, nets);
 
-                sheetFrames = layoutEngine.runLayout(graph,
-                    containerFrames, nets);
+                    sheetFrames = layoutEngine.runLayout(graph,
+                        containerFrames, nets);
 
-                if (enableErc) {
-                    const documentRules = (documentVariable as any).rules as Record<string, string>;
-                    ercResults = EvaluateERCRules(visitor, graph, nets, documentRules);
+                    if (enableErc) {
+                        const documentRules = (documentVariable as any).rules as Record<string, string>;
+                        ercResults = EvaluateERCRules(visitor, graph, nets, documentRules);
 
-                    if (ercResults.length > 0) {
+                        if (ercResults.length > 0) {
 
-                        const displayErcResults = ercResults.filter(i => (i.severity === ERCSeverity.Error || i.severity === ERCSeverity.Warning));
+                            const displayErcResults = ercResults.filter(i => (i.severity === ERCSeverity.Error || i.severity === ERCSeverity.Warning));
 
-                        const errorCount = displayErcResults.filter(i => i.severity === ERCSeverity.Error).length;
-                        const warningCount = displayErcResults.filter(i => i.severity === ERCSeverity.Warning).length;
-                        console.log(`ERC found ${errorCount} error(s), ${warningCount} warning(s):`);
+                            const errorCount = displayErcResults.filter(i => i.severity === ERCSeverity.Error).length;
+                            const warningCount = displayErcResults.filter(i => i.severity === ERCSeverity.Warning).length;
+                            console.log(`ERC found ${errorCount} error(s), ${warningCount} warning(s):`);
 
-                        displayErcResults.forEach((item, index) => {
-                            let position = "";
-                            if (item.start){
-                                position = `line ${item.start.line}, column: ${item.start.column}: `
-                            }
-                            const label = item.severity === 'error' ? '[Error]' : '[Warning]';
-                            console.log(`${(index + 1).toString().padStart(3)}. ${label} ${position}${item.type} - ${item.message}`);
-                        });
-                    } else {
-                        console.log('No ERC issues found');
+                            displayErcResults.forEach((item, index) => {
+                                let position = "";
+                                if (item.start){
+                                    position = `line ${item.start.line}, column: ${item.start.column}: `
+                                }
+                                const label = item.severity === 'error' ? '[Error]' : '[Warning]';
+                                console.log(`${(index + 1).toString().padStart(3)}. ${label} ${position}${item.type} - ${item.message}`);
+                            });
+                        } else {
+                            console.log('No ERC issues found');
+                        }
                     }
                 }
 
@@ -436,6 +448,11 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             const wantsDataSvg = outputReturnType === 'html' || outputReturnType === 'data-svg' || htmlPaths.length > 0;
 
             if (remainingPaths.length > 0 || outputPaths.length === 0 || wantsDataSvg) {
+                // Getting here means something still needs the laid-out sheets,
+                // which is exactly what made layoutNeeded true above - so the
+                // layout pass did run and sheetFrames is populated.
+                const renderedSheets = sheetFrames!;
+
                 // The base SVG render is only needed for .svg/.pdf output, or
                 // when no output path was given and the caller wants the SVG
                 // string back. HTML output uses its own interactive render pass.
@@ -451,7 +468,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
                     const renderLogger = new Logger();
                     try {
-                        svgCanvas = renderSheetsToSVG(sheetFrames, renderLogger, documentVariable, documentStyles);
+                        svgCanvas = renderSheetsToSVG(renderedSheets, renderLogger, documentVariable, documentStyles);
                     } catch (err) {
                         throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
                     }
@@ -476,7 +493,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     const interactiveLogger = new Logger();
                     try {
                         const interactiveCanvas = renderSheetsToSVG(
-                            sheetFrames, interactiveLogger, documentVariable, documentStyles, true);
+                            renderedSheets, interactiveLogger, documentVariable, documentStyles, true);
                         dataSvgOutput = generateSvgOutput(interactiveCanvas, defaultZoomScale);
                     } catch (err) {
                         throw new RenderError(`Error during interactive SVG generation: ${err}`, 'svg_generation');
@@ -484,7 +501,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
                     showStats && console.log('Interactive render took:', interactiveTimer.lap());
 
-                    componentMeta = generateComponentMetadata(sheetFrames);
+                    componentMeta = generateComponentMetadata(renderedSheets);
                     if (outputReturnType === 'html' || htmlPaths.length > 0) {
                         htmlOutput = generateHtmlOutput(dataSvgOutput, componentMeta, environment);
                     }
@@ -500,6 +517,14 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                         sheetSizeDefined = true;
                     }
 
+                    // pdfkit pulls in a large dependency tree (fontkit, brotli,
+                    // png-js, restructure) that is only needed for .pdf output,
+                    // so it is loaded on demand rather than at module scope.
+                    let PDFDocument: typeof import('pdfkit') | undefined;
+                    if (remainingPaths.some(p => path.extname(p) === '.pdf')) {
+                        PDFDocument = (await import('pdfkit')).default;
+                    }
+
                     for (const outPath of remainingPaths) {
                         const ext = path.extname(outPath).substring(1);
                         if (ext === 'svg') {
@@ -510,7 +535,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                             }
                         } else if (ext === 'pdf') {
                             try {
-                                const doc = new PDFDocument({
+                                const doc = new PDFDocument!({
                                     layout: 'landscape',
                                     size: sheetSize
                                 });
