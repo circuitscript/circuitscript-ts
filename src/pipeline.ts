@@ -115,6 +115,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         };
 
     const visitor = new ParserVisitor(true, onErrorHandler, environment);
+    visitor.logger.enabled = dumpData;
     environment.setCurrentFile(inputPath);
     visitor.log(`current file: ${inputPath}`);
 
@@ -351,7 +352,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 }
             }
 
-            const logger = new Logger();
+            const logger = new Logger(dumpData);
             const graphEngine = new NetGraph(logger);
             const layoutEngine = new LayoutEngine(logger);
             const layoutTimer = new SimpleStopwatch();
@@ -466,7 +467,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 if (needsBaseSvg) {
                     const generateSvgTimer = new SimpleStopwatch();
 
-                    const renderLogger = new Logger();
+                    const renderLogger = new Logger(dumpData);
                     try {
                         svgCanvas = renderSheetsToSVG(renderedSheets, renderLogger, documentVariable, documentStyles);
                     } catch (err) {
@@ -490,7 +491,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 // global svg.js window.
                 if (wantsDataSvg) {
                     const interactiveTimer = new SimpleStopwatch();
-                    const interactiveLogger = new Logger();
+                    const interactiveLogger = new Logger(dumpData);
                     try {
                         const interactiveCanvas = renderSheetsToSVG(
                             renderedSheets, interactiveLogger, documentVariable, documentStyles, true);

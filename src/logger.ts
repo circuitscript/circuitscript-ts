@@ -8,13 +8,22 @@
 export class Logger {
 
     logs: string[] = [];
+    enabled: boolean;
 
-    constructor() {
-        this.add((new Date()).toISOString());
-        this.add('starting logger...');
+    constructor(enabled = false) {
+        this.enabled = enabled;
+
+        if (this.enabled) {
+            this.add((new Date()).toISOString());
+            this.add('starting logger...');
+        }
     }
 
     add(...args: (string | number)[]): void {
+        if (!this.enabled) {
+            return;
+        }
+
         let message = "";
         if (args.length === 1) {
             message = args[0].toString();
