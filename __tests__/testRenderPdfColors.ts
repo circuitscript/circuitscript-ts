@@ -39,7 +39,8 @@ describe('PDF color resolution', () => {
 
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
         const documentStyles = getStylesFromDocument(documentVariable);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, documentStyles);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames, 
+            new Logger(), documentVariable, documentStyles);
 
         const sheetSize = 'A4';
         const doc = new PDFDocument({ layout: 'landscape', size: sheetSize });

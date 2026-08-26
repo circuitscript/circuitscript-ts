@@ -26,7 +26,8 @@ import { ComponentPinNet, DocumentVariable, ImportedLibrary } from "./objects/ty
 import { parseFileWithVisitor } from "./parser.js";
 import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNetListOutputHandler.js";
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
-import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput } from "./render/render.js";
+import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput,
+    clonePlainCanvas, applyInteractiveMarkup } from "./render/render.js";
 import { generateComponentMetadata, type ComponentMeta } from "./render/generateComponentMetadata.js";
 import { generateHtmlOutput } from "./render/generateHtmlOutput.js";
 import { ERCReportItem, ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
@@ -446,7 +447,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             // Determine which paths still need SVG/PDF rendering.
             const remainingPaths = outputPaths.filter(p => !handledPaths.has(p));
             const htmlPaths = remainingPaths.filter(p => path.extname(p) === '.html');
-            const wantsDataSvg = outputReturnType === 'html' || outputReturnType === 'data-svg' || htmlPaths.length > 0;
+            const wantsDataSvg = outputReturnType === 'html'
+                || outputReturnType === 'data-svg'
+                || htmlPaths.length > 0;
 
             if (remainingPaths.length > 0 || outputPaths.length === 0 || wantsDataSvg) {
                 // Getting here means something still needs the laid-out sheets,
@@ -463,21 +466,26 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     }) ||
                     (outputPaths.length === 0 && outputReturnType === 'svg');
 
+                const generateSvgTimer = new SimpleStopwatch();
+
+                const renderLogger = new Logger(dumpData);
+                let canvas;
+                let metadata;
+                try {
+                    ({ canvas, metadata } = renderSheetsToSVG(renderedSheets,
+                        renderLogger, documentVariable, documentStyles));
+                } catch (err) {
+                    throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
+                }
+
+                showStats && console.log('Render took:', generateSvgTimer.lap());
+
+                dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
+
                 let svgCanvas;
                 if (needsBaseSvg) {
-                    const generateSvgTimer = new SimpleStopwatch();
-
-                    const renderLogger = new Logger(dumpData);
-                    try {
-                        svgCanvas = renderSheetsToSVG(renderedSheets, renderLogger, documentVariable, documentStyles);
-                    } catch (err) {
-                        throw new RenderError(`Error during SVG generation: ${err}`, 'svg_generation');
-                    }
-
-                    showStats && console.log('Render took:', generateSvgTimer.lap());
-
-                    dumpData && environment.writeFileSync(dumpDirectory + 'raw-render.txt', renderLogger.dump());
-
+                    // Clone so applyInteractiveMarkup/generatePdfOutput can mutate `canvas` without affecting this plain output.
+                    svgCanvas = wantsDataSvg ? clonePlainCanvas(canvas) : canvas;
                     try {
                         svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
                     } catch (err) {
@@ -485,17 +493,11 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     }
                 }
 
-                // Second, separate render pass for the interactive HTML viewer.
-                // Must run before the output loop below: generatePdfOutput()
-                // moves the sheet groups out of svgCanvas and re-registers the
-                // global svg.js window.
                 if (wantsDataSvg) {
                     const interactiveTimer = new SimpleStopwatch();
-                    const interactiveLogger = new Logger(dumpData);
                     try {
-                        const interactiveCanvas = renderSheetsToSVG(
-                            renderedSheets, interactiveLogger, documentVariable, documentStyles, true);
-                        dataSvgOutput = generateSvgOutput(interactiveCanvas, defaultZoomScale);
+                        applyInteractiveMarkup(metadata); // mutates `canvas` in place
+                        dataSvgOutput = generateSvgOutput(canvas, defaultZoomScale);
                     } catch (err) {
                         throw new RenderError(`Error during interactive SVG generation: ${err}`, 'svg_generation');
                     }

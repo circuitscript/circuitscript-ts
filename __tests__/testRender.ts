@@ -155,7 +155,8 @@ describe('Render tests', () => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
 
         const styles = getStylesFromDocument(documentVariable);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames, 
+            new Logger(), documentVariable, styles);
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         let useSvgPath = scriptPath;
@@ -209,7 +210,8 @@ describe('Render tests', () => {
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
 
         const documentStyles = getStylesFromDocument(documentVariable);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, documentStyles);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames, 
+            new Logger(), documentVariable, documentStyles);
 
         // Full ISO time string is given, because the CI server might
         // have a different timezone
@@ -262,7 +264,8 @@ describe('Render tests', () => {
 
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
         const styles = getStylesFromDocument(documentVariable);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames, 
+            new Logger(), documentVariable, styles);
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         const widthMatch = svgOutput.match(/width="([\d.]+)"/);
@@ -286,7 +289,8 @@ describe('Render tests', () => {
 
         const { sheetFrames, documentVariable } = await renderCommon(mainPath + scriptPath);
         const styles = getStylesFromDocument(documentVariable);
-        const svgCanvas = renderSheetsToSVG(sheetFrames, new Logger(), documentVariable, styles);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames, 
+            new Logger(), documentVariable, styles);
         const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
         expect(svgOutput).toContain('var(--cs-my-line)');

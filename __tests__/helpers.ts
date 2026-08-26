@@ -315,7 +315,8 @@ export async function renderScenarioCommon(scriptPath: string): Promise<{
     const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
     const sheetFrames = await layoutEngine.runLayout(graph, containerFrames, nets);
 
-    const svgCanvas = renderSheetsToSVG(sheetFrames, logger, documentVariable, styles);
+    const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames, logger, 
+        documentVariable, styles);
     const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
 
     const scenarioResultsText = formatScenarioResults(visitor.scenarios).join('\n');
