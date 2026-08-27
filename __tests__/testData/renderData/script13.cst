@@ -2,9 +2,9 @@ def label(value, anchor="left"):
     return create component:
         pins: 1
         copy: true
-        followWireOrientation: false
+        follow_wire_orientation: false
         display: create graphic (params):
-            label: params.net_name, 0, -10, fontSize=50, anchor=params.anchor
+            label: params.net_name, 0, -10, font_size=50, anchor=params.anchor
             pin: 1, 0, 0, 0, 0, display_id=0
         type: "label"
         params:

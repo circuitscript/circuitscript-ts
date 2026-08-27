@@ -21,7 +21,7 @@ def conn3x2():
             hpin: 4, "4", "passive", width/2 + 100, 0,      -100
             hpin: 6, "6", "passive", width/2 + 100, 100,    -100
             
-            label: params.refdes, -width/2, -height/2 - 20, fontSize=50, anchor="left", vanchor="bottom"
+            label: params.refdes, -width/2, -height/2 - 20, font_size=50, anchor="left", vanchor="bottom"
 
             circle: -50, -100, 40 
             circle: -50,  0,   40

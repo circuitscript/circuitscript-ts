@@ -32,8 +32,8 @@ export enum ParamKeys {
     net_type = 'net_type',
 
     flip = 'flip',
-    flipX = 'flipX',
-    flipY = 'flipY',
+    flipX = 'flipx',
+    flipY = 'flipy',
     angle = 'angle',
 
 }

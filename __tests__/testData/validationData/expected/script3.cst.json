@@ -48,7 +48,7 @@
         "variable"
     ],
     [
-        "--.[std].port_sym.portType",
+        "--.[std].port_sym.port_type",
         "variable"
     ],
     [
@@ -192,15 +192,15 @@
         "variable"
     ],
     [
-        "--.[std].text_sym.offsetX",
+        "--.[std].text_sym.offset_x",
         "variable"
     ],
     [
-        "--.[std].text_sym.offsetY",
+        "--.[std].text_sym.offset_y",
         "variable"
     ],
     [
-        "--.[std].text_sym.fontSize",
+        "--.[std].text_sym.font_size",
         "variable"
     ],
     [
@@ -624,7 +624,7 @@
         "variable"
     ],
     [
-        "--.[std].sheet_generator_sym.fontSize",
+        "--.[std].sheet_generator_sym.font_size",
         "variable"
     ],
     [

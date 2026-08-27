@@ -1026,19 +1026,29 @@ export class SymbolPlaceholder extends SymbolGraphic {
     }
 
     parseLabelStyle(keywordParams: Map<string, any>): LabelStyle {
-        const keywords = ['fontSize', 'anchor', 'vanchor', 
-            'angle', 'textColor', 'portType', 'bold', 'italic'];
+        // Script-facing keyword name -> internal LabelStyle property name.
+        // The script surface is snake_case, the style object stays camelCase.
+        const keywords: [string, string][] = [
+            ['font_size', 'fontSize'],
+            ['anchor', 'anchor'],
+            ['vanchor', 'vanchor'],
+            ['angle', 'angle'],
+            ['text_color', 'textColor'],
+            ['port_type', 'portType'],
+            ['bold', 'bold'],
+            ['italic', 'italic'],
+        ];
 
         // Create the style object
         const style: { [key: string]: any } = {};
-        keywords.forEach(item => {
-            if (keywordParams.has(item)) {
-                style[item] = keywordParams.get(item);
-                
-                if (item === 'bold'){
-                    style.fontWeight = keywordParams.get(item) === true ? 'bold' : 'regular';
-                } else if (item === 'italic'){
-                    style.fontStyle = keywordParams.get(item) === true ? 'italic' : 'normal';
+        keywords.forEach(([keyword, styleKey]) => {
+            if (keywordParams.has(keyword)) {
+                style[styleKey] = keywordParams.get(keyword);
+
+                if (keyword === 'bold'){
+                    style.fontWeight = keywordParams.get(keyword) === true ? 'bold' : 'regular';
+                } else if (keyword === 'italic'){
+                    style.fontStyle = keywordParams.get(keyword) === true ? 'italic' : 'normal';
                 }
 
             }

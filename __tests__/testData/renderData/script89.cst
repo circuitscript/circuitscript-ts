@@ -4,7 +4,7 @@ def arrow_point():
     arrow_size = 30
     return create component:
         pins: 1
-        followWireOrientation: false
+        follow_wire_orientation: false
         display: create graphic(params):
             line_width: 5
             path: "M", params.offset_x, params.offset_y, \
