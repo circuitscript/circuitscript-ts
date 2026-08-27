@@ -1,6 +1,6 @@
 from "std" import *
 
-fontSize = 50
+font_size = 50
 
 tmp = create component:
     pins: 1
@@ -8,55 +8,55 @@ tmp = create component:
         pin: 1, 0, 0, 0, 0, display_id=false
         
         #vanchor bottom
-        label: "1", 0, 0, fontSize=fontSize, anchor="left",   vanchor="bottom", angle=0
-        label: "1", 100, 0, fontSize=fontSize, anchor="left", vanchor="bottom", angle=90
-        label: "1", 200, 0, fontSize=fontSize, anchor="left", vanchor="bottom", angle=180
-        label: "1", 300, 0, fontSize=fontSize, anchor="left", vanchor="bottom", angle=270
+        label: "1", 0, 0, font_size=font_size, anchor="left",   vanchor="bottom", angle=0
+        label: "1", 100, 0, font_size=font_size, anchor="left", vanchor="bottom", angle=90
+        label: "1", 200, 0, font_size=font_size, anchor="left", vanchor="bottom", angle=180
+        label: "1", 300, 0, font_size=font_size, anchor="left", vanchor="bottom", angle=270
 
-        label: "1", 0,   200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=0
-        label: "1", 100, 200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=90
-        label: "1", 200, 200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=180
-        label: "1", 300, 200, fontSize=fontSize, anchor="center", vanchor="bottom", angle=270
+        label: "1", 0,   200, font_size=font_size, anchor="center", vanchor="bottom", angle=0
+        label: "1", 100, 200, font_size=font_size, anchor="center", vanchor="bottom", angle=90
+        label: "1", 200, 200, font_size=font_size, anchor="center", vanchor="bottom", angle=180
+        label: "1", 300, 200, font_size=font_size, anchor="center", vanchor="bottom", angle=270
 
-        label: "1", 0,   400, fontSize=fontSize, anchor="right", vanchor="bottom", angle=0
-        label: "1", 100, 400, fontSize=fontSize, anchor="right", vanchor="bottom", angle=90
-        label: "1", 200, 400, fontSize=fontSize, anchor="right", vanchor="bottom", angle=180
-        label: "1", 300, 400, fontSize=fontSize, anchor="right", vanchor="bottom", angle=270
+        label: "1", 0,   400, font_size=font_size, anchor="right", vanchor="bottom", angle=0
+        label: "1", 100, 400, font_size=font_size, anchor="right", vanchor="bottom", angle=90
+        label: "1", 200, 400, font_size=font_size, anchor="right", vanchor="bottom", angle=180
+        label: "1", 300, 400, font_size=font_size, anchor="right", vanchor="bottom", angle=270
 
         line: -200, 500, 500, 500
 
         #vanchor middle
-        label: "1", 0,   600, fontSize=fontSize, anchor="left", vanchor="center", angle=0
-        label: "1", 100, 600, fontSize=fontSize, anchor="left", vanchor="center", angle=90
-        label: "1", 200, 600, fontSize=fontSize, anchor="left", vanchor="center", angle=180
-        label: "1", 300, 600, fontSize=fontSize, anchor="left", vanchor="center", angle=270
+        label: "1", 0,   600, font_size=font_size, anchor="left", vanchor="center", angle=0
+        label: "1", 100, 600, font_size=font_size, anchor="left", vanchor="center", angle=90
+        label: "1", 200, 600, font_size=font_size, anchor="left", vanchor="center", angle=180
+        label: "1", 300, 600, font_size=font_size, anchor="left", vanchor="center", angle=270
 
-        label: "1", 0,   800, fontSize=fontSize, anchor="center", vanchor="center", angle=0
-        label: "1", 100, 800, fontSize=fontSize, anchor="center", vanchor="center", angle=90
-        label: "1", 200, 800, fontSize=fontSize, anchor="center", vanchor="center", angle=180
-        label: "1", 300, 800, fontSize=fontSize, anchor="center", vanchor="center", angle=270
+        label: "1", 0,   800, font_size=font_size, anchor="center", vanchor="center", angle=0
+        label: "1", 100, 800, font_size=font_size, anchor="center", vanchor="center", angle=90
+        label: "1", 200, 800, font_size=font_size, anchor="center", vanchor="center", angle=180
+        label: "1", 300, 800, font_size=font_size, anchor="center", vanchor="center", angle=270
 
-        label: "1", 0,   1000, fontSize=fontSize, anchor="right", vanchor="center", angle=0
-        label: "1", 100, 1000, fontSize=fontSize, anchor="right", vanchor="center", angle=90
-        label: "1", 200, 1000, fontSize=fontSize, anchor="right", vanchor="center", angle=180
-        label: "1", 300, 1000, fontSize=fontSize, anchor="right", vanchor="center", angle=270
+        label: "1", 0,   1000, font_size=font_size, anchor="right", vanchor="center", angle=0
+        label: "1", 100, 1000, font_size=font_size, anchor="right", vanchor="center", angle=90
+        label: "1", 200, 1000, font_size=font_size, anchor="right", vanchor="center", angle=180
+        label: "1", 300, 1000, font_size=font_size, anchor="right", vanchor="center", angle=270
 
         line: -200, 1100, 500, 1100
 
         #vanchor top
-        label: "1", 0,   1200, fontSize=fontSize, anchor="left", vanchor="top", angle=0
-        label: "1", 100, 1200, fontSize=fontSize, anchor="left", vanchor="top", angle=90
-        label: "1", 200, 1200, fontSize=fontSize, anchor="left", vanchor="top", angle=180
-        label: "1", 300, 1200, fontSize=fontSize, anchor="left", vanchor="top", angle=270
+        label: "1", 0,   1200, font_size=font_size, anchor="left", vanchor="top", angle=0
+        label: "1", 100, 1200, font_size=font_size, anchor="left", vanchor="top", angle=90
+        label: "1", 200, 1200, font_size=font_size, anchor="left", vanchor="top", angle=180
+        label: "1", 300, 1200, font_size=font_size, anchor="left", vanchor="top", angle=270
 
-        label: "1", 0,   1400, fontSize=fontSize, anchor="center", vanchor="top", angle=0
-        label: "1", 100, 1400, fontSize=fontSize, anchor="center", vanchor="top", angle=90
-        label: "1", 200, 1400, fontSize=fontSize, anchor="center", vanchor="top", angle=180
-        label: "1", 300, 1400, fontSize=fontSize, anchor="center", vanchor="top", angle=270
+        label: "1", 0,   1400, font_size=font_size, anchor="center", vanchor="top", angle=0
+        label: "1", 100, 1400, font_size=font_size, anchor="center", vanchor="top", angle=90
+        label: "1", 200, 1400, font_size=font_size, anchor="center", vanchor="top", angle=180
+        label: "1", 300, 1400, font_size=font_size, anchor="center", vanchor="top", angle=270
 
-        label: "1", 0,   1600, fontSize=fontSize, anchor="right", vanchor="top", angle=0
-        label: "1", 100, 1600, fontSize=fontSize, anchor="right", vanchor="top", angle=90
-        label: "1", 200, 1600, fontSize=fontSize, anchor="right", vanchor="top", angle=180
-        label: "1", 300, 1600, fontSize=fontSize, anchor="right", vanchor="top", angle=270
+        label: "1", 0,   1600, font_size=font_size, anchor="right", vanchor="top", angle=0
+        label: "1", 100, 1600, font_size=font_size, anchor="right", vanchor="top", angle=90
+        label: "1", 200, 1600, font_size=font_size, anchor="right", vanchor="top", angle=180
+        label: "1", 300, 1600, font_size=font_size, anchor="right", vanchor="top", angle=270
 
 at tmp

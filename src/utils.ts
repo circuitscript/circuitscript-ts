@@ -115,8 +115,8 @@ export function getPortType(component: ClassComponent): string | null {
     const commands = drawingCommands.getCommands();
 
     commands.some(item => {
-        if (item[0] === 'label' && item[2].has('portType')) {
-            foundPinType = item[2].get('portType');
+        if (item[0] === 'label' && item[2].has('port_type')) {
+            foundPinType = item[2].get('port_type');
             return true;
         }
 

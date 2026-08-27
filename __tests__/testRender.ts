@@ -25,8 +25,8 @@ describe('Render tests', () => {
         ['script8.cst', 'point block command'],
         ['script9.cst', 'start immediately with `add component` command'],
         ['script10.cst', 'start immediately with `wire` command'],
-        ['script11.cst', 'flipX and flipY parameters'],
-        ['script12.cst', 'flipX, flipY, angle parameters with multiple components'],
+        ['script11.cst', 'flipx and flipy parameters'],
+        ['script12.cst', 'flipx, flipy, angle parameters with multiple components'],
         ['script13.cst', 'anchor modifier'],
 
         ['script14.cst', 'text graphic expression'],

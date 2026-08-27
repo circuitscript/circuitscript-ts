@@ -9,7 +9,7 @@ def net2(net_name):
         display: create graphic (params):
             hline: -50, 0, 100
             vpin: 1, 0, 50, -50, display_id=false
-            label: params.net_name, 0, -15, fontSize=50, anchor="center", italic=true
+            label: params.net_name, 0, -15, font_size=50, anchor="center", italic=true
         type: "net"
         params:
             net_name: net_name
@@ -57,7 +57,7 @@ frame:
 at net2("hello")
 wire down 100
 
-add text("some normal text", 100, 0)
+add text("some normal text", offset_x=100, offset_y=0)
 
 add text("some italic text", 100, 100, 50, false, true)
 

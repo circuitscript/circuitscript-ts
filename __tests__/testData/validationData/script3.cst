@@ -309,7 +309,7 @@ sheet:
                     wire down 200
                     add cap(100n) #= C6
                     ..place = false
-                    ..flipX = true
+                    ..flipx = true
 
                     wire down 100
                     to gnd
@@ -322,7 +322,7 @@ sheet:
                 wire right 300 
                 
                 add res(0) #= R6
-                ..flipY = true
+                ..flipy = true
                 
                 wire right 300
                 branch:

@@ -18,7 +18,7 @@ def esd_diode():
             # pin definition order is 1, 2
             hpin: 1, width/2 + 100, 0, -100  # cathode
             hpin: 2, -width/2-100, 0, 100    # anode
-            label: params.refdes, 0, -100, fontSize=50, anchor="middle", vanchor="top"
+            label: params.refdes, 0, -100, font_size=50, anchor="middle", vanchor="top"
 
 def esd_diode2():
     width = 100
@@ -36,7 +36,7 @@ def esd_diode2():
             # pin definition order is 2, 1
             hpin: 2, -width/2-100, 0, 100    # anode
             hpin: 1, width/2 + 100, 0, -100  # cathode
-            label: params.refdes, 0, -100, fontSize=50, anchor="middle", vanchor="top"
+            label: params.refdes, 0, -100, font_size=50, anchor="middle", vanchor="top"
 
 
 at v5 = supply("5V")

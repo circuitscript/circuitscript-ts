@@ -10,10 +10,10 @@ def cmp():
 at cmp()
 
 at cmp()
-..flipX = 1
+..flipx = 1
 
 at cmp()
-..flipY = 1
+..flipy = 1
 
 at cmp() flip:xy
 

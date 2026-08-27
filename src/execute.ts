@@ -1826,7 +1826,7 @@ export class ExecutionContext {
                 [],
                 new Map([
                     ["content", name],
-                    ["fontSize", numeric(10)],
+                    ["font_size", numeric(10)],
                 ]),
                     null
                 ]

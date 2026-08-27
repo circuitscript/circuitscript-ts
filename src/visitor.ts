@@ -417,7 +417,7 @@ export class ParserVisitor extends BaseVisitor {
         const width = (properties.get('width') as NumericValue)?? null;
         const height = (properties.get('height') as NumericValue) ?? null;
         const angle = (properties.get(ParamKeys.angle) as NumericValue) ?? null;
-        const followWireOrientation = (properties.get('followWireOrientation') as boolean) ?? true;
+        const followWireOrientation = (properties.get('follow_wire_orientation') as boolean) ?? true;
 
         const arrange = properties.get('arrange') ?? null;
         const display = (properties.get('display') as SymbolDrawingCommands) ?? null;
@@ -803,10 +803,10 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         // For the `label` command, allow both 'in' and 'out' as shortform
-        // values to portType
+        // values to port_type
         if (commandName === PlaceHolderCommands.label) {
             parameters.forEach(item => {
-                if (item[0] == 'keyword' && item[1] === 'portType') {
+                if (item[0] == 'keyword' && item[1] === 'port_type') {
                     if (item[2] === 'in') {
                         item[2] = 'input';
                     } else if (item[2] === 'out') {

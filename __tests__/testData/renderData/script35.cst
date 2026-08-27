@@ -8,7 +8,7 @@ def comp_pin_only():
             crect: 0, 0, 140, 60
             hpin: 1, "A", "passive", -100, 0, 30, pin_only=true
             hpin: 2, "B", "passive", 100, 0, -30, pin_only=true
-            label: params.refdes, 0, -55, name="refdes", fontSize=50, anchor="center"
+            label: params.refdes, 0, -55, name="refdes", font_size=50, anchor="center"
 
 def comp_explicit():
     return create component:
@@ -17,7 +17,7 @@ def comp_explicit():
             crect: 0, 0, 140, 60
             hpin: 1, "A", "passive", -100, 0, 30, display_id=false, display_name=false
             hpin: 2, "B", "passive", 100, 0, -30, display_id=false, display_name=false
-            label: params.refdes, 0, -55, name="refdes", fontSize=50, anchor="center"
+            label: params.refdes, 0, -55, name="refdes", font_size=50, anchor="center"
 
 def comp_default():
     return create component:
@@ -26,7 +26,7 @@ def comp_default():
             crect: 0, 0, 140, 60
             hpin: 1, "A", "passive", -100, 0, 30
             hpin: 2, "B", "passive", 100, 0, -30
-            label: params.refdes, 0, -55, name="refdes", fontSize=50, anchor="center"
+            label: params.refdes, 0, -55, name="refdes", font_size=50, anchor="center"
 
 u1 = comp_pin_only()
 u2 = comp_explicit()

@@ -14,8 +14,8 @@ def res(value):
             hpin: 2, "2", "passive", width/2 + 30, 0, -30, pin_only=true
             label: params.refdes, -width/2 + params.refdes_offsetx, \
                 -height/2 - 20 + params.refdes_offsety, \
-                name="refdes", fontSize=50, anchor="left"
-            label: params.value, 0, 0, name="value", fontSize=30, \
+                name="refdes", font_size=50, anchor="left"
+            label: params.value, 0, 0, name="value", font_size=30, \
                 anchor="center", vanchor="center"
         type: "res"
         params:
