@@ -39,8 +39,11 @@ export function measureTextSize2(
     // Reuse the canvas, so no need to keep creating
     const mainCanvas = environment.getCanvasWindow();
 
-    // Check if entry already exists in the cache
-    const key = `${text}-${fontFamily}-${fontSize}-${fontWeight}-${fontStyle}-${anchor}-${vanchor}`;
+    /* fontFamily is always forced to defaultFont below - keying on defaultFont
+    * here (rather than the caller's fontFamily) avoids fragmenting the cache
+    * with distinct entries for callers that pass different families but end
+    * up with identical measurements. */
+    const key = `${text}-${defaultFont}-${fontSize}-${fontWeight}-${fontStyle}-${anchor}-${vanchor}`;
 
     if (measureTextSizeCache[key] === undefined) {
         const dominantBaseline = resolveDominantBaseline(vanchor);

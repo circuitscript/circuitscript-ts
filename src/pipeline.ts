@@ -484,7 +484,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
                 let svgCanvas;
                 if (needsBaseSvg) {
-                    // Clone so applyInteractiveMarkup/generatePdfOutput can mutate `canvas` without affecting this plain output.
+                    // Clone so applyInteractiveMarkup/generatePdfOutput can 
+                    // mutate `canvas` without affecting this plain output.
                     svgCanvas = wantsDataSvg ? clonePlainCanvas(canvas) : canvas;
                     try {
                         svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
