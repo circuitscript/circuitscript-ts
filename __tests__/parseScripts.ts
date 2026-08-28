@@ -1006,6 +1006,34 @@ tmp = create component:
 has_pin(tmp, 1, 2)
 `;
 
+export const inlineScript101 = new ScriptTest(`
+def test1(a, b, c):
+    return a + b + c
+print(test1(c=3, a=1, b=2))
+`, ['6']);
+
+export const inlineScript102 = new ScriptTest(`
+def test1(a, b=10, c=20):
+    return a + b + c
+print(test1(1))
+print(test1(1, c=5))
+print(test1(1, 2, 3))
+`, ['31', '16', '6']);
+
+export const inlineScript103 = new ScriptTest(`
+def test1(a, b, c=100):
+    return a + b + c
+print(test1(1, c=2, b=3))
+`, ['6']);
+
+export const inlineScript104 = new ScriptTest(`
+from "std" import *
+def get_value(r):
+    return r.value
+r1 = res(10k)
+print(get_value(r1))
+`, ['10k']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [

@@ -40,6 +40,10 @@ import {
     inlineScript83,
     inlineScript84,
     inlineScript85,
+    inlineScript101,
+    inlineScript102,
+    inlineScript103,
+    inlineScript104,
     inlineScriptChain1,
     inlineScriptChain2,
     inlineScriptChain3,
@@ -479,6 +483,11 @@ def sub():
     testInlineScriptTest('test setting of net params', inlineScript57);
 
     testInlineScriptTest('test function return values and referenced values', inlineScript58);
+
+    testInlineScriptTest('function call with out-of-order keyword arguments', inlineScript101);
+    testInlineScriptTest('function call with default parameter values', inlineScript102);
+    testInlineScriptTest('function call mixing positional and keyword arguments', inlineScript103);
+    testInlineScriptTest('function call passing a component as an argument', inlineScript104);
 });
 
 describe('line continuation tests', () => {
@@ -526,6 +535,67 @@ describe('atom expr and trailers tests', () => {
     testInlineScriptTest('test nested function calls mixed with array access', inlineScript61);
 
     testInlineScriptTest('test nested objects in variables', inlineScript62);
+});
+
+describe('function argument errors', () => {
+    test('missing required function argument throws', async () => {
+        const err = await runScriptExpectErrorObject(`
+def test1(a, b):
+    return a + b
+print(test1(1))
+`);
+
+        expect(err.message).toContain('Missing arguments');
+        expect(err.message).toContain('b');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('unknown keyword argument name throws', async () => {
+        const err = await runScriptExpectErrorObject(`
+def test1(a, b):
+    return a + b
+print(test1(1, z=2))
+`);
+
+        expect(err.message).toContain('Invalid keyword argument');
+        expect(err.message).toContain('z');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('too many positional arguments throws', async () => {
+        const err = await runScriptExpectErrorObject(`
+def test1(a, b):
+    return a + b
+print(test1(1, 2, 3))
+`);
+
+        expect(err.message).toContain('Invalid positional argument');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('keyword argument colliding with positional argument throws', async () => {
+        const err = await runScriptExpectErrorObject(`
+def test1(a, b):
+    return a + b
+print(test1(1, a=2))
+`);
+
+        expect(err.message).toContain('Got multiple values for argument');
+        expect(err.message).toContain('a');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('repeated keyword argument throws', async () => {
+        const err = await runScriptExpectErrorObject(`
+def test1(a, b):
+    return a + b
+print(test1(a=1, a=2, b=3))
+`);
+
+        expect(err.message).toContain('Got multiple values for argument');
+        expect(err.message).toContain('a');
+        expect(err.startToken).toBeDefined();
+    });
 });
 
 // This tests that an error is generated at the right position for 

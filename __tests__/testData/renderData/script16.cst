@@ -9,23 +9,23 @@ wire down 100
 branch:
     wire down 100
 
-    add diode(3.3) pin 2
+    add diode() pin 2
     wire down 100 to gnd
 
 branch:
     wire right 100
-    add diode(3.3) pin 2
+    add diode() pin 2
     wire right 100 to gnd
 
 wire left 200
 
 branch:
     wire up 100
-    add diode(3.3) pin 2
+    add diode() pin 2
     wire up 100 to gnd
 
 wire left 100
 
 branch:
-    add diode(3.3) pin 2
+    add diode() pin 2
     wire left 100 to gnd

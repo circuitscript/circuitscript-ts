@@ -29,7 +29,7 @@ describe('Scenario error paths', () => {
     const minimalCircuit = `
 from "std" import *
 
-v5 = supply("5V", 5)
+v5 = supply("5V")
 gnd = dgnd()
 
 at v5

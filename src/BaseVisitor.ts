@@ -25,16 +25,16 @@ import { Net } from "./objects/Net.js";
 import { HighImpedanceValue, NumberOperator, NumberOperatorType, numeric, NumericValue,
     resolveToNumericValue } from "./objects/NumericValue.js";
 import { PercentageValue } from "./objects/PercentageValue.js";
-import { CallableParameter, ComplexType, 
+import { CallableParameter as CallableArgument, ComplexType, 
     Direction, 
-    FunctionDefinedParameter, AnyReference, UndeclaredReference, 
+    FunctionDefinedParameter as FunctionDefinedArgument, AnyReference, UndeclaredReference, 
     ValueType,
     ImportedLibrary,
     NewContextOptions,
     ImportFunctionHandling as ImportFunctionHandling,
     ComponentPinNetPair} from "./objects/types.js";
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
-import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, ParamKeys, 
+import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, KeywordRefdesPrefix, ParamKeys, 
     ReferenceTypes, TrailerArrayIndex } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInFunctions } from './builtinMethods.js';
@@ -720,7 +720,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         
         const executor = this.getExecutor();
                 
-        let parameters: CallableParameter[] = [];
+        let parameters: CallableArgument[] = [];
 
         const ctxParameters = ctx.parameters();
         if (ctxParameters) {
@@ -819,8 +819,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         contextName: string,
         ctx: ParserRuleContext,
         options: NewContextOptions,
-        funcDefinedParameters: FunctionDefinedParameter[],
-        passedInParameters: CallableParameter[],
+        funcDefinedParameters: FunctionDefinedArgument[],
+        passedInParameters: CallableArgument[],
         isBreakContext = true
     ): ExecutionContext {
 
@@ -994,7 +994,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         const boundary = IDs.length - defaultValuesProvided.length;
 
-        const result: FunctionDefinedParameter[] = IDs.map((id, index) => {
+        const result: FunctionDefinedArgument[] = IDs.map((id, index) => {
             const idText = id.getText();
             if (index >= boundary) {
                 const tmpCtx = defaultValuesProvided[index - boundary];
@@ -1002,7 +1002,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
                 const defaultValue = this.getResult(tmpCtx);
                 return [idText, tmpCtx.start!, defaultValue];
             } else {
-            return [idText, id.getSymbol()];
+                return [idText, id.getSymbol()];
             }
         });
 
@@ -1030,7 +1030,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         // Values are wrapped if they are a reference, and this method
         // assumes that the values are to be used.
-        const returnList: CallableParameter[] = dataExpressions.map((item, index) => {
+        const returnList: CallableArgument[] = dataExpressions.map((item, index) => {
             const value = this.visitResult(item);
             return ['position', index, unwrapValue(value)];
         });
@@ -1465,72 +1465,106 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         this.passResult(ctx, ctx.data_expr());
     }
 
-    protected setupDefinedParameters(
-        funcDefinedParameters: FunctionDefinedParameter[], 
-        passedInParameters: CallableParameter[], 
+    protected setupDefinedArguments(
+        funcDefinedArgs: FunctionDefinedArgument[], 
+        passedInArgs: CallableArgument[], 
         executor: ExecutionContext): void {
         
-        // Check if the arguments match up
-        for (let i = 0; i < funcDefinedParameters.length; i++) {
-            const tmpFuncArg = funcDefinedParameters[i];
+        // Track function params already set.
+        let keywordArgsCount = 0;
+        const keywordsAlrSet: string[] = [];
+        const validKeywords = funcDefinedArgs.map(item => item[0]);
 
-            if (i < passedInParameters.length) {
-                const tmpPassedInArgs = passedInParameters[i];
-                const argValue = unwrapValue(tmpPassedInArgs[2]);
+        // Set the passed in values first.
+        for (let i = 0; i < passedInArgs.length; i++) {
+            const passedInArg = passedInArgs[i];
+            const argType = passedInArg[0];
+            const argValue = unwrapValue(passedInArg[2]);
 
-                if (tmpPassedInArgs[0] === 'position') {
-                    // If value is passed in as function parameter, then
-                    // use it in the scope.
-                    const variableName = tmpFuncArg[0];
-                    executor.log(
-                        'set variable in scope, var name: ',
-                        variableName,
-                    );
+            let useVariableName: string | null = null;
 
-                    executor.scope.setVariable(
-                        variableName,
-                        argValue,
-                    );
-
-                    if (argValue instanceof ClassComponent) {
-                        const component  = argValue;
-
-                        // Add the component nets into the local scope
-                        for(const [pinNumber, net] of component.pinNets){
-                            executor.scope.netMap.set(component, pinNumber, net);
-                        }
-                    }
-                } else if (tmpPassedInArgs[0] === 'keyword') {
-                    const variableName = tmpPassedInArgs[1];
-                    executor.log(
-                        'set variable in scope, var name: ',
-                        variableName
-                    );
-
-                    executor.scope.setVariable(
-                        variableName,
-                        argValue
-                    );
+            if (argType === 'position') {
+                // Keyword args must be after all position args
+                if (keywordArgsCount > 0) {
+                    throw 'All keyword arguments must be after positional arguments'
                 }
 
-            } else if (tmpFuncArg.length === 3) {
-                // Value was not provided to function, but a default 
-                // value is provided.
-                const variableName = tmpFuncArg[0];
-                const defaultValue = tmpFuncArg[2];
+                // If value is passed in as function parameter, then
+                // use it in the scope.
+                if (i >= funcDefinedArgs.length) {
+                    throw `Invalid positional argument: ${argValue}`;
+                }
+
+                const positionArg = funcDefinedArgs[i];
+                useVariableName = positionArg[0];
+
+            } else if (argType === 'keyword') {
+                useVariableName = passedInArg[1];
+                keywordArgsCount++;
+            }
+
+            if (useVariableName) {
+                if (validKeywords.indexOf(useVariableName) === -1) {
+                    throw `Invalid keyword argument: ${useVariableName}`;
+                }
+
+                if (keywordsAlrSet.indexOf(useVariableName) !== -1) {
+                    throw `Got multiple values for argument: ${useVariableName}`;
+                }
+
                 executor.log(
                     'set variable in scope, var name: ',
-                    variableName,
+                    useVariableName,
                 );
+
                 executor.scope.setVariable(
-                    variableName, defaultValue,
+                    useVariableName,
+                    argValue,
                 );
-            } else {
-                throw `Invalid arguments got: ` + passedInParameters;
+
+                if (argValue instanceof ClassComponent) {
+                    const component = argValue;
+
+                    // Add the component nets into the local scope
+                    for (const [pinNumber, net] of component.pinNets) {
+                        executor.scope.netMap.set(component, pinNumber, net);
+                    }
+                }
+
+                keywordsAlrSet.push(useVariableName);
             }
         }
-    }
 
+        // For remaining params, go ahead to set the values.
+        for (let i = 0; i < funcDefinedArgs.length; i++) {
+            const funcDefinedArg = funcDefinedArgs[i];
+            const variableName = funcDefinedArg[0];
+
+            const hasDefaultValue = funcDefinedArg.length === 3;
+
+            // Not set yet, then apply default value
+            if (hasDefaultValue && keywordsAlrSet.indexOf(variableName) === -1) {
+                const defaultValue = unwrapValue(funcDefinedArg[2]);
+
+                executor.scope.setVariable(
+                    variableName,
+                    defaultValue
+                );
+
+                keywordsAlrSet.push(variableName);
+            }
+        }
+
+        const missingParams = funcDefinedArgs.filter(item => {
+            const variableName = item[0];
+            return (keywordsAlrSet.indexOf(variableName) === -1);
+        });
+
+        if (missingParams.length > 0) {
+            throw `Missing arguments: ` + missingParams.join(', ');
+        }
+    }
+    
     protected runExpressions(executor: ExecutionContext,
         expressions: ExpressionContext[]
             | Function_exprContext[]
@@ -1646,8 +1680,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         parentContext: ExecutionContext,
         executionContextName: string,
         options: NewContextOptions,
-        funcDefinedParameters: FunctionDefinedParameter[],
-        passedInParameters: CallableParameter[]
+        funcDefinedParameters: FunctionDefinedArgument[],
+        passedInParameters: CallableArgument[]
     ): ExecutionContext {
         const { 
             netNamespace = "",
@@ -1684,7 +1718,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         newExecutor.scope.netMap.componentPinNetPairResolver =
             this.createComponentPinNetPairResolver(executionStack);
 
-        this.setupDefinedParameters(
+        this.setupDefinedArguments(
             funcDefinedParameters,
             passedInParameters,
             newExecutor
