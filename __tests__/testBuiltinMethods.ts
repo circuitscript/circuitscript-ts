@@ -32,6 +32,18 @@ import {
     inlineScript98,
     inlineScript99,
     inlineScript100,
+    inlineScript105,
+    inlineScript106,
+    inlineScript107,
+    inlineScript108,
+    inlineScript109,
+    inlineScript110,
+    inlineScript111,
+    inlineScript112,
+    inlineScript113,
+    inlineScript114,
+    inlineScript115,
+    inlineScript116,
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -60,6 +72,18 @@ describe('builtin methods', () => {
         ['has_pin returns false for non-existent numeric pin', inlineScript72],
         ['has_pin checks boundary pins correctly', inlineScript73],
         ['has_pin with named string pin', inlineScript74],
+
+        ['textwrap_dedent removes common leading whitespace', inlineScript105],
+        ['textwrap_dedent preserves relative indentation', inlineScript106],
+        ['textwrap_dedent no-op when no common indent', inlineScript107],
+        ['textwrap_dedent handles blank lines', inlineScript108],
+        ['textwrap_dedent normalizes whitespace-only blank line longer than common indent', inlineScript109],
+
+        ['strip removes leading/trailing whitespace', inlineScript111],
+        ['strip removes leading/trailing tab and newline', inlineScript112],
+        ['strip removes custom chars', inlineScript113],
+        ['strip removes multiple custom chars', inlineScript114],
+        ['strip is a no-op when nothing to strip', inlineScript115],
 
     ])('built-in functions - %s',  async (description, scriptTest) =>
         await expectInlineScriptTest(description, scriptTest)
@@ -156,6 +180,20 @@ describe('builtin methods', () => {
 
         test('three arguments throws', async () => {
             const { hasError } = await runScript(inlineScript100);
+            expect(hasError).toBe(true);
+        });
+    });
+
+    describe('textwrap_dedent', () => {
+        test('throws for non-string input', async () => {
+            const { hasError } = await runScript(inlineScript110);
+            expect(hasError).toBe(true);
+        });
+    });
+
+    describe('strip', () => {
+        test('throws for non-string input', async () => {
+            const { hasError } = await runScript(inlineScript116);
             expect(hasError).toBe(true);
         });
     });

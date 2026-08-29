@@ -29,6 +29,8 @@ const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
     ['range', range],
     ['len', objectLength],
     ['str', strFunction],
+    ['textwrap_dedent', textwrapDedent],
+    ['strip', textStrip],
     ['array_push', arrayPush],
     ['array_get', arrayGet],
     ['array_set', arraySet],
@@ -910,4 +912,78 @@ function strFunction(object: any): string {
     } else {
         throw "str() method failed";
     }
+}
+
+/** Strips the longest common leading whitespace shared by all non-blank lines,
+ * preserving relative indentation. Mirrors Python's `textwrap.dedent`. */
+function textwrapDedent(value: string): string {
+    if (typeof value !== 'string') {
+        throw "Invalid input for method textwrap_dedent: expected a string";
+    }
+
+    const lines = value.split('\n');
+
+    // Longest common leading whitespace across all non-whitespace-only lines.
+    let commonIndent: string | null = null;
+    for (const line of lines) {
+        if (line.trim().length === 0) {
+            continue;
+        }
+        const indent = line.match(/^[ \t]*/)?.[0] ?? '';
+        if (commonIndent === null) {
+            commonIndent = indent;
+        } else {
+            let i = 0;
+            while (i < commonIndent.length && i < indent.length && commonIndent[i] === indent[i]) {
+                i++;
+            }
+            commonIndent = commonIndent.slice(0, i);
+        }
+    }
+
+    if (!commonIndent) {
+        return value;
+    }
+    const indentToStrip = commonIndent;
+
+    return lines
+        .map(line => {
+            // Blank/whitespace-only lines always normalize to empty, regardless of length,
+            // matching Python's textwrap.dedent (a whitespace-only line longer than
+            // commonIndent must NOT be left with leftover spaces after slicing).
+            if (line.trim().length === 0) {
+                return '';
+            }
+            return line.startsWith(indentToStrip) ? line.slice(indentToStrip.length) : line.trimStart();
+        })
+        .join('\n');
+}
+
+/** Strips leading/trailing whitespace, or leading/trailing characters from
+ * `chars` if given. Mirrors Python's `str.strip`. */
+function textStrip(value: string, chars?: string): string {
+    if (typeof value !== 'string') {
+        throw "Invalid input for method strip: expected a string";
+    }
+
+    if (chars === undefined) {
+        return value.trim();
+    }
+
+    if (typeof chars !== 'string') {
+        throw "Invalid input for method strip: chars must be a string";
+    }
+
+    const charSet = new Set(chars);
+
+    let start = 0;
+    let end = value.length;
+    while (start < end && charSet.has(value[start])) {
+        start++;
+    }
+    while (end > start && charSet.has(value[end - 1])) {
+        end--;
+    }
+
+    return value.slice(start, end);
 }

@@ -216,7 +216,7 @@ def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic
         display: create graphic:
             pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
             text:
-                content: value
+                content: strip(textwrap_dedent(value))
                 offset: offset_x, offset_y
                 font_size: font_size
                 bold: bold

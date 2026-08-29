@@ -1034,6 +1034,73 @@ r1 = res(10k)
 print(get_value(r1))
 `, ['10k']);
 
+export const inlineScript105 = new ScriptTest(`
+s = "    line one
+    line two
+    line three"
+print(textwrap_dedent(s))
+`, ['"line one\nline two\nline three"']);
+
+export const inlineScript106 = new ScriptTest(`
+s = "  outer
+    inner
+  outer2"
+print(textwrap_dedent(s))
+`, ['"outer\n  inner\nouter2"']);
+
+export const inlineScript107 = new ScriptTest(`
+s = "no indent
+same here"
+print(textwrap_dedent(s))
+`, ['"no indent\nsame here"']);
+
+export const inlineScript108 = new ScriptTest(`
+s = "    line one
+
+    line three"
+print(textwrap_dedent(s))
+`, ['"line one\n\nline three"']);
+
+export const inlineScript109 = new ScriptTest(`
+s = "  line one
+    
+  line two"
+print(textwrap_dedent(s))
+`, ['"line one\n\nline two"']);
+
+export const inlineScript110 = `
+print(textwrap_dedent(5))
+`;
+
+export const inlineScript111 = new ScriptTest(`
+s = "   hello world   "
+print(strip(s))
+`, ['"hello world"']);
+
+export const inlineScript112 = new ScriptTest(`
+s = "\txhello\n"
+print(strip(s))
+`, ['"xhello"']);
+
+export const inlineScript113 = new ScriptTest(`
+s = "xxhelloxx"
+print(strip(s, "x"))
+`, ['"hello"']);
+
+export const inlineScript114 = new ScriptTest(`
+s = "xyxhelloxyx"
+print(strip(s, "xy"))
+`, ['"hello"']);
+
+export const inlineScript115 = new ScriptTest(`
+s = "no strip needed"
+print(strip(s))
+`, ['"no strip needed"']);
+
+export const inlineScript116 = `
+print(strip(5))
+`;
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [

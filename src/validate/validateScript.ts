@@ -9,15 +9,19 @@ import { ScriptOptions, prepareFile, ParseErrorStrategy, TokenErrorListener } fr
 import { ParseError } from "../errors.js";
 import { SymbolValidatorResolveVisitor } from "./SymbolValidatorResolveVisitor.js";
 import { SymbolValidatorVisitor } from "./SymbolValidatorVisitor.js";
+import { BaseErrorListener } from "antlr4ng";
 
 export async function validateScript(filePath: string, scriptData: string,
-    options: ScriptOptions): Promise<SymbolValidatorVisitor> {
+    options: ScriptOptions, errorListener: null | BaseErrorListener = new TokenErrorListener()): Promise<SymbolValidatorVisitor> {
 
     const { parser } = prepareFile(scriptData);
     parser.removeErrorListeners();
 
     parser.errorHandler = new ParseErrorStrategy();
-    parser.addErrorListener(new TokenErrorListener());
+
+    if (errorListener) {
+        parser.addErrorListener(errorListener);
+    }
 
     const tree = parser.script();
 

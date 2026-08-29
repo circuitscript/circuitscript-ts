@@ -438,7 +438,7 @@ export function prepareTokens(tokens: Token[], lexer: CircuitScriptLexer,
     
     const parsedTokens: IParsedToken[] = [];
 
-    for (const item of tokens){
+    for (const item of tokens) {
         // Skip EOF tokens
         if (item.type !== -1) {
             let stringValue = "";
@@ -527,6 +527,7 @@ function resolveTokenType(tokenType: string): string {
             case 'BOOLEAN_VALUE':
                 return 'keyword';
             case 'COMMENT':
+            case 'ANNOTATION_START':
                 return 'comment';
         }
 
