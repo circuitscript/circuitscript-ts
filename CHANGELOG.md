@@ -1,6 +1,108 @@
 # Changelog
 
-## [v0.10.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.1...v0.10.2)
+## [v0.10.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.2...v0.10.3)
+
+[0f0d40e](https://github.com/circuitscript/circuitscript-ts/commit/0f0d40e06e467ffd2145a444a7e5e6cbf03dc88b)Standardize script-facing keyword params to snake_case
+- 
+- fontSize, flipX/flipY, followWireOrientation, and portType are now
+- font_size, flipx/flipy, follow_wire_orientation, and port_type across
+- the grammar surface, std library, and rendering code.
+
+[4c7da7f](https://github.com/circuitscript/circuitscript-ts/commit/4c7da7f9d7c83ee26a44fa6e602e7f8887e9c9e8)Support keyword and default function arguments
+- 
+- Function calls can now mix positional/keyword arguments in any order,
+- use default parameter values, and pass components as arguments.
+- Validates missing, unknown, duplicate, and misordered arguments with
+- clear errors.
+
+[5547451](https://github.com/circuitscript/circuitscript-ts/commit/5547451da58789a9a1a3f6d55b6d738001315162)Add data-svg outputReturnType to renderScript
+- 
+- Returns the interactive SVG string plus componentMeta via outputExtra
+- without wrapping it in the full HTML viewer.
+
+[e31f7af](https://github.com/circuitscript/circuitscript-ts/commit/e31f7afdde78486fabf5cd55fb42527ee61f1635)Merge interactive markup into single render pass instead of a second pass
+- 
+- renderSheetsToSVG now returns metadata describing interactive-only
+- elements (component ids, data-net attributes, synthetic highlights)
+- instead of taking an interactiveAttributes flag and re-rendering.
+- applyInteractiveMarkup() applies that metadata to the same canvas
+- used for plain SVG/PDF output, with clonePlainCanvas() used to keep
+- the plain output unaffected.
+
+[9e0c8a1](https://github.com/circuitscript/circuitscript-ts/commit/9e0c8a1b16d976bf3fe9d47451f7ac52c8afca42)Speed up pipeline startup and numeric arithmetic
+- 
+- Addresses five profiled hot spots. Output is unchanged: all SVG and
+- netlist results are byte-identical to before, and PDF output matches
+- apart from its (already nondeterministic) creation timestamp.
+- 
+- Load pdfkit on demand
+- pdfkit was imported at module scope in pipeline.ts but is only used
+- for .pdf output. It pulls in fontkit, brotli, png-js and restructure -
+- 199 of the 346 module files loaded by a plain SVG run. Loading it
+- inside the .pdf branch cuts module load from 238ms to 123ms.
+- 
+- Enable the V8 compile cache
+- Every CLI invocation recompiled the whole module graph. Turning on
+- node:module's compile cache reuses the previous run's bytecode. It has
+- to be active before the expensive requires run, hence the separate
+- module imported first from main.ts. Node 22.1+; older runtimes and the
+- ESM build simply skip it.
+- 
+- Skip layout when nothing downstream needs it
+- Netlist handlers run in the beforeRender phase and write their output
+- straight from the visitor, never touching the laid-out sheets. Layout
+- still ran unconditionally afterwards and the result was discarded.
+- It is now guarded on whether any output path, ERC pass, or requested
+- return type actually consumes it.
+- 
+- Stop round-tripping big.js values through float64
+- The free-function operators built operands with new Big(v.toNumber()),
+- converting Big -&gt; number -&gt; string -&gt; Big. That is 7x slower than
+- operating on the stored Big, and silently drops the arbitrary
+- precision big.js exists to preserve. The NumericValue methods already
+- did this correctly; the operators now match. PercentageValue and
+- WrappedNumber gain toBigNumber() so the whole NumberOperatorType union
+- supports it.
+- 
+- Memoize NumericValue.toBigNumber()
+- It allocated a Big and did a multiply on every call while sitting on
+- the hot path of every arithmetic operation. valuePart and prefixPart
+- are only assigned in the constructor, so the scaled value is stable.
+- 
+- Measured on script84.cst, median of 9 runs:
+- svg output  1570ms -&gt; 1398ms  (-11%)
+- net output  1416ms -&gt; 1056ms  (-25%)
+- pdf output  1977ms -&gt; 1874ms  (-5%)
+
+[70f69d3](https://github.com/circuitscript/circuitscript-ts/commit/70f69d32334fc0c59d6af5fbebe0f0f3bfdbf444)Add textwrap_dedent and strip builtins, apply to text() content
+- 
+- Also fixes semantic tokens for annotation comments and allows validateScript to accept a custom error listener.
+
+[4e7b6a0](https://github.com/circuitscript/circuitscript-ts/commit/4e7b6a04dc2860e1cc5262edb26547fc00b0dc09)Support returning HTML output via renderScript
+- 
+- Adds outputReturnType option to select whether renderScript returns
+- the SVG or interactive HTML string, replacing the SVG-only svgOutput
+- field with a generic outputReturn.
+
+[8e5c7ce](https://github.com/circuitscript/circuitscript-ts/commit/8e5c7cecf80a1d16be6b05693e2b58e7f5288a17)Avoid re-reading import files during resolution
+- 
+- resolveAllImportFilepaths now returns file contents alongside
+- resolved paths, so resolveImportsAndLoad reuses them instead of
+- reading each file from disk a second time.
+
+[6a4c5cb](https://github.com/circuitscript/circuitscript-ts/commit/6a4c5cb9c630c6fbcc28a42c2622c3472382175c)Skip logger work when dump-data output is not requested
+- 
+- Logger.add() and construction did unconditional string formatting and
+- array pushes even when nothing consumed the logs. Gate logging behind
+- an enabled flag tied to the dumpData pipeline option.
+
+[d3bd404](https://github.com/circuitscript/circuitscript-ts/commit/d3bd404a84a5b3a1a549fabd4ef548671d0e25f2)Fix text measurement cache key to use resolved font family
+- 
+- Cache was keying on the caller's requested fontFamily even though
+- fontFamily is always forced to defaultFont, fragmenting the cache
+- with duplicate entries for identical measurements.
+
+## [v0.10.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.1...v0.10.2) - 2026-08-23
 
 [20896f1](https://github.com/circuitscript/circuitscript-ts/commit/20896f1c4f8f54fbf0aec6aee24cf1fd099332f2)Add interactive HTML viewer output format
 - 
