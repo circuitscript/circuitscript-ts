@@ -1,0 +1,8 @@
+[
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "severity": "warning",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]

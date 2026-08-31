@@ -255,6 +255,8 @@ export class ExecutionContext {
             behavior?: any,
 
             sim?: Map<string, any>,
+
+            erc_net_bridge?: boolean,
         },
         isModule = false
     ): ClassComponent {
@@ -281,6 +283,12 @@ export class ExecutionContext {
         component.behaviorProp = props.behavior ?? null;
 
         component.isNetLabel = props.is_label ?? false;
+
+        component.setParam('erc_net_bridge', props.erc_net_bridge ?? false);
+
+        if (component.ercNetBridgeProp && component.numPins !== 2) {
+            throw new RuntimeExecutionError("'erc_net_bridge' is only valid on components with exactly 2 pins");
+        }
 
         const paramsMap = new Map<string, any>();
         params.forEach((param) => {

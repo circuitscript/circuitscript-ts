@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { expectJsonOutput, testValidateScript } from "./helpers";
+import { expectJsonOutput, runScript, runScriptExpectError, testValidateScript } from "./helpers";
 
 const mainPath = '__tests__/testData/validationData/';
 
@@ -37,6 +37,50 @@ describe('test validation', () => {
         const jsonString = JSON.stringify(result);
 
         expectJsonOutput(jsonString, `${mainPath}expected/${scriptPath}.cst.json`);
+    });
+
+    describe('erc_net_bridge property validation', () => {
+        test('non-boolean value throws a validation error', async () => {
+            const msg = await runScriptExpectError(
+                'c1 = create component:\n    pins: 2\n    erc_net_bridge: "yes"\n'
+            );
+            expect(msg).toContain("Invalid value for 'erc_net_bridge' property");
+        });
+
+        test('true on a component with pins != 2 throws the pin-count error', async () => {
+            const msg = await runScriptExpectError(
+                'c1 = create component:\n    pins: 3\n    erc_net_bridge: true\n'
+            );
+            expect(msg).toContain("is only valid on components with exactly 2 pins");
+        });
+
+        test('true on a component with pins: 2 parses/executes without error', async () => {
+            const { hasError } = await runScript(
+                'c1 = create component:\n    pins: 2\n    erc_net_bridge: true\n'
+            );
+            expect(hasError).toBe(false);
+        });
+
+        test('can be set to a non-boolean post-creation and throws a validation error', async () => {
+            const msg = await runScriptExpectError(
+                'c1 = create component:\n    pins: 2\n\nc1.erc_net_bridge = "yes"\n'
+            );
+            expect(msg).toContain("Invalid value for 'erc_net_bridge' property");
+        });
+
+        test('true set post-creation on a component with pins != 2 throws the pin-count error', async () => {
+            const msg = await runScriptExpectError(
+                'c1 = create component:\n    pins: 3\n\nc1.erc_net_bridge = true\n'
+            );
+            expect(msg).toContain("is only valid on components with exactly 2 pins");
+        });
+
+        test('true set post-creation on a component with pins: 2 parses/executes without error', async () => {
+            const { hasError } = await runScript(
+                'c1 = create component:\n    pins: 2\n\nc1.erc_net_bridge = true\n'
+            );
+            expect(hasError).toBe(false);
+        });
     });
 });
 

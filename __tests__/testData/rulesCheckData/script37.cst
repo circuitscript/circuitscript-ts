@@ -1,0 +1,24 @@
+drv1 = create component:
+    pins:
+        1: "1", "out"
+
+drv2 = create component:
+    pins:
+        1: "1", "out"
+    copy: true
+
+recv = create component:
+    pins:
+        1: "1", "input"
+
+at drv1
+wire right 100
+to recv
+
+at drv2
+wire down 100 right 100
+to recv pin 1
+
+at drv2
+wire down 200 right 100
+to recv pin 1

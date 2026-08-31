@@ -397,6 +397,10 @@ export class ParserVisitor extends BaseVisitor {
             props.behavior = properties.get('behavior');
         }
 
+        if (properties.has('erc_net_bridge')){
+            props.erc_net_bridge = properties.get('erc_net_bridge');
+        }
+
         try {
             const createdComponent = this.getExecutor().createComponent(instanceName,
                 [], params, props);
@@ -602,6 +606,13 @@ export class ParserVisitor extends BaseVisitor {
                         } else {
                             // All other types
                             throw new RuntimeExecutionError("Invalid value for 'copy' property", ctx);
+                        }
+                        break;
+                    case 'erc_net_bridge':
+                        if (typeof value === 'boolean') {
+                            this.validateBoolean(value, ctx);
+                        } else {
+                            throw new RuntimeExecutionError("Invalid value for 'erc_net_bridge' property", ctx);
                         }
                         break;
                 }

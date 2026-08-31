@@ -25,7 +25,8 @@
     "files": [
         "dist",
         "fonts",
-        "libs"
+        "libs",
+        "viewer"
     ],
     "devDependencies": {
         "@resvg/resvg-js": "^2.6.2",
@@ -86,7 +87,7 @@
         "preversion": "npm run test",
         "version": "npm run changelog && npm run update-version-ts && git add CHANGELOG.md src/version.ts",
         "update-version-ts": "node -e \"const v=require('./package.json').version; require('fs').writeFileSync('src/version.ts', \\\"export const VERSION = '\\\" + v + \\\"';\\\\n\\\");\"",
-        "copy-assets": "mkdir -p dist/fonts && mkdir -p dist/libs && cp -r fonts dist/ && cp -r libs dist/",
+        "copy-assets": "mkdir -p dist/fonts && mkdir -p dist/libs && mkdir -p dist/viewer  && cp -r fonts dist/ && cp -r libs dist/ && cp -r viewer dist/",
         "license:check": "license-check-and-add check -f licensecheck.json",
         "license:add": "license-check-and-add add -f licensecheck.json"
     },
@@ -107,7 +108,7 @@
         "ml-matrix": "^6.12.1",
         "pdfkit": "^0.15.1",
         "svg-to-pdfkit": "^0.1.8",
-        "svgdom": "^0.1.22",
+        "svgdom": "0.1.22",
         "this-file": "^2.0.3",
         "tslib": "~2.5",
         "ws": "^8.14.2"

@@ -1,0 +1,17 @@
+[
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "type": "PIN-TYPE-INPUT-UNDRIVEN",
+        "severity": "warning",
+        "message": "Net '/NET-(J3-2)' has input pin(s) but no driving output"
+    },
+    {
+        "start": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "severity": "warning",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]

@@ -42,6 +42,18 @@ describe('ERC rules', () => {
         ['erc_set suppresses UNCONNECTED-PIN (off)', 'script23.cst'],
         ['input pin driven by power_input (no violation)', 'script24.cst'],
         ['input pin undriven - no power_input present', 'script25.cst'],
+        ['erc_net_bridge suppresses undriven-input', 'script26.cst'],
+        ['no erc_net_bridge still warns (default off)', 'script27.cst'],
+        ['erc_net_bridge - conflict detection still fires through a bridge', 'script28.cst'],
+        ['erc_net_bridge - unconnected-pin check unaffected by unrelated bridge', 'script29.cst'],
+        ['erc_net_bridge - one pin unconnected on the bridge itself', 'script30.cst'],
+        ['erc_net_bridge + copy - clone retains bridge suppression', 'script31.cst'],
+        ['erc_net_bridge - chained bridges merge a 3-net chain', 'script32.cst'],
+        ['erc_net_bridge - instances created in a loop keyed by identity', 'script33.cst'],
+        ['erc_net_bridge - set true post-creation suppresses undriven-input', 'script34.cst'],
+        ['erc_net_bridge - set false post-creation (after true at creation) still warns', 'script35.cst'],
+        ['copies of the same output-driven component on one net - no violation', 'script36.cst'],
+        ['copy of one driver plus a distinct driver on same net - still flags multiple outputs', 'script37.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

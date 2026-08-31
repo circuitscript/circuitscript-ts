@@ -29,6 +29,12 @@ function makeViolation(type: ERC_Rules, instance: ClassComponent, pin: PinId | n
 export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
     const netMap = new Map<Net, PinEntry[]>();
 
+    /* Copies of the same component (e.g. a net label or power symbol placed
+     * multiple times) share an origin via `_copyFrom` and represent a single
+     * logical driver, not distinct ones. Dedup by origin+pin per net so they
+     * don't get double-counted as multiple drivers. */
+    const seenPerNet = new Map<Net, Set<string>>();
+
     for (const [component, pin, net] of nets) {
         if (!netMap.has(net)) {
             netMap.set(net, []);
@@ -43,6 +49,16 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
 
         const pinType = pinDef.pinType as PinTypes;
         if (EXCLUDED_TYPES.has(pinType)) continue;
+
+        const origin = component._copyFrom ?? component;
+        const dedupKey = `${origin.instanceName}-${pinKey.getHashValue()}`;
+
+        if (!seenPerNet.has(net)) {
+            seenPerNet.set(net, new Set());
+        }
+        const seen = seenPerNet.get(net)!;
+        if (seen.has(dedupKey)) continue;
+        seen.add(dedupKey);
 
         netMap.get(net)!.push({ component, pin, pinType });
     }

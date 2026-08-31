@@ -642,7 +642,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             sequenceParts.push(...[itemType, leftSideReference.name, rhsValue]);
         } else {
             if (leftSideReference.rootValue instanceof ClassComponent) {
-                this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue);
+                this.setInstanceParam(leftSideReference.rootValue, trailers, rhsValue, lhsCtx);
 
                 this.log2(`assigned component param "${leftSideReference.rootValue}" trailers: "${trailers}" value: "${rhsValue}"`);
                 sequenceParts.push(...['instance', [leftSideReference.rootValue, trailers], rhsValue]);
@@ -1624,11 +1624,35 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
         return result;
     }
 
-    protected setInstanceParam(object: ClassComponent, trailers: string[], value: any): void {
+    protected setInstanceParam(object: ClassComponent, trailers: string[], value: any,
+        ctx?: ParserRuleContext): void {
         if (trailers.length === 1){
             // Directly set the param of the object
             const paramName = trailers[0];
-            
+
+            // erc_net_bridge applies the same type/pin-count validation post-creation
+            // that createComponentPropertyValidator() applies at creation time, since
+            // assignment here bypasses that visitor path.
+            if (paramName === 'erc_net_bridge') {
+                if (typeof value !== 'boolean') {
+                    const message = "Invalid value for 'erc_net_bridge' property";
+                    if (ctx) {
+                        this.throwWithContext(ctx, message);
+                    } else {
+                        throw new RuntimeExecutionError(message);
+                    }
+                }
+
+                if (value && object.numPins !== 2) {
+                    const message = "'erc_net_bridge' is only valid on components with exactly 2 pins";
+                    if (ctx) {
+                        this.throwWithContext(ctx, message);
+                    } else {
+                        throw new RuntimeExecutionError(message);
+                    }
+                }
+            }
+
             // Convert the flipX/flipY value from boolean to number.
             if (paramName === ParamKeys.flipX || paramName == ParamKeys.flipY) {
                 // Coerce boolean value into numeric value.

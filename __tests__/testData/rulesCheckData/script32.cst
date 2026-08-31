@@ -1,0 +1,27 @@
+drv1 = create component:
+    pins:
+        1: "1", "out"
+
+bridgeA = create component:
+    pins:
+        1: "1", "passive"
+        2: "2", "passive"
+    erc_net_bridge: true
+
+bridgeB = create component:
+    pins:
+        1: "1", "passive"
+        2: "2", "passive"
+    erc_net_bridge: true
+
+recv1 = create component:
+    pins:
+        1: "1", "input"
+
+at drv1
+wire right 100
+add bridgeA
+wire right 100
+add bridgeB
+wire right 100
+to recv1

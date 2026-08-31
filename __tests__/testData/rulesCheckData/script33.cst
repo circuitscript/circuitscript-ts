@@ -1,0 +1,32 @@
+def bridge():
+    return create component:
+        pins:
+            1: "1", "passive"
+            2: "2", "passive"
+        erc_net_bridge: true
+
+drv1 = create component:
+    pins:
+        1: "1", "out"
+
+recv1 = create component:
+    pins:
+        1: "1", "input"
+
+drv2 = create component:
+    pins:
+        1: "1", "out"
+
+recv2 = create component:
+    pins:
+        1: "1", "input"
+
+drivers = [drv1, drv2]
+receivers = [recv1, recv2]
+
+for i in range(0, 2):
+    at array_get(drivers, i)
+    wire right 100
+    add bridge()
+    wire right 100
+    to array_get(receivers, i)

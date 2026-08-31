@@ -212,10 +212,10 @@ export class ClassComponent {
      * Pin number starts from 1. */
     numPins: number;
 
-    /** Component parameters in a map. These parameters may be defined by 
-     * user code. These are defined in the `params` property in the 
+    /** Component parameters in a map. These parameters may be defined by
+     * user code. These are defined in the `params` property in the
      * `create component` command. */
-    parameters: Map<string, number | string | NumericValue> = new Map();
+    parameters: Map<string, number | string | boolean | NumericValue> = new Map();
 
     /** Maps pin indexes to the pin definition */
     pins: Map<PinId, PinDefinition> = new Map();
@@ -306,6 +306,13 @@ export class ClassComponent {
 
     /** Stores behavioral prop */
     behaviorProp: Map | null = null;
+
+    // ERC-only net-bridging flag for 2-pin components. Stored in `parameters` (like any
+    // other param) so it can be read/written post-creation via `instance.erc_net_bridge`;
+    // this getter is a typed convenience accessor for internal engine use.
+    get ercNetBridgeProp(): boolean {
+        return this.parameters.get('erc_net_bridge') === true;
+    }
 
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
@@ -413,7 +420,7 @@ export class ClassComponent {
         }
     }
 
-    setParam(key: string, value: number | string | NumericValue | Net): void {
+    setParam(key: string, value: number | string | boolean | NumericValue | Net): void {
         this.parameters.set(key, value);
     }
 
@@ -519,6 +526,8 @@ export class ClassComponent {
         });
 
         component.isNetLabel = this.isNetLabel;
+        // erc_net_bridge is copied by the generic `parameters` loop above (it's not
+        // excluded like flipX/flipY/angle), so no explicit copy is needed here.
 
         component.refreshCache();
 
