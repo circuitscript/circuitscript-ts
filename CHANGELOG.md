@@ -1,6 +1,16 @@
 # Changelog
 
-## [v0.10.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.2...v0.10.3)
+## [v0.10.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.3...v0.10.4)
+
+[c56bd60](https://github.com/circuitscript/circuitscript-ts/commit/c56bd60858035ba289fc57aaa62aa4457d6e5b94)Add erc_net_bridge component property, dedup copied drivers in pin-type ERC
+- 
+- erc_net_bridge lets a 2-pin component (e.g. a jumper or ferrite bead)
+- merge the nets on either side for ERC purposes without electrically
+- joining them at layout time. Pin-type ERC now also dedups drivers that
+- originate from the same copied component instance so repeated labels
+- or power symbols aren't flagged as separate conflicting drivers.
+
+## [v0.10.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.2...v0.10.3) - 2026-08-29
 
 [0f0d40e](https://github.com/circuitscript/circuitscript-ts/commit/0f0d40e06e467ffd2145a444a7e5e6cbf03dc88b)Standardize script-facing keyword params to snake_case
 - 
