@@ -23,6 +23,11 @@ export type ComponentMeta = {
     type: ComponentTypes,
     refDes: string | null;
     instanceName: string;
+    // Line/file of the first statement (assignment, add/at/to) that
+    // referenced this component, derived from ctxReferences[0]. Null if the
+    // component was never referenced.
+    sourceLine: number | null;
+    sourceFile: string | null;
     params: { key: string; value: string }[];
     pins: ComponentPinMeta[];
 };
@@ -92,11 +97,15 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                 }
             });
 
+            const firstCtxReference = instance.ctxReferences[0];
+
             result.push({
                 domId: sanitizeDomId(`comp-${sheetIndex}-${instance.instanceName}`),
                 type: instance.typeProp,
                 refDes: instance.assignedRefDes,
                 instanceName: instance.instanceName,
+                sourceLine: firstCtxReference?.ctx.start?.line ?? null,
+                sourceFile: firstCtxReference?.filePath ?? null,
                 params: Array.from(instance.parameters.entries()).map(([key, value]) => ({
                     key,
                     value: stringifyParamValue(value),

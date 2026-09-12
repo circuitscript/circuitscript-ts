@@ -168,8 +168,55 @@ describe('interactive HTML viewer output', () => {
         expect(resistor).toBeDefined();
         expect(resistor.pins.length).toBe(2);
 
+        // sourceLine/sourceFile should point at the `add res(10k) ..angle = 90`
+        // statement in script1.cst (line 10), which first adds this resistor to
+        // the graph -- not at res()'s definition in libs/std.cst.
+        expect(resistor.sourceLine).toBe(10);
+        expect(resistor.sourceFile).toContain('script1.cst');
+        expect(resistor.sourceFile).not.toContain('std.cst');
+
         for (const component of components) {
             expect(result.outputReturn).toContain(`id="${component.domId}"`);
+        }
+    });
+
+    test("'data-svg' componentMeta reports distinct sourceLine per copyProp clone", async () => {
+        const scriptData = `from "std" import *
+
+n = net("5V")
+add n
+wire right 100
+to n
+wire right 100
+to dgnd()
+`;
+        const environment = getTestEnvironment();
+        await environment.prepareSVGEnvironment();
+
+        const result = await renderScript(scriptData, [], {
+            dumpNets: false,
+            dumpData: false,
+            showStats: false,
+            environment,
+            inputPath: 'scratch.cst',
+            outputReturnType: 'data-svg',
+        });
+
+        expect(result.errors.length).toBe(0);
+        const components = result.outputExtra! as any[];
+
+        const netInstances = components.filter((c: any) =>
+            c.params.some((p: any) => p.key === 'net_name' && p.value === '5V'));
+        expect(netInstances.length).toBe(2);
+
+        // `n` is used twice (`add n` then `to n`); since net() has `copy: true`,
+        // the second usage clones the component. Each clone should report the
+        // sourceLine of its own add/to statement, not both pointing at the same
+        // line and not silently keeping the first clone's stamped value.
+        const lines = netInstances.map((c: any) => c.sourceLine).sort((a: number, b: number) => a - b);
+        expect(lines).toEqual([4, 6]);
+        for (const instance of netInstances) {
+            expect(instance.sourceFile).toContain('scratch.cst');
         }
     });
 
