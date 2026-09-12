@@ -23,6 +23,12 @@ describe('interactive HTML viewer output', () => {
         return JSON.parse(match![1]);
     }
 
+    function extractFrames(html: string): any[] {
+        const match = html.match(/window\.__CS_FRAMES__ = (\[.*?\]);/s);
+        expect(match).not.toBeNull();
+        return JSON.parse(match![1]);
+    }
+
     test('generates a well-formed standalone HTML file', async () => {
         const scriptData = readFileSync(`${renderPath}script1.cst`, { encoding: 'utf8' });
         const environment = getTestEnvironment();
@@ -317,5 +323,83 @@ to dgnd()
         expect(dataSvgResult.errors.length).toBeGreaterThan(0);
         expect(dataSvgResult.outputReturn).toBe('');
         expect(dataSvgResult.outputExtra).toBeNull();
+    });
+
+    test('window.__CS_FRAMES__ describes titled frames, tagged in the SVG, excluding sheet/untitled frames', async () => {
+        const framePath = `${renderPath}frameMetadata.cst`;
+        const scriptData = readFileSync(`${framePath}`, { encoding: 'utf8' });
+        const environment = getTestEnvironment();
+        await environment.prepareSVGEnvironment();
+
+        const frameOutputPath = `${framePath}.html`;
+        try {
+            const result = await renderScript(scriptData, [frameOutputPath], {
+                dumpNets: false,
+                dumpData: false,
+                showStats: false,
+                environment,
+                inputPath: framePath,
+            });
+
+            expect(result.errors.length).toBe(0);
+            expect(existsSync(frameOutputPath)).toBe(true);
+
+            const html = readFileSync(frameOutputPath, { encoding: 'utf8' });
+            const frames = extractFrames(html);
+
+            // Only the one titled `frame:` block should be present.
+            expect(frames.length).toBe(1);
+
+            const frame = frames[0];
+            expect(frame.title).toBe('Titled Frame');
+            expect(frame.sourceLine).not.toBeNull();
+            expect(frame.sourceFile).toContain('frameMetadata.cst');
+            expect(frame.bounds).not.toBeNull();
+            expect(frame.bounds.width).toBeGreaterThan(0);
+            expect(frame.bounds.height).toBeGreaterThan(0);
+
+            expect(html).toContain(`id="${frame.domId}"`);
+            const groupMatch = html.match(new RegExp(`<[a-zA-Z]+[^>]*id="${frame.domId}"[^>]*>`));
+            expect(groupMatch).not.toBeNull();
+            expect(groupMatch![0]).toContain('cs-frame-title');
+
+            // Regression guards: the untitled `frame:` block, the titled
+            // `sheet:` block (out of scope for this plan), and any
+            // synthetic/base frame must not appear in the metadata.
+            const titles = frames.map((f: any) => f.title);
+            expect(titles).not.toContain('Titled Sheet');
+            expect(titles.length).toBe(1);
+        } finally {
+            if (existsSync(frameOutputPath)) {
+                unlinkSync(frameOutputPath);
+            }
+        }
+    });
+
+    test("'data-svg' returns frameMeta via frameExtra alongside outputExtra", async () => {
+        const framePath = `${renderPath}frameMetadata.cst`;
+        const scriptData = readFileSync(framePath, { encoding: 'utf8' });
+        const environment = getTestEnvironment();
+        await environment.prepareSVGEnvironment();
+
+        const result = await renderScript(scriptData, [], {
+            dumpNets: false,
+            dumpData: false,
+            showStats: false,
+            environment,
+            inputPath: framePath,
+            outputReturnType: 'data-svg',
+        });
+
+        expect(result.errors.length).toBe(0);
+        expect(Array.isArray(result.frameExtra)).toBe(true);
+        const frames = result.frameExtra!;
+        expect(frames.length).toBe(1);
+        expect(frames[0].title).toBe('Titled Frame');
+        expect(frames[0].bounds).not.toBeNull();
+
+        for (const frame of frames) {
+            expect(result.outputReturn).toContain(`id="${frame.domId}"`);
+        }
     });
 });

@@ -963,7 +963,8 @@ export class LayoutEngine {
             textObject.fontSize = fontSize;
             textObject.fontWeight = isBold ? 'bold': 'regular';
             textObject.fontStyle = isItalic ? 'italic': 'normal';
-            
+            textObject.frameTitleFor = frameObject.frameId;
+
             if (titleColor !==null){
                 textObject.color = titleColor;
             }
@@ -1955,6 +1956,10 @@ export class RenderText extends RenderObject {
     _fontWeight = 'regular';
     _fontStyle = 'normal';
     _color: string | undefined = undefined;
+
+    /** Set only on the RenderText used as a frame's title; holds the frameId of the
+     * outer (real, user-declared) frame this title belongs to. */
+    frameTitleFor?: number;
 
     get fontSize (): NumericValue {
         return this._fontSize;

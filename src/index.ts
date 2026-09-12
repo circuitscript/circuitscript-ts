@@ -14,7 +14,7 @@ export * from './globals.js';
 export * from './helpers.js';
 export * from './render/layout.js';
 export * from './render/render.js';
-export * from './render/generateComponentMetadata.js';
+export * from './render/generateOutputMetadata.js';
 export * from './render/generateHtmlOutput.js';
 export * from './render/KiCadNetListOutputHandler.js';
 export * from './lexer.js';

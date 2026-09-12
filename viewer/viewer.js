@@ -5,6 +5,12 @@
         componentsById[components[i].domId] = components[i];
     }
 
+    var frames = window.__CS_FRAMES__ || [];
+    var framesById = {};
+    for (var fi = 0; fi < frames.length; fi++) {
+        framesById[frames[fi].domId] = frames[fi];
+    }
+
     var viewport = document.getElementById('cs-viewport');
     var panZoom = document.getElementById('cs-pan-zoom');
     var panel = document.getElementById('cs-panel');
@@ -60,6 +66,38 @@
     var selectedHighlight = makeHighlightRect('#ff5722');
     var hoverHighlight = makeHighlightRect('#2196f3');
 
+    /* Frame bounding-box overlay: unlike component highlights, a frame's box
+       comes directly from its metadata's `bounds` field (computed by layout)
+       rather than from getBBox() on a single element - a frame's bounds span
+       many DOM elements, not one. So this rect is built fully positioned and
+       appended straight into the SVG root instead of into a target element. */
+    var FRAME_HIGHLIGHT_COLOR = '#9c27b0';
+    var frameHighlight = null;
+    var selectedFrameDomId = null;
+
+    function makeBoundsRect(bounds) {
+        var rect = document.createElementNS(SVG_NS, 'rect');
+        rect.setAttribute('fill', 'none');
+        rect.setAttribute('stroke', FRAME_HIGHLIGHT_COLOR);
+        rect.setAttribute('stroke-width', '2');
+        rect.setAttribute('stroke-dasharray', '6 4');
+        rect.setAttribute('vector-effect', 'non-scaling-stroke');
+        rect.style.pointerEvents = 'none';
+        rect.setAttribute('x', bounds.x);
+        rect.setAttribute('y', bounds.y);
+        rect.setAttribute('width', bounds.width);
+        rect.setAttribute('height', bounds.height);
+        return rect;
+    }
+
+    function clearFrameHighlight() {
+        if (frameHighlight && frameHighlight.parentNode) {
+            frameHighlight.parentNode.removeChild(frameHighlight);
+        }
+        frameHighlight = null;
+        selectedFrameDomId = null;
+    }
+
     var NET_HIGHLIGHT_CLASS = 'cs-net-highlighted';
     var highlightedNetEls = [];
 
@@ -94,14 +132,8 @@
         return sheetIndex + '-' + sanitizeNetKey(rawNetName);
     }
 
-    /* A component's own geometry never changes, so its bbox is cached after
-       the first measurement rather than re-measured via getBBox() on every
-       reposition (e.g. each zoom tick). This also sidesteps a feedback loop:
-       once a highlight rect is attached as a child of the target, it becomes
-       part of that target's own bbox, so re-measuring live would make the
-       rect grow a little on every subsequent reposition - and the hover and
-       selected rects can both be attached to the same target at once, so
-       even detaching just the one being repositioned isn't enough. */
+    /* Bbox is cached per component to avoid a feedback loop where a highlight rect,
+       once attached as a child, inflates the target's own getBBox() on re-measure. */
     var bboxCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
 
     function getCleanBBox(targetEl) {
@@ -370,6 +402,18 @@
         panelContent.innerHTML = html;
     }
 
+    function renderFramePanel(meta) {
+        clearNetHighlight();
+
+        var html = '';
+        html += '<h2>' + escapeHtml(meta.title) + '</h2>';
+        if (meta.sourceLine != null) {
+            html += '<p class="instance-name">Line ' + escapeHtml(meta.sourceLine) + '</p>';
+        }
+
+        panelContent.innerHTML = html;
+    }
+
     function escapeHtml(value) {
         var div = document.createElement('div');
         div.textContent = value === null || value === undefined ? '' : String(value);
@@ -382,11 +426,49 @@
             removeHighlight(selectedHighlight);
             selectedEl = null;
         }
+        clearFrameHighlight();
         panel.classList.add('cs-hidden');
     }
 
     viewport.addEventListener('click', function (event) {
         if (Math.abs(event.clientX - dragStart.x) > 3 || Math.abs(event.clientY - dragStart.y) > 3) {
+            return;
+        }
+
+        var frameTarget = event.target.closest ? event.target.closest('.cs-frame-title') : null;
+        if (frameTarget) {
+            var wasSelectedFrame = selectedFrameDomId === frameTarget.id;
+            deselect();
+            if (wasSelectedFrame) {
+                /* second click on the same frame title just clears selection */
+                return;
+            }
+
+            var frameMeta = framesById[frameTarget.id];
+            if (!frameMeta) {
+                return;
+            }
+
+            selectedFrameDomId = frameTarget.id;
+            if (frameMeta.bounds) {
+                /* frameMeta.bounds is in the local coordinate space of this
+                   sheet's own '.sheet-elements' group (same space the actual
+                   frame rect/title are drawn in) - that group carries its own
+                   translate() for the sheet's paper margin, and its parent
+                   '#sheet-N' group carries another translate() for stacking
+                   multiple sheets vertically. Appending to the SVG root
+                   directly would skip both, offsetting the overlay from the
+                   real frame. */
+                var sheetElements = panZoom.querySelector(
+                    '#sheet-' + frameMeta.sheetIndex + ' .sheet-elements');
+                if (sheetElements) {
+                    frameHighlight = makeBoundsRect(frameMeta.bounds);
+                    sheetElements.appendChild(frameHighlight);
+                }
+            }
+
+            renderFramePanel(frameMeta);
+            panel.classList.remove('cs-hidden');
             return;
         }
 
@@ -402,6 +484,7 @@
             return;
         }
 
+        deselect();
         selectedEl = target;
         positionHighlight(selectedHighlight, selectedEl);
 

@@ -28,7 +28,7 @@ import { KiCadNetListOutputHandler, ParseOutputHandler } from "./render/KiCadNet
 import { KiCadSchOutputHandler, KiCadVersion } from "./render/KiCadSchOutputHandler.js";
 import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput,
     clonePlainCanvas, applyInteractiveMarkup } from "./render/render.js";
-import { generateComponentMetadata, type ComponentMeta } from "./render/generateComponentMetadata.js";
+import { generateComponentMetadata, type ComponentMeta, generateFrameMetadata, type FrameMeta } from "./render/generateOutputMetadata.js";
 import { generateHtmlOutput } from "./render/generateHtmlOutput.js";
 import { ERCReportItem, ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
 import { printWarnings, generateDebugSequenceAction, 
@@ -279,6 +279,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     let svgOutput = "";
     let htmlOutput: string | null = null;
     let componentMeta: ComponentMeta[] | null = null;
+    let frameMeta: FrameMeta[] | null = null;
     let dataSvgOutput: string | null = null;
     let ercResults: ERCReportItem[] = [];
 
@@ -506,8 +507,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     showStats && console.log('Interactive render took:', interactiveTimer.lap());
 
                     componentMeta = generateComponentMetadata(renderedSheets);
+                    frameMeta = generateFrameMetadata(renderedSheets);
                     if (outputReturnType === 'html' || htmlPaths.length > 0) {
-                        htmlOutput = generateHtmlOutput(dataSvgOutput, componentMeta, environment);
+                        htmlOutput = generateHtmlOutput(dataSvgOutput, componentMeta, frameMeta, environment);
                     }
                 }
 
@@ -573,18 +575,20 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     let outputReturn: string;
     let outputExtra: ComponentMeta[] | null = null;
+    let frameExtra: FrameMeta[] | null = null;
 
     if (outputReturnType === 'html') {
         outputReturn = htmlOutput ?? "";
     } else if (outputReturnType === 'data-svg') {
         outputReturn = dataSvgOutput ?? "";
         outputExtra = componentMeta;
+        frameExtra = frameMeta;
     } else {
         outputReturn = svgOutput;
     }
 
     const results: RenderScriptReturn = {
-        outputReturn, outputExtra, errors
+        outputReturn, outputExtra, frameExtra, errors
     }
 
     if (enableErc && ercResults) {

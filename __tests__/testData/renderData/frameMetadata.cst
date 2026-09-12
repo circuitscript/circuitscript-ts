@@ -1,0 +1,30 @@
+from "std" import *
+
+document.sheet_type = sheet_A4()
+
+v5 = supply("5V")
+gnd = dgnd()
+
+sheet:
+    ..title = "Titled Sheet"
+
+    frame:
+        ..title = "Titled Frame"
+        ..width = 3000
+        ..height = 3000
+
+        at v5
+        wire down 100
+        add res(10k)
+        wire down 100
+        to gnd
+
+    frame:
+        ..width = 2000
+        ..height = 2000
+
+        at v5
+        wire down 100
+        add cap(100n)
+        wire down 100
+        to gnd

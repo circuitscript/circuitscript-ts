@@ -24,7 +24,7 @@ import { NodeScriptEnvironment } from "./environment/environment.js";
 import { ComponentPinNet, ImportedLibrary } from "./objects/types.js";
 import { ERCReportItem, ERCSeverity } from "./rules-check/rules.js";
 import { PinId, PinIdType } from "./objects/PinDefinition.js";
-import { ComponentMeta } from "./render/generateComponentMetadata.js";
+import { ComponentMeta, FrameMeta } from "./render/generateOutputMetadata.js";
 
 export enum JSModuleType {
     CommonJs = 'cjs',
@@ -135,6 +135,9 @@ export type RenderScriptReturn = {
     /* Additional data accompanying `outputReturn`. 'svg'/'html' -> null;
        'data-svg' -> the ComponentMeta[] produced by generateComponentMetadata. */
     outputExtra: ComponentMeta[] | null,
+    /* 'svg'/'html' -> null; 'data-svg' -> the FrameMeta[] produced by
+       generateFrameMetadata. */
+    frameExtra: FrameMeta[] | null,
     errors: BaseError[],
     ercResults?: ERCReportItem[],
     nets?: ComponentPinNet[],

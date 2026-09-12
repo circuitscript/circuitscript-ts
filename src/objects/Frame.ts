@@ -12,6 +12,8 @@ export class Frame {
     parameters: Map<string, any> = new Map();
     frameId: number;
     frameType: FrameType;
+    sourceLine: number | null = null;
+    sourceFile: string | null = null;
 
     constructor(frameId: number, frameType = FrameType.Frame) {
         this.frameId = frameId;

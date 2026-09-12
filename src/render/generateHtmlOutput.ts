@@ -4,13 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { ComponentMeta } from './generateComponentMetadata.js';
+import { ComponentMeta, FrameMeta } from './generateOutputMetadata.js';
 import { NodeScriptEnvironment } from '../environment/environment.js';
 import { VERSION } from '../version.js';
 
 export function generateHtmlOutput(
     svgOutput: string,
     components: ComponentMeta[],
+    frames: FrameMeta[],
     environment: NodeScriptEnvironment,
 ): string {
     let viewerCss: string;
@@ -51,6 +52,7 @@ export function generateHtmlOutput(
   </div>
   <script>
     window.__CS_COMPONENTS__ = ${JSON.stringify(components).replace(/<\/script/gi, '<\\/script')};
+    window.__CS_FRAMES__ = ${JSON.stringify(frames).replace(/<\/script/gi, '<\\/script')};
   </script>
   <script>${viewerJs}</script>
 </body>

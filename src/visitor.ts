@@ -2177,6 +2177,9 @@ export class ParserVisitor extends BaseVisitor {
 
         if (ctxExpressionsBlock ){
             const frameId = this.getExecutor().enterFrame(frameType);
+            const frame = this.getExecutor().scope.frames[frameId - 1];
+            frame.sourceLine = ctx.start?.line ?? null;
+            frame.sourceFile = this.getCurrentFile();
             this.visit(ctxExpressionsBlock);
             this.getExecutor().exitFrame(frameId);
         }

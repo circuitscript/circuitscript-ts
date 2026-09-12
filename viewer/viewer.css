@@ -31,6 +31,9 @@ html, body {
 .cs-component {
     cursor: pointer;
 }
+.cs-frame-title {
+    cursor: pointer;
+}
 #cs-panel {
     position: fixed;
     top: 0;

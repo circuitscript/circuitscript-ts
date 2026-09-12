@@ -84,7 +84,9 @@ export function renderSheetsToSVG(sheetFrames: SheetFrame[], logger: Logger,
 
     const canvas = createSvgCanvas();
     const colorRegistry: CustomColorVarRegistry = new Map();
-    const metadata: InteractiveRenderMetadata = { components: [], netTaggedElements: [], highlightAdditions: [] };
+    const metadata: InteractiveRenderMetadata = {
+        components: [], netTaggedElements: [], highlightAdditions: [], frameTitles: [],
+    };
 
     // Set the default font family
     const canvasGroup = canvas.group();
@@ -222,6 +224,11 @@ export function applyInteractiveMarkup(metadata: InteractiveRenderMetadata): voi
 
     metadata.netTaggedElements.forEach(({ element, netKey }) => {
         element.attr('data-net', netKey);
+    });
+
+    metadata.frameTitles.forEach(({ element, sheetIndex, frameId }) => {
+        element.id(sanitizeDomId(`frame-${sheetIndex}-${frameId}`));
+        element.addClass('cs-frame-title');
     });
 
     metadata.highlightAdditions.forEach(({
@@ -636,10 +643,6 @@ function generateSVGChild(canvas: Svg | G,
 
     frameObjects.forEach(item => {
         const { bounds, borderWidth } = item;
-        const { width, height } = getBoundsSize(bounds);
-
-        const useWidth = roundValue(width).toNumber();
-        const useHeight = roundValue(height).toNumber();
         const useBorderWidth = roundValue(borderWidth).toNumber();
 
         let strokeColor = item.borderColor ?? ColorScheme.FrameBorderColor;
@@ -660,12 +663,14 @@ function generateSVGChild(canvas: Svg | G,
                     frameOverrides.stroke = strokeColor;
                 }
 
-                const tmpRect = frameGroup.rect(useWidth, useHeight)
+                const { x, y, width, height } = boundBoxToRect(bounds,
+                    { x: item.x.toNumber(), y: item.y.toNumber() });
+
+                const tmpRect = frameGroup.rect(width, height)
                     .attr({ 'stroke-width': `${milsToMM(useBorderWidth).toNumber()}px` });
                 applyClassWithOverrides(tmpRect, 'frame', frameOverrides);
 
-                tmpRect.translate(
-                    item.x.toNumber(), item.y.toNumber());
+                tmpRect.translate(x, y);
             }
         }
     });
@@ -676,6 +681,14 @@ function generateSVGChild(canvas: Svg | G,
         innerGroup.translate(x.toNumber(), y.toNumber());
         symbol.setColorVarRegistry(colorRegistry);
         symbol.draw(innerGroup);
+
+        if (item.frameTitleFor !== undefined) {
+            metadata.frameTitles.push({
+                element: innerGroup,
+                sheetIndex,
+                frameId: item.frameTitleFor,
+            });
+        }
     });
 
     // Draw origin
@@ -685,6 +698,22 @@ function generateSVGChild(canvas: Svg | G,
         .circle(originSize)
         .translate(-originSize/2, -originSize/2)
         .stroke('none').fill('red');
+}
+
+/** Converts a RenderFrame's bounds + absolute position into the drawn
+ * `{x, y, width, height}` rect. Shared with generateOutputMetadata.ts so the
+ * drawn rectangle and metadata bbox never disagree. */
+export function boundBoxToRect(bounds: BoundBox,
+    position: { x: number; y: number }): { x: number; y: number; width: number; height: number } {
+
+    const { width, height } = getBoundsSize(bounds);
+
+    return {
+        x: position.x,
+        y: position.y,
+        width: roundValue(width).toNumber(),
+        height: roundValue(height).toNumber(),
+    };
 }
 
 function drawGrid(group: G,
@@ -821,6 +850,13 @@ export interface InteractiveComponentMeta {
     instanceName: string;
 }
 
+/** A frame-title text group needing the `id`/`cs-frame-title` class applied by applyInteractiveMarkup. */
+export interface InteractiveFrameTitleMeta {
+    element: G;
+    sheetIndex: number;
+    frameId: number;
+}
+
 /** An already-drawn element needing a `data-net` attribute applied by applyInteractiveMarkup. */
 export interface InteractiveNetTagMeta {
     element: Path | Circle; // wireEl/highlightEl are Path, junctionEl/highlightCircleEl are Circle - no call site tags a G
@@ -842,4 +878,5 @@ export interface InteractiveRenderMetadata {
     components: InteractiveComponentMeta[];
     netTaggedElements: InteractiveNetTagMeta[];
     highlightAdditions: InteractiveHighlightAdditionMeta[];
+    frameTitles: InteractiveFrameTitleMeta[];
 }

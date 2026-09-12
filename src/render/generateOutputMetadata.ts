@@ -5,9 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { SheetFrame } from './layout.js';
-import { NumericValue } from '../objects/NumericValue.js';
+import { boundBoxToRect } from './render.js';
 import { sanitizeDomId } from '../utils.js';
-import { ComponentTypes } from '../globals.js';
+import { ComponentTypes, FrameType } from '../globals.js';
+import { NumericValue } from '../objects/NumericValue.js';
+import { FixedFrameIds, FrameParamKeys } from '../objects/Frame.js';
+
+export type FrameMeta = {
+    domId: string;
+    frameId: number;
+    sheetIndex: number;
+    title: string;
+    sourceLine: number | null;
+    sourceFile: string | null;
+    bounds: { x: number; y: number; width: number; height: number } | null;
+};
 
 export type ComponentPinMeta = {
     id: string;
@@ -37,6 +49,44 @@ function stringifyParamValue(value: number | string | NumericValue): string {
         return value.toDisplayString();
     }
     return String(value);
+}
+
+export function generateFrameMetadata(sheetFrames: SheetFrame[]): FrameMeta[] {
+    const result: FrameMeta[] = [];
+
+    sheetFrames.forEach((sheet, sheetIndex) => {
+        sheet.frames.forEach(renderFrame => {
+            const frame = renderFrame.frame;
+
+            // synthetic title-only wrapper frame - not a real user frame
+            if (renderFrame.containsTitle) return;
+
+            if (frame.frameId === FixedFrameIds.BaseFrame
+                || frame.frameId === FixedFrameIds.FrameIdNotUsed) return;
+
+            // sheet titles are drawn via drawSheetFrameBorder, never tagged
+            // with cs-frame-title - out of scope for this plan.
+            if (frame.frameType === FrameType.Sheet) return;
+
+            const title = frame.parameters.get(FrameParamKeys.Title);
+            if (title === undefined || title === null) return; // nothing to click
+
+            result.push({
+                domId: sanitizeDomId(`frame-${sheetIndex}-${frame.frameId}`),
+                frameId: frame.frameId,
+                sheetIndex,
+                title: String(title),
+                sourceLine: frame.sourceLine,
+                sourceFile: frame.sourceFile,
+                bounds: renderFrame.bounds
+                    ? boundBoxToRect(renderFrame.bounds,
+                        { x: renderFrame.x.toNumber(), y: renderFrame.y.toNumber() })
+                    : null,
+            });
+        });
+    });
+
+    return result;
 }
 
 export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentMeta[] {
@@ -78,7 +128,7 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                 for (const [pinId, net] of instance.pinNets) {
                     if (pinId.equals(p.id)) {
                         netName = net.name;
-                        // If pin is on a NC net, then do not display the 
+                        // If pin is on a NC net, then do not display the
                         // net name.
                         if (nc_nets.indexOf(net.toString()) !== -1) {
                             netName = null;
