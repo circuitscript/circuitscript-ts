@@ -284,7 +284,9 @@ export class ExecutionContext {
 
         component.isNetLabel = props.is_label ?? false;
 
-        component.setParam('erc_net_bridge', props.erc_net_bridge ?? false);
+        if (props.erc_net_bridge !== undefined) {
+            component.setParam('erc_net_bridge', props.erc_net_bridge);
+        }
 
         if (component.ercNetBridgeProp && component.numPins !== 2) {
             throw new RuntimeExecutionError("'erc_net_bridge' is only valid on components with exactly 2 pins");

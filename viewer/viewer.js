@@ -71,7 +71,7 @@
        rather than from getBBox() on a single element - a frame's bounds span
        many DOM elements, not one. So this rect is built fully positioned and
        appended straight into the SVG root instead of into a target element. */
-    var FRAME_HIGHLIGHT_COLOR = '#9c27b0';
+    var FRAME_HIGHLIGHT_COLOR = '#ff5722';
     var frameHighlight = null;
     var selectedFrameDomId = null;
 
@@ -375,7 +375,9 @@
         } else {
             html += '<h2>' + escapeHtml(displayName) + '</h2>';
         }
-        html += '<p class="instance-name">ID: ' + escapeHtml(meta.instanceName) + '</p>';
+        if (meta.sourceLine != null) {
+            html += '<div class="cs-source-line">Line ' + escapeHtml(meta.sourceLine) + '</div>';
+        }
 
         html += '<h3>Pins</h3>';
         html += '<table><thead><tr><th>ID</th><th>Name</th><th>Pin Type</th><th>Net</th></tr></thead><tbody>';
@@ -408,7 +410,7 @@
         var html = '';
         html += '<h2>' + escapeHtml(meta.title) + '</h2>';
         if (meta.sourceLine != null) {
-            html += '<p class="instance-name">Line ' + escapeHtml(meta.sourceLine) + '</p>';
+            html += '<div class="cs-source-line">Line ' + escapeHtml(meta.sourceLine) + '</div>';
         }
 
         panelContent.innerHTML = html;

@@ -81,6 +81,42 @@ describe('test validation', () => {
             );
             expect(hasError).toBe(false);
         });
+
+        test('parameter is not set when not specified by the user', async () => {
+            const { hasError, visitor } = await runScript(
+                'c1 = create component:\n    pins: 2\n'
+            );
+            expect(hasError).toBe(false);
+
+            const c1 = visitor.dumpVariables().get('c1')!;
+
+            expect(c1.parameters.has('erc_net_bridge')).toBe(false);
+            expect(c1.ercNetBridgeProp).toBe(false);
+        });
+
+        test('parameter is set to true when specified at creation', async () => {
+            const { hasError, visitor } = await runScript(
+                'c1 = create component:\n    pins: 2\n    erc_net_bridge: true\n'
+            );
+            expect(hasError).toBe(false);
+
+            const c1 = visitor.dumpVariables().get('c1')!;
+
+            expect(c1.parameters.get('erc_net_bridge')).toBe(true);
+            expect(c1.ercNetBridgeProp).toBe(true);
+        });
+
+        test('parameter is set to false when explicitly specified as false at creation', async () => {
+            const { hasError, visitor } = await runScript(
+                'c1 = create component:\n    pins: 2\n    erc_net_bridge: false\n'
+            );
+            expect(hasError).toBe(false);
+
+            const c1 = visitor.dumpVariables().get('c1')!;
+
+            expect(c1.parameters.get('erc_net_bridge')).toBe(false);
+            expect(c1.ercNetBridgeProp).toBe(false);
+        });
     });
 });
 
