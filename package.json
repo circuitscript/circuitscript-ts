@@ -20,13 +20,14 @@
         ".": {
             "require": "./dist/cjs/index.js",
             "import": "./dist/esm/index.js"
-        }
+        },
+        "./viewer-ui": "./viewer-ui/src/index.ts"
     },
     "files": [
         "dist",
         "fonts",
         "libs",
-        "viewer"
+        "viewer-ui"
     ],
     "devDependencies": {
         "@resvg/resvg-js": "^2.6.2",
@@ -42,6 +43,8 @@
         "@typescript-eslint/eslint-plugin": "~5.59",
         "@typescript-eslint/parser": "~5.59",
         "antlr4ng-cli": "^2.0.0",
+        "concurrently": "^10.0.5",
+        "esbuild": "^0.27.3",
         "eslint": "~8.38",
         "eslint-config-prettier": "~8.8",
         "eslint-plugin-jest": "~27.2",
@@ -49,6 +52,7 @@
         "license-check-and-add": "^4.0.5",
         "pixelmatch": "^7.1.0",
         "pngjs": "^7.0.0",
+        "preact": "10.29.8",
         "prettier": "~2.8",
         "rimraf": "~5.0",
         "source-map-support": "^0.5.21",
@@ -61,17 +65,20 @@
         "start": "node dist/esm/main.js",
         "clean": "rimraf coverage build tmp dist",
         "compile": "npm run build",
-        "build": "npm run copy-assets ; npm run build:cjs ; npm run build:esm",
+        "build": "npm run build:viewer ; npm run copy-assets ; npm run build:cjs ; npm run build:esm",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:release:cjs": "tsc -p tsconfig.release.cjs.json",
         "build:esm": "tsc -p tsconfig.esm.json",
         "build:release:esm": "tsc -p tsconfig.release.esm.json",
+        "build:viewer": "esbuild viewer/viewer-host.tsx --bundle --platform=browser --target=es2020 --format=iife --outfile=viewer/generated/viewer.js --tsconfig=viewer/tsconfig.json --define:process.env.NODE_ENV=\\\"production\\\"",
         "rename:esm": "npx ts2mjs ./dist/esm && rm -rf ./dist/esm/*.js && rm -rf ./dist/esm/**/*.js",
-        "build:watch": "tsc -w -p tsconfig.esm.json",
+        "build:watch": "concurrently -n tsc,viewer \"npm:build:watch:esm-tsc\" \"npm:build:watch:viewer\"",
+        "build:watch:esm-tsc": "tsc -w -p tsconfig.esm.json",
         "build:watch:cjs": "tsc -w -p tsconfig.cjs.json",
-        "build:release": "npm run clean && npm run copy-assets && npm run build:release:cjs || npm run build:release:esm",
+        "build:watch:viewer": "esbuild viewer/viewer-host.tsx --bundle --platform=browser --target=es2020 --format=iife --outfile=viewer/generated/viewer.js --tsconfig=viewer/tsconfig.json --define:process.env.NODE_ENV=\\\"development\\\" --watch",
+        "build:release": "npm run clean && npm run build:viewer && npm run copy-assets && npm run build:release:cjs || npm run build:release:esm",
         "prebuild": "npm run lint || true",
-        "lint": "eslint . --ext .ts --ext .mts",
+        "lint": "eslint . --ext .ts --ext .mts --ext .tsx",
         "test": "node --experimental-vm-modules node_modules/.bin/jest",
         "test-coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
         "prettier": "prettier --config .prettierrc --write .",
@@ -87,7 +94,7 @@
         "preversion": "npm run test",
         "version": "npm run changelog && npm run update-version-ts && git add CHANGELOG.md src/version.ts",
         "update-version-ts": "node -e \"const v=require('./package.json').version; require('fs').writeFileSync('src/version.ts', \\\"export const VERSION = '\\\" + v + \\\"';\\\\n\\\");\"",
-        "copy-assets": "mkdir -p dist/fonts && mkdir -p dist/libs && mkdir -p dist/viewer  && cp -r fonts dist/ && cp -r libs dist/ && cp -r viewer dist/",
+        "copy-assets": "mkdir -p dist/fonts && mkdir -p dist/libs && mkdir -p dist/viewer/generated && cp -r fonts dist/ && cp -r libs dist/ && cp viewer/preview.html dist/viewer/ && cp viewer/generated/viewer.js dist/viewer/generated/",
         "license:check": "license-check-and-add check -f licensecheck.json",
         "license:add": "license-check-and-add add -f licensecheck.json"
     },

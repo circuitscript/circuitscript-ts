@@ -1,0 +1,9 @@
+{
+  "name": "viewer-ui",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "preact": "^10.29.0"
+  }
+}

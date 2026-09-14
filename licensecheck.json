@@ -5,6 +5,7 @@
         "build",
         "coverage",
         "src/antlr",
+        "viewer/generated",
         "__tests__",
         "fonts",
         "libs",
@@ -38,6 +39,13 @@
             }
         },
         "mts": {
+            "prepend": "/*",
+            "append": " */",
+            "eachLine": {
+                "prepend": " * "
+            }
+        },
+        "tsx": {
             "prepend": "/*",
             "append": " */",
             "eachLine": {

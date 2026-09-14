@@ -25,5 +25,19 @@
     "@typescript-eslint/explicit-function-return-type": "warn",
     "@typescript-eslint/ban-ts-comment": "warn",
     "@typescript-eslint/no-non-null-assertion": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["viewer-ui/**/*.ts", "viewer-ui/**/*.tsx"],
+      "parserOptions": {
+        "project": "viewer-ui/tsconfig.json"
+      }
+    },
+    {
+      "files": ["viewer/*.tsx"],
+      "parserOptions": {
+        "project": "viewer/tsconfig.json"
+      }
+    }
+  ]
 }

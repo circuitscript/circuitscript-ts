@@ -6,7 +6,6 @@
  */
 import { ComponentMeta, FrameMeta } from './generateOutputMetadata.js';
 import { NodeScriptEnvironment } from '../environment/environment.js';
-import { VERSION } from '../version.js';
 
 export function generateHtmlOutput(
     svgOutput: string,
@@ -14,13 +13,10 @@ export function generateHtmlOutput(
     frames: FrameMeta[],
     environment: NodeScriptEnvironment,
 ): string {
-    let viewerCss: string;
     let viewerJs: string;
     try {
-        viewerCss = environment.readFileSync(
-            environment.getRelativeToViewerAssets('viewer.css'), 'utf8');
         viewerJs = environment.readFileSync(
-            environment.getRelativeToViewerAssets('viewer.js'), 'utf8');
+            environment.getRelativeToViewerAssets('generated/viewer.js'), 'utf8');
     } catch (err) {
         throw new Error(
             `Failed to load viewer assets from ${environment.getViewerAssetsPath()}: ${err}`);
@@ -31,25 +27,10 @@ export function generateHtmlOutput(
 <head>
 <meta charset="utf-8">
 <title>CircuitScript Viewer</title>
-<style>${viewerCss}</style>
 </head>
 <body>
-  <div id="cs-viewport">
-    <div id="cs-pan-zoom">${svgOutput}</div>
-  </div>
-  <div id="cs-hint">
-    <p>Scroll/pinch to zoom &middot; drag to pan &middot; click an item to inspect</p>
-    <div id="cs-hint-controls">
-        <button id="cs-zoom-in" type="button" title="Zoom in">+</button>
-        <button id="cs-zoom-out" type="button" title="Zoom out">&minus;</button>
-        <button id="cs-zoom-fit" type="button" title="Show all">Show all</button>
-    </div>
-    <p id="cs-hint-version">CircuitScript v${VERSION}</p>
-  </div>
-  <div id="cs-panel" class="cs-hidden">
-    <button id="cs-panel-close">&times;</button>
-    <div id="cs-panel-content"></div>
-  </div>
+  <div id="root"></div>
+  <template id="cs-svg-source">${svgOutput}</template>
   <script>
     window.__CS_COMPONENTS__ = ${JSON.stringify(components).replace(/<\/script/gi, '<\\/script')};
     window.__CS_FRAMES__ = ${JSON.stringify(frames).replace(/<\/script/gi, '<\\/script')};

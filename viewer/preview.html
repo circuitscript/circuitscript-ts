@@ -1,14 +1,25 @@
+<!--
+Copyright 2023 Liu Weihao
+
+This source code is licensed under the MIT license found in the
+LICENSE file in the root directory of this source tree.
+-->
+<!--
+Manual dev harness for the viewer bundle (viewer/generated/viewer.js, built
+from viewer-host.tsx). Open directly in a browser against mock SVG/component
+data below to exercise pan/zoom/net-highlight/panel UI without running the
+full pipeline on a real .cst file.
+-->
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <title>CircuitScript Viewer Preview</title>
-<link rel="stylesheet" href="viewer.css">
 </head>
 <body>
-  <div id="cs-viewport">
-    <div id="cs-pan-zoom">
-      <svg width="400" height="200" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+  <div id="root"></div>
+  <template id="cs-svg-source">
+    <svg width="400" height="200" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
         <g class="cs-component" id="comp-0-R1">
           <rect x="10" y="10" width="20" height="10" fill="none" stroke="#333" stroke-width="0.5"></rect>
           <text x="12" y="8" font-size="4">R1</text>
@@ -22,18 +33,17 @@
           <text x="72" y="4" font-size="4">U1</text>
         </g>
       </svg>
-    </div>
-  </div>
-  <div id="cs-panel" class="cs-hidden">
-    <button id="cs-panel-close">&times;</button>
-    <div id="cs-panel-content"></div>
-  </div>
+  </template>
   <script>
     window.__CS_COMPONENTS__ = [
       {
         domId: 'comp-0-R1',
+        type: 'resistor',
+        kind: 'component',
         refDes: 'R1',
         instanceName: 'R1',
+        sourceLine: null,
+        sourceFile: null,
         params: [
           { key: 'value', value: '10k' },
           { key: 'tolerance', value: '5%' }
@@ -45,8 +55,12 @@
       },
       {
         domId: 'comp-0-C1',
+        type: 'capacitor',
+        kind: 'component',
         refDes: 'C1',
         instanceName: 'C1',
+        sourceLine: null,
+        sourceFile: null,
         params: [
           { key: 'value', value: '100nF' }
         ],
@@ -57,8 +71,12 @@
       },
       {
         domId: 'comp-0-U1',
+        type: 'ic',
+        kind: 'component',
         refDes: 'U1',
         instanceName: 'U1',
+        sourceLine: null,
+        sourceFile: null,
         params: [
           { key: 'part', value: 'LM358' }
         ],
@@ -70,6 +88,6 @@
       }
     ];
   </script>
-  <script src="viewer.js"></script>
+  <script src="generated/viewer.js"></script>
 </body>
 </html>
