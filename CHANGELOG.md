@@ -1,6 +1,38 @@
 # Changelog
 
-## [v0.10.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.3...v0.10.4)
+## [v0.10.5](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.4...v0.10.5)
+
+[86613ac](https://github.com/circuitscript/circuitscript-ts/commit/86613ac25366bd45add1caaa2672c8f985f95815)Rewrite HTML viewer as a Preact-based app
+- 
+- Replace the hand-rolled viewer.js/viewer.css with a viewer-ui package
+- (Preact components for inspector panel, toolbar, viewport, zoom/pan)
+- bundled via esbuild into viewer/generated/viewer.js. Update build
+- scripts, eslint overrides, and license check config for the new
+- viewer-ui and viewer .tsx sources.
+- 
+- Co-Authored-By: Claude Sonnet 5 &lt;noreply@anthropic.com&gt;
+
+[a458958](https://github.com/circuitscript/circuitscript-ts/commit/a4589580ef38655dfdfbe6b45229d8b532bc2cd6)Add frame metadata and click-to-highlight support to interactive viewer
+- 
+- Rename generateComponentMetadata.ts to generateOutputMetadata.ts and add
+- generateFrameMetadata, exposing titled frame bounds/source location as
+- window.__CS_FRAMES__ alongside components. The viewer can now select a
+- frame title to highlight its bounding box and show source info.
+
+[d6959d4](https://github.com/circuitscript/circuitscript-ts/commit/d6959d4a8a34399d48dcb2f2ff7ae2b16bc6d02a)Add sourceLine/sourceFile to component metadata
+- 
+- Tracks the first statement that referenced a component (via ctxReferences[0]) so the interactive HTML viewer can map components back to source, distinguishing clones created by copyProp.
+- 
+- Co-Authored-By: Claude Sonnet 5 &lt;noreply@anthropic.com&gt;
+
+[5a8a8ab](https://github.com/circuitscript/circuitscript-ts/commit/5a8a8abe3a2ca8d6a9c1e30a206837179f60b627)Fix erc_net_bridge default and clean up viewer instance panel
+- 
+- - Only set erc_net_bridge when explicitly specified so it doesn't override an unset default
+- - Show source line instead of instance ID in the viewer panel, and change frame highlight color
+- 
+- Co-Authored-By: Claude Sonnet 5 &lt;noreply@anthropic.com&gt;
+
+## [v0.10.4](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.3...v0.10.4) - 2026-09-01
 
 [c56bd60](https://github.com/circuitscript/circuitscript-ts/commit/c56bd60858035ba289fc57aaa62aa4457d6e5b94)Add erc_net_bridge component property, dedup copied drivers in pin-type ERC
 - 
