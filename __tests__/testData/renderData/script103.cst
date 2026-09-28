@@ -1,0 +1,15 @@
+# Test pin spacing in bus definition
+
+spi = create bus:
+        name: "SPI"
+        pins: "MOSI", "MISO", [2], "CLK", "NSS"
+
+at spi
+wire right 100
+
+spi1 = create bus:
+        name: "SPI"
+        pins: [1], "MOSI", [1], "MISO", [0], "CLK", [1], "NSS", [2]
+
+at spi1
+wire right 100

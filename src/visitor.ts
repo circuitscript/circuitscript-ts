@@ -977,25 +977,39 @@ export class ParserVisitor extends BaseVisitor {
         const pins = properties.get("pins");
         let usePins = [];
 
+        const pinsPosition: number[] = [];
+
         // Pins is a single number, then generate an increasing list starting from 1.
         if ((pins instanceof NumericValue)) {
             const numPins = pins.toNumber();
             for (let i = 0; i < numPins; i++) {
                 usePins.push(i + 1);
+                pinsPosition.push(i);
             }
         } else {
             usePins = pins;
         }
+        
+        let lastPinPosition = 0;
+        const pinsDef: PinDefinition[] = [];
 
-        const pinsDef: PinDefinition[] = usePins.map(pinId => {
-            if (typeof pinId === "number" || (pinId instanceof NumericValue)) {
-                if (pinId instanceof NumericValue) {
-                    pinId = pinId.toNumber();
+        for (const pinId of usePins) {
+            if (Array.isArray(pinId)) {
+                lastPinPosition += (pinId[0] as NumericValue).toNumber();
+            } else {
+                if (typeof pinId === "number" || (pinId instanceof NumericValue)) {
+                    if (pinId instanceof NumericValue) {
+                        pinId = pinId.toNumber();
+                    }
+                    pinsDef.push(new PinDefinition(pinId, PinIdType.Int, pinId.toString(), PinTypes.Passive));
+                } else {
+                    pinsDef.push(new PinDefinition(pinId, PinIdType.Str, pinId, PinTypes.Passive));
                 }
-                return new PinDefinition(pinId, PinIdType.Int, pinId.toString(), PinTypes.Passive);
+
+                pinsPosition.push(lastPinPosition);
+                lastPinPosition++;
             }
-            return new PinDefinition(pinId, PinIdType.Str, pinId, PinTypes.Passive)
-        });
+        }
 
         const numSignalPins = pinsDef.length;
 
@@ -1007,13 +1021,9 @@ export class ParserVisitor extends BaseVisitor {
         const mainBusPin = new PinDefinition(BusMainPinName, PinIdType.Str, 
             BusMainPinName, PinTypes.Bus);
 
-        // Find the y-position
-
         const busLineStart = directionMultipler * 0.5 * gridSize;
-        const busLineEnd = busLineStart + gridSize * (numSignalPins - 1);
-        let useBusPinY = gridSize * (Math.floor(numSignalPins/2)) + (directionMultipler === -1 ? -gridSize: 0);
-
-        // let useBusPinY = Math.floor(numSignalPins  / 2) * gridSize;
+        const busLineEnd = busLineStart + gridSize * (lastPinPosition - 1);
+        let useBusPinY = gridSize * (Math.floor(lastPinPosition/2)) + (directionMultipler === -1 ? -gridSize: 0);
 
         if (numSignalPins === 1){
             useBusPinY = 0;
@@ -1034,7 +1044,7 @@ export class ParserVisitor extends BaseVisitor {
             drawingCommands.push([
                 PlaceHolderCommands.hpin,
                 [pinDef.id, 
-                    numeric(-2 * gridSize), numeric(index * gridSize), 
+                    numeric(-2 * gridSize), numeric(pinsPosition[index] * gridSize), 
                     numeric(1.5 * gridSize)],
                 new Map([["display_name", true]]), null
             ]);
@@ -1055,8 +1065,8 @@ export class ParserVisitor extends BaseVisitor {
                 drawingCommands.push([
                     PlaceHolderCommands.path,
                     [
-                        'M', numeric(-0.7 * gridSize), numeric(i * gridSize),
-                        'L', numeric(-0.5 * gridSize), numeric(i * gridSize),
+                        'M', numeric(-0.7 * gridSize), numeric(pinsPosition[i] * gridSize),
+                        'L', numeric(-0.5 * gridSize), numeric(pinsPosition[i] * gridSize),
                         'l', numeric(gridSize * 0.5), numeric(gridSize * 0.5 * directionMultipler),
                     ]
                 ])
