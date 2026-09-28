@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.10.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.5...v0.10.6)
+## [v0.10.7](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.6...v0.10.7)
+
+[08256a2](https://github.com/circuitscript/circuitscript-ts/commit/08256a253bfc1b8ccd22b01b0d3d003fe43d898b) minor fix
+
+## [v0.10.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.5...v0.10.6) - 2026-09-28
 
 [2fb6d13](https://github.com/circuitscript/circuitscript-ts/commit/2fb6d138002c20dbe3294355807bfdf9bdc8dfa0)Support explicit spacing slots in bus pin definitions
 - 
