@@ -1,6 +1,13 @@
 # Changelog
 
-## [v0.10.5](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.4...v0.10.5)
+## [v0.10.6](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.5...v0.10.6)
+
+[2fb6d13](https://github.com/circuitscript/circuitscript-ts/commit/2fb6d138002c20dbe3294355807bfdf9bdc8dfa0)Support explicit spacing slots in bus pin definitions
+- 
+- Allow [N] entries in a bus pins list to skip N grid positions, letting
+- pin spacing be controlled explicitly instead of always being sequential.
+
+## [v0.10.5](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.4...v0.10.5) - 2026-09-14
 
 [86613ac](https://github.com/circuitscript/circuitscript-ts/commit/86613ac25366bd45add1caaa2672c8f985f95815)Rewrite HTML viewer as a Preact-based app
 - 
