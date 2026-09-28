@@ -993,7 +993,7 @@ export class ParserVisitor extends BaseVisitor {
         let lastPinPosition = 0;
         const pinsDef: PinDefinition[] = [];
 
-        for (const pinId of usePins) {
+        for (let pinId of usePins) {
             if (Array.isArray(pinId)) {
                 lastPinPosition += (pinId[0] as NumericValue).toNumber();
             } else {
