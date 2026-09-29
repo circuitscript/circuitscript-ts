@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ClassComponent } from "./ClassComponent.js";
 import { NetClass } from "./NetClass.js";
 import { ParamsContainer } from "./ParamsContainer.js";
 import { NetTypes } from "./types.js";
@@ -33,6 +34,7 @@ export class Net extends ParamsContainer {
 
     // If true, this net is a bus net.
     busNet = false;
+    busComponent?: ClassComponent;
 
     // private randomId: string;
 
@@ -71,7 +73,10 @@ export class Net extends ParamsContainer {
         cloned.baseName = this.baseName;
         cloned.type = this.type;
         cloned.class = this.class;
+        
         cloned.busNet = this.busNet;
+        cloned.busComponent = this.busComponent;
+
         cloned.parameters = new Map(this.parameters);
         return cloned;
     }

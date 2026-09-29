@@ -713,44 +713,52 @@ export class ExecutionContext {
             currentComponent.getPin(currentPin)
         )!;
 
-        let isBusConnection = false;
+        let busConnectComponents: ClassComponent[] = [];
+
+        const pinTypes = [toPinDef.pinType, fromPinDef.pinType].sort();        
+        const busPins = pinTypes.filter(item => {
+            return item === PinTypes.Bus;
+        })
 
         // If pin is of bus type.
-        if (toPinDef.pinType === PinTypes.Bus || fromPinDef.pinType === PinTypes.Bus) {
-            if (toPinDef.pinType !== fromPinDef.pinType) {
-                throw new RuntimeExecutionError("Bus wire cannot be connected with wire");
-            } else {
-                const useComponent1 = 
-                    component._pointLinkComponent ? component._pointLinkComponent : component;
-                const useComponent2 = 
-                    currentComponent._pointLinkComponent ? currentComponent._pointLinkComponent: currentComponent;
+        if (busPins.length > 0) {
 
-                // Check if both buses are the same.
-                const pin1Names = Array.from(useComponent1.pins.values()).filter(pin => {
-                    return pin.id.getValue() !== 1; 
-                }).map(pinDef => pinDef.name);
+            if (busPins.length === 2) {
+                // Both components are buses.
+                busConnectComponents = [component, currentComponent];
+                
+            } else if (busPins.length === 1) {
+                // Only 1 component is a bus, then other must be a component label.
 
-                const pin2Names = Array.from(useComponent2.pins.values()).filter(pin => {
-                    return pin.id.getValue() !== 1; 
-                }).map(pinDef => pinDef.name);
-
-                // Sort pin names so that the order does not matter.
-                const sortedPin1Names = pin1Names.sort();
-                const sortedPin2Names = pin2Names.sort();
-
-                // Check that both matches
-                let numMatches = 0;
-                for (let i = 0; i < sortedPin1Names.length; i++) {
-                    if (sortedPin1Names[i] === sortedPin2Names[i]) {
-                        numMatches++;
+                if (component.typeProp === ComponentTypes.net && component.isNetLabel) {
+                    const tmpNet = this.scope.netMap.get(component, pinId);
+                    if (tmpNet && tmpNet.busNet) {
+                        busConnectComponents = [currentComponent, tmpNet.busComponent!];
                     }
-                }
 
-                if (numMatches !== sortedPin1Names.length || numMatches !== sortedPin2Names.length) {
-                    throw new RuntimeExecutionError("Buses are different");
-                }
+                    // Else the net label is just a normal label (not connected)
+                    // to a bus yet.
+                    
+                } else if (component.typeProp === ComponentTypes.bus
+                    && currentComponent.typeProp === ComponentTypes.net
+                    && currentComponent.isNetLabel) {
 
-                isBusConnection = true;
+                    const tmpNet = this.scope.netMap.get(currentComponent, currentPin)!;
+
+                    // Current component net should exists.
+                    if (tmpNet === null) {
+                        throw new RuntimeExecutionError("Net should not be null");
+                    }
+
+                    if (tmpNet.busNet) {
+                        // Merge with the bus net
+                        busConnectComponents = [tmpNet.busComponent!, component];
+                    }
+                } else {
+                    throw new RuntimeExecutionError("Invalid connection to bus");    
+                }
+            } else {
+                throw new RuntimeExecutionError("Invalid connection to bus");
             }
         }
 
@@ -763,9 +771,38 @@ export class ExecutionContext {
             currentComponent, currentPin, component, pinId
         );
 
-        if (isBusConnection) {
-            const useComponent1 = component._pointLinkComponent ? component._pointLinkComponent : component;
-            const useComponent2 = currentComponent._pointLinkComponent ? currentComponent._pointLinkComponent: currentComponent;
+        if (busConnectComponents.length === 2) {
+            const tmpComponent1 = busConnectComponents[0];
+            const tmpComponent2 = busConnectComponents[1];
+
+            const useComponent1 = tmpComponent1._pointLinkComponent ? tmpComponent1._pointLinkComponent : tmpComponent1;
+            const useComponent2 = tmpComponent2._pointLinkComponent ? tmpComponent2._pointLinkComponent: tmpComponent2;
+
+            // Check if both buses are the same.
+            const pin1Names = Array.from(useComponent1.pins.values()).filter(pin => {
+                return pin.id.getValue() !== 1;
+            }).map(pinDef => pinDef.name);
+
+            const pin2Names = Array.from(useComponent2.pins.values()).filter(pin => {
+                return pin.id.getValue() !== 1;
+            }).map(pinDef => pinDef.name);
+
+            // Sort pin names so that the order does not matter.
+            const sortedPin1Names = pin1Names.sort();
+            const sortedPin2Names = pin2Names.sort();
+
+            // Check that both matches
+            let numMatches = 0;
+            for (let i = 0; i < sortedPin1Names.length; i++) {
+                if (sortedPin1Names[i] === sortedPin2Names[i]) {
+                    numMatches++;
+                }
+            }
+
+            // Ensure that the buses match up first.
+            if (numMatches !== sortedPin1Names.length || numMatches !== sortedPin2Names.length) {
+                throw new RuntimeExecutionError("Buses are different");
+            }
 
             // Connect up all the bus connections by finding the matching pairs
             const pins1 = Array.from(useComponent1.pins.values());
@@ -858,11 +895,11 @@ export class ExecutionContext {
             const pinDef = component.pins.get(component.getPin(usePinId))!;
             if (pinDef.pinType === PinTypes.Bus) {
                 tmpNet.busNet = true;
+                tmpNet.busComponent = component;
             }
 
             this.scope.netMap.set(component, usePinId, tmpNet);
         }
-
 
         // Insertion point is currently at a component pin, so clear
         // any wire/frame selected.

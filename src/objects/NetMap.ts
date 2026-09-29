@@ -183,6 +183,8 @@ export class NetMap {
             }
         });
 
+        net1.busNet = net1.busNet || net2.busNet;
+        net1.busComponent = net1.busComponent ?? net2.busComponent;
         return net1;
     }
 
