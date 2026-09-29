@@ -1,0 +1,29 @@
+# Test labels on buses, label created first.
+
+from "std" import *
+
+gnd = dgnd()
+
+spi1 = create bus:
+        name: "SPI"
+        pins: "MOSI", [1], "MISO", [0], "CLK", [1], "NSS"
+
+spi2 = create bus:
+    name: "SPI"
+    pins: "MOSI", [1], "MISO", [0], "NSS", [1], "CLK"
+
+spi3 = create bus:
+    name: "SPI"
+    pins: "MOSI", [1], "MISO", [0], "NSS", [1], "CLK"
+
+at label("SPIX")
+wire right 500
+to spi2
+
+at spi2 pin "MOSI" wire right 300 down 100 
+add res(10k)
+wire down 600 to gnd
+
+at spi2 pin "NSS" wire right 100 down 300
+add res(1k)
+wire down 100 to gnd

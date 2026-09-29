@@ -1,0 +1,12 @@
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | res-0.COMP-1-10k | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1
+/GND | res-1.COMP-1-1k | 2
+/GND | dgnd-0.COMP-1-GND:1 | 1
+/NET-(J2-MOSI) | COMP-2 | MOSI
+/NET-(J2-MOSI) | res-0.COMP-1-10k | 1
+/NET-(J2-NSS) | COMP-2 | NSS
+/NET-(J2-NSS) | res-1.COMP-1-1k | 1
+/SPIX | label-0.COMP-1-SPIX | 1
+/SPIX | label-0.COMP-1-SPIX:0 | 1
+/SPIX | COMP-2 | __BUS

@@ -151,7 +151,8 @@ describe('Render tests', () => {
         ['script99.cst',  'arrange list mixes pin ids, pin names and blank slots'],
         ['script100.cst', 'pin referenced by both id and name is de-duplicated'],
         ['script103.cst', 'pin spacing in bus definition'],
-        ['script104.cst', 'Labels on buses']
+        ['script104.cst', 'Labels on buses'],
+        ['script105.cst', 'Labels on buses, label created first.']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);

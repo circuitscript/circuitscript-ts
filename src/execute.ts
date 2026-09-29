@@ -753,6 +753,9 @@ export class ExecutionContext {
                     if (tmpNet.busNet) {
                         // Merge with the bus net
                         busConnectComponents = [tmpNet.busComponent!, component];
+                    } else {
+                        tmpNet.busNet = true;
+                        tmpNet.busComponent = component;
                     }
                 } else {
                     throw new RuntimeExecutionError("Invalid connection to bus");    
