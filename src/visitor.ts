@@ -1759,10 +1759,27 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
+    private checkNoArrayOperands(
+        ctx: ParserRuleContext,
+        op: string,
+        value1: any,
+        value2: any
+    ): void {
+        if (Array.isArray(unwrapValue(value1)) || Array.isArray(unwrapValue(value2))) {
+            this.throwWithContext(
+                ctx,
+                `Invalid operands for '${op}': arrays do not support this operation`
+            );
+        }
+    }
+
     visitMultiplyExpr = (ctx: MultiplyExprContext): void => {
         const value1 = this.resolveDataExpr<number>(ctx.data_expr(0));
         const value2 = this.resolveDataExpr<number>(ctx.data_expr(1));
-        
+
+        const mulOp = ctx.Multiply() ? '*' : ctx.Divide() ? '/' : '%';
+        this.checkNoArrayOperands(ctx, mulOp, value1, value2);
+
         const operator = new NumberOperator();
         const tmpValue1 = operator.prepare(value1);
         const tmpValue2 = operator.prepare(value2);
@@ -1807,6 +1824,9 @@ export class ParserVisitor extends BaseVisitor {
             const result = tmpValue1 + tmpValue2;
             this.setResult(ctx, result);
 
+        } else if (ctx.Addition() && Array.isArray(value1) && Array.isArray(value2)) {
+            // Array concatenation, returns a new array
+            this.setResult(ctx, [...value1, ...value2]);
         } else if (ctx.Addition() && (value1 instanceof NumericValue) && Array.isArray(value2)){
             // This sets the tolerance for a given number.
             try {
@@ -1817,6 +1837,7 @@ export class ParserVisitor extends BaseVisitor {
             const result = value1;
             this.setResult(ctx, result);
         } else {
+            this.checkNoArrayOperands(ctx, ctx.Addition() ? '+' : '-', value1, value2);
             const operator = new NumberOperator();
             const tmpValue1 = operator.prepare(value1);
             const tmpValue2 = operator.prepare(value2);

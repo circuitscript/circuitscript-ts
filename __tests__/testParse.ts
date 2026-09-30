@@ -63,7 +63,14 @@ import {
     inlineScriptChain17,
     inlineScriptChain18,
     inlineScriptChain19,
-    inlineScriptChain20
+    inlineScriptChain20,
+    inlineScript117,
+    inlineScript118,
+    inlineScript119,
+    inlineScript120,
+    inlineScript121,
+    inlineScript122,
+    inlineScript123
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -535,6 +542,56 @@ describe('atom expr and trailers tests', () => {
     testInlineScriptTest('test nested function calls mixed with array access', inlineScript61);
 
     testInlineScriptTest('test nested objects in variables', inlineScript62);
+});
+
+describe('array addition tests', () => {
+    testInlineScriptTest('array + array concatenates', inlineScript117);
+    testInlineScriptTest('concatenation does not mutate operands', inlineScript118);
+    testInlineScriptTest('concatenation with empty operands', inlineScript119);
+    testInlineScriptTest('concatenation with mixed element types', inlineScript120);
+    testInlineScriptTest('chained concatenation', inlineScript121);
+    testInlineScriptTest('concatenation result usable with builtins', inlineScript122);
+    testInlineScriptTest('nested array concatenation', inlineScript123);
+
+    test('array operand error for +', async () => {
+        const err = await runScriptExpectErrorObject(`
+print([1] + 5)
+`);
+
+        expect(err.message).toContain('Invalid operands for');
+        expect(err.message).not.toContain('toBigNumber');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('array operand error for -', async () => {
+        const err = await runScriptExpectErrorObject(`
+print([1] - [2])
+`);
+
+        expect(err.message).toContain('Invalid operands for');
+        expect(err.message).not.toContain('toBigNumber');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('array operand error for *', async () => {
+        const err = await runScriptExpectErrorObject(`
+print([1] * 2)
+`);
+
+        expect(err.message).toContain('Invalid operands for');
+        expect(err.message).not.toContain('toBigNumber');
+        expect(err.startToken).toBeDefined();
+    });
+
+    test('array operand error for /', async () => {
+        const err = await runScriptExpectErrorObject(`
+print([1] / [2])
+`);
+
+        expect(err.message).toContain('Invalid operands for');
+        expect(err.message).not.toContain('toBigNumber');
+        expect(err.startToken).toBeDefined();
+    });
 });
 
 describe('function argument errors', () => {

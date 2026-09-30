@@ -1101,6 +1101,48 @@ export const inlineScript116 = `
 print(strip(5))
 `;
 
+export const inlineScript117 = new ScriptTest(`
+a = [1, 2]
+b = [3, 4]
+print(a + b)
+`, ['[1, 2, 3, 4]']);
+
+export const inlineScript118 = new ScriptTest(`
+a = [1, 2]
+b = [3, 4]
+c = a + b
+print(a)
+print(b)
+print(len(c))
+`, ['[1, 2]', '[3, 4]', '4']);
+
+export const inlineScript119 = new ScriptTest(`
+print([] + [1])
+print([1] + [])
+print([] + [])
+`, ['[1]', '[1]', '[]']);
+
+export const inlineScript120 = new ScriptTest(`
+print(["a", 1] + [2k, "b"])
+`, ['["a", 1, 2k, "b"]']);
+
+export const inlineScript121 = new ScriptTest(`
+print([1] + [2] + [3])
+`, ['[1, 2, 3]']);
+
+export const inlineScript122 = new ScriptTest(`
+a = [1, 2]
+b = [3, 4]
+print(len(a + b))
+print(array_get(a + b, 2))
+array_push(a + b, 5)
+print(a)
+`, ['4', '3', '[1, 2]']);
+
+export const inlineScript123 = new ScriptTest(`
+print([[1]] + [[2]])
+`, ['[[1], [2]]']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [
