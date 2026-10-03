@@ -40,6 +40,8 @@ const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
 
     // Get pin type
     ['pin_get_type', null],
+
+    ['pins_match', null],
     
     // Returns true if component has given pin
     ['has_pin', null],
@@ -257,6 +259,24 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
         return [visitor, useComponent.hasPin(usePinId)];
     });
 
+    context.createFunction(BaseNamespace, 'pins_match', (params) => {
+        const args = getPositionParams(params);
+
+        const component = args[0];
+        const matchString = args[1];
+
+        if (component instanceof ClassComponent && typeof matchString === "string") {
+            const allPins = Array.from(component.pins.values());
+            const isMatch = createPinNameMatcher(matchString);
+            const matchingPins = allPins.filter(pinDef =>
+                isMatch(pinDef.name) || pinDef.altNames.some(isMatch));
+
+            return [visitor, matchingPins.map(item => item.name)];
+        } else {
+            throw `Invalid parameters for pins_match`;
+        }
+    });
+
     builtInFunctions.forEach(([functionName, functionImpl]) => {
         if (functionImpl !== null){
             context.createFunction(BaseNamespace, functionName, params => {
@@ -266,6 +286,21 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
             });
         }
     });
+}
+
+/** Returns a substring matcher for pin names. "*" in the pattern matches
+ * any run of characters (including none). */
+function createPinNameMatcher(pattern: string): (name: string) => boolean {
+    if (!pattern.includes('*')) {
+        return name => name.includes(pattern);
+    }
+
+    const source = pattern
+        .split('*')
+        .map(part => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*');
+    const regex = new RegExp(source);
+    return name => regex.test(name);
 }
 
 /** Resolves the `(pinOrComponent, pin?)`-style args shared by `voltage()`,

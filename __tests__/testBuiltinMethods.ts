@@ -44,6 +44,16 @@ import {
     inlineScript114,
     inlineScript115,
     inlineScript116,
+    inlineScript124,
+    inlineScript125,
+    inlineScript126,
+    inlineScript127,
+    inlineScript128,
+    inlineScript129,
+    inlineScript130,
+    inlineScript131,
+    inlineScript132,
+    inlineScript133,
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -84,6 +94,13 @@ describe('builtin methods', () => {
         ['strip removes custom chars', inlineScript113],
         ['strip removes multiple custom chars', inlineScript114],
         ['strip is a no-op when nothing to strip', inlineScript115],
+        ['pins_match substring on pin name', inlineScript124],
+        ['pins_match returns empty array when nothing matches', inlineScript125],
+        ['pins_match wildcard patterns', inlineScript126],
+        ['pins_match treats regex metacharacters literally', inlineScript127],
+        ['pins_match matches alt names and returns primary name', inlineScript128],
+        ['pins_match does not duplicate pin matched by name and alt name', inlineScript129],
+        ['pins_match is case sensitive', inlineScript130],
 
     ])('built-in functions - %s',  async (description, scriptTest) =>
         await expectInlineScriptTest(description, scriptTest)
@@ -194,6 +211,23 @@ describe('builtin methods', () => {
     describe('strip', () => {
         test('throws for non-string input', async () => {
             const { hasError } = await runScript(inlineScript116);
+            expect(hasError).toBe(true);
+        });
+    });
+
+    describe('pins_match - invalid parameters', () => {
+        test('throws when first arg is not a component', async () => {
+            const { hasError } = await runScript(inlineScript131);
+            expect(hasError).toBe(true);
+        });
+
+        test('throws when pattern is not a string', async () => {
+            const { hasError } = await runScript(inlineScript132);
+            expect(hasError).toBe(true);
+        });
+
+        test('throws when pattern is missing', async () => {
+            const { hasError } = await runScript(inlineScript133);
             expect(hasError).toBe(true);
         });
     });

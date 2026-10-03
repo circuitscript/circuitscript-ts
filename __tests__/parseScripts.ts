@@ -1143,6 +1143,115 @@ export const inlineScript123 = new ScriptTest(`
 print([[1]] + [[2]])
 `, ['[[1], [2]]']);
 
+// pins_match: substring match on name
+export const inlineScript124 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "PA1"
+        2: "PA2"
+        3: "PB1"
+        4: "VCC"
+
+print(pins_match(tmp, "PA"))
+print(pins_match(tmp, "1"))
+`, ['["PA1", "PA2"]', '["PA1", "PB1"]']);
+
+// pins_match: no match returns empty array
+export const inlineScript125 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "PA1"
+        2: "PA2"
+
+print(pins_match(tmp, "XYZ"))
+print(len(pins_match(tmp, "XYZ")))
+`, ['[]', '0']);
+
+// pins_match: wildcard
+export const inlineScript126 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "PA1"
+        2: "PA2"
+        3: "PB1"
+        4: "GND"
+
+print(pins_match(tmp, "P*1"))
+print(pins_match(tmp, "*"))
+print(pins_match(tmp, "*ND"))
+print(pins_match(tmp, "G*"))
+`, ['["PA1", "PB1"]', '["PA1", "PA2", "PB1", "GND"]', '["GND"]', '["GND"]']);
+
+// pins_match: regex metacharacters in the pattern are literal
+export const inlineScript127 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "A.B"
+        2: "AxB"
+        3: "A+B"
+        4: "(X)"
+
+print(pins_match(tmp, "A.B"))
+print(pins_match(tmp, "A+B"))
+print(pins_match(tmp, "A.*B"))
+print(pins_match(tmp, "(X)"))
+`, ['["A.B"]', '["A+B"]', '["A.B"]', '["(X)"]']);
+
+// pins_match: matches alt names, returns the primary name
+export const inlineScript128 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "PA0", "passive", "SDA", "TX"
+        2: "PA1", "passive", "SCL"
+        3: "PB0"
+
+print(pins_match(tmp, "SDA"))
+print(pins_match(tmp, "S*"))
+print(pins_match(tmp, "TX"))
+`, ['["PA0"]', '["PA0", "PA1"]', '["PA0"]']);
+
+// pins_match: a pin matching by both name and alt name is returned once
+export const inlineScript129 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "PA0", "passive", "PA0_ALT"
+
+print(pins_match(tmp, "PA0"))
+`, ['["PA0"]']);
+
+// pins_match: matching is case sensitive
+export const inlineScript130 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "VCC"
+
+print(pins_match(tmp, "vcc"))
+print(pins_match(tmp, "VCC"))
+`, ['[]', '["VCC"]']);
+
+// pins_match: first arg is not a component
+export const inlineScript131 = `
+print(pins_match("abc", "a"))
+`;
+
+// pins_match: pattern is not a string
+export const inlineScript132 = `
+tmp = create component:
+    pins:
+        1: "A"
+
+print(pins_match(tmp, 1))
+`;
+
+// pins_match: missing args
+export const inlineScript133 = `
+tmp = create component:
+    pins:
+        1: "A"
+
+print(pins_match(tmp))
+`;
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [
