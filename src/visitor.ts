@@ -83,7 +83,8 @@ import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, Compone
 import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
-    WireAutoDirection} from './globals.js';
+    WireAutoDirection,
+    defaultPinIdTextSize} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
@@ -1078,8 +1079,10 @@ export class ParserVisitor extends BaseVisitor {
     
             drawingCommands.push([
                 PlaceHolderCommands.label,
-                [name, numeric(20), numeric(useBusPinY - 20)]
-            ])
+                [name, numeric(20), numeric(useBusPinY - 20)],
+                new Map([["font_size", numeric(defaultPinIdTextSize)]]),
+                null
+            ]);
         }
 
         drawingCommands.push(...[
@@ -2935,7 +2938,9 @@ export class ParserVisitor extends BaseVisitor {
             // Net and graphic components are skipped as they do not need
             // to be annotated
             if (instance.typeProp === ComponentTypes.net
-                || instance.typeProp == ComponentTypes.graphic) {
+                || instance.typeProp === ComponentTypes.graphic
+                || instance.typeProp === ComponentTypes.bus
+            ) {
                 continue;
             }
 
@@ -3036,8 +3041,14 @@ export class ParserVisitor extends BaseVisitor {
                 
                 // Update both names, since both are originally system
                 // created net names.
+
+                let useIdName = component.instanceName;
+                if (component.assignedRefDes !== null){
+                    useIdName = component.assignedRefDes;
+                }
+
                 net.name = net.baseName = 
-                    `NET-(${component.assignedRefDes}-${pin.toString()})`;
+                    `NET-(${useIdName}-${pin.toString()})`;
                 
                 // If net already exists, this is an unhandled case, since it
                 if (fullNetNames.indexOf(net.toString()) !== -1) {
