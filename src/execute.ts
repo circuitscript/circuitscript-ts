@@ -915,7 +915,34 @@ export class ExecutionContext {
         
         // Check if there is an existing net, otherwise create the net
         if (!this.scope.netMap.hasNet(component, usePinId)) {
-            const tmpNet = this.scope.netMap.newNet(this.netNamespace);
+            let tmpNet: Net;
+            let useNetName: string | null = null;
+
+            if (component.typeProp === ComponentTypes.bus){
+                // if new net, and component is a bus, then use generated
+                // net name with bus name and pin name.
+
+                const busNet = this.scope.netMap.get(component, component.getDefaultPin());
+                if (busNet){
+                    let busName = "";
+                    if (component.hasParam('bus_name')){
+                        busName = `${component.getParam('bus_name')}.`;
+                    }
+                    
+                    const busNetName = busNet.name;
+                    useNetName = `${busNetName}.${busName}${usePinId.getValue()}`;
+                }
+            }
+
+            if (useNetName === null){
+                tmpNet = this.scope.netMap.newNet(this.netNamespace);
+            } else {
+                tmpNet = this.scope.netMap.newNet(this.netNamespace, useNetName);
+                
+                if (component.typeProp === ComponentTypes.bus){
+                    tmpNet.priority = 1;
+                }
+            }
 
             // Set property if it is a bus pin.
             const pinDef = component.pins.get(component.getPin(usePinId))!;
