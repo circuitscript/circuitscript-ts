@@ -70,7 +70,12 @@ import {
     inlineScript120,
     inlineScript121,
     inlineScript122,
-    inlineScript123
+    inlineScript123,
+    inlineScript134,
+    inlineScript135,
+    inlineScript136,
+    inlineScript137,
+    inlineScript138
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -542,6 +547,23 @@ describe('atom expr and trailers tests', () => {
     testInlineScriptTest('test nested function calls mixed with array access', inlineScript61);
 
     testInlineScriptTest('test nested objects in variables', inlineScript62);
+});
+
+describe('multi-line array tests', () => {
+    testInlineScriptTest('elements split across lines', inlineScript134);
+    testInlineScriptTest('brackets on their own lines', inlineScript135);
+    testInlineScriptTest('nested multi-line arrays', inlineScript136);
+    testInlineScriptTest('multi-line array in call inside indented block', inlineScript137);
+    testInlineScriptTest('multi-line index expression', inlineScript138);
+
+    test('unterminated array reports a syntax error', async () => {
+        const { hasError } = await runScript(`
+b = [1,
+    2
+print(b)
+`);
+        expect(hasError).toEqual(true);
+    });
 });
 
 describe('array addition tests', () => {

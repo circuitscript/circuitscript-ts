@@ -54,8 +54,8 @@ Colon:              ':';
 Comma:              ',';
 Dot:                '.';
 DoubleDot:          '..';
-LSquare:            '[';
-RSquare:            ']';
+LSquare:            '[' {this.openBrace();};
+RSquare:            ']' {this.closeBrace();};
 Assign:             '=';
 
 Equals:             '==';

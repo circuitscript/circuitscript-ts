@@ -175,7 +175,9 @@ export class MainLexer extends CircuitScriptLexer {
     }
 
     closeBrace(): void {
-        this.opened--;
+        if (this.opened > 0) {
+            this.opened--;
+        }
     }
 
     onNewLine(): void {

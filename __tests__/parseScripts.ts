@@ -1252,6 +1252,57 @@ tmp = create component:
 print(pins_match(tmp))
 `;
 
+// multi-line array literal with elements across lines
+export const inlineScript134 = new ScriptTest(`
+b = [1,
+        3, 4, 5,
+        7]
+print(b)
+`, ['[1, 3, 4, 5, 7]']);
+
+// opening bracket alone on its line, closing bracket on its own line
+export const inlineScript135 = new ScriptTest(`
+b = [
+    1,
+    2,
+    3
+]
+print(len(b))
+`, ['3']);
+
+// nested multi-line arrays
+export const inlineScript136 = new ScriptTest(`
+b = [
+    [1, 2],
+    [3,
+     4]
+]
+print(b)
+`, ['[[1, 2], [3, 4]]']);
+
+// multi-line array inside a function call and an indented block
+export const inlineScript137 = new ScriptTest(`
+def f(x):
+    return len(x)
+
+if true:
+    y = f([1,
+           2,
+           3])
+    print(y)
+`, ['3']);
+
+// multi-line index expression and statements after the array still parse
+export const inlineScript138 = new ScriptTest(`
+a = [10, 20, 30]
+c = a[
+    1
+]
+print(c)
+d = 5
+print(d)
+`, ['20', '5']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [
