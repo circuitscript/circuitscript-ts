@@ -784,7 +784,7 @@ export class ExecutionContext {
                 const tmpPin = busComponentPins[i];
                 if (tmpPin.pinType !== PinTypes.Bus) {
                     const pinNet = this.scope.netMap.get(useBusComponent, tmpPin.id)!;
-                    if (pinNet.priority === 0) {
+                    if (pinNet && pinNet.priority === 0) {
                         const proposedNetName = `${labelNetName}.${useBusName}${tmpPin.name}`;
 
                         // Check that proposed net name does not exist.
