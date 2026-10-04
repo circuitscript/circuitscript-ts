@@ -1104,7 +1104,13 @@ export class ParserVisitor extends BaseVisitor {
             ]
         ]);
         
-        const blankParams: ParamDefinition[] = [];
+        const busParams: ParamDefinition[] = [];
+
+        if (properties.has("name")){
+            busParams.push(
+                new ParamDefinition("bus_name", properties.get("name")));
+        }
+
         const props = {
             units: [[
                 'unit', {
@@ -1122,7 +1128,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const moduleInstanceName = this.getExecutor().getUniqueInstanceName();
         const busComponent = this.getExecutor().createComponent(
-            moduleInstanceName, usePinsDef, blankParams, props);
+            moduleInstanceName, usePinsDef, busParams, props);
         busComponent.typeProp = typeProp;
 
         this.setResult(ctx, busComponent);
@@ -3025,6 +3031,9 @@ export class ParserVisitor extends BaseVisitor {
     /**
      * Renames nets that have a priority of 0 (not directly defined by user) 
      * based on the first component and component pin that it is connected to.
+     * 
+     * This is useful in the PCB layout stage to show which components the
+     * net connects to.
      */
     private renameNetsWithRefdes(): void {
         const nets = this.getScope().netMap.getNets();
@@ -3034,10 +3043,20 @@ export class ParserVisitor extends BaseVisitor {
         const uniqueNets = new Set<Net>(nets.map(([,,net]) => net));
         const fullNetNames = Array.from(uniqueNets).map(item => item.toString());
 
+        // Get all bus components, this is used for renaming unlabeled nets.
+        const netsInBus = new Map<Net, [ClassComponent, PinId]>();
         nets.forEach(([component, pin, net]) => {
-            if (net.priority === 0 && seenNets.indexOf(net) === -1 
+            if (component.typeProp === ComponentTypes.bus && !net.busNet) {
+                netsInBus.set(net, [component, pin]);
+            }
+        });
+
+        nets.forEach(([component, pin, net]) => {
+            if (net.priority === 0 
+                && seenNets.indexOf(net) === -1 
                 && component.typeProp !== ComponentTypes.module
-                && component.typeProp !== ComponentTypes.net) {
+                && component.typeProp !== ComponentTypes.net
+                && component.typeProp !== ComponentTypes.bus) {
                 
                 // Update both names, since both are originally system
                 // created net names.
@@ -3047,9 +3066,20 @@ export class ParserVisitor extends BaseVisitor {
                     useIdName = component.assignedRefDes;
                 }
 
-                net.name = net.baseName = 
-                    `NET-(${useIdName}-${pin.toString()})`;
-                
+                let useNetName = `NET-(${useIdName}-${pin.toString()})`;
+                if (netsInBus.has(net)){
+                    const [busComponent, busPinId] = netsInBus.get(net);
+
+                    let useBusName = '';
+                    if (busComponent.hasParam('bus_name')){
+                        useBusName = `${busComponent.getParam('bus_name')}.`;
+                    }
+
+                    useNetName = `NET-(${useIdName}-${pin.toString()}-${useBusName}${busPinId.value})`;
+                }
+
+                net.baseName = net.name = useNetName;
+
                 // If net already exists, this is an unhandled case, since it
                 if (fullNetNames.indexOf(net.toString()) !== -1) {
                     throw new RuntimeExecutionError('Net renaming failed due to clash: ' + net);

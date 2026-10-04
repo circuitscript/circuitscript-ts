@@ -714,6 +714,7 @@ export class ExecutionContext {
         )!;
 
         let busConnectComponents: ClassComponent[] = [];
+        let labelBusConnect = false;
 
         const pinTypes = [toPinDef.pinType, fromPinDef.pinType].sort();        
         const busPins = pinTypes.filter(item => {
@@ -722,7 +723,6 @@ export class ExecutionContext {
 
         // If pin is of bus type.
         if (busPins.length > 0) {
-
             if (busPins.length === 2) {
                 // Both components are buses.
                 busConnectComponents = [component, currentComponent];
@@ -730,35 +730,28 @@ export class ExecutionContext {
             } else if (busPins.length === 1) {
                 // Only 1 component is a bus, then other must be a component label.
 
-                if (component.typeProp === ComponentTypes.net && component.isNetLabel) {
-                    const tmpNet = this.scope.netMap.get(component, pinId);
-                    if (tmpNet && tmpNet.busNet) {
-                        busConnectComponents = [currentComponent, tmpNet.busComponent!];
-                    }
+                const tmpArray = [currentComponent, component];
+                const busComponent = tmpArray.find(item => item.typeProp === ComponentTypes.bus);
+                const labelComponent = tmpArray.find(item => item.typeProp === ComponentTypes.net && item.isNetLabel);
 
-                    // Else the net label is just a normal label (not connected)
-                    // to a bus yet.
-                    
-                } else if (component.typeProp === ComponentTypes.bus
-                    && currentComponent.typeProp === ComponentTypes.net
-                    && currentComponent.isNetLabel) {
+                const labelPinId = labelComponent === currentComponent ? currentPin : pinId;
 
-                    const tmpNet = this.scope.netMap.get(currentComponent, currentPin)!;
+                if (busComponent && labelComponent) {
+                    const tmpNet = this.scope.netMap.get(labelComponent, labelPinId);
+                    if (tmpNet) {
+                        if (tmpNet.busNet) {
+                            // If net is already connected to a bus, then use that bus.
+                            busConnectComponents = [tmpNet.busComponent!, busComponent];
+                        } else {
+                            tmpNet.busNet = true;
+                            tmpNet.busComponent = busComponent;
+                            labelBusConnect = true;
 
-                    // Current component net should exists.
-                    if (tmpNet === null) {
-                        throw new RuntimeExecutionError("Net should not be null");
-                    }
-
-                    if (tmpNet.busNet) {
-                        // Merge with the bus net
-                        busConnectComponents = [tmpNet.busComponent!, component];
+                            busConnectComponents = [busComponent, labelComponent];
+                        }
                     } else {
-                        tmpNet.busNet = true;
-                        tmpNet.busComponent = component;
+                        throw new RuntimeExecutionError("Invalid net for label");
                     }
-                } else {
-                    throw new RuntimeExecutionError("Invalid connection to bus");    
                 }
             } else {
                 throw new RuntimeExecutionError("Invalid connection to bus");
@@ -774,7 +767,37 @@ export class ExecutionContext {
             currentComponent, currentPin, component, pinId
         );
 
-        if (busConnectComponents.length === 2) {
+        if (labelBusConnect) {
+            // Connection between a bus and a label.
+            const busComponent = busConnectComponents[0];
+            const labelComponent = busConnectComponents[1];
+
+            const useBusComponent = busComponent._pointLinkComponent ? busComponent._pointLinkComponent : busComponent;
+            const useLabelComponent = labelComponent._pointLinkComponent ? labelComponent._pointLinkComponent: labelComponent;
+
+            const labelNetName = useLabelComponent.getParam('net_name');
+            const busName = useBusComponent.getParam('bus_name') ?? null;
+            const useBusName = busName !== null ? `${busName}.` : '';
+
+            const busComponentPins = Array.from(useBusComponent.pins.values());
+            for (let i = 0; i < busComponentPins.length; i++) {
+                const tmpPin = busComponentPins[i];
+                if (tmpPin.pinType !== PinTypes.Bus) {
+                    const pinNet = this.scope.netMap.get(useBusComponent, tmpPin.id)!;
+                    if (pinNet.priority === 0) {
+                        const proposedNetName = `${labelNetName}.${useBusName}${tmpPin.name}`;
+
+                        // Check that proposed net name does not exist.
+                        const matchingNet = this.scope.netMap.getNetWithNamespacePath(pinNet.namespace, proposedNetName);
+                        if (matchingNet === null) {
+                            pinNet.baseName = pinNet.name = proposedNetName;
+                            pinNet.priority = 1;
+                        }
+                    }
+                }
+            }
+        } else if (busConnectComponents.length === 2) {
+            // Handle connections between 2 buses only.
             const tmpComponent1 = busConnectComponents[0];
             const tmpComponent2 = busConnectComponents[1];
 
@@ -810,7 +833,7 @@ export class ExecutionContext {
             // Connect up all the bus connections by finding the matching pairs
             const pins1 = Array.from(useComponent1.pins.values());
             const pins2 = Array.from(useComponent2.pins.values());
-
+            
             for (let i = 0; i < pins1.length; i++) {
                 const targetPin = pins1[i];
                 const matchingPin = pins2.find(pin => {
