@@ -1154,7 +1154,7 @@ tmp = create component:
 
 print(pins_match(tmp, "PA"))
 print(pins_match(tmp, "1"))
-`, ['["PA1", "PA2"]', '["PA1", "PB1"]']);
+`, ['[1, 2]', '[1, 3]']);
 
 // pins_match: no match returns empty array
 export const inlineScript125 = new ScriptTest(`
@@ -1180,7 +1180,7 @@ print(pins_match(tmp, "P*1"))
 print(pins_match(tmp, "*"))
 print(pins_match(tmp, "*ND"))
 print(pins_match(tmp, "G*"))
-`, ['["PA1", "PB1"]', '["PA1", "PA2", "PB1", "GND"]', '["GND"]', '["GND"]']);
+`, ['[1, 3]', '[1, 2, 3, 4]', '[4]', '[4]']);
 
 // pins_match: regex metacharacters in the pattern are literal
 export const inlineScript127 = new ScriptTest(`
@@ -1195,9 +1195,9 @@ print(pins_match(tmp, "A.B"))
 print(pins_match(tmp, "A+B"))
 print(pins_match(tmp, "A.*B"))
 print(pins_match(tmp, "(X)"))
-`, ['["A.B"]', '["A+B"]', '["A.B"]', '["(X)"]']);
+`, ['[1]', '[3]', '[1]', '[4]']);
 
-// pins_match: matches alt names, returns the primary name
+// pins_match: matches alt names, returns the pin id
 export const inlineScript128 = new ScriptTest(`
 tmp = create component:
     pins:
@@ -1208,7 +1208,7 @@ tmp = create component:
 print(pins_match(tmp, "SDA"))
 print(pins_match(tmp, "S*"))
 print(pins_match(tmp, "TX"))
-`, ['["PA0"]', '["PA0", "PA1"]', '["PA0"]']);
+`, ['[1]', '[1, 2]', '[1]']);
 
 // pins_match: a pin matching by both name and alt name is returned once
 export const inlineScript129 = new ScriptTest(`
@@ -1217,7 +1217,7 @@ tmp = create component:
         1: "PA0", "passive", "PA0_ALT"
 
 print(pins_match(tmp, "PA0"))
-`, ['["PA0"]']);
+`, ['[1]']);
 
 // pins_match: matching is case sensitive
 export const inlineScript130 = new ScriptTest(`
@@ -1227,7 +1227,7 @@ tmp = create component:
 
 print(pins_match(tmp, "vcc"))
 print(pins_match(tmp, "VCC"))
-`, ['[]', '["VCC"]']);
+`, ['[]', '[1]']);
 
 // pins_match: first arg is not a component
 export const inlineScript131 = `
@@ -1251,6 +1251,18 @@ tmp = create component:
 
 print(pins_match(tmp))
 `;
+
+// pins_match: returns pin ids; string ids are returned as strings
+export const inlineScript139 = new ScriptTest(`
+tmp = create component:
+    pins:
+        1: "PA1"
+        "B": "PA2"
+        3: "VCC"
+
+print(pins_match(tmp, "PA"))
+print(pins_match(tmp, "VCC"))
+`, ['[1, "B"]', '[3]']);
 
 // multi-line array literal with elements across lines
 export const inlineScript134 = new ScriptTest(`

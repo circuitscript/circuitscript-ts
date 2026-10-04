@@ -54,6 +54,7 @@ import {
     inlineScript131,
     inlineScript132,
     inlineScript133,
+    inlineScript139,
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -98,9 +99,10 @@ describe('builtin methods', () => {
         ['pins_match returns empty array when nothing matches', inlineScript125],
         ['pins_match wildcard patterns', inlineScript126],
         ['pins_match treats regex metacharacters literally', inlineScript127],
-        ['pins_match matches alt names and returns primary name', inlineScript128],
+        ['pins_match matches alt names and returns pin id', inlineScript128],
         ['pins_match does not duplicate pin matched by name and alt name', inlineScript129],
         ['pins_match is case sensitive', inlineScript130],
+        ['pins_match returns numeric and string pin ids', inlineScript139],
 
     ])('built-in functions - %s',  async (description, scriptTest) =>
         await expectInlineScriptTest(description, scriptTest)

@@ -14,7 +14,7 @@ import { RuntimeExecutionError, ScenarioRuntimeError } from "./errors.js";
 import { BaseNamespace, ComponentTypes, GlobalDocumentName } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
-import { PinId } from "./objects/PinDefinition.js";
+import { PinId, PinIdType } from "./objects/PinDefinition.js";
 import { AllPinTypes, normalizePinType, resolvePinType } from "./objects/PinTypes.js";
 import { NetClass } from "./objects/NetClass.js";
 import { AcceptedSeverityLevels, ERC_RuleSeverity } from "./rules-check/severity-defaults.js";
@@ -270,8 +270,14 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
             const isMatch = createPinNameMatcher(matchString);
             const matchingPins = allPins.filter(pinDef =>
                 isMatch(pinDef.name) || pinDef.altNames.some(isMatch));
-
-            return [visitor, matchingPins.map(item => item.name)];
+                
+            return [visitor, matchingPins.map(item => {
+                if (item.id.getType() === PinIdType.Int) {
+                    return numeric(item.id.getValue());
+                } else {
+                    return item.id.getValue();
+                }
+            })];
         } else {
             throw `Invalid parameters for pins_match`;
         }
