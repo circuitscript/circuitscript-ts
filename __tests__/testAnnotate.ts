@@ -9,6 +9,7 @@ import { ParserVisitor } from '../src/visitor.js';
 import { BaseVisitor, OnErrorHandler, ImportFileResult } from '../src/BaseVisitor.js';
 import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/parser.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
+import { ComponentTypes } from '../src/globals.js';
 import { getTestEnvironment } from './helpers.js';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
@@ -144,5 +145,48 @@ describe('Refdes annotation: output format', () => {
         expect(annotationVisitor.getModifications().size).toBe(0);
         const output = annotationVisitor.getOutput();
         expect(output).not.toContain('#=');
+    });
+});
+
+describe('Refdes annotation: bus components', () => {
+    const busDef = `spi = create bus:\n    name: "SPI"\n    pins: "MOSI", "MISO", "CLK"\n\nat spi\nwire right 100\n`;
+
+    const getBuses = (visitor: ParserVisitor): ReturnType<ParserVisitor["getScope"]>["instances"] extends Map<string, infer V> ? V[] : never =>
+        [...visitor.getScope().instances.values()]
+            .filter(i => i.typeProp === ComponentTypes.bus);
+
+    test('bus instance gets no refdes', async () => {
+        const { hasError, visitor } = await runScript(busDef, SCRIPT_PATH);
+        expect(hasError).toBe(false);
+        const buses = getBuses(visitor);
+        expect(buses.length).toBe(1);
+        buses.forEach(b => expect(b.assignedRefDes).toBeNull());
+    });
+
+    test('annotation output has no #= for a bus', async () => {
+        const { hasError, visitor, tree, tokens } = await runScript(busDef, SCRIPT_PATH);
+        expect(hasError).toBe(false);
+        const annotationVisitor = new RefdesAnnotationVisitor(
+            true, busDef, tokens, visitor.getComponentCtxLinks());
+        annotationVisitor.visit(tree);
+        expect(annotationVisitor.getOutput()).not.toContain('#=');
+        expect(annotationVisitor.getModifications().size).toBe(0);
+    });
+
+    test('bus does not consume a refdes or disturb other components', async () => {
+        const script = `import "lib1"\n${busDef}at lib1.my_resistor()\n`;
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH);
+        expect(hasError).toBe(false);
+        const annotationVisitor = new RefdesAnnotationVisitor(
+            true, script, tokens, visitor.getComponentCtxLinks());
+        annotationVisitor.visit(tree);
+        const output = annotationVisitor.getOutput();
+        expect(output).toMatch(/at lib1.my_resistor\(\) #= R1/);
+        expect(output).not.toMatch(/at spi.*#=/);
+        expect(output).not.toMatch(/create bus.*#=/);
+        getBuses(visitor).forEach(b => expect(b.assignedRefDes).toBeNull());
+        const res = [...visitor.getScope().instances.values()]
+            .filter(i => i.typeProp !== ComponentTypes.bus && i.assignedRefDes);
+        expect(res.map(r => r.assignedRefDes)).toContain('R1');
     });
 });
