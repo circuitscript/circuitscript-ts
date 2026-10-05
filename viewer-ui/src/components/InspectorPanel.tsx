@@ -15,7 +15,7 @@ export interface InspectorPanelProps {
   meta: ComponentMeta | null;
   frameMeta?: FrameMeta | null;
   onClose: () => void;
-  onNetClick: (sheetIndex: string, netName: string) => void;
+  onNetClick: (netName: string) => void;
 }
 
 export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, frameMeta = null, onClose, onNetClick }) => {
@@ -82,7 +82,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
               {panelData.isNet && panelData.netName ? (
                 <span
                   className="cs-net-link"
-                  onClick={() => onNetClick(panelData.sheetIndex, panelData.netName!)}
+                  onClick={() => onNetClick(panelData.netName!)}
                 >
                   {panelData.title}
                 </span>
@@ -112,7 +112,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
                     {pin.netName ? (
                       <td
                         className="cs-net-link"
-                        onClick={() => onNetClick(panelData.sheetIndex, pin.netName!)}
+                        onClick={() => onNetClick(pin.netName!)}
                       >
                         {pin.netName}
                       </td>

@@ -17,6 +17,7 @@ export function sheetIndexFromDomId(domId: string): string {
   return m ? m[1] : '0';
 }
 
-export function buildNetKey(sheetIndex: string, rawNetName: string): string {
-  return sheetIndex + '-' + sanitizeNetKey(rawNetName);
+// Not sheet-scoped, so a net highlights on every sheet.
+export function buildNetKey(rawNetName: string): string {
+  return sanitizeNetKey(rawNetName);
 }

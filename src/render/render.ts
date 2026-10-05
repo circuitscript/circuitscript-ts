@@ -484,7 +484,8 @@ function generateSVGChild(canvas: Svg | G,
     mergedWires.forEach(tmpItem => {
         const { intersectPoints, net = null, lines = null } = tmpItem;
 
-        const netKey = net !== null ? `${sheetIndex}-${sanitizeDomId(net.net.name)}` : null;
+        // Not sheet-scoped, so the same net highlights across all sheets.
+        const netKey = net !== null ? sanitizeDomId(net.net.name) : null;
 
         let useJunctionColor = ColorScheme.JunctionColor;
         let useColor = defaultWireColor;
