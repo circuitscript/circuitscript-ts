@@ -4,6 +4,7 @@ import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
 import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
+import { FrameType } from '../src/globals.js';
 import {
     inlineScript17, inlineScript18, inlineScript19,
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
@@ -75,7 +76,20 @@ import {
     inlineScript135,
     inlineScript136,
     inlineScript137,
-    inlineScript138
+    inlineScript138,
+    inlineScript140,
+    inlineScript141,
+    inlineScript142,
+    inlineScript143,
+    inlineScript144,
+    inlineScript145,
+    inlineScript146,
+    inlineScript147,
+    inlineScript148,
+    inlineScript149,
+    inlineScript150,
+    inlineScript151,
+    inlineScript152
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
@@ -563,6 +577,97 @@ b = [1,
 print(b)
 `);
         expect(hasError).toEqual(true);
+    });
+});
+
+describe('frame and sheet header tests', () => {
+    testInlineScriptTest('frame row with title', inlineScript140);
+    testInlineScriptTest('frame column with title', inlineScript141);
+    testInlineScriptTest('frame with title', inlineScript142);
+    testInlineScriptTest('frame without header arguments', inlineScript143);
+    testInlineScriptTest('sheet with title', inlineScript144);
+    testInlineScriptTest('frame title from variable', inlineScript145);
+    testInlineScriptTest('frame with title, direction and layout', inlineScript146);
+    testInlineScriptTest('frame with direction and no title', inlineScript147);
+    testInlineScriptTest('frame with layout and no title', inlineScript148);
+    testInlineScriptTest('sheet row with title', inlineScript149);
+    testInlineScriptTest('sheet column with title', inlineScript150);
+    testInlineScriptTest('sheet row without title', inlineScript151);
+    testInlineScriptTest('sheet column without title', inlineScript152);
+
+    test('sheet row and column set direction', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+sheet "a" row:
+    R1 = res(10k)
+    add res(1k)
+sheet "b" column:
+    R2 = res(10k)
+    add res(1k)
+`);
+        expect(hasError).toEqual(false);
+        const sheets = visitor.getExecutor().scope.frames
+            .filter(f => f.frameType === FrameType.Sheet);
+        expect(sheets.length).toEqual(2);
+        expect(sheets[0].parameters.get('direction')).toEqual('row');
+        expect(sheets[1].parameters.get('direction')).toEqual('column');
+    });
+
+    test('layout sets border and padding to 0, body overrides', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+frame "a" layout:
+    R1 = res(10k)
+frame "b" layout:
+    ..border = 5
+    ..padding = 20
+    R2 = res(10k)
+frame "c":
+    R3 = res(10k)
+`);
+        expect(hasError).toEqual(false);
+        const frames = visitor.getExecutor().scope.frames;
+        const byTitle = (title: string) =>
+            frames.find(f => f.parameters.get('title') === title)!;
+        expect(byTitle('a').parameters.get('border').toNumber()).toEqual(0);
+        expect(byTitle('a').parameters.get('padding').toNumber()).toEqual(0);
+        expect(byTitle('b').parameters.get('border').toNumber()).toEqual(5);
+        expect(byTitle('b').parameters.get('padding').toNumber()).toEqual(20);
+        expect(byTitle('c').parameters.has('border')).toEqual(false);
+    });
+
+    test.each([
+        ['unknown modifier', 'frame "a" diagonal:'],
+        ['duplicate modifier', 'frame "a" row row:'],
+        ['row and column together', 'frame "a" row column:'],
+        ['row and column on sheet', 'sheet "a" row column:'],
+        ['duplicate modifier on sheet', 'sheet "a" row row:'],
+        ['unknown modifier on sheet', 'sheet "a" diagonal:'],
+    ])('%s reports an error', async (_name, header) => {
+        const { hasError } = await runScript(`
+from "std" import *
+${header}
+    R1 = res(10k)
+`);
+        expect(hasError).toEqual(true);
+    });
+
+    test('layout on sheet reports an error', async () => {
+        const err = await runScriptExpectErrorObject(`
+from "std" import *
+sheet "a" layout:
+    R1 = res(10k)
+`);
+        expect(err.message).toContain("Sheet does not accept modifier 'layout'");
+    });
+
+    test('bare layout on sheet reports an error', async () => {
+        const err = await runScriptExpectErrorObject(`
+from "std" import *
+sheet layout:
+    R1 = res(10k)
+`);
+        expect(err.message).toContain("Sheet does not accept modifier 'layout'");
     });
 });
 

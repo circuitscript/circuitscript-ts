@@ -152,7 +152,11 @@ describe('Render tests', () => {
         ['script100.cst', 'pin referenced by both id and name is de-duplicated'],
         ['script103.cst', 'pin spacing in bus definition'],
         ['script104.cst', 'Labels on buses'],
-        ['script105.cst', 'Labels on buses, label created first.']
+        ['script105.cst', 'Labels on buses, label created first.'],
+        ['script106.cst', 'frame row/column header syntax with titles (nested)'],
+        ['script107.cst', 'frame body title overrides header title'],
+        ['script108.cst', 'frame layout modifier and property overrides'],
+        ['script109.cst', 'sheet row/column header syntax']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);

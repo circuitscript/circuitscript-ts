@@ -1,0 +1,6 @@
+/3v3 | net-0.COMP-1-3v3 | 1
+/3v3 | net-0.COMP-1-3v3:0 | 1
+/3v3 | cap-0.COMP-1-100n | 1
+/GND | dgnd-0.COMP-1-GND | 1
+/GND | cap-0.COMP-1-100n | 2
+/GND | dgnd-0.COMP-1-GND:0 | 1

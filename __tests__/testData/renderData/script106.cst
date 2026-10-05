@@ -1,0 +1,25 @@
+# Nested frame row / frame column headers with titles.
+from "std" import *
+
+vcc = net("3v3")
+gnd = dgnd()
+
+def unit(val):
+    at vcc
+    wire down 100
+    add res(val)
+    wire down 100
+    to gnd
+
+frame "Outer row" row:
+    frame "Left column" column:
+        unit(1)
+        unit(2)
+        unit(3)
+
+    frame "Right column" column:
+        unit(4)
+        unit(5)
+
+    frame "Single":
+        unit(6)

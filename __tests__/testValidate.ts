@@ -39,6 +39,34 @@ describe('test validation', () => {
         expectJsonOutput(jsonString, `${mainPath}expected/${scriptPath}.cst.json`);
     });
 
+    test('frame modifiers are not reported as undefined symbols', async () => {
+        const visitor = await testValidateScript(`
+from "std" import *
+frame row:
+    R1 = res(10k)
+frame "t" column layout:
+    R2 = res(10k)
+`);
+        const undefinedSymbols = [...visitor.symbolTable.getSymbols()]
+            .filter(([, value]) => value.type === 'undefined')
+            .map(([key]) => key);
+        expect(undefinedSymbols).toEqual([]);
+    });
+
+    test('sheet modifiers are not reported as undefined symbols', async () => {
+        const visitor = await testValidateScript(`
+from "std" import *
+sheet row:
+    R1 = res(10k)
+sheet "t" column:
+    R2 = res(10k)
+`);
+        const undefinedSymbols = [...visitor.symbolTable.getSymbols()]
+            .filter(([, value]) => value.type === 'undefined')
+            .map(([key]) => key);
+        expect(undefinedSymbols).toEqual([]);
+    });
+
     describe('erc_net_bridge property validation', () => {
         test('non-boolean value throws a validation error', async () => {
             const msg = await runScriptExpectError(

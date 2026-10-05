@@ -16,7 +16,8 @@ import { Assignment_exprContext,
     TrailerContext,
     CreateBehaviorExprContext,
     Create_scenario_exprContext,
-    Callable_exprContext} from "../antlr/CircuitScriptParser.js";
+    Callable_exprContext,
+    Frame_exprContext} from "../antlr/CircuitScriptParser.js";
 
 import { builtInBehaviorFunctionsNamesList, builtInFunctionsNamesList, linkScenarioFunctions, unlinkScenarioFunctions } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
@@ -24,6 +25,7 @@ import { ComplexType, FunctionDefinedParameter, ImportedLibrary, ImportFunctionH
 import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTable.js";
 import { SymbolTable } from "./SymbolTable.js";
 import { BaseVisitor } from "../BaseVisitor.js";
+import { FrameModifiers } from "../objects/Frame.js";
 import { BaseNamespace, SymbolValidatorContext } from "../globals.js";
 import { AllPinTypes } from "../objects/PinTypes.js";
 
@@ -343,6 +345,26 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             });
 
             this.setResult(ctx, tmpSymbol);
+        }
+    };
+
+    /**
+     * @brief Visits frame/sheet headers
+     * @param ctx Frame_expr context
+     *
+     * @details
+     * A bare modifier with no title (`frame row:`) parses as the title
+     * expression, so it is skipped to avoid reporting an undefined symbol.
+     */
+    visitFrame_expr = (ctx: Frame_exprContext): void => {
+        const ctxTitle = ctx._title;
+        if (ctxTitle && !FrameModifiers.includes(ctxTitle.getText())) {
+            this.visit(ctxTitle);
+        }
+
+        const ctxExpressionsBlock = ctx.expressions_block();
+        if (ctxExpressionsBlock) {
+            this.visit(ctxExpressionsBlock);
         }
     };
 

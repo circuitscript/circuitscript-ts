@@ -72,6 +72,9 @@ export enum FrameParamKeys {
     SheetTotal = 'sheet_total',     // Total number of sheets
 }
 
+/** Identifiers accepted after the optional title in a frame header. */
+export const FrameModifiers = ['row', 'column', 'layout'];
+
 export enum FramePlotDirection {
     Row = 'row',
     Column = 'column',

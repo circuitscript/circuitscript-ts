@@ -148,6 +148,38 @@ value = myFunc(1, 2)
         expect(myFuncToken?.tokenType).toBe('function');
     });
 
+    test('frame modifier tokens', async () => {
+        const script = `
+frame "t" row layout:
+    R1 = res(10k)
+
+frame column:
+    R2 = res(10k)
+`;
+        const tokens = await getSemanticTokens(script);
+        for (const text of ['frame', 'row', 'layout', 'column']) {
+            const token = findTokenByText(tokens, text);
+            expect(token).toBeDefined();
+            expect(token?.tokenType).toBe('keyword');
+        }
+    });
+
+    test('sheet modifier tokens', async () => {
+        const script = `
+sheet "t" row:
+    R1 = res(10k)
+
+sheet column:
+    R2 = res(10k)
+`;
+        const tokens = await getSemanticTokens(script);
+        for (const text of ['sheet', 'row', 'column']) {
+            const token = findTokenByText(tokens, text);
+            expect(token).toBeDefined();
+            expect(token?.tokenType).toBe('keyword');
+        }
+    });
+
     test('create component tokens', async () => {
         const script = `
 U1 = create component:

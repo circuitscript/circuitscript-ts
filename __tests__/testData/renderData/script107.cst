@@ -1,0 +1,14 @@
+# Body ..title overrides the header title.
+from "std" import *
+
+vcc = net("3v3")
+gnd = dgnd()
+
+frame "a" row:
+    ..title = "b"
+
+    at vcc
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd

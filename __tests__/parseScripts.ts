@@ -1315,6 +1315,112 @@ d = 5
 print(d)
 `, ['20', '5']);
 
+// frame/sheet header forms: row/column keywords and titles
+export const inlineScript140 = new ScriptTest(`
+from "std" import *
+frame "a" row:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript141 = new ScriptTest(`
+from "std" import *
+frame "a" column:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript142 = new ScriptTest(`
+from "std" import *
+frame "a":
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript143 = new ScriptTest(`
+from "std" import *
+frame:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript144 = new ScriptTest(`
+from "std" import *
+sheet "a":
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript145 = new ScriptTest(`
+from "std" import *
+title = "my title"
+frame title:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript146 = new ScriptTest(`
+from "std" import *
+frame "a" row layout:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript147 = new ScriptTest(`
+from "std" import *
+frame column:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript148 = new ScriptTest(`
+from "std" import *
+frame layout:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript149 = new ScriptTest(`
+from "std" import *
+sheet "a" row:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript150 = new ScriptTest(`
+from "std" import *
+sheet "a" column:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript151 = new ScriptTest(`
+from "std" import *
+sheet row:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
+export const inlineScript152 = new ScriptTest(`
+from "std" import *
+sheet column:
+    R1 = res(10k)
+    add res(1k)
+    print("ok")
+`, ['"ok"']);
+
 const scriptPath = '__tests__/testData/parseData';
 
 export const inlineScriptTests = [

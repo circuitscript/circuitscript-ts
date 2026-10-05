@@ -94,7 +94,7 @@ import { ParserRuleContext, Token } from 'antlr4ng';
 import { getPortType } from './utils.js';
 import { BaseError, RuntimeExecutionError, ScenarioRuntimeError } from './errors.js';
 import { UnitDimension } from './helpers.js';
-import { Frame, FrameParamKeys } from './objects/Frame.js';
+import { Frame, FrameModifiers, FrameParamKeys, FramePlotDirection } from './objects/Frame.js';
 import { ComponentAnnotater } from './annotate/ComponentAnnotater.js';
 import { Wire } from './objects/Wire.js';
 import { applyPartConditions, ConditionNode, extractPartConditions, flattenConditionNodes } from './ComponentMatchConditions.js';
@@ -2216,10 +2216,57 @@ export class ParserVisitor extends BaseVisitor {
         const ctxExpressionsBlock = ctx.expressions_block();
 
         if (ctxExpressionsBlock ){
+            // Modifiers are plain identifiers, so a bare modifier name with
+            // no title (e.g. `frame row:`) parses as the title expression.
+            const modifiers = ctx._modifiers.map(token => token.text!);
+            let ctxTitle = ctx._title;
+            if (ctxTitle && FrameModifiers.includes(ctxTitle.getText())) {
+                modifiers.unshift(ctxTitle.getText());
+                ctxTitle = undefined;
+            }
+
+            let title: unknown = undefined;
+            if (ctxTitle) {
+                title = this.visitResult(ctxTitle);
+                if (typeof title !== "string") {
+                    this.throwWithContext(ctxTitle, "Frame title must be a string");
+                }
+            }
+
+            const seen = new Set<string>();
+            for (const modifier of modifiers) {
+                if (!FrameModifiers.includes(modifier)) {
+                    this.throwWithContext(ctx, `Unknown frame modifier '${modifier}'`);
+                }
+                if (seen.has(modifier)) {
+                    this.throwWithContext(ctx, `Duplicate frame modifier '${modifier}'`);
+                }
+                seen.add(modifier);
+            }
+            if (seen.has('row') && seen.has('column')) {
+                this.throwWithContext(ctx, "Frame cannot be both 'row' and 'column'");
+            }
+            if (frameType === FrameType.Sheet && seen.has('layout')) {
+                this.throwWithContext(ctx, "Sheet does not accept modifier 'layout'");
+            }
+
             const frameId = this.getExecutor().enterFrame(frameType);
             const frame = this.getExecutor().scope.frames[frameId - 1];
             frame.sourceLine = ctx.start?.line ?? null;
             frame.sourceFile = this.getCurrentFile();
+            if (title !== undefined) {
+                frame.parameters.set(FrameParamKeys.Title, title);
+            }
+            if (seen.has('row')) {
+                frame.parameters.set(FrameParamKeys.Direction, FramePlotDirection.Row);
+            } else if (seen.has('column')) {
+                frame.parameters.set(FrameParamKeys.Direction, FramePlotDirection.Column);
+            }
+            // Set before the body so '..padding' and '..border' can override.
+            if (seen.has('layout')) {
+                frame.parameters.set(FrameParamKeys.Padding, numeric(0));
+                frame.parameters.set(FrameParamKeys.Border, numeric(0));
+            }
             this.visit(ctxExpressionsBlock);
             this.getExecutor().exitFrame(frameId);
         }

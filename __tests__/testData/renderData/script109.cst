@@ -1,0 +1,28 @@
+# Sheet row / column modifiers.
+from "std" import *
+
+vcc = net("3v3")
+gnd = dgnd()
+
+def unit(val):
+    at vcc
+    wire down 100
+    add res(val)
+    wire down 100
+    to gnd
+
+sheet "Main" row:
+    frame "Left":
+        unit(1)
+        unit(2)
+
+    frame "Right":
+        unit(3)
+
+sheet "Second" column:
+    frame "Top":
+        unit(4)
+        unit(5)
+
+    frame "Bottom":
+        unit(6)

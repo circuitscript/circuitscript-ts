@@ -18,8 +18,10 @@ import { Function_def_exprContext, CreateComponentExprContext,
     CreateExprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
+    Frame_exprContext,
     TrailerContext} from "../antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "../BaseVisitor.js";
+import { FrameModifiers } from "../objects/Frame.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
 import { SymbolValidatorContext } from "../globals.js";
 
@@ -310,6 +312,22 @@ export class SemanticTokensVisitor extends BaseVisitor {
             });
         }
     } 
+
+    /**
+     * Marks frame modifiers (row, column, layout) as keywords. A bare
+     * modifier with no title (`frame row:`) parses as the title expression.
+     */
+    visitFrame_expr = (ctx: Frame_exprContext): void => {
+        this.visitChildren(ctx);
+
+        const ctxTitle = ctx._title;
+        if (ctxTitle?.start && FrameModifiers.includes(ctxTitle.getText())) {
+            this.addSemanticToken(new TerminalNode(ctxTitle.start), [], 'keyword');
+        }
+        ctx._modifiers.forEach(token => {
+            this.addSemanticToken(new TerminalNode(token), [], 'keyword');
+        });
+    }
 
     visitTrailer = (ctx: TrailerContext): void => {
         // Do nothing

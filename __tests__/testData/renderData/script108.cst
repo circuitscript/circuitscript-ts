@@ -1,0 +1,25 @@
+# Frame 'layout' modifier removes border and padding; body overrides it.
+from "std" import *
+
+vcc = net("3v3")
+gnd = dgnd()
+
+def unit(val):
+    at vcc
+    wire down 100
+    add res(val)
+    wire down 100
+    to gnd
+
+frame "Outer" row:
+    frame "Layout only" column layout:
+        unit(1)
+        unit(2)
+
+    frame "Layout with border" column layout:
+        ..border = 5
+        unit(3)
+        unit(4)
+
+    frame "Default" column:
+        unit(5)
