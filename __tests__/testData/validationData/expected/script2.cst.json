@@ -32,7 +32,19 @@
         "variable"
     ],
     [
+        "--.[std].label_sym.arrow",
+        "variable"
+    ],
+    [
         "--.[std].label_sym.anchor",
+        "variable"
+    ],
+    [
+        "--.[std].label_sym.arrow_size",
+        "variable"
+    ],
+    [
+        "--.[std].label_sym.text_arrow_offset",
         "variable"
     ],
     [

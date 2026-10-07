@@ -61,7 +61,8 @@ import {
     CreateBehaviorExprContext,
     Create_scenario_exprContext,
     Behavior_state_exprContext,
-    Behavior_blockContext
+    Behavior_blockContext,
+    GraphicIfExprContext
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -748,7 +749,7 @@ export class ParserVisitor extends BaseVisitor {
                 const [commandName, parameters] =
                     this.visitResult(item) as [string, CallableParameter[]];
                     
-                if (commandName === PlaceHolderCommands.for) {
+                if (commandName === PlaceHolderCommands.for || commandName === PlaceHolderCommands.if) {
                     accum = accum.concat(parameters);
                 } else {
                     const keywordParams = new Map<string, any>();
@@ -863,6 +864,46 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, [PlaceHolderCommands.for, allCommands]);
+    }
+
+    visitGraphicIfExpr = (ctx: GraphicIfExprContext): void => {
+        const result = this.visitResult(ctx.data_expr());
+        let resultValue = result;
+        if (result instanceof UndeclaredReference) {
+            resultValue = false;
+        } else {
+            resultValue = unwrapValue(result);
+        }
+
+        let commands: CallableParameter[] = [];
+
+        if (resultValue) {
+            commands = this.visitResult(ctx.graphic_expressions_block());
+        } else {
+            const ctxInnerIfExprs = ctx.if_inner_graphic_expr();
+            let innerIfWasTrue = false;
+
+            for (let i = 0; i < ctxInnerIfExprs.length; i++) {
+                const innerResult = this.visitResult(ctxInnerIfExprs[i]);
+
+                // If this was true, then ignore further states
+                if (innerResult) {
+                    innerIfWasTrue = true;
+                    commands = this.visitResult(ctx.graphic_expressions_block());
+                    break;
+                }
+            }
+
+            if (!innerIfWasTrue) {
+                // Run the else statement
+                const elseCtx = ctx.else_graphic_expr();
+                if (elseCtx) {
+                    commands = this.visitResult(elseCtx);
+                }
+            }
+        }
+
+        this.setResult(ctx, [PlaceHolderCommands.if, commands]);
     }
 
     visitCreateModuleExpr = (ctx: CreateModuleExprContext): void => {

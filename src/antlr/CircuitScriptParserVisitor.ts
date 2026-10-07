@@ -58,7 +58,10 @@ import { Behavior_state_exprContext } from "./CircuitScriptParser.js";
 import { Behavior_block_exprContext } from "./CircuitScriptParser.js";
 import { Behavior_blockContext } from "./CircuitScriptParser.js";
 import { Create_scenario_exprContext } from "./CircuitScriptParser.js";
+import { If_inner_graphic_exprContext } from "./CircuitScriptParser.js";
+import { Else_graphic_exprContext } from "./CircuitScriptParser.js";
 import { GraphicForExprContext } from "./CircuitScriptParser.js";
+import { GraphicIfExprContext } from "./CircuitScriptParser.js";
 import { GraphicCommandExprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
@@ -439,12 +442,31 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitCreate_scenario_expr?: (ctx: Create_scenario_exprContext) => Result;
     /**
+     * Visit a parse tree produced by `CircuitScriptParser.if_inner_graphic_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIf_inner_graphic_expr?: (ctx: If_inner_graphic_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.else_graphic_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitElse_graphic_expr?: (ctx: Else_graphic_exprContext) => Result;
+    /**
      * Visit a parse tree produced by the `GraphicForExpr`
      * labeled alternative in `CircuitScriptParser.graphic_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitGraphicForExpr?: (ctx: GraphicForExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `GraphicIfExpr`
+     * labeled alternative in `CircuitScriptParser.graphic_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitGraphicIfExpr?: (ctx: GraphicIfExprContext) => Result;
     /**
      * Visit a parse tree produced by the `GraphicCommandExpr`
      * labeled alternative in `CircuitScriptParser.graphic_expr`.

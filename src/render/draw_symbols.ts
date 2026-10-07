@@ -1288,6 +1288,8 @@ export enum PlaceHolderCommands {
     units = 'units',
 
     for = 'for',
+
+    if = 'if',
 }
 
 /** Symbol that is generated only from pin definitions and does not have a 

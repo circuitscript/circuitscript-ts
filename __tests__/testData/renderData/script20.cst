@@ -54,8 +54,7 @@ wire right 300 down 100
 to tmp pin "signal_b"
 
 at tmp pin "signal_d"
-wire right 200
+wire right 300
 add label("output")
-wire right 100
 
 at tmp.contains

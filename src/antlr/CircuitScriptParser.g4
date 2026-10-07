@@ -160,8 +160,12 @@ behavior_block:
 
 create_scenario_expr: CreateScenario data_expr? Colon expressions_block;
 
-graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                        # GraphicForExpr
-              | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)  # GraphicCommandExpr
+if_inner_graphic_expr: Else If data_expr Colon graphic_expressions_block;
+else_graphic_expr: Else Colon graphic_expressions_block;
+
+graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                          # GraphicForExpr
+              | If data_expr Colon graphic_expressions_block if_inner_graphic_expr* else_graphic_expr? # GraphicIfExpr
+              | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)    # GraphicCommandExpr
               ;
 
 property_expr: property_key_expr (Comma property_key_expr)* Colon property_value_expr;

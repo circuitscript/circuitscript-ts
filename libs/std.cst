@@ -18,16 +18,38 @@ def supply(net_name):
     net_obj = net(net_name)
     return net_obj
 
-def label(value, anchor="left"):
+def label(value, arrow="", anchor="right"):
+    arrow_size = 0
+    text_arrow_offset = 0
+    
+    if arrow == "out":
+        arrow_size = 25
+    else if arrow == "in":
+        arrow_size = -25
+
+    if arrow == "out" or arrow == "in":
+        text_arrow_offset = -20
+
     return create component:
         pins: 1
         copy: true
-        follow_wire_orientation: false
         display: create graphic (params):
             text_color: "#222", dark="#ccc", var="label-color"
-            label: params.value, 0, -10, name="value", font_size=50, \
+
+            label: params.value, 0 + text_arrow_offset, -10, name="value", font_size=50, \
                 anchor=anchor
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+
+            line_width: 6
+            fill: "#333"
+            
+            if arrow_size != 0:
+                path: "M", arrow_size/2, 0, \
+                    "m", -arrow_size, -arrow_size,         \
+                    "l", arrow_size, arrow_size,           \
+                    "l", -arrow_size, arrow_size, \
+                    "L", -arrow_size+arrow_size/2, -arrow_size, "Z"
+                  
         type: "net"
         is_label: true
         params:
