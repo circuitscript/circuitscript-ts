@@ -62,7 +62,9 @@ import {
     Create_scenario_exprContext,
     Behavior_state_exprContext,
     Behavior_blockContext,
-    GraphicIfExprContext
+    GraphicIfExprContext,
+    If_inner_graphic_exprContext,
+    Else_graphic_exprContext
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -866,6 +868,27 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, [PlaceHolderCommands.for, allCommands]);
     }
 
+    visitIf_inner_graphic_expr = (ctx: If_inner_graphic_exprContext): void => {
+        const result = this.visitResult(ctx.data_expr());
+        let resultValue;
+        if (result instanceof UndeclaredReference) {
+            resultValue = false;
+        } else {
+            resultValue = unwrapValue(result);
+        }
+
+        let commands: CallableParameter[] = [];
+        if (resultValue) {
+            commands = this.visitResult(ctx.graphic_expressions_block());
+        }
+
+        this.setResult(ctx, { matched: !!resultValue, commands });
+    }
+
+    visitElse_graphic_expr = (ctx: Else_graphic_exprContext): void => {
+        this.setResult(ctx, this.visitResult(ctx.graphic_expressions_block()));
+    }
+
     visitGraphicIfExpr = (ctx: GraphicIfExprContext): void => {
         const result = this.visitResult(ctx.data_expr());
         let resultValue = result;
@@ -884,12 +907,13 @@ export class ParserVisitor extends BaseVisitor {
             let innerIfWasTrue = false;
 
             for (let i = 0; i < ctxInnerIfExprs.length; i++) {
-                const innerResult = this.visitResult(ctxInnerIfExprs[i]);
+                const innerResult = this.visitResult(ctxInnerIfExprs[i]) as
+                    { matched: boolean, commands: CallableParameter[] };
 
                 // If this was true, then ignore further states
-                if (innerResult) {
+                if (innerResult.matched === true) {
                     innerIfWasTrue = true;
-                    commands = this.visitResult(ctx.graphic_expressions_block());
+                    commands = innerResult.commands;
                     break;
                 }
             }

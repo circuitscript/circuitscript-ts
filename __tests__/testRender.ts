@@ -156,7 +156,8 @@ describe('Render tests', () => {
         ['script106.cst', 'frame row/column header syntax with titles (nested)'],
         ['script107.cst', 'frame body title overrides header title'],
         ['script108.cst', 'frame layout modifier and property overrides'],
-        ['script109.cst', 'sheet row/column header syntax']
+        ['script109.cst', 'sheet row/column header syntax'],
+        ['script110.cst', 'graphic if / else if / else branches']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
@@ -289,6 +290,35 @@ describe('Render tests', () => {
         // the 6-line text block back down will fail this bound.
         expect(width).toBeCloseTo(335.9776364, 1);
         expect(height).toBeCloseTo(265.062356717, 1);
+    });
+
+    test('graphic if / else if / else labels render per branch', async () => {
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + 'script110.cst');
+        const styles = getStylesFromDocument(documentVariable);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames,
+            new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+        const count = (text: string): number => svgOutput.split(text).length - 1;
+
+        const rendered = [
+            'IF_ONE', 'ELIF_TWO', 'ELIF_THREE', 'ELSE_OTHER',
+            'IFONLY_SHOWN', 'IFELSE_TRUE', 'IFELSE_FALSE',
+            'FIRST_ELIF_A', 'MULTI_ONE', 'MULTI_ELSE',
+            'UNDECL_ELSE', 'UNDECL2_ELSE',
+            'LOOP_IF', 'LOOP_ELIF', 'LOOP_ELSE'
+        ];
+        for (const label of rendered) {
+            expect(svgOutput).toContain(label);
+            expect(count(label)).toBe(1);
+        }
+
+        const notRendered = [
+            'FIRST_IF', 'FIRST_ELIF_B', 'FIRST_ELSE',
+            'UNDECL_IF', 'UNDECL2_IF', 'UNDECL2_ELIF'
+        ];
+        for (const label of notRendered) {
+            expect(svgOutput).not.toContain(label);
+        }
     });
 
     test('var= custom color compiles to var(--cs-<name>) with a :root declaration', async () => {

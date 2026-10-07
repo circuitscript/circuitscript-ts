@@ -1,0 +1,154 @@
+# Graphic block if / else if / else branches.
+# Each component renders only the label of the branch that is taken.
+
+def mk(mode):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if mode == 1:
+                label: "IF_ONE", 0, -10
+            else if mode == 2:
+                label: "ELIF_TWO", 0, -10
+            else if mode == 3:
+                label: "ELIF_THREE", 0, -10
+            else:
+                label: "ELSE_OTHER", 0, -10
+
+# if only
+def mk_if(flag):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if flag:
+                label: "IFONLY_SHOWN", 0, -10
+
+# if / else
+def mk_else(flag):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if flag:
+                label: "IFELSE_TRUE", 0, -10
+            else:
+                label: "IFELSE_FALSE", 0, -10
+
+# earlier else if wins over later true else if
+def mk_first(mode):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if mode == 0:
+                label: "FIRST_IF", 0, -10
+            else if mode >= 1:
+                label: "FIRST_ELIF_A", 0, -10
+            else if mode >= 2:
+                label: "FIRST_ELIF_B", 0, -10
+            else:
+                label: "FIRST_ELSE", 0, -10
+
+# several commands in one branch
+def mk_multi(mode):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if mode == 1:
+                label: "MULTI_ONE", 0, -10
+            else:
+                crect: 0, 0, 60, 30
+                label: "MULTI_ELSE", 0, 40
+
+# undeclared name as bare condition
+def mk_undeclared():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if undeclared_name:
+                label: "UNDECL_IF", 0, -10
+            else:
+                label: "UNDECL_ELSE", 0, -10
+
+# undeclared name as bare else if condition
+def mk_undeclared_elif():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if false:
+                label: "UNDECL2_IF", 0, -10
+            else if undeclared_other:
+                label: "UNDECL2_ELIF", 0, -10
+            else:
+                label: "UNDECL2_ELSE", 0, -10
+
+# branch chosen per loop iteration
+def mk_loop():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            for loop_idx in range(0, 3):
+                if loop_idx == 0:
+                    label: "LOOP_IF", 0, -10
+                else if loop_idx == 1:
+                    label: "LOOP_ELIF", 0, 20
+                else:
+                    label: "LOOP_ELSE", 0, 50
+
+for k in range(1, 5):
+    c_mode = mk(k)
+    at c_mode pin 1
+    wire right 100
+
+c_if_t = mk_if(true)
+at c_if_t pin 1
+wire right 100
+
+c_if_f = mk_if(false)
+at c_if_f pin 1
+wire right 100
+
+c_else_t = mk_else(true)
+at c_else_t pin 1
+wire right 100
+
+c_else_f = mk_else(false)
+at c_else_f pin 1
+wire right 100
+
+c_first = mk_first(3)
+at c_first pin 1
+wire right 100
+
+c_multi_a = mk_multi(1)
+at c_multi_a pin 1
+wire right 100
+
+c_multi_b = mk_multi(2)
+at c_multi_b pin 1
+wire right 100
+
+c_undecl = mk_undeclared()
+at c_undecl pin 1
+wire right 100
+
+c_undecl2 = mk_undeclared_elif()
+at c_undecl2 pin 1
+wire right 100
+
+c_loop = mk_loop()
+at c_loop pin 1
+wire right 100
