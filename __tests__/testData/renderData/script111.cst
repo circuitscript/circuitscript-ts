@@ -1,0 +1,15 @@
+# Test label function direction arrow
+
+from "std" import *
+
+at tmp = create component:
+    pins: 6
+
+at tmp:
+    1: wire left 100 add label("in1", "in")
+    3: wire left 100 add label("out1", "out")
+    5: wire left 100 add label("io1", "io")
+    
+    2: wire right 100 add label("in2", "in")
+    4: wire right 100 add label("out2", "out")
+    6: wire right 100 add label("io2", "io")

@@ -23,11 +23,15 @@ def label(value, arrow="", anchor="right"):
     text_arrow_offset = 0
     
     if arrow == "out":
-        arrow_size = 25
+        arrow_size = 20
     else if arrow == "in":
-        arrow_size = -25
+        arrow_size = -20
+    else if arrow == "io":
+        arrow_size = 20
 
     if arrow == "out" or arrow == "in":
+        text_arrow_offset = -20
+    if arrow == "io":
         text_arrow_offset = -20
 
     return create component:
@@ -43,13 +47,29 @@ def label(value, arrow="", anchor="right"):
             line_width: 6
             fill: "#333"
             
-            if arrow_size != 0:
+            if arrow_size != 0 and arrow != "io":
                 path: "M", arrow_size/2, 0, \
-                    "m", -arrow_size, -arrow_size,         \
-                    "l", arrow_size, arrow_size,           \
-                    "l", -arrow_size, arrow_size, \
+                    "m", -arrow_size, -arrow_size,  \
+                    "l", arrow_size, arrow_size,    \
+                    "l", -arrow_size, arrow_size,   \
                     "L", -arrow_size+arrow_size/2, -arrow_size, "Z"
-                  
+
+            if arrow == "io":
+                path: "M", arrow_size + 10, 0, \
+                    "m", -arrow_size, -arrow_size,  \
+                    "l", arrow_size, arrow_size,    \
+                    "l", -arrow_size, arrow_size,   \
+                    "L", 10, -arrow_size, "Z"
+
+                path: "M", -arrow_size - 10, 0, \
+                    "m", arrow_size, arrow_size,    \
+                    "l", -arrow_size, -arrow_size,  \
+                    "l", arrow_size, -arrow_size,   \
+                    "L", -10, -arrow_size, "Z"
+
+                path: "M", arrow_size + 10, 0, "L", -arrow_size-10, 0
+
+                    
         type: "net"
         is_label: true
         params:
