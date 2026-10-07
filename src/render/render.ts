@@ -397,58 +397,6 @@ function generateSVGChild(canvas: Svg | G,
         canvas.group().translate(0, 0),
         gridProperties, logger);
 
-    components.forEach(item => {
-        const { x, y, width, height } = item;
-        const symbolGroup = canvas.group();
-        metadata.components.push({
-            element: symbolGroup,
-            sheetIndex,
-            instanceName: item.component.instanceName,
-        });
-        symbolGroup.translate(x.toNumber(), y.toNumber());
-
-        const tooltip = componentTooltip(item.component);
-        if (tooltip) {
-            symbolGroup.element('title').words(tooltip);
-        }
-
-        const { symbol = null } = item;
-
-        if (symbol !== null && symbol) {
-            const extra: SymbolExtras = {};
-
-            if (item.component.typeProp === ComponentTypes.net) {
-                extra.net_name = item.component.parameters.get(ParamKeys.net_name) as string;
-
-            } else if (item.component.parameters.has('value')) {
-                let tmpValue = item.component.parameters.get('value') as unknown;
-                if (tmpValue instanceof NumericValue){
-                    // Prepare value for display
-                    tmpValue = (tmpValue as NumericValue).value;
-                }
-                
-                extra.value = tmpValue as (string | number);
-            }
-
-            extra.instance_name = item.component.instanceName;
-            
-            if (item.component.parameters.has('place')){
-                extra.place = (item.component.parameters.get('place') as unknown) as boolean;
-            } else {
-                extra.place = true; // Default is to place the item
-            }
-
-            symbol.setColorVarRegistry(colorRegistry);
-            symbol.draw(symbolGroup, extra);
-
-        } else {
-            // draw default shape
-            symbolGroup.rect(width, height)
-                .fill(ColorScheme.BodyColor)
-                .stroke({ width: 1, color: '#333' });
-        }
-    });
-
     if (displayWireId) {
         // Debugging method to draw the wire id next to the wires.
         const wiresGroup = canvas.group().translate(0, 0);
@@ -627,6 +575,59 @@ function generateSVGChild(canvas: Svg | G,
             //                     size: 10,
             //                 })
         });
+    });
+
+    // Components are drawn after wires so they paint on top, but before frames.
+    components.forEach(item => {
+        const { x, y, width, height } = item;
+        const symbolGroup = canvas.group();
+        metadata.components.push({
+            element: symbolGroup,
+            sheetIndex,
+            instanceName: item.component.instanceName,
+        });
+        symbolGroup.translate(x.toNumber(), y.toNumber());
+
+        const tooltip = componentTooltip(item.component);
+        if (tooltip) {
+            symbolGroup.element('title').words(tooltip);
+        }
+
+        const { symbol = null } = item;
+
+        if (symbol !== null && symbol) {
+            const extra: SymbolExtras = {};
+
+            if (item.component.typeProp === ComponentTypes.net) {
+                extra.net_name = item.component.parameters.get(ParamKeys.net_name) as string;
+
+            } else if (item.component.parameters.has('value')) {
+                let tmpValue = item.component.parameters.get('value') as unknown;
+                if (tmpValue instanceof NumericValue){
+                    // Prepare value for display
+                    tmpValue = (tmpValue as NumericValue).value;
+                }
+                
+                extra.value = tmpValue as (string | number);
+            }
+
+            extra.instance_name = item.component.instanceName;
+            
+            if (item.component.parameters.has('place')){
+                extra.place = (item.component.parameters.get('place') as unknown) as boolean;
+            } else {
+                extra.place = true; // Default is to place the item
+            }
+
+            symbol.setColorVarRegistry(colorRegistry);
+            symbol.draw(symbolGroup, extra);
+
+        } else {
+            // draw default shape
+            symbolGroup.rect(width, height)
+                .fill(ColorScheme.BodyColor)
+                .stroke({ width: 1, color: '#333' });
+        }
     });
 
     // const debugRectsGroup = canvas.group();

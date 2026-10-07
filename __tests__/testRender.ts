@@ -264,7 +264,7 @@ describe('Render tests', () => {
         });
 
         // Use file hash to verify that files are the same.
-        expect(result).toEqual('08998adfaedf1ea9ae6e29bb8953c49b');
+        expect(result).toEqual('576536b4f160f2ca3615f311bc9f4dfd');
     });
 
     test('text newline handling - svg height regression', async () => {
