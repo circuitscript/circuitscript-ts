@@ -16,9 +16,41 @@ export interface InspectorPanelProps {
   frameMeta?: FrameMeta | null;
   onClose: () => void;
   onNetClick: (netName: string) => void;
+  onSourceClick?: (file: string | null, line: number) => void;
 }
 
-export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, frameMeta = null, onClose, onNetClick }) => {
+const SourceLine: FunctionComponent<{
+  line: number;
+  file: string | null;
+  onClick?: (file: string | null, line: number) => void;
+}> = ({ line, file, onClick }) => {
+  if (!onClick) {
+    return <div className="cs-source-line">Line {line}</div>;
+  }
+  const go = () => onClick(file, line);
+  return (
+    <div
+      className="cs-source-line cs-source-link"
+      role="button"
+      tabIndex={0}
+      title="Go to source"
+      onClick={go}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          go();
+        }
+      }}
+    >
+      Line {line}
+      <svg className="cs-source-link-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+        <path d="M5 11L11 5M6 5h5v5" />
+      </svg>
+    </div>
+  );
+};
+
+export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, frameMeta = null, onClose, onNetClick, onSourceClick }) => {
   const [width, setWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -72,7 +104,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
           <>
             <h2>{framePanelData.title}</h2>
             {framePanelData.sourceLine != null && (
-              <div className="cs-source-line">Line {framePanelData.sourceLine}</div>
+              <SourceLine line={framePanelData.sourceLine} file={framePanelData.sourceFile} onClick={onSourceClick} />
             )}
           </>
         )}
@@ -91,7 +123,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
               )}
             </h2>
             {panelData.sourceLine != null && (
-              <div className="cs-source-line">Line {panelData.sourceLine}</div>
+              <SourceLine line={panelData.sourceLine} file={panelData.sourceFile} onClick={onSourceClick} />
             )}
             <h3>Pins</h3>
             <table>

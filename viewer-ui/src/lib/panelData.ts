@@ -108,11 +108,13 @@ export function getPanelData(meta: ComponentMeta): PanelData {
 export interface FramePanelData {
   title: string;
   sourceLine: number | null;
+  sourceFile: string | null;
 }
 
 export function getFramePanelData(meta: FrameMeta): FramePanelData {
   return {
     title: meta.title,
     sourceLine: meta.sourceLine,
+    sourceFile: meta.sourceFile,
   };
 }

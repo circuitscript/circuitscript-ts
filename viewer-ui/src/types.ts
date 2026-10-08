@@ -51,4 +51,6 @@ export interface PreviewTransport {
   requestExport(type: ExportType): Promise<void>;
   applyRefdes(): Promise<void>;
   runErcCheck(): Promise<void>;
+  /* Optional: reveal a source location in the host editor. Line is 1-based. */
+  navigateToSource?(file: string | null, line: number): void;
 }

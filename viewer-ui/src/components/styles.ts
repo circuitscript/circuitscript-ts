@@ -330,6 +330,9 @@ body {
 	font-size: 12px;
 	color: var(--cs-text-muted);
 }
+.cs-source-line.cs-source-link { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.cs-source-line.cs-source-link:hover { text-decoration: underline; color: var(--cs-accent); }
+.cs-source-link-icon { flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 #cs-panel-content table {
 	width: 100%;
 	border-collapse: collapse;
