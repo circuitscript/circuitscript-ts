@@ -1,0 +1,20 @@
+from "std" import *
+
+pa = create component:
+    pins:
+        1: "1", "passive"
+
+at pa:
+    1:
+        add no_connect()
+
+pb = create component:
+    pins:
+        1: "1", "input"
+        2: "2", "input"
+
+at pb:
+    1:
+        add no_connect()
+        wire right 100
+        to pb pin 2

@@ -1,0 +1,9 @@
+from "std" import *
+
+recv = create component:
+    pins:
+        1: "1", "input"
+
+at recv:
+    1:
+        add no_connect()

@@ -54,6 +54,8 @@ describe('ERC rules', () => {
         ['erc_net_bridge - set false post-creation (after true at creation) still warns', 'script35.cst'],
         ['copies of the same output-driven component on one net - no violation', 'script36.cst'],
         ['copy of one driver plus a distinct driver on same net - still flags multiple outputs', 'script37.cst'],
+        ['input pin with only no_connect - no undriven warning', 'script38.cst'],
+        ['passive/input pins with no_connect - suppress only when alone', 'script39.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

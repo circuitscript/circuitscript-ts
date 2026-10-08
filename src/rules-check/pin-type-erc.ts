@@ -28,6 +28,7 @@ function makeViolation(type: ERC_Rules, instance: ClassComponent, pin: PinId | n
 
 export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
     const netMap = new Map<Net, PinEntry[]>();
+    const noConnectNets = new Set<Net>();
 
     /* Copies of the same component (e.g. a net label or power symbol placed
      * multiple times) share an origin via `_copyFrom` and represent a single
@@ -47,7 +48,14 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
         const pinDef = unit.pins.get(pinKey);
         if (!pinDef) continue;
 
-        const pinType = pinDef.pinType as PinTypes;
+        /* The std no_connect symbol's pin is declared passive, so identify
+         * it by its no_connect param. */
+        const pinType = component.hasParam('no_connect')
+            ? PinTypes.NoConnect
+            : pinDef.pinType as PinTypes;
+        if (pinType === PinTypes.NoConnect) {
+            noConnectNets.add(net);
+        }
         if (EXCLUDED_TYPES.has(pinType)) continue;
 
         const origin = component._copyFrom ?? component;
@@ -67,6 +75,8 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
 
     for (const [net, allPins] of netMap) {
         const netName = net.toString();
+        // A lone pin marked with no_connect is intentionally unused.
+        if (noConnectNets.has(net) && allPins.length <= 1) continue;
         const signalPins = allPins.filter(p => SIGNAL_TYPES.has(p.pinType));
         const powerPins  = allPins.filter(p => POWER_NET_TYPES.has(p.pinType));
         const outputPins = signalPins.filter(p => p.pinType === PinTypes.Output);
