@@ -193,6 +193,52 @@ for i in range(3):
         expect(outputText).toContain('(type none)');
         expect(outputText).not.toContain('(type outline)');
     });
+
+    test('KiCad schematic export emits no_connect() and dnc() as no_connect markers', async () => {
+        const scriptPath = '__tests__/testData/renderData/script112.cst';
+        const script = readFileSync(scriptPath, { encoding: 'utf8' });
+        const { hasError, visitor } = await runScript(script, scriptPath);
+        expect(hasError).toBe(false);
+
+        visitor.applySheetFrameComponent();
+        const { sequence, nets } = visitor.getGraph();
+
+        const documentVariable = visitor.getScope()
+            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+        const styles = getStylesFromDocument(documentVariable);
+
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        graphEngine.setStyles(styles);
+
+        const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+
+        const layoutEngine = new LayoutEngine(logger);
+        const sheetFrames = await layoutEngine.runLayout(graph, containerFrames, nets);
+
+        const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
+        const { output } = generator.generate(visitor, sheetFrames, 'script112')[0];
+
+        const markers = [...output.matchAll(/\(no_connect\s+\(at ([-\d.]+) ([-\d.]+)\)\s+\(uuid /g)];
+        expect(output.match(/\(no_connect\s+\(at /g)).toHaveLength(2);
+        expect(markers).toHaveLength(2);
+
+        // No library symbols for the markers
+        const libStart = output.indexOf('(lib_symbols');
+        const libEnd = output.indexOf('(wire', libStart);
+        const libSection = output.slice(libStart, libEnd);
+        expect(libSection).not.toContain('no_connect');
+        expect(libSection).not.toContain('dnc');
+
+        // Each marker sits on a wire endpoint
+        const wireEnds = new Set<string>();
+        for (const m of output.matchAll(/\(xy ([-\d.]+) ([-\d.]+)\)/g)) {
+            wireEnds.add(`${m[1]} ${m[2]}`);
+        }
+        for (const m of markers) {
+            expect(wireEnds.has(`${m[1]} ${m[2]}`)).toBe(true);
+        }
+    });
 });
 
 const script = `

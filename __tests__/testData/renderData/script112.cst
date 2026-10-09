@@ -1,0 +1,12 @@
+from "std" import *
+
+U1 = create component:
+    pins: 2
+
+at U1 pin 1
+wire right 100
+add no_connect()
+
+at U1 pin 2
+wire right 100
+add dnc()

@@ -6,7 +6,6 @@
  */
 
 import { createHash } from 'crypto';
-import path from 'path';
 import { Geometry, GeometryProp, Feature, Textbox, HorizontalAlign, VerticalAlign } from './geometry.js';
 import { SymbolDrawing, PinRenderInfo, SymbolCustom } from './draw_symbols.js';
 import { SheetFrame, RenderComponent } from './layout.js';
@@ -15,6 +14,7 @@ import { Id, RawAtom, raw, printTree } from './s_expressions.js';
 import { FrameParamKeys } from '../objects/Frame.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import Flatten from '@flatten-js/core';
+import { ComponentTypes } from '../globals.js';
 import { resolveToLiteralColor, ThemedColor } from './svgClasses.js';
 
 export enum KiCadVersion {
@@ -135,7 +135,9 @@ export class KiCadSchGenerator {
 
         // Components with isNetLabel are rendered as KiCad (label ...) tokens, not symbols.
         const labelComponents = keepComponents.filter(rc => rc.component.isNetLabel);
-        const regularComponents = keepComponents.filter(rc => !rc.component.isNetLabel);
+        const noConnectComponents = keepComponents.filter(rc => this.isNoConnectMarker(rc));
+        const regularComponents = keepComponents.filter(rc =>
+            !rc.component.isNetLabel && !this.isNoConnectMarker(rc));
 
         // Build definitionName → numPins map to determine whether numPins needs
         // to be included in the library symbol id (only needed when the same
@@ -192,6 +194,9 @@ export class KiCadSchGenerator {
 
             // Net labels (isNetLabel components → KiCad label tokens)
             ...labelComponents.map(rc => this.buildNetLabel(rc)),
+
+            // no_connect() components become KiCad no_connect markers
+            ...noConnectComponents.map(rc => this.buildNoConnect(rc)),
 
             // Component instance placements
             ...regularComponents.map(rc =>
@@ -297,7 +302,7 @@ export class KiCadSchGenerator {
                 // value here.
                 const fc = resolveToLiteralColor(item.value as string | ThemedColor);
                 fillType = fc === 'none' ? 'none'
-                    : (fc === '#fff' || fc === 'white') ? 'background' : 'outline';
+                    : 'background';
             } else if (item.name === 'lineWidth') {
                 const lw = item.value as any;
                 lineWidth = (typeof lw === 'object' && lw !== null && typeof lw.toNumber === 'function')
@@ -781,6 +786,22 @@ export class KiCadSchGenerator {
     // -----------------------------------------------------------------------
     // Net label generation
     // -----------------------------------------------------------------------
+
+    private isNoConnectMarker(rc: RenderComponent): boolean {
+        const { component } = rc;
+        return component.typeProp === ComponentTypes.graphic
+            && component.hasParam('no_connect')
+            && component.getParam('no_connect') === true;
+    }
+
+    private buildNoConnect(rc: RenderComponent): N {
+        const x = rc.x.toNumber();
+        const y = rc.y.toNumber();
+        return n('no_connect',
+            n('at', raw(mm(x)), raw(mm(y))),
+            n('uuid', deterministicUUID(`nc_${rc.component.instanceName}`))
+        );
+    }
 
     /**
      * Build a KiCad (label ...) token for a component with isNetLabel = true.
