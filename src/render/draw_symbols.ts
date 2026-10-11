@@ -1407,7 +1407,7 @@ export class SymbolCustom extends SymbolGraphic {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId, leftPinStart.sub(this.pinLength), pinY,
-                leftPinStart, pinY, defaultLineColor);
+                leftPinStart, pinY, defaultLineColor, true, true, pin.text);
 
             drawing.addLabel(leftPinStart.add(milsToMM(20)),
                 pinY, pin.text, {
@@ -1431,7 +1431,7 @@ export class SymbolCustom extends SymbolGraphic {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId, rightPinStart.add(this.pinLength), pinY,
-                rightPinStart, pinY, defaultLineColor);
+                rightPinStart, pinY, defaultLineColor, true, true, pin.text);
 
             drawing.addLabel(rightPinStart.sub(milsToMM(20)), pinY, pin.text, {
                 fontSize: numeric(CustomSymbolPinTextSize),
@@ -1455,7 +1455,7 @@ export class SymbolCustom extends SymbolGraphic {
 
             drawing.addPinMM(pin.pinId,
                 pinX, topPinStart.sub(this.pinLength),
-                pinX, topPinStart, defaultLineColor);
+                pinX, topPinStart, defaultLineColor, true, true, pin.text);
 
             drawing.addLabel(pinX, topPinStart.add(milsToMM(20)), pin.text, {
                 fontSize: numeric(CustomSymbolPinTextSize),
@@ -1480,7 +1480,7 @@ export class SymbolCustom extends SymbolGraphic {
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId,
                 pinX, bottomPinStart.add(this.pinLength),
-                pinX, bottomPinStart, defaultLineColor);
+                pinX, bottomPinStart, defaultLineColor, true, true, pin.text);
 
             drawing.addLabel(pinX, bottomPinStart.sub(milsToMM(20)), pin.text, {
                 fontSize: numeric(CustomSymbolPinTextSize),
@@ -1621,7 +1621,7 @@ export class SymbolCustomModule extends SymbolCustom {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId, leftPinStart.sub(this.pinLength), pinY,
-                leftPinStart, pinY, defaultLineColor);
+                leftPinStart, pinY, defaultLineColor, true, true, pin.text);
 
             drawing.addModulePort(leftPinStart, pinY, this.portWidth, this.portHeight, pin.pinType);
 
@@ -1637,7 +1637,7 @@ export class SymbolCustomModule extends SymbolCustom {
             const position = pin.position;
             const pinY = pinStartY.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId, rightPinStart.add(this.pinLength), pinY,
-                rightPinStart, pinY, defaultLineColor);
+                rightPinStart, pinY, defaultLineColor, true, true, pin.text);
 
             drawing.addModulePort(rightPinStart, pinY, this.portWidth, this.portHeight, pin.pinType, -1);
 
@@ -1654,7 +1654,7 @@ export class SymbolCustomModule extends SymbolCustom {
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId,
                 pinX, topPinStart.sub(this.pinLength),
-                pinX, topPinStart, defaultLineColor);
+                pinX, topPinStart, defaultLineColor, true, true, pin.text);
 
             drawing.addModulePort(pinX, topPinStart, this.portWidth, this.portHeight, pin.pinType, 1, 90);
 
@@ -1672,7 +1672,7 @@ export class SymbolCustomModule extends SymbolCustom {
             const pinX = pinStartX.add((position + 1) * tmpPinSpacing) // Includes the offset too
             drawing.addPinMM(pin.pinId,
                 pinX, bottomPinStart,
-                pinX, bottomPinStart.sub(this.pinLength), defaultLineColor);
+                pinX, bottomPinStart.sub(this.pinLength), defaultLineColor, true, true, pin.text);
 
             drawing.addModulePort(pinX, bottomPinStart, this.portWidth, this.portHeight, pin.pinType, 1, -90);
 

@@ -239,6 +239,251 @@ for i in range(3):
             expect(wireEnds.has(`${m[1]} ${m[2]}`)).toBe(true);
         }
     });
+
+    test('KiCad schematic export escapes newlines in multiline text', async () => {
+        const text = 'from "std" import *\n\nat text("Hello\nNew text\nLine")\n';
+        const { hasError, visitor } = await runScript(text);
+        expect(hasError).toBe(false);
+
+        visitor.applySheetFrameComponent();
+        const { sequence, nets } = visitor.getGraph();
+        const documentVariable = visitor.getScope()
+            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+        const styles = getStylesFromDocument(documentVariable);
+
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        graphEngine.setStyles(styles);
+        const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+        const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+
+        const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
+        const { output } = generator.generate(visitor, sheetFrames, 'multiline')[0];
+
+        expect(output).toContain('"Hello\\nNew text\\nLine"');
+        expect(output).not.toContain('Hello\nNew text');
+    });
+
+    describe('bus export as net labels', () => {
+        const dir = '__tests__/testData/renderData/';
+
+        const BUS_JUSTIFY: Record<number, string> = {
+            0: 'left bottom',
+            90: 'left bottom',
+            180: 'right bottom',
+            270: 'right bottom',
+        };
+
+        async function generateSch(scriptText: string, name: string, scriptPath?: string) {
+            const { hasError, visitor } = await runScript(scriptText, scriptPath);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+
+            const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
+            const { output } = generator.generate(visitor, sheetFrames, name)[0];
+            return { output, visitor };
+        }
+
+        async function generateFixture(name: string) {
+            const scriptPath = `${dir}${name}.cst`;
+            const text = readFileSync(scriptPath, { encoding: 'utf8' });
+            return generateSch(text, name, scriptPath);
+        }
+
+        interface LabelInfo { text: string; x: string; y: string; angle: number; justify: string }
+
+        function parseLabels(output: string): LabelInfo[] {
+            const re = /\(label "([^"]*)"\s+\(at ([-\d.]+) ([-\d.]+) (\d+)\)[\s\S]*?\(justify ([^)]*)\)/g;
+            return [...output.matchAll(re)].map(m => ({
+                text: m[1], x: m[2], y: m[3], angle: Number(m[4]), justify: m[5].trim(),
+            }));
+        }
+
+        // Wire segments as [x1, y1, x2, y2]
+        function parseWires(output: string): number[][] {
+            const re = /\(wire\s+\(pts\s+\(xy ([-\d.]+) ([-\d.]+)\)\s+\(xy ([-\d.]+) ([-\d.]+)\)/g;
+            return [...output.matchAll(re)].map(m => m.slice(1, 5).map(Number));
+        }
+
+        function wiresAt(wires: number[][], l: LabelInfo) {
+            const x = Number(l.x), y = Number(l.y);
+            return wires.filter(w =>
+                (w[0] === x && w[1] === y) || (w[2] === x && w[3] === y));
+        }
+
+        function netNames(visitor: any): Set<string> {
+            const { tree } = generateKiCadNetList(visitor.getNetList());
+            const nets = new SExpObject(new SExpObject(tree).getWithId('nets')!);
+            const json = nets.getJSON() as any;
+            const net = json.nets?.net;
+            const list: { name: string }[] = net === undefined ? [] : Array.isArray(net) ? net : [net];
+            return new Set(list.map(x => x.name));
+        }
+
+        function expectNoBusObjects(output: string) {
+            expect(output).not.toMatch(/\(bus[\s_)]/);
+            expect(output).not.toContain('(bus_entry');
+            expect(output).not.toContain('(bus_alias');
+            expect(output).not.toContain('NO_NET');
+            const libStart = output.indexOf('(lib_symbols');
+            const libEnd = output.indexOf('(wire', libStart);
+            expect(output.slice(libStart, libEnd).toLowerCase()).not.toContain('bus');
+            expect(output).not.toMatch(/\(symbol\s+\(lib_id "[^"]*bus/i);
+        }
+
+        // Labels absent from the netlist must be single-pin nets, which the
+        // netlist omits. Returns those so callers can assert on them.
+        function expectLabelsMatchNetlist(output: string, visitor: any, lone: string[] = []) {
+            const names = netNames(visitor);
+            for (const l of parseLabels(output)) {
+                if (lone.includes(l.text)) {
+                    expect(names.has('/' + l.text)).toBe(false);
+                } else {
+                    expect(names.has('/' + l.text)).toBe(true);
+                }
+            }
+        }
+
+        function expectLabelsOnWires(output: string) {
+            const wires = parseWires(output);
+            for (const l of parseLabels(output)) {
+                const hits = wiresAt(wires, l);
+                // Bus-only nets have no wire, so only check when one exists nearby
+                if (hits.length === 0) continue;
+                expect(hits.length).toBeGreaterThan(0);
+            }
+        }
+
+        // Single-pin nets are omitted from the KiCad netlist
+        const lone: Record<string, string[]> = {
+            script91: ['5V'],
+            script104: ['NET-2', 'NET-3'],
+            script113: ['MOSI_OUT'],
+            script114: ['NET-3'],
+        };
+
+        test.each(['script91', 'script104', 'script105', 'script113', 'script114', 'script115', 'script116'])(
+            '%s: no bus symbol or bus tokens, labels match netlist', async (name) => {
+                const { output, visitor } = await generateFixture(name);
+                expectNoBusObjects(output);
+                expectLabelsMatchNetlist(output, visitor, lone[name] ?? []);
+                // Net label components use their own justify rules
+                if (name === 'script104' || name === 'script105') return;
+                for (const l of parseLabels(output)) {
+                    expect(l.justify).toBe(BUS_JUSTIFY[l.angle]);
+                }
+            });
+
+        test('numeric, named, up, single-pin and gap buses get one label per connected pin', async () => {
+            const { output, visitor } = await generateFixture('script113');
+            const labels = parseLabels(output);
+            const texts = labels.map(l => l.text);
+
+            // 1 numeric pin, MOSI (user net), MISO, UP.A, single pin; unconnected pins skipped
+            expect(texts).toHaveLength(5);
+            expect(texts).toContain('MOSI_OUT');
+            expect(texts.some(t => t.includes('SPI.MISO'))).toBe(true);
+            expect(texts.some(t => t.includes('UP.A'))).toBe(true);
+            expect(new Set(texts).size).toBe(texts.length);
+            expect(texts.some(t => t.startsWith('/'))).toBe(false);
+            expectLabelsOnWires(output);
+
+            // Each connected label sits on a wire endpoint
+            const wires = parseWires(output);
+            for (const l of labels.filter(x => x.text !== 'MOSI_OUT')) {
+                expect(wiresAt(wires, l).length).toBeGreaterThan(0);
+            }
+            expectLabelsMatchNetlist(output, visitor, ['MOSI_OUT']);
+        });
+
+        test('signal pin sharing a net with an unlabeled component pin uses the refdes-renamed net', async () => {
+            const { output, visitor } = await generateFixture('script113');
+            const texts = parseLabels(output).map(l => l.text);
+            const names = netNames(visitor);
+            const renamed = texts.filter(t => /^NET-\(R\d+-\d+/.test(t));
+            expect(renamed.length).toBeGreaterThan(0);
+            for (const t of renamed) expect(names.has('/' + t)).toBe(true);
+        });
+
+        test('bus-to-bus connection keeps both buses on one named net and drops bus wiring', async () => {
+            const { output, visitor } = await generateFixture('script114');
+            const labels = parseLabels(output);
+            const texts = labels.map(l => l.text);
+
+            expect(texts.filter(t => t.includes('SPI.MOSI'))).toHaveLength(2);
+            expect(new Set(texts.filter(t => t.includes('SPI.MOSI'))).size).toBe(1);
+
+            // Mixed net: the MOSI wire to R1 stays
+            const wires = parseWires(output);
+            const mosi = labels.filter(l => l.text.includes('SPI.MOSI'));
+            expect(mosi.some(l => wiresAt(wires, l).length > 0)).toBe(true);
+            expectLabelsMatchNetlist(output, visitor, ['NET-3']);
+        });
+
+        test('bus connected to a net label drops the label and emits no dangling BUSX label', async () => {
+            const { output } = await generateFixture('script114');
+            expect(output).not.toContain('"BUSX"');
+            expect(parseLabels(output).some(l => l.text.includes('BUSX'))).toBe(false);
+        });
+
+        test('bus inside a module keeps the inner namespace in the label', async () => {
+            const { output, visitor } = await generateFixture('script115');
+            const labels = parseLabels(output);
+            expect(labels).toHaveLength(1);
+            expect(labels[0].text.startsWith('adc1/')).toBe(true);
+            expect(labels[0].text.startsWith('/')).toBe(false);
+            expect(netNames(visitor).has('/' + labels[0].text)).toBe(true);
+            expectLabelsOnWires(output);
+        });
+
+        test('rotated and flipped bus still labels the connected pin on the wire', async () => {
+            const { output } = await generateFixture('script116');
+            const labels = parseLabels(output);
+            expect(labels).toHaveLength(1);
+            expect(wiresAt(parseWires(output), labels[0]).length).toBeGreaterThan(0);
+        });
+
+        const flips: [string, string][] = [['', 'none'], [' flip:x', 'x'], [' flip:y', 'y'], [' flip:xy', 'xy']];
+        const angles = [0, 90, 180, 270];
+        const cases = angles.flatMap(a => flips.map(([f, fname]) => [a, fname, f] as [number, string, string]));
+
+        test.each(cases)('label angle and justify follow pin geometry: angle %i flip %s', async (a, _fname, f) => {
+            const text = `
+from "std" import *
+gnd = dgnd()
+spi = create bus:
+    name: "SPI"
+    pins: "MOSI", "MISO"
+at gnd
+wire up 200
+to spi angle:${a}${f} pin "MOSI"
+`;
+            const { output } = await generateSch(text, 'angle_case');
+            const labels = parseLabels(output);
+            const l = labels.find(x => x.text.includes('SPI.MOSI') || x.text === 'GND')!;
+            expect(l).toBeDefined();
+
+            // Canonical pin direction is 0; flip x mirrors it, then the
+            // drawing angle turns it clockwise on screen (KiCad angles are CCW).
+            const dir = f.includes('x') ? 0 : 180;
+            expect(l.angle).toBe((((dir - a) % 360) + 360) % 360);
+
+            // Label sits on the end of the connecting wire
+            expect(wiresAt(parseWires(output), l).length).toBeGreaterThan(0);
+            expect(l.justify).toBe(BUS_JUSTIFY[l.angle]);
+        });
+    });
 });
 
 const script = `

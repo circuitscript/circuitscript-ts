@@ -14,7 +14,11 @@ import { Id, RawAtom, raw, printTree } from './s_expressions.js';
 import { FrameParamKeys } from '../objects/Frame.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import Flatten from '@flatten-js/core';
-import { ComponentTypes } from '../globals.js';
+import { ComponentTypes, NoNetText } from '../globals.js';
+import { PinId } from '../objects/PinDefinition.js';
+import { PinTypes } from '../objects/PinTypes.js';
+import { Net } from '../objects/Net.js';
+import { NumericValue } from '../objects/NumericValue.js';
 import { resolveToLiteralColor, ThemedColor } from './svgClasses.js';
 
 export enum KiCadVersion {
@@ -25,6 +29,22 @@ export enum KiCadVersion {
 // ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
+
+/*
+ * Justify for bus pin labels by KiCad label angle. 0 and 90 are
+ * left-justified, 180 and 270 right-justified; all add "bottom".
+ *   angle   justify
+ *   0       left bottom
+ *   90      left bottom
+ *   180     right bottom
+ *   270     right bottom
+ */
+const BUS_LABEL_JUSTIFY: Record<number, string[]> = {
+    0: ['left', 'bottom'],
+    90: ['left', 'bottom'],
+    180: ['right', 'bottom'],
+    270: ['right', 'bottom'],
+};
 
 /** Format a number for KiCad output: up to 4 decimal places, no trailing zeros */
 function mm(v: number): string {
@@ -136,8 +156,19 @@ export class KiCadSchGenerator {
         // Components with isNetLabel are rendered as KiCad (label ...) tokens, not symbols.
         const labelComponents = keepComponents.filter(rc => rc.component.isNetLabel);
         const noConnectComponents = keepComponents.filter(rc => this.isNoConnectMarker(rc));
+
+        // Buses are exported as per-pin net labels, not as symbols.
+        const busComponents = keepComponents.filter(rc =>
+            rc.component.typeProp === ComponentTypes.bus);
         const regularComponents = keepComponents.filter(rc =>
-            !rc.component.isNetLabel && !this.isNoConnectMarker(rc));
+            !rc.component.isNetLabel && !this.isNoConnectMarker(rc) &&
+            rc.component.typeProp !== ComponentTypes.bus);
+
+        // Nets that touch a real (non-bus) component pin. Wires and labels
+        // on bus-marked nets outside this set are bus wiring and are dropped.
+        const signalNetNames = this.buildSignalNetNames(visitor);
+        const keepLabelComponents = labelComponents.filter(rc =>
+            !this.isBusOnlyLabel(visitor, rc, signalNetNames));
 
         // Build definitionName → numPins map to determine whether numPins needs
         // to be included in the library symbol id (only needed when the same
@@ -175,6 +206,26 @@ export class KiCadSchGenerator {
             }
         }
 
+        // Labels already emitted are tracked by (x, y, text) so a bus pin
+        // label that duplicates an existing label is skipped.
+        const seenLabels = new Set<string>();
+        const netLabels = keepLabelComponents.map(rc => this.buildNetLabel(rc));
+        netLabels.forEach(node => seenLabels.add(this.labelKey(node)));
+
+        const pinNetMap = this.buildPinNetMap(visitor);
+        const busLabels: N[] = [];
+        const busWires: N[] = [];
+        for (const rc of busComponents) {
+            const target = this.findBusLabelPosition(visitor, rc, labelComponents);
+            for (const { label, wire } of this.buildBusPinLabels(rc, pinNetMap, target)) {
+                const key = this.labelKey(label);
+                if (seenLabels.has(key)) continue;
+                seenLabels.add(key);
+                busLabels.push(label);
+                busWires.push(wire);
+            }
+        }
+
         const root = n('kicad_sch',
             n('version', raw(this.fileVersion())),
             n('generator', 'circuitscript'),
@@ -188,12 +239,18 @@ export class KiCadSchGenerator {
             ),
 
             // Wires and junctions
-            ...this.buildWires(sheetFrame),
-            ...this.buildJunctions(sheetFrame),
+            ...this.buildWires(sheetFrame, signalNetNames),
+            ...this.buildJunctions(sheetFrame, signalNetNames),
             ...this.buildFrameRectangles(sheetFrame),
 
+            // Wires from bus pin starts to their labels
+            ...busWires,
+
             // Net labels (isNetLabel components → KiCad label tokens)
-            ...labelComponents.map(rc => this.buildNetLabel(rc)),
+            ...netLabels,
+
+            // Bus signal pins → labels carrying the pin's net name
+            ...busLabels,
 
             // no_connect() components become KiCad no_connect markers
             ...noConnectComponents.map(rc => this.buildNoConnect(rc)),
@@ -803,6 +860,187 @@ export class KiCadSchGenerator {
         );
     }
 
+    /** Dedup key for a (label ...) node: x, y and text. */
+    private labelKey(node: N): string {
+        const at = node[2];
+        return `${at[1]}|${at[2]}|${node[1]}`;
+    }
+
+    /**
+     * Label text for a bus signal pin: the net name from the netlist with
+     * the single leading '/' removed, since KiCad adds the root prefix to
+     * local labels itself. Returns null for unconnected pins.
+     */
+    private busPinNetName(
+        pinNetMap: Map<string, Map<string, string>>,
+        rc: RenderComponent,
+        pinId: PinId
+    ): string | null {
+        const name = pinNetMap.get(rc.component.instanceName)
+            ?.get(pinId.toString());
+        if (!name || name === NoNetText) return null;
+        return name.startsWith('/') ? name.slice(1) : name;
+    }
+
+    /**
+     * Label direction (KiCad degrees) for a bus signal pin. The text runs
+     * from the pin start (where wires arrive) toward the pin end, taken
+     * from the transformed pin geometry so flips are handled.
+     */
+    private busPinLabelAngle(
+        start: [NumericValue, NumericValue],
+        end: [NumericValue, NumericValue]
+    ): number {
+        const dx = end[0].toNumber() - start[0].toNumber();
+        const dy = end[1].toNumber() - start[1].toNumber();
+        // KiCad Y is down, so a positive angle is CCW on screen.
+        const degs = Math.atan2(-dy, dx) * 180 / Math.PI;
+        // Flipped 180 so the text extends away from the pin line.
+        return (((Math.round(degs / 90) * 90 + 180) % 360) + 360) % 360;
+    }
+
+    /**
+     * Position of the net label (the "bus label") on the same net as the
+     * bus's __BUS pin, or null if there is none.
+     */
+    private findBusLabelPosition(
+        visitor: ParserVisitor,
+        bus: RenderComponent,
+        labelComponents: RenderComponent[]
+    ): { x: number; y: number } | null {
+        const entries = [...visitor.getScope().netMap.getNets()];
+        const busNets = new Set<string>();
+        for (const [component, pinId, net] of entries) {
+            if (component === bus.component &&
+                component.pins.get(pinId)?.pinType === PinTypes.Bus) {
+                busNets.add(net.toString());
+            }
+        }
+        for (const [component, , net] of entries) {
+            if (!component.isNetLabel || !busNets.has(net.toString())) continue;
+            const label = labelComponents.find(rc => rc.component === component);
+            if (label) return { x: label.x.toNumber(), y: label.y.toNumber() };
+        }
+        return null;
+    }
+
+    /**
+     * Build a (label ...) per connected signal pin of a bus component. A
+     * wire extends from the pin start (where circuit wires arrive) along the
+     * pin axis to the label. The label sits at the bus label position when
+     * it lies beyond the pin, otherwise at the pin's inner end.
+     */
+    private buildBusPinLabels(
+        rc: RenderComponent,
+        pinNetMap: Map<string, Map<string, string>>,
+        target: { x: number; y: number } | null
+    ): { label: N; wire: N }[] {
+        const labels: { label: N; wire: N }[] = [];
+        const unit = rc.component.getUnit(rc.unitId);
+
+        unit.pins.forEach((pinDef, pinId) => {
+            if (pinDef.pinType === PinTypes.Bus) return;
+
+            const text = this.busPinNetName(pinNetMap, rc, pinId);
+            if (text === null) return;
+
+            // Gap pins have no geometry
+            const geometry = rc.symbol.drawing.getPinPosition(pinId);
+            if (geometry === null) return;
+
+            const pos = rc.symbol.pinPosition(pinId);
+            const x1 = rc.x.toNumber() + pos.x.toNumber();
+            const y1 = rc.y.toNumber() + pos.y.toNumber();
+            let x = rc.x.toNumber() + geometry.end[0].toNumber();
+            let y = rc.y.toNumber() + geometry.end[1].toNumber();
+            if (target) {
+                const len = Math.hypot(x - x1, y - y1);
+                const ux = (x - x1) / len;
+                const uy = (y - y1) / len;
+                const t = (target.x - x1) * ux + (target.y - y1) * uy;
+                if (t > len) {
+                    x = x1 + ux * t;
+                    y = y1 + uy * t;
+                }
+            }
+            const angle = this.busPinLabelAngle(geometry.start, geometry.end);
+
+            const wire = n('wire',
+                n('pts',
+                    n('xy', raw(mm(x1)), raw(mm(y1))),
+                    n('xy', raw(mm(x)), raw(mm(y)))
+                ),
+                n('stroke', n('width', raw(0)), n('type', raw('default'))),
+                n('uuid', deterministicUUID(
+                    `buswire_${rc.component.instanceName}_${pinId.toString()}`))
+            );
+
+            const label = n('label', text,
+                n('at', raw(mm(x)), raw(mm(y)), raw(angle)),
+                n('fields_autoplaced', raw('yes')),
+                n('effects',
+                    n('font', n('size', raw(1.27), raw(1.27))),
+                    n('justify', ...BUS_LABEL_JUSTIFY[angle].map(p => raw(p)))
+                ),
+                n('uuid', deterministicUUID(
+                    `buslabel_${rc.component.instanceName}_${pinId.toString()}`))
+            );
+            labels.push({ label, wire });
+        });
+
+        return labels;
+    }
+
+    /**
+     * Names of nets that contain at least one pin on a real component:
+     * not a bus, net label, or internal path object, and not a bus pin.
+     */
+    private buildSignalNetNames(visitor: ParserVisitor): Set<string> {
+        const names = new Set<string>();
+        for (const [component, pinId, net] of visitor.getScope().netMap.getNets()) {
+            if (component.typeProp === ComponentTypes.bus ||
+                component.isNetLabel ||
+                component._isInternalPathObject) continue;
+            if (component.pins.get(pinId)?.pinType === PinTypes.Bus) continue;
+            names.add(net.toString());
+        }
+        return names;
+    }
+
+    /** True if a net is marked as a bus net and has no real component pin. */
+    private isBusOnlyNet(net: Net | null | undefined, signalNetNames: Set<string>): boolean {
+        return !!net && net.busNet && !signalNetNames.has(net.toString());
+    }
+
+    /** True if a net label component sits on a bus-only net. */
+    private isBusOnlyLabel(
+        visitor: ParserVisitor,
+        rc: RenderComponent,
+        signalNetNames: Set<string>
+    ): boolean {
+        for (const [component, , net] of visitor.getScope().netMap.getNets()) {
+            if (component === rc.component &&
+                this.isBusOnlyNet(net, signalNetNames)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * KiCad label angle for a drawing: negates the drawing angle (KiCad is
+     * Y-down CCW) and adds 180 when both flips are set. A single flip is
+     * ignored.
+     */
+    private labelAngleFor(drawing: SymbolDrawing): number {
+        let angle = drawing.angle * -1;
+        if (angle < 0) angle += 360;
+        else if (angle > 360) angle = angle % 360;
+
+        if (drawing.flipX && drawing.flipY) {
+            angle = (angle + 180) % 360;
+        }
+        return angle;
+    }
+
     /**
      * Build a KiCad (label ...) token for a component with isNetLabel = true.
      * The label's connection point is the component origin (rc.x, rc.y).
@@ -814,21 +1052,7 @@ export class KiCadSchGenerator {
         );
         const x = rc.x.toNumber();
         const y = rc.y.toNumber();
-        const drawing = rc.symbol.drawing;
-        const placementAngle = drawing.angle;
-        let flipX = drawing.flipX;
-        let flipY = drawing.flipY;
-
-        // Same angle/flip normalisation as buildSymbolPlacement
-        let usePlacementAngle = placementAngle * -1;
-        if (usePlacementAngle < 0) usePlacementAngle += 360;
-        else if (usePlacementAngle > 360) usePlacementAngle = usePlacementAngle % 360;
-
-        if (flipX && flipY) {
-            usePlacementAngle = (usePlacementAngle + 180) % 360;
-            flipX = 0;
-            flipY = 0;
-        }
+        const usePlacementAngle = this.labelAngleFor(rc.symbol.drawing);
 
         // Derive anchor/vanchor from the transformed label properties (e.g. the "value" text).
         const props = this.transformedProperties(rc);
@@ -868,9 +1092,10 @@ export class KiCadSchGenerator {
     // Wire generation
     // -----------------------------------------------------------------------
 
-    private buildWires(sf: SheetFrame): N[] {
+    private buildWires(sf: SheetFrame, signalNetNames: Set<string>): N[] {
         const wires: N[] = [];
         for (const wire of sf.mergedWires) {
+            if (this.isBusOnlyNet(wire.net?.net, signalNetNames)) continue;
             for (const segment of wire.segments) {
                 for (let i = 0; i < segment.length - 1; i++) {
                     const [x1, y1] = segment[i];
@@ -900,8 +1125,10 @@ export class KiCadSchGenerator {
     // Junction generation
     // -----------------------------------------------------------------------
 
-    private buildJunctions(sf: SheetFrame): N[] {
-        return sf.junctions.map(junc => {
+    private buildJunctions(sf: SheetFrame, signalNetNames: Set<string>): N[] {
+        return sf.junctions
+            .filter(junc => !this.isBusOnlyNet(junc.net?.net, signalNetNames))
+            .map(junc => {
             const jx = junc.x.toNumber();
             const jy = junc.y.toNumber();
             const juncUuid = deterministicUUID(`junc_${jx}_${jy}`);

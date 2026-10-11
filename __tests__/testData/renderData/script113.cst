@@ -1,0 +1,37 @@
+# Bus export: numeric, named, up style, no name, single pin, gaps, user net name
+from "std" import *
+gnd = dgnd()
+
+num = create bus:
+    pins: 4
+at num pin 1
+wire left 200
+add res(1k) angle:0
+wire right 100 to gnd
+
+spi = create bus:
+    name: "SPI"
+    pins: "MOSI", [1], "MISO", "CLK"
+at spi pin "MOSI"
+wire left 200
+add net("MOSI_OUT")
+at spi pin "MISO"
+wire left 200
+add res(2k) angle:0
+wire right 100 to gnd
+
+up = create bus:
+    name: "UP"
+    pins: "A", "B"
+    style: "up"
+at up pin "A"
+wire left 200
+add res(3k) angle:0
+wire right 100 to gnd
+
+one = create bus:
+    pins: 1
+at one pin 1
+wire left 200
+add res(4k) angle:0
+wire right 100 to gnd

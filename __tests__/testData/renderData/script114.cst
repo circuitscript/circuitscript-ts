@@ -1,0 +1,25 @@
+# Bus export: bus-to-bus, bus -> label, mixed net with component pin
+from "std" import *
+gnd = dgnd()
+
+a = create bus:
+    name: "SPI"
+    pins: "MOSI", "MISO"
+b = create bus:
+    name: "SPI"
+    pins: "MOSI", "MISO"
+
+at a
+wire right 300
+to b
+
+at b pin "MOSI"
+wire right 200 down 100
+add res(10k) angle:90
+wire down 100 to gnd
+
+at label("BUSX")
+wire right 300
+to create bus:
+    name: "SPI"
+    pins: "MOSI"

@@ -1,0 +1,10 @@
+from "std" import *
+b = create bus:
+    name: "SPI"
+    pins: "MOSI", "MISO"
+at b pin "MOSI"
+wire left 100
+add res(10k) angle:0
+at b
+wire right 400
+to label("BUSX")

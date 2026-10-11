@@ -1,0 +1,14 @@
+# Bus export: bus inside a module instance
+from "std" import *
+gnd = dgnd()
+
+def sub():
+    spi = create bus:
+        name: "SPI"
+        pins: "MOSI", "MISO"
+    at spi pin "MOSI"
+    wire left 200
+    add res(1k) angle:0
+    wire right 100 to gnd
+
+/adc1 sub()
