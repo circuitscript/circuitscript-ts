@@ -1,6 +1,141 @@
 # Changelog
 
-## [v0.10.7](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.6...v0.10.7)
+## [v0.11.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.7...v0.11.0)
+
+[3053176](https://github.com/circuitscript/circuitscript-ts/commit/30531763cad159c873891553ff2bfb68cf2d4e39)Support if/else in graphic blocks and add arrow option to label
+- 
+- Add GraphicIfExpr to the grammar and visitor so graphic blocks can
+- branch on conditions. The std label component now takes an arrow
+- ("in" or "out") and defaults to right anchor. Update golden nets,
+- SVGs and validation expectations.
+
+[c3b8229](https://github.com/circuitscript/circuitscript-ts/commit/c3b8229be9630523b60c47a9af4589b4cb60e321)Add pre: block in graphic definitions for local assignments
+- 
+- Allow data statements (assignments, calls, control flow) inside a
+- graphic block via a named pre: block so later graphic commands can use
+- the computed values. Adds the grammar rule, visitor handling, arrow
+- label offset support in symbol drawing, and render/validate tests.
+
+[d5b4681](https://github.com/circuitscript/circuitscript-ts/commit/d5b4681a90c4348c604d12ad8b47a8f3de3d2d09)Allow bare at: block that continues from the current component
+- 
+- Make the component expression optional in at_component_expr so that
+- 'at:' reuses the current component. Regenerate the parser and add
+- parse and render tests.
+
+[f605cd4](https://github.com/circuitscript/circuitscript-ts/commit/f605cd4924947ef157edfec950e63d459d4b3ad8)Add title, row/column and layout modifiers to frame and sheet headers
+- 
+- Frame and sheet headers now accept an optional title expression followed
+- by modifier identifiers. row/column set the direction parameter, and
+- layout (frame only) defaults border and padding to 0. Unknown, duplicate
+- or conflicting modifiers report errors. Includes semantic token and
+- validation support, plus parse, render and golden-file tests.
+
+[328dae8](https://github.com/circuitscript/circuitscript-ts/commit/328dae87578f5840f9905d5cf6dca939b4a2dcd5)Export buses as net labels in KiCad schematic output
+- 
+- Bus symbols are no longer emitted. Each connected bus pin gets a net
+- label placed at the wire end, with justify following label angle. Adds
+- bus fixtures (script113-117) and export tests.
+
+[fb78766](https://github.com/circuitscript/circuitscript-ts/commit/fb78766fba57e6693644b2415792b85f76785a4d)Allow multi-line array literals
+- 
+- Track bracket nesting in the lexer so newlines inside [] do not emit
+- NEWLINE or indentation tokens. Add parse tests for multi-line, nested,
+- indexed and unterminated arrays.
+
+[c8dc444](https://github.com/circuitscript/circuitscript-ts/commit/c8dc444f1237d6b52e4f2c6ed7df71a0fe33d18f)Add bus refdes annotation tests and update bus net golden files
+- 
+- Bus components are covered by annotation tests: no refdes is assigned and
+- other components are unaffected. Net and SVG golden outputs for bus scripts
+- are regenerated with the new net naming.
+
+[58bd40d](https://github.com/circuitscript/circuitscript-ts/commit/58bd40d428189a6fc1cf52d3940247babd67255c)Validate graphic bodies for undefined symbols
+- 
+- Visit graphic expression blocks in the symbol validator, declare for-loop
+- variables, and treat the first argument of the pin command as a bare pin id.
+- Move pre: block tests to testParse and add validation tests.
+
+[55466df](https://github.com/circuitscript/circuitscript-ts/commit/55466dfbb60809635784bd4fc2c5420462c17ea2)Draw components after wires so symbols render on top
+- 
+- Move the component drawing loop after wire and junction drawing in
+- generateSVGChild. Update golden SVGs and the render hash accordingly.
+
+[650e5b3](https://github.com/circuitscript/circuitscript-ts/commit/650e5b3ba491564228b19f30d71ca1cbcc780b6d)Fix else if / else branch evaluation in graphic blocks
+- 
+- Each else if branch now evaluates its own condition and returns its own
+- commands, instead of reusing the block of the outer if. Add script110
+- and a test covering if, else if and else branches in graphic blocks.
+
+[e16f62d](https://github.com/circuitscript/circuitscript-ts/commit/e16f62d1358f649b11d3824a8689eced63ab282e)Support net labels connected to buses
+- 
+- Allow a bus to be wired to a net label that is tied to another bus.
+- Bus compatibility is checked and pins are merged through the bus
+- component stored on the net. Add render test script104.
+
+[d814b27](https://github.com/circuitscript/circuitscript-ts/commit/d814b27341513f0fdcac2f3c64da0ad7945f71c2) added tests
+
+[52fc96d](https://github.com/circuitscript/circuitscript-ts/commit/52fc96d96e81c4ebefb400477ddde18a91a5d9fd)Add pins_match builtin to find component pins by name pattern
+- 
+- Matches pin names and alt names by substring, with * as a wildcard.
+- Regex metacharacters in the pattern are treated literally. Returns the
+- primary names of matching pins.
+
+[dc86dbc](https://github.com/circuitscript/circuitscript-ts/commit/dc86dbc55e085cf3809f18936b71e05ed09261c5)Support array concatenation with + and reject arrays in other arithmetic operators
+- 
+- Array + array returns a new array without mutating the operands.
+- Using arrays with -, *, / or % now raises an 'Invalid operands' error
+- instead of an internal conversion error.
+
+[790f37a](https://github.com/circuitscript/circuitscript-ts/commit/790f37a791981d463ad4c0930948fbcf461c2d02)Name nets from bus labels and bus names
+- 
+- Connecting a net label to a bus now names the bus pin nets as
+- &lt;label&gt;.&lt;bus name&gt;.&lt;pin&gt;. Buses accept a name property stored as
+- bus_name. Unlabeled nets on buses include the bus name and pin in
+- their refdes-based net name.
+
+[f1b4529](https://github.com/circuitscript/circuitscript-ts/commit/f1b45294cbbc8f13a3183c9ab15a068b18708e4d)Export no_connect() and dnc() as KiCad no_connect markers
+- 
+- Graphic components flagged no_connect are emitted as (no_connect (at x y))
+- tokens at the component origin instead of library symbols. Filled shapes now
+- use background fill unless the fill is none, and the unused path import is
+- removed. Adds a KiCad export test using script112.cst.
+- 
+- Co-Authored-By: Claude Sonnet 5.5 &lt;noreply@anthropic.com&gt;
+
+[f40ea78](https://github.com/circuitscript/circuitscript-ts/commit/f40ea78b1ab291e656005cdf6991df6a6d091136)Add bidirectional io arrow option to label and adjust arrow size
+- 
+- Add render test script111 for label direction arrows.
+
+[aad44da](https://github.com/circuitscript/circuitscript-ts/commit/aad44da55dc74571dc2510394359f8b20cf44ecb)Name new bus pin nets from parent net, bus name and pin id
+
+[a2e4c3b](https://github.com/circuitscript/circuitscript-ts/commit/a2e4c3b7c1bbc92b4e0ba96f0f95f137c04d678e)Make inspector source line clickable to navigate to source
+- 
+- Add optional navigateToSource to PreviewTransport and render the
+- source line in the inspector panel as a link when the host provides it.
+
+[7ecb2a6](https://github.com/circuitscript/circuitscript-ts/commit/7ecb2a61dbb39dd1b614acf4017c86f8f07e4511)Fix bus label connection when the label is created before the bus
+- 
+- Mark the label net as a bus net when it is first connected to a bus component, and add render test script105.
+
+[56f073a](https://github.com/circuitscript/circuitscript-ts/commit/56f073ab6314ce7e76f55dd238c00d0ff986019d)Suppress pin type ERC warnings for lone pins marked no_connect
+- 
+- The std no_connect symbol declares its pin as passive, so detect it via
+- the no_connect param. A net is skipped only when a single pin sits on it
+- alongside the marker; shared nets are still checked.
+
+[b5c9d2b](https://github.com/circuitscript/circuitscript-ts/commit/b5c9d2b0946f263fb76613a6f3a65e9d4245660e)Return pin ids from pins_match instead of pin names
+
+[dde97dc](https://github.com/circuitscript/circuitscript-ts/commit/dde97dc5e15ab576701ce7f3b1efdfb4cbb2f76d) changed size of bus name
+
+[050c1e6](https://github.com/circuitscript/circuitscript-ts/commit/050c1e6d4c4ab7a58804ec190ea63cc474c7236d)Highlight nets across all sheets in the viewer
+- 
+- Net keys no longer include the sheet index, so selecting a net
+- highlights its wires on every sheet.
+
+[40ef017](https://github.com/circuitscript/circuitscript-ts/commit/40ef017883ef012bc328d5d7f772d655ab9f3ec4) fixed multiline text for kicad sch output
+
+[946473e](https://github.com/circuitscript/circuitscript-ts/commit/946473ebbe2fc13d9a8bfb495b4c970eadc7a9cb) added check for null pin net in bus pins
+
+## [v0.10.7](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.6...v0.10.7) - 2026-09-28
 
 [08256a2](https://github.com/circuitscript/circuitscript-ts/commit/08256a253bfc1b8ccd22b01b0d3d003fe43d898b) minor fix
 
