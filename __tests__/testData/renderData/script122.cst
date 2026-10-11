@@ -1,0 +1,16 @@
+# KiCad export: custom symbol with unnamed pins
+
+from "std" import *
+vcc = supply("VCC")
+gnd = dgnd()
+
+blk = create component:
+    pins: 2
+
+at vcc
+wire down 100
+to blk pin 1
+
+at blk pin 2
+wire down 100
+to gnd

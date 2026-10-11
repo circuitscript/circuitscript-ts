@@ -264,6 +264,128 @@ for i in range(3):
         expect(output).not.toContain('Hello\nNew text');
     });
 
+    describe('custom symbol pin names', () => {
+        const dir = '__tests__/testData/renderData/';
+
+        async function generateKiCadSch(scriptPath: string, name: string,
+            version: KiCadVersion = KiCadVersion.V9) {
+            const script = readFileSync(scriptPath, { encoding: 'utf8' });
+            const { hasError, visitor } = await runScript(script, scriptPath);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+
+            const generator = new KiCadSchGenerator(version, '0.0.0');
+            return generator.generate(visitor, sheetFrames, name)[0].output;
+        }
+
+        // Returns the s-expression text starting at the opening paren at `start`
+        function sexp(text: string, start: number): string {
+            let depth = 0;
+            for (let i = start; i < text.length; i++) {
+                if (text[i] === '(') depth++;
+                else if (text[i] === ')' && --depth === 0) return text.slice(start, i + 1);
+            }
+            throw new Error('unbalanced s-expression');
+        }
+
+        function libSymbol(output: string, name: string): string {
+            const m = new RegExp(`\\(symbol "[^"]*:${name}"`).exec(output);
+            expect(m).not.toBeNull();
+            return sexp(output, m!.index);
+        }
+
+        function pinText(symbol: string, pinNumber: string): string {
+            const numIdx = symbol.indexOf(`(number "${pinNumber}"`);
+            expect(numIdx).toBeGreaterThan(-1);
+            return sexp(symbol, symbol.lastIndexOf('(pin passive', numIdx));
+        }
+
+        function nameEffects(pin: string): string {
+            return sexp(pin, pin.indexOf('(name '));
+        }
+
+        function numberEffects(pin: string): string {
+            return sexp(pin, pin.indexOf('(number '));
+        }
+
+        const versions = [KiCadVersion.V9, KiCadVersion.V10];
+
+        test.each(versions)('custom symbol shows pin names and numbers (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script120.cst`, 'script120', version);
+            const symbol = libSymbol(output, 'J1_unit_sym');
+
+            const pinNames = sexp(symbol, symbol.indexOf('(pin_names'));
+            expect(pinNames).toContain('(offset 0.002)');
+            expect(pinNames).not.toContain('hide');
+
+            const pinNumbers = sexp(symbol, symbol.indexOf('(pin_numbers'));
+            expect(pinNumbers).not.toContain('hide');
+        });
+
+        test.each(versions)('custom symbol with unnamed pins still shows pin names (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script122.cst`, 'script122', version);
+            const symbol = libSymbol(output, 'J1_unit_sym');
+
+            const pinNames = sexp(symbol, symbol.indexOf('(pin_names'));
+            expect(pinNames).toContain('(offset 0.002)');
+            expect(pinNames).not.toContain('hide');
+            expect(sexp(symbol, symbol.indexOf('(pin_numbers'))).not.toContain('hide');
+        });
+
+        test.each(versions)('custom symbol pin names are exported and not hidden (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script120.cst`, 'script120', version);
+            const symbol = libSymbol(output, 'J1_unit_sym');
+
+            const expected: Record<string, string> = { '1': 'VIN', '2': 'GND', '3': 'OUT', '4': 'EN' };
+            for (const [num, pinName] of Object.entries(expected)) {
+                const pin = pinText(symbol, num);
+                expect(nameEffects(pin)).toContain(`(name "${pinName}"`);
+                expect(nameEffects(pin)).not.toContain('hide');
+                expect(numberEffects(pin)).not.toContain('hide');
+            }
+        });
+
+        test.each(versions)('display_name=false hides only that pin name (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script121.cst`, 'script121', version);
+            const symbol = libSymbol(output, 'mixed_sym');
+
+            expect(nameEffects(pinText(symbol, '2'))).toContain('(name "HIDDENNAME"');
+            expect(nameEffects(pinText(symbol, '2'))).toContain('(hide yes)');
+            expect(nameEffects(pinText(symbol, '1'))).toContain('(name "SHOWN"');
+            expect(nameEffects(pinText(symbol, '1'))).not.toContain('hide');
+            expect(nameEffects(pinText(symbol, '3'))).not.toContain('hide');
+        });
+
+        test.each(versions)('display_id=false hides only that pin number (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script121.cst`, 'script121', version);
+            const symbol = libSymbol(output, 'mixed_sym');
+
+            expect(numberEffects(pinText(symbol, '3'))).toContain('(hide yes)');
+            expect(numberEffects(pinText(symbol, '1'))).not.toContain('hide');
+            expect(numberEffects(pinText(symbol, '2'))).not.toContain('hide');
+        });
+
+        test.each(versions)('unnamed pins export "~" without hide (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script121.cst`, 'script121', version);
+            const symbol = libSymbol(output, 'mixed_sym');
+
+            const pin = pinText(symbol, '4');
+            expect(nameEffects(pin)).toContain('(name "~"');
+            expect(nameEffects(pin)).not.toContain('hide');
+        });
+    });
+
     describe('bus export as net labels', () => {
         const dir = '__tests__/testData/renderData/';
 

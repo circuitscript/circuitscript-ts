@@ -1,0 +1,38 @@
+# KiCad export: graphic symbol with mixed pin display flags
+
+from "std" import *
+vcc = supply("VCC")
+gnd = dgnd()
+
+def mixed():
+    width = 200
+    height = 300
+
+    return create component:
+        type: "U"
+        pins: 4
+        display: create graphic (params):
+            crect: 0, 0, width, height
+            hpin: 1, "SHOWN", "passive", -width/2 - 100, 100, 100
+            hpin: 2, "HIDDENNAME", "passive", -width/2 - 100, -100, 100, display_name=false
+            hpin: 3, "HIDDENID", "passive", width/2 + 100, 100, -100, display_id=false
+            hpin: 4, width/2 + 100, -100, -100
+
+u = mixed()
+
+at vcc
+wire down 100
+branch:
+    wire down 100
+    to u pin 1
+
+wire auto
+to u pin 2
+
+at u pin 3
+wire right 100
+to vcc
+
+at u pin 4
+wire right 100
+to gnd
