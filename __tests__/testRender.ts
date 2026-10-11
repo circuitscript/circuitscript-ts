@@ -162,7 +162,10 @@ describe('Render tests', () => {
 
         // bare at: block
         ['script118.cst', 'bare at: block continues from current component'],
-        ['script119.cst', 'bare at: block variants']
+        ['script119.cst', 'bare at: block variants'],
+
+        // graphic pre: block
+        ['script123.cst', 'graphic pre: block assignments feed later commands']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
@@ -324,6 +327,85 @@ describe('Render tests', () => {
         for (const label of notRendered) {
             expect(svgOutput).not.toContain(label);
         }
+    });
+
+    test('graphic pre: block variables drive later commands', async () => {
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + 'script123.cst');
+        const styles = getStylesFromDocument(documentVariable);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames,
+            new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+        const count = (text: string): number => svgOutput.split(text).length - 1;
+
+        const rendered = [
+            'PRE_BASIC', 'PRE_PARAM_A', 'PRE_PARAM_B',
+            'PRE_IF_1', 'PRE_IF_2', 'PRE_IF_3', 'PRE_FOR', 'PRE_GATE_ON',
+            'PRE_TWICE_2', 'PRE_CALL_5',
+            'A_OUT', 'A_IN', 'A_IO', 'A_NONE'
+        ];
+        for (const label of rendered) {
+            expect(count(label)).toBe(1);
+        }
+        expect(svgOutput).not.toContain('PRE_GATE_OFF');
+
+        // Label offset (translate x, y) of the group wrapping the label text.
+        const offset = (label: string): [number, number] => {
+            const match = new RegExp(
+                `matrix\\(1,0,0,1,([-\\d.e]+),([-\\d.e]+)\\)"><text[^>]*><tspan[^>]*>${label}</tspan>`
+            ).exec(svgOutput);
+            expect(match).not.toBeNull();
+            return [Number(match![1]), Number(match![2])];
+        };
+
+        // Default label y is -10 units (-0.354); offset = 40 gives -1.116.
+        expect(offset('PRE_BASIC')).toEqual([0, -1.116]);
+        expect(offset('PRE_PARAM_A')).toEqual([0, -0.354]);
+        // x = 10, 20, 30 selected by the if chain in pre:
+        expect(offset('PRE_IF_1')[0]).toBeCloseTo(-0.254, 5);
+        expect(offset('PRE_IF_2')[0]).toBeCloseTo(-0.508, 5);
+        expect(offset('PRE_IF_3')[0]).toBeCloseTo(-0.762, 5);
+        // total = 0 + 1 + 2 = 3, so x = 3 units
+        expect(offset('PRE_FOR')[0]).toBeCloseTo(-0.0762, 5);
+        // text_arrow_offset is -20 for out / in / io and 0 without an arrow
+        expect(offset('A_OUT')[0]).toBeCloseTo(0.508, 5);
+        expect(offset('A_IN')[0]).toBeCloseTo(0.508, 5);
+        expect(offset('A_IO')[0]).toBeCloseTo(0.508, 5);
+        expect(offset('A_NONE')[0]).toBe(0);
+
+        // Arrow graphics: out 1, in 1, io 3 (two heads and a line), none 0.
+        expect(count('class="graphicLine')).toBe(5);
+    });
+
+    test('pre: wrong block name is an error', async () => {
+        const message = await runScriptExpectError(`
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            foo:
+                x = 1
+            label: "a", 0, 0
+
+c = mk()
+at c pin 1
+`);
+        expect(message).toContain('Invalid graphic command for pre expression');
+    });
+
+    test('pre: block outside a graphic is a syntax error', async () => {
+        const { hasError } = await runScript(`
+pre:
+    x = 1
+`, mainPath + 'inline.cst');
+        expect(hasError).toEqual(true);
+    });
+
+    test('pre: is an ordinary identifier outside a block', async () => {
+        const { hasError } = await runScript(`
+pre = 1
+x = pre + 1
+`, mainPath + 'inline.cst');
+        expect(hasError).toEqual(false);
     });
 
     test('var= custom color compiles to var(--cs-<name>) with a :root declaration', async () => {

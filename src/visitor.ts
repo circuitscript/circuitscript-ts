@@ -64,7 +64,9 @@ import {
     Behavior_blockContext,
     GraphicIfExprContext,
     If_inner_graphic_exprContext,
-    Else_graphic_exprContext
+    Else_graphic_exprContext,
+    GraphicPreExprContext,
+    Graphics_data_expressions_blockContext
 } from './antlr/CircuitScriptParser.js';
 
 import { ExecutionContext } from './execute.js';
@@ -931,6 +933,21 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, [PlaceHolderCommands.if, commands]);
+    }
+
+    visitGraphicPreExpr = (ctx: GraphicPreExprContext): void => {
+        if(ctx.ID().getText() === "pre") {
+            this.visit(ctx.graphics_data_expressions_block());
+        } else {
+            this.throwWithContext(ctx, "Invalid graphic command for pre expression")
+        }
+        this.setResult(ctx, [PlaceHolderCommands.pre, []]);
+    }
+
+    visitGraphics_data_expressions_block = (ctx: Graphics_data_expressions_blockContext): void => {
+        ctx.graphics_data_expr().forEach(ctx => {
+            this.visit(ctx);
+        });
     }
 
     visitCreateModuleExpr = (ctx: CreateModuleExprContext): void => {

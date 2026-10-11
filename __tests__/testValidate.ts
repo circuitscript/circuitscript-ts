@@ -53,6 +53,35 @@ frame "t" column layout:
         expect(undefinedSymbols).toEqual([]);
     });
 
+    test('pre: block variables are not reported as undefined symbols', async () => {
+        const undefinedOf = async (script: string): Promise<string[]> => {
+            const visitor = await testValidateScript(script);
+            return [...visitor.symbolTable.getSymbols()]
+                .filter(([, value]) => value.type === 'undefined')
+                .map(([key]) => key);
+        };
+
+        const positive = await undefinedOf(`
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            pre:
+                x = 1
+            label: "a", x, 0
+`);
+        expect(positive).toEqual([]);
+
+        // Graphic bodies are not walked by the validator, so an undeclared
+        // name inside one is not reported. Control: the helper does report
+        // undeclared names elsewhere in the same def.
+        const control = await undefinedOf(`
+def mk():
+    z = y + 1
+`);
+        expect(control).toEqual(['--.mk_sym.y']);
+    });
+
     test('sheet modifiers are not reported as undefined symbols', async () => {
         const visitor = await testValidateScript(`
 from "std" import *

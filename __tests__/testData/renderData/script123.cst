@@ -1,0 +1,194 @@
+# Graphic pre: block.
+# Variables assigned in pre: feed later graphic commands.
+
+def mk_basic():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                offset = 40
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            label: "PRE_BASIC", 0, -offset
+
+def mk_params(tag=""):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                t = params.tag
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            label: "PRE_PARAM_" + t, 0, -10
+        params:
+            tag: tag
+
+def mk_if(mode):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                x = 0
+                if mode == 1:
+                    x = 10
+                else if mode == 2:
+                    x = 20
+                else:
+                    x = 30
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            label: "PRE_IF_" + str(mode), x, -10
+
+def mk_for():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                total = 0
+                for i in range(0, 3):
+                    total = total + i
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            label: "PRE_FOR", total, -10
+
+def mk_graphic_if():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                flag = true
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            if flag:
+                label: "PRE_GATE_ON", 0, -10
+            else:
+                label: "PRE_GATE_OFF", 0, -10
+
+def mk_arrow(value, arrow="", anchor="right"):
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                arrow_size = 0
+                text_arrow_offset = 0
+                arrow = params.arrow
+
+                if arrow == "out":
+                    arrow_size = 20
+                else if arrow == "in":
+                    arrow_size = -20
+                else if arrow == "io":
+                    arrow_size = 20
+
+                if arrow == "out" or arrow == "in":
+                    text_arrow_offset = -20
+                if arrow == "io":
+                    text_arrow_offset = -20
+
+            label: params.value, 0 + text_arrow_offset, -10, name="value", font_size=50, \
+                anchor=anchor
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+
+            line_width: 6
+            fill: "#333"
+
+            if arrow_size != 0 and arrow != "io":
+                path: "M", arrow_size/2, 0, \
+                    "m", -arrow_size, -arrow_size,  \
+                    "l", arrow_size, arrow_size,    \
+                    "l", -arrow_size, arrow_size,   \
+                    "L", -arrow_size+arrow_size/2, -arrow_size, "Z"
+
+            if arrow == "io":
+                path: "M", arrow_size + 10, 0, \
+                    "m", -arrow_size, -arrow_size,  \
+                    "l", arrow_size, arrow_size,    \
+                    "l", -arrow_size, arrow_size,   \
+                    "L", 10, -arrow_size, "Z"
+
+                path: "M", -arrow_size - 10, 0, \
+                    "m", arrow_size, arrow_size,    \
+                    "l", -arrow_size, -arrow_size,  \
+                    "l", arrow_size, -arrow_size,   \
+                    "L", -10, -arrow_size, "Z"
+
+                path: "M", arrow_size + 10, 0, "L", -arrow_size-10, 0
+        params:
+            value: value
+            arrow: arrow
+            arrow_size: 0
+            text_arrow_offset: 0
+
+def mk_pre_twice():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                v = 1
+            pre:
+                v = v + 1
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            label: "PRE_TWICE_" + str(v), 0, -10
+
+def mk_call():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pre:
+                x = str(5)
+                arr = []
+                array_push(arr, 1)
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            label: "PRE_CALL_" + x, 0, -10
+
+c_basic = mk_basic()
+at c_basic pin 1
+wire right 100
+
+c_pa = mk_params()
+at c_pa tag:"A"
+wire right 100
+
+c_pb = mk_params()
+at c_pb tag:"B"
+wire right 100
+
+for k in range(1, 4):
+    c_if = mk_if(k)
+    at c_if pin 1
+    wire right 100
+
+c_for = mk_for()
+at c_for pin 1
+wire right 100
+
+c_gate = mk_graphic_if()
+at c_gate pin 1
+wire right 100
+
+c_a1 = mk_arrow("A_OUT")
+at c_a1 arrow:"out"
+wire right 100
+
+c_a2 = mk_arrow("A_IN")
+at c_a2 arrow:"in"
+wire right 100
+
+c_a3 = mk_arrow("A_IO")
+at c_a3 arrow:"io"
+wire right 100
+
+c_a4 = mk_arrow("A_NONE")
+at c_a4 arrow:""
+wire right 100
+
+c_tw = mk_pre_twice()
+at c_tw pin 1
+wire right 100
+
+c_call = mk_call()
+at c_call pin 1
+wire right 100

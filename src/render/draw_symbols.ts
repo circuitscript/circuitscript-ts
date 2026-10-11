@@ -858,7 +858,11 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                     case PlaceHolderCommands.path:
                         // @ts-ignore
-                        drawing.addPath(...positionParams);
+                        if (Array.isArray(positionParams) && positionParams.length === 1) {
+                            drawing.addPath(...positionParams[0]);
+                        } else {
+                            drawing.addPath(...positionParams);
+                        }
                         break;
 
                     case PlaceHolderCommands.lineWidth:
@@ -904,14 +908,14 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         drawing.addArrow(...positionParams);
                         break;
 
-                    case PlaceHolderCommands.pin: 
+                    case PlaceHolderCommands.pin:
                     case PlaceHolderCommands.hpin:
                     case PlaceHolderCommands.vpin:
-                    {
-                        this.drawPinParams(drawing, commandName, 
-                            keywordParams, positionParams, lineColor, textColor);
-                        break;
-                    }
+                        {
+                            this.drawPinParams(drawing, commandName,
+                                keywordParams, positionParams, lineColor, textColor);
+                            break;
+                        }
 
                     case PlaceHolderCommands.label: {
                         // Extract name property if it is defined.
@@ -930,9 +934,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         }
 
                         const tmpPositionParams: unknown[] = [
-                                positionParams[1], positionParams[2],
-                                positionParams[0], style
-                            ];
+                            positionParams[1], positionParams[2],
+                            positionParams[0], style
+                        ];
 
                         if (labelName){
                             tmpPositionParams.push(labelName);
@@ -951,10 +955,10 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                     case PlaceHolderCommands.text: {
                         const style = this.parseLabelStyle(keywordParams);
-                        
+
                         // TODO: also support positional parameters
                         const content = keywordParams.get('content');
-                        
+
                         let offsetX = numeric(0);
                         let offsetY = numeric(0);
 
@@ -1288,8 +1292,8 @@ export enum PlaceHolderCommands {
     units = 'units',
 
     for = 'for',
-
     if = 'if',
+    pre = 'pre',
 }
 
 /** Symbol that is generated only from pin definitions and does not have a 

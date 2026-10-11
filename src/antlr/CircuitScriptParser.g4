@@ -163,8 +163,15 @@ create_scenario_expr: CreateScenario data_expr? Colon expressions_block;
 if_inner_graphic_expr: Else If data_expr Colon graphic_expressions_block;
 else_graphic_expr: Else Colon graphic_expressions_block;
 
+graphics_data_expr: assignment_expr | callable_expr | flow_expressions;
+
+// Allow data expressions within graphic blocks
+graphics_data_expressions_block: 
+    NEWLINE INDENT (NEWLINE | graphics_data_expr)+ DEDENT;
+
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                          # GraphicForExpr
               | If data_expr Colon graphic_expressions_block if_inner_graphic_expr* else_graphic_expr? # GraphicIfExpr
+              | ID Colon graphics_data_expressions_block                                               # GraphicPreExpr
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)    # GraphicCommandExpr
               ;
 
