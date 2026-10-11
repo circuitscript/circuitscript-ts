@@ -782,6 +782,55 @@ print(test1(a=1, a=2, b=3))
     });
 });
 
+describe('bare at: block tests', () => {
+    test('bare at: block with no current component throws', async () => {
+        const err = await runScriptExpectErrorObject(`
+from "std" import *
+
+at:
+    "A1": wire left 100
+`);
+
+        expect(err.message).toContain('Invalid pin number');
+    });
+
+    test('bare at: block is equivalent to explicit at component', async () => {
+        const definition = `
+from "std" import *
+
+at tmp = create component:
+    pins:
+        1: "A1"
+        2: "A2"
+        3: "A3"
+`;
+
+        const bare = await runScript(definition + `
+at label("in")
+wire right 100
+to tmp pin "A1"
+
+at:
+    "A2": wire left 100 add label("X")
+    "A3": wire left 100 add label("Y")
+`);
+
+        const explicit = await runScript(definition + `
+at label("in")
+wire right 100
+to tmp pin "A1"
+
+at tmp:
+    "A2": wire left 100 add label("X")
+    "A3": wire left 100 add label("Y")
+`);
+
+        expect(bare.hasError).toEqual(false);
+        expect(explicit.hasError).toEqual(false);
+        expect(orderNets(bare.componentPinNets)).toStrictEqual(orderNets(explicit.componentPinNets));
+    });
+});
+
 // This tests that an error is generated at the right position for 
 // overlapping connections
 `

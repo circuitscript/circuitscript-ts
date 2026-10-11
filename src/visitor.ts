@@ -174,16 +174,19 @@ export class ParserVisitor extends BaseVisitor {
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
         let refComponent: ClassComponent;
 
-        const creationFlag = this.trackNewComponentCreated(() => {
-            const [component, pin] = this.visitResult(ctx.component_select_expr());
-            this.getExecutor().atComponent(component, pin, {
-                addSequence: true
+        const ctxComponentSelect = ctx.component_select_expr();
+        if (ctxComponentSelect){
+            const creationFlag = this.trackNewComponentCreated(() => {
+                const [component, pin] = this.visitResult(ctx.component_select_expr());
+                this.getExecutor().atComponent(component, pin, {
+                    addSequence: true
+                });
+                
+                refComponent = component;
             });
-            
-            refComponent = component;
-        });
-
-        this.linkComponentToCtx(ctx, refComponent!, creationFlag);
+    
+            this.linkComponentToCtx(ctx, refComponent!, creationFlag);
+        }
         return this.getExecutor().getCurrentPoint();
     }
 

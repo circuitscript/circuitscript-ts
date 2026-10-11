@@ -1,0 +1,26 @@
+# Bare at: block continues from current component
+from "std" import *
+
+gnd = dgnd()
+
+at tmp = create component:
+    pins: 
+        1: "A1", "input"
+        2: "A2", "output"
+        3: "A3"
+        4: "A4"
+        5: "A5"
+        6: "A6"
+
+    arrange:
+        left: 1,2,3,4,5,6
+
+at label("hello")
+wire right 500
+to tmp pin "A1"
+
+at:
+    "A6": 
+        wire left 100 down 100
+
+    "A5": wire left 500 add label("OK")

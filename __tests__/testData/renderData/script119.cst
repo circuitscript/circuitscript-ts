@@ -1,0 +1,40 @@
+# Bare at: block variants
+from "std" import *
+
+gnd = dgnd()
+
+at tmp = create component:
+    pins: 
+        1: "A1", "input"
+        2: "A2", "output"
+        3: "A3"
+        4: "A4"
+        5: "A5"
+        6: "A6"
+
+    arrange:
+        left: 1,2,3,4,5,6
+
+# bare at: after a wire end, with a trailing comment on the header
+at label("hello")
+wire right 500
+to tmp pin "A1"
+
+at: # note
+    "A6": wire left 100 down 100
+
+# bare at: continuing from a wire (no component in the last to)
+at tmp pin "A2"
+wire right 200
+
+at:
+    "A3": wire left 100 add label("B")
+
+# comma separated keys and numeric pin ids
+at tmp pin "A2"
+
+at:
+    "A4", "A5":
+        wire left 100 add label("C")
+    6:
+        wire left 100 down 100

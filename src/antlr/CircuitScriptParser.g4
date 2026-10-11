@@ -73,7 +73,7 @@ add_component_expr: Add data_expr_with_assignment;
 
 component_select_expr: data_expr_with_assignment | pin_select_expr | Point;
 
-at_component_expr: At component_select_expr;
+at_component_expr: At component_select_expr?;
 to_component_expr: To component_select_expr (Comma component_select_expr)*;
 
 at_block_header: at_component_expr Colon annotation_comment_expr*;

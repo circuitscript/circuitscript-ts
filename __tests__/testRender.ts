@@ -158,7 +158,11 @@ describe('Render tests', () => {
         ['script108.cst', 'frame layout modifier and property overrides'],
         ['script109.cst', 'sheet row/column header syntax'],
         ['script110.cst', 'graphic if / else if / else branches'],
-        ['script111.cst', 'Label function direction arrow']
+        ['script111.cst', 'Label function direction arrow'],
+
+        // bare at: block
+        ['script118.cst', 'bare at: block continues from current component'],
+        ['script119.cst', 'bare at: block variants']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
