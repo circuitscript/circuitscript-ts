@@ -224,6 +224,14 @@
         "variable"
     ],
     [
+        "--.strip",
+        "function"
+    ],
+    [
+        "--.textwrap_dedent",
+        "function"
+    ],
+    [
         "--.[std].marker_point",
         "function"
     ],
@@ -520,6 +528,18 @@
         "variable"
     ],
     [
+        "--.range",
+        "function"
+    ],
+    [
+        "--.[std].conn_single_row_sym.i",
+        "variable"
+    ],
+    [
+        "--.str",
+        "function"
+    ],
+    [
         "--.[std].conn_double_rows",
         "function"
     ],
@@ -550,6 +570,10 @@
     [
         "--.[std].conn_double_rows_sym.params",
         "variable"
+    ],
+    [
+        "--.array_get",
+        "function"
     ],
     [
         "--.[std].test_point",
@@ -688,6 +712,22 @@
         "variable"
     ],
     [
+        "--.[std].sheet_generator_sym.i",
+        "variable"
+    ],
+    [
+        "--.enumerate",
+        "function"
+    ],
+    [
+        "--.[std].sheet_generator_sym.index",
+        "variable"
+    ],
+    [
+        "--.[std].sheet_generator_sym.val",
+        "variable"
+    ],
+    [
         "--.[std].sheet_A1",
         "function"
     ],
@@ -706,10 +746,6 @@
     [
         "--.[std].sheet_A1_sym.margin",
         "variable"
-    ],
-    [
-        "--.range",
-        "function"
     ],
     [
         "--.[std].sheet_A2",

@@ -3,6 +3,13 @@ import { expectJsonOutput, runScript, runScriptExpectError, testValidateScript }
 
 const mainPath = '__tests__/testData/validationData/';
 
+async function undefinedOf(script: string): Promise<string[]> {
+    const visitor = await testValidateScript(script);
+    return [...visitor.symbolTable.getSymbols()]
+        .filter(([, value]) => value.type === 'undefined')
+        .map(([key]) => key);
+}
+
 /**
  * Validation is used mainly in the IDE, for syntax highlighting and 
  * semantic tokens.
@@ -54,13 +61,6 @@ frame "t" column layout:
     });
 
     test('pre: block variables are not reported as undefined symbols', async () => {
-        const undefinedOf = async (script: string): Promise<string[]> => {
-            const visitor = await testValidateScript(script);
-            return [...visitor.symbolTable.getSymbols()]
-                .filter(([, value]) => value.type === 'undefined')
-                .map(([key]) => key);
-        };
-
         const positive = await undefinedOf(`
 def mk():
     return create component:
@@ -72,14 +72,155 @@ def mk():
 `);
         expect(positive).toEqual([]);
 
-        // Graphic bodies are not walked by the validator, so an undeclared
-        // name inside one is not reported. Control: the helper does report
-        // undeclared names elsewhere in the same def.
+        // Control: an undeclared name in the same graphic is reported
         const control = await undefinedOf(`
 def mk():
-    z = y + 1
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            pre:
+                x = 1
+            label: "a", y, 0
+            label: "b", x, 0
 `);
         expect(control).toEqual(['--.mk_sym.y']);
+    });
+
+    test('graphic body reports undefined names', async () => {
+        const wrap = (body: string, params = '(params)') => `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic ${params}:
+${body.split('\n').map(l => '            ' + l).join('\n')}
+`;
+        const cases: [string, string, string, string?][] = [
+            ['positional arg', 'label: "a", y, 0', 'y'],
+            ['keyword arg', 'label: "a", 0, 0, anchor=y', 'y'],
+            ['properties block', 'label:\n    x: 0\n    y: yy', 'yy'],
+            ['if condition', 'if cond:\n    label: "a", 0, 0', 'cond'],
+            ['else if condition', 'if true:\n    label: "a", 0, 0\nelse if cond2:\n    label: "b", 0, 0', 'cond2'],
+            ['for iterable', 'for i in items:\n    label: "a", i, 0', 'items'],
+            ['params without identifier', 'label: params.refdes, 0, 0', 'params', ''],
+        ];
+
+        for (const [name, body, key, params] of cases) {
+            const result = await undefinedOf(wrap(body, params));
+            expect([name, result]).toEqual([name, [`--.mk_sym.${key}`]]);
+        }
+    });
+
+    test('graphic body declared names are not reported', async () => {
+        const scripts: [string, string][] = [
+            ['params identifier', `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            label: params.refdes, 0, 0
+`],
+            ['two graphics in one def', `
+def mk():
+    a = create component:
+        pins: 1
+        display: create graphic (params):
+            label: params.refdes, 0, 0
+    b = create component:
+        pins: 1
+        display: create graphic (params):
+            label: params.refdes, 0, 0
+    return a
+`],
+            ['for variable', `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            for i in range(3):
+                label: "a", i, 0
+`],
+            ['for two variables', `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            for a, b in enumerate(range(3)):
+                label: "a", a, b
+`],
+            ['pre assignment', `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            pre:
+                x = 1
+            label: "a", x, 0
+            line: 0, 0, x, x
+`],
+            ['def argument', `
+def mk(w):
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            rect: 0, 0, w, w
+`],
+            ['module variable', `
+size = 10
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            rect: 0, 0, size, size
+`],
+            ['forward reference', `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            rect: 0, 0, later_size, later_fn(1)
+def later_fn(a):
+    return a
+later_size = 10
+`],
+            ['builtin', `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            label: str(1), 0, 0
+`],
+        ];
+
+        for (const [name, script] of scripts) {
+            expect([name, await undefinedOf(script)]).toEqual([name, []]);
+        }
+    });
+
+    test('graphic command names are not reported as undefined', async () => {
+        const result = await undefinedOf(`
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            pre:
+                x = 1
+            line: 0, 0, 10, 10
+            rect: 0, 0, 10, 10
+            label: "a", x, 0
+            pin: 1, "1", "passive", 0, 0, 0, 0
+`);
+        expect(result).toEqual([]);
+    });
+
+    test('graphic pin command accepts a bare pin id', async () => {
+        const result = await undefinedOf(`
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            pin: B, input, "B", 0, 0, 0, 0
+`);
+        expect(result).toEqual([]);
     });
 
     test('sheet modifiers are not reported as undefined symbols', async () => {

@@ -13,6 +13,8 @@ import { Assignment_exprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
     CreateGraphicExprContext,
+    GraphicCommandExprContext,
+    GraphicForExprContext,
     TrailerContext,
     CreateBehaviorExprContext,
     Create_scenario_exprContext,
@@ -493,8 +495,35 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         if (ctxID){
             this.addSymbolVariable(ctxID.getSymbol(), ctxID.getText(), null);
         }
+        this.visit(ctx.graphic_expressions_block());
     }
-    
+
+    visitGraphicCommandExpr = (ctx: GraphicCommandExprContext): void => {
+        const ctxProperties = ctx.properties_block();
+        const ctxParameters = ctx.parameters();
+
+        if (ctx._command?.text === 'pin' && !ctxProperties && ctxParameters) {
+            // The first argument of `pin` is the pin id, which may be a
+            // bare name that is not declared anywhere.
+            const args = ctxParameters.data_expr_with_doubledot();
+            args.slice(1).forEach(item => this.visit(item));
+            ctxParameters.keyword_assignment_expr().forEach(
+                item => this.visit(item));
+            return;
+        }
+
+        this.visitChildren(ctx);
+    }
+
+    visitGraphicForExpr = (ctx: GraphicForExprContext): void => {
+        // Resolve the iterable before declaring the loop variables
+        this.visit(ctx.data_expr());
+        ctx.ID().forEach(item => {
+            this.addSymbolVariable(item.getSymbol(), item.getText(), null);
+        });
+        this.visit(ctx.graphic_expressions_block());
+    }
+
     visitTrailer = (ctx: TrailerContext): void => {
         const ctxParameters = ctx.parameters();
         const ctxDataExpr = ctx.data_expr();

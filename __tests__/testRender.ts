@@ -376,38 +376,6 @@ describe('Render tests', () => {
         expect(count('class="graphicLine')).toBe(5);
     });
 
-    test('pre: wrong block name is an error', async () => {
-        const message = await runScriptExpectError(`
-def mk():
-    return create component:
-        pins: 1
-        display: create graphic (params):
-            foo:
-                x = 1
-            label: "a", 0, 0
-
-c = mk()
-at c pin 1
-`);
-        expect(message).toContain('Invalid graphic command for pre expression');
-    });
-
-    test('pre: block outside a graphic is a syntax error', async () => {
-        const { hasError } = await runScript(`
-pre:
-    x = 1
-`, mainPath + 'inline.cst');
-        expect(hasError).toEqual(true);
-    });
-
-    test('pre: is an ordinary identifier outside a block', async () => {
-        const { hasError } = await runScript(`
-pre = 1
-x = pre + 1
-`, mainPath + 'inline.cst');
-        expect(hasError).toEqual(false);
-    });
-
     test('var= custom color compiles to var(--cs-<name>) with a :root declaration', async () => {
         const scriptPath = 'script94.cst';
 

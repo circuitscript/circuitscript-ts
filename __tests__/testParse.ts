@@ -3,7 +3,7 @@
 import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
-import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
+import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, runScriptExpectError, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
 import { FrameType } from '../src/globals.js';
 import {
     inlineScript17, inlineScript18, inlineScript19,
@@ -828,6 +828,40 @@ at tmp:
         expect(bare.hasError).toEqual(false);
         expect(explicit.hasError).toEqual(false);
         expect(orderNets(bare.componentPinNets)).toStrictEqual(orderNets(explicit.componentPinNets));
+    });
+});
+
+describe('graphic pre: block tests', () => {
+    test('pre: wrong block name is an error', async () => {
+        const message = await runScriptExpectError(`
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            foo:
+                x = 1
+            label: "a", 0, 0
+
+c = mk()
+at c pin 1
+`);
+        expect(message).toContain('Invalid graphic command for pre expression');
+    });
+
+    test('pre: block outside a graphic is a syntax error', async () => {
+        const { hasError } = await runScript(`
+pre:
+    x = 1
+`);
+        expect(hasError).toEqual(true);
+    });
+
+    test('pre: is an ordinary identifier outside a block', async () => {
+        const { hasError } = await runScript(`
+pre = 1
+x = pre + 1
+`);
+        expect(hasError).toEqual(false);
     });
 });
 
