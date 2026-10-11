@@ -48,7 +48,11 @@ export function printTree(tree: any, level = 0): string {
         if (typeof tree === 'number') {
             return String(tree);
         }
-        return "\"" + tree + "\"";
+        const escaped = String(tree)
+            .replace(/\\/g, "\\\\")
+            .replace(/"/g, "\\\"")
+            .replace(/\r?\n/g, "\\n");
+        return "\"" + escaped + "\"";
     }
 
     const firstItem = tree[0] as IdObject;
