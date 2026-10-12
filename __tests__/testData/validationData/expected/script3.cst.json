@@ -40,15 +40,15 @@
         "variable"
     ],
     [
+        "--.[std].label_sym.params",
+        "variable"
+    ],
+    [
         "--.[std].label_sym.arrow_size",
         "variable"
     ],
     [
         "--.[std].label_sym.text_arrow_offset",
-        "variable"
-    ],
-    [
-        "--.[std].label_sym.params",
         "variable"
     ],
     [
