@@ -1,6 +1,16 @@
 # Changelog
 
-## [v0.11.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.0...v0.11.1)
+## [v0.11.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.1...v0.11.2)
+
+[b1aefa5](https://github.com/circuitscript/circuitscript-ts/commit/b1aefa597b205638369d331246abcd56824b2968)Fix PDF output for wrapped sheet groups and class/attribute style conflicts
+- 
+- Find sheet groups by id so the font wrapper group is not paginated as a
+- sheet, and carry the wrapper's font settings onto each per-sheet canvas.
+- Merge default class styles under explicit presentation attributes before
+- PDF conversion so class rules no longer override attributes such as
+- fill="none" in svg-to-pdfkit.
+
+## [v0.11.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.0...v0.11.1) - 2026-10-12
 
 [6f002be](https://github.com/circuitscript/circuitscript-ts/commit/6f002be7a3a9e90cd35c70f5cc74fcd025626c2e) updated label component in std library
 
