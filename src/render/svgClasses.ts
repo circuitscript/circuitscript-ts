@@ -331,6 +331,30 @@ export function expandStyleOverridesForPdf(canvas: Svg, styles: Styles): void {
             // `white-space: pre`, always set regardless of class overrides).
             Object.keys(overrides).forEach(prop => el.css(prop, null));
         });
+
+        // Elements drawn with a default class AND explicit presentation
+        // attributes (e.g. the sheet frame's `graphicPolygon` paths with
+        // `fill="none"`): the class rule would win in svg-to-pdfkit and, for
+        // a filled class, paint over everything drawn earlier. Merge the
+        // class defaults under the explicit attributes and drop the class.
+        const defaultKeys = Object.keys(defaults);
+        canvas.find(`.${className}`).forEach(el => {
+            const explicit: Record<string, string> = {};
+            defaultKeys.forEach(prop => {
+                // svg.js attr() reports defaults (e.g. fill) for unset attributes
+                const value = el.node.getAttribute(prop);
+                if (value !== null) {
+                    explicit[prop] = value;
+                }
+            });
+
+            if (Object.keys(explicit).length === 0) {
+                return;
+            }
+
+            el.removeClass(className);
+            el.attr({ ...defaults, ...explicit });
+        });
     }
 }
 

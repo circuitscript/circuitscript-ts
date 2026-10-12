@@ -294,10 +294,10 @@ export function generateSvgOutput(canvas: Svg, zoomScale = 1): string {
 export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
     sheetSize: string, sheetSizeDefined: boolean, styles: Styles, zoomScale = 1): void {
 
-    // Split the canvas up into different canvases. The <style> element added by
-    // addDefaultStyleClasses() is a sibling of the sheet groups, not a sheet itself
-    // - exclude it from pagination.
-    const children = canvas.children().filter(child => child.node.tagName === 'g');
+    // Split the canvas up into different canvases. Sheet groups are nested in
+    // a wrapper group that carries the document font; find them by class so the
+    // wrapper and the <style> element are excluded from pagination.
+    const children = canvas.find('g[id^="sheet-"]') as G[];
     const numChildren = children.length;
 
     // Registry stashed by renderSheetsToSVG() on this same canvas - needed to
@@ -315,7 +315,16 @@ export function generatePdfOutput(doc: PDFKit.PDFDocument, canvas: Svg,
 
     children.forEach((child, index) => {
         const sheetCanvas = createSvgCanvas();
-        sheetCanvas.add(child);
+        // Keep the wrapper group's font settings on the per-sheet canvas
+        const wrapper = child.parent() as G;
+        const sheetWrapper = sheetCanvas.group();
+        for (const attr of ['font-family', 'font-size', 'style']) {
+            const value = wrapper.attr(attr);
+            if (value !== undefined && value !== null) {
+                sheetWrapper.attr(attr, value);
+            }
+        }
+        sheetWrapper.add(child);
 
         // svg-to-pdfkit doesn't follow standard CSS precedence (a class rule
         // beats even a `style=` override there), so elements whose actual
