@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.11.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.7...v0.11.0)
+## [v0.11.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.0...v0.11.1)
+
+[6f002be](https://github.com/circuitscript/circuitscript-ts/commit/6f002be7a3a9e90cd35c70f5cc74fcd025626c2e) updated label component in std library
+
+## [v0.11.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.10.7...v0.11.0) - 2026-10-12
 
 [3053176](https://github.com/circuitscript/circuitscript-ts/commit/30531763cad159c873891553ff2bfb68cf2d4e39)Support if/else in graphic blocks and add arrow option to label
 - 
