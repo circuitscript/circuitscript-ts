@@ -18,6 +18,8 @@ export * from './render/generateOutputMetadata.js';
 export * from './render/generateHtmlOutput.js';
 export * from './render/KiCadNetListOutputHandler.js';
 export * from './lexer.js';
+export * from './keywords.js';
+export { AllPinTypes } from './objects/PinTypes.js';
 export * from './LexerDiagnosticListener.js';
 export * from './logger.js';
 export * from './parser.js';
