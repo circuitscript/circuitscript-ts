@@ -1,0 +1,7 @@
+/a1 | COMP-1 | 1
+/a1 | label-0.COMP-1-my_net | 1
+/a1 | label-0.COMP-1-my_net:0 | 1
+/a1 | my_func-0.within_func-0.label-1.COMP-1-my_net | 1
+/a1 | my_func-0.within_func-0.label-1.COMP-1-my_net:0 | 1
+/a1 | my_func-0.within_func-0.label-2.COMP-1-a1 | 1
+/a1 | my_func-0.within_func-0.label-2.COMP-1-a1:0 | 1

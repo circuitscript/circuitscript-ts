@@ -166,7 +166,9 @@ describe('Render tests', () => {
 
         // graphic pre: block
         ['script123.cst', 'graphic pre: block assignments feed later commands'],
-        ['script124.cst', 'When parent scope net is merged with higher priority child scope net.']
+        ['script124.cst', 'When parent scope net is merged with higher priority child scope net.'],
+        ['script125.cst', 'Different ways to set the label anchor parameter'],
+        ['script126.cst', 'Parent scope net merged with higher priority child scope net, using different label instances']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);

@@ -1546,11 +1546,12 @@ export class ParserVisitor extends BaseVisitor {
                 } else if (modifierText === ParamKeys.angle) {
                     defaultUnit.setParam(ParamKeys.angle, result as NumericValue);
                     shouldIgnoreWireOrientation = true;
-                } else if (modifierText === 'anchor') {
-                    // Do not apply to the component unit, but to component itself.
-                    dataResult.setParam('anchor', result.name as string);
                 } else {
                     // For all other params, set it directly on the component.
+                    if (result instanceof DeclaredReference && !result.found){
+                        this.throwWithContext(modifier, "Failed to resolve modifier value");
+                    }
+                    
                     dataResult.setParam(modifierText, result);
                 }
 

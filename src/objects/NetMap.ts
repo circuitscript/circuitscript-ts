@@ -11,6 +11,9 @@ import { ComponentPinNet, ComponentPinNetPair } from "./types.js";
 export class NetMap {
     protected items: ComponentPinNetPair[] = [];
 
+    // Trackers merged nets (Old Net ==> New Net)
+    mergedNets = new Map<Net, Net>();
+
     // Resolver function to find component pin net pairs from parent contexts.
     componentPinNetPairResolver!:
         (instance: ClassComponent, pin: PinId) => ComponentPinNetPair | undefined;
@@ -154,9 +157,11 @@ export class NetMap {
                 if (returnNet === net1) {
                     // net2 was merged away
                     this.set(component2, component2Pin, net1);
+                    this.trackMergedNet(net2, net1);
                 } else {
                     // net1 was merged away
                     this.set(component1, component1Pin, net2);
+                    this.trackMergedNet(net1, net2);
                 }
 
             } else {
@@ -168,6 +173,20 @@ export class NetMap {
         this.log('final net after link: ', returnNet, returnNet.priority);
         return returnNet!;
     }
+
+    private trackMergedNet(oldNet: Net, newNet: Net): void {
+        const keys = Array.from(this.mergedNets.keys());
+        const values = Array.from(this.mergedNets.values());
+
+        values.forEach((value, index) => {
+            if (value === oldNet) {
+                this.mergedNets.set(keys[index], newNet);
+            }
+        });
+
+        this.mergedNets.set(oldNet, newNet);
+    }
+
 
     /** Combines 2 nets into a single net. Component-pin pairs in the nets will
      * also be merged. By default net2 will be merged into net1 and net2 will

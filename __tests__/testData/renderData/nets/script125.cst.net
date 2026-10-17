@@ -1,0 +1,8 @@
+/my_label | label-0.COMP-1-my_label | 1
+/my_label | label-0.COMP-1-my_label:0 | 1
+/my_label | label-1.COMP-1-my_label2 | 1
+/my_label | label-1.COMP-1-my_label2:0 | 1
+/my_label | label-2.COMP-1-my_label | 1
+/my_label | label-2.COMP-1-my_label:0 | 1
+/my_label | label-3.COMP-1-my_label3 | 1
+/my_label | label-3.COMP-1-my_label3:0 | 1

@@ -1,0 +1,21 @@
+# Test when parent scope net is merged with higher priority child scope net 
+# and different label instances are used
+from "std" import *
+
+at tmp = create component:
+    pins: 6
+
+at tmp:
+    1: wire right 500 add label("my_net")
+
+def my_func():
+
+    def within_func():
+
+        at label("my_net")
+        wire right 500
+        add label("a1", priority=10) 
+
+    within_func()
+
+my_func()

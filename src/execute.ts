@@ -20,12 +20,12 @@ import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PortSide } from './objects/PinDefinition.js';
 import { AnyReference, CFunction, CFunctionEntry, CFunctionResult, CallableParameter, ComponentPin, 
+    ComponentPinNetPair, 
     ComponentUnitDefinition, 
     DeclaredReference, 
     Direction,
     ImportFunctionHandling,
-    ImportedLibrary,
-    NetTypes} from './objects/types.js';
+    ImportedLibrary} from './objects/types.js';
 import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
@@ -1609,7 +1609,7 @@ export class ExecutionContext {
 
         // move all instances into the parent scope first, with a namespace extension
         const tmpInstances = childScope.instances;
-        const tmpNets = childScope.netMap.getNets();
+        const childScopeNets = childScope.netMap.getNets();
 
         const mergedInstances: ClassComponent[] = [];
 
@@ -1637,7 +1637,7 @@ export class ExecutionContext {
         }
 
         // Get all unique nets in the scope
-        const childScopeUniqueNets = new Set<Net>(tmpNets.map(([,,net]) => net));
+        const childScopeUniqueNets = new Set<Net>(childScopeNets.map(([,,net]) => net));
 
         // Re-name child scope nets that exist in the parent scope
         childScopeUniqueNets.forEach(net => {
@@ -1653,9 +1653,32 @@ export class ExecutionContext {
             }
         });
 
-        // Merge all nets into parent scope
-        tmpNets.forEach(([component, pin, net]) => {
+        // Merge all child scope nets into parent scope
+        childScopeNets.forEach(([component, pin, net]) => {
             this.scope.netMap.set(component, pin, net);
+        });
+
+        const { mergedNets: childScopeMergedNets } = childScope.netMap;
+        const toUpdate: ComponentPinNetPair[] = [];
+
+        const scopeNets = this.scope.netMap.getNets();
+        scopeNets.forEach(([component, pin, net]) => {
+            // If the parent scope net was merged in the child scope net,
+            // then add an entry to update.
+            if (childScopeMergedNets.has(net)) {
+                // New entry sets the new net.
+                toUpdate.push([component, pin, childScopeMergedNets.get(net)!]);
+            }
+        });
+
+        // Update parent scope nets for merged items.
+        toUpdate.forEach(([component, pin, net]) => {
+            this.scope.netMap.set(component, pin, net);
+        });
+
+        // Pass on the merged nets to the parent scope to continue tracking.
+        childScopeMergedNets.forEach((value, key) => {
+            this.scope.netMap.mergedNets.set(key, value);
         });
 
         // If true, then __root component of the child_scope will

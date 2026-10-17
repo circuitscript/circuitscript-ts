@@ -17,4 +17,4 @@ tmp = label("hello")
 at tmp 
 wire right 500
 
-add tmp anchor:right
+add tmp anchor:"right"

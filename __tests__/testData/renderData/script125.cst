@@ -1,0 +1,10 @@
+# Test for different ways to set label anchor parameter
+from "std" import *
+
+at label("my_label")
+wire right 500 
+add label("my_label2", anchor="left")
+
+at label("my_label")
+wire right 500 
+add label("my_label3") anchor:"left"

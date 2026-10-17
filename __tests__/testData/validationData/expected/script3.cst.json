@@ -40,6 +40,10 @@
         "variable"
     ],
     [
+        "--.[std].label_sym.priority",
+        "variable"
+    ],
+    [
         "--.[std].label_sym.params",
         "variable"
     ],
