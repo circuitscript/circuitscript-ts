@@ -18,7 +18,7 @@ def supply(net_name):
     net_obj = net(net_name)
     return net_obj
 
-def label(value, arrow="", anchor="right"):
+def label(value, arrow="", anchor="right", priority=5):
     return create component:
         pins: 1
         copy: true
@@ -42,7 +42,7 @@ def label(value, arrow="", anchor="right"):
 
             text_color: "#222", dark="#ccc", var="label-color"
             label: params.value, 0 + text_arrow_offset, -10, name="value", font_size=50, \
-                anchor=anchor
+                anchor=params.anchor
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
 
             line_width: 6
@@ -75,10 +75,11 @@ def label(value, arrow="", anchor="right"):
         params:
             net_name: value
             value: value
-            priority: 5
+            priority: priority
             arrow: arrow
             arrow_size: 0
             text_arrow_offset: 0
+            anchor: anchor
 
 def port(value, port_type="input"):
     return create component:
