@@ -12,7 +12,7 @@ export class NetMap {
     protected items: ComponentPinNetPair[] = [];
 
     // Resolver function to find component pin net pairs from parent contexts.
-    componentPinNetPairResolver!: 
+    componentPinNetPairResolver!:
         (instance: ClassComponent, pin: PinId) => ComponentPinNetPair | undefined;
 
     netCounter = 1;
@@ -145,9 +145,20 @@ export class NetMap {
             this.set(component2, component2Pin, net1);
             returnNet = net1;
 
-        } else {
+        } else if (net1 !== null && net2 !== null) {
             if (net1 !== net2) {
                 returnNet = this.mergeNets(net1, net2);
+                
+                // This is needed, in case the merged net belows to a higher/
+                // parent scope, so store the updated pairing as well.
+                if (returnNet === net1) {
+                    // net2 was merged away
+                    this.set(component2, component2Pin, net1);
+                } else {
+                    // net1 was merged away
+                    this.set(component1, component1Pin, net2);
+                }
+
             } else {
                 // Otherwise, both nets are the same.
                 returnNet = net1;
@@ -171,7 +182,7 @@ export class NetMap {
         // if this is not the case.
         if (net2.priority > net1.priority) {
             const tmpNet = net1;
-            net1 = net2;
+                        net1 = net2;
             net2 = tmpNet;
         }
 

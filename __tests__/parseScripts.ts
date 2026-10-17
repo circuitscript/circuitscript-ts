@@ -1452,4 +1452,5 @@ export const inlineScriptTests = [
   ['module nets', script20_],
 
   ["net namespace computed/string/variable", createParseTest(scriptPath, 'script17')],
+  ["parent scope net merged with higher priority child scope net", createParseTest(scriptPath, 'script18')],
 ];

@@ -1,0 +1,19 @@
+# Test when parent scope net is merged with higher priority child scope net.
+from "std" import *
+
+at tmp = create component:
+    pins: 6
+
+at tmp:
+    1: wire right 500
+
+def my_func():
+
+    def within_func():
+        at tmp pin 1 
+        wire right 100 down 100 right 500 
+        add label("a1")
+
+    within_func()
+
+my_func()

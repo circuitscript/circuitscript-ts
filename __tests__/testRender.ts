@@ -165,7 +165,8 @@ describe('Render tests', () => {
         ['script119.cst', 'bare at: block variants'],
 
         // graphic pre: block
-        ['script123.cst', 'graphic pre: block assignments feed later commands']
+        ['script123.cst', 'graphic pre: block assignments feed later commands'],
+        ['script124.cst', 'When parent scope net is merged with higher priority child scope net.']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
