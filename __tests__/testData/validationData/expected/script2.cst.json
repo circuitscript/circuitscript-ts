@@ -568,6 +568,10 @@
         "variable"
     ],
     [
+        "--.array_push",
+        "function"
+    ],
+    [
         "--.[std].conn_double_rows_sym.params",
         "variable"
     ],

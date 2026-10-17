@@ -384,7 +384,7 @@ sheet:
                         wire left 400
                         to array_get(tmp_array, i-1, tmp)
 
-                    arraySet(tmp_array, i-1, tmp)
+                    array_set(tmp_array, i-1, tmp)
 
                 if i < (len(tmp_array)-1):
                     wire left 200 down 600 right 200

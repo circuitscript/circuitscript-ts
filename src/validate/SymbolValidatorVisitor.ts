@@ -9,6 +9,7 @@ import { Assignment_exprContext,
     UnaryOperatorExprContext,
     MultiplyExprContext, AdditionExprContext, BinaryOperatorExprContext,
     Function_def_exprContext,
+    Flow_expressionsContext,
     For_exprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
@@ -485,9 +486,35 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     };
 
     visitFor_expr = (ctx: For_exprContext): void => {
+        // Resolve the iterable before declaring the loop variables
+        this.visit(ctx.data_expr());
+
+        // `for` does not create a new scope, loop variables live in the
+        // enclosing scope. Reuse an existing symbol so earlier instances are
+        // kept.
+        const executor = this.getExecutor();
         ctx.ID().forEach(item => {
-            this.addSymbolVariable(item.getSymbol(), item.getText(), null);
+            const name = item.getText();
+            if (this.symbolTable.exists(executor, name)) {
+                const existing = this.symbolTable.get(executor, name);
+                this.addSymbolInstance(existing, item.getSymbol());
+            } else {
+                this.addSymbolVariable(item.getSymbol(), name, null);
+            }
         });
+
+        this.visit(ctx.expressions_block());
+    }
+
+    /**
+     * `break` and `continue` are ignored, since setting the break signal
+     * would stop the validation of the remaining expressions.
+     */
+    visitFlow_expressions = (ctx: Flow_expressionsContext): void => {
+        if (ctx.Break() || ctx.Continue()) {
+            return;
+        }
+        this.visitChildren(ctx);
     }
 
     visitCreateGraphicExpr = (ctx: CreateGraphicExprContext): void => {
