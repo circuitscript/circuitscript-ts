@@ -2355,6 +2355,7 @@ export class ParserVisitor extends BaseVisitor {
             }
             this.visit(ctxExpressionsBlock);
             this.getExecutor().exitFrame(frameId);
+            this.getScope().currentFrameId = -1;
         }
     }
 

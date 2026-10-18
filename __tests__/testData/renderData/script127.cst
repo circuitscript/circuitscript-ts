@@ -1,0 +1,17 @@
+from "std" import *
+from "script127-import" import *
+
+document.sheet_type = sheet_A6()
+
+v5 = supply("5V")
+gnd = dgnd()
+
+sheet "B":
+    sheetB()
+
+sheet "A":
+    at v5
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
