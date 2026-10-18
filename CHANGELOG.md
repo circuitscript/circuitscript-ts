@@ -1,6 +1,52 @@
 # Changelog
 
-## [v0.11.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.1...v0.11.2)
+## [v0.11.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.2...v0.11.3)
+
+[1fb5b77](https://github.com/circuitscript/circuitscript-ts/commit/1fb5b776ed033dc4ebbb3cb8f626f23e43212cc4)Track symbol usage inside for loops in validation
+- 
+- Visit the iterable and loop body in the symbol validator, reuse an
+- existing symbol for loop variables, and skip break/continue so later
+- statements are still validated. Fix array_set typo in script3 and update
+- expected symbol tables. Add usage tracking tests.
+
+[ea92eaf](https://github.com/circuitscript/circuitscript-ts/commit/ea92eaf75166e99f5335a3a4c326a50e3874562c)Track merged nets across child scopes and require resolvable modifier values
+- 
+- Record old-to-new net mappings in NetMap when nets are merged and carry
+- them into the parent scope, so parent nets merged with higher priority
+- child nets are updated even when different label instances are used.
+- Remove the anchor special case in modifier handling and throw when a
+- modifier value cannot be resolved. Add parse, render and validation
+- test data.
+
+[c67567a](https://github.com/circuitscript/circuitscript-ts/commit/c67567a808c9f02639962ca04e5b3e3db988577d)Fix undefined symbol handling for imported modules in validation
+- 
+- Set current file during validation, report file name on undefined symbols,
+- use the executor namespace for imported function paths, and guard against
+- missing symbols. Add validation test for imports and update render test
+- scripts.
+
+[05170be](https://github.com/circuitscript/circuitscript-ts/commit/05170bead406a46e94490df4c49756dd0b99af4c)Store merged net pairing in current scope when merging parent scope nets
+- 
+- When a net from a parent scope is merged with a higher priority net in a
+- child scope, the updated component pin pairing is now stored as well.
+- Adds parse and render tests for this case.
+
+[6c0d4e9](https://github.com/circuitscript/circuitscript-ts/commit/6c0d4e9c69dc17a14b9c9fd8c2892621059f41f7)Reset current frame id after a sheet block exits
+- 
+- Sheet blocks left currentFrameId set after exiting, so later statements
+- could attach to the closed frame. Add script127 render test covering a
+- sheet defined from an imported function.
+
+[6b2ffdc](https://github.com/circuitscript/circuitscript-ts/commit/6b2ffdca05961bcb41f7d7391f331e3265b18871)Export grammar keywords and AllPinTypes from the library index
+- 
+- Add keywords.ts deriving the reserved word list from the lexer's literal
+- names, plus the lexer alternatives that have no single literal.
+
+[6ce7ea6](https://github.com/circuitscript/circuitscript-ts/commit/6ce7ea622685ac8e3afc56f4fe4b07a345eaf5d3) updated label in std library
+
+[09bf295](https://github.com/circuitscript/circuitscript-ts/commit/09bf295021424562b0328d36c52c0abc80207eed) removed error for blank sheet
+
+## [v0.11.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.1...v0.11.2) - 2026-10-12
 
 [b1aefa5](https://github.com/circuitscript/circuitscript-ts/commit/b1aefa597b205638369d331246abcd56824b2968)Fix PDF output for wrapped sheet groups and class/attribute style conflicts
 - 
