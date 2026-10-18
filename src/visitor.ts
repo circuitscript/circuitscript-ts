@@ -1526,7 +1526,7 @@ export class ParserVisitor extends BaseVisitor {
                 let shouldIgnoreWireOrientation = false;
 
                 if (modifierText === ParamKeys.flip) {
-                    const flipValue = result.name;
+                    const flipValue = result as string;
                     let didSetX = false;
                     let didSetY = false;
 

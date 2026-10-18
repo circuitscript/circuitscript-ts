@@ -60,24 +60,25 @@ export default async function validate(): Promise<void> {
     if (watchFileChanges) {
         console.log('watching for file changes...');
     }
-
+    
     await env.prepareSVGEnvironment();
-
+    
     let inputFilePath = "";
-
+    
     if (args.length > 2) {
         console.log("Error: Extra arguments passed");
         return;
     }
-
+    
     if (options.outputFormat === 'html' && !args[1]) {
         console.error("Error: Output path is required for html format");
         return;
     }
-
+    
     let scriptData: string;
     if (args.length > 0 && args[0]) {
         inputFilePath = args[0];
+        env.setCurrentFile(inputFilePath);
 
         if (existsSync(inputFilePath)) {
             scriptData = readFileSync(inputFilePath, { encoding: 'utf-8' });
@@ -148,6 +149,7 @@ export default async function validate(): Promise<void> {
         undefinedSymbols.forEach(symbol => {
             const {token} = symbol;
             const info = {
+                fileName: symbol.fileName,
                 start: {
                     line: (token?.line || 1),
                     character: token?.column || 0

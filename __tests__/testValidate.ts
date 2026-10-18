@@ -335,6 +335,31 @@ sheet "t" column:
     });
 });
 
+describe('nested imports', () => {
+    test('std imported by both the main file and an imported file keeps separate symbols', async () => {
+        const scriptData = readFileSync('__tests__/testData/validationData/script4.cst', { encoding: 'utf8' });
+        const visitor = await testValidateScript(scriptData, './__tests__/testData/validationData/script4.cst');
+        const symbols = visitor.symbolTable.getSymbols();
+
+        const mainRes = symbols.get('--.res')!;
+        const importedRes = symbols.get('--.[script4-import].res')!;
+
+        expect(mainRes.type).toBe('function');
+        expect(importedRes.type).toBe('function');
+        expect(mainRes.context.namespace).toBe('--.');
+        expect(importedRes.context.namespace).toBe('--.[script4-import].');
+
+        // Every std function merged into the main file stays in the main context
+        const stdFunctions = [...symbols].filter(([key, value]) =>
+            value.type === 'function' && key.split('.').length === 2 &&
+            'fileName' in value && value.fileName.endsWith('std.cst'));
+        expect(stdFunctions.length).toBeGreaterThan(0);
+        stdFunctions.forEach(([, value]) => {
+            expect(value.context.namespace).toBe('--.');
+        });
+    });
+});
+
 describe('validation usage tracking', () => {
     const forSample = `from "std" import *
 

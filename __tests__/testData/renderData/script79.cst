@@ -17,28 +17,28 @@ sheet:
         at led("green") angle:270
     
     frame:
-        at led("green") flip:x
+        at led("green") flip:"x"
 
-        at led("green") flip:x angle:90
+        at led("green") flip:"x" angle:90
 
-        at led("green") flip:x angle:180
+        at led("green") flip:"x" angle:180
 
-        at led("green") flip:x angle:270
-
-    frame:
-        at led("green") flip:y
-
-        at led("green") flip:y angle:90
-
-        at led("green") flip:y angle:180
-
-        at led("green") flip:y angle:270
+        at led("green") flip:"x" angle:270
 
     frame:
-        at led("green") flip:xy
+        at led("green") flip:"y"
 
-        at led("green") flip:xy angle:90
+        at led("green") flip:"y" angle:90
 
-        at led("green") flip:xy angle:180
+        at led("green") flip:"y" angle:180
 
-        at led("green") flip:xy angle:270
+        at led("green") flip:"y" angle:270
+
+    frame:
+        at led("green") flip:"xy"
+
+        at led("green") flip:"xy" angle:90
+
+        at led("green") flip:"xy" angle:180
+
+        at led("green") flip:"xy" angle:270

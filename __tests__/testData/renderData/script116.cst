@@ -8,7 +8,7 @@ spi = create bus:
 
 at gnd
 wire up 200
-to spi angle:90 flip:x pin "MOSI"
+to spi angle:90 flip:"x" pin "MOSI"
 wire right 100
 add res(1k) angle:0
 wire right 100 to gnd

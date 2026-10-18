@@ -22,9 +22,9 @@ def cmp():
 at cmp() pin 2
 wire left 300
 
-to cmp() flip:x pin 2 
+to cmp() flip:"x" pin 2 
 
 at pin 3
 wire right 100 down 700 left 900 up 100
 
-to cmp() flip:xy angle:90 pin 5
+to cmp() flip:"xy" angle:90 pin 5

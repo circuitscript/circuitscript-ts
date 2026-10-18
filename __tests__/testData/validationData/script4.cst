@@ -1,0 +1,23 @@
+from "std" import *
+from "script4-import" import *
+
+gnd = dgnd()
+
+def decoupling_caps(supply_component, num_caps, value=1u):
+    # decoupling caps
+    at supply_component
+    wire down 100
+    branch:
+        wire down 100
+        add cap(value)
+        wire down 100 to gnd
+
+    for i in range(num_caps-1):
+        wire right 400
+        branch:
+            wire down 100
+            add cap(value)
+            wire down 100 to gnd
+
+v5 = supply("5V")
+decoupling_caps(v5, 5)

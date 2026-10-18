@@ -8,5 +8,5 @@ at tmp = create component:
     arrange:
         left: 1,2,3,4,5,6,7,8,9,10
 
-at tmp flip:y pin 10
+at tmp flip:"y" pin 10
 wire right 100 to gnd

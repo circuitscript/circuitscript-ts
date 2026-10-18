@@ -576,7 +576,7 @@ for i in range(3):
             expect(wiresAt(parseWires(output), labels[0]).length).toBeGreaterThan(0);
         });
 
-        const flips: [string, string][] = [['', 'none'], [' flip:x', 'x'], [' flip:y', 'y'], [' flip:xy', 'xy']];
+        const flips: [string, string][] = [['', 'none'], [' flip:"x"', 'x'], [' flip:"y"', 'y'], [' flip:"xy"', 'xy']];
         const angles = [0, 90, 180, 270];
         const cases = angles.flatMap(a => flips.map(([f, fname]) => [a, fname, f] as [number, string, string]));
 

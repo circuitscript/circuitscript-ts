@@ -15,7 +15,7 @@ at cmp()
 at cmp()
 ..flipy = 1
 
-at cmp() flip:xy
+at cmp() flip:"xy"
 
-at cmp() flip:xy
+at cmp() flip:"xy"
 ..angle = 90

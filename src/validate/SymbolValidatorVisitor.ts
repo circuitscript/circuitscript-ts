@@ -173,10 +173,10 @@ export class SymbolValidatorVisitor extends BaseVisitor {
             }
         }
 
-        if (tmpSymbol.type !== ParseSymbolType.Undefined){
+        if (tmpSymbol && tmpSymbol.type !== ParseSymbolType.Undefined){
             this.addSymbolInstance(tmpSymbol, atom.getSymbol());
         }
-        
+ 
         return tmpSymbol;
     }
 
@@ -263,7 +263,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
                         );
 
                     if (addSymbolToNamespace) {
-                        const funcPath = `${BaseNamespace}${definedSymbol.id}`;
+                        const funcPath = `${executor.namespace}${definedSymbol.id}`;
 
                         // Clone symbol and update the context, so that it is 
                         // not the import context, but the main

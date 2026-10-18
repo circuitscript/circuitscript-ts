@@ -121,9 +121,14 @@ export async function runScript(script: string, scriptPath?: string, options?: {
     }
 }
 
-export async function testValidateScript(scriptData: string): Promise<SymbolValidatorVisitor> {
-    const scriptPath = "./__tests__/testData/validationData/";
+export async function testValidateScript(scriptData: string,
+    scriptPath = "./__tests__/testData/validationData/"): Promise<SymbolValidatorVisitor> {
     const environment = getTestEnvironment();
+
+    // Important for resolving imports
+    if (scriptPath.endsWith('.cst')) {
+        environment.setCurrentFile(scriptPath);
+    }
 
     return validateScript(
         scriptPath,
