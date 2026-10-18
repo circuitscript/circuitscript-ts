@@ -97,6 +97,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
     protected importedFiles:ImportLibraryFile[] = [];
 
+    // Import filepaths found by the last resolveImportsAndLoad call
+    importedFilepaths: string[] = [];
+
     protected warnings:ExecutionWarning[] = [];
 
     // Maps filenames to file contents.
@@ -300,6 +303,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
         const { filepaths: importedFiles, contents } = await resolveAllImportFilepaths(inputPath,
             scriptData, this.environment);
+        this.importedFilepaths = importedFiles;
         this.log('resolved all referenced imports');
 
         // Load all the files (content already read during import resolution)

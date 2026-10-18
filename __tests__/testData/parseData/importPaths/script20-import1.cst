@@ -1,0 +1,4 @@
+from "script20-import2" import b_func
+
+def a_func():
+    return b_func()

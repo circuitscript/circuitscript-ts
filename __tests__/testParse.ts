@@ -3,8 +3,10 @@
 import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
-import { expectInlineScriptTest, findItem, findItemByRefDes, orderNets, runScript, runScriptExpectError, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
+import { expectInlineScriptTest, findItem, findItemByRefDes, getTestEnvironment, orderNets, runScript, runScriptExpectError, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
 import { FrameType } from '../src/globals.js';
+import { renderScript } from '../src/pipeline.js';
+import { readFileSync } from 'fs';
 import {
     inlineScript17, inlineScript18, inlineScript19,
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
@@ -862,6 +864,43 @@ pre = 1
 x = pre + 1
 `);
         expect(hasError).toEqual(false);
+    });
+});
+
+describe('imported file paths', () => {
+    const importDir = '__tests__/testData/parseData/importPaths/';
+
+    async function renderImports(name: string) {
+        const inputPath = `${importDir}${name}`;
+        const environment = getTestEnvironment();
+        await environment.prepareSVGEnvironment();
+        return await renderScript(readFileSync(inputPath, { encoding: 'utf8' }), [], {
+            dumpNets: false,
+            dumpData: false,
+            showStats: false,
+            environment,
+            inputPath,
+        });
+    }
+
+    test('returns direct and transitive imports', async () => {
+        const result = await renderImports('script20.cst');
+
+        expect(result.errors.map(e => e.message)).toStrictEqual([]);
+        expect(result.importedFiles).toStrictEqual([
+            `${importDir}script20-import1.cst`,
+            `${importDir}script20-import2.cst`,
+        ]);
+    });
+
+    test('returns imports when the render has errors', async () => {
+        const result = await renderImports('script21.cst');
+
+        expect(result.errors.length).toBeGreaterThan(0);
+        expect(result.importedFiles).toStrictEqual([
+            `${importDir}script20-import1.cst`,
+            `${importDir}script20-import2.cst`,
+        ]);
     });
 });
 

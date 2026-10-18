@@ -186,6 +186,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     }
 
     await visitor.resolveImportsAndLoad(inputPath, scriptData);
+    const importedFiles = visitor.importedFilepaths;
 
     const { tree, parser, tokens, lexer,
         parserTimeTaken,
@@ -588,7 +589,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     }
 
     const results: RenderScriptReturn = {
-        outputReturn, outputExtra, frameExtra, errors
+        outputReturn, outputExtra, frameExtra, errors, importedFiles
     }
 
     if (enableErc && ercResults) {

@@ -1,0 +1,3 @@
+from "script20-import1" import a_func
+
+x = undefined_symbol + 1

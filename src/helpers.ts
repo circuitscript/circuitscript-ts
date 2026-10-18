@@ -139,6 +139,9 @@ export type RenderScriptReturn = {
        generateFrameMetadata. */
     frameExtra: FrameMeta[] | null,
     errors: BaseError[],
+    /* Import filepaths resolved for this render, relative to the environment's
+       current directory. Set even when the render has errors. */
+    importedFiles?: string[],
     ercResults?: ERCReportItem[],
     nets?: ComponentPinNet[],
     scenarioResults?: string[],
