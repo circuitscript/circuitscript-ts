@@ -769,10 +769,8 @@ function drawGrid(group: G,
         .translate(-originSize/2, -originSize/2)
         .stroke('none').fill('blue');
 
-    // Even if the gridStyle is none, still draw the elements so that the
-    // same gridBounds will be generated.
-    const useGridColor = gridStyle !== "none" ? gridColor: "rgba(0,0,0,0)";
-    
+    const useGridColor = gridColor;
+
     const lines = [];
     const smallOffset = milsToMM(3);
 
@@ -794,6 +792,17 @@ function drawGrid(group: G,
             .translate(gridStartX.toNumber(), gridStartY.toNumber());
     }
     
+    if (gridStyle === "none") {
+        // A single invisible rect keeps the bounds without drawing lines,
+        // which some PDF readers render even when fully transparent.
+        group.addClass('grid')
+            .rect(gridEndX.sub(gridStartX).roundDp().toNumber(),
+                endY.sub(startY).roundDp().toNumber())
+            .fill('none').stroke('none')
+            .translate(gridStartX.toNumber(), startY.toNumber());
+        return;
+    }
+
     const gridPath = group.addClass('grid').path(lines.join(" "));
 
     const gridOverrides: Record<string, string> = {};

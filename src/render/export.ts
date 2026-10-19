@@ -12,6 +12,11 @@ import { Id, IdObject, SExp } from "./s_expressions.js";
 
 export { IdObject, SExpObject, SExpString, SExpNested, SExp, printTree, _id } from "./s_expressions.js";
 
+/** Net names in the KiCad netlist omit the root namespace's leading '/'. */
+function kicadNetName(netName: string): string {
+    return netName.startsWith('/') ? netName.slice(1) : netName;
+}
+
 export function generateKiCadNetList(netlist: NetListItem[])
     : {
         tree: SExp,
@@ -21,7 +26,7 @@ export function generateKiCadNetList(netlist: NetListItem[])
     const componentsList = [];
 
     // Dictionary storing net name to the list of nodes/pins
-    const nets = {};
+    const nets: Record<string, any[]> = Object.create(null);
 
     const missingFootprints: { refdes: string, instanceName: string }[] = [];
 
@@ -56,11 +61,12 @@ export function generateKiCadNetList(netlist: NetListItem[])
 
             for(const key in pins){
                 const netInfo = pins[key];
-                const netName = netInfo.netName;
 
-                if (netName === NoNetText){
+                if (netInfo.netName === NoNetText){
                     continue;
                 }
+
+                const netName = kicadNetName(netInfo.netName);
 
                 if (nets[netName] === undefined){
                     nets[netName] = [];

@@ -45,7 +45,7 @@ describe('export to KiCad', () => {
                     "net": [
                         {
                             "code": 1,
-                            "name": "/NET-(J1-2)",
+                            "name": "NET-(J1-2)",
                             "node": [
                                 {
                                     "ref": "J1",
@@ -61,7 +61,7 @@ describe('export to KiCad', () => {
                         },
                         {
                             "code": 2,
-                            "name": "/5V",
+                            "name": "5V",
                             "node": [
                                 {
                                     "ref": "C1",
@@ -77,7 +77,7 @@ describe('export to KiCad', () => {
                         },
                         {
                             "code": 3,
-                            "name": "/GND",
+                            "name": "GND",
                             "node": [
                                 {
                                     "ref": "C1",
@@ -98,7 +98,7 @@ describe('export to KiCad', () => {
                         },
                         {
                             "code": 4,
-                            "name": "/NET-(R1-2)",
+                            "name": "NET-(R1-2)",
                             "node": [
                                 {
                                     "ref": "R1",
@@ -149,14 +149,43 @@ for i in range(3):
 
         // Each iteration's SIG net must be distinct and namespaced, not
         // collapsed onto a single shared/undefined net.
-        expect(netNames).toContain('/ch0/SIG');
-        expect(netNames).toContain('/ch1/SIG');
-        expect(netNames).toContain('/ch2/SIG');
+        expect(netNames).toContain('ch0/SIG');
+        expect(netNames).toContain('ch1/SIG');
+        expect(netNames).toContain('ch2/SIG');
         expect(netNames.some((name) => name.includes('undefined'))).toBe(false);
 
         // Exactly one net per iteration should carry the SIG name, and no
         // net should merge nodes across iterations.
         expect(netNames.filter((name) => name.endsWith('/SIG'))).toHaveLength(3);
+    });
+
+    test('KiCad netlist net names have no leading slash', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+anchor = net("ANCHOR")
+
+def sub():
+    add res(0)
+    add res(0)
+    add net("SIG")
+
+at anchor
+branch:
+    /("ns") sub()
+`);
+        expect(hasError).toBe(false);
+
+        const { tree: kiCadNetList } = generateKiCadNetList(visitor.getNetList());
+        const sExp = new SExpObject(kiCadNetList);
+        const nets = new SExpObject(sExp.getWithId('nets')!);
+        const tmpNets = nets.getJSON() as { nets: { net: { name: string }[] } };
+        const netNames = tmpNets.nets.net.map((net) => net.name);
+
+        expect(netNames.every((n) => !n.startsWith('/'))).toBe(true);
+        expect(new Set(netNames).size).toBe(netNames.length);
+        expect(netNames).toContain('ANCHOR');
+        expect(netNames).toContain('ns/SIG');
     });
 
     test('KiCad schematic export resolves a themed (dark=/var=) fill color to its light value', async () => {
@@ -470,9 +499,9 @@ for i in range(3):
             const names = netNames(visitor);
             for (const l of parseLabels(output)) {
                 if (lone.includes(l.text)) {
-                    expect(names.has('/' + l.text)).toBe(false);
+                    expect(names.has(l.text)).toBe(false);
                 } else {
-                    expect(names.has('/' + l.text)).toBe(true);
+                    expect(names.has(l.text)).toBe(true);
                 }
             }
         }
@@ -535,7 +564,7 @@ for i in range(3):
             const names = netNames(visitor);
             const renamed = texts.filter(t => /^NET-\(R\d+-\d+/.test(t));
             expect(renamed.length).toBeGreaterThan(0);
-            for (const t of renamed) expect(names.has('/' + t)).toBe(true);
+            for (const t of renamed) expect(names.has(t)).toBe(true);
         });
 
         test('bus-to-bus connection keeps both buses on one named net and drops bus wiring', async () => {
@@ -565,7 +594,7 @@ for i in range(3):
             expect(labels).toHaveLength(1);
             expect(labels[0].text.startsWith('adc1/')).toBe(true);
             expect(labels[0].text.startsWith('/')).toBe(false);
-            expect(netNames(visitor).has('/' + labels[0].text)).toBe(true);
+            expect(netNames(visitor).has(labels[0].text)).toBe(true);
             expectLabelsOnWires(output);
         });
 
