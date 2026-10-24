@@ -4,6 +4,7 @@
             "line": 5,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script9.cst",
         "type": "POWER-NET-MULTIPLE-OUTPUTS",
         "severity": "warning",
         "message": "Power net '/VCC' has multiple power_output pins \u2014 possible power conflict"

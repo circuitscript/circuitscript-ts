@@ -23,6 +23,7 @@ export { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js
 
 export type ERCReportItem = {
     start: Token | null,
+    filePath: string | null,
     type: ERC_Rules,
     severity: ERCSeverity,
     message: string,
@@ -48,14 +49,14 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         switch (type) {
             case ERC_Rules.UnconnectedPin: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     const refdes = instance.assignedRefDes
                         ? `: ${instance.assignedRefDes} pin ${item.pin}`
                         : '';
                     reportItems.push({
                         type,
-                        start: token,
+                        start: loc.start, filePath: loc.filePath,
                         message: `Unconnected pin${refdes}`
                     });
                 }
@@ -71,6 +72,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                     reportItems.push({
                         type,
                         start: startToken,
+                        filePath: visitor.wireCreationFile.get(wire) ?? null,
                         message: `Unconnected wire end`
                     });
                 }
@@ -79,11 +81,11 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.PowerNetWithoutDriver: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     reportItems.push({
                         type,
-                        start: token,
+                        start: loc.start, filePath: loc.filePath,
                         message: `Power net '${item.netName}' has no power driver`
                     });
                 }
@@ -92,76 +94,76 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.PowerReferenceOnUnnamedNet: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Pin 'power_reference' on net '${item.netName}' has no power symbol — possibly connected to a signal net` });
             }
                 break;
 
             case ERC_Rules.PowerInputOnUnnamedNet: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Power input pin on net '${item.netName}' has no power symbol declaration` });
             }
                 break;
 
             case ERC_Rules.PowerOutputOnUnnamedNet: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Power output pin on net '${item.netName}' has no power symbol declaration` });
             }
                 break;
 
             case ERC_Rules.PowerNetNoSource: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Power net '${item.netName}' has power_input pins but no power_output source` });
             }
                 break;
 
             case ERC_Rules.PowerNetUnused: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Power net '${item.netName}' is declared but has no physical connections` });
             }
                 break;
 
             case ERC_Rules.PowerNetNameConflict: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Power net name conflict: nets ${item.netName} are shorted together` });
             }
                 break;
 
             case ERC_Rules.PowerNetMultipleOutputs: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Power net '${item.netName}' has multiple power_output pins — possible power conflict` });
             }
                 break;
 
             case ERC_Rules.PowerReferenceAmbiguousNet: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `power_reference pin is on a net with conflicting power symbol names: ${item.netName}` });
             }
                 break;
 
             case ERC_Rules.PowerReferenceUnconnected: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     const refdes = instance.assignedRefDes
                         ? `: ${instance.assignedRefDes} pin ${item.pin}`
                         : '';
-                    reportItems.push({ type, start: token,
+                    reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                         message: `Unconnected power_reference pin${refdes}` });
                 }
             }
@@ -169,12 +171,12 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.PowerInputUnconnected: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     const refdes = instance.assignedRefDes
                         ? `: ${instance.assignedRefDes} pin ${item.pin}`
                         : '';
-                    reportItems.push({ type, start: token,
+                    reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                         message: `Unconnected power_input pin${refdes}` });
                 }
             }
@@ -182,12 +184,12 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.PowerOutputUnconnected: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     const refdes = instance.assignedRefDes
                         ? `: ${instance.assignedRefDes} pin ${item.pin}`
                         : '';
-                    reportItems.push({ type, start: token,
+                    reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                         message: `Unconnected power_output pin${refdes}` });
                 }
             }
@@ -195,8 +197,8 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.PowerSymbolUnconnected: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     let displayValue = "";
                     if (instance.assignedRefDes) {
                         displayValue = instance.assignedRefDes;
@@ -206,7 +208,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                         displayValue = `: ${displayValue}`;
                     }
                     reportItems.push({
-                        type, start: token,
+                        type, start: loc.start, filePath: loc.filePath,
                         message: `Unconnected power symbol pin${displayValue}`
                     })
                 };
@@ -214,7 +216,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                 break;
 
             case ERC_Rules.NoPowerReferenceInSchematic: {
-                reportItems.push({ type, start: null,
+                reportItems.push({ type, start: null, filePath: null,
                     message: `No power_reference pin found in schematic — no ground reference defined` });
             }
                 break;
@@ -228,11 +230,11 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                     extra = `: ${targetComponent.assignedRefDes} pin ${targetPin}`;
                 }
 
-                const token = getComponentFirstCtxToken(instance);
-                if (token) {
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) {
                     reportItems.push({
                         type,
-                        start: token,
+                        start: loc.start, filePath: loc.filePath,
                         message: `No connect on connected pin${extra}`
                     });
                 }
@@ -241,40 +243,40 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 
             case ERC_Rules.PinTypeOutputMultiple: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Net '${item.netName}' has multiple output pins — possible signal conflict` });
             }
                 break;
 
             case ERC_Rules.PinTypeInputUndriven: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Net '${item.netName}' has input pin(s) but no driving output` });
             }
                 break;
 
             case ERC_Rules.PinTypePassiveOnly: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Net '${item.netName}' has only passive pins — no driver or typed receiver` });
             }
                 break;
 
             case ERC_Rules.PinTypeBidirectionalOnPowerNet: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Bidirectional pin on power net '${item.netName}'` });
             }
                 break;
 
             case ERC_Rules.PinTypeOutputDrivingPowerInput: {
                 const instance = item.instance as ClassComponent;
-                const token = getComponentFirstCtxToken(instance);
-                if (token) reportItems.push({ type, start: token,
+                const loc = getComponentFirstCtxLocation(instance);
+                if (loc) reportItems.push({ type, start: loc.start, filePath: loc.filePath,
                     message: `Signal output pin driving power net '${item.netName}' directly — missing power symbol` });
             }
                 break;
@@ -302,6 +304,8 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
         if (a.start === null && b.start === null) return 0;
         if (a.start === null) return 1;
         if (b.start === null) return -1;
+        const fileCmp = (a.filePath ?? '').localeCompare(b.filePath ?? '');
+        if (fileCmp !== 0) return fileCmp;
         return a.start.line !== b.start.line
             ? a.start.line - b.start.line
             : a.start.column - b.start.column;
@@ -310,10 +314,11 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
     return sortedReport;
 }
 
-function getComponentFirstCtxToken(instance: ClassComponent): Token | null {
+function getComponentFirstCtxLocation(instance: ClassComponent):
+    { start: Token, filePath: string } | null {
     if (instance.ctxReferences.length > 0) {
-        const { ctx } = instance.ctxReferences[0];
-        return ctx.start!;
+        const { ctx, filePath } = instance.ctxReferences[0];
+        return { start: ctx.start!, filePath };
     }
 
     return null;

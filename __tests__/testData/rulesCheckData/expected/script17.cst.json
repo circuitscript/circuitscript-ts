@@ -4,6 +4,7 @@
             "line": 5,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script17.cst",
         "type": "PIN-TYPE-INPUT-UNDRIVEN",
         "severity": "warning",
         "message": "Net '/GND' has input pin(s) but no driving output"
@@ -13,12 +14,14 @@
             "line": 18,
             "column": 3
         },
+        "filePath": "__tests__/testData/rulesCheckData/script17.cst",
         "type": "POWER-NET-UNUSED",
         "severity": "warning",
         "message": "Power net '/GND' is declared but has no physical connections"
     },
     {
         "start": null,
+        "filePath": null,
         "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
         "severity": "warning",
         "message": "No power_reference pin found in schematic — no ground reference defined"

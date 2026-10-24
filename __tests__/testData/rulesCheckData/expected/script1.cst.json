@@ -4,6 +4,7 @@
             "line": 4,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "POWER-NET-UNUSED",
         "severity": "warning",
         "message": "Power net '/GND' is declared but has no physical connections"
@@ -13,6 +14,7 @@
             "line": 6,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "UNCONNECTED-PIN",
         "severity": "warning",
         "message": "Unconnected pin: J1 pin 2"
@@ -22,6 +24,7 @@
             "line": 6,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "UNCONNECTED-PIN",
         "severity": "warning",
         "message": "Unconnected pin: J1 pin 3"
@@ -31,6 +34,7 @@
             "line": 6,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "UNCONNECTED-PIN",
         "severity": "warning",
         "message": "Unconnected pin: J1 pin 4"
@@ -40,6 +44,7 @@
             "line": 6,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "UNCONNECTED-PIN",
         "severity": "warning",
         "message": "Unconnected pin: J1 pin 5"
@@ -49,6 +54,7 @@
             "line": 6,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "UNCONNECTED-PIN",
         "severity": "warning",
         "message": "Unconnected pin: J1 pin 6"
@@ -58,12 +64,14 @@
             "line": 12,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script1.cst",
         "type": "POWER-NET-UNUSED",
         "severity": "warning",
         "message": "Power net '/5V' is declared but has no physical connections"
     },
     {
         "start": null,
+        "filePath": null,
         "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
         "severity": "warning",
         "message": "No power_reference pin found in schematic \u2014 no ground reference defined"

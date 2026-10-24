@@ -129,6 +129,7 @@ export class ParserVisitor extends BaseVisitor {
     
     // TODO: this should be in the scope object?
     creationCtx = new Map<Wire | ClassComponent, ParserRuleContext>();
+    wireCreationFile = new Map<Wire, string>();
 
     // Stores the scenarios that have been executed.
     scenarios: Scenario[] = [];
@@ -2210,6 +2211,7 @@ export class ParserVisitor extends BaseVisitor {
         
         const newWire = this.getExecutor().addWire(segments, ctx);
         this.creationCtx.set(newWire, ctx);
+        this.wireCreationFile.set(newWire, this.getCurrentFile());
 
         this.wireCtxLinks.set(newWire, ctx);
     }

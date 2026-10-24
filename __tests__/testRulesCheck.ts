@@ -1,4 +1,5 @@
 /* eslint-disable jest/expect-expect */
+import path from "node:path";
 import { ERCReportItem } from "../src/rules-check/rules";
 import { expectJsonOutput, renderCommon, runScript } from "./helpers";
 
@@ -10,6 +11,7 @@ describe('ERC rules', () => {
         return results.map(item => {
             return {
                 start: item.start ? { line: item.start.line, column: item.start.column } : null,
+                filePath: item.filePath ? path.relative(process.cwd(), item.filePath) : null,
                 type: item.type,
                 severity: item.severity,
                 message: item.message,
@@ -56,6 +58,7 @@ describe('ERC rules', () => {
         ['copy of one driver plus a distinct driver on same net - still flags multiple outputs', 'script37.cst'],
         ['input pin with only no_connect - no undriven warning', 'script38.cst'],
         ['passive/input pins with no_connect - suppress only when alone', 'script39.cst'],
+        ['filepath of items from imported file', 'script40.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

@@ -1,0 +1,9 @@
+from "std" import *
+
+def lib_part():
+    tmp = create component:
+        pins: 2
+        arrange:
+            left: 1
+            right: 2
+    return tmp

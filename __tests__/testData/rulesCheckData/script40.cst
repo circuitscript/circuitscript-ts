@@ -1,0 +1,21 @@
+from "std" import *
+from "script40_lib" import lib_part
+
+v5 = supply("5V")
+gnd = dgnd()
+
+main_part = create component:
+    pins: 2
+    arrange:
+        left: 1
+        right: 2
+
+at v5
+wire down 100 right 100
+to main_part pin 1
+
+lp = lib_part()
+
+at v5
+wire down 300 right 100
+to lp pin 1

@@ -4,6 +4,7 @@
             "line": 1,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script5.cst",
         "type": "POWER-OUTPUT-ON-UNNAMED-NET",
         "severity": "info",
         "message": "Power output pin on net '/NET-(J1-1)' has no power symbol declaration"
@@ -13,12 +14,14 @@
             "line": 5,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script5.cst",
         "type": "POWER-INPUT-ON-UNNAMED-NET",
         "severity": "info",
         "message": "Power input pin on net '/NET-(J1-1)' has no power symbol declaration"
     },
     {
         "start": null,
+        "filePath": null,
         "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
         "severity": "warning",
         "message": "No power_reference pin found in schematic — no ground reference defined"

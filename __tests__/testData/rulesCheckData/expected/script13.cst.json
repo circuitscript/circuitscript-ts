@@ -4,6 +4,7 @@
             "line": 5,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script13.cst",
         "type": "POWER-OUTPUT-UNCONNECTED",
         "severity": "warning",
         "message": "Unconnected power_output pin: J1 pin 2"

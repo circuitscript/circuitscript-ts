@@ -4,6 +4,7 @@
             "line": 6,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script8.cst",
         "type": "POWER-REFERENCE-AMBIGUOUS-NET",
         "severity": "error",
         "message": "power_reference pin is on a net with conflicting power symbol names: 3V3, VCC"
@@ -13,6 +14,7 @@
             "line": 10,
             "column": 0
         },
+        "filePath": "__tests__/testData/rulesCheckData/script8.cst",
         "type": "POWER-NET-NAME-CONFLICT",
         "severity": "error",
         "message": "Power net name conflict: nets 3V3, VCC are shorted together"

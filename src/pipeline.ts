@@ -400,7 +400,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                             displayErcResults.forEach((item, index) => {
                                 let position = "";
                                 if (item.start){
-                                    position = `line ${item.start.line}, column: ${item.start.column}: `
+                                    const file = item.filePath ? `${item.filePath}: ` : "";
+                                    position = `${file}line ${item.start.line}, column: ${item.start.column}: `
                                 }
                                 const label = item.severity === 'error' ? '[Error]' : '[Warning]';
                                 console.log(`${(index + 1).toString().padStart(3)}. ${label} ${position}${item.type} - ${item.message}`);
