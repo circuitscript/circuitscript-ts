@@ -68,6 +68,7 @@ export interface PanelData {
   instanceId: string;
   sourceLine: number | null;
   sourceFile: string | null;
+  sourceFileLabel: string | null;
   pins: PanelPinData[];
   params: PanelParamData[];
 }
@@ -95,6 +96,7 @@ export function getPanelData(meta: ComponentMeta): PanelData {
     instanceId: meta.instanceName,
     sourceLine: meta.sourceLine,
     sourceFile: meta.sourceFile,
+    sourceFileLabel: meta.sourceFileLabel ?? null,
     pins: meta.pins.map((pin) => ({
       id: pin.id,
       name: pin.name,
@@ -109,6 +111,7 @@ export interface FramePanelData {
   title: string;
   sourceLine: number | null;
   sourceFile: string | null;
+  sourceFileLabel: string | null;
 }
 
 export function getFramePanelData(meta: FrameMeta): FramePanelData {
@@ -116,5 +119,6 @@ export function getFramePanelData(meta: FrameMeta): FramePanelData {
     title: meta.title,
     sourceLine: meta.sourceLine,
     sourceFile: meta.sourceFile,
+    sourceFileLabel: meta.sourceFileLabel ?? null,
   };
 }

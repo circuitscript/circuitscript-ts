@@ -22,10 +22,12 @@ export interface InspectorPanelProps {
 const SourceLine: FunctionComponent<{
   line: number;
   file: string | null;
+  label?: string | null;
   onClick?: (file: string | null, line: number) => void;
-}> = ({ line, file, onClick }) => {
+}> = ({ line, file, label, onClick }) => {
+  const text = label ? `Line ${line}: ${label}` : `Line ${line}`;
   if (!onClick) {
-    return <div className="cs-source-line">Line {line}</div>;
+    return <div className="cs-source-line">{text}</div>;
   }
   const go = () => onClick(file, line);
   return (
@@ -33,7 +35,7 @@ const SourceLine: FunctionComponent<{
       className="cs-source-line cs-source-link"
       role="button"
       tabIndex={0}
-      title="Go to source"
+      title={file ?? 'Go to source'}
       onClick={go}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -42,7 +44,7 @@ const SourceLine: FunctionComponent<{
         }
       }}
     >
-      Line {line}
+      {text}
       <svg className="cs-source-link-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
         <path d="M5 11L11 5M6 5h5v5" />
       </svg>
@@ -104,7 +106,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
           <>
             <h2>{framePanelData.title}</h2>
             {framePanelData.sourceLine != null && (
-              <SourceLine line={framePanelData.sourceLine} file={framePanelData.sourceFile} onClick={onSourceClick} />
+              <SourceLine line={framePanelData.sourceLine} file={framePanelData.sourceFile} label={framePanelData.sourceFileLabel} onClick={onSourceClick} />
             )}
           </>
         )}
@@ -123,7 +125,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
               )}
             </h2>
             {panelData.sourceLine != null && (
-              <SourceLine line={panelData.sourceLine} file={panelData.sourceFile} onClick={onSourceClick} />
+              <SourceLine line={panelData.sourceLine} file={panelData.sourceFile} label={panelData.sourceFileLabel} onClick={onSourceClick} />
             )}
             <h3>Pins</h3>
             <table>

@@ -18,6 +18,8 @@ export type FrameMeta = {
     title: string;
     sourceLine: number | null;
     sourceFile: string | null;
+    // Display name for sourceFile, filled in by the host. Optional.
+    sourceFileLabel?: string | null;
     bounds: { x: number; y: number; width: number; height: number } | null;
 };
 
@@ -40,6 +42,8 @@ export type ComponentMeta = {
     // component was never referenced.
     sourceLine: number | null;
     sourceFile: string | null;
+    // Display name for sourceFile, filled in by the host. Optional.
+    sourceFileLabel?: string | null;
     params: { key: string; value: string }[];
     pins: ComponentPinMeta[];
 };
