@@ -1,0 +1,31 @@
+# Test label function font_size and color parameters
+
+from "std" import *
+
+at tmp = create component:
+    pins: 6
+
+at tmp:
+    1: wire left 100 add label("default1")
+    2: wire right 100 add label("big2", font_size=80)
+    3: wire left 100 add label("small3", font_size=30)
+    4: wire right 100 add label("red4", color="red")
+    5: wire left 100 add label("both5", "out", font_size=70, color="blue")
+    6: wire right 100 add label("pos6", "in", "left", 5, 40, "green")
+
+# text() with the new color param, and unchanged default
+at label("t")
+wire down 100
+add text("text default", offset_x=100, offset_y=0)
+add text("text red", offset_x=100, offset_y=60, color="red")
+add text("text big blue", 100, 120, 80, true, false, "blue")
+
+# net() and supply() with font_size and color
+at tmp2 = create component:
+    pins: 4
+
+at tmp2:
+    1: wire left 100 add net("NETDEF")
+    2: wire right 100 add net("NETBIG", font_size=80, color="red")
+    3: wire left 100 add supply("SUPDEF")
+    4: wire right 100 add supply("SUPSMALL", 30, "blue")

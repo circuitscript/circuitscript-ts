@@ -8,6 +8,14 @@
         "variable"
     ],
     [
+        "--.[std].net_sym.font_size",
+        "variable"
+    ],
+    [
+        "--.[std].net_sym.color",
+        "variable"
+    ],
+    [
         "--.[std].net_sym.params",
         "variable"
     ],
@@ -17,6 +25,14 @@
     ],
     [
         "--.[std].supply_sym.net_name",
+        "variable"
+    ],
+    [
+        "--.[std].supply_sym.font_size",
+        "variable"
+    ],
+    [
+        "--.[std].supply_sym.color",
         "variable"
     ],
     [
@@ -41,6 +57,14 @@
     ],
     [
         "--.[std].label_sym.priority",
+        "variable"
+    ],
+    [
+        "--.[std].label_sym.font_size",
+        "variable"
+    ],
+    [
+        "--.[std].label_sym.color",
         "variable"
     ],
     [
@@ -225,6 +249,10 @@
     ],
     [
         "--.[std].text_sym.italic",
+        "variable"
+    ],
+    [
+        "--.[std].text_sym.color",
         "variable"
     ],
     [

@@ -171,7 +171,9 @@ describe('Render tests', () => {
         ['script126.cst', 'Parent scope net merged with higher priority child scope net, using different label instances'],
 
         // imports script127-import.cst from the same folder
-        ['script127.cst', 'sheet closes the active frame properly']
+        ['script127.cst', 'sheet closes the active frame properly'],
+
+        ['script128.cst', 'Label function font_size and color parameters']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
@@ -380,6 +382,42 @@ describe('Render tests', () => {
 
         // Arrow graphics: out 1, in 1, io 3 (two heads and a line), none 0.
         expect(count('class="graphicLine')).toBe(5);
+    });
+
+    test('label font_size and color parameters', async () => {
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + 'script128.cst');
+        const styles = getStylesFromDocument(documentVariable);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames,
+            new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+        // font-size of the <text> element wrapping a given label
+        const fontSize = (label: string): number => {
+            const match = new RegExp(
+                `<text[^>]*font-size="([\\d.]+)"[^>]*><tspan[^>]*>${label}</tspan>`).exec(svgOutput);
+            expect(match).not.toBeNull();
+            return Number(match![1]);
+        };
+
+        expect(fontSize('big2')).toBeGreaterThan(fontSize('default1'));
+        expect(fontSize('small3')).toBeLessThan(fontSize('default1'));
+        expect(fontSize('both5')).toBeGreaterThan(fontSize('default1'));
+        expect(fontSize('pos6')).toBeLessThan(fontSize('default1'));
+
+        // default labels keep the themed color, overridden labels use the literal color
+        expect(svgOutput).toContain('var(--cs-label-color)');
+        expect(svgOutput).toContain('red');
+        expect(svgOutput).toContain('blue');
+        expect(svgOutput).toContain('green');
+
+        // text(): color applies, font_size still applies
+        expect(fontSize('text red')).toEqual(fontSize('text default'));
+        expect(fontSize('text big blue')).toBeGreaterThan(fontSize('text default'));
+
+        // net() and supply(): font_size and color
+        expect(fontSize('NETBIG')).toBeGreaterThan(fontSize('NETDEF'));
+        expect(fontSize('SUPSMALL')).toBeLessThan(fontSize('SUPDEF'));
+        expect(fontSize('SUPDEF')).toEqual(fontSize('NETDEF'));
     });
 
     test('var= custom color compiles to var(--cs-<name>) with a :root declaration', async () => {

@@ -1,24 +1,28 @@
 # Circuitscript default lib
 
-def net(net_name):
+def net(net_name, font_size=50, color=""):
     return create component:
         pins: 1
         copy: true
         display: create graphic (params):
             hline: -50, 0, 100
             vpin: 1, "1", "power", 0, 50, -50, pin_only=true
+            if params.color != "":
+                text_color: params.color
             label: params.net_name, 0, -15, name="value", \
-                font_size=50, anchor="center"
+                font_size=params.font_size, anchor="center"
         type: "net"
         params:
             net_name: net_name
             priority: 10
+            font_size: font_size
+            color: color
 
-def supply(net_name):
-    net_obj = net(net_name)
+def supply(net_name, font_size=50, color=""):
+    net_obj = net(net_name, font_size, color)
     return net_obj
 
-def label(value, arrow="", anchor="right", priority=5):
+def label(value, arrow="", anchor="right", priority=5, font_size=50, color=""):
     return create component:
         pins: 1
         copy: true
@@ -40,9 +44,12 @@ def label(value, arrow="", anchor="right", priority=5):
                 if arrow == "io":
                     text_arrow_offset = -20
 
-            text_color: "#222", dark="#ccc", var="label-color"
-            label: params.value, 0 + text_arrow_offset, -10, name="value", font_size=50, \
-                anchor=params.anchor
+            if params.color != "":
+                text_color: params.color
+            else:
+                text_color: "#222", dark="#ccc", var="label-color"
+            label: params.value, 0 + text_arrow_offset, -10, name="value", \
+                font_size=params.font_size, anchor=params.anchor
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
 
             line_width: 6
@@ -80,6 +87,8 @@ def label(value, arrow="", anchor="right", priority=5):
             arrow_size: 0
             text_arrow_offset: 0
             anchor: anchor
+            font_size: font_size
+            color: color
 
 def port(value, port_type="input"):
     return create component:
@@ -254,19 +263,28 @@ def dgnd(net_name="GND"):
             net_name: net_name
             priority: 100
 
-def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic = false):
+def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic = false, color = ""):
     return create component:
         pins: 1
         follow_wire_orientation: false
         type: "graphic"
         display: create graphic:
             pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
-            text:
-                content: strip(textwrap_dedent(value))
-                offset: offset_x, offset_y
-                font_size: font_size
-                bold: bold
-                italic: italic
+            if color != "":
+                text:
+                    content: strip(textwrap_dedent(value))
+                    offset: offset_x, offset_y
+                    font_size: font_size
+                    bold: bold
+                    italic: italic
+                    text_color: color
+            else:
+                text:
+                    content: strip(textwrap_dedent(value))
+                    offset: offset_x, offset_y
+                    font_size: font_size
+                    bold: bold
+                    italic: italic
 
 # Drawing markers
 
