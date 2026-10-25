@@ -63,6 +63,14 @@ function buildErcNetBridgeUnionFind(nets: ComponentPinNetPair[]): Map<Net, Net> 
     return parent;
 }
 
+function walkRoot(parent: Map<Net, Net>, n: Net): Net {
+    let root = n;
+    while (parent.has(root) && parent.get(root) !== root) {
+        root = parent.get(root)!;
+    }
+    return root;
+}
+
 /** Returns a new ComponentPinNetPair[] with erc_net_bridge-joined nets collapsed
  *  to a single representative Net. The input array and its Net objects are
  *  left untouched — this is only for feeding ERC rule checks. */
@@ -70,15 +78,14 @@ export function mergeErcNetBridgedNets(nets: ComponentPinNetPair[]): ComponentPi
     const parent = buildErcNetBridgeUnionFind(nets);
     if (parent.size === 0) return nets;
 
-    const find = (n: Net): Net => {
-        let root = n;
-        while (parent.has(root) && parent.get(root) !== root) {
-            root = parent.get(root)!;
-        }
-        return root;
-    };
-
     return nets.map(([component, pin, net]) => {
-        return [component, pin, find(net)] as ComponentPinNetPair;
+        return [component, pin, walkRoot(parent, net)] as ComponentPinNetPair;
     });
+}
+
+/** Returns a function mapping a Net to the representative Net of its
+ *  erc_net_bridge-joined group (the Net itself if it is not bridged). */
+export function getErcNetRoots(nets: ComponentPinNetPair[]): (n: Net) => Net {
+    const parent = buildErcNetBridgeUnionFind(nets);
+    return (n: Net) => walkRoot(parent, n);
 }

@@ -59,6 +59,10 @@ describe('ERC rules', () => {
         ['input pin with only no_connect - no undriven warning', 'script38.cst'],
         ['passive/input pins with no_connect - suppress only when alone', 'script39.cst'],
         ['filepath of items from imported file', 'script40.cst'],
+        ['erc_net_bridge - bridged power_input net sourced through bridge', 'script41.cst'],
+        ['no erc_net_bridge - power_input net still reports no source', 'script42.cst'],
+        ['erc_net_bridge - bridged group with no power_output still reports no source', 'script43.cst'],
+        ['erc_net_bridge - chained bridges propagate power source', 'script44.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

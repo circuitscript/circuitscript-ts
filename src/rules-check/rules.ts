@@ -11,7 +11,7 @@ import { RuleCheck_UnconnectedPinsWires } from "./unconnected-pins.js";
 import { RuleCheck_NoConnectOnConnectedPin } from "./no-connect-on-connected-pin.js";
 import { RuleCheck_PowerNetERC } from "./power-net-erc.js";
 import { RuleCheck_PinTypeERC } from "./pin-type-erc.js";
-import { mergeErcNetBridgedNets } from "./erc-net-bridge.js";
+import { getErcNetRoots, mergeErcNetBridgedNets } from "./erc-net-bridge.js";
 import { ComponentPinNetPair } from "src/objects/types";
 import { ClassComponent } from "src/objects/ClassComponent.js";
 import { Wire } from "src/objects/Wire.js";
@@ -38,7 +38,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
     ruleCheckItems.push(
         ...RuleCheck_UnconnectedPinsWires(graph, nets),
         ...RuleCheck_NoConnectOnConnectedPin(graph, nets),
-        ...RuleCheck_PowerNetERC(nets),
+        ...RuleCheck_PowerNetERC(nets, getErcNetRoots(nets)),
         ...RuleCheck_PinTypeERC(ercNets)
     );
 

@@ -1,0 +1,25 @@
+from "std" import *
+
+v1 = supply("V1")
+v2 = supply("V2")
+
+at tmp = create component:
+    pins:
+        1: "OUT", "power_output"
+
+at tmp pin 1
+wire right 100 up 100 to v1
+
+at tmp2 = create component:
+    pins:
+        1: "IN", "power_input"
+
+at v1
+wire right 100
+add cap(100n)
+
+wire right 100
+to v2
+
+at tmp2 pin 1
+wire right 100 up 100 to v2

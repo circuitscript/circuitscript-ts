@@ -42,7 +42,10 @@ function makeViolation(
     return { type, instance, pin, netName };
 }
 
-export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
+export function RuleCheck_PowerNetERC(
+    nets: ComponentPinNetPair[],
+    root: (n: Net) => Net = (n) => n
+) {
     const netMap = new Map<Net, NetState>();
     let schematicHasPowerReference = false;
 
@@ -128,7 +131,12 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
     type ViolationItem = ReturnType<typeof makeViolation> | { type: ERC_Rules; instance: null; pin: null; netName: string };
     const items: ViolationItem[] = [];
 
-    for (const state of netMap.values()) {
+    const sourcedRoots = new Set<Net>();
+    for (const [net, state] of netMap) {
+        if (state.hasPowerOutput) sourcedRoots.add(root(net));
+    }
+
+    for (const [net, state] of netMap) {
         const hasPowerSymbol = state.powerSymbolNames.size > 0;
 
         // ERC rule for: power_reference on net with no power symbol
@@ -162,7 +170,7 @@ export function RuleCheck_PowerNetERC(nets: ComponentPinNetPair[]) {
         }
 
         // ERC rule for: power net with power_input but no power_output
-        if (hasPowerSymbol && state.hasPowerInput && !state.hasPowerOutput) {
+        if (hasPowerSymbol && state.hasPowerInput && !sourcedRoots.has(root(net))) {
             items.push(makeViolation(
                 ERC_Rules.PowerNetNoSource,
                 state.firstPowerInputComponent!,

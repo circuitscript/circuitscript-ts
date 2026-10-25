@@ -1,0 +1,19 @@
+from "std" import *
+
+v2 = supply("V2")
+v3 = supply("V3")
+
+at tmp2 = create component:
+    pins:
+        1: "IN", "power_input"
+
+at v3
+wire right 100
+add cap(100n)
+..erc_net_bridge = true
+
+wire right 100
+to v2
+
+at tmp2 pin 1
+wire right 100 up 100 to v2

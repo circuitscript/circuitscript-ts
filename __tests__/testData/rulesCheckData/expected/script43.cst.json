@@ -1,0 +1,29 @@
+[
+    {
+        "start": {
+            "line": 6,
+            "column": 3
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script43.cst",
+        "type": "POWER-NET-NO-SOURCE",
+        "severity": "warning",
+        "message": "Power net '/V2' has power_input pins but no power_output source"
+    },
+    {
+        "start": {
+            "line": 10,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script43.cst",
+        "type": "POWER-NET-UNUSED",
+        "severity": "warning",
+        "message": "Power net '/V3' is declared but has no physical connections"
+    },
+    {
+        "start": null,
+        "filePath": null,
+        "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
+        "severity": "warning",
+        "message": "No power_reference pin found in schematic — no ground reference defined"
+    }
+]
