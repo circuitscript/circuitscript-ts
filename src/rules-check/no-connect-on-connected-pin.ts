@@ -8,24 +8,46 @@ import { Edge, Graph } from "@dagrejs/graphlib";
 import { GraphNodeInfo, RenderItemType } from "../render/graph.js";
 import { RenderComponent } from "../render/layout.js";
 import { ComponentPinNetPair } from "src/objects/types.js";
+import { ClassComponent } from "../objects/ClassComponent.js";
+import { PinTypes } from "../objects/PinTypes.js";
+import { ComponentTypes } from "../globals.js";
 import { Net } from "../objects/Net.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { ERC_Rules } from "./rules.js";
 
 /**
- * If component pin is connected to another component pin. This is a net check
+ * A pin counts as a physical pin unless it belongs to a net marker (supply,
+ * label), bus, port, module, graphic or internal path object, or is a bus pin.
+ */
+function isPhysicalPin(component: ClassComponent, pin: PinId): boolean {
+    switch (component.typeProp) {
+        case ComponentTypes.net:
+        case ComponentTypes.bus:
+        case ComponentTypes.port:
+        case ComponentTypes.module:
+        case ComponentTypes.graphic:
+            return false;
+    }
+
+    if (component.isNetLabel || component._isInternalPathObject) {
+        return false;
+    }
+
+    return component.pins.get(pin)?.pinType !== PinTypes.Bus;
+}
+
+/**
+ * A no_connect is valid on a net with at most one physical pin. This is a net
+ * check.
  * @param graph 
  * @returns 
  */
 export function RuleCheck_NoConnectOnConnectedPin(graph: Graph, 
     nets: ComponentPinNetPair[]) {
-    // Find all the no connect pins
-    const allNodes = graph.nodes();
-
     const items = [];
 
-    // Collate number of components in each net
-    const netComponentPins = new Map<Net, [instanceName: string, PinId][]>();
+    // Physical pins in each net
+    const netPhysicalPins = new Map<Net, [ClassComponent, PinId][]>();
 
     // Links component-pin to net.
     const pinMapping = new Map<string, Net>();
@@ -36,89 +58,74 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
         };
 
     for (const [component, pin, net] of nets) {
-        if (!netComponentPins.has(net)) {
-            netComponentPins.set(net, []);
-        }
-
-        const items = netComponentPins.get(net)!;
         const unit = component.getUnitForPin(pin);
+        pinMapping.set(makeComponentPinHash(unit.instanceName, pin), net);
 
-        items.push([
-            unit.instanceName,
-            pin
-        ]);
-
-        netComponentPins.set(net, items);
-
-        pinMapping.set(makeComponentPinHash(
-            unit.instanceName, pin), net);
+        if (isPhysicalPin(component, pin)) {
+            if (!netPhysicalPins.has(net)) {
+                netPhysicalPins.set(net, []);
+            }
+            netPhysicalPins.get(net)!.push([component, pin]);
+        }
     };
 
-    for(const node of allNodes) {
+    for (const node of graph.nodes()) {
         const nodeInfo = graph.node(node) as GraphNodeInfo;
-        if (nodeInfo[0] === RenderItemType.Component) {
-            const { component } = nodeInfo[1] as RenderComponent;
-            if (component.hasParam('no_connect')) {
-                const instanceName = component.getUnit().instanceName;
-                const edges = graph.nodeEdges(node) as Edge[];
-
-                const otherNodes: string[] = [];
-
-                edges.forEach(edge => {
-                    const edgeInfo = graph.edge(edge.v, edge.w);
-                    let targetComponentName: string;
-                    let targetPin: PinId;
-
-                    if (edge.v === instanceName) {
-                        otherNodes.push(edge.w);
-                        targetComponentName = edge.w;
-                        targetPin = edgeInfo[3];
-
-                    } else {
-                        targetComponentName = edge.v;
-                        targetPin = edgeInfo[1];
-                    }
-
-                    const componentPinHash =
-                        makeComponentPinHash(targetComponentName, targetPin);
-
-                    if (pinMapping.has(componentPinHash)) {
-                        const net = pinMapping.get(componentPinHash)!;
-                        const tmpNetComponentPins = netComponentPins.get(net)!;
-
-                        // Go through all component pins in the net and remove
-                        // the no_connect component-pin and the current target
-                        // component-pin.
-                        const remainingItems = tmpNetComponentPins.filter(item => {
-                            if (item[0] === instanceName) {
-                                return false;
-                            } else if (item[0] === targetComponentName 
-                                && item[1].getHashValue() === targetPin.getHashValue()) {
-                                
-                                return false;
-                            }
-
-                            return true;
-                        });
-
-                        if (remainingItems.length > 0) {
-                            const targetInfo = 
-                                graph.node(targetComponentName) as GraphNodeInfo;
-                            const tmpComponent = targetInfo[1] as RenderComponent;
-
-                            items.push({
-                                type: ERC_Rules.NoConnectOnConnectedPin,
-                                instance: component, // The no_connect component
-                                target: {
-                                    instance: tmpComponent.component,
-                                    pin: targetPin
-                                }
-                            })
-                        }
-                    }
-                });
-            }
+        if (nodeInfo[0] !== RenderItemType.Component) {
+            continue;
         }
+
+        const { component } = nodeInfo[1] as RenderComponent;
+        if (!component.hasParam('no_connect')) {
+            continue;
+        }
+
+        const instanceName = component.getUnit().instanceName;
+        const edges = graph.nodeEdges(node) as Edge[];
+        const reportedNets = new Set<Net>();
+
+        edges.forEach(edge => {
+            const edgeInfo = graph.edge(edge.v, edge.w);
+            let targetComponentName: string;
+            let targetPin: PinId;
+
+            if (edge.v === instanceName) {
+                targetComponentName = edge.w;
+                targetPin = edgeInfo[3];
+            } else {
+                targetComponentName = edge.v;
+                targetPin = edgeInfo[1];
+            }
+
+            const net = pinMapping.get(
+                makeComponentPinHash(targetComponentName, targetPin));
+            if (net === undefined || reportedNets.has(net)) {
+                return;
+            }
+
+            const physicalPins = netPhysicalPins.get(net) ?? [];
+            if (physicalPins.length <= 1) {
+                return;
+            }
+
+            reportedNets.add(net);
+
+            // Report the edge target if it is a physical pin, otherwise the
+            // first physical pin in the net.
+            const [targetComponent, reportPin] = physicalPins.find(
+                ([c, p]) => p.getHashValue() === targetPin.getHashValue()
+                    && c.getUnitForPin(p).instanceName === targetComponentName
+            ) ?? physicalPins[0];
+
+            items.push({
+                type: ERC_Rules.NoConnectOnConnectedPin,
+                instance: component, // The no_connect component
+                target: {
+                    instance: targetComponent,
+                    pin: reportPin
+                }
+            })
+        });
     }
 
     return items;

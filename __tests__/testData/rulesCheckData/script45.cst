@@ -1,0 +1,42 @@
+from "std" import *
+
+bus1 = create bus:
+    name: "my_bus"
+    pins: "A", "B", "C"
+
+bus1_2 = create bus:
+    name: "my_bus"
+    pins: "A", "B", "C"
+
+tmp = create component:
+    pins:
+        1: "pin1", "output"
+        2: "pin2", "output"
+        3: "pin3", "output"
+    arrange:
+        right: 1,2,3
+
+tmp2 = create component:
+    pins:
+        1: "pin1", "input"
+        2: "pin3", "input"
+    arrange:
+        right: 1, 2
+
+at tmp:
+    1: wire right 100 to bus1 pin "A"
+    2: wire right 100 to bus1 pin "B"
+    3: wire right 100 to bus1 pin "C"
+
+at bus1
+wire right 500
+add label("main_bus")
+
+at label("main_bus")
+wire right 500
+to bus1_2
+
+at bus1_2:
+    "A": wire right 100 to tmp2 pin 1
+    "B": wire right 100 to tmp2 pin 2
+    "C": add no_connect()

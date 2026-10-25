@@ -1,0 +1,24 @@
+from "std" import *
+
+tmp = create component:
+    pins: 2
+    arrange:
+        right: 1, 2
+
+tmp2 = create component:
+    pins: 2
+    arrange:
+        left: 1, 2
+
+at tmp:
+    1:
+        wire right 100
+        add label("sig")
+        wire right 100
+        add no_connect()
+    2:
+        wire right 100 to tmp2 pin 1
+
+at tmp2 pin 2
+add no_connect()
+add no_connect()

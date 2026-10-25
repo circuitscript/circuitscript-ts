@@ -63,6 +63,8 @@ describe('ERC rules', () => {
         ['no erc_net_bridge - power_input net still reports no source', 'script42.cst'],
         ['erc_net_bridge - bridged group with no power_output still reports no source', 'script43.cst'],
         ['erc_net_bridge - chained bridges propagate power source', 'script44.cst'],
+        ['no_connect on bus pin with one physical pin on net', 'script45.cst'],
+        ['no_connect with label and duplicate no_connect on single-pin nets', 'script46.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);
