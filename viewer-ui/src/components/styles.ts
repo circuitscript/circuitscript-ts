@@ -88,6 +88,30 @@ body {
 	line-height: 1;
 }
 
+#search-box {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+#search-input {
+	height: 26px;
+	box-sizing: border-box;
+	font-size: 14px;
+	padding: 0 6px;
+	width: 160px;
+	border: 1px solid var(--cs-border);
+	border-radius: 3px;
+	background: var(--cs-surface);
+	color: inherit;
+}
+
+#search-count {
+	font-size: 12px;
+	color: var(--cs-text-muted);
+	white-space: nowrap;
+}
+
 .toolbar-btn:hover:not(:disabled) {
 	background: var(--cs-surface-hover);
 }
@@ -189,6 +213,14 @@ body {
     .toolbar-btn {
         padding: 4px 6px;
     }
+
+	#search-box {
+		flex: 1 1 100%;
+	}
+
+	#search-input {
+		flex: 1;
+	}
 
 	.dropdown-toggle {
         padding: 4px 6px;

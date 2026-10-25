@@ -4,10 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { FunctionComponent } from 'preact';
 import type { ComponentMeta, ExportType, FrameMeta, PreviewTransport } from '../types';
 import { buildNetKey } from '../lib/net';
+import { searchRefdes } from '../lib/search';
 import { previewStyles } from './styles';
 import { Toolbar } from './Toolbar';
 import { Viewport, type ViewportHandle } from './Viewport';
@@ -80,6 +81,62 @@ export const PreviewApp: FunctionComponent<PreviewAppProps> = ({
     [framesById, onFrameSelect]
   );
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchedQuery, setSearchedQuery] = useState<string | null>(null);
+  const [resultIndex, setResultIndex] = useState(-1);
+
+  const results = useMemo(
+    () => (searchedQuery ? searchRefdes(componentsById, searchedQuery) : []),
+    [componentsById, searchedQuery]
+  );
+
+  // Live reload: keep the index within the new result list, no auto-jump.
+  useEffect(() => {
+    if (resultIndex >= results.length) {
+      setResultIndex(results.length - 1);
+    }
+  }, [results, resultIndex]);
+
+  const jumpTo = useCallback((list: string[], index: number) => {
+    setResultIndex(index);
+    setSelectedDomId(list[index]);
+    setSelectedFrameDomId(null);
+    viewportRef.current?.centerOn(list[index]);
+  }, []);
+
+  const stepResult = useCallback(
+    (delta: number) => {
+      if (results.length === 0) return;
+      const base = resultIndex < 0 ? 0 : resultIndex;
+      jumpTo(results, (base + delta + results.length) % results.length);
+    },
+    [results, resultIndex, jumpTo]
+  );
+
+  const handleSearchQueryChange = useCallback((q: string) => {
+    setSearchQuery(q);
+    if (!q.trim()) {
+      setSearchedQuery(null);
+      setResultIndex(-1);
+    }
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    if (q === searchedQuery) {
+      stepResult(1);
+      return;
+    }
+    const list = searchRefdes(componentsById, q);
+    setSearchedQuery(q);
+    if (list.length > 0) {
+      jumpTo(list, 0);
+    } else {
+      setResultIndex(-1);
+    }
+  }, [searchQuery, searchedQuery, componentsById, stepResult, jumpTo]);
+
   const hasActiveFile = !!activeDocumentFilePath && activeDocumentFilePath.trim() !== '';
 
   return (
@@ -102,6 +159,14 @@ export const PreviewApp: FunctionComponent<PreviewAppProps> = ({
         onRunErc={() => {
           transport.runErcCheck();
         }}
+        searchQuery={searchQuery}
+        onSearchQueryChange={handleSearchQueryChange}
+        resultCount={results.length}
+        currentResultIndex={resultIndex}
+        hasSearched={searchedQuery !== null}
+        onSearchSubmit={handleSearchSubmit}
+        onSearchPrev={() => stepResult(-1)}
+        onSearchNext={() => stepResult(1)}
       />
       <div id="svg-view-area">
         {error && errorIsHtml && (

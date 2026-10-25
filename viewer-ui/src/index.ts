@@ -10,6 +10,7 @@ export * from './lib/zoom';
 export * from './lib/net';
 export * from './lib/bbox';
 export * from './lib/panelData';
+export * from './lib/search';
 export * from './components/PreviewApp';
 export * from './components/Toolbar';
 export * from './components/Viewport';

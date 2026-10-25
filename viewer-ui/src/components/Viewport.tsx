@@ -14,6 +14,7 @@ import { positionHighlight, positionBoundsRect, type BboxCache } from '../lib/bb
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const NET_HIGHLIGHT_CLASS = 'cs-net-highlighted';
 const FRAME_HIGHLIGHT_COLOR = '#9c27b0';
+const MIN_JUMP_SCALE = 0.5;
 
 function makeHighlightRect(): SVGRectElement {
   const rect = document.createElementNS(SVG_NS, 'rect');
@@ -41,6 +42,7 @@ export interface ViewportHandle {
   zoomIn(): void;
   zoomOut(): void;
   zoomFit(): void;
+  centerOn(domId: string): void;
   highlightNet(netKey: string): void;
   clearNetHighlight(): void;
 }
@@ -203,10 +205,44 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
     refreshHighlightPositions();
   }, [applyTransform, refreshHighlightPositions]);
 
-  useImperativeHandle(ref, () => ({ zoomIn, zoomOut, zoomFit, highlightNet, clearNetHighlight }), [
+  // Centers the viewport on a component using screen-space rects, which
+  // avoids reproducing the sheet/group transforms. Raises zoom to
+  // MIN_JUMP_SCALE if currently below it.
+  const centerOn = useCallback(
+    (domId: string) => {
+      const el = panZoomRef.current?.querySelector(`#${CSS.escape(domId)}`);
+      const vp = viewportRef.current;
+      if (!el || !vp) return;
+      const er = el.getBoundingClientRect();
+      const vr = vp.getBoundingClientRect();
+      const offX = er.left + er.width / 2 - (vr.left + vr.width / 2);
+      const offY = er.top + er.height / 2 - (vr.top + vr.height / 2);
+      let nextScale = scaleRef.current;
+      let nextTranslate = translateRef.current;
+      let factor = 1;
+      if (nextScale < MIN_JUMP_SCALE) {
+        const next = zoomBy(nextScale, nextTranslate, MIN_JUMP_SCALE / nextScale, {
+          x: vr.width / 2,
+          y: vr.height / 2,
+        });
+        factor = next.scale / nextScale;
+        nextScale = next.scale;
+        nextTranslate = next.translate;
+      }
+      applyTransform(nextScale, {
+        x: nextTranslate.x - offX * factor,
+        y: nextTranslate.y - offY * factor,
+      });
+      refreshHighlightPositions();
+    },
+    [applyTransform, refreshHighlightPositions]
+  );
+
+  useImperativeHandle(ref, () => ({ zoomIn, zoomOut, zoomFit, centerOn, highlightNet, clearNetHighlight }), [
     zoomIn,
     zoomOut,
     zoomFit,
+    centerOn,
     highlightNet,
     clearNetHighlight,
   ]);
