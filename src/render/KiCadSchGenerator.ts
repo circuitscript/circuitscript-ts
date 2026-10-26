@@ -685,6 +685,8 @@ export class KiCadSchGenerator {
             setNotPlaced = true;
         }
 
+        const excludeFromBom = params.has('bom_exclude') && params.get('bom_exclude') === true;
+
         if (params.has('net_name')) {
             // Power component: manually add Reference since there is no refdes label.
             children.push(
@@ -785,7 +787,7 @@ export class KiCadSchGenerator {
             n('at', raw(mm(x)), raw(mm(y)), raw(usePlacementAngle)),
             ...mirrorNodes,
             n('unit', raw(1)),
-            n('in_bom', raw('yes')),
+            n('in_bom', raw(excludeFromBom ? 'no' : 'yes')),
             n('on_board', raw('yes')),
             n('dnp', raw(setNotPlaced ? 'yes' : 'no')),
             ...children

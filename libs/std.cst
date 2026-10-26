@@ -175,6 +175,8 @@ def ind(value):
                 anchor="center", vanchor="center"
         params:
             value: value
+            size: "0402"
+            footprint: "Inductor_SMD:L_0402_1005Metric"
             refdes_offsetx: 0
             refdes_offsety: 0
 

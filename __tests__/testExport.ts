@@ -635,6 +635,48 @@ to spi angle:${a}${f} pin "MOSI"
             expect(l.justify).toBe(BUS_JUSTIFY[l.angle]);
         });
     });
+
+    test('KiCad export maps bom_exclude to in_bom and place to dnp', async () => {
+        const scriptPath = '__tests__/testData/renderData/script129.cst';
+        const script = readFileSync(scriptPath, { encoding: 'utf8' });
+        const { hasError, visitor } = await runScript(script, scriptPath);
+        expect(hasError).toBe(false);
+
+        visitor.applySheetFrameComponent();
+        const { sequence, nets } = visitor.getGraph();
+
+        const documentVariable = visitor.getScope()
+            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+        const styles = getStylesFromDocument(documentVariable);
+
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        graphEngine.setStyles(styles);
+
+        const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+
+        const layoutEngine = new LayoutEngine(logger);
+        const sheetFrames = await layoutEngine.runLayout(graph, containerFrames, nets);
+
+        const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
+        const { output } = generator.generate(visitor, sheetFrames, 'script129')[0];
+        // Strip escape characters so quoted values can be matched directly.
+        const outputText = printTree(output).replace(/\\/g, '');
+
+        // Scope to the placed symbol block that holds each Reference.
+        const blockFor = (ref: string) => {
+            const refIdx = outputText.indexOf(`(reference "${ref}")`);
+            expect(refIdx).toBeGreaterThan(-1);
+            const start = outputText.lastIndexOf('(in_bom', refIdx);
+            return outputText.substring(start, outputText.indexOf('(dnp', start) + 10);
+        };
+        const r1 = blockFor('R1');
+        expect(r1).toContain('(in_bom no)');
+        expect(r1).toContain('(dnp no)');
+        const r2 = blockFor('R2');
+        expect(r2).toContain('(in_bom yes)');
+        expect(r2).toContain('(dnp yes)');
+    });
 });
 
 const script = `

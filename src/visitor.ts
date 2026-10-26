@@ -671,6 +671,7 @@ export class ParserVisitor extends BaseVisitor {
                             this.validateString(value, ctx);
                             break;
                         case 'place':
+                        case 'bom_exclude':
                             this.validateBoolean(value, ctx);
                             break;
 

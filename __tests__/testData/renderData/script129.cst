@@ -1,0 +1,12 @@
+from "std" import *
+gnd = dgnd()
+
+at supply("5V")
+wire down 100
+add R1 = res(10k)
+..bom_exclude = true
+wire down 100
+add R2 = res(20k)
+..place = false
+wire down 100
+to gnd

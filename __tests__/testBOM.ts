@@ -53,4 +53,21 @@ describe('BOM generation', () => {
         expect(affectedRefdes).toContain('R2');
     });
 
+    test.each([true, false])('bom_exclude removes part from BOM and unplaced list (only_placed=%s)', async (onlyPlaced) => {
+        const { bomResult } = await renderCommon(mainPath + 'script7.cst', {
+            generateBom: true,
+            bomConfig: {
+                columns: ['refdes', 'value', 'footprint'],
+                group_by: ['value', 'footprint'],
+                only_placed: onlyPlaced,
+            },
+        });
+        const refdes = JSON.stringify(bomResult!.bom);
+        expect(refdes).not.toContain('R2');
+        expect(bomResult!.unplacedItems).not.toContain('R2');
+        expect(bomResult!.unplacedItems.includes('R3')).toBe(onlyPlaced);
+        expect(refdes).toContain('R1');
+        expect(refdes.includes('R3')).toBe(!onlyPlaced);
+    });
+
 });

@@ -350,6 +350,38 @@ to gnd
         expect(item2.parameters.get('place')).toBe(true);
     });
 
+    test('bom_exclude double dot parameter', async () => {
+        const script = `
+from "std" import *
+at net("5V")
+wire down 20
+add res(10k)
+..bom_exclude = true
+wire down 20
+to dgnd()
+`;
+        const { hasError, visitor } = await runScript(script);
+        expect(hasError).toBe(false);
+        const instances = visitor.dumpInstances();
+        const item = findItem(instances, 'res', 'R1', 'numeric:10k');
+        expect(item.parameters.get('bom_exclude')).toBe(true);
+    });
+
+    test('bom_exclude in component definition must be boolean', async () => {
+        const script = `
+from "std" import *
+def part():
+    return create component:
+        pins: 1
+        params:
+            bom_exclude: "yes"
+
+at part()
+`;
+        const { hasError } = await runScript(script);
+        expect(hasError).toBe(true);
+    });
+
     test('instance assignment syntax', async () => {
 
         const script = `

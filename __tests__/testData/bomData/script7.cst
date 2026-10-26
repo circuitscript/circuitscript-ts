@@ -1,0 +1,15 @@
+from "std" import *
+
+document.bom.columns = ["refdes", "value", "footprint"]
+document.bom.group_by = ["value", "footprint"]
+
+at res(10k) #= R1
+..footprint = "Resistor_SMD:R_0603_1005Metric"
+
+at res(20k) #= R2
+..footprint = "Resistor_SMD:R_0603_1005Metric"
+..bom_exclude = true
+
+at res(30k) #= R3
+..footprint = "Resistor_SMD:R_0603_1005Metric"
+..place = false

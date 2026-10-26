@@ -158,6 +158,11 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
 
     instances.forEach(instance => {
         if (instance.assignedRefDes !== null) {
+            // Excluded parts are neither rows nor unplaced items.
+            if (instance.hasParam('bom_exclude') && instance.getParam('bom_exclude') === true) {
+                return;
+            }
+
             // Refdes is always included.
             const row = {
                 '.type': instance.typeProp,
