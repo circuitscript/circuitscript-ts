@@ -236,6 +236,8 @@ type RenderCommonOptions = {
         columns: string[],
         group_by: string[],
         only_placed?: boolean,
+        display_name_qty?: string,
+        display_name_refdes?: string,
     },
     skipAnnotation?: boolean,
 }
@@ -284,7 +286,7 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     let bomResult: BomGenerationResult | undefined;
     if (generateBomOption) {
         bomResult = generateBom(options.bomConfig, visitor.getScope().getInstances());
-        bomCsvOutput = generateBomCSV(bomResult.bom);
+        bomCsvOutput = generateBomCSV(bomResult.bom, options.bomConfig);
     }
 
     return {

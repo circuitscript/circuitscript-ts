@@ -328,7 +328,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             const bomConfig = documentVariable.bom;
             const { bom: bomData } = generateBom(bomConfig, visitor.getScope().getInstances(), true);
 
-            const bomCsvOutput = generateBomCSV(bomData);
+            const bomCsvOutput = generateBomCSV(bomData, bomConfig);
             await saveBomOutputCsv(environment, bomCsvOutput, bomOutputPath);
             console.log('Generated BOM file', bomOutputPath);
         }

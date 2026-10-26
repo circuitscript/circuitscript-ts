@@ -20,7 +20,16 @@ export type BomConfig = {
 
     // If true, only display placed items in the BOM.
     only_placed?: boolean,
+
+    // Header text for the "qty" column. Defaults to "Qty".
+    display_name_qty?: string,
+
+    // Header text for the "refdes" column. Defaults to "Refdes".
+    display_name_refdes?: string,
 }
+
+export const BomQtyKey = 'qty';
+export const BomRefdesKey = 'refdes';
 
 type BomExtractionResult = {
     resultRows: Record<string, unknown>[],
@@ -57,6 +66,14 @@ export function generateBom(
     instances: ClassComponent[],
     verbose = false
 ): BomGenerationResult {
+    for (const name of ['display_name_qty', 'display_name_refdes'] as const) {
+        const displayName = bomConfig[name];
+        if (displayName !== undefined &&
+            (typeof displayName !== 'string' || displayName.length === 0)) {
+            throw new RuntimeExecutionError(`Invalid ${name}: expected a non-empty string`);
+        }
+    }
+
     const { resultRows, unplacedItems, missingValues } = extractComponentValuesForBom(bomConfig, instances);
 
     // Sort all items by natural order first, then by the type.
@@ -67,10 +84,14 @@ export function generateBom(
     const groupedBom: Record<string, unknown>[] = [];
     tmpGroupedComponents.forEach(value => {
         const useParams = mergeComponentParams(value.items);
-        groupedBom.push({
+        const row: Record<string, unknown> = {
             ...useParams,
             refdes: value.allRefdes.join(', ')
-        });
+        };
+        if (bomConfig.columns.includes(BomQtyKey)) {
+            row[BomQtyKey] = value.items.length;
+        }
+        groupedBom.push(row);
     });
 
     // Sort the items by refdes
@@ -178,8 +199,13 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
                 columns.forEach(paramKey => {
                     let useValue: any = undefined;
 
-                    if (paramKey === 'refdes') {
+                    if (paramKey === BomRefdesKey) {
                         useValue = instance.assignedRefDes;
+
+                    } else if (paramKey === BomQtyKey) {
+                        // Placeholder so the key keeps its position in columns;
+                        // the real count is set per group in generateBom.
+                        useValue = 1;
 
                     } else {
                         if (instance.hasParam(paramKey)) {
@@ -237,7 +263,15 @@ function resolveValuesInTemplate(instance: ClassComponent, templateString: strin
     });
 }
 
-export function generateBomCSV(bomData: Record<string, GroupEntry>[]): string[][] {
+export function generateBomCSV(
+    bomData: Record<string, GroupEntry>[],
+    bomConfig?: Pick<BomConfig, 'display_name_qty' | 'display_name_refdes'>,
+): string[][] {
+    const displayNames: Record<string, string | undefined> = {
+        [BomQtyKey]: bomConfig?.display_name_qty,
+        [BomRefdesKey]: bomConfig?.display_name_refdes,
+    };
+
     // extract headers from the first record
     const useHeaders: string[] = [];
     const rows:string[][] = [];
@@ -250,8 +284,11 @@ export function generateBomCSV(bomData: Record<string, GroupEntry>[]): string[][
             if (key.startsWith('.')) {
                 continue;
             }
-            // Capitalize the first char
-            const useKey = key[0].toUpperCase() + key.substring(1);
+            // Custom display names are used verbatim, otherwise capitalize
+            const custom = displayNames[key];
+            const useKey = (typeof custom === 'string' && custom.length > 0)
+                ? custom
+                : key[0].toUpperCase() + key.substring(1);
             useHeaders.push(useKey);
         }
     }

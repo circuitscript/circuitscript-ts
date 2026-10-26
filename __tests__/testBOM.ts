@@ -1,3 +1,4 @@
+import { RuntimeExecutionError } from "../src/errors";
 import { expectJsonOutput, renderCommon } from "./helpers";
 
 const mainPath = '__tests__/testData/bomData/';
@@ -68,6 +69,65 @@ describe('BOM generation', () => {
         expect(bomResult!.unplacedItems.includes('R3')).toBe(onlyPlaced);
         expect(refdes).toContain('R1');
         expect(refdes.includes('R3')).toBe(!onlyPlaced);
+    });
+
+    const qtyBase = { columns: ['refdes', 'qty', 'mpn', 'manufacturer'], group_by: ['mpn', 'manufacturer'] };
+
+    test('qty column counts grouped items', async () => {
+        const { bomCsvOutput } = await renderCommon(mainPath + 'script1.cst', {
+            generateBom: true, bomConfig: qtyBase,
+        });
+        expect(bomCsvOutput[0]).toEqual(['Refdes', 'Qty', 'Mpn', 'Manufacturer']);
+        expectJsonOutput(JSON.stringify(bomCsvOutput), `${mainPath}expected/script1_qty.cst.json`);
+    });
+
+    test('display_name_qty overrides qty header', async () => {
+        const { bomCsvOutput } = await renderCommon(mainPath + 'script1.cst', {
+            generateBom: true, bomConfig: { ...qtyBase, display_name_qty: 'Quantity' },
+        });
+        expect(bomCsvOutput[0]).toEqual(['Refdes', 'Quantity', 'Mpn', 'Manufacturer']);
+    });
+
+    test('qty as last column has no missing values', async () => {
+        const { bomCsvOutput, bomResult } = await renderCommon(mainPath + 'script1.cst', {
+            generateBom: true,
+            bomConfig: { columns: ['refdes', 'mpn', 'manufacturer', 'qty'], group_by: ['mpn', 'manufacturer'] },
+        });
+        expect(bomCsvOutput[0]).toEqual(['Refdes', 'Mpn', 'Manufacturer', 'Qty']);
+        expect([...bomResult!.missingValues.keys()].join()).not.toContain('qty');
+    });
+
+    test('display_name_refdes overrides refdes header only', async () => {
+        const base = { columns: ['refdes', 'mpn', 'manufacturer'], group_by: ['mpn', 'manufacturer'] };
+        const plain = await renderCommon(mainPath + 'script1.cst', { generateBom: true, bomConfig: base });
+        const named = await renderCommon(mainPath + 'script1.cst', {
+            generateBom: true, bomConfig: { ...base, display_name_refdes: 'Reference' },
+        });
+        expect(named.bomCsvOutput[0]).toEqual(['Reference', 'Mpn', 'Manufacturer']);
+        expect(named.bomCsvOutput.slice(1)).toEqual(plain.bomCsvOutput.slice(1));
+    });
+
+    test('both display names keep grouping and refdes cells', async () => {
+        const plain = await renderCommon(mainPath + 'script1.cst', { generateBom: true, bomConfig: qtyBase });
+        const named = await renderCommon(mainPath + 'script1.cst', {
+            generateBom: true,
+            bomConfig: { ...qtyBase, display_name_qty: 'Quantity', display_name_refdes: 'Reference' },
+        });
+        expect(named.bomCsvOutput[0]).toEqual(['Reference', 'Quantity', 'Mpn', 'Manufacturer']);
+        expect(named.bomCsvOutput.slice(1)).toEqual(plain.bomCsvOutput.slice(1));
+        expect(named.bomCsvOutput.map(r => r[0])).toContain('R2, R3');
+    });
+
+    test.each([
+        ['display_name_qty', ''],
+        ['display_name_qty', 5],
+        ['display_name_refdes', ''],
+        ['display_name_refdes', 5],
+    ])('invalid %s (%p) throws', async (key, value) => {
+        await expect(renderCommon(mainPath + 'script1.cst', {
+            generateBom: true,
+            bomConfig: { ...qtyBase, [key]: value } as any,
+        })).rejects.toThrow(RuntimeExecutionError);
     });
 
 });
