@@ -128,6 +128,11 @@ export class ParseErrorStrategy extends DefaultErrorStrategy {
     }
 }
 
+export interface BomWarnings {
+    unplacedItems: string[],
+    missingValues: Record<string, string[]>,
+}
+
 export type RenderScriptReturn = {
     /* The SVG, HTML, or interactive SVG string requested via `outputReturnType`
        ('svg', 'html', or 'data-svg' respectively), or "" if nothing was generated. */
@@ -143,6 +148,9 @@ export type RenderScriptReturn = {
        current directory. Set even when the render has errors. */
     importedFiles?: string[],
     ercResults?: ERCReportItem[],
+    /* Header row followed by data rows, set when `enableBom` is true and the render has no errors. */
+    bomTable?: string[][],
+    bomWarnings?: BomWarnings,
     nets?: ComponentPinNet[],
     scenarioResults?: string[],
     scenarioFailureCount?: number,

@@ -16,6 +16,7 @@ import { NodeScriptEnvironment } from "./environment/environment.js";
 import { defaultZoomScale, GlobalDocumentName, FrameType } from "./globals.js";
 import { NetGraph } from "./render/graph.js";
 import { ScriptOptions, RenderScriptReturn } from "./helpers.js";
+import type { BomWarnings } from "./helpers.js";
 import { LayoutEngine } from "./render/layout.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
@@ -283,6 +284,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     let frameMeta: FrameMeta[] | null = null;
     let dataSvgOutput: string | null = null;
     let ercResults: ERCReportItem[] = [];
+    let bomTable: string[][] | undefined;
+    let bomWarnings: BomWarnings | undefined;
 
     if (errors.length === 0 && throwError === undefined){
         const { frameComponent } = visitor.applySheetFrameComponent();
@@ -324,13 +327,24 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         const documentVariable = visitor.getScope()
             .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
 
-        if (enableBom && bomOutputPath) {
+        if (enableBom) {
             const bomConfig = documentVariable.bom;
-            const { bom: bomData } = generateBom(bomConfig, visitor.getScope().getInstances(), true);
-
-            const bomCsvOutput = generateBomCSV(bomData, bomConfig);
-            await saveBomOutputCsv(environment, bomCsvOutput, bomOutputPath);
-            console.log('Generated BOM file', bomOutputPath);
+            // Console warnings only for the CLI/export path.
+            const verbose = !!bomOutputPath;
+            const { bom: bomData, unplacedItems, missingValues } =
+                generateBom(bomConfig, visitor.getScope().getInstances(), verbose);
+            // generateBomCSV keeps raw cell values (qty is a number).
+            bomTable = generateBomCSV(bomData, bomConfig)
+                .map(row => row.map(cell => String(cell ?? '')));
+            bomWarnings = {
+                unplacedItems: [...unplacedItems].sort(),
+                missingValues: Object.fromEntries(
+                    [...missingValues].map(([k, v]) => [k, [...v].sort()])),
+            };
+            if (bomOutputPath) {
+                await saveBomOutputCsv(environment, bomTable, bomOutputPath);
+                console.log('Generated BOM file', bomOutputPath);
+            }
         }
 
         const tmpSequence = generateDebugSequenceAction(sequence).map(item => sequenceActionString(item));
@@ -595,6 +609,11 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     if (enableErc && ercResults) {
         results.ercResults = ercResults;
+    }
+
+    if (bomTable) {
+        results.bomTable = bomTable;
+        results.bomWarnings = bomWarnings;
     }
 
     if (dumpedNets) {
