@@ -1,0 +1,9 @@
+from "std" import *
+gnd = dgnd()
+at gnd
+wire up 100
+add res(1k) #= R1
+wire up 100
+add res(2k) #= R1
+wire up 100
+add res(3k)

@@ -3073,7 +3073,12 @@ export class ParserVisitor extends BaseVisitor {
     annotateComponents(simplifyRefdes = true): void {
         this.log('===== annotate components =====');
 
-        const annotater = new ComponentAnnotater();
+        // Show paths relative to the main script's folder
+        const mainFile = this.filePathStack[0];
+        const annotater = mainFile
+            ? new ComponentAnnotater(filePath => this.environment.relative(
+                this.environment.dirname(mainFile), filePath))
+            : new ComponentAnnotater();
         const instances = this.getScope().instances;
         const toAnnotate: ClassComponent[] = [];
 
@@ -3097,7 +3102,7 @@ export class ParserVisitor extends BaseVisitor {
                         instance.assignedRefDes = refdes;
                         this.setComponentUnitRefdesSuffix(instance);
                         
-                        annotater.trackRefDes(refdes);
+                        annotater.trackRefDes(refdes, instance);
                         this.log(refdes, '-', instance.instanceName);
                         continue;
                     }
@@ -3106,6 +3111,16 @@ export class ParserVisitor extends BaseVisitor {
                 toAnnotate.push(instance);
             }
         }
+
+        // Reserve placeholder prefixes after all explicit refdes are tracked.
+        toAnnotate.forEach(instance => {
+            const first = instance.ctxReferences[0];
+            if (instance.placeHolderRefDes && first
+                && first.indexedStack.length > 0 && first.creationFlag) {
+                annotater.reservePlaceholder(
+                    instance.placeHolderRefDes.replaceAll('_', ''), instance);
+            }
+        });
 
         toAnnotate.forEach(instance => {
             const newRefDes = annotater.getAnnotation(instance);
@@ -3122,10 +3137,14 @@ export class ParserVisitor extends BaseVisitor {
         if (simplifyRefdes) {
             // Simplify indexed refdes that only have one instance (e.g. R1_1 → R1).
             const simplifications = annotater.getIndexedRefdesSimplifications();
+            const assignedNames = new Set<string>();
+            for (const [, instance] of instances) {
+                if (instance.assignedRefDes) assignedNames.add(instance.assignedRefDes);
+            }
             if (simplifications.size > 0) {
                 for (const [, instance] of instances) {
                     const simplified = simplifications.get(instance.assignedRefDes ?? '');
-                    if (simplified !== undefined) {
+                    if (simplified !== undefined && !assignedNames.has(simplified)) {
                         this.log(`Simplify refdes: ${instance.assignedRefDes} → ${simplified}`);
                         instance.assignedRefDes = simplified;
                         this.setComponentUnitRefdesSuffix(instance);
