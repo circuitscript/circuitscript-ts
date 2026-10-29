@@ -172,6 +172,7 @@ graphics_data_expressions_block:
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                          # GraphicForExpr
               | If data_expr Colon graphic_expressions_block if_inner_graphic_expr* else_graphic_expr? # GraphicIfExpr
               | ID Colon graphics_data_expressions_block                                               # GraphicPreExpr
+              | ID Colon parameters graphic_expressions_block                                           # GraphicTableExpr
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)    # GraphicCommandExpr
               ;
 

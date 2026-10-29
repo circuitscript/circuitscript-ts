@@ -66,6 +66,7 @@ import {
     If_inner_graphic_exprContext,
     Else_graphic_exprContext,
     GraphicPreExprContext,
+    GraphicTableExprContext,
     Graphics_data_expressions_blockContext
 } from './antlr/CircuitScriptParser.js';
 
@@ -758,7 +759,8 @@ export class ParserVisitor extends BaseVisitor {
                 const [commandName, parameters] =
                     this.visitResult(item) as [string, CallableParameter[]];
                     
-                if (commandName === PlaceHolderCommands.for || commandName === PlaceHolderCommands.if) {
+                if (commandName === PlaceHolderCommands.for || commandName === PlaceHolderCommands.if
+                    || commandName === PlaceHolderCommands.table) {
                     accum = accum.concat(parameters);
                 } else {
                     const keywordParams = new Map<string, any>();
@@ -935,6 +937,161 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         this.setResult(ctx, [PlaceHolderCommands.if, commands]);
+    }
+
+    visitGraphicTableExpr = (ctx: GraphicTableExprContext): void => {
+        const tableName = ctx.ID().getText();
+        if (tableName !== PlaceHolderCommands.table) {
+            this.throwWithContext(ctx,
+                "Invalid graphic command with a block: " + tableName);
+        }
+
+        const textStyleKeys = ['font_size', 'bold', 'italic', 'anchor',
+            'vanchor', 'text_color'];
+        const tableKeys = ['col_widths', 'row_height', 'padding',
+            ...textStyleKeys];
+
+        const parameters = this.visitResult(ctx.parameters()) as unknown as CallableParameter[];
+        const positionArgs: any[] = [];
+        const tableKwargs = new Map<string, any>();
+        parameters.forEach(([argType, name, value]) => {
+            if (argType === 'position') {
+                positionArgs.push(value);
+            } else {
+                if (!tableKeys.includes(name as string)) {
+                    this.throwWithContext(ctx,
+                        `Unknown table parameter: ${name}`);
+                }
+                tableKwargs.set(name as string, value);
+            }
+        });
+
+        if (positionArgs.length !== 2) {
+            this.throwWithContext(ctx,
+                "table: requires exactly two positional arguments (x, y)");
+        }
+
+        const [tableX, tableY] = positionArgs as NumericValue[];
+        const colWidths = tableKwargs.get('col_widths') as NumericValue[] | undefined;
+        if (!Array.isArray(colWidths) || colWidths.length === 0) {
+            this.throwWithContext(ctx,
+                "table: `col_widths` is required and must be a non-empty list");
+        }
+
+        const toNumeric = (value: unknown, name: string): NumericValue => {
+            if (value instanceof NumericValue) {
+                return value;
+            }
+            this.throwWithContext(ctx, `table: \`${name}\` must be a number`);
+            throw new Error('unreachable');
+        };
+
+        const widths = colWidths!.map(w => toNumeric(w, 'col_widths'));
+        const rowHeight = tableKwargs.has('row_height') ?
+            toNumeric(tableKwargs.get('row_height'), 'row_height') : numeric(100);
+        const padding = tableKwargs.has('padding') ?
+            toNumeric(tableKwargs.get('padding'), 'padding') : numeric(20);
+
+        const tableTextStyle = new Map<string, any>();
+        textStyleKeys.forEach(key => {
+            if (tableKwargs.has(key)) {
+                tableTextStyle.set(key, tableKwargs.get(key));
+            }
+        });
+        if (!tableTextStyle.has('anchor')) {
+            tableTextStyle.set('anchor', 'left');
+        }
+        if (!tableTextStyle.has('vanchor')) {
+            tableTextStyle.set('vanchor', 'center');
+        }
+
+        const rowCommands = this.visitResult(
+            ctx.graphic_expressions_block()) as GraphicExprCommand[];
+
+        rowCommands.forEach(([name,,, item]) => {
+            if (name !== 'row' && name !== 'header') {
+                this.throwWithContext(item ?? ctx,
+                    "Only `row` and `header` are allowed inside a table");
+            }
+        });
+
+        // Column left edges
+        const colX: NumericValue[] = [];
+        let runningX = tableX;
+        widths.forEach(w => {
+            colX.push(runningX);
+            runningX = runningX.add(w);
+        });
+        const totalWidth = runningX.sub(tableX);
+        const nrows = rowCommands.length;
+        const totalHeight = rowHeight.mul(nrows);
+
+        const lowered: GraphicExprCommand[] = [];
+        const noKw = () => new Map<string, any>();
+
+        for (let i = 0; i <= nrows; i++) {
+            lowered.push([PlaceHolderCommands.hline,
+                [tableX, tableY.add(rowHeight.mul(i)), totalWidth], noKw(), ctx]);
+        }
+        for (let j = 0; j <= widths.length; j++) {
+            const lineX = j < widths.length ? colX[j] : runningX;
+            lowered.push([PlaceHolderCommands.vline,
+                [lineX, tableY, totalHeight], noKw(), ctx]);
+        }
+
+        const cellToString = (value: unknown): string => {
+            if (value instanceof NumericValue) {
+                return value.toDisplayString();
+            }
+            return String(value);
+        };
+
+        rowCommands.forEach(([name, cells, rowKwargs, item], rowIndex) => {
+            rowKwargs.forEach((_value, key) => {
+                if (!textStyleKeys.includes(key)) {
+                    this.throwWithContext(item ?? ctx,
+                        `Unknown ${name} parameter: ${key}`);
+                }
+            });
+
+            if (cells.length > widths.length) {
+                this.throwWithContext(item ?? ctx,
+                    `Too many cells in ${name}: ${cells.length} cells but only ` +
+                    `${widths.length} columns`);
+            }
+
+            const style = new Map(tableTextStyle);
+            if (name === 'header') {
+                style.set('bold', true);
+            }
+            rowKwargs.forEach((value, key) => style.set(key, value));
+
+            const anchor = style.get('anchor');
+            const rowMiddle = tableY.add(rowHeight.mul(rowIndex)).add(rowHeight.half());
+
+            cells.forEach((cell, colIndex) => {
+                const content = cellToString(cell);
+                if (content === '') {
+                    return;
+                }
+
+                let cellX: NumericValue;
+                if (anchor === 'center') {
+                    cellX = colX[colIndex].add(widths[colIndex].half());
+                } else if (anchor === 'right') {
+                    cellX = colX[colIndex].add(widths[colIndex]).sub(padding);
+                } else {
+                    cellX = colX[colIndex].add(padding);
+                }
+
+                const kw = new Map<string, any>(style);
+                kw.set('content', content);
+                kw.set('offset', [cellX, rowMiddle]);
+                lowered.push([PlaceHolderCommands.text, [], kw, item]);
+            });
+        });
+
+        this.setResult(ctx, [PlaceHolderCommands.table, lowered]);
     }
 
     visitGraphicPreExpr = (ctx: GraphicPreExprContext): void => {

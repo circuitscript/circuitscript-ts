@@ -103,6 +103,20 @@ def mk():
         expect(control).toEqual(['--.mk_sym.y']);
     });
 
+    test('graphic table: loop variable in row is not undefined', async () => {
+        const result = await undefinedOf(`
+def mk(rows):
+    return create component:
+        pins: 1
+        display: create graphic (params):
+            table: 0, 0, col_widths=[100, 100]
+                header: "a", "b"
+                for item in rows:
+                    row: item, item
+`);
+        expect(result).toEqual([]);
+    });
+
     test('graphic body reports undefined names', async () => {
         const wrap = (body: string, params = '(params)') => `
 def mk():

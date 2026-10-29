@@ -173,7 +173,8 @@ describe('Render tests', () => {
         // imports script127-import.cst from the same folder
         ['script127.cst', 'sheet closes the active frame properly'],
 
-        ['script128.cst', 'Label function font_size and color parameters']
+        ['script128.cst', 'Label function font_size and color parameters'],
+        ['script130.cst', 'Graphic table: command']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
@@ -519,5 +520,25 @@ describe('Render tests', () => {
         const messages = visitor.getWarnings().map(warning => warning.message);
         expect(messages).not.toContainEqual(
             expect.stringMatching(/Unknown frame property/));
+    });
+
+    test('graphic table: header text is bold and row text is not', async () => {
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + 'script130.cst');
+        const styles = getStylesFromDocument(documentVariable);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames,
+            new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+        const textTag = (label: string): string => {
+            const match = new RegExp(
+                `<text[^>]*>(?:(?!</text>)[\\s\\S])*?>${label}</tspan>`).exec(svgOutput);
+            expect(match).not.toBeNull();
+            return match![0];
+        };
+
+        expect(textTag('TBL_Ref')).toMatch(/font-weight="bold"/);
+        expect(textTag('TBL_R1')).not.toMatch(/font-weight="bold"/);
+        expect(textTag('TBL_Plain')).not.toMatch(/font-weight="bold"/);
+        expect(svgOutput).toContain('TBL_C3');
     });
 });

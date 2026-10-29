@@ -226,6 +226,29 @@ TDB
 ### Drawing/graphics
 - KiCAD output?
 
+#### `table:` in `create graphic`
+Draws a grid with text cells. It is lowered into `hline`, `vline` and `text` commands.
+
+```
+table: x, y, col_widths=[400, 200, 200], row_height=100, padding=20, \
+        font_size=40, anchor="left", vanchor="center"
+    header: "Ref", "Value", "Qty"
+    for ref, value, qty in bom_rows:
+        row: ref, value, qty
+```
+
+| Param | Kind | Default | Meaning |
+|---|---|---|---|
+| `x`, `y` | positional, required | - | top-left corner |
+| `col_widths` | keyword, required | - | list of column widths |
+| `row_height` | keyword | 100 | height of every row |
+| `padding` | keyword | 20 | cell inset for `left`/`right` anchors |
+| `font_size`, `bold`, `italic`, `anchor`, `vanchor`, `text_color` | keyword | `anchor="left"`, `vanchor="center"` | default cell text style |
+
+`row:` and `header:` take one positional value per cell, and the keywords `bold`, `italic`, `font_size`, `anchor`, `vanchor`, `text_color` to override the table style for that row. `header:` is a `row:` with `bold=true` by default. Only `row:` and `header:` are allowed in the body, and `for`/`if` may wrap them. Rows run downward from `y`. Fewer cells than columns leaves the rest blank; more is an error.
+
+`fill`, `line_color` and `line_width` are not table parameters; set them with the existing commands before `table:`.
+
 # New ideas:
 - object for bundle/harnesses
 ### `before` command

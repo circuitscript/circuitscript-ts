@@ -1,0 +1,22 @@
+# Graphic table: command lowered into lines and text.
+
+def mk_table():
+    return create component:
+        pins: 1
+        copy: true
+        display: create graphic (params):
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            table: 0, 50, col_widths=[400, 200, 200], row_height=100, padding=20, \
+                    font_size=40
+                header: "TBL_Ref", "TBL_Value", "TBL_Qty"
+                for ref, val, qty in [["TBL_R1", "10k", 2], ["TBL_R2", "20k", 3]]:
+                    row: ref, val, qty
+                header: "TBL_Plain", "TBL_Mid", bold=false
+                row: "TBL_C1", "TBL_C2", "TBL_C3", anchor="center"
+
+c_tbl = mk_table()
+at c_tbl pin 1
+wire left 100
+
+table = 5
+y = table + 1

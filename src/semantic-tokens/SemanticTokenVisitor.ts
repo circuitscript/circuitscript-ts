@@ -12,6 +12,7 @@ import { Function_def_exprContext, CreateComponentExprContext,
     Assignment_exprContext,
     Function_args_exprContext,
     GraphicCommandExprContext,
+    GraphicTableExprContext,
     For_exprContext,
     Annotation_comment_exprContext,
     ScriptContext,
@@ -207,6 +208,12 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Visits graphic expressions for drawing commands
      * Example: circle, rect, line, pin, etc.
      */
+    visitGraphicTableExpr = (ctx: GraphicTableExprContext): void => {
+        this.addSemanticToken(ctx.ID(), [], 'property');
+        this.visit(ctx.parameters());
+        this.visit(ctx.graphic_expressions_block());
+    }
+
     visitGraphicCommandExpr = (ctx: GraphicCommandExprContext): void  => {
         let useValue: TerminalNode | null = null;
 

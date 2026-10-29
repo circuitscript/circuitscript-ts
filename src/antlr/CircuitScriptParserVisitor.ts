@@ -65,6 +65,7 @@ import { Graphics_data_expressions_blockContext } from "./CircuitScriptParser.js
 import { GraphicForExprContext } from "./CircuitScriptParser.js";
 import { GraphicIfExprContext } from "./CircuitScriptParser.js";
 import { GraphicPreExprContext } from "./CircuitScriptParser.js";
+import { GraphicTableExprContext } from "./CircuitScriptParser.js";
 import { GraphicCommandExprContext } from "./CircuitScriptParser.js";
 import { Property_exprContext } from "./CircuitScriptParser.js";
 import { Property_key_exprContext } from "./CircuitScriptParser.js";
@@ -489,6 +490,13 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitGraphicPreExpr?: (ctx: GraphicPreExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `GraphicTableExpr`
+     * labeled alternative in `CircuitScriptParser.graphic_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitGraphicTableExpr?: (ctx: GraphicTableExprContext) => Result;
     /**
      * Visit a parse tree produced by the `GraphicCommandExpr`
      * labeled alternative in `CircuitScriptParser.graphic_expr`.

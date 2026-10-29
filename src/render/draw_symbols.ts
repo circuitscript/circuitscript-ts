@@ -1294,6 +1294,7 @@ export enum PlaceHolderCommands {
     for = 'for',
     if = 'if',
     pre = 'pre',
+    table = 'table',
 }
 
 /** Symbol that is generated only from pin definitions and does not have a 

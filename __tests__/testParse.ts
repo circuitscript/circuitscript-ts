@@ -957,3 +957,62 @@ branch:
 wire down 40    # error should be here
 to c1 pin 1
 `
+
+describe('graphic table: block tests', () => {
+    const wrap = (body: string): string => `
+def mk():
+    return create component:
+        pins: 1
+        display: create graphic (params):
+${body.split('\n').map(l => '            ' + l).join('\n')}
+
+c = mk()
+at c pin 1
+`;
+
+    test('wrong command name with a block is an error', async () => {
+        const message = await runScriptExpectError(wrap(
+            'foo: 0, 0, col_widths=[100]\n    row: "a"'));
+        expect(message).toContain('Invalid graphic command with a block: foo');
+    });
+
+    test('non row/header command inside a table is an error', async () => {
+        const message = await runScriptExpectError(wrap(
+            'table: 0, 0, col_widths=[100]\n    label: "a", 0, 0'));
+        expect(message).toContain('Only `row` and `header` are allowed inside a table');
+    });
+
+    test('missing col_widths is an error', async () => {
+        const message = await runScriptExpectError(wrap(
+            'table: 0, 0\n    row: "a"'));
+        expect(message).toContain('`col_widths` is required');
+    });
+
+    test('unknown table keyword is an error', async () => {
+        const message = await runScriptExpectError(wrap(
+            'table: 0, 0, col_widths=[100], bogus=1\n    row: "a"'));
+        expect(message).toContain('Unknown table parameter: bogus');
+    });
+
+    test('too many cells in a row is an error', async () => {
+        const message = await runScriptExpectError(wrap(
+            'table: 0, 0, col_widths=[100]\n    row: "a", "b"'));
+        expect(message).toContain('Too many cells in row');
+    });
+
+    test('table: outside a graphic is a syntax error', async () => {
+        const { hasError } = await runScript(`
+table: 0, 0, col_widths=[100]
+    row: "a"
+`);
+        expect(hasError).toEqual(true);
+    });
+
+    test('table is an ordinary identifier', async () => {
+        const { hasError } = await runScript(`
+table = 1
+x = table + 1
+`);
+        expect(hasError).toEqual(false);
+    });
+});

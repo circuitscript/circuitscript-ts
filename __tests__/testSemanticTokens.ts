@@ -180,6 +180,23 @@ sheet column:
         }
     });
 
+    test('graphic table tokens', async () => {
+        const script = `
+U1 = create component:
+    pins: 1
+    display: create graphic (params):
+        table: 0, 0, col_widths=[100]
+            header: "a"
+            row: "b"
+`;
+        const tokens = await getSemanticTokens(script);
+        ['table', 'header', 'row'].forEach(name => {
+            const token = findTokenByText(tokens, name);
+            expect(token).toBeDefined();
+            expect(token?.tokenType).toBe('property');
+        });
+    });
+
     test('create component tokens', async () => {
         const script = `
 U1 = create component:
