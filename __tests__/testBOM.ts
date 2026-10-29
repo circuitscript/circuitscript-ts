@@ -130,4 +130,57 @@ describe('BOM generation', () => {
         })).rejects.toThrow(RuntimeExecutionError);
     });
 
+    describe('place_default frame param', () => {
+        const bomConfig = { columns: ['refdes', 'value'], group_by: ['value'] };
+        const bomFor = async (script: string) => {
+            const { bomResult } = await renderCommon(mainPath + script, { generateBom: true, bomConfig });
+            return {
+                unplaced: [...bomResult!.unplacedItems].sort(),
+                refdes: bomResult!.bom.map(r => r['refdes'] as string).sort(),
+                bomResult: bomResult!,
+            };
+        };
+
+        test('unplaced frame, explicit place wins, nested frames override and inherit', async () => {
+            const { unplaced, refdes } = await bomFor('script8.cst');
+            expect(unplaced).toEqual(['R1', 'R4']);
+            expect(refdes).toEqual(['R2', 'R3']);
+        });
+
+        test('matches per-part place = false', async () => {
+            const viaDefault = await bomFor('script8.cst');
+            const viaPart = await bomFor('script9.cst');
+            expect(viaDefault.bomResult.bom).toEqual(viaPart.bomResult.bom);
+            expect(viaDefault.unplaced).toEqual(viaPart.unplaced);
+        });
+
+        test('sheet default applies to its frames only', async () => {
+            const { unplaced, refdes } = await bomFor('script10.cst');
+            expect(unplaced).toEqual(['R1']);
+            expect(refdes).toEqual(['R2']);
+        });
+
+        test.each([
+            ['script11.cst', ['R1'], ['R2']],
+            ['script12.cst', ['R2'], ['R1']],
+        ])('expression value decides placement (%s)', async (script, expectedUnplaced, expectedPlaced) => {
+            const { unplaced, refdes } = await bomFor(script);
+            expect(unplaced).toEqual(expectedUnplaced);
+            expect(refdes).toEqual(expectedPlaced);
+        });
+
+        test('shared component keeps the state of the first frame', async () => {
+            const { unplaced, refdes } = await bomFor('script13.cst');
+            expect(unplaced).toEqual(['R2']);
+            expect(refdes).toEqual(['R1']);
+        });
+
+        test('def inherits the call-site frame', async () => {
+            const { unplaced, refdes } = await bomFor('script14.cst');
+            expect(unplaced).toHaveLength(1);
+            expect(refdes).toHaveLength(1);
+            expect(unplaced[0]).not.toEqual(refdes[0]);
+        });
+    });
+
 });

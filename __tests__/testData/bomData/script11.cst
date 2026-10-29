@@ -1,0 +1,14 @@
+from "std" import *
+
+document.bom.columns = ["refdes", "value"]
+document.bom.group_by = ["value"]
+
+reg = "linear"
+
+frame:
+    ..place_default = (reg == "switching")
+    at res(1k) #= R1
+
+frame:
+    ..place_default = (reg == "linear")
+    at res(2k) #= R2

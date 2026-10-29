@@ -1,0 +1,14 @@
+from "std" import *
+
+document.bom.columns = ["refdes", "value"]
+document.bom.group_by = ["value"]
+
+def one_res(val):
+    at res(val)
+
+frame:
+    ..place_default = false
+    one_res(1k)
+
+frame:
+    one_res(2k)

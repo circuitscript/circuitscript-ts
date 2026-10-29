@@ -174,7 +174,9 @@ describe('Render tests', () => {
         ['script127.cst', 'sheet closes the active frame properly'],
 
         ['script128.cst', 'Label function font_size and color parameters'],
-        ['script130.cst', 'Graphic table: command']
+        ['script130.cst', 'Graphic table: command'],
+
+        ['script131.cst', 'place_default frame param: unplaced parts, nets and ground still drawn']
 
     ])('render - %s (%s)', async (scriptPath, title, extra = "") => {
         const { sheetFrames, documentVariable, componentPinNets } = await renderCommon(mainPath + scriptPath);
@@ -540,5 +542,35 @@ describe('Render tests', () => {
         expect(textTag('TBL_R1')).not.toMatch(/font-weight="bold"/);
         expect(textTag('TBL_Plain')).not.toMatch(/font-weight="bold"/);
         expect(svgOutput).toContain('TBL_C3');
+    });
+
+    test('place_default marks only non-net parts as unplaced', async () => {
+        const scriptPath = mainPath + 'script131.cst';
+        const { visitor } = await runScript(readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+        visitor.applyFramePlaceDefaults(visitor.getGraph().sequence);
+
+        const places = new Map<string, unknown[]>();
+        visitor.getScope().getInstances().forEach(inst => {
+            const key = inst.typeProp ?? '';
+            places.set(key, [...(places.get(key) ?? []), inst.parameters.get('place')]);
+        });
+        expect([...places.get('res')!].sort()).toEqual([false, undefined]);
+        expect(places.get('net')!.every(p => p === undefined)).toBe(true);
+    });
+
+    test('place_default with a non-boolean value throws', async () => {
+        const message = await runScriptExpectError(
+            readFileSync(mainPath + 'script132.cst', { encoding: 'utf8' }));
+        expect(message).toMatch(/oolean/);
+    });
+
+    test('misspelt place_default warns as an unknown frame property', async () => {
+        const scriptPath = mainPath + 'script133.cst';
+        const { hasError, visitor } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+        expect(visitor.getWarnings().map(warning => warning.message)).toContainEqual(
+            expect.stringContaining('Unknown frame property "..place_defualt"'));
     });
 });

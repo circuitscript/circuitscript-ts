@@ -82,7 +82,7 @@ import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { numeric } from "./objects/NumericValue.js";
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { AllPinTypes, normalizePinType, PinTypes, resolvePinType } from './objects/PinTypes.js';
-import { ExecutionScope, PropertyTreeKey } from './objects/ExecutionScope.js';
+import { ExecutionScope, FrameAction, PropertyTreeKey, SequenceAction, SequenceItem } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
@@ -2426,6 +2426,10 @@ export class ParserVisitor extends BaseVisitor {
             });
         }
 
+        if (useObject instanceof Frame && firstId === FrameParamKeys.PlaceDefault) {
+            this.validateBoolean(result, ctx);
+        }
+
         const referenceWithFirstID = this.getExecutor().resolveTrailers(
             null, lastReference.value, [firstId]);
 
@@ -3383,6 +3387,41 @@ export class ParserVisitor extends BaseVisitor {
             }
         });
 
+    }
+
+    /** Applies each frame's `place_default` to the components inside it. */
+    applyFramePlaceDefaults(sequence: SequenceItem[]): void {
+        const stack: boolean[] = [];
+        const owned = new Set<ClassComponent>();
+        const skipTypes: string[] = [
+            ComponentTypes.net, ComponentTypes.graphic, ComponentTypes.port
+        ];
+
+        for (const item of sequence) {
+            if (item[0] === SequenceAction.Frame) {
+                if (item[2] === FrameAction.Enter) {
+                    const own = item[1].parameters.get(FrameParamKeys.PlaceDefault);
+                    const inherited = stack.length > 0 ? stack[stack.length - 1] : true;
+                    stack.push(typeof own === 'boolean' ? own : inherited);
+                } else {
+                    stack.pop();
+                }
+            } else if (item[0] === SequenceAction.At || item[0] === SequenceAction.To) {
+                const component = item[1];
+                if (owned.has(component)) {
+                    continue;
+                }
+                owned.add(component);
+
+                if (component.typeProp && skipTypes.includes(component.typeProp)) {
+                    continue;
+                }
+                if (stack.length > 0 && !stack[stack.length - 1]
+                    && !component.hasParam('place')) {
+                    component.setParam('place', false);
+                }
+            }
+        }
     }
 
     /** Sets the frame component used for the document sheet type as the sheet

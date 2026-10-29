@@ -677,6 +677,55 @@ to spi angle:${a}${f} pin "MOSI"
         expect(r2).toContain('(in_bom yes)');
         expect(r2).toContain('(dnp yes)');
     });
+
+    test('KiCad export of place_default frame matches per-part place = false', async () => {
+        const dnpFor = async (scriptText: string, scriptPath?: string) => {
+            const { hasError, visitor } = await runScript(scriptText, scriptPath);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            visitor.applyFramePlaceDefaults(sequence);
+
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(getStylesFromDocument(documentVariable));
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+
+            const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
+            const { output } = generator.generate(visitor, sheetFrames, 'inline')[0];
+            const text = printTree(output).replace(/\\/g, '');
+            return (text.match(/\(dnp (yes|no)\)/g) ?? []).sort();
+        };
+
+        const scriptPath = '__tests__/testData/renderData/script131.cst';
+        const viaDefault = await dnpFor(readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+        const viaPart = await dnpFor(`from "std" import *
+
+v5 = supply("5V")
+gnd = dgnd()
+
+frame:
+    at v5
+    wire down 100
+    add res(1k)
+    ..place = false
+    wire down 100
+    to gnd
+
+frame:
+    at v5
+    wire down 100
+    add res(2k)
+    wire down 100
+    to gnd
+`);
+        expect(viaDefault.filter(d => d === '(dnp yes)')).toHaveLength(1);
+        expect(viaDefault).toEqual(viaPart);
+    });
 });
 
 const script = `

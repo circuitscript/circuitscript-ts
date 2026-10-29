@@ -1,0 +1,13 @@
+from "std" import *
+
+document.bom.columns = ["refdes", "value"]
+document.bom.group_by = ["value"]
+
+sheet:
+    ..place_default = false
+    frame:
+        at res(1k) #= R1
+
+sheet:
+    frame:
+        at res(2k) #= R2

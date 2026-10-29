@@ -1,0 +1,15 @@
+from "std" import *
+
+document.bom.columns = ["refdes", "value"]
+document.bom.group_by = ["value"]
+
+frame:
+    ..place_default = false
+    at res(1k) #= R1
+    at res(2k) #= R2
+    ..place = true
+    frame:
+        ..place_default = true
+        at res(3k) #= R3
+    frame:
+        at res(4k) #= R4

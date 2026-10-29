@@ -293,6 +293,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         // await writeFile('dump/raw-netlist.json', JSON.stringify(visitor.dump2(), null, 2));
 
         const { sequence, nets } = visitor.getGraph();
+        visitor.applyFramePlaceDefaults(sequence);
 
         // If KiCad output is selected and no Sheet frame exists in the sequence,
         // wrap the entire sequence in an auto-generated Sheet frame.

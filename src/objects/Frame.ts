@@ -70,6 +70,8 @@ export enum FrameParamKeys {
 
     SheetNumber = 'sheet_number',   // Current sheet number
     SheetTotal = 'sheet_total',     // Total number of sheets
+
+    PlaceDefault = 'place_default', // Default `place` state for components in the frame
 }
 
 /** Identifiers accepted after the optional title in a frame header. */

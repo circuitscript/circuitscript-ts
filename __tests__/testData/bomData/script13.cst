@@ -1,0 +1,22 @@
+from "std" import *
+
+document.bom.columns = ["refdes", "value"]
+document.bom.group_by = ["value"]
+
+v5 = supply("5V")
+gnd = dgnd()
+
+frame:
+    at v5
+    wire down 100
+    add R1 = res(1k)
+    wire down 100
+    to gnd
+
+frame:
+    ..place_default = false
+    at v5
+    wire down 100
+    add R2 = res(2k)
+    wire down 100
+    to R1

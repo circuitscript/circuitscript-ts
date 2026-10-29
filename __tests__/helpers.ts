@@ -259,6 +259,7 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     visitor.applySheetFrameComponent();
 
     const { sequence, nets } = visitor.getGraph();
+    visitor.applyFramePlaceDefaults(sequence);
 
     const logger = new Logger();
     const graphEngine = new NetGraph(logger);
