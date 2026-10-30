@@ -11,6 +11,7 @@ import { PinId } from "../objects/PinDefinition.js";
 import { PinTypes } from "../objects/PinTypes.js";
 import { ComponentPinNetPair } from "../objects/types.js";
 import { ERC_Rules } from "./rules.js";
+import { ComponentTypes } from "../globals.js";
 
 export function RuleCheck_UnconnectedPinsWires(graph: Graph, nets: ComponentPinNetPair[] = []) {
     const items: any[] = [];
@@ -21,6 +22,11 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph, nets: ComponentPinN
         if (nodeInfo[0] === RenderItemType.Component) {
             const renderComponent = nodeInfo[1] as RenderComponent;
             const { component, unitId } = renderComponent;
+
+            // Graphic components (text, no_connect, frames) are not electrical parts
+            if (component.typeProp === ComponentTypes.graphic) {
+                continue;
+            }
 
             // Find all edges connected to this node/component
             const edges = graph.nodeEdges(node) as Edge[];
