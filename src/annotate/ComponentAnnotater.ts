@@ -11,6 +11,8 @@ import { KeywordRefdesPrefix } from '../globals.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 
+const defaultFormatPath = (filePath: string) => filePath.split(/[\\/]/).pop() ?? filePath;
+
 export class ComponentAnnotater {
 
     counter: { [key: string]: number; } = {};
@@ -21,9 +23,21 @@ export class ComponentAnnotater {
 
     existingRefDes: string[] = [];
 
+    // Max candidate names tried when picking the next free refdes. Fixed for now.
+    maxRefdesAttempts = 1000;
+
+    private existingSet = new Set<string>();
+
+    // Refdes -> "file:line" of the instance that claimed it.
+    private claimedBy = new Map<string, string>();
+
+    // Placeholder base (e.g. R5) -> ctx that owns it.
+    private placeholderOwner = new Map<string, ParserRuleContext>();
+
     indexedRefdesGroups = new Map<string, string[]>();
 
-    constructor() {
+    constructor(private formatPath: (filePath: string) => string = defaultFormatPath,
+        private indexedRefdes = true) {
         // Refdes counting should all start at 1. e.g. R1, C1, etc.
         for (const key in ComponentRefDesPrefixes) {
             this.counter[key] = 1;
@@ -82,7 +96,7 @@ export class ComponentAnnotater {
             // The context of the firstReference is used as the replication point.
             const { ctx: useCtx, indexedStack, creationFlag } = firstReference;
 
-            if (indexedStack.length > 0 && creationFlag) {
+            if (this.indexedRefdes && indexedStack.length > 0 && creationFlag) {
                 // If indexedStack is defined, then the instance was created within
                 // a indexing structure (loops or functions).
 
@@ -97,7 +111,11 @@ export class ComponentAnnotater {
                     // Use the placeholder refdes if it was already defined.
                     if (instance.placeHolderRefDes) {
                         // Remove the '_' to get the main refdes.
+                        // It was reserved up front by reservePlaceholder.
                         prefix = instance.placeHolderRefDes.replaceAll('_', '');
+                        if (!this.placeholderOwner.has(prefix)) {
+                            this.reservePlaceholder(prefix, instance);
+                        }
                     } else {
                         // Otherwise, generate the main refdes based on the type.
                         const { index: nextIndex, proposedName } =
@@ -108,7 +126,9 @@ export class ComponentAnnotater {
 
                     // Store the prefix so it should not be used further. This
                     // is a normal refdes, not indexed.
-                    this.existingRefDes.push(prefix);
+                    if (!instance.placeHolderRefDes) {
+                        this.markUsed(prefix, instance);
+                    }
                     this.indexedContextPrefix.set(useCtx, prefix);
                 }
 
@@ -116,8 +136,8 @@ export class ComponentAnnotater {
                 const prefixParts = [this.indexedContextPrefix.get(useCtx)!, ...indexes];
                 resultRefdes = prefixParts.join('_');
 
-                if (this.existingRefDes.indexOf(resultRefdes) !== -1){
-                    console.log('Warning: Refdes already used:', resultRefdes);
+                if (this.existingSet.has(resultRefdes)) {
+                    throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
                 }
 
                 const basePrefix = this.indexedContextPrefix.get(useCtx)!;
@@ -134,33 +154,22 @@ export class ComponentAnnotater {
             }
 
             // Track the refdes used.
-            this.existingRefDes.push(resultRefdes);
+            this.markUsed(resultRefdes, instance);
 
             return resultRefdes;
         }
     }
 
     getNextRefdesCounter(prefix: string, startingIndex: number): { index: number, proposedName: string } {
-        let attempts = 100;
-        let proposedName = "";
-
         let index = startingIndex;
-
-        while (attempts >= 0) {
-            proposedName = prefix + index;
+        const limit = startingIndex + this.maxRefdesAttempts;
+        while (this.existingSet.has(prefix + index)) {
             index++;
-
-            if (this.existingRefDes.indexOf(proposedName) === -1) {
-                break;
+            if (index >= limit) {
+                throw new Error(`Annotation failed: no free refdes for '${prefix}' after ${this.maxRefdesAttempts} attempts`);
             }
-            attempts--;
         }
-
-        if (attempts === 0) {
-            throw "Annotation failed";
-        }
-
-        return { index, proposedName };
+        return { index: index + 1, proposedName: prefix + index };
     }
 
     getIndexedRefdesSimplifications(): Map<string, string> {
@@ -175,7 +184,46 @@ export class ComponentAnnotater {
         return simplifications;
     }
 
-    trackRefDes(name: string): void {
+    trackRefDes(name: string, instance: ClassComponent): void {
+        if (this.existingSet.has(name)) {
+            throw new Error(`Duplicate refdes '${name}': first used at ${this.claimedBy.get(name) ?? 'unknown'}, again at ${this.describeLocation(instance)}`);
+        }
+        this.markUsed(name, instance);
+    }
+
+    /** Reserves the base name of an indexed placeholder (e.g. R5_ -> R5) */
+    reservePlaceholder(base: string, instance: ClassComponent): void {
+        const ctx = instance.ctxReferences[0]?.ctx;
+        const loc = this.describeLocation(instance);
+        const owner = this.placeholderOwner.get(base);
+
+        if (owner === undefined) {
+            if (this.existingSet.has(base)) {
+                throw new Error(`Placeholder '${base}_' at ${loc} conflicts with explicit refdes '${base}' (${this.claimedBy.get(base) ?? 'unknown'})`);
+            }
+            this.placeholderOwner.set(base, ctx);
+            this.markUsed(base, instance);
+        } else if (owner !== ctx) {
+            throw new Error(`Placeholder '${base}_' used at ${this.claimedBy.get(base) ?? 'unknown'} and ${loc}`);
+        }
+    }
+
+    private markUsed(name: string, instance?: ClassComponent): void {
+        this.existingSet.add(name);
         this.existingRefDes.push(name);
+        if (instance && !this.claimedBy.has(name)) {
+            this.claimedBy.set(name, this.describeLocation(instance));
+        }
+    }
+
+    describeLocation(instance: ClassComponent): string {
+        const refs = instance.ctxReferences;
+        const ref = refs.find(r => r.creationFlag) ?? refs[0];
+        const line = ref?.ctx?.start?.line;
+        if (line === undefined) {
+            return instance.instanceName;
+        }
+        const file = ref.filePath ? this.formatPath(ref.filePath) : '';
+        return `${file ? file + ':' : 'line '}${line}`;
     }
 }

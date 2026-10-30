@@ -42,13 +42,22 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     constructor(silent: boolean, sourceText: string,
         tokenStream: CommonTokenStream,
-        componentCtxLinks: Map<ParserRuleContext, ClassComponent>) {
+        componentCtxLinks: Map<ParserRuleContext, ClassComponent>,
+        indexedRefdes = true) {
 
         // super(silent, null, null);
         super(true);
         this.sourceText = sourceText;
         this.tokenStream = tokenStream;
         this.componentCtxLinks = componentCtxLinks;
+        this.indexedRefdes = indexedRefdes;
+    }
+
+    private indexedRefdes: boolean;
+    private skippedIndexed = 0;
+
+    getSkippedIndexedCount(): number {
+        return this.skippedIndexed;
     }
 
     getModifications(): Map<ParserRuleContext, RefdesModification> {
@@ -197,6 +206,11 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                 if (ctxReferences.length > 0) {
                     const firstReference = ctxReferences[0];
                     const { indexedStack: loopStack = [] } = firstReference;
+
+                    if (!this.indexedRefdes && loopStack.length > 0) {
+                        this.skippedIndexed++;
+                        return null;
+                    }
 
                     if (loopStack.length > 0) {
                         // If instance is within a loop structure, then use a 

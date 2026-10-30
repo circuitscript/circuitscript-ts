@@ -10,11 +10,12 @@ import { BaseVisitor, OnErrorHandler, ImportFileResult } from '../src/BaseVisito
 import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/parser.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
 import { ComponentTypes } from '../src/globals.js';
+import { readFileSync } from 'fs';
 import { getTestEnvironment } from './helpers.js';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
-async function runScript(script: string, scriptPath: string): Promise<{
+async function runScript(script: string, scriptPath: string, simplify = true, indexedRefdes = true): Promise<{
     hasError: boolean;
     visitor: ParserVisitor;
     tree: ReturnType<CircuitScriptParser['script']>;
@@ -58,7 +59,7 @@ async function runScript(script: string, scriptPath: string): Promise<{
     }
     visitor.exitFile();
 
-    visitor.annotateComponents();
+    visitor.annotateComponents(simplify, indexedRefdes);
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
@@ -131,6 +132,22 @@ describe('Refdes annotation: output format', () => {
         expect(output).not.toMatch(/add lib1.my_resistor\(\) #= R1[^_]/);
     });
 
+    test('indexedRefdes disabled: loop instance not annotated, non-loop instance is', async () => {
+        const script = `import "lib1"\nadd lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, false);
+        expect(hasError).toBe(false);
+
+        const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
+            visitor.getComponentCtxLinks(), false);
+        annotationVisitor.visit(tree);
+        const output = annotationVisitor.getOutput();
+
+        expect(output).toMatch(/^add lib1.my_resistor\(\) #= R\d+$/m);
+        expect(output).not.toMatch(/    {8}add lib1.my_resistor\(\) #=/);
+        expect(output).not.toMatch(/#= [A-Z]+\d*_/);
+        expect(annotationVisitor.getSkippedIndexedCount()).toBeGreaterThan(0);
+    });
+
     test('annotation visitor produces no modifications for non-component expressions', async () => {
         // Script with only a variable assignment — no add/at/to component expressions
         const script = `x = 42\n`;
@@ -188,5 +205,64 @@ describe('Refdes annotation: bus components', () => {
         const res = [...visitor.getScope().instances.values()]
             .filter(i => i.typeProp !== ComponentTypes.bus && i.assignedRefDes);
         expect(res.map(r => r.assignedRefDes)).toContain('R1');
+    });
+});
+
+describe('Refdes annotation: clashes', () => {
+    const dir = '__tests__/testData/annotateData/clash/';
+
+    async function refdesOf(script: string, simplify: boolean): Promise<string[]> {
+        const { visitor } = await runScript(script, dir + 'x.cst', simplify);
+        return [...visitor.getScope().instances.values()]
+            .filter(i => i.typeProp === ComponentTypes.resistor && i.assignedRefDes)
+            .map(i => i.assignedRefDes!)
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    }
+
+    const load = (n: string) => readFileSync(dir + n + '.cst', 'utf8');
+
+    test('script4: same placeholder in two functions errors', async () => {
+        await expect(refdesOf(load('script4'), true)).rejects.toThrow(/R5_.*:6.*:12/);
+    });
+
+    test('script5: placeholder conflicting with explicit refdes errors', async () => {
+        await expect(refdesOf(load('script5'), true)).rejects.toThrow(/R7_.*conflicts with explicit.*R7/);
+    });
+
+    test('script7: duplicate explicit refdes errors with both lines', async () => {
+        await expect(refdesOf(load('script7'), true)).rejects.toThrow(/Duplicate refdes 'R1'.*:5.*:7/);
+    });
+
+    test('inline: more than 100 explicit refdes, auto gets next free name', async () => {
+        const lines = ['from "std" import *', 'gnd = dgnd()', 'at gnd'];
+        for (let i = 1; i <= 101; i++) lines.push('wire up 50', `add res(1k) #= R${i}`);
+        lines.push('wire up 50', 'add res(2k)');
+        const result = await refdesOf(lines.join('\n') + '\n', true);
+        expect(result.length).toBe(102);
+        expect(new Set(result).size).toBe(102);
+        expect(result).toContain('R102');
+    });
+
+    test('inline boundary: 100 explicit refdes, auto gets R101', async () => {
+        const lines = ['from "std" import *', 'gnd = dgnd()', 'at gnd'];
+        for (let i = 1; i <= 100; i++) lines.push('wire up 50', `add res(1k) #= R${i}`);
+        lines.push('wire up 50', 'add res(2k)');
+        const result = await refdesOf(lines.join('\n') + '\n', true);
+        expect(result.length).toBe(101);
+        expect(result).toContain('R101');
+    });
+
+    const cases: [string, boolean, string[]][] = [
+        ['script1', true, ['R1', 'R2_1', 'R2_2', 'R3_1', 'R3_2', 'R3_3']],
+        ['script1', false, ['R1', 'R2_1', 'R2_2', 'R3_1', 'R3_2', 'R3_3']],
+        ['script2', true, ['R1']],
+        ['script2', false, ['R1_1']],
+        ['script3', true, ['R1', 'R2', 'R3', 'R4']],
+        ['script3', false, ['R1', 'R2', 'R3', 'R4']],
+        ['script6', true, ['R1', 'R2', 'R3']],
+        ['script6', false, ['R1_1', 'R2_1', 'R3']],
+    ];
+    test.each(cases)('regression %s (simplify=%s)', async (name, simplify, expected) => {
+        expect(await refdesOf(load(name), simplify)).toEqual(expected);
     });
 });

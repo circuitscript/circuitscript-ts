@@ -249,7 +249,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     }
 
     try {
-        visitor.annotateComponents(options.simplifyRefdes ?? true);
+        visitor.annotateComponents(options.simplifyRefdes ?? true, options.indexedRefdes ?? true);
     } catch (err) {
         throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
     }
