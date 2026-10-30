@@ -12,7 +12,7 @@ import { ScriptOptions, AnnotatedFile, RefdesOutputType, ExternalLibAnnotationFi
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { ImportedLibrary } from "../objects/types.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
-import { RefdesModification } from "./utils.js";
+import { RefdesModification, resolveRefdesMode } from "./utils.js";
 
 export async function DefaultPostAnnotationCallback(options: ScriptOptions,
     scriptData: string,
@@ -22,10 +22,10 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
     importedLibraries: ImportedLibrary[],
     environment: NodeScriptEnvironment): Promise<void> {
     const {
-        indexedRefdes: useIndexedRefdes = true, inputPath = null, updateSource = false, saveAnnotatedCopy = undefined,
+        indexedRefdes, refdesMode: optRefdesMode, inputPath = null, updateSource = false, saveAnnotatedCopy = undefined,
     } = options;
 
-    const indexedRefdes = useIndexedRefdes;
+    const refdesMode = resolveRefdesMode(optRefdesMode, indexedRefdes);
     let skippedIndexed = 0;
 
     // Generate refdes annotation comments
@@ -118,7 +118,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                         inputStream.getTextFromRange(0, inputStream.size);
 
                     const tmpVisitor = new RefdesAnnotationVisitor(true,
-                        scriptChunk, tokens, componentLinks, indexedRefdes);
+                        scriptChunk, tokens, componentLinks, refdesMode);
                     tmpVisitor.visit(tree);
                     skippedIndexed += tmpVisitor.getSkippedIndexedCount();
 
@@ -144,7 +144,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
             } else {
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
-                    scriptData, tokens, componentLinks, indexedRefdes);
+                    scriptData, tokens, componentLinks, refdesMode);
                 tmpVisitor.visit(tree);
                 skippedIndexed += tmpVisitor.getSkippedIndexedCount();
                 modifications = tmpVisitor.getModifications();
@@ -178,7 +178,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 const { scriptData, tokens, tree, filePath, libraryName } = item;
 
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
-                    scriptData, tokens, componentLinks, indexedRefdes);
+                    scriptData, tokens, componentLinks, refdesMode);
 
                 await tmpVisitor.visit(tree);
                 skippedIndexed += tmpVisitor.getSkippedIndexedCount();

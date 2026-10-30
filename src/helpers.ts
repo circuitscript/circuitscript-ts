@@ -15,7 +15,7 @@ import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream,
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser, ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
-import { LengthUnit, MilsToMM, PxToMM } from "./globals.js";
+import { LengthUnit, MilsToMM, PxToMM, RefdesMode } from "./globals.js";
 
 // Dynamic type definition for svgdom since it's ESM-only
 export type SVGWindow = any;
@@ -66,6 +66,8 @@ export type ScriptOptions = {
     simplifyRefdes?: boolean,
     // If false, components in loops/functions get plain running refdes instead of indexed (R1_1, R1_2)
     indexedRefdes?: boolean,
+    // Refdes mode: flat, indexed or indexed-flat. Overrides indexedRefdes.
+    refdesMode?: RefdesMode,
 
     /* Selects which rendered output (SVG, interactive HTML, or the raw
        interactive SVG) is generated and returned via `outputReturn` when

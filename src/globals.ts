@@ -228,3 +228,10 @@ export const TrailerArrayIndex = 'index';
 export const DefaultComponentUnit = '__default';
 
 export const BusMainPinName = '__BUS';
+export enum RefdesMode {
+    Flat = 'flat',
+    Indexed = 'indexed',
+    IndexedFlat = 'indexed-flat',
+}
+
+export const RefdesModes: RefdesMode[] = Object.values(RefdesMode);

@@ -9,13 +9,13 @@ import { ParserVisitor } from '../src/visitor.js';
 import { BaseVisitor, OnErrorHandler, ImportFileResult } from '../src/BaseVisitor.js';
 import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/parser.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
-import { ComponentTypes } from '../src/globals.js';
+import { ComponentTypes, RefdesMode } from '../src/globals.js';
 import { readFileSync } from 'fs';
 import { getTestEnvironment } from './helpers.js';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
-async function runScript(script: string, scriptPath: string, simplify = true, indexedRefdes = true): Promise<{
+async function runScript(script: string, scriptPath: string, simplify = true, refdesMode: RefdesMode = RefdesMode.Indexed): Promise<{
     hasError: boolean;
     visitor: ParserVisitor;
     tree: ReturnType<CircuitScriptParser['script']>;
@@ -59,7 +59,7 @@ async function runScript(script: string, scriptPath: string, simplify = true, in
     }
     visitor.exitFile();
 
-    visitor.annotateComponents(simplify, indexedRefdes);
+    visitor.annotateComponents(simplify, refdesMode);
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
@@ -134,11 +134,11 @@ describe('Refdes annotation: output format', () => {
 
     test('indexedRefdes disabled: loop instance not annotated, non-loop instance is', async () => {
         const script = `import "lib1"\nadd lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
-        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, false);
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesMode.Flat);
         expect(hasError).toBe(false);
 
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
-            visitor.getComponentCtxLinks(), false);
+            visitor.getComponentCtxLinks(), RefdesMode.Flat);
         annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
 
@@ -146,6 +146,18 @@ describe('Refdes annotation: output format', () => {
         expect(output).not.toMatch(/    {8}add lib1.my_resistor\(\) #=/);
         expect(output).not.toMatch(/#= [A-Z]+\d*_/);
         expect(annotationVisitor.getSkippedIndexedCount()).toBeGreaterThan(0);
+    });
+
+    test('indexed-flat: source update writes placeholder for loop component', async () => {
+        const script = `import "lib1"\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        expect(hasError).toBe(false);
+
+        const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
+            visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+        annotationVisitor.visit(tree);
+        expect(annotationVisitor.getOutput()).toMatch(/add lib1.my_resistor\(\) #= R1_$/m);
+        expect(annotationVisitor.getSkippedIndexedCount()).toBe(0);
     });
 
     test('annotation visitor produces no modifications for non-component expressions', async () => {

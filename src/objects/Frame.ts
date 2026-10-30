@@ -40,6 +40,9 @@ export enum FrameParamKeys {
     // Same parameter is used in 'document' and 'sheet(frame)' objects
     SheetType = 'sheet_type',
 
+    // Document level only: see RefdesMode
+    RefdesAssignment = 'refdes_assignment',
+
     // Grid that is displayed
     GridStyle = "grid_style",  // "none", "dots"
     GridColor = "grid_color",

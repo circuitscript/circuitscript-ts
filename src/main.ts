@@ -12,7 +12,8 @@
 // module graph is loaded - see enableCompileCache.ts.
 import './enableCompileCache.js';
 
-import { program } from 'commander';
+import { program, Option } from 'commander';
+import { RefdesMode, RefdesModes } from './globals.js';
 import figlet from 'figlet';
 
 import { watch } from 'fs';
@@ -52,6 +53,7 @@ export default async function main(): Promise<void> {
         .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
         .option('--no-simplify-refdes', 'Disable simplification of single-instance indexed refdes (e.g. R1_1 → R1)')
         .option('--no-indexed-refdes', 'Disable indexed refdes for components in loops/functions; use running numbers instead (e.g. R1, R2 instead of R1_1, R1_2)')
+        .addOption(new Option('--refdes-mode <mode>', 'Refdes mode for components in loops/functions: flat, indexed or indexed-flat (single counter per prefix, e.g. R1_1, R1_2, R1_3)').choices(RefdesModes))
         .option('--o <fileName>', 'Additional output paths, see below', collectOutputPaths, [])
         ;
 
@@ -77,6 +79,12 @@ Supported output formats (selected by output path extension):
 
     const options = program.opts();
     const args = program.args;
+
+    if (options.refdesMode !== undefined && options.refdesMode !== RefdesMode.Flat
+        && options.indexedRefdes === false) {
+        console.error(`error: --no-indexed-refdes conflicts with --refdes-mode ${options.refdesMode}`);
+        process.exit(1);
+    }
 
     const watchFileChanges = options.watch;
     const dumpNets = options.dumpNets;
@@ -152,6 +160,7 @@ Supported output formats (selected by output path extension):
         kiCadVersion: options.kicadVersion,
         simplifyRefdes: options.simplifyRefdes,
         indexedRefdes: options.indexedRefdes,
+        refdesMode: options.refdesMode,
     }
 
     // Build the list of output paths.

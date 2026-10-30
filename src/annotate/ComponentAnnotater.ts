@@ -7,7 +7,7 @@
 import { ParserRuleContext } from 'antlr4ng';
 import { ClassComponent } from './../objects/ClassComponent.js';
 import { ComponentRefDesPrefixes } from './../visitor.js';
-import { KeywordRefdesPrefix } from '../globals.js';
+import { KeywordRefdesPrefix, RefdesMode } from '../globals.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 
@@ -36,8 +36,14 @@ export class ComponentAnnotater {
 
     indexedRefdesGroups = new Map<string, string[]>();
 
+    // Counter type key (e.g. 'res') -> shared base used by indexed-flat mode.
+    private flatBaseByKey = new Map<string, string>();
+
+    // Base (e.g. R32) -> last counter value used.
+    private flatCounters = new Map<string, number>();
+
     constructor(private formatPath: (filePath: string) => string = defaultFormatPath,
-        private indexedRefdes = true) {
+        private refdesMode: RefdesMode = RefdesMode.Indexed) {
         // Refdes counting should all start at 1. e.g. R1, C1, etc.
         for (const key in ComponentRefDesPrefixes) {
             this.counter[key] = 1;
@@ -96,7 +102,10 @@ export class ComponentAnnotater {
             // The context of the firstReference is used as the replication point.
             const { ctx: useCtx, indexedStack, creationFlag } = firstReference;
 
-            if (this.indexedRefdes && indexedStack.length > 0 && creationFlag) {
+            if (this.refdesMode === RefdesMode.IndexedFlat && indexedStack.length > 0 && creationFlag) {
+                resultRefdes = this.getFlatIndexedRefdes(instance, usePrefix, useCounterKey);
+
+            } else if (this.refdesMode !== RefdesMode.Flat && indexedStack.length > 0 && creationFlag) {
                 // If indexedStack is defined, then the instance was created within
                 // a indexing structure (loops or functions).
 
@@ -160,6 +169,44 @@ export class ComponentAnnotater {
         }
     }
 
+    private getFlatIndexedRefdes(instance: ClassComponent, usePrefix: string,
+        useCounterKey: string): string {
+        let base: string;
+
+        if (instance.placeHolderRefDes) {
+            // Remove the '_' to get the main refdes.
+            base = instance.placeHolderRefDes.replaceAll('_', '');
+            this.reservePlaceholder(base, instance);
+        } else {
+            const existing = this.flatBaseByKey.get(useCounterKey);
+            if (existing !== undefined) {
+                base = existing;
+            } else {
+                const { index: nextIndex, proposedName } =
+                    this.getNextRefdesCounter(usePrefix, this.counter[useCounterKey]);
+                this.counter[useCounterKey] = nextIndex;
+                base = proposedName;
+                this.markUsed(base, instance);
+                this.flatBaseByKey.set(useCounterKey, base);
+            }
+        }
+
+        const n = (this.flatCounters.get(base) ?? 0) + 1;
+        const resultRefdes = `${base}_${n}`;
+
+        if (this.existingSet.has(resultRefdes)) {
+            throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
+        }
+        this.flatCounters.set(base, n);
+
+        if (!this.indexedRefdesGroups.has(base)) {
+            this.indexedRefdesGroups.set(base, []);
+        }
+        this.indexedRefdesGroups.get(base)!.push(resultRefdes);
+
+        return resultRefdes;
+    }
+
     getNextRefdesCounter(prefix: string, startingIndex: number): { index: number, proposedName: string } {
         let index = startingIndex;
         const limit = startingIndex + this.maxRefdesAttempts;
@@ -203,7 +250,7 @@ export class ComponentAnnotater {
             }
             this.placeholderOwner.set(base, ctx);
             this.markUsed(base, instance);
-        } else if (owner !== ctx) {
+        } else if (owner !== ctx && this.refdesMode !== RefdesMode.IndexedFlat) {
             throw new Error(`Placeholder '${base}_' used at ${this.claimedBy.get(base) ?? 'unknown'} and ${loc}`);
         }
     }

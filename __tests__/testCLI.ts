@@ -42,6 +42,11 @@ describe('test cli program', () => {
   --no-indexed-refdes               Disable indexed refdes for components in
                                     loops/functions; use running numbers
                                     instead (e.g. R1, R2 instead of R1_1, R1_2)
+  --refdes-mode <mode>              Refdes mode for components in
+                                    loops/functions: flat, indexed or
+                                    indexed-flat (single counter per prefix,
+                                    e.g. R1_1, R1_2, R1_3) (choices: "flat",
+                                    "indexed", "indexed-flat")
   --o <fileName>                    Additional output paths, see below
                                     (default: [])
   -h, --help                        display help for command

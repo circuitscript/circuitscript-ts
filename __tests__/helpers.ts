@@ -1,3 +1,4 @@
+import { RefdesMode } from '../src/globals.js';
 import { readFileSync } from 'fs';
 import { Resvg } from '@resvg/resvg-js';
 import { PNG } from 'pngjs';
@@ -37,6 +38,7 @@ export function getTestEnvironment(): NodeScriptEnvironment {
 export async function runScript(script: string, scriptPath?: string, options?: {
     simplifyRefdes?: boolean,
     indexedRefdes?: boolean,
+    refdesMode?: RefdesMode,
     skipAnnotation?: boolean,
 }): Promise<{
     visitor: ParserVisitor,
@@ -110,7 +112,7 @@ export async function runScript(script: string, scriptPath?: string, options?: {
     hasError = hasError || errorListener.hasSyntaxErrors();
 
     if (!options?.skipAnnotation) {
-        visitor.annotateComponents(options?.simplifyRefdes ?? true, options?.indexedRefdes ?? true);
+        visitor.annotateComponents(options?.simplifyRefdes ?? true, options?.refdesMode ?? (options?.indexedRefdes === false ? RefdesMode.Flat : undefined));
     }
 
     // Do not write cached libraries for tests

@@ -4,7 +4,7 @@ import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
 import { expectInlineScriptTest, findItem, findItemByRefDes, getTestEnvironment, orderNets, runScript, runScriptExpectError, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
-import { FrameType } from '../src/globals.js';
+import { FrameType, RefdesMode } from '../src/globals.js';
 import { renderScript } from '../src/pipeline.js';
 import { readFileSync } from 'fs';
 import {
@@ -308,6 +308,153 @@ for i in range(0, 3):
 `, undefined, undefined);
         expect(hasError).toEqual(false);
         expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3']);
+    });
+
+    describe('indexed-flat refdes mode', () => {
+        const head = `
+from "std" import *
+
+document.sheet_type = sheet_A5()
+`;
+        const flat = (body: string, simplifyRefdes = true) =>
+            runScript(head + body, undefined, { refdesMode: RefdesMode.IndexedFlat, simplifyRefdes });
+
+        const loopBody = `
+for i in range(0, 2):
+    branch:
+        add res(10k)
+`;
+
+        test('document.refdes_assignment sets the mode', async () => {
+            const { hasError, visitor } = await runScript(
+                head + 'document.refdes_assignment = "indexed-flat"\n' + loopBody);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2']);
+        });
+
+        test('document.refdes_assignment simple', async () => {
+            const { visitor } = await runScript(
+                head + 'document.refdes_assignment = "flat"\n' + loopBody);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2']);
+        });
+
+        test('explicit option overrides document.refdes_assignment', async () => {
+            const { visitor } = await runScript(
+                head + 'document.refdes_assignment = "indexed-flat"\n' + loopBody,
+                undefined, { refdesMode: RefdesMode.Flat });
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2']);
+        });
+
+        test('invalid document.refdes_assignment throws', async () => {
+            await expect(runScript(
+                head + 'document.refdes_assignment = "bogus"\n' + loopBody))
+                .rejects.toThrow(/refdes_assignment/);
+        });
+
+        test('single loop', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 3):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3']);
+        });
+
+        test('nested loops use one counter', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 2):
+    for j in range(0, 2):
+        branch:
+            add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3', 'R1_4']);
+        });
+
+        test('function called three times', async () => {
+            const { hasError, visitor } = await flat(`
+def blk():
+    add res(1k)
+
+blk()
+blk()
+blk()
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3']);
+        });
+
+        test('loop and function share base and counter', async () => {
+            const { hasError, visitor } = await flat(`
+def blk():
+    add res(1k)
+
+for i in range(0, 2):
+    branch:
+        add res(10k)
+blk()
+blk()
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3', 'R1_4']);
+        });
+
+        test('capacitors and resistors count independently', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 2):
+    branch:
+        add res(10k)
+    branch:
+        add cap(1u)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2']);
+            expect(getRefdes(visitor.dumpInstances(), 'cap')).toEqual(['C1_1', 'C1_2']);
+        });
+
+        test('single instance simplifies, unless disabled', async () => {
+            const body = `
+for i in range(0, 1):
+    branch:
+        add res(10k)
+`;
+            const a = await flat(body);
+            expect(getRefdes(a.visitor.dumpInstances(), 'res')).toEqual(['R1']);
+            const b = await flat(body, false);
+            expect(getRefdes(b.visitor.dumpInstances(), 'res')).toEqual(['R1_1']);
+        });
+
+        test('explicit placeholder gets its own base', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 2):
+    branch:
+        add res(10k) #= R40_
+for i in range(0, 2):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R40_1', 'R40_2']);
+        });
+
+        test('same placeholder at two sites: ok in flat, error in indexed', async () => {
+            const body = `
+for i in range(0, 2):
+    branch:
+        add res(10k) #= R32_
+for i in range(0, 2):
+    branch:
+        add res(10k) #= R32_
+`;
+            const flatResult = await flat(body);
+            expect(flatResult.hasError).toEqual(false);
+            expect(getRefdes(flatResult.visitor.dumpInstances(), 'res'))
+                .toEqual(['R32_1', 'R32_2', 'R32_3', 'R32_4']);
+
+            await expect(runScript(head + body, undefined, { refdesMode: RefdesMode.Indexed }))
+                .rejects.toThrow(/Placeholder/);
+        });
     });
 
     test('component annotation with custom type param', async () => {

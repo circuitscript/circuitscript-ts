@@ -13,7 +13,7 @@ import { ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { OnErrorHandler, BaseVisitor, ImportFileResult } from "./BaseVisitor.js";
 import { generateBom, generateBomCSV, saveBomOutputCsv } from "./BomGeneration.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";
-import { defaultZoomScale, GlobalDocumentName, FrameType } from "./globals.js";
+import { defaultZoomScale, GlobalDocumentName, FrameType, RefdesMode } from "./globals.js";
 import { NetGraph } from "./render/graph.js";
 import { ScriptOptions, RenderScriptReturn } from "./helpers.js";
 import type { BomWarnings } from "./helpers.js";
@@ -249,7 +249,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     }
 
     try {
-        visitor.annotateComponents(options.simplifyRefdes ?? true, options.indexedRefdes ?? true);
+        visitor.annotateComponents(options.simplifyRefdes ?? true,
+            options.refdesMode ?? (options.indexedRefdes === false ? RefdesMode.Flat : undefined));
+        options = { ...options, refdesMode: visitor.getRefdesMode() };
     } catch (err) {
         throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
     }

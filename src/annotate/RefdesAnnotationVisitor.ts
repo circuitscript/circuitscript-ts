@@ -18,6 +18,7 @@ import { Add_component_exprContext, Assignment_exprContext, At_block_headerConte
 import { BaseVisitor } from '../BaseVisitor.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import { generateModifiedSourceText, RefdesModification } from './utils.js';
+import { RefdesMode } from '../globals.js';
 
 /**
  * A visitor that preserves original formatting including:
@@ -43,17 +44,17 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     constructor(silent: boolean, sourceText: string,
         tokenStream: CommonTokenStream,
         componentCtxLinks: Map<ParserRuleContext, ClassComponent>,
-        indexedRefdes = true) {
+        refdesMode: RefdesMode = RefdesMode.Indexed) {
 
         // super(silent, null, null);
         super(true);
         this.sourceText = sourceText;
         this.tokenStream = tokenStream;
         this.componentCtxLinks = componentCtxLinks;
-        this.indexedRefdes = indexedRefdes;
+        this.refdesMode = refdesMode;
     }
 
-    private indexedRefdes: boolean;
+    private refdesMode: RefdesMode;
     private skippedIndexed = 0;
 
     getSkippedIndexedCount(): number {
@@ -207,7 +208,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                     const firstReference = ctxReferences[0];
                     const { indexedStack: loopStack = [] } = firstReference;
 
-                    if (!this.indexedRefdes && loopStack.length > 0) {
+                    if (this.refdesMode === RefdesMode.Flat && loopStack.length > 0) {
                         this.skippedIndexed++;
                         return null;
                     }
