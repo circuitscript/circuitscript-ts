@@ -174,7 +174,11 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         // Do nothing
     }
 
+    // Refdes annotations that have already been aded
     addedRefdesAnnotations:string[] = [];
+
+    // Refdes placeholder annotations that have already been added
+    addedRefdesPlaceholderAnnotations:string[] = [];
 
     private generateRefdesAnnotationComment(ctx:ParserRuleContext): string | null {
         if (this.componentCtxLinks.has(ctx)) {
@@ -182,8 +186,17 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
             // If the refdes annotation was already added, then do not
             // add it again.
-            const alreadyHaveRefdesAnnotation = instance.assignedRefDes !== null ?
+            let alreadyHaveRefdesAnnotation = instance.assignedRefDes !== null ?
                 (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) !== -1) : false;
+
+            if (instance.assignedRefDes !== null){
+                // extract placeholder
+                const parts = instance.assignedRefDes.split('_');
+                if (parts.length > 1){
+                    const placeholder = parts[0] + '_';
+                    alreadyHaveRefdesAnnotation = this.addedRefdesPlaceholderAnnotations.indexOf(placeholder) !== -1;
+                }
+            }
 
             const { forceSaveRefdesAnnotation: forceSaveRefdes } = instance;
 
@@ -224,10 +237,12 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                         useRefDes = parts[0] + '_';
                     }
 
-                    if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1
-                        && !isPlaceholderRefdes) {
-
-                        this.addedRefdesAnnotations.push(instance.assignedRefDes);
+                    if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1) {
+                        if (isPlaceholderRefdes) {
+                            this.addedRefdesPlaceholderAnnotations.push(useRefDes);
+                        } else {
+                            this.addedRefdesAnnotations.push(instance.assignedRefDes);
+                        }
                     }
 
                     return useRefDes;

@@ -12,6 +12,10 @@ import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor
 import { ComponentTypes, RefdesMode } from '../src/globals.js';
 import { readFileSync } from 'fs';
 import { getTestEnvironment } from './helpers.js';
+import { renderScript, renderScriptCustom } from '../src/pipeline.js';
+import { generateAnnotatedFiles, AnnotationOutputFile } from '../src/annotate/DefaultPostAnnotationCallback.js';
+import { mkdirSync, rmSync, copyFileSync, readdirSync, statSync } from 'fs';
+import { join, resolve, basename } from 'path';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
@@ -160,6 +164,42 @@ describe('Refdes annotation: output format', () => {
         expect(annotationVisitor.getSkippedIndexedCount()).toBe(0);
     });
 
+    test('indexed-flat: two loops write distinct placeholders', async () => {
+        const loop = `for i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+        const script = `import "lib1"\n${loop}${loop}`;
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        expect(hasError).toBe(false);
+
+        const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
+            visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+        annotationVisitor.visit(tree);
+        const output = annotationVisitor.getOutput();
+        expect((output.match(/#= R1_$/gm) ?? []).length).toBe(1);
+        expect((output.match(/#= R2_$/gm) ?? []).length).toBe(1);
+        expect(annotationVisitor.getSkippedIndexedCount()).toBe(0);
+    });
+
+    test('indexed-flat: re-annotating written placeholders is stable', async () => {
+        const loop = `for i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+        const script = `import "lib1"\n${loop}${loop}`;
+        const first = await runScript(script, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        expect(first.hasError).toBe(false);
+        const v1 = new RefdesAnnotationVisitor(true, script, first.tokens,
+            first.visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+        v1.visit(first.tree);
+        const output = v1.getOutput();
+
+        const second = await runScript(output, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        expect(second.hasError).toBe(false);
+        const v2 = new RefdesAnnotationVisitor(true, output, second.tokens,
+            second.visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+        v2.visit(second.tree);
+        const output2 = v2.getOutput();
+        expect((output2.match(/#= R1_$/gm) ?? []).length).toBe(1);
+        expect((output2.match(/#= R2_$/gm) ?? []).length).toBe(1);
+        expect(output2).toEqual(output);
+    });
+
     test('annotation visitor produces no modifications for non-component expressions', async () => {
         // Script with only a variable assignment — no add/at/to component expressions
         const script = `x = 42\n`;
@@ -276,5 +316,64 @@ describe('Refdes annotation: clashes', () => {
     ];
     test.each(cases)('regression %s (simplify=%s)', async (name, simplify, expected) => {
         expect(await refdesOf(load(name), simplify)).toEqual(expected);
+    });
+});
+
+describe('generateAnnotatedFiles', () => {
+    const tmpRoot = resolve('__tests__/tmp/annotateGen');
+    const fixtureDir = resolve('__tests__/testData/cliTest/script59');
+    const names = ['main.cst', 'file1.cst', 'file2.cst'];
+
+    function setup(name: string): string {
+        const dir = join(tmpRoot, name);
+        rmSync(dir, { recursive: true, force: true });
+        mkdirSync(dir, { recursive: true });
+        for (const n of names) {
+            copyFileSync(join(fixtureDir, n), join(dir, n));
+        }
+        return dir;
+    }
+
+    function readAll(dir: string): Map<string, string> {
+        return new Map(readdirSync(dir).filter(n => statSync(join(dir, n)).isFile()).map(n => [n, readFileSync(join(dir, n), 'utf8')]));
+    }
+
+    afterAll(() => {
+        rmSync(tmpRoot, { recursive: true, force: true });
+    });
+
+    test('returns file contents without writing, matching the CLI path', async () => {
+        const dirA = setup('compute');
+        const dirB = setup('cli');
+        const before = readAll(dirA);
+        const env = getTestEnvironment();
+        await env.prepareSVGEnvironment();
+
+        let generated: AnnotationOutputFile[] = [];
+        const inputA = join(dirA, 'main.cst');
+        await renderScriptCustom(before.get('main.cst')!, [], {
+            dumpNets: false, dumpData: false, showStats: false,
+            environment: env, inputPath: inputA, updateSource: true,
+        }, [], [async (...args) => {
+            const res = await generateAnnotatedFiles(...args, { skipCacheSideEffects: true });
+            generated = res.files;
+        }]);
+
+        // main, file1 (inline) and the external refdes file
+        expect(generated.length).toBe(3);
+        expect(generated.filter(f => f.isMainFile).length).toBe(1);
+        expect(generated.filter(f => f.kind === 'external-refdes').length).toBe(1);
+        expect(readAll(dirA)).toEqual(before);
+
+        const inputB = join(dirB, 'main.cst');
+        await renderScript(before.get('main.cst')!, [], {
+            dumpNets: false, dumpData: false, showStats: false,
+            environment: env, inputPath: inputB, updateSource: true,
+        });
+
+        for (const file of generated) {
+            const written = readFileSync(join(dirB, basename(file.filePath)), 'utf8');
+            expect(file.content).toEqual(written);
+        }
     });
 });

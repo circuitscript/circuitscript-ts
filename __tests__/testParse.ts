@@ -385,7 +385,7 @@ blk()
             expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3']);
         });
 
-        test('loop and function share base and counter', async () => {
+        test('loop and function use separate bases', async () => {
             const { hasError, visitor } = await flat(`
 def blk():
     add res(1k)
@@ -397,7 +397,125 @@ blk()
 blk()
 `);
             expect(hasError).toEqual(false);
-            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3', 'R1_4']);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R2_1', 'R2_2']);
+        });
+
+        test('two loops of the same type get separate bases', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 2):
+    branch:
+        add res(10k)
+for i in range(0, 3):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R2_1', 'R2_2', 'R2_3']);
+        });
+
+        test('two functions of the same type get separate bases', async () => {
+            const { hasError, visitor } = await flat(`
+def a():
+    add res(1k)
+
+def b():
+    add res(1k)
+
+a()
+a()
+b()
+b()
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R2_1', 'R2_2']);
+        });
+
+        test('repeated calls from different call sites share the function base', async () => {
+            const { hasError, visitor } = await flat(`
+def blk():
+    add res(1k)
+
+for i in range(0, 2):
+    blk()
+blk()
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3']);
+        });
+
+        test('nested loop and sibling loop', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 2):
+    for j in range(0, 2):
+        branch:
+            add res(10k)
+for k in range(0, 2):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3', 'R1_4', 'R2_1', 'R2_2']);
+        });
+
+        test('single-iteration loops simplify independently', async () => {
+            const body = `
+for i in range(0, 1):
+    branch:
+        add res(10k)
+for i in range(0, 1):
+    branch:
+        add res(10k)
+`;
+            const a = await flat(body);
+            expect(a.hasError).toEqual(false);
+            expect(getRefdes(a.visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2']);
+            const b = await flat(body, false);
+            expect(b.hasError).toEqual(false);
+            expect(getRefdes(b.visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R2_1']);
+        });
+
+        test('one single-iteration loop and one multi-iteration loop', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 1):
+    branch:
+        add res(10k)
+for i in range(0, 2):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2_1', 'R2_2']);
+        });
+
+        test('second site skips a base already claimed by an explicit refdes', async () => {
+            const { hasError, visitor } = await flat(`
+add res(10k) #= R2
+for i in range(0, 2):
+    branch:
+        add res(10k)
+for i in range(0, 2):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R2', 'R3_1', 'R3_2']);
+        });
+
+        test('types stay independent across sites', async () => {
+            const { hasError, visitor } = await flat(`
+for i in range(0, 2):
+    branch:
+        add res(10k)
+for i in range(0, 2):
+    branch:
+        add cap(1u)
+for i in range(0, 2):
+    branch:
+        add res(10k)
+`);
+            expect(hasError).toEqual(false);
+            expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R2_1', 'R2_2']);
+            expect(getRefdes(visitor.dumpInstances(), 'cap')).toEqual(['C1_1', 'C1_2']);
         });
 
         test('capacitors and resistors count independently', async () => {

@@ -35,6 +35,7 @@ export * from './validate/SymbolValidatorVisitor.js';
 export * from './validate/validateScript.js';
 export * from './environment/environment.js';
 export * from './annotate/RefdesAnnotationVisitor.js';
+export * from './annotate/DefaultPostAnnotationCallback.js';
 export * from './semantic-tokens/getSemanticTokens.js';
 export * from './render/KiCadSchOutputHandler.js'
 export * from './rules-check/rules.js'

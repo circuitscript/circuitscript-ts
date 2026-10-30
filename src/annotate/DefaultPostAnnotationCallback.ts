@@ -14,23 +14,40 @@ import { ImportedLibrary } from "../objects/types.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { RefdesModification, resolveRefdesMode } from "./utils.js";
 
-export async function DefaultPostAnnotationCallback(options: ScriptOptions,
+export type AnnotationOutputFile = {
+    filePath: string;
+    content: string;
+    isMainFile: boolean;
+    kind: 'source' | 'external-refdes';
+    libraryName?: string;
+};
+
+export type GenerateAnnotatedFilesOptions = {
+    // Skip library cache side effects (modifications, writeToCache)
+    skipCacheSideEffects?: boolean;
+};
+
+/*
+ * Computes annotated file contents without writing anything.
+ */
+export async function generateAnnotatedFiles(options: ScriptOptions,
     scriptData: string,
     tree: ScriptContext,
     tokens: CommonTokenStream,
     componentLinks: Map<ParserRuleContext, ClassComponent>,
     importedLibraries: ImportedLibrary[],
-    environment: NodeScriptEnvironment): Promise<void> {
+    environment: NodeScriptEnvironment,
+    genOptions: GenerateAnnotatedFilesOptions = {}): Promise<{ files: AnnotationOutputFile[]; skippedIndexed: number }> {
+    const { skipCacheSideEffects = false } = genOptions;
     const {
-        indexedRefdes, refdesMode: optRefdesMode, inputPath = null, updateSource = false, saveAnnotatedCopy = undefined,
+        indexedRefdes, refdesMode: optRefdesMode, inputPath = null,
     } = options;
 
     const refdesMode = resolveRefdesMode(optRefdesMode, indexedRefdes);
     let skippedIndexed = 0;
+    const files: AnnotationOutputFile[] = [];
 
-    // Generate refdes annotation comments
-    if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)) {
-
+    if (inputPath) {
         // Files where the source is updated
         const sourceAnnotatedFiles: AnnotatedFile[] = [{
             isMainFile: true,
@@ -89,18 +106,6 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 library
             } = item;
 
-            let usePath = filePath;
-
-            // What path to save to for libary files??
-            if (isMainFile && saveAnnotatedCopy === true) {
-                const dir = environment.dirname(filePath);
-                const ext = environment.extname(filePath);
-                const basename = environment.basename(filePath, ext);
-                usePath = environment.join(dir, `${basename}.annotated${ext}`);
-            } else if (isMainFile && typeof saveAnnotatedCopy === 'string') {
-                usePath = saveAnnotatedCopy as string;
-            }
-
             let updatedScriptData = scriptData;
 
             const isCachedLibrary = tokens === null && tree === null;
@@ -126,7 +131,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
                     // If there are some modifications, then update the
                     // write to cache flag.
-                    if (modifications.size > 0 && library && !library.writeToCache){
+                    if (!skipCacheSideEffects && modifications.size > 0 && library && !library.writeToCache){
                         library.writeToCache = true;
                     }
 
@@ -152,17 +157,17 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 updatedScriptData = tmpVisitor.getOutput();
             }
 
-            // Pass annotation comments to the library.
-            library && library.addRefdesModifications(modifications);
-
-            environment.writeFileSync(usePath, updatedScriptData);
-
-            let display = 'Refdes annotations';
-            if (libraryName) {
-                display += ` for library ${libraryName}`;
+            if (!skipCacheSideEffects) {
+                library && library.addRefdesModifications(modifications);
             }
 
-            console.log(`${display} saved to ${usePath}`);
+            files.push({
+                filePath,
+                content: updatedScriptData,
+                isMainFile,
+                kind: 'source',
+                libraryName,
+            });
         }
 
         // Process all external refdes libraries into a single JSON file
@@ -206,16 +211,62 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 libraries: sortedLibs,
             };
 
-            environment.writeFileSync(
-                refdesFilePath,
-                JSON.stringify(jsonFile, null, 4)
-            );
+            files.push({
+                filePath: refdesFilePath,
+                content: JSON.stringify(jsonFile, null, 4),
+                isMainFile: false,
+                kind: 'external-refdes',
+            });
+        }
+    }
 
-            console.log(`External refdes annotations saved to ${refdesFilePath}`);
+    return { files, skippedIndexed };
+}
+
+export async function DefaultPostAnnotationCallback(options: ScriptOptions,
+    scriptData: string,
+    tree: ScriptContext,
+    tokens: CommonTokenStream,
+    componentLinks: Map<ParserRuleContext, ClassComponent>,
+    importedLibraries: ImportedLibrary[],
+    environment: NodeScriptEnvironment): Promise<void> {
+    const {
+        inputPath = null, updateSource = false, saveAnnotatedCopy = undefined,
+    } = options;
+
+    if (!(inputPath && (updateSource || saveAnnotatedCopy !== undefined))) {
+        return;
+    }
+
+    const { files, skippedIndexed } = await generateAnnotatedFiles(options,
+        scriptData, tree, tokens, componentLinks, importedLibraries, environment);
+
+    for (const file of files) {
+        let usePath = file.filePath;
+
+        if (file.isMainFile && saveAnnotatedCopy === true) {
+            const dir = environment.dirname(file.filePath);
+            const ext = environment.extname(file.filePath);
+            const basename = environment.basename(file.filePath, ext);
+            usePath = environment.join(dir, `${basename}.annotated${ext}`);
+        } else if (file.isMainFile && typeof saveAnnotatedCopy === 'string') {
+            usePath = saveAnnotatedCopy as string;
         }
 
-        if (skippedIndexed > 0) {
-            console.log(`Warning: ${skippedIndexed} loop/function-created components were not annotated in source (indexed refdes disabled); their refdes may change between runs.`);
+        environment.writeFileSync(usePath, file.content);
+
+        if (file.kind === 'external-refdes') {
+            console.log(`External refdes annotations saved to ${usePath}`);
+        } else {
+            let display = 'Refdes annotations';
+            if (file.libraryName) {
+                display += ` for library ${file.libraryName}`;
+            }
+            console.log(`${display} saved to ${usePath}`);
         }
+    }
+
+    if (skippedIndexed > 0) {
+        console.log(`Warning: ${skippedIndexed} loop/function-created components were not annotated in source (indexed refdes disabled); their refdes may change between runs.`);
     }
 }

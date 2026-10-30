@@ -34,10 +34,10 @@ export class ComponentAnnotater {
     // Placeholder base (e.g. R5) -> ctx that owns it.
     private placeholderOwner = new Map<string, ParserRuleContext>();
 
+    // Base prefix (e.g. R5) -> indexed refdes generated under it (R5_1, R5_2, ...).
+    // Used by getIndexedRefdesSimplifications to collapse single-member groups
+    // back to the base name.
     indexedRefdesGroups = new Map<string, string[]>();
-
-    // Counter type key (e.g. 'res') -> shared base used by indexed-flat mode.
-    private flatBaseByKey = new Map<string, string>();
 
     // Base (e.g. R32) -> last counter value used.
     private flatCounters = new Map<string, number>();
@@ -103,7 +103,7 @@ export class ComponentAnnotater {
             const { ctx: useCtx, indexedStack, creationFlag } = firstReference;
 
             if (this.refdesMode === RefdesMode.IndexedFlat && indexedStack.length > 0 && creationFlag) {
-                resultRefdes = this.getFlatIndexedRefdes(instance, usePrefix, useCounterKey);
+                resultRefdes = this.getFlatIndexedRefdes(useCtx, instance, usePrefix, useCounterKey);
 
             } else if (this.refdesMode !== RefdesMode.Flat && indexedStack.length > 0 && creationFlag) {
                 // If indexedStack is defined, then the instance was created within
@@ -169,40 +169,44 @@ export class ComponentAnnotater {
         }
     }
 
-    private getFlatIndexedRefdes(instance: ClassComponent, usePrefix: string,
+    private getFlatIndexedRefdes(ctx: ParserRuleContext, instance: ClassComponent, usePrefix: string,
         useCounterKey: string): string {
-        let base: string;
+        let prefix: string;
 
-        if (instance.placeHolderRefDes) {
-            // Remove the '_' to get the main refdes.
-            base = instance.placeHolderRefDes.replaceAll('_', '');
-            this.reservePlaceholder(base, instance);
-        } else {
-            const existing = this.flatBaseByKey.get(useCounterKey);
-            if (existing !== undefined) {
-                base = existing;
+        // Not indexed, yet so create it
+        if (!this.indexedContextPrefix.has(ctx)) {
+
+            // Use placeholder refdes if already defined.
+            if (instance.placeHolderRefDes) {
+                // Remove the '_' to get the main refdes.
+                prefix = instance.placeHolderRefDes.replaceAll('_', '');
+                this.reservePlaceholder(prefix, instance);
             } else {
                 const { index: nextIndex, proposedName } =
                     this.getNextRefdesCounter(usePrefix, this.counter[useCounterKey]);
                 this.counter[useCounterKey] = nextIndex;
-                base = proposedName;
-                this.markUsed(base, instance);
-                this.flatBaseByKey.set(useCounterKey, base);
+                prefix = proposedName;
+
+                this.markUsed(prefix, instance);
             }
+            this.indexedContextPrefix.set(ctx, prefix);
+
+        } else {
+            prefix = this.indexedContextPrefix.get(ctx)!;
         }
 
-        const n = (this.flatCounters.get(base) ?? 0) + 1;
-        const resultRefdes = `${base}_${n}`;
+        const n = (this.flatCounters.get(prefix) ?? 0) + 1;
+        const resultRefdes = `${prefix}_${n}`;
 
         if (this.existingSet.has(resultRefdes)) {
             throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
         }
-        this.flatCounters.set(base, n);
+        this.flatCounters.set(prefix, n);
 
-        if (!this.indexedRefdesGroups.has(base)) {
-            this.indexedRefdesGroups.set(base, []);
+        if (!this.indexedRefdesGroups.has(prefix)) {
+            this.indexedRefdesGroups.set(prefix, []);
         }
-        this.indexedRefdesGroups.get(base)!.push(resultRefdes);
+        this.indexedRefdesGroups.get(prefix)!.push(resultRefdes);
 
         return resultRefdes;
     }
