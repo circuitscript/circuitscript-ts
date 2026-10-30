@@ -36,6 +36,7 @@ export function getTestEnvironment(): NodeScriptEnvironment {
 
 export async function runScript(script: string, scriptPath?: string, options?: {
     simplifyRefdes?: boolean,
+    indexedRefdes?: boolean,
     skipAnnotation?: boolean,
 }): Promise<{
     visitor: ParserVisitor,
@@ -109,7 +110,7 @@ export async function runScript(script: string, scriptPath?: string, options?: {
     hasError = hasError || errorListener.hasSyntaxErrors();
 
     if (!options?.skipAnnotation) {
-        visitor.annotateComponents(options?.simplifyRefdes ?? true);
+        visitor.annotateComponents(options?.simplifyRefdes ?? true, options?.indexedRefdes ?? true);
     }
 
     // Do not write cached libraries for tests

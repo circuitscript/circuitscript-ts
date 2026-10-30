@@ -3070,15 +3070,15 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     /** Performs simple annotation for components and rename nets */
-    annotateComponents(simplifyRefdes = true): void {
+    annotateComponents(simplifyRefdes = true, indexedRefdes = true): void {
         this.log('===== annotate components =====');
 
         // Show paths relative to the main script's folder
         const mainFile = this.filePathStack[0];
         const annotater = mainFile
             ? new ComponentAnnotater(filePath => this.environment.relative(
-                this.environment.dirname(mainFile), filePath))
-            : new ComponentAnnotater();
+                this.environment.dirname(mainFile), filePath), indexedRefdes)
+            : new ComponentAnnotater(undefined, indexedRefdes);
         const instances = this.getScope().instances;
         const toAnnotate: ClassComponent[] = [];
 
@@ -3115,7 +3115,7 @@ export class ParserVisitor extends BaseVisitor {
         // Reserve placeholder prefixes after all explicit refdes are tracked.
         toAnnotate.forEach(instance => {
             const first = instance.ctxReferences[0];
-            if (instance.placeHolderRefDes && first
+            if (indexedRefdes && instance.placeHolderRefDes && first
                 && first.indexedStack.length > 0 && first.creationFlag) {
                 annotater.reservePlaceholder(
                     instance.placeHolderRefDes.replaceAll('_', ''), instance);

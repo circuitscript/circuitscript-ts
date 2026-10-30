@@ -15,7 +15,7 @@ import { getTestEnvironment } from './helpers.js';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
-async function runScript(script: string, scriptPath: string, simplify = true): Promise<{
+async function runScript(script: string, scriptPath: string, simplify = true, indexedRefdes = true): Promise<{
     hasError: boolean;
     visitor: ParserVisitor;
     tree: ReturnType<CircuitScriptParser['script']>;
@@ -59,7 +59,7 @@ async function runScript(script: string, scriptPath: string, simplify = true): P
     }
     visitor.exitFile();
 
-    visitor.annotateComponents(simplify);
+    visitor.annotateComponents(simplify, indexedRefdes);
 
     hasError = hasError || errorListener.hasSyntaxErrors();
 
@@ -130,6 +130,22 @@ describe('Refdes annotation: output format', () => {
         expect(output).toMatch(/add lib1.my_resistor\(\) #= R1_/);
         // Must not contain a fully-resolved (non-placeholder) refdes for a loop component
         expect(output).not.toMatch(/add lib1.my_resistor\(\) #= R1[^_]/);
+    });
+
+    test('indexedRefdes disabled: loop instance not annotated, non-loop instance is', async () => {
+        const script = `import "lib1"\nadd lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, false);
+        expect(hasError).toBe(false);
+
+        const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
+            visitor.getComponentCtxLinks(), false);
+        annotationVisitor.visit(tree);
+        const output = annotationVisitor.getOutput();
+
+        expect(output).toMatch(/^add lib1.my_resistor\(\) #= R\d+$/m);
+        expect(output).not.toMatch(/    {8}add lib1.my_resistor\(\) #=/);
+        expect(output).not.toMatch(/#= [A-Z]+\d*_/);
+        expect(annotationVisitor.getSkippedIndexedCount()).toBeGreaterThan(0);
     });
 
     test('annotation visitor produces no modifications for non-component expressions', async () => {

@@ -51,6 +51,7 @@ export default async function main(): Promise<void> {
         // .option('--lexer-summary', 'Print lexer operation summary (requires -l)')
         .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
         .option('--no-simplify-refdes', 'Disable simplification of single-instance indexed refdes (e.g. R1_1 → R1)')
+        .option('--no-indexed-refdes', 'Disable indexed refdes for components in loops/functions; use running numbers instead (e.g. R1, R2 instead of R1_1, R1_2)')
         .option('--o <fileName>', 'Additional output paths, see below', collectOutputPaths, [])
         ;
 
@@ -150,6 +151,7 @@ Supported output formats (selected by output path extension):
         saveAnnotatedCopy: saveAnnotatedCopyPath,
         kiCadVersion: options.kicadVersion,
         simplifyRefdes: options.simplifyRefdes,
+        indexedRefdes: options.indexedRefdes,
     }
 
     // Build the list of output paths.

@@ -39,6 +39,9 @@ describe('test cli program', () => {
                                     (default: "9")
   --no-simplify-refdes              Disable simplification of single-instance
                                     indexed refdes (e.g. R1_1 → R1)
+  --no-indexed-refdes               Disable indexed refdes for components in
+                                    loops/functions; use running numbers
+                                    instead (e.g. R1, R2 instead of R1_1, R1_2)
   --o <fileName>                    Additional output paths, see below
                                     (default: [])
   -h, --help                        display help for command

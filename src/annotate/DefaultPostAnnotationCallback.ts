@@ -22,8 +22,11 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
     importedLibraries: ImportedLibrary[],
     environment: NodeScriptEnvironment): Promise<void> {
     const {
-        inputPath = null, updateSource = false, saveAnnotatedCopy = undefined,
+        indexedRefdes: useIndexedRefdes = true, inputPath = null, updateSource = false, saveAnnotatedCopy = undefined,
     } = options;
+
+    const indexedRefdes = useIndexedRefdes;
+    let skippedIndexed = 0;
 
     // Generate refdes annotation comments
     if (inputPath && (updateSource || saveAnnotatedCopy !== undefined)) {
@@ -115,8 +118,9 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                         inputStream.getTextFromRange(0, inputStream.size);
 
                     const tmpVisitor = new RefdesAnnotationVisitor(true,
-                        scriptChunk, tokens, componentLinks);
+                        scriptChunk, tokens, componentLinks, indexedRefdes);
                     tmpVisitor.visit(tree);
+                    skippedIndexed += tmpVisitor.getSkippedIndexedCount();
 
                     modifications = tmpVisitor.getModifications();
 
@@ -140,8 +144,9 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
 
             } else {
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
-                    scriptData, tokens, componentLinks);
+                    scriptData, tokens, componentLinks, indexedRefdes);
                 tmpVisitor.visit(tree);
+                skippedIndexed += tmpVisitor.getSkippedIndexedCount();
                 modifications = tmpVisitor.getModifications();
 
                 updatedScriptData = tmpVisitor.getOutput();
@@ -173,9 +178,10 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
                 const { scriptData, tokens, tree, filePath, libraryName } = item;
 
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
-                    scriptData, tokens, componentLinks);
+                    scriptData, tokens, componentLinks, indexedRefdes);
 
                 await tmpVisitor.visit(tree);
+                skippedIndexed += tmpVisitor.getSkippedIndexedCount();
 
                 const output = tmpVisitor.getOutputForExternalRefdesFile();
 
@@ -206,6 +212,10 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
             );
 
             console.log(`External refdes annotations saved to ${refdesFilePath}`);
+        }
+
+        if (skippedIndexed > 0) {
+            console.log(`Warning: ${skippedIndexed} loop/function-created components were not annotated in source (indexed refdes disabled); their refdes may change between runs.`);
         }
     }
 }

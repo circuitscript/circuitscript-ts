@@ -233,6 +233,83 @@ tmp_block_2()
         expect(findItem(instances, 'res', 'R2_2', 'numeric:10k')).not.toBeNull();
     });
 
+    const getRefdes = (instances: Map<string, any>, type: string) =>
+        [...instances.values()].filter(i => i.typeProp === type)
+            .map(i => i.assignedRefDes as string).sort();
+
+    test('indexedRefdes disabled: loop gives running refdes', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+for i in range(0, 3):
+    branch:
+        add res(10k)
+
+`, undefined, { indexedRefdes: false });
+        expect(hasError).toEqual(false);
+        expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2', 'R3']);
+    });
+
+    test('indexedRefdes disabled: explicit refdes skipped', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+for i in range(0, 3):
+    branch:
+        add res(10k)
+add res(1k) #= R2
+
+`, undefined, { indexedRefdes: false });
+        expect(hasError).toEqual(false);
+        expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2', 'R3', 'R4']);
+    });
+
+    test('indexedRefdes disabled: function called twice', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+def blk():
+    add cap(1u)
+
+blk()
+blk()
+
+`, undefined, { indexedRefdes: false });
+        expect(hasError).toEqual(false);
+        expect(getRefdes(visitor.dumpInstances(), 'cap')).toEqual(['C1', 'C2']);
+    });
+
+    test('indexedRefdes disabled: stale placeholder ignored', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+for i in range(0, 3):
+    branch:
+        add res(10k) #= R5_
+
+`, undefined, { indexedRefdes: false });
+        expect(hasError).toEqual(false);
+        expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2', 'R3']);
+    });
+
+    test('indexedRefdes default still indexed', async () => {
+        const { hasError, visitor } = await runScript(`
+from "std" import *
+
+document.sheet_type = sheet_A5()
+for i in range(0, 3):
+    branch:
+        add res(10k)
+
+`, undefined, undefined);
+        expect(hasError).toEqual(false);
+        expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R1_3']);
+    });
+
     test('component annotation with custom type param', async () => {
 
         const script = `

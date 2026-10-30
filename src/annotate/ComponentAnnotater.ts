@@ -23,6 +23,9 @@ export class ComponentAnnotater {
 
     existingRefDes: string[] = [];
 
+    // Max candidate names tried when picking the next free refdes. Fixed for now.
+    maxRefdesAttempts = 1000;
+
     private existingSet = new Set<string>();
 
     // Refdes -> "file:line" of the instance that claimed it.
@@ -33,7 +36,8 @@ export class ComponentAnnotater {
 
     indexedRefdesGroups = new Map<string, string[]>();
 
-    constructor(private formatPath: (filePath: string) => string = defaultFormatPath) {
+    constructor(private formatPath: (filePath: string) => string = defaultFormatPath,
+        private indexedRefdes = true) {
         // Refdes counting should all start at 1. e.g. R1, C1, etc.
         for (const key in ComponentRefDesPrefixes) {
             this.counter[key] = 1;
@@ -92,7 +96,7 @@ export class ComponentAnnotater {
             // The context of the firstReference is used as the replication point.
             const { ctx: useCtx, indexedStack, creationFlag } = firstReference;
 
-            if (indexedStack.length > 0 && creationFlag) {
+            if (this.indexedRefdes && indexedStack.length > 0 && creationFlag) {
                 // If indexedStack is defined, then the instance was created within
                 // a indexing structure (loops or functions).
 
@@ -158,7 +162,13 @@ export class ComponentAnnotater {
 
     getNextRefdesCounter(prefix: string, startingIndex: number): { index: number, proposedName: string } {
         let index = startingIndex;
-        while (this.existingSet.has(prefix + index)) index++;
+        const limit = startingIndex + this.maxRefdesAttempts;
+        while (this.existingSet.has(prefix + index)) {
+            index++;
+            if (index >= limit) {
+                throw new Error(`Annotation failed: no free refdes for '${prefix}' after ${this.maxRefdesAttempts} attempts`);
+            }
+        }
         return { index: index + 1, proposedName: prefix + index };
     }
 

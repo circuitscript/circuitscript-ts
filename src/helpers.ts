@@ -64,6 +64,8 @@ export type ScriptOptions = {
 
     // If false, disables simplification of single-instance indexed refdes (e.g. R1_1 → R1)
     simplifyRefdes?: boolean,
+    // If false, components in loops/functions get plain running refdes instead of indexed (R1_1, R1_2)
+    indexedRefdes?: boolean,
 
     /* Selects which rendered output (SVG, interactive HTML, or the raw
        interactive SVG) is generated and returned via `outputReturn` when
