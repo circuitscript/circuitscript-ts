@@ -289,10 +289,9 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                     }
 
                     if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1) {
+                        this.addedRefdesAnnotations.push(instance.assignedRefDes);
                         if (isPlaceholderRefdes) {
                             this.addedRefdesPlaceholderAnnotations.push(useRefDes);
-                        } else {
-                            this.addedRefdesAnnotations.push(instance.assignedRefDes);
                         }
                     }
 

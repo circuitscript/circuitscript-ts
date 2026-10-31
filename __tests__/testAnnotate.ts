@@ -212,6 +212,47 @@ describe('Refdes annotation: output format', () => {
         expect(output2).toEqual(output);
     });
 
+    describe.each([RefdesMode.Indexed, RefdesMode.IndexedFlat])('loop placeholder dedupe (%s)', (mode) => {
+        const count = (s: string, re: RegExp): number => (s.match(re) ?? []).length;
+
+        test('loop component is annotated exactly once and is stable', async () => {
+            const script = `import "lib1"\nfor i in range(0, 5):\n    branch:\n        add lib1.my_resistor()\n`;
+            const { output } = await annotate(script, mode);
+            expect(count(output, /#= R1_$/gm)).toBe(1);
+            expect(count(output, /#=/g)).toBe(1);
+            const second = await annotate(output, mode);
+            expect(second.output).toEqual(output);
+        });
+
+        test('non-loop component then loop component get distinct refdes', async () => {
+            const script = `import "lib1"\nadd lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
+            const { output } = await annotate(script, mode);
+            expect(count(output, /#= R1$/gm)).toBe(1);
+            expect(count(output, /#= R2_$/gm)).toBe(1);
+            expect(count(output, /#=/g)).toBe(2);
+            const second = await annotate(output, mode);
+            expect(second.output).toEqual(output);
+        });
+
+        test('two components of the same type in one loop get distinct placeholders', async () => {
+            const script = `import "lib1"\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n        add lib1.my_resistor()\n`;
+            const { output } = await annotate(script, mode);
+            expect(count(output, /#= R1_$/gm)).toBe(1);
+            expect(count(output, /#= R2_$/gm)).toBe(1);
+            const second = await annotate(output, mode);
+            expect(second.output).toEqual(output);
+        });
+
+        test('nested loop component is annotated once', async () => {
+            const script = `import "lib1"\nfor i in range(0, 2):\n    for j in range(0, 2):\n        branch:\n            add lib1.my_resistor()\n`;
+            const { output } = await annotate(script, mode);
+            expect(count(output, /#= R1_$/gm)).toBe(1);
+            expect(count(output, /#=/g)).toBe(1);
+            const second = await annotate(output, mode);
+            expect(second.output).toEqual(output);
+        });
+    });
+
     test('annotation visitor produces no modifications for non-component expressions', async () => {
         // Script with only a variable assignment — no add/at/to component expressions
         const script = `x = 42\n`;
