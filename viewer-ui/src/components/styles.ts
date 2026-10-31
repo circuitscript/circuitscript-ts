@@ -397,6 +397,10 @@ body {
 	cursor: pointer;
 	text-decoration: underline;
 }
+.cs-param-link {
+	color: var(--cs-accent);
+	text-decoration: underline;
+}
 .cs-net-link:hover {
 	color: var(--cs-accent);
 }

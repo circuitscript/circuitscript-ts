@@ -19,6 +19,27 @@ export interface InspectorPanelProps {
   onSourceClick?: (file: string | null, line: number) => void;
 }
 
+const URL_PATTERN = /(https?:\/\/[^\s<>"']+)/g;
+
+// Render http(s) URLs in a value as links that open in a new tab.
+const LinkifiedValue: FunctionComponent<{ value: string }> = ({ value }) => {
+  const parts = value.split(URL_PATTERN);
+  return (
+    <>
+      {parts.map((part, index) =>
+        // split with a capture group puts the matched URLs at odd indices
+        index % 2 === 1 ? (
+          <a key={index} className="cs-param-link" href={part} target="_blank" rel="noopener noreferrer">
+            {part}
+          </a>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
+
 const SourceLine: FunctionComponent<{
   line: number;
   file: string | null;
@@ -170,7 +191,9 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
                 {panelData.params.map((param, index) => (
                   <tr key={`${param.key}-${index}`}>
                     <td>{param.key}</td>
-                    <td>{param.value}</td>
+                    <td>
+                      <LinkifiedValue value={param.value} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
