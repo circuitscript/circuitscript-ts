@@ -344,7 +344,8 @@ export class ParserVisitor extends BaseVisitor {
                     refdesValue = refdesValue.split(',')[0];
 
                     // Force the refdes value to be saved during annotation.
-                    this.setCurrentComponentRefdes(refdesValue, true);
+                    const currentComponent = this.getScope().currentComponent!;
+                    this.setComponentRefdes(refdesValue, true, currentComponent);
                 }
             }
         }
@@ -421,6 +422,12 @@ export class ParserVisitor extends BaseVisitor {
             this.setResult(ctx, createdComponent);
 
             createdComponent._creationIndex = this.componentCreationIndex++;
+
+            const ctxAnnotation = ctx.annotation_comment_expr();
+            if (ctxAnnotation) {
+                this.setResult(ctxAnnotation, { component: createdComponent });
+                this.visit(ctxAnnotation);
+            }
 
         } catch (error) {
             this.throwWithContext(ctx, (error as BaseError).message)
@@ -2725,19 +2732,20 @@ export class ParserVisitor extends BaseVisitor {
         executor.popBreakContext();
     }
 
-    private setCurrentComponentRefdes(refdesValue: string, forceSave = false): void {
-        const currentComponent = this.getScope().currentComponent;
+    private setComponentRefdes(refdesValue: string,
+        forceSave = false,
+        component: ClassComponent): void {
 
-        if (currentComponent !== null) {
+        if (component !== null) {
             if (refdesValue.indexOf('_') === -1) {
                 // Normal refdes, not a placeholder refdes
-                currentComponent.setParam('refdes', refdesValue);
+                component.setParam('refdes', refdesValue);
             } else {
                 // Store the placeholder refdes. In the annotation stage, this
                 // will be used.
-                currentComponent.placeHolderRefDes = refdesValue;
+                component.placeHolderRefDes = refdesValue;
             }
-            currentComponent.forceSaveRefdesAnnotation = forceSave;
+            component.forceSaveRefdesAnnotation = forceSave;
         }
     }
 
@@ -2745,7 +2753,12 @@ export class ParserVisitor extends BaseVisitor {
     visitAnnotation_comment_expr = (ctx: Annotation_comment_exprContext): void => {
         // Only parse a single ID for now
         const refdesID = ctx.getText().replace('#=', '').trim();
-        this.setCurrentComponentRefdes(refdesID);
+
+        const params = this.getResult(ctx) ?? {};
+        const currentComponent = this.getScope().currentComponent;
+        const {component = currentComponent} = params;
+
+        this.setComponentRefdes(refdesID, false, component);
     }
     
     visitPart_set_expr = (ctx: Part_set_exprContext): void => {

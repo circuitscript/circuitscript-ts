@@ -141,7 +141,7 @@ properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;
 graphic_expressions_block:
     NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
-create_expr: CreateComponent Colon properties_block                                                     #CreateComponentExpr
+create_expr: CreateComponent Colon annotation_comment_expr? properties_block                                                     #CreateComponentExpr
            | CreateNetClass  Colon properties_block                                                     #CreateNetClassExpr
            | CreateBus       Colon properties_block                                                     #CreateBusExpr
            | CreateBehavior  Colon behavior_block                                                       #CreateBehaviorExpr

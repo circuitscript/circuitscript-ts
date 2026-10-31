@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ParserRuleContext, CommonTokenStream } from 'antlr4ng';
+import { ParserRuleContext, CommonTokenStream, Parser, TerminalNode } from 'antlr4ng';
 import { Add_component_exprContext, Assignment_exprContext, At_block_headerContext, 
     At_blockContext, 
     At_component_exprContext, 
     Callable_exprContext, 
     Component_select_exprContext, 
+    CreateComponentExprContext, 
     Frame_exprContext, 
     Function_def_exprContext, Function_return_exprContext, ScriptContext, 
     To_component_exprContext,
@@ -40,6 +41,9 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     debug = false;
 
     componentCtxLinks: Map<ParserRuleContext, ClassComponent>;
+
+    inPathCommand = false;
+    inPathCommandUseCtx: ParserRuleContext | null = null;
 
     constructor(silent: boolean, sourceText: string,
         tokenStream: CommonTokenStream,
@@ -106,15 +110,53 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     }
 
     visitAdd_component_expr = (ctx: Add_component_exprContext): void => {
+        const ctxDataExpr = ctx.data_expr_with_assignment();
+        if (ctxDataExpr) {
+            this.inPathCommandUseCtx = ctx;
+            this.visit(ctxDataExpr);
+            this.inPathCommandUseCtx = null;
+        }
+
         this.addRefdesAnnotationComment(ctx);
     }
     
     visitAt_component_expr = (ctx: At_component_exprContext): void => {
+        const ctxComponentSel = ctx.component_select_expr();
+        if (ctxComponentSel) {
+            this.inPathCommandUseCtx = ctx;
+            this.visit(ctxComponentSel);
+        }
+
         this.addRefdesAnnotationComment(ctx);
     }
 
     visitComponent_select_expr = (ctx: Component_select_exprContext): void => {
+        const ctxDataExpr = ctx.data_expr_with_assignment();
+        if (ctxDataExpr){
+            this.visit(ctxDataExpr);
+        }
         this.addRefdesAnnotationComment(ctx);
+    }
+
+    visitCreateComponentExpr = (ctx: CreateComponentExprContext): void => {
+        if (this.inPathCommandUseCtx !== null) {
+            // This is a special case to put the refdes annotation comment
+            // just beside the create component.
+            // The component link may be on an enclosing context (e.g. the
+            // component_select_expr of a 'to'), so walk up to find it.
+            let linkCtx: ParserRuleContext = this.inPathCommandUseCtx;
+            let walk = ctx.parent as ParserRuleContext | null;
+            while (walk !== null && walk !== undefined) {
+                if (this.componentCtxLinks.has(walk)) {
+                    linkCtx = walk;
+                    break;
+                }
+                walk = walk.parent as ParserRuleContext | null;
+            }
+
+            this.addRefdesAnnotationComment(linkCtx, ctx.Colon());
+            this.inPathCommandUseCtx = null;
+        }
     }
 
     visitAt_block_header = (ctx: At_block_headerContext): void => {
@@ -128,26 +170,34 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): void => {
-        const allRefdes: string[] = [];
+        // const allRefdes: string[] = [];
 
-        // Extract the refdes from the components that are part of the 
-        // 'to' list.
-        ctx.component_select_expr().forEach(itemCtx => {
-            const tmpRefdes = this.generateRefdesAnnotationComment(itemCtx);
-            if (tmpRefdes !== null){
-                allRefdes.push(tmpRefdes);
-            }
-        });
+        // // Extract the refdes from the components that are part of the 
+        // // 'to' list.
+        // ctx.component_select_expr().forEach(itemCtx => {
+        //     const tmpRefdes = this.generateRefdesAnnotationComment(itemCtx);
+        //     if (tmpRefdes !== null){
+        //         allRefdes.push(tmpRefdes);
+        //     }
+        // });
 
-        if (allRefdes.length > 0) {
-            const originalText = this.getOriginalText(ctx);
-            // const annotation = ' #= ' + allRefdes.join(',');
+        // if (allRefdes.length > 0) {
+        //     const originalText = this.getOriginalText(ctx);
+        //     // const annotation = ' #= ' + allRefdes.join(',');
 
-            this.modifications.set(ctx, {
-                originalText,
-                refdes: allRefdes,
-            });
+        //     this.modifications.set(ctx, {
+        //         originalText,
+        //         refdes: allRefdes,
+        //     });
+        // }
+
+        const ctxComponentSel = ctx.component_select_expr();
+        if (ctxComponentSel) {
+            this.inPathCommandUseCtx = ctx;
+            this.visit(ctxComponentSel[0]);
         }
+
+        this.addRefdesAnnotationComment(ctx);
     }
 
     visitFunction_def_expr = (ctx: Function_def_exprContext): void => {
@@ -164,6 +214,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
         // Do nothing
+        this.inPathCommand = false;
     }
 
     visitParameters = (ctx: ParametersContext): void => {
@@ -253,13 +304,25 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         return null;
     }
 
-    private addRefdesAnnotationComment(ctx: ParserRuleContext): void {
+    private addRefdesAnnotationComment(ctx: ParserRuleContext, insertCtx?: ParserRuleContext | TerminalNode): void {
         const refdes = this.generateRefdesAnnotationComment(ctx);
         if (refdes !== null) {
-            const originalText = this.getOriginalText(ctx);
+
+            if (insertCtx === undefined) {
+                insertCtx = ctx;
+            } else if (insertCtx instanceof TerminalNode) {
+                // Wrap the terminal's token in a context spanning only
+                // that token.
+                const terminalCtx = new ParserRuleContext(ctx);
+                terminalCtx.start = insertCtx.symbol;
+                terminalCtx.stop = insertCtx.symbol;
+                insertCtx = terminalCtx;
+            }
+
+            const originalText = this.getOriginalText(insertCtx);
 
             // Default behavior: append annotation at end
-            this.modifications.set(ctx, {
+            this.modifications.set(insertCtx, {
                 originalText,
                 refdes: [refdes]
             });

@@ -70,6 +70,18 @@ async function runScript(script: string, scriptPath: string, simplify = true, re
     return { hasError, visitor, tree, tokens };
 }
 
+async function annotate(script: string, refdesMode: RefdesMode = RefdesMode.Indexed) {
+    const r = await runScript(script, SCRIPT_PATH, true, refdesMode);
+    expect(r.hasError).toBe(false);
+    const av = new RefdesAnnotationVisitor(true, script, r.tokens,
+        r.visitor.getComponentCtxLinks(), refdesMode);
+    av.visit(r.tree);
+    return { ...r, av, output: av.getOutput() };
+}
+
+const CREATE_RES = '    type: "res"\n    pins: 2\n';
+const CREATE_IC = '    type: "ic"\n    pins: 4\n';
+
 describe('Refdes annotation: output format', () => {
     test('single add expression generates correct #= refdes comment', async () => {
         const script = `import "lib1"\nadd lib1.my_ic()\n`;
@@ -215,6 +227,147 @@ describe('Refdes annotation: output format', () => {
         const output = annotationVisitor.getOutput();
         expect(output).not.toContain('#=');
     });
+
+    test('at block header gets annotation after the call', async () => {
+        const script = `import "lib1"\nat lib1.my_resistor():\n    wire right 50\n`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/^at lib1\.my_resistor\(\): #= R1$/m);
+    });
+
+    test('at with assignment form is annotated at end of line', async () => {
+        const script = `import "lib1"\nat X = lib1.my_resistor()\n`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/^at X = lib1\.my_resistor\(\) #= R1$/m);
+    });
+
+    test('at an existing variable gets no annotation', async () => {
+        const script = `from "std" import *\ngnd = dgnd()\nat gnd\nwire up 50\nto gnd\n`;
+        const { output, av } = await annotate(script);
+        expect(output).toBe(script);
+        expect(av.getModifications().size).toBe(0);
+    });
+
+    test('to with a single call gets annotation', async () => {
+        const script = `import "lib1"\nat lib1.my_ic()\nwire right 50\nto lib1.my_resistor()\n`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/^to lib1\.my_resistor\(\) #= R1$/m);
+    });
+
+    test('add of a plain call is unchanged in placement', async () => {
+        const script = `import "lib1"\nadd lib1.my_resistor()\n`;
+        const { output } = await annotate(script);
+        expect(output).toBe(`import "lib1"\nadd lib1.my_resistor() #= R1\n`);
+    });
+
+    test('to a, b annotates only the first item (known limitation)', async () => {
+        // Known limitation: only the first item of a 'to' list is annotated.
+        const script = `import "lib1"\nat lib1.my_ic()\nwire right 50\nto lib1.my_resistor(), lib1.my_ic()\n`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/^to lib1\.my_resistor\(\) #= R1, lib1\.my_ic\(\)$/m);
+    });
+});
+
+describe('Refdes annotation: inline create component', () => {
+    test('at create component: gets annotation after the colon', async () => {
+        const script = `at create component:\n${CREATE_RES}`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/^at create component: #= R1$/m);
+        expect(output).toContain('    type: "res"\n');
+        expect(output).toContain('    pins: 2\n');
+        expect(output).not.toMatch(/(type|pins).*#=/);
+    });
+
+    test('two at create component blocks get R1 and U1', async () => {
+        const script = `at create component:\n${CREATE_RES}wire right 50\nat create component:\n${CREATE_IC}`;
+        const { output } = await annotate(script);
+        expect(output.match(/#=/g)!.length).toBe(2);
+        expect(output).toContain('#= R1');
+        expect(output).toContain('#= U1');
+    });
+
+    test('to create component: gets annotation after the colon', async () => {
+        const script = `import "lib1"\nadd lib1.my_resistor()\nwire right 50\nto create component:\n${CREATE_RES}`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/^add lib1\.my_resistor\(\) #= R1$/m);
+        expect(output).toMatch(/^to create component: #= R2$/m);
+    });
+
+    test('inline create inside a loop gets a placeholder', async () => {
+        const script = `for i in range(0, 3):\n    branch:\n        at create component:\n            type: "res"\n            pins: 2\n`;
+        const { output } = await annotate(script);
+        expect(output).toMatch(/at create component: #= R1_$/m);
+    });
+
+    test('one modification per inline create, wrapping the colon', async () => {
+        const script = `at create component:\n${CREATE_RES}`;
+        const { av } = await annotate(script);
+        const mods = av.getModifications();
+        expect(mods.size).toBe(1);
+        expect([...mods.values()][0].originalText).toBe(':');
+    });
+
+    test('explicit annotation is preserved', async () => {
+        const script = `at create component: #= R7\n${CREATE_RES}`;
+        const { output, av } = await annotate(script);
+        expect(output).toBe(script);
+        expect(av.getModifications().size).toBe(0);
+    });
+
+    test('explicit annotation binds to the created component', async () => {
+        const script = `at create component: #= R7\n${CREATE_RES}wire right 50\nat create component:\n${CREATE_RES}`;
+        const { visitor, output } = await annotate(script);
+        const refdes = [...visitor.getScope().instances.values()].map(i => i.assignedRefDes);
+        expect(refdes).toContain('R7');
+        expect(refdes).toContain('R1');
+        const r7 = [...visitor.getScope().instances.values()].find(i => i.assignedRefDes === 'R7')!;
+        expect(r7.getParam('refdes')).toBe('R7');
+        expect(output).toMatch(/^at create component: #= R7$/m);
+        expect(output).toMatch(/^at create component: #= R1$/m);
+    });
+
+    test('re-annotating the output is stable', async () => {
+        const script = `at create component:\n${CREATE_RES}`;
+        const first = await annotate(script);
+        const second = await annotate(first.output);
+        expect(second.output).toEqual(first.output);
+    });
+
+    test('explicit placeholder in a loop is kept and not duplicated', async () => {
+        const script = `for i in range(0, 3):\n    branch:\n        at create component: #= R1_\n            type: "res"\n            pins: 2\n`;
+        const first = await annotate(script);
+        expect(first.output.match(/#=/g)!.length).toBe(1);
+        const second = await annotate(first.output);
+        expect(second.output).toEqual(first.output);
+    });
+
+    test('add create component: gets annotation after the colon', async () => {
+        const script = `add create component:\n${CREATE_RES}`;
+        const { output, av } = await annotate(script);
+        expect(output).toMatch(/^add create component: #= R1$/m);
+        expect(output.match(/#=/g)!.length).toBe(1);
+        expect(av.getModifications().size).toBe(1);
+    });
+
+    test('explicit add create component: annotation is preserved', async () => {
+        const script = `add create component: #= R7\n${CREATE_RES}`;
+        const { output, av } = await annotate(script);
+        expect(output).toBe(script);
+        expect(av.getModifications().size).toBe(0);
+    });
+
+    test('add create component: re-annotation is stable', async () => {
+        const first = await annotate(`add create component:\n${CREATE_RES}`);
+        const second = await annotate(first.output);
+        expect(second.output).toEqual(first.output);
+    });
+
+    test('annotation on a created component does not overwrite the current component', async () => {
+        const script = `import "lib1"\nadd lib1.my_resistor() #= R5\nwire right 50\nat create component: #= R9\n${CREATE_RES}`;
+        const { visitor } = await annotate(script);
+        const refs = [...visitor.getScope().instances.values()]
+            .filter(i => i.hasParam('refdes')).map(i => i.getParam('refdes'));
+        expect(refs.sort()).toEqual(['R5', 'R9']);
+    });
 });
 
 describe('Refdes annotation: bus components', () => {
@@ -283,6 +436,11 @@ describe('Refdes annotation: clashes', () => {
 
     test('script7: duplicate explicit refdes errors with both lines', async () => {
         await expect(refdesOf(load('script7'), true)).rejects.toThrow(/Duplicate refdes 'R1'.*:5.*:7/);
+    });
+
+    test('inline create and add with same explicit refdes errors with both lines', async () => {
+        const script = 'from "std" import *\nat create component: #= R1\n    type: "res"\n    pins: 2\nwire right 50\nadd res(1k) #= R1\n';
+        await expect(refdesOf(script, true)).rejects.toThrow(/Duplicate refdes 'R1'.*:2.*:6/);
     });
 
     test('inline: more than 100 explicit refdes, auto gets next free name', async () => {
