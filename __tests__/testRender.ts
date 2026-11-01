@@ -174,6 +174,7 @@ describe('Render tests', () => {
         ['script127.cst', 'sheet closes the active frame properly'],
 
         ['script128.cst', 'Label function font_size and color parameters'],
+        ['script134.cst', 'Label font_size override is written as inline style'],
         ['script130.cst', 'Graphic table: command'],
 
         ['script131.cst', 'place_default frame param: unplaced parts, nets and ground still drawn']
@@ -406,6 +407,14 @@ describe('Render tests', () => {
         expect(fontSize('small3')).toBeLessThan(fontSize('default1'));
         expect(fontSize('both5')).toBeGreaterThan(fontSize('default1'));
         expect(fontSize('pos6')).toBeLessThan(fontSize('default1'));
+
+        // font_size overrides must be inline styles, since the class rule wins over attributes
+        const hasInlineFontSize = (label: string): boolean =>
+            new RegExp(`<text[^>]*style="[^"]*font-size[^"]*"[^>]*><tspan[^>]*>${label}</tspan>`)
+                .test(svgOutput);
+        expect(hasInlineFontSize('big2')).toBe(true);
+        expect(hasInlineFontSize('small3')).toBe(true);
+        expect(hasInlineFontSize('default1')).toBe(false);
 
         // default labels keep the themed color, overridden labels use the literal color
         expect(svgOutput).toContain('var(--cs-label-color)');

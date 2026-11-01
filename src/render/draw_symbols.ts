@@ -639,7 +639,18 @@ export abstract class SymbolGraphic {
             if (textColor !== labelClassDefault.fill) {
                 overrides['fill'] = resolveThemedColor(textColor, this.colorVarRegistry);
             }
-            
+            // The class rule beats presentation attributes in browsers, so
+            // size and weight that differ from the class need inline style.
+            const scaledSize = fontSize.toNumber() * fontDisplayScale;
+            if (labelClassDefault.fontSize !== undefined &&
+                Math.abs(scaledSize - labelClassDefault.fontSize * fontDisplayScale) > 1e-6) {
+                overrides['font-size'] = `${scaledSize}px`;
+            }
+            if (labelClassDefault.fontWeight !== undefined &&
+                fontWeight !== labelClassDefault.fontWeight) {
+                overrides['font-weight'] = fontWeight;
+            }
+
             const textElement = textContainer.text(tmpLabel.text);
             applyClassWithOverrides(textElement, labelClassDefault.className, overrides);
             textElement

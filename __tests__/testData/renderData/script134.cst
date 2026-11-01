@@ -1,0 +1,5 @@
+from "std" import *
+
+at label("hello", font_size=30)
+
+at label("hello")

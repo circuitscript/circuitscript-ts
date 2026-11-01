@@ -9,6 +9,7 @@ import { LayoutEngine } from '../src/render/layout.js';
 import { KiCadSchGenerator, KiCadVersion } from '../src/render/KiCadSchGenerator.js';
 import { printTree } from '../src/render/s_expressions.js';
 import { DocumentVariable } from '../src/objects/types.js';
+import { RenderError } from '../src/errors.js';
 
 describe('export to KiCad', () => {
 
@@ -757,3 +758,89 @@ add res(1k) angle:90
 wire down 100
 to gnd
 `;
+describe('KiCad hierarchical root sheet', () => {
+    const fixture = '__tests__/testData/renderData/scriptKicadMultiSheet.cst';
+
+    async function generateAll(script: string, name: string, version: KiCadVersion) {
+        const { hasError, visitor } = await runScript(script, fixture);
+        expect(hasError).toBe(false);
+
+        visitor.applySheetFrameComponent();
+        const { sequence, nets } = visitor.getGraph();
+        const documentVariable = visitor.getScope()
+            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+        const styles = getStylesFromDocument(documentVariable);
+
+        const logger = new Logger();
+        const graphEngine = new NetGraph(logger);
+        graphEngine.setStyles(styles);
+        const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+        const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+        const generator = new KiCadSchGenerator(version, '0.0.0');
+        return () => generator.generate(visitor, sheetFrames, name);
+    }
+
+    const body = (title2: string, extra = '') => `from "std" import *
+document.sheet_type = sheet_A6()
+vcc = net("3v3")
+gnd = dgnd()
+
+sheet:
+    ..title = "Power Supply"
+    at vcc
+    wire right 100 add res(1k)
+    to gnd
+
+sheet:
+    ..title = "${title2}"
+${extra}    at vcc
+    wire right 100 add res(2k)
+    to gnd
+`;
+
+    for (const version of [KiCadVersion.V9, KiCadVersion.V10]) {
+        describe(`V${version}`, () => {
+            test('root sheet links child files', async () => {
+                const script = readFileSync(fixture, { encoding: 'utf8' });
+                const gen = await generateAll(script, 'proj', version);
+                const out = gen();
+                expect(out.length).toBe(4);
+                expect(out[0].fileName).toBe('proj');
+                expect(out[1].fileName).toBe('power_supply');
+                expect(out[2].fileName).toBe('output_stage');
+                expect(out[3].fileName).toBe('proj-2');
+
+                const root = out[0].output;
+                expect(root.match(/\(sheet\b/g)!.length).toBe(3);
+                for (const [name, file] of [['Power Supply', out[1]],
+                    ['Output Stage', out[2]], ['Sheet 3', out[3]]] as const) {
+                    expect(root).toContain(`"Sheetname" "${name}"`);
+                    expect(root).toContain(`"Sheetfile" "${file.fileName}.kicad_sch"`);
+                }
+            });
+
+            test('name param overrides the cleaned title', async () => {
+                const gen = await generateAll(body('Other', '    ..name = "custom"\n'), 'proj', version);
+                const out = gen();
+                expect(out.map(o => o.fileName)).toEqual(['proj', 'power_supply', 'custom']);
+                expect(out[0].output).toContain('"custom.kicad_sch"');
+            });
+
+            test('duplicate cleaned titles throw', async () => {
+                const gen = await generateAll(body('power  supply'), 'proj', version);
+                expect(gen).toThrow(RenderError);
+                expect(gen).toThrow(/Power Supply.*power  supply/);
+            });
+
+            test('name param resolves a collision', async () => {
+                const gen = await generateAll(body('power  supply', '    ..name = "ps2"\n'), 'proj', version);
+                expect(gen().map(o => o.fileName)).toEqual(['proj', 'power_supply', 'ps2']);
+            });
+
+            test('file name equal to the project name throws', async () => {
+                const gen = await generateAll(body('Proj'), 'proj', version);
+                expect(gen).toThrow(RenderError);
+            });
+        });
+    }
+});

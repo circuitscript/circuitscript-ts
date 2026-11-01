@@ -1,0 +1,4 @@
+/hello | label-0.COMP-1-hello | 1
+/hello | label-0.COMP-1-hello:0 | 1
+/hello | label-1.COMP-1-hello | 1
+/hello | label-1.COMP-1-hello:0 | 1

@@ -19,6 +19,7 @@ import { PinId } from '../objects/PinDefinition.js';
 import { PinTypes } from '../objects/PinTypes.js';
 import { Net } from '../objects/Net.js';
 import { NumericValue } from '../objects/NumericValue.js';
+import { RenderError } from '../errors.js';
 import { resolveToLiteralColor, ThemedColor } from './svgClasses.js';
 
 export enum KiCadVersion {
@@ -118,20 +119,17 @@ export class KiCadSchGenerator {
             }
         }
 
-        // If only single sheet, then do not add the -{index} suffix for the 
-        // default value.
         const singleSheet = sheetFrames.length === 1;
+        const names = singleSheet
+            ? [{
+                sheetName: projectName,
+                fileName: sheetFrames[0].frame.frame.parameters.has('name')
+                    ? sheetFrames[0].frame.frame.parameters.get('name') : projectName,
+            }]
+            : this.resolveSheetNames(sheetFrames, projectName);
 
-        return sheetFrames.map((sheet, index) => {
-            const sheetParams = sheet.frame.frame.parameters;
-
-            // Default filename if none is provided.
-            let useSheetName = singleSheet ? projectName : `${projectName}-${index}`;
-            if (sheetParams.has('name')) {
-                // Use name of the sheet as the file name
-                useSheetName = sheetParams.get('name');
-            }
-
+        const sheetEntries = sheetFrames.map((sheet, index) => {
+            const useSheetName = names[index].fileName;
             const schematicUuid = deterministicUUID(`${projectName}-${useSheetName}`);
             const kicadOutput = this.generateSheet(visitor, sheet, schematicUuid,
                 paperSize, this.currentProjectName);
@@ -141,6 +139,100 @@ export class KiCadSchGenerator {
                 output: kicadOutput,
             }
         });
+
+        if (singleSheet) return sheetEntries;
+
+        const rootUuid = deterministicUUID(`${projectName}-root`);
+        const rootOutput = this.generateRootSheet(names, projectName, paperSize, rootUuid);
+        return [{ fileName: projectName, output: rootOutput }, ...sheetEntries];
+    }
+
+    /** Resolve the displayed sheet name and file name of each sheet (multi-sheet only). */
+    private resolveSheetNames(sheetFrames: SheetFrame[], projectName: string):
+        { sheetName: string, fileName: string }[] {
+        const cleanFileName = (t: string) => t.trim().replace(/\s+/g, '_').toLowerCase();
+
+        const resolved = sheetFrames.map((sheet, index) => {
+            const params = sheet.frame.frame.parameters;
+            const title = params.get(FrameParamKeys.Title);
+            const hasTitle = title !== undefined && title !== null && String(title) !== '';
+            const hasName = params.has('name');
+            const sheetName = hasTitle ? String(title) : `Sheet ${index + 1}`;
+            let fileName: string;
+            if (hasName) fileName = String(params.get('name'));
+            else if (hasTitle) fileName = cleanFileName(String(title));
+            else fileName = `${projectName}-${index}`;
+            return { sheetName, fileName, hasName };
+        });
+
+        const groups = new Map<string, typeof resolved>();
+        resolved.forEach(item => {
+            const key = item.fileName.toLowerCase();
+            groups.set(key, [...(groups.get(key) ?? []), item]);
+        });
+        const describe = (r: typeof resolved[number]) =>
+            `"${r.sheetName}"` + (r.hasName ? ` (name "${r.fileName}")` : '');
+        for (const [key, items] of groups) {
+            const clashesRoot = key === projectName.toLowerCase();
+            if (items.length > 1 || clashesRoot) {
+                const list = items.map(describe).join(', ');
+                throw new RenderError(
+                    `KiCad export: file name "${items[0].fileName}" is used by ` +
+                    (clashesRoot ? `the root sheet and by ${list}` : list) +
+                    '. Give these sheets distinct titles or set a distinct `name`.',
+                    'output_generation');
+            }
+        }
+
+        return resolved.map(({ sheetName, fileName }) => ({ sheetName, fileName }));
+    }
+
+    /** Root page with one hierarchical sheet block per child sheet. */
+    generateRootSheet(sheets: { sheetName: string, fileName: string }[],
+        projectName: string, paperSize: string, rootUuid: string): string {
+        const snap = (v: number) => Math.round(v / 1.27) * 1.27;
+        const w = 50.8, h = 25.4, gap = 12.7, cols = 2, x0 = 25.4, y0 = 25.4;
+
+        const blocks = sheets.map((sheet, i) => {
+            const x = snap(x0 + (i % cols) * (w + gap));
+            const y = snap(y0 + Math.floor(i / cols) * (h + gap + 5.08));
+            const hide = (): N => n('effects', n('font', n('size', raw(1.27), raw(1.27))),
+                n('justify', raw('left'), raw('bottom')));
+            return n('sheet',
+                n('at', raw(mm(x)), raw(mm(y))),
+                n('size', raw(mm(w)), raw(mm(h))),
+                n('exclude_from_sim', raw('no')),
+                n('in_bom', raw('yes')),
+                n('on_board', raw('yes')),
+                n('dnp', raw('no')),
+                n('fields_autoplaced', raw('yes')),
+                n('stroke', n('width', raw(0.1524)), n('type', raw('solid'))),
+                n('fill', n('color', raw(0), raw(0), raw(0), raw(0))),
+                n('uuid', deterministicUUID(`sheet_block_${projectName}_${sheet.fileName}`)),
+                n('property', 'Sheetname', sheet.sheetName,
+                    n('at', raw(mm(x)), raw(mm(y - 0.7366)), raw(0)), hide()),
+                n('property', 'Sheetfile', `${sheet.fileName}.kicad_sch`,
+                    n('at', raw(mm(x)), raw(mm(y + h + 0.5846)), raw(0)),
+                    n('effects', n('font', n('size', raw(1.27), raw(1.27)), n('italic', raw('yes'))),
+                        n('justify', raw('left'), raw('top')))),
+                n('instances',
+                    n('project', projectName,
+                        n('path', `/${rootUuid}`, n('page', String(i + 2))))
+                )
+            );
+        });
+
+        const root = n('kicad_sch',
+            n('version', raw(this.fileVersion())),
+            n('generator', 'circuitscript'),
+            n('generator_version', this.circuitscriptVersion),
+            n('uuid', rootUuid),
+            n('paper', paperSize),
+            n('lib_symbols'),
+            ...blocks,
+            n('sheet_instances', n('path', '/', n('page', '1')))
+        );
+        return printTree(root);
     }
 
     generateSheet(visitor: ParserVisitor, sheetFrame: SheetFrame, 
