@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ComponentTypes, Delimiter1, FrameType, GlobalNames, 
+import { ComponentTypes, Delimiter1, FrameType, GeneratedNetPrefix, GlobalNames, 
     NoNetText, ParamKeys, 
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
@@ -179,7 +179,7 @@ export class ExecutionContext {
     }
 
     private getUniqueNetName(): string {
-        const tmpName = `NET${Delimiter1}${this.scope.netCounter}`;
+        const tmpName = `${GeneratedNetPrefix}${this.scope.netCounter}`;
         this.scope.netCounter++;
         return tmpName;
     }
@@ -1640,18 +1640,33 @@ export class ExecutionContext {
         const childScopeUniqueNets = new Set<Net>(childScopeNets.map(([,,net]) => net));
 
         // Re-name child scope nets that exist in the parent scope
-        childScopeUniqueNets.forEach(net => {
+        for (const net of childScopeUniqueNets) {
             // If the same net exists, then rename it with a new unique name.
             // Net with priority 0 are generated nets (not user-defined).
-            if (net.priority === 0 
-                && this.scope.netMap.getNetWithNamespacePath(net.namespace, net.name) !== null){
-                this.log('net namespace and name already used in parent scope', net);
+            if (net.priority === 0) {
 
-                const newNetName = this.scope.netMap.getUniqueNetName();
-                net.name = newNetName;
-                this.log('assigned new name: ', net);
+                if (this.scope.netMap.getNetWithNamespacePath(net.namespace, net.name) !== null) {
+                    this.log('net namespace and name already used in parent scope', net);
+
+                    for (let i = 0; i < 100; i++) {
+                        const newNetName = this.scope.netMap.getUniqueNetName();
+
+                        // Ensure that the net does not exist yet, otherwise try
+                        // again.
+                        if (this.scope.netMap.getNetWithNamespacePath(net.namespace, newNetName) === null) {
+                            net.name = newNetName;
+                            break;
+                        } else {
+                            this.log('net name exists: ', newNetName);
+                        }
+                    }
+
+                    this.log('assigned new name: ', net);
+                } else {
+                    this.scope.netMap.updateCounter(net);
+                }
             }
-        });
+        }
 
         // Merge all child scope nets into parent scope
         childScopeNets.forEach(([component, pin, net]) => {
@@ -1784,7 +1799,7 @@ export class ExecutionContext {
 
         // dump the list of nets in the current scope
         const currentNets = this.scope.netMap.getNets();
-
+        
         currentNets.reduce((accum, [,,net]) => {
             if (accum.indexOf(net) === -1){
                 accum.push(net);

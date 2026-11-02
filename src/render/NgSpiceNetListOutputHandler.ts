@@ -2,7 +2,7 @@ import { NetListItemPin, ParserVisitor } from "src/visitor.js";
 import { ParseOutputHandler } from "./KiCadNetListOutputHandler.js";
 import { NumericValue } from "../objects/NumericValue.js";
 import { RuntimeExecutionError } from "../errors.js";
-import { GlobalDocumentName } from "../globals.js";
+import { GlobalDocumentName, GeneratedNetPrefix } from "../globals.js";
 import { ClassComponent } from "src/objects/ClassComponent.js";
 
 export class NgSpiceNetListOutputHandler extends ParseOutputHandler {
@@ -157,8 +157,8 @@ function generateNodeName(netName: string): string {
         netName = netName.slice(1);
     }
 
-    if (netName.startsWith("NET-")) {
-        netName = netName.slice(4);
+    if (netName.startsWith(GeneratedNetPrefix)) {
+        netName = netName.slice(GeneratedNetPrefix.length);
     }
 
     if (netName.toLowerCase() === "gnd"){

@@ -1,4 +1,4 @@
-import { Delimiter1 } from "../globals.js";
+import { GeneratedNetPrefix } from "../globals.js";
 import { RuntimeExecutionError } from "../errors.js";
 import { ClassComponent } from "./ClassComponent.js";
 import { Net } from "./Net.js";
@@ -23,7 +23,7 @@ export class NetMap {
     logCallback!: () => void;
 
     getUniqueNetName(): string {
-        const tmpName = `NET${Delimiter1}${this.netCounter}`;
+        const tmpName = `${GeneratedNetPrefix}${this.netCounter}`;
         this.netCounter++;
         return tmpName;
     }
@@ -74,6 +74,18 @@ export class NetMap {
         });
 
         return found ? found[2] : null;
+    }
+
+    updateCounter(net: Net): number {
+        // Only allow generated nets to increment the counter
+        if (net.priority === 0 && net.name.startsWith(GeneratedNetPrefix)) {
+            const tmpValue = Number(net.name.replace(GeneratedNetPrefix, ""));
+            if (!isNaN(tmpValue) && tmpValue >= this.netCounter) {
+                this.netCounter = tmpValue + 1;
+            }
+        }
+
+        return this.netCounter;
     }
 
     remove(component: ClassComponent, pin: PinId): void {

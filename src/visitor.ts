@@ -90,7 +90,7 @@ import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, Delimiter1, Fram
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
     WireAutoDirection,
-    defaultPinIdTextSize, RefdesMode, RefdesModes} from './globals.js';
+    defaultPinIdTextSize, RefdesMode, RefdesModes, GeneratedNetPrefix} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
@@ -3421,7 +3421,7 @@ export class ParserVisitor extends BaseVisitor {
                     useIdName = component.assignedRefDes;
                 }
 
-                let useNetName = `NET-(${useIdName}-${pin.toString()})`;
+                let useNetName = `${GeneratedNetPrefix}(${useIdName}-${pin.toString()})`;
                 if (netsInBus.has(net)){
                     const [busComponent, busPinId] = netsInBus.get(net);
 
@@ -3430,7 +3430,7 @@ export class ParserVisitor extends BaseVisitor {
                         useBusName = `${busComponent.getParam('bus_name')}.`;
                     }
 
-                    useNetName = `NET-(${useIdName}-${pin.toString()}-${useBusName}${busPinId.value})`;
+                    useNetName = `${GeneratedNetPrefix}(${useIdName}-${pin.toString()}-${useBusName}${busPinId.value})`;
                 }
 
                 net.baseName = net.name = useNetName;

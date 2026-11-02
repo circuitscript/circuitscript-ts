@@ -24,6 +24,9 @@ export enum GlobalNames {
 
 export const NoNetText = 'NO_NET';
 
+// Prefix for auto-generated net names (e.g. NET-1)
+export const GeneratedNetPrefix = `NET${Delimiter1}`;
+
 export enum ParamKeys {
     priority = 'priority',
     net_name = 'net_name',
