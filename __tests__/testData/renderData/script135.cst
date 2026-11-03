@@ -1,0 +1,19 @@
+# Generated child scope nets collide with parent scope generated nets and are renamed
+from "std" import *
+
+at tmp = create component:
+    pins: 6
+
+def sub():
+    at tmp pin 1
+    wire right 100 
+    add res(1k)
+    wire right 100
+    add res(2k)
+
+at tmp pin 2
+wire right 100
+add res(3k)
+wire right 100
+add res(4k)
+sub()

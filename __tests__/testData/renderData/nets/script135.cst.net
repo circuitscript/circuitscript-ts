@@ -1,0 +1,10 @@
+/NET-(J1-1) | COMP-1 | 1
+/NET-(J1-1) | sub-0.res-2.COMP-1-1k | 1
+/NET-(J1-2) | COMP-1 | 2
+/NET-(J1-2) | res-0.COMP-1-3k | 1
+/NET-(R1-2) | res-0.COMP-1-3k | 2
+/NET-(R1-2) | res-1.COMP-1-4k | 1
+/NET-(R2-2) | res-1.COMP-1-4k | 2
+/NET-(R3-2) | sub-0.res-2.COMP-1-1k | 2
+/NET-(R3-2) | sub-0.res-3.COMP-1-2k | 1
+/NET-(R4-2) | sub-0.res-3.COMP-1-2k | 2

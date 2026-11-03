@@ -40,6 +40,7 @@ export async function runScript(script: string, scriptPath?: string, options?: {
     indexedRefdes?: boolean,
     refdesMode?: RefdesMode,
     skipAnnotation?: boolean,
+    maxNetRenameAttempts?: number,
 }): Promise<{
     visitor: ParserVisitor,
     hasError: boolean,
@@ -67,6 +68,9 @@ export async function runScript(script: string, scriptPath?: string, options?: {
         };
         
     const visitor = new ParserVisitor(true, errorHandler, env);
+    if (options?.maxNetRenameAttempts !== undefined) {
+        visitor.settings.maxNetRenameAttempts = options.maxNetRenameAttempts;
+    }
 
     visitor.printToConsole = false; // do not clutter the console log
 
@@ -401,12 +405,14 @@ export function compareSvgToFile(svgFilePath: string, svgString: string, thresho
     };
 }
 
-export async function runScriptExpectError(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst'): Promise<string> {
-    const err = await runScriptExpectErrorObject(script, scriptPath);
+export async function runScriptExpectError(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst',
+    maxNetRenameAttempts?: number): Promise<string> {
+    const err = await runScriptExpectErrorObject(script, scriptPath, maxNetRenameAttempts);
     return (err as any).message ?? String(err);
 }
 
-export async function runScriptExpectErrorObject(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst'): Promise<any> {
+export async function runScriptExpectErrorObject(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst',
+    maxNetRenameAttempts?: number): Promise<any> {
     const chars = CharStream.fromString(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -418,6 +424,9 @@ export async function runScriptExpectErrorObject(script: string, scriptPath = '_
 
     const visitor = new ParserVisitor(true, null, env);
     visitor.printToConsole = false;
+    if (maxNetRenameAttempts !== undefined) {
+        visitor.settings.maxNetRenameAttempts = maxNetRenameAttempts;
+    }
 
     const parser = new CircuitScriptParser(tokens);
     parser.removeErrorListeners();

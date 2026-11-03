@@ -18,7 +18,7 @@ import {
     Value_exprContext, 
     ValueExprContext} from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptParserVisitor } from "./antlr/CircuitScriptParserVisitor.js";
-import { ExecutionContext } from "./execute.js";
+import { ExecutionContext, ExecutionSettings } from "./execute.js";
 import { Logger } from "./logger.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { Net } from "./objects/Net.js";
@@ -35,7 +35,7 @@ import { CallableParameter as CallableArgument, ComplexType,
     ComponentPinNetPair} from "./objects/types.js";
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, KeywordRefdesPrefix, ParamKeys, 
-    ReferenceTypes, TrailerArrayIndex } from './globals.js';
+    ReferenceTypes, TrailerArrayIndex, DefaultMaxNetRenameAttempts } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInFunctions } from './builtinMethods.js';
 import { VERSION } from './version.js';
@@ -102,6 +102,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
 
     protected warnings:ExecutionWarning[] = [];
 
+    settings: ExecutionSettings = { maxNetRenameAttempts: DefaultMaxNetRenameAttempts };
+
     // Maps filenames to file contents.
     loadedFiles: Map<string, string> = new Map();
     
@@ -141,6 +143,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             0, 0, silent, 
             this.logger, 
             this.warnings,
+            this.settings,
             null);
 
         const scope = this.startingContext.scope;
@@ -1734,6 +1737,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
             currentExecutionContext.silent,
             currentExecutionContext.logger,
             currentExecutionContext.warnings,
+            currentExecutionContext.settings,
             parentContext
         );
 

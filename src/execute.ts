@@ -40,6 +40,8 @@ import { PinTypes } from './objects/PinTypes.js';
 import { Scenario } from './objects/Scenario.js';
 
 /** Contains the current running state of the circuit graph */
+export interface ExecutionSettings { maxNetRenameAttempts: number }
+
 export class ExecutionContext {
 
     /** Local name of the execution context.  */
@@ -93,6 +95,8 @@ export class ExecutionContext {
 
     warnings: ExecutionWarning[] = [];
 
+    settings: ExecutionSettings;
+
     // Stores the index for a given parser rule context
     indexedStack = new Map<ParserRuleContext, {
         index: number,
@@ -108,9 +112,10 @@ export class ExecutionContext {
         silent = false,
         logger: Logger,
         warnings: ExecutionWarning[],
-
+        settings: ExecutionSettings,
         parent: ExecutionContext
     ) {
+        this.settings = settings;
         this.name = name;
         this.namespace = namespace;
         this.netNamespace = netNamespace;
@@ -1648,17 +1653,27 @@ export class ExecutionContext {
                 if (this.scope.netMap.getNetWithNamespacePath(net.namespace, net.name) !== null) {
                     this.log('net namespace and name already used in parent scope', net);
 
-                    for (let i = 0; i < 100; i++) {
+                    const limit = this.settings.maxNetRenameAttempts;
+                    let renamed = false;
+                    for (let i = 0; i < limit; i++) {
                         const newNetName = this.scope.netMap.getUniqueNetName();
 
                         // Ensure that the net does not exist yet, otherwise try
                         // again.
                         if (this.scope.netMap.getNetWithNamespacePath(net.namespace, newNetName) === null) {
                             net.name = newNetName;
+                            renamed = true;
                             break;
                         } else {
                             this.log('net name exists: ', newNetName);
                         }
+                    }
+
+                    if (!renamed) {
+                        throw new RuntimeExecutionError(
+                            `Unable to find an unused name for generated net "${net.name}" in ` +
+                            `namespace "${net.namespace}" after ${limit} attempts. ` +
+                            'Increase the limit with --max-net-rename-attempts.');
                     }
 
                     this.log('assigned new name: ', net);

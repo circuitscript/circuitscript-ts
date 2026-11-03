@@ -85,6 +85,8 @@ describe('test cli program', () => {
   --no-indexed-refdes               Disable indexed refdes for components in
                                     loops/functions; use running numbers
                                     instead (e.g. R1, R2 instead of R1_1, R1_2)
+  --max-net-rename-attempts <n>     Max attempts to find an unused name for a
+                                    colliding generated net (default 5000)
   --refdes-mode <mode>              Refdes mode for components in
                                     loops/functions: flat, indexed or
                                     indexed-flat (single counter per prefix,
@@ -245,6 +247,19 @@ Supported output formats (selected by output path extension):
             const status = runAndGetStatus(
                 `${baseCommand} ${rulesCheckPath}script6.cst -x`);
             expect(status).toEqual(0);
+        });
+
+        test('exits with status 0 with a custom --max-net-rename-attempts', () => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${renderPath}script135.cst -x --max-net-rename-attempts 10000`);
+            expect(status).toEqual(0);
+        });
+
+        test.each(['0', 'abc', '5abc', '-3'])(
+            'exits with status 1 on invalid --max-net-rename-attempts %s', (value) => {
+            const status = runAndGetStatus(
+                `${baseCommand} ${renderPath}script135.cst -x --max-net-rename-attempts=${value}`);
+            expect(status).toEqual(1);
         });
 
         test('exits with status 0 on a clean script', () => {
