@@ -68,6 +68,8 @@ export type ScriptOptions = {
     indexedRefdes?: boolean,
     // Refdes mode: flat, indexed or indexed-flat. Overrides indexedRefdes.
     refdesMode?: RefdesMode,
+    // Max attempts when renaming a colliding generated net (default 5000)
+    maxNetRenameAttempts?: number,
 
     /* Selects which rendered output (SVG, interactive HTML, or the raw
        interactive SVG) is generated and returned via `outputReturn` when

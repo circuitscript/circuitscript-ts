@@ -118,6 +118,9 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
     const visitor = new ParserVisitor(true, onErrorHandler, environment);
     visitor.logger.enabled = dumpData;
+    if (options.maxNetRenameAttempts !== undefined) {
+        visitor.settings.maxNetRenameAttempts = options.maxNetRenameAttempts;
+    }
     environment.setCurrentFile(inputPath);
     visitor.log(`current file: ${inputPath}`);
 

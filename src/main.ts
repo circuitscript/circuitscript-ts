@@ -12,7 +12,7 @@
 // module graph is loaded - see enableCompileCache.ts.
 import './enableCompileCache.js';
 
-import { program, Option } from 'commander';
+import { program, Option, InvalidArgumentError } from 'commander';
 import { RefdesMode, RefdesModes } from './globals.js';
 import figlet from 'figlet';
 
@@ -27,6 +27,13 @@ import { VERSION } from './version.js';
 export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
+
+    const parsePositiveInt = (val: string) => {
+        if (!/^\d+$/.test(val) || parseInt(val, 10) < 1) {
+            throw new InvalidArgumentError('Must be a positive integer.');
+        }
+        return parseInt(val, 10);
+    };
 
     const collectOutputPaths = (val: string, prev: string[]) => [...prev, val];
 
@@ -53,6 +60,7 @@ export default async function main(): Promise<void> {
         .option('--kicad-version <version>', 'KiCad schematic output version (9 or 10)', '9')
         .option('--no-simplify-refdes', 'Disable simplification of single-instance indexed refdes (e.g. R1_1 → R1)')
         .option('--no-indexed-refdes', 'Disable indexed refdes for components in loops/functions; use running numbers instead (e.g. R1, R2 instead of R1_1, R1_2)')
+        .option('--max-net-rename-attempts <n>', 'Max attempts to find an unused name for a colliding generated net (default 5000)', parsePositiveInt)
         .addOption(new Option('--refdes-mode <mode>', 'Refdes mode for components in loops/functions: flat, indexed or indexed-flat (single counter per prefix, e.g. R1_1, R1_2, R1_3)').choices(RefdesModes))
         .option('--o <fileName>', 'Additional output paths, see below', collectOutputPaths, [])
         ;
@@ -161,6 +169,7 @@ Supported output formats (selected by output path extension):
         simplifyRefdes: options.simplifyRefdes,
         indexedRefdes: options.indexedRefdes,
         refdesMode: options.refdesMode,
+        maxNetRenameAttempts: options.maxNetRenameAttempts,
     }
 
     // Build the list of output paths.

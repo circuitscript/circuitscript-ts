@@ -27,6 +27,9 @@ export const NoNetText = 'NO_NET';
 // Prefix for auto-generated net names (e.g. NET-1)
 export const GeneratedNetPrefix = `NET${Delimiter1}`;
 
+// Max attempts to find an unused name when renaming a colliding generated net
+export const DefaultMaxNetRenameAttempts = 5000;
+
 export enum ParamKeys {
     priority = 'priority',
     net_name = 'net_name',

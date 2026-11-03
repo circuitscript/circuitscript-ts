@@ -175,6 +175,7 @@ describe('Render tests', () => {
 
         ['script128.cst', 'Label function font_size and color parameters'],
         ['script134.cst', 'Label font_size override is written as inline style'],
+        ['script135.cst', 'Colliding generated child scope nets are renamed'],
         ['script130.cst', 'Graphic table: command'],
 
         ['script131.cst', 'place_default frame param: unplaced parts, nets and ground still drawn']
@@ -581,5 +582,23 @@ describe('Render tests', () => {
         expect(hasError).toEqual(false);
         expect(visitor.getWarnings().map(warning => warning.message)).toContainEqual(
             expect.stringContaining('Unknown frame property "..place_defualt"'));
+    });
+
+    test('generated net rename throws when the attempt limit is exhausted', async () => {
+        const scriptPath = mainPath + 'script135.cst';
+        const message = await runScriptExpectError(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath, 0);
+        expect(message).toContain('Unable to find an unused name');
+        expect(message).toContain('after 0 attempts');
+    });
+
+    test('generated net rename succeeds with a limit of 1 attempt', async () => {
+        const scriptPath = mainPath + 'script135.cst';
+        const script = readFileSync(scriptPath, { encoding: 'utf8' });
+        const { componentPinNets: defaultNets } = await runScript(script, scriptPath);
+        const { hasError, componentPinNets } = await runScript(script, scriptPath,
+            { maxNetRenameAttempts: 1 });
+        expect(hasError).toEqual(false);
+        expect(orderNets(componentPinNets)).toStrictEqual(orderNets(defaultNets));
     });
 });
