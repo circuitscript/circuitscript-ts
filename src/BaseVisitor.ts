@@ -280,6 +280,10 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
     log(...params: any[]): void {
+        if (!this.logger.enabled && this.silent) {
+            return;
+        }
+
         const indentLevel = this.getScope().scopeLevel;
 
         const indentOutput = ''.padStart(indentLevel * 4, '    ');

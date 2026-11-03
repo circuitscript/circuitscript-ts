@@ -22,6 +22,10 @@ export class NetMap {
 
     logCallback!: () => void;
 
+    /** Reports whether log output is active, so that expensive log
+     * arguments (string formatting of nets/components) can be skipped. */
+    logEnabled?: () => boolean;
+
     getUniqueNetName(): string {
         const tmpName = `${GeneratedNetPrefix}${this.netCounter}`;
         this.netCounter++;
@@ -51,7 +55,7 @@ export class NetMap {
         } else {
             this.items[result][2] = net;
         }
-        this.log(`set net: ${instance} ${pin} ${net}`);
+        this.logEnabled?.() && this.log(`set net: ${instance} ${pin} ${net}`);
         instance.pinNets.set(pin, net);
     }
 
@@ -135,7 +139,7 @@ export class NetMap {
         const net1 = this.get(component1, component1Pin);
         const net2 = this.get(component2, component2Pin);
 
-        this.log('link nets:', component1, component1Pin, net1, 'priority:' + net1?.priority,
+        this.logEnabled?.() && this.log('link nets:', component1, component1Pin, net1, 'priority:' + net1?.priority,
             'to', component2, component2Pin, net2, 'priority:' + net2?.priority);
 
         let returnNet: Net;
@@ -182,7 +186,7 @@ export class NetMap {
             }
         }
 
-        this.log('final net after link: ', returnNet, returnNet.priority);
+        this.logEnabled?.() && this.log('final net after link: ', returnNet, returnNet.priority);
         return returnNet!;
     }
 
@@ -234,6 +238,7 @@ export class NetMap {
         const cloned = new NetMap();
         cloned.items = this.items.map(([instance, pin, net]) => [instance, pin, net] as ComponentPinNetPair);
         cloned.logCallback = this.logCallback;
+        cloned.logEnabled = this.logEnabled;
         cloned.componentPinNetPairResolver = this.componentPinNetPairResolver;
         return cloned;
     }
