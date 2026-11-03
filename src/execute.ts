@@ -125,7 +125,7 @@ export class ExecutionContext {
 
         this.scope = ExecutionScope.create((...params) => {
             this.log(...params);
-        });
+        }, () => this.isLogging);
         
         this.scope.scopeLevel = scopeLevel;
 
@@ -146,7 +146,17 @@ export class ExecutionContext {
         })
     }
 
+    /** True if log() output goes anywhere (logger enabled or console not
+     * silenced). Callers building expensive log arguments can check this. */
+    get isLogging(): boolean {
+        return this.logger.enabled || !this.silent;
+    }
+
     log(...params: any[]): void {
+        if (!this.isLogging) {
+            return;
+        }
+
         const indentOutput = ''.padStart(this.scope.scopeLevel * 4, '    ');
         const indentLevelText = this.scope.scopeLevel
             .toString()

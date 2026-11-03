@@ -6,6 +6,7 @@
  */
 
 import { G } from "@svgdotjs/svg.js";
+import "./svgPatches.js";
 
 import { milsToMM } from "../helpers.js";
 import { ColorScheme, CustomSymbolParamTextSize, CustomSymbolPinIdSize, CustomSymbolPinTextSize, 

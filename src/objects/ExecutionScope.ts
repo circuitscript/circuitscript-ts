@@ -101,15 +101,16 @@ export class ExecutionScope {
 
     scenario: Scenario| null = null;
 
-    private constructor(scopeId: number, logCallback: any) {
+    private constructor(scopeId: number, logCallback: any, logEnabled?: () => boolean) {
         this.scopeId = scopeId;
         this.netMap.logCallback = logCallback;
+        this.netMap.logEnabled = logEnabled;
     }
 
     static scopeId = 0;
 
-    static create(logCallback: any): ExecutionScope {
-        const scope = new ExecutionScope(ExecutionScope.scopeId, logCallback);
+    static create(logCallback: any, logEnabled?: () => boolean): ExecutionScope {
+        const scope = new ExecutionScope(ExecutionScope.scopeId, logCallback, logEnabled);
         ExecutionScope.scopeId += 1;
         return scope;
     }

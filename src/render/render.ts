@@ -26,6 +26,7 @@ import { NodeScriptEnvironment } from "../environment/environment.js";
 import SVGtoPDF from 'svg-to-pdfkit';
 import { FrameParamKeys } from '../objects/Frame.js';
 import { SymbolPlaceholder } from './draw_symbols.js';
+import './svgPatches.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import { Logger } from '../logger.js';
 import { DocumentVariable } from 'src/objects/types.js';
