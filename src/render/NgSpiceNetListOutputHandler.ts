@@ -84,15 +84,10 @@ export class NgSpiceNetListOutputHandler extends ParseOutputHandler {
             }
 
             let simTitle = "* TITLE";
-            let simAnalysis = ".op";
 
             if (globalDocument.sim) {
                 if (globalDocument.sim.title) {
                     simTitle = `* ${globalDocument.sim.title}`;
-                }
-
-                if (globalDocument.sim.analysis) {
-                    simAnalysis = globalDocument.sim.analysis;
                 }
             }
 

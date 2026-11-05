@@ -1597,31 +1597,6 @@ export function applyComponentParamsToSymbol(componentUnit: ComponentUnit,
 
 }
 
-function calculateSymbolAngle(symbol: SymbolGraphic,
-    pin: number, direction: string): number {
-
-    let directionVector = 0;
-    switch (direction) {
-        case Direction.Right:
-            directionVector = 0;
-            break;
-        case Direction.Down:
-            directionVector = 90;
-            break;
-        case Direction.Left:
-            directionVector = 180;
-            break;
-        case Direction.Up:
-            directionVector = 270;
-            break;
-    }
-
-    const { angle: pinVector } = symbol.pinPosition(pin);
-    const useAngle = directionVector - (pinVector % 360);
-
-    return useAngle;
-}
-
 export function getBounds(
     components: (RenderComponent|RenderText)[], 
     wires: RenderWire[], junctions: RenderJunction[], frames: RenderFrame[]): BoundBox{

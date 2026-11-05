@@ -280,7 +280,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Visits simple import expressions and marks library name as namespace
      * Example: import "myLibrary"
      */
-    visitImport_simple = (ctx: Import_simpleContext): void => {
+    visitImport_simple = (_ctx: Import_simpleContext): void => {
         // libraryName should be passed as a string
     }
 
@@ -336,7 +336,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
         });
     }
 
-    visitTrailer = (ctx: TrailerContext): void => {
+    visitTrailer = (_ctx: TrailerContext): void => {
         // Do nothing
     }
 
@@ -407,7 +407,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
     /**
      * Debug method to dump all collected semantic tokens to console
      */
-    dumpTokens(){
+    dumpTokens(): void {
         for(const [id, value] of this.semanticTokens){
             console.log(id, value);
         }
@@ -417,7 +417,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * Returns the map of collected semantic tokens
      * @returns Map of semantic tokens indexed by position
      */
-    getTokens(){
+    getTokens(): Map<string, IParsedToken> {
         return this.semanticTokens;
     }
 }
@@ -567,6 +567,6 @@ function resolveTokenType(tokenType: string): string {
  * @param tokenType - ANTLR lexer token type name
  * @returns Array of semantic modifiers (currently empty)
  */
-function resolveTokenModifiers(tokenType: string): string[] {
+function resolveTokenModifiers(_tokenType: string): string[] {
     return [];
 }

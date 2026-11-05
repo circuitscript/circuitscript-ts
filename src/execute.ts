@@ -242,7 +242,7 @@ export class ExecutionContext {
         }
 
         // last function definition
-        const lastFuncMatch = name.match(/([\w_]+)\-[\d]+\.$/);
+        const lastFuncMatch = name.match(/([\w_]+)-[\d]+\.$/);
         if (lastFuncMatch) {
             const funcName = lastFuncMatch[1];
             return [...libraries, funcName].join("-");
@@ -1838,7 +1838,7 @@ export class ExecutionContext {
         return mergedInstances;
     }
 
-    addWire(segments: [string, (number | UnitDimension)?][], ctx: ParserRuleContext): Wire {
+    addWire(segments: [string, (number | UnitDimension)?][], _ctx: ParserRuleContext): Wire {
         if (this.scope.currentComponent === null) {
             throw "No current component";
         }
@@ -1959,6 +1959,7 @@ export class ExecutionContext {
             ]
         ];
 
+        // eslint-disable-next-line no-constant-condition -- intentionally disabled block
         if (false){
             commands.push(...[
                 [PlaceHolderCommands.lineColor,

@@ -45,7 +45,7 @@ export class SymbolValidatorResolveVisitor extends SymbolValidatorVisitor {
      * No-op implementation that prevents creating new variable symbols
      * during the resolution pass. Only validates existing symbols.
      */
-    protected addSymbolVariable(token: Token, name: string, value: ComplexType): void {
+    protected addSymbolVariable(_token: Token, _name: string, _value: ComplexType): void {
         // do nothing - resolution pass doesn't create new variables
     }
 

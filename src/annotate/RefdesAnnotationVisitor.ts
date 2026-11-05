@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ParserRuleContext, CommonTokenStream, Parser, TerminalNode } from 'antlr4ng';
+import { ParserRuleContext, CommonTokenStream, TerminalNode } from 'antlr4ng';
 import { Add_component_exprContext, Assignment_exprContext, At_block_headerContext, 
     At_blockContext, 
     At_component_exprContext, 
@@ -101,11 +101,11 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         );
     }
 
-    visitCallable_expr = (ctx: Callable_exprContext) => {
+    visitCallable_expr = (_ctx: Callable_exprContext): void => {
         // Do nothing
     }
 
-    visitAssignment_expr = (ctx: Assignment_exprContext) => {
+    visitAssignment_expr = (_ctx: Assignment_exprContext): void => {
         // Do nothing
     }
 
@@ -163,7 +163,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         this.addRefdesAnnotationComment(ctx);
     }
     
-    // Override the visitor.ts version.
+    // Override the visitor.ts version.
     visitAt_block = (ctx: At_blockContext):void => {
         this.visit(ctx.at_block_header());
         this.visit(ctx.at_block_expressions());
@@ -204,7 +204,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         this.runExpressions(this.getExecutor(), ctx.function_expr());
     };
 
-    visitFunction_return_expr = (ctx: Function_return_exprContext): void => {
+    visitFunction_return_expr = (_ctx: Function_return_exprContext): void => {
         // Do nothing and don't signal the end.
     }
 
@@ -212,16 +212,16 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         this.visit(ctx.expressions_block());
     }
 
-    visitFunction_call_expr = (ctx: Function_call_exprContext): void => {
+    visitFunction_call_expr = (_ctx: Function_call_exprContext): void => {
         // Do nothing
         this.inPathCommand = false;
     }
 
-    visitParameters = (ctx: ParametersContext): void => {
+    visitParameters = (_ctx: ParametersContext): void => {
         // Do nothing;
     }
 
-    visitTrailer = (ctx: TrailerContext): void => {
+    visitTrailer = (_ctx: TrailerContext): void => {
         // Do nothing
     }
 

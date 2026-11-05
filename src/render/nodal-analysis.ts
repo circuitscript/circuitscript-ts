@@ -12,7 +12,7 @@ import { ComponentTypes } from "../globals.js";
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { Net } from "../objects/Net.js";
 import { HighImpedanceValue, NumericValue } from "../objects/NumericValue.js";
-import { ComponentPinNetPair, NetTypes } from "../objects/types.js";
+import { ComponentPinNetPair } from "../objects/types.js";
 import { NetMap } from "../objects/NetMap.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { RuntimeExecutionError } from "../errors.js";

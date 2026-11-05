@@ -89,7 +89,7 @@ export function extractPartConditions(conditionBranches: ConditionNode[][]): Par
         const { endValue } = lastNode;
         const conditions: ConditionNode[] = [];
 
-        branch.forEach((node, index) => {
+        branch.forEach((node, _index) => {
             conditions.push({
                 key: node.key,
                 values: node.values

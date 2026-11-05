@@ -11,7 +11,7 @@ import { KeywordRefdesPrefix, RefdesMode } from '../globals.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 
-const defaultFormatPath = (filePath: string) => filePath.split(/[\\/]/).pop() ?? filePath;
+const defaultFormatPath = (filePath: string): string => filePath.split(/[\\/]/).pop() ?? filePath;
 
 export class ComponentAnnotater {
 

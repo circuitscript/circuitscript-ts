@@ -20,7 +20,7 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
     VerticalAlignProp,
     resolveDominantBaseline} from "./geometry.js";
 import { Logger } from "../logger.js";
-import { normalizePinType, PinTypes } from "../objects/PinTypes.js";
+import { PinTypes } from "../objects/PinTypes.js";
 import { RuntimeExecutionError, throwWithContext } from "../errors.js";
 import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
@@ -426,7 +426,7 @@ export abstract class SymbolGraphic {
 
             if (portType !== null) {
                 // Use the text measurement bounds.
-                const { x: boundsX, y: boundsY, width: measurementWidth}
+                const { y: boundsY, width: measurementWidth}
                     = tmpLabel.textMeasurementBounds;
 
                 const paddingHorizontal = PortPaddingHorizontal;
@@ -573,8 +573,8 @@ export abstract class SymbolGraphic {
                 //     });
             }
 
-            let containerX = translateX.toNumber();
-            let containerY = translateY.toNumber() - 0.1;
+            const containerX = translateX.toNumber();
+            const containerY = translateY.toNumber() - 0.1;
 
             textContainer.translate(
                 containerX, containerY)
@@ -846,30 +846,29 @@ export class SymbolPlaceholder extends SymbolGraphic {
                 switch (commandName) {
                     case PlaceHolderCommands.rect:
                         drawing.log('add rect', ...positionParams);
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addRect(...positionParams);
                         break;
 
                     case PlaceHolderCommands.hline:
                         drawing.log('add hline', ...positionParams);
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addHLine(...positionParams);
                         break;
 
                     case PlaceHolderCommands.vline:
                         drawing.log('add vline', ...positionParams);
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addVLine(...positionParams);
                         break;
 
                     case PlaceHolderCommands.line:
                         drawing.log('add line', ...positionParams);
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addLine(...positionParams);
                         break;
 
                     case PlaceHolderCommands.path:
-                        // @ts-ignore
                         if (Array.isArray(positionParams) && positionParams.length === 1) {
                             drawing.addPath(...positionParams[0]);
                         } else {
@@ -878,7 +877,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         break;
 
                     case PlaceHolderCommands.lineWidth:
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addSetLineWidth(...positionParams);
                         break;
 
@@ -899,24 +898,24 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         break;
 
                     case PlaceHolderCommands.arc:
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addArc(...positionParams);
                         break;
 
                     case PlaceHolderCommands.circle:
                         // circle params: center x, center y, radius
                         // Circle consists of drawing two arcs of 180 degrees each
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addCircle(...positionParams);
                         break;
 
                     case PlaceHolderCommands.triangle:
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addTriangle(...positionParams);
                         break;
 
                     case PlaceHolderCommands.arrow:
-                        // @ts-ignore
+                        // @ts-expect-error positionParams is a loosely typed spread argument list
                         drawing.addArrow(...positionParams);
                         break;
 
@@ -956,7 +955,6 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
                         drawing.log('add label', JSON.stringify(tmpPositionParams));
 
-                        //@ts-ignore
                         try {
                             drawing.addLabelMils(...tmpPositionParams);
                         } catch (err) {
@@ -1119,7 +1117,6 @@ export class SymbolPlaceholder extends SymbolGraphic {
         }
 
         let pinNameParam: string | null = null;
-        let pinType = PinTypes.Passive;
 
         if (typeof positionParams[1] === "string") {
             // First string should be the pin name
@@ -1127,7 +1124,6 @@ export class SymbolPlaceholder extends SymbolGraphic {
 
             // If this position is a string, then it must be the pin name.
             if (typeof positionParams[2] === "string") {
-                pinType = normalizePinType(positionParams[2]);
                 positionParams = [positionParams[0], ...positionParams.slice(3)];
             } else {
                 positionParams = [positionParams[0], ...positionParams.slice(2)];
@@ -1168,7 +1164,6 @@ export class SymbolPlaceholder extends SymbolGraphic {
             ]
         }
 
-        // @ts-ignore
         if (positionParams[0] instanceof NumericValue){
             positionParams[0] = new PinId(positionParams[0].toNumber());
         } else if (typeof positionParams[0] === 'number' || typeof positionParams[0] === 'string') {

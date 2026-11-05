@@ -38,14 +38,14 @@ function makeViolation(
     instance: ClassComponent,
     pin: PinId | null,
     netName: string
-) {
+): { type: ERC_Rules; instance: ClassComponent; pin: PinId | null; netName: string } {
     return { type, instance, pin, netName };
 }
 
 export function RuleCheck_PowerNetERC(
     nets: ComponentPinNetPair[],
     root: (n: Net) => Net = (n) => n
-) {
+): Array<{ type: ERC_Rules; instance: ClassComponent | null; pin: PinId | null; netName: string }> {
     const netMap = new Map<Net, NetState>();
     let schematicHasPowerReference = false;
 

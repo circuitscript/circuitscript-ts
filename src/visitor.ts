@@ -96,7 +96,7 @@ import { ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
-import { ParserRuleContext, Token } from 'antlr4ng';
+import { ParserRuleContext } from 'antlr4ng';
 import { getPortType } from './utils.js';
 import { BaseError, RuntimeExecutionError, ScenarioRuntimeError } from './errors.js';
 import { UnitDimension } from './helpers.js';
@@ -1036,7 +1036,7 @@ export class ParserVisitor extends BaseVisitor {
         const totalHeight = rowHeight.mul(nrows);
 
         const lowered: GraphicExprCommand[] = [];
-        const noKw = () => new Map<string, any>();
+        const noKw = (): Map<string, any> => new Map<string, any>();
 
         for (let i = 0; i <= nrows; i++) {
             lowered.push([PlaceHolderCommands.hline,
@@ -1489,10 +1489,8 @@ export class ParserVisitor extends BaseVisitor {
         }
 
         let ctxCondition: Data_exprContext;
-        let ctxTitle: Data_exprContext | null = null;
 
         if (ctxDataExpr.length === 2) {
-            ctxTitle = ctxDataExpr[0];
             ctxCondition = ctxDataExpr[1];
         } else {
             ctxCondition = ctxDataExpr[0];
@@ -3159,7 +3157,7 @@ export class ParserVisitor extends BaseVisitor {
         return this.getScope().instances;
     }
 
-    dump2() {
+    dump2(): Array<{ name: string; refdes: string | null; pins: Record<string, unknown> }> {
         const instances = this.getScope().instances;
         const items = [];
 

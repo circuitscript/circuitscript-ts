@@ -265,7 +265,7 @@ export class NetMap {
         });
     }
 
-    log(...params) {
+    log(...params): void {
         this.logCallback && this.logCallback(...params);
     }
 

@@ -29,7 +29,7 @@ import { cloneSymbol, SymbolTableItem, SymbolTableItemDefined } from "./SymbolTa
 import { SymbolTable } from "./SymbolTable.js";
 import { BaseVisitor } from "../BaseVisitor.js";
 import { FrameModifiers } from "../objects/Frame.js";
-import { BaseNamespace, SymbolValidatorContext } from "../globals.js";
+import { SymbolValidatorContext } from "../globals.js";
 import { AllPinTypes } from "../objects/PinTypes.js";
 
 /**
@@ -180,7 +180,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         return tmpSymbol;
     }
 
-    protected addSymbolInstance(symbol: SymbolTableItem, token: Token){
+    protected addSymbolInstance(symbol: SymbolTableItem, token: Token): void {
         symbol = symbol as SymbolTableItemDefined;
         if (symbol.instances.indexOf(token) == -1){
             symbol.instances.push(token);
@@ -250,7 +250,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         const executor = this.getExecutor();
 
         const symbolTable = this.symbolTable.getSymbols();
-        symbolTable.forEach((value, key) => {
+        symbolTable.forEach((value, _key) => {
             if (value.type === ParseSymbolType.Function) {
                 const definedSymbol = (value as SymbolTableItemDefined);
                 // The symbol is part of the library
@@ -595,7 +595,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * @brief Returns the symbol table containing all validated symbols
      * @return SymbolTable with variables, functions, and undefined references
      */
-    getSymbols() {
+    getSymbols(): SymbolTable {
         return this.symbolTable;
     }
 
@@ -606,7 +606,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * Outputs all symbol table entries for debugging and development.
      * Useful for understanding symbol resolution and scope issues.
      */
-    dumpSymbols() {
+    dumpSymbols(): void {
         this.symbolTable.dumpSymbols();
     }
 }

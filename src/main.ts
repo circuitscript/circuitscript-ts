@@ -28,14 +28,14 @@ export default async function main(): Promise<void> {
     const env = new NodeScriptEnvironment();
     NodeScriptEnvironment.setInstance(env);
 
-    const parsePositiveInt = (val: string) => {
+    const parsePositiveInt = (val: string): number => {
         if (!/^\d+$/.test(val) || parseInt(val, 10) < 1) {
             throw new InvalidArgumentError('Must be a positive integer.');
         }
         return parseInt(val, 10);
     };
 
-    const collectOutputPaths = (val: string, prev: string[]) => [...prev, val];
+    const collectOutputPaths = (val: string, prev: string[]): string[] => [...prev, val];
 
     program
         .description('generate graphical output from circuitscript files (supported output formats: svg, pdf, kicad_sch, net, cir, html)')

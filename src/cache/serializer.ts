@@ -81,7 +81,7 @@ export function serializeLibraryScope(
         let groupStart: [number, number] | null = null;
         let prevStopLine: number | null = null;
 
-        const flushGroup = () => {
+        const flushGroup = (): void => {
             let useSource = '';
             if (groupCtx.length > 0 && groupStart !== null) {
 
@@ -156,7 +156,7 @@ export function serializeLibraryScope(
     }
 
     const imports: SerializedExpression[] = [];
-    for (const [libName, lib] of importedLib.context.scope.libraries) {
+    for (const [, lib] of importedLib.context.scope.libraries) {
         imports.push(lib.importStatement);
     }
 

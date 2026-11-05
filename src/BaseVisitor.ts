@@ -34,7 +34,7 @@ import { CallableParameter as CallableArgument, ComplexType,
     ImportFunctionHandling as ImportFunctionHandling,
     ComponentPinNetPair} from "./objects/types.js";
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
-import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, KeywordRefdesPrefix, ParamKeys, 
+import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, ParamKeys, 
     ReferenceTypes, TrailerArrayIndex, DefaultMaxNetRenameAttempts } from './globals.js';
 import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInFunctions } from './builtinMethods.js';
@@ -113,8 +113,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     enableCachedImportsWrite = false || this.enableCacheImports;
 
     // Callback to set behaviour when file is imported
-    onImportFile = (visitor: BaseVisitor, filePath:string, fileData: string, 
-        onErrorHandler: OnErrorHandler, fileLineOffset: number): ImportFileResult => {
+    onImportFile = (_visitor: BaseVisitor, _filePath:string, _fileData: string, 
+        _onErrorHandler: OnErrorHandler, _fileLineOffset: number): ImportFileResult => {
         throw "Import file not implemented"
     }
 
@@ -1459,11 +1459,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<ComplexType | AnyRef
     }
 
 
-    checkLibraryInRefdesFile(filePath: string): void{
+    checkLibraryInRefdesFile(_filePath: string): void{
         return;
     }
 
-    getPathRefdesFile(filePath: string): string {
+    getPathRefdesFile(_filePath: string): string {
         return '';
     }
 

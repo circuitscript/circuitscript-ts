@@ -8,7 +8,7 @@
 import { NoNetText } from "../globals.js";
 import { NumericValue } from "../objects/NumericValue.js";
 import { NetListItem } from "../visitor.js";
-import { Id, IdObject, SExp } from "./s_expressions.js";
+import { Id, SExp } from "./s_expressions.js";
 
 export { IdObject, SExpObject, SExpString, SExpNested, SExp, printTree, _id } from "./s_expressions.js";
 

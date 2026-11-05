@@ -202,7 +202,7 @@ export class NetGraph {
                     // Record the sequence number to determine priority
                     graph.setNode(wireName, [RenderItemType.Wire, renderWire, index]);
 
-                    let tmpPreviousNode = previousNode;
+                    const tmpPreviousNode = previousNode;
 
                     // Connect previous node to pin:0 of the wire
                     this.setGraphEdge(graph, previousNode, wireName,

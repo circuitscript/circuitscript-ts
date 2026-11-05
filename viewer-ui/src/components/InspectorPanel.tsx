@@ -50,7 +50,7 @@ const SourceLine: FunctionComponent<{
   if (!onClick) {
     return <div className="cs-source-line">{text}</div>;
   }
-  const go = () => onClick(file, line);
+  const go = (): void => onClick(file, line);
   return (
     <div
       className="cs-source-line cs-source-link"
@@ -91,7 +91,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
 
   useEffect(() => {
     if (!isResizing) return undefined;
-    const handleMove = (event: PointerEvent) => {
+    const handleMove = (event: PointerEvent): void => {
       const viewport = panelRef.current?.parentElement;
       const viewportWidth = viewport?.getBoundingClientRect().width ?? Infinity;
       const maxWidth = Math.max(PANEL_MIN_WIDTH, viewportWidth - 40);
@@ -100,7 +100,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
       newWidth = Math.min(maxWidth, Math.max(PANEL_MIN_WIDTH, newWidth));
       setWidth(newWidth);
     };
-    const endResize = () => setIsResizing(false);
+    const endResize = (): void => setIsResizing(false);
     document.addEventListener('pointermove', handleMove);
     document.addEventListener('pointerup', endResize);
     document.addEventListener('pointercancel', endResize);

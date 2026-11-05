@@ -12,7 +12,7 @@ import { HorizontalAlign, HorizontalAlignProp, VerticalAlign, VerticalAlignProp,
 import { defaultFont } from './globals.js';
 import { NodeScriptEnvironment } from "./environment/environment.js";
 
-export function applyFontsToSVG(canvas: SVGTypeMapping): void {
+export function applyFontsToSVG(_canvas: SVGTypeMapping): void {
     // for (const fontName in supportedFonts) {
     //     canvas.fontface(fontName, "url('" + InterFontEncoded + "')");
     // }

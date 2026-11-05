@@ -110,7 +110,7 @@ export class TokenErrorListener extends BaseErrorListener {
         recognizer: Recognizer<T>, 
         offendingSymbol: S | null, 
         line: number, column: number, msg: string, 
-        e: RecognitionException | null): void {
+        _e: RecognitionException | null): void {
         console.log(msg);
     }
 

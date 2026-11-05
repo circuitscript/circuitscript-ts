@@ -538,7 +538,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         return [visitor, numeric(resistanceValue)];
     });
 
-    context.createFunction(BaseNamespace, 'evaluate', (params) => {
+    context.createFunction(BaseNamespace, 'evaluate', (_params) => {
         const scope = visitor.getScope();
         const scenario = visitor.getExecutor().resolveScenario()!;
 
@@ -689,7 +689,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         return [visitor];
     });
 
-    context.createFunction(BaseNamespace, 'open', (params) => {
+    context.createFunction(BaseNamespace, 'open', (_params) => {
         return [visitor];
     });
 
@@ -790,7 +790,7 @@ export function unlinkScenarioFunctions(context: ExecutionContext): void {
     });
 }
 
-function range(...args) {
+function range(...args): NumericValue[] {
     let startValue = numeric(0);
     let endValue = numeric(0);
 

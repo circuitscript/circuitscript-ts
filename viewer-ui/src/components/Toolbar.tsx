@@ -56,7 +56,7 @@ export const Toolbar: FunctionComponent<ToolbarProps> = ({
     // export-menu/dropdown-toggle click-outside handling.
     useEffect(() => {
         if (!isExportMenuOpen) return undefined;
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent): void => {
             if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
                 setIsExportMenuOpen(false);
             }
@@ -68,7 +68,7 @@ export const Toolbar: FunctionComponent<ToolbarProps> = ({
     const anyExportPending = exportOptions.some((opt) => pendingActions.has(opt.type));
     const exportMenuDisabled = !hasActiveFile || anyExportPending;
 
-    const handleExportClick = (type: ExportType) => {
+    const handleExportClick = (type: ExportType): void => {
         setIsExportMenuOpen(false);
         onExport(type);
     };

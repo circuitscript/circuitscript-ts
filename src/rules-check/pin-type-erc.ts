@@ -22,11 +22,11 @@ const PASSIVE_TYPES   = new Set([PinTypes.Passive, PinTypes.Any]);
 
 type PinEntry = { component: ClassComponent; pin: PinId; pinType: PinTypes };
 
-function makeViolation(type: ERC_Rules, instance: ClassComponent, pin: PinId | null, netName: string) {
+function makeViolation(type: ERC_Rules, instance: ClassComponent, pin: PinId | null, netName: string): { type: ERC_Rules; instance: ClassComponent; pin: PinId | null; netName: string } {
     return { type, instance, pin, netName };
 }
 
-export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]) {
+export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]): Array<ReturnType<typeof makeViolation>> {
     const netMap = new Map<Net, PinEntry[]>();
     const noConnectNets = new Set<Net>();
 

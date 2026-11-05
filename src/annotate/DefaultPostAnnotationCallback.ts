@@ -194,7 +194,7 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
                 const relativeFilePath = environment.relative(inputDir, filePath);
 
                 libraries.push({
-                    name: libraryName!!,
+                    name: libraryName!,
                     path: relativeFilePath,
                     items: output,
                 });

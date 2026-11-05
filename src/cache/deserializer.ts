@@ -63,7 +63,7 @@ export function deserializeLibraryScope(
 
             // Line offset is needed to correctly position the code chunk.
             // Needed to ensure correct refdes annotations.
-            const [line, column, sourceText] = func.sourceText;
+            const [line, , sourceText] = func.sourceText;
             const { tokens, tree } = parseAndVisit(sourceText, line - 1);
 
             importedLibrary.referencedTokens.push([tokens, tree]);
@@ -78,7 +78,7 @@ export function deserializeLibraryScope(
     // Handle imports first.
     enterContext();
     for (const importStatement of ir.imports) {
-        const [line, column, statement] = importStatement;
+        const [line, , statement] = importStatement;
         parseAndVisit(statement, line - 1);
     }
     
@@ -88,7 +88,7 @@ export function deserializeLibraryScope(
     // function definitions and are parsed independently so that each block's line
     // offset correctly maps back to its original position in the source file.
     for (const block of (ir.topLevel ?? [])) {
-        const [line, column, sourceText] = block;
+        const [line, , sourceText] = block;
         const {tokens, tree} = parseAndVisit(sourceText, line - 1);
         importedLibrary.referencedTokens.push([tokens, tree]);
     }

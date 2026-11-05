@@ -13,7 +13,7 @@ import { ComponentPinNetPair } from "../objects/types.js";
 import { ERC_Rules } from "./rules.js";
 import { ComponentTypes } from "../globals.js";
 
-export function RuleCheck_UnconnectedPinsWires(graph: Graph, nets: ComponentPinNetPair[] = []) {
+export function RuleCheck_UnconnectedPinsWires(graph: Graph, _nets: ComponentPinNetPair[] = []): any[] {
     const items: any[] = [];
     const allNodes = graph.nodes();
 

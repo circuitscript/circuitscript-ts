@@ -43,7 +43,7 @@ function isPhysicalPin(component: ClassComponent, pin: PinId): boolean {
  * @returns 
  */
 export function RuleCheck_NoConnectOnConnectedPin(graph: Graph, 
-    nets: ComponentPinNetPair[]) {
+    nets: ComponentPinNetPair[]): Array<{ type: ERC_Rules; instance: ClassComponent; target: { instance: ClassComponent; pin: PinId } }> {
     const items = [];
 
     // Physical pins in each net

@@ -1,5 +1,5 @@
 import { BaseVisitor } from "./BaseVisitor";
-import { Behavior_blockContext, Data_exprContext } from "./antlr/CircuitScriptParser";
+import { Behavior_blockContext } from "./antlr/CircuitScriptParser";
 
 export class ComponentBehavior {
     ctx: Behavior_blockContext;

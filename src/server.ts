@@ -27,7 +27,7 @@ wsServer.on('connection', socket => {
     }
 
     let emitTimeout = null;
-    fs.watch(fileName, (event, targetFile) => {
+    fs.watch(fileName, (event, _targetFile) => {
         if (event === 'change') {
             console.log((new Date()).toISOString(), 'file changed!');
 

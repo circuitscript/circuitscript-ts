@@ -150,7 +150,7 @@ export class KiCadSchGenerator {
     /** Resolve the displayed sheet name and file name of each sheet (multi-sheet only). */
     private resolveSheetNames(sheetFrames: SheetFrame[], projectName: string):
         { sheetName: string, fileName: string }[] {
-        const cleanFileName = (t: string) => t.trim().replace(/\s+/g, '_').toLowerCase();
+        const cleanFileName = (t: string): string => t.trim().replace(/\s+/g, '_').toLowerCase();
 
         const resolved = sheetFrames.map((sheet, index) => {
             const params = sheet.frame.frame.parameters;
@@ -170,7 +170,7 @@ export class KiCadSchGenerator {
             const key = item.fileName.toLowerCase();
             groups.set(key, [...(groups.get(key) ?? []), item]);
         });
-        const describe = (r: typeof resolved[number]) =>
+        const describe = (r: typeof resolved[number]): string =>
             `"${r.sheetName}"` + (r.hasName ? ` (name "${r.fileName}")` : '');
         for (const [key, items] of groups) {
             const clashesRoot = key === projectName.toLowerCase();
@@ -190,7 +190,7 @@ export class KiCadSchGenerator {
     /** Root page with one hierarchical sheet block per child sheet. */
     generateRootSheet(sheets: { sheetName: string, fileName: string }[],
         projectName: string, paperSize: string, rootUuid: string): string {
-        const snap = (v: number) => Math.round(v / 1.27) * 1.27;
+        const snap = (v: number): number => Math.round(v / 1.27) * 1.27;
         const w = 50.8, h = 25.4, gap = 12.7, cols = 2, x0 = 25.4, y0 = 25.4;
 
         const blocks = sheets.map((sheet, i) => {

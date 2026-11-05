@@ -1,1 +1,6 @@
 /**/*.js
+dist/
+src/antlr/CircuitScriptParser.ts
+src/antlr/CircuitScriptLexer.ts
+src/antlr/CircuitScriptParserVisitor.ts
+viewer/generated/

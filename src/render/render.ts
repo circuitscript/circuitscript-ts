@@ -729,7 +729,7 @@ export function boundBoxToRect(bounds: BoundBox,
 }
 
 function drawGrid(group: G,
-    gridProperties: GridProperties, logger: Logger): void {
+    gridProperties: GridProperties, _logger: Logger): void {
 
     const { gridBounds: canvasSize,
         extendGrid,

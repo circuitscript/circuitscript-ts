@@ -35,7 +35,7 @@ function buildErcNetBridgeUnionFind(nets: ComponentPinNetPair[]): Map<Net, Net> 
 
     // Merges a's and b's sets by pointing one root at the other; no-op if
     // they're already in the same set.
-    const union = (a: Net, b: Net) => {
+    const union = (a: Net, b: Net): void => {
         const ra = find(a);
         const rb = find(b);
         if (ra !== rb) parent.set(ra, rb);

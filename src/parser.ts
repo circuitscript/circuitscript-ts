@@ -148,19 +148,19 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
         this.syntaxErrorCounter++;
     }
 
-    reportAmbiguity(recognizer: Parser, dfa: DFA, startIndex: number,
-        stopIndex: number, exact: boolean, ambigAlts: BitSet | undefined,
-        configs: ATNConfigSet): void {
+    reportAmbiguity(_recognizer: Parser, _dfa: DFA, _startIndex: number,
+        _stopIndex: number, _exact: boolean, _ambigAlts: BitSet | undefined,
+        _configs: ATNConfigSet): void {
         // throw new Error('Method not implemented.');
     }
-    reportAttemptingFullContext(recognizer: Parser, dfa: DFA,
-        startIndex: number, stopIndex: number,
-        conflictingAlts: BitSet | undefined, configs: ATNConfigSet): void {
+    reportAttemptingFullContext(_recognizer: Parser, _dfa: DFA,
+        _startIndex: number, _stopIndex: number,
+        _conflictingAlts: BitSet | undefined, _configs: ATNConfigSet): void {
         // throw new Error('Method not implemented.');
     }
-    reportContextSensitivity(recognizer: Parser, dfa: DFA,
-        startIndex: number, stopIndex: number, prediction: number,
-        configs: ATNConfigSet): void {
+    reportContextSensitivity(_recognizer: Parser, _dfa: DFA,
+        _startIndex: number, _stopIndex: number, _prediction: number,
+        _configs: ATNConfigSet): void {
         // throw new Error('Method not implemented.');
     }
 

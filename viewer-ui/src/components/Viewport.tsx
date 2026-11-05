@@ -145,7 +145,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
     }
   }, [attachedRects]);
 
-  const removeHighlight = (rect: SVGRectElement) => {
+  const removeHighlight = (rect: SVGRectElement): void => {
     if (rect.parentNode) rect.parentNode.removeChild(rect);
   };
 
@@ -254,7 +254,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   // instead handles drags that leave the viewport bounds (e.g. over the side
   // panel) without that side effect.
   useEffect(() => {
-    const handleMove = (event: PointerEvent) => {
+    const handleMove = (event: PointerEvent): void => {
       const drag = dragStateRef.current;
       if (!drag.dragging) return;
       const nextTranslate = {
@@ -264,7 +264,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
       translateRef.current = nextTranslate;
       setTranslate(nextTranslate);
     };
-    const endDrag = () => {
+    const endDrag = (): void => {
       if (!dragStateRef.current.dragging) return;
       dragStateRef.current.dragging = false;
       setIsDragging(false);
@@ -296,7 +296,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return undefined;
-    const handleWheel = (event: WheelEvent) => {
+    const handleWheel = (event: WheelEvent): void => {
       event.preventDefault();
       const rect = el.getBoundingClientRect();
       const cursor = { x: event.clientX - rect.left, y: event.clientY - rect.top };
