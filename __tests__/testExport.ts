@@ -189,6 +189,191 @@ branch:
         expect(netNames).toContain('ns/SIG');
     });
 
+    describe('mergeScope generated net handling', () => {
+
+        const getNets = async (script: string) => {
+            const rawNets = await getRawNets(script);
+            expectNoMixedNets(rawNets);
+            const { hasError, visitor } = await runScript(script);
+            expect(hasError).toBe(false);
+            const { tree } = generateKiCadNetList(visitor.getNetList());
+            const nets = new SExpObject(new SExpObject(tree).getWithId('nets')!);
+            const json = nets.getJSON() as {
+                nets: { net: { name: string; node: { ref: string; pin: string }[] }[] }
+            };
+            const list = json.nets.net.map((n) => ({
+                ...n,
+                node: ([] as { ref: string; pin: string }[]).concat(n.node),
+            }));
+            const names = list.map((n) => n.name);
+            return { list, names, visitor };
+        };
+
+        // Net names before refdes-based renaming, mapped to the pins on each net
+        const getRawNets = async (script: string) => {
+            const { hasError, componentPinNets } = await runScript(script, undefined, { skipAnnotation: true });
+            expect(hasError).toBe(false);
+            const nets = new Map<string, string[]>();
+            for (const [name, instance, pin] of componentPinNets) {
+                nets.set(name, [...(nets.get(name) ?? []), `${instance}.${pin}`]);
+            }
+            return nets;
+        };
+
+        // A shared name for nets created in different scopes would merge them
+        // here, so no net may hold pins from both a function scope ('sub-')
+        // and the parent scope, unless it is a user-defined net.
+        const expectNoMixedNets = (raw: Map<string, string[]>) => {
+            for (const [name, pins] of raw) {
+                if (!name.startsWith('/NET-')) continue;
+                const inChild = pins.filter((p) => p.startsWith('sub-')).length;
+                expect(inChild === 0 || inChild === pins.length).toBe(true);
+            }
+        };
+
+        type NetList = Awaited<ReturnType<typeof getNets>>['list'];
+
+        // Returns the name of the net holding a pin, e.g. netOf(list, 'R1', '2')
+        const netOf = (list: NetList, ref: string, pin: string) =>
+            list.find((n) => n.node.some((x) => x.ref === ref && x.pin === pin))?.name;
+
+        const expectDistinct = (names: string[]) =>
+            expect(new Set(names).size).toBe(names.length);
+
+        test('collision: child generated net is renamed and stays separate', async () => {
+            const { list, names } = await getNets(`
+from "std" import *
+
+a1 = net("A1")
+a2 = net("A2")
+
+def sub():
+    add res(1k)
+    add res(2k)
+
+at a1
+add res(10k)
+add res(20k)
+
+at a2
+sub()
+`);
+            expectDistinct(names);
+            const parentNet = netOf(list, 'R1', '2');
+            const childNet = netOf(list, 'R3', '2');
+            expect(parentNet).toBeDefined();
+            expect(childNet).toBeDefined();
+            expect(netOf(list, 'R2', '1')).toBe(parentNet);
+            expect(netOf(list, 'R4', '1')).toBe(childNet);
+            expect(childNet).not.toBe(parentNet);
+        });
+
+        test('no collision: counter moves past merged child net', async () => {
+            const { list, names } = await getNets(`
+from "std" import *
+
+a1 = net("A1")
+a2 = net("A2")
+
+def sub():
+    add res(1k)
+    add res(2k)
+
+at a1
+sub()
+
+at a2
+add res(10k)
+add res(20k)
+`);
+            expectDistinct(names);
+            const childNet = netOf(list, 'R1', '2');
+            const parentNet = netOf(list, 'R3', '2');
+            expect(netOf(list, 'R2', '1')).toBe(childNet);
+            expect(netOf(list, 'R4', '1')).toBe(parentNet);
+            expect(childNet).not.toBe(parentNet);
+        });
+
+        test('retry: first candidate name is taken in the parent', async () => {
+            // The parent counter is at 3 when the child merges. The child's
+            // first generated net takes NET-3, so the next candidate is NET-4,
+            // which is held by a user-defined net (it does not advance the
+            // counter) and forces a retry.
+            const { list, names } = await getNets(`
+from "std" import *
+
+n4 = net("NET-4")
+a2 = net("A2")
+
+def sub():
+    add res(1k)
+
+at n4
+add res(10k)
+add res(20k)
+
+at a2
+sub()
+`);
+            expectDistinct(names);
+            const parentNet = netOf(list, 'R1', '2');
+            const childNet = netOf(list, 'R3', '2');
+            expect(netOf(list, 'R1', '1')).toBe('NET-4');
+            expect(netOf(list, 'R2', '1')).toBe(parentNet);
+            expect(childNet).not.toBe('NET-4');
+            expectDistinct([parentNet, childNet].map(String));
+        });
+
+        test('loop calls produce distinct nets per iteration', async () => {
+            const { list, names } = await getNets(`
+from "std" import *
+
+anchor = net("ANCHOR")
+
+def sub():
+    add res(1k)
+    add res(2k)
+
+at anchor
+for i in range(3):
+    branch:
+        sub()
+`);
+            expectDistinct(names);
+            const mids = [1, 2, 3].map((i) => {
+                const first = netOf(list, `R1_${i}_1`, '2');
+                expect(netOf(list, `R2_${i}_1`, '1')).toBe(first);
+                expect(netOf(list, `R1_${i}_1`, '1')).toBe('ANCHOR');
+                return first;
+            });
+            expectDistinct(mids.map(String));
+        });
+
+        test('user-defined child net keeps its name', async () => {
+            const { list, names } = await getNets(`
+from "std" import *
+
+a1 = net("A1")
+a2 = net("A2")
+
+def sub():
+    add res(1k)
+    add res(2k)
+    add net("SIG")
+
+at a1
+add res(10k)
+add res(20k)
+
+at a2
+sub()
+`);
+            expectDistinct(names);
+            expect(names).toContain('SIG');
+            expect(netOf(list, 'R4', '2')).toBe('SIG');
+        });
+    });
+
     test('KiCad schematic export resolves a themed (dark=/var=) fill color to its light value', async () => {
         const scriptPath = '__tests__/testData/renderData/script97.cst';
         const script = readFileSync(scriptPath, { encoding: 'utf8' });

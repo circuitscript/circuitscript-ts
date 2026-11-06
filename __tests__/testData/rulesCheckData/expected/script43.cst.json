@@ -20,10 +20,20 @@
         "message": "Power net '/V3' is declared but has no physical connections"
     },
     {
+        "start": {
+            "line": 12,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script43.cst",
+        "type": "UNCONNECTED-PIN",
+        "severity": "warning",
+        "message": "Unconnected pin: C1 pin 1"
+    },
+    {
         "start": null,
         "filePath": null,
         "type": "NO-POWER-REFERENCE-IN-SCHEMATIC",
         "severity": "warning",
-        "message": "No power_reference pin found in schematic — no ground reference defined"
+        "message": "No power_reference pin found in schematic \u2014 no ground reference defined"
     }
 ]

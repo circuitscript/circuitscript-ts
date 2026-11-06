@@ -7,6 +7,26 @@
         "filePath": "__tests__/testData/rulesCheckData/script4.cst",
         "type": "UNCONNECTED-PIN",
         "severity": "warning",
+        "message": "Unconnected pin: J1 pin 1"
+    },
+    {
+        "start": {
+            "line": 6,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script4.cst",
+        "type": "UNCONNECTED-PIN",
+        "severity": "warning",
+        "message": "Unconnected pin: J1 pin 2"
+    },
+    {
+        "start": {
+            "line": 6,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script4.cst",
+        "type": "UNCONNECTED-PIN",
+        "severity": "warning",
         "message": "Unconnected pin: J1 pin 5"
     },
     {

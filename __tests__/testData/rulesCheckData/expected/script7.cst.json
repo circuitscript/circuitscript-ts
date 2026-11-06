@@ -5,6 +5,16 @@
             "column": 0
         },
         "filePath": "__tests__/testData/rulesCheckData/script7.cst",
+        "type": "POWER-INPUT-UNCONNECTED",
+        "severity": "error",
+        "message": "Unconnected power_input pin: J1 pin 1"
+    },
+    {
+        "start": {
+            "line": 5,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script7.cst",
         "type": "POWER-NET-NO-SOURCE",
         "severity": "warning",
         "message": "Power net '/VCC' has power_input pins but no power_output source"

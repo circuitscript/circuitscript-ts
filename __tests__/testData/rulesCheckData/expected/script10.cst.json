@@ -1,1 +1,22 @@
-[]
+[
+    {
+        "start": {
+            "line": 6,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script10.cst",
+        "type": "POWER-OUTPUT-UNCONNECTED",
+        "severity": "warning",
+        "message": "Unconnected power_output pin: J1 pin 1"
+    },
+    {
+        "start": {
+            "line": 10,
+            "column": 0
+        },
+        "filePath": "__tests__/testData/rulesCheckData/script10.cst",
+        "type": "POWER-REFERENCE-UNCONNECTED",
+        "severity": "error",
+        "message": "Unconnected power_reference pin: J2 pin 1"
+    }
+]

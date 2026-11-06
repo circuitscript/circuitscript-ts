@@ -1,0 +1,16 @@
+from "std" import *
+
+v5 = supply("5V")
+
+tmp = create component:
+    pins: 2
+    arrange:
+        right: 1, 2
+
+# Pin 1 only reaches a supply, pin 2 only reaches a label.
+at tmp pin 1
+wire left 100 to v5
+
+at tmp pin 2
+wire right 100
+add label("sig")

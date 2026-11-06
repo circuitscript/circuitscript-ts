@@ -4,7 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { Graph } from "@dagrejs/graphlib";
+import { Edge, Graph } from "@dagrejs/graphlib";
+import { GraphNodeInfo, RenderItemType } from "../render/graph.js";
+import { RenderComponent } from "../render/layout.js";
 
 import { ParserVisitor } from "src/visitor";
 import { RuleCheck_UnconnectedPinsWires } from "./unconnected-pins.js";
@@ -18,6 +20,10 @@ import { Wire } from "src/objects/Wire.js";
 import { Token } from "antlr4ng";
 import { RuntimeExecutionError } from "../errors.js";
 import { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js';
+import { Net } from "../objects/Net.js";
+import { PinId } from "../objects/PinDefinition.js";
+import { ComponentTypes } from "../globals.js";
+import { PinTypes } from "../objects/PinTypes.js";
 
 export { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js';
 
@@ -29,15 +35,142 @@ export type ERCReportItem = {
     message: string,
 }
 
+/**
+ * A pin counts as a physical pin unless it belongs to a net marker (supply,
+ * label), bus, port, module, graphic or internal path object, or is a bus pin.
+ */
+export function isPhysicalPin(component: ClassComponent, pin: PinId): boolean {
+    switch (component.typeProp) {
+        case ComponentTypes.net:
+        case ComponentTypes.bus:
+        case ComponentTypes.port:
+        case ComponentTypes.module:
+        case ComponentTypes.graphic:
+            return false;
+    }
+
+    if (component.isNetLabel || component._isInternalPathObject) {
+        return false;
+    }
+
+    return component.pins.get(pin)?.pinType !== PinTypes.Bus;
+}
+
+/** Key identifying a pin on a specific unit instance. */
+export function makeComponentPinHash(instanceName: string, pin: PinId): string {
+    return instanceName + '-' + pin.getHashValue();
+}
+
+export type NoConnectTarget = {
+    component: ClassComponent,
+    net: Net,
+    targetComponentName: string,
+    targetPin: PinId,
+};
+
+/** Resolves each no_connect component to the nets it touches. */
+export function collectNoConnectTargets(graph: Graph,
+    pinMapping: Map<string, Net>): NoConnectTarget[] {
+    const targets: NoConnectTarget[] = [];
+
+    for (const node of graph.nodes()) {
+        const nodeInfo = graph.node(node) as GraphNodeInfo;
+        if (nodeInfo[0] !== RenderItemType.Component) {
+            continue;
+        }
+
+        const { component } = nodeInfo[1] as RenderComponent;
+        if (!component.hasParam('no_connect')) {
+            continue;
+        }
+
+        const instanceName = component.getUnit().instanceName;
+        for (const edge of graph.nodeEdges(node) as Edge[]) {
+            const edgeInfo = graph.edge(edge.v, edge.w);
+            let targetComponentName: string;
+            let targetPin: PinId;
+
+            if (edge.v === instanceName) {
+                targetComponentName = edge.w;
+                targetPin = edgeInfo[3];
+            } else {
+                targetComponentName = edge.v;
+                targetPin = edgeInfo[1];
+            }
+
+            const net = pinMapping.get(
+                makeComponentPinHash(targetComponentName, targetPin));
+            if (net !== undefined) {
+                targets.push({ component, net, targetComponentName, targetPin });
+            }
+        }
+    }
+
+    return targets;
+}
+
+/**
+ * Nets holding a no_connect pin. Covers no_connect markers that sit behind a
+ * wire or label, where the graph edge does not reach a component pin.
+ */
+export function collectNoConnectNets(graph: Graph,
+    pinMapping: Map<string, Net>): Set<Net> {
+    const result = new Set<Net>();
+
+    for (const node of graph.nodes()) {
+        const nodeInfo = graph.node(node) as GraphNodeInfo;
+        if (nodeInfo[0] !== RenderItemType.Component) {
+            continue;
+        }
+
+        const { component } = nodeInfo[1] as RenderComponent;
+        if (!component.hasParam('no_connect')) {
+            continue;
+        }
+
+        const unit = component.getUnit();
+        for (const pin of unit.pins.keys()) {
+            const net = pinMapping.get(makeComponentPinHash(unit.instanceName, pin));
+            if (net !== undefined) {
+                result.add(net);
+            }
+        }
+    }
+
+    return result;
+}
+
 export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
     nets: ComponentPinNetPair[], documentRules: Record<string, string> = {}): ERCReportItem[] {
     const ruleCheckItems = [];
     const creationCtx = visitor.creationCtx;
     const ercNets = mergeErcNetBridgedNets(nets);
 
+    // Physical pins in each net
+    const netPhysicalPins = new Map<Net, [ClassComponent, PinId][]>();
+
+    // Links component-pin to net.
+    const pinMapping = new Map<string, Net>();
+
+    for (const [component, pin, net] of nets) {
+        const unit = component.getUnitForPin(pin);
+        pinMapping.set(makeComponentPinHash(unit.instanceName, pin), net);
+
+        if (isPhysicalPin(component, pin)) {
+            if (!netPhysicalPins.has(net)) {
+                netPhysicalPins.set(net, []);
+            }
+            netPhysicalPins.get(net)!.push([component, pin]);
+        }
+    }
+
+    const noConnectTargets = collectNoConnectTargets(graph, pinMapping);
+    const noConnectNets = collectNoConnectNets(graph, pinMapping);
+    noConnectTargets.forEach(t => noConnectNets.add(t.net));
+
     ruleCheckItems.push(
-        ...RuleCheck_UnconnectedPinsWires(graph, nets),
-        ...RuleCheck_NoConnectOnConnectedPin(graph, nets),
+        ...RuleCheck_UnconnectedPinsWires(graph, netPhysicalPins, pinMapping, noConnectNets),
+        ...RuleCheck_NoConnectOnConnectedPin(noConnectTargets, netPhysicalPins),
         ...RuleCheck_PowerNetERC(nets, getErcNetRoots(nets)),
         ...RuleCheck_PinTypeERC(ercNets)
     );

@@ -1,0 +1,20 @@
+from "std" import *
+
+tmp = create component:
+    pins: 1
+    arrange:
+        right: 1
+
+tmp2 = create component:
+    pins: 1
+    arrange:
+        left: 1
+
+# Two physical pins on one net, one through a label.
+at tmp pin 1
+wire right 100
+add label("sig")
+
+at tmp2 pin 1
+wire left 100
+add label("sig")
