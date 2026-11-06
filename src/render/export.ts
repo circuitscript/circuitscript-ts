@@ -26,7 +26,7 @@ export function generateKiCadNetList(netlist: NetListItem[])
     const componentsList = [];
 
     // Dictionary storing net name to the list of nodes/pins
-    const nets: Record<string, any[]> = Object.create(null);
+    const nets: Record<string, unknown[]> = Object.create(null);
 
     const missingFootprints: { refdes: string, instanceName: string }[] = [];
 

@@ -9,6 +9,7 @@ import { FrameType } from "../globals.js";
 
 /** Frame class to hold frame parameters */
 export class Frame {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- frame parameters are read as typed values (NumericValue, FramePlotDirection, ClassComponent, strings) by render/KiCad code outside this file; unknown breaks those consumers
     parameters: Map<string, any> = new Map();
     frameId: number;
     frameType: FrameType;

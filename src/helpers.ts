@@ -18,6 +18,7 @@ import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
 import { LengthUnit, MilsToMM, PxToMM, RefdesMode } from "./globals.js";
 
 // Dynamic type definition for svgdom since it's ESM-only
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- svgdom is ESM-only and dynamically imported; no static typing available
 export type SVGWindow = any;
 import { NumericValue, resolveToNumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from "./environment/environment.js";

@@ -828,6 +828,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
         commands.forEach(([commandName, positionParams, keywordParams, ctx]) => {
 
             // evaluate any declared references in the position and keywork params
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- command args are dynamic script values spread into typed draw methods (see @ts-expect-error below)
             positionParams = (positionParams as any[]).map(param => {
                 return this.resolveReference(param);
             });
@@ -1003,8 +1004,9 @@ export class SymbolPlaceholder extends SymbolGraphic {
      * ambiguous with a genuine light/dark pair and silently drops dark
      * theming if left unhandled, so it's rejected outright instead.
      */
-    private parseThemedColorArgs(commandName: any, positionParams: any,
-        keywordParams: Map<string, any> | unknown): ThemedColor {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- positional args are untyped script values (callers pass loosely narrowed unions)
+    private parseThemedColorArgs(commandName: unknown, positionParams: any,
+        keywordParams: unknown): ThemedColor {
 
         if (positionParams.length > 1) {
             throw new RuntimeExecutionError(
@@ -1029,6 +1031,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
         return { light, dark: dark ?? light, varName };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reference values are arbitrary script values passed through untouched to typed draw methods
     private resolveReference(param: any): any {
         if (param instanceof DeclaredReference) {
             return param.value;
@@ -1039,6 +1042,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
         return param;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- keyword values are arbitrary script values assigned into LabelStyle fields by key
     parseLabelStyle(keywordParams: Map<string, any>): LabelStyle {
         // Script-facing keyword name -> internal LabelStyle property name.
         // The script surface is snake_case, the style object stays camelCase.
@@ -1054,6 +1058,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
         ];
 
         // Create the style object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- keyed assignment of arbitrary script values into LabelStyle
         const style: { [key: string]: any } = {};
         keywords.forEach(([keyword, styleKey]) => {
             if (keywordParams.has(keyword)) {
@@ -1072,7 +1077,10 @@ export class SymbolPlaceholder extends SymbolGraphic {
     }
     
     drawPinParams(drawing: SymbolDrawingCommands,
-        commandName: string, keywordParams: Map<string, any>,
+        commandName: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- keyword args are untyped script values
+        keywordParams: Map<string, any>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- positional args are untyped script values spread into draw methods
         positionParams: any[], lineColor: ThemedColor, pinNameColor: ThemedColor): void {
 
         drawing.log('add pin', ...positionParams);
@@ -1722,6 +1730,7 @@ export class SymbolDrawing {
 
     // Stores values that will be used to populate/fill up fields
     // in the graphic object.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- values are filled from arbitrary script expressions and read as strings/numbers/colors by command callbacks
     variables: Map<string, any> = new Map();
 
     clear(): void {
@@ -1729,7 +1738,7 @@ export class SymbolDrawing {
         this.pins = [];
     }
 
-    log(...params: any[]): void {
+    log(...params: unknown[]): void {
         this.logger && this.logger.add(params.join(' '));
     }
 
@@ -2023,6 +2032,7 @@ export class SymbolDrawing {
         return this;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- path parts are mixed strings/numbers/references reduced at runtime
     addPath(...pathParts: any): SymbolDrawing {
         const parts = pathParts.reduce((accum, tmp) => {
             if (typeof tmp === "string") {
@@ -2315,7 +2325,9 @@ export class SymbolDrawing {
 }
 
 export type GraphicExprCommand = [commandName: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- positional args are untyped script values spread into draw methods
     positionParams: any[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- keyword args are untyped script values
     keywordParams: Map<string, any>,
     ctx: ParserRuleContext
 ];
@@ -2331,8 +2343,10 @@ export class SymbolDrawingCommands extends SymbolDrawing {
     paramIds: string[] = [];    // For component reference when executing
                                 // graphic commands
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- variable values are untyped script values (see SymbolDrawing.variables)
     callback: (variables: Map<string, any>) => GraphicExprCommand[];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- variable values are untyped script values (see SymbolDrawing.variables)
     constructor(callback: (variables: Map<string, any>) => GraphicExprCommand[]){
         super();
         this.callback = callback;

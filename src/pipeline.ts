@@ -94,7 +94,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     
     const errors: BaseError[] = [];
     const onErrorHandler: OnErrorHandler =
-        (message: string, context: ParserRuleContext, error?: any) => {
+        (message: string, context: ParserRuleContext, error?: unknown) => {
             if (error && error instanceof RuntimeExecutionError) {
                 errors.push(error);
             } else if (error && error instanceof RecognitionException) {
@@ -406,7 +406,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                         containerFrames, nets);
 
                     if (enableErc) {
-                        const documentRules = (documentVariable as any).rules as Record<string, string>;
+                        const documentRules = (documentVariable as DocumentVariable & { rules?: Record<string, string> }).rules as Record<string, string>;
                         ercResults = EvaluateERCRules(visitor, graph, nets, documentRules);
 
                         if (ercResults.length > 0) {

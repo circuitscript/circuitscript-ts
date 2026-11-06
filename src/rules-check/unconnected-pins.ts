@@ -13,7 +13,9 @@ import { ComponentPinNetPair } from "../objects/types.js";
 import { ERC_Rules } from "./rules.js";
 import { ComponentTypes } from "../globals.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous ERC items are read by rules.ts via property access on a mixed array; a union breaks that caller
 export function RuleCheck_UnconnectedPinsWires(graph: Graph, _nets: ComponentPinNetPair[] = []): any[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see return type
     const items: any[] = [];
     const allNodes = graph.nodes();
 

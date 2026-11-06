@@ -37,7 +37,7 @@ export function raw(value: string | number): RawAtom {
 }
 
 // TODO: fix type of tree
-export function printTree(tree: any, level = 0): string {
+export function printTree(tree: unknown, level = 0): string {
     const output = [];
 
     // If a single item, then just return the value
@@ -85,23 +85,27 @@ export class SExpObject {
         return object[0];
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- slice of the mixed s-expression tuple; the element types do not satisfy SExp so getJSON recursion needs an untyped array
     getValue(object: SExp | null = null): any {
         object = object ?? this.object;
         return object.slice(1);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary JSON tree built from heterogeneous s-expressions; callers/tests cast the result to ad-hoc shapes
     getJSON(object: SExp | null = null): { [key: string]: any } {
         object = object ?? this.object;
         if (!Array.isArray(object)) {
             return object;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary JSON tree built from heterogeneous s-expressions; callers/tests cast the result to ad-hoc shapes
         const properties: { [key: string]: any } = {};
         const keyName = object[0].keyName;
 
         if (object.length === 2) {
             properties[keyName] = this.getJSON(object[1]);
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary JSON tree built from heterogeneous s-expressions; callers/tests cast the result to ad-hoc shapes
             const innerProps: { [key: string]: any } = {};
             this.getValue(object).forEach(item => {
                 // if key already exists, then change to an array

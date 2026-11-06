@@ -14,7 +14,7 @@ export class NgSpiceNetListOutputHandler extends ParseOutputHandler {
             const netlist = visitor.getNetList();
 
             const globalDocument =
-                visitor.getScope().variables.get(GlobalDocumentName) as Record<string, any>;
+                visitor.getScope().variables.get(GlobalDocumentName) as { sim?: { title?: string } };
 
             const models: string[] = [];
             const lines: (string|string[])[] = [];

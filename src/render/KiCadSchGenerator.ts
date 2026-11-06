@@ -68,7 +68,7 @@ function deterministicUUID(seed: string): string {
 type N = any[];
 
 /** Shorthand to create a named s-expression node. */
-function n(id: string, ...children: any[]): N {
+function n(id: string, ...children: unknown[]): N {
     return [Id(id), ...children];
 }
 
@@ -370,7 +370,7 @@ export class KiCadSchGenerator {
         for (const item of visitor.getNetList()) {
             const pinMap = new Map<string, string>();
             for (const [pinKey, netInfo] of Object.entries(item.pins)) {
-                const netName = (netInfo as any).netName ?? netInfo;
+                const netName = netInfo.netName ?? netInfo;
                 pinMap.set(String(pinKey), String(netName));
             }
             result.set(item.instanceName, pinMap);
@@ -453,9 +453,10 @@ export class KiCadSchGenerator {
                 fillType = fc === 'none' ? 'none'
                     : 'background';
             } else if (item.name === 'lineWidth') {
-                const lw = item.value as any;
-                lineWidth = (typeof lw === 'object' && lw !== null && typeof lw.toNumber === 'function')
-                    ? lw.toNumber()
+                const lw: unknown = item.value;
+                lineWidth = (typeof lw === 'object' && lw !== null
+                    && typeof (lw as { toNumber?: unknown }).toNumber === 'function')
+                    ? (lw as { toNumber: () => number }).toNumber()
                     : Number(lw);
             } else {
                 if (item instanceof GeometryProp || (item instanceof Textbox)){
@@ -629,7 +630,7 @@ export class KiCadSchGenerator {
      * Build a single geometry feature as a KiCad polyline or arc node.
      */
     private buildFeature(feat: Feature, fillType: string, lineWidth: number): N {
-        const f = feat as any;
+        const f: Feature = feat;
         const stroke = n('stroke', n('width', raw(mm(lineWidth))), n('type', raw('default')));
         const fill = n('fill', n('type', raw(fillType)));
 

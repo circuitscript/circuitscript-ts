@@ -28,13 +28,14 @@ import { Scenario } from './Scenario.js';
  * to occur with the key/value pairs immediately and exceptions will have
  * access to the relevant context/token info.
  **/
-type OnPropertyHandler = (path: PropertyTreeKey[], value: any, valueContext:ParserRuleContext) => void;
+type OnPropertyHandler = (path: PropertyTreeKey[], value: unknown, valueContext:ParserRuleContext) => void;
 
 /** 
 Stores the path of the property tree, which can have nested properties.
 If the property tree contains an item in the array, then it have the word 'index'
 as the first item instead of the context.
 **/
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- key values are read by visitor as ids/names
 export type PropertyTreeKey = [ctx: ParserRuleContext, value: any] | ['index', number];
 
 export class ExecutionScope {
@@ -101,7 +102,7 @@ export class ExecutionScope {
 
     scenario: Scenario| null = null;
 
-    private constructor(scopeId: number, logCallback: any, logEnabled?: () => boolean) {
+    private constructor(scopeId: number, logCallback: () => void, logEnabled?: () => boolean) {
         this.scopeId = scopeId;
         this.netMap.logCallback = logCallback;
         this.netMap.logEnabled = logEnabled;
@@ -109,7 +110,7 @@ export class ExecutionScope {
 
     static scopeId = 0;
 
-    static create(logCallback: any, logEnabled?: () => boolean): ExecutionScope {
+    static create(logCallback: () => void, logEnabled?: () => boolean): ExecutionScope {
         const scope = new ExecutionScope(ExecutionScope.scopeId, logCallback, logEnabled);
         ExecutionScope.scopeId += 1;
         return scope;
@@ -122,10 +123,12 @@ export class ExecutionScope {
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- callers (visitor) pass loosely-typed values incl. document objects
     setVariable(name: string, value: any): void {
         this.variables.set(name, value);
     }
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- item is a wire/frame id from loosely typed callers
     setActive(type: ActiveObject, item: any): void {
         // Reset the state and ensure that only one of the 
         // active object is selected.
@@ -190,7 +193,7 @@ export class ExecutionScope {
         return this.onPropertyHandler.pop()!;
     }
 
-    triggerPropertyHandler(visitor: BaseVisitor, value: any, 
+    triggerPropertyHandler(visitor: BaseVisitor, value: unknown, 
         valueCtx:ParserRuleContext): void {
         
         const lastHandler = this.onPropertyHandler[this.onPropertyHandler.length-1];

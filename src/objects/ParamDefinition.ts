@@ -7,9 +7,10 @@
 
 export class ParamDefinition {
     paramName: string;
-    paramValue: string | number | any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- read by callers as untyped value
+    paramValue: any;
 
-    constructor(paramName: string, paramValue: any) {
+    constructor(paramName: string, paramValue: unknown) {
         this.paramName = paramName;
         this.paramValue = paramValue;
     }

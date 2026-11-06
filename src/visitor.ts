@@ -110,6 +110,12 @@ import { ComponentBehavior } from './behavior.js';
 import { Scenario, formatScenarioResults } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
+// Property trees (component/module/frame definitions) hold arbitrary runtime values
+// that are indexed and narrowed per key by the visitor.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic property tree values
+type PropertyValue = any;
+type PropertyMap = Map<string, PropertyValue>;
+
 export class ParserVisitor extends BaseVisitor {
 
     private refdesMode: RefdesMode = RefdesMode.Indexed;
@@ -511,12 +517,12 @@ export class ParserVisitor extends BaseVisitor {
      * @param typeProp 
      * @returns 
      */
-    private extractComponentUnitProperties(properties: Map<string, any>,
+    private extractComponentUnitProperties(properties: PropertyMap,
         typeProp: string | null): [string, ComponentUnitDefinition][] {
 
         let lastNumericPinId = 0;
         
-        const unitsProperties: [string, any][] = [];
+        const unitsProperties: [string, ComponentUnitDefinition][] = [];
         for (const [key, value] of properties) {
             if (key.split(':')[0] === 'unit') {
                 const unitDef = this.extractComponentUnitDefinition(value, typeProp, lastNumericPinId);
@@ -544,7 +550,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     // Creates a validator for the component property definition.
-    private createComponentPropertyValidator(): ((path: PropertyTreeKey[], value: any, ctx: ParserRuleContext) => void) {
+    private createComponentPropertyValidator(): ((path: PropertyTreeKey[], value: PropertyValue, ctx: ParserRuleContext) => void) {
         const definedPinIds: number[] = [];     // Store pin IDs defined
         const definedPinNames: string[] = [];   // Store pin names defined
         const pinNamesIdMap = new Map<string, PinId>();
@@ -575,7 +581,7 @@ export class ParserVisitor extends BaseVisitor {
             arrangedPinIds.push(pinId);
         }
 
-        return (path: PropertyTreeKey[], value: any, ctx: ParserRuleContext) => {
+        return (path: PropertyTreeKey[], value: PropertyValue, ctx: ParserRuleContext) => {
             // const pathText = path.map(item => item[1]);
 
             if (path.length === 1) {
@@ -661,6 +667,8 @@ export class ParserVisitor extends BaseVisitor {
                                 if (!(value instanceof NumericValue) && !(typeof value === 'string')) {
                                     throw new RuntimeExecutionError(`Invalid numeric value for arrange.${sideKeyName}`, ctx);
                                 } else {
+                                    // pin ids may be numbers or names; checkPinExistsAndNotDuplicated is loosely typed
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see comment above
                                     let useValue: any;
                                     if (value instanceof NumericValue) {
                                         useValue = value.toNumber();
@@ -772,7 +780,7 @@ export class ParserVisitor extends BaseVisitor {
                     || commandName === PlaceHolderCommands.table) {
                     accum = accum.concat(parameters);
                 } else {
-                    const keywordParams = new Map<string, any>();
+                    const keywordParams = new Map<string, PropertyValue>();
                     const positionParams = parameters.reduce(
                         (accum, [argType, name, value]) => {
                             if (argType === 'position') {
@@ -781,7 +789,7 @@ export class ParserVisitor extends BaseVisitor {
                                 keywordParams.set(name, value);
                             }
                             return accum;
-                        }, [] as any[]);
+                        }, [] as unknown[]);
 
                     let useCommandName = commandName;
                     let usePositionParams = positionParams;
@@ -825,7 +833,7 @@ export class ParserVisitor extends BaseVisitor {
         if (ctxPropertiesBlock) {
             const nestedKeyValues = this.visitResult(ctxPropertiesBlock);
 
-            nestedKeyValues.forEach((value: any, key: any) => {
+            nestedKeyValues.forEach((value: PropertyValue, key: PropertyValue) => {
                 // Values will be used by graphics command, so unwrap any
                 // references.
                 parameters.push(['keyword', key, unwrapValue(value)]);
@@ -961,8 +969,8 @@ export class ParserVisitor extends BaseVisitor {
             ...textStyleKeys];
 
         const parameters = this.visitResult(ctx.parameters()) as unknown as CallableParameter[];
-        const positionArgs: any[] = [];
-        const tableKwargs = new Map<string, any>();
+        const positionArgs: unknown[] = [];
+        const tableKwargs = new Map<string, PropertyValue>();
         parameters.forEach(([argType, name, value]) => {
             if (argType === 'position') {
                 positionArgs.push(value);
@@ -1001,7 +1009,7 @@ export class ParserVisitor extends BaseVisitor {
         const padding = tableKwargs.has('padding') ?
             toNumeric(tableKwargs.get('padding'), 'padding') : numeric(20);
 
-        const tableTextStyle = new Map<string, any>();
+        const tableTextStyle = new Map<string, PropertyValue>();
         textStyleKeys.forEach(key => {
             if (tableKwargs.has(key)) {
                 tableTextStyle.set(key, tableKwargs.get(key));
@@ -1036,7 +1044,7 @@ export class ParserVisitor extends BaseVisitor {
         const totalHeight = rowHeight.mul(nrows);
 
         const lowered: GraphicExprCommand[] = [];
-        const noKw = (): Map<string, any> => new Map<string, any>();
+        const noKw = (): PropertyMap => new Map<string, PropertyValue>();
 
         for (let i = 0; i <= nrows; i++) {
             lowered.push([PlaceHolderCommands.hline,
@@ -1093,7 +1101,7 @@ export class ParserVisitor extends BaseVisitor {
                     cellX = colX[colIndex].add(padding);
                 }
 
-                const kw = new Map<string, any>(style);
+                const kw = new Map<string, PropertyValue>(style);
                 kw.set('content', content);
                 kw.set('offset', [cellX, rowMiddle]);
                 lowered.push([PlaceHolderCommands.text, [], kw, item]);
@@ -1575,13 +1583,13 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitProperties_block = (ctx: Properties_blockContext): void => {
-        const result = new Map<string, any>();
+        const result = new Map<string, PropertyValue>();
 
         // For duplicated keys, track a counter value with the key.
         const keyCounter = new Map<string, number>();
 
         ctx.property_expr().forEach(item => {
-            const property: Map<string, any> = this.visitResult(item);
+            const property: PropertyMap = this.visitResult(item);
 
             // Get out all items, by default
             for (const [key, value] of property) {
@@ -2014,7 +2022,7 @@ export class ParserVisitor extends BaseVisitor {
         this.setResult(ctx, result);
     }
 
-    private checkValueUndefined(value: any, ctx: Data_exprContext): void {
+    private checkValueUndefined(value: unknown, ctx: Data_exprContext): void {
         if (value === undefined) {
             this.throwWithContext(ctx, 'Undefined value: ' + ctx.getText());
         }
@@ -2023,8 +2031,8 @@ export class ParserVisitor extends BaseVisitor {
     private checkNoArrayOperands(
         ctx: ParserRuleContext,
         op: string,
-        value1: any,
-        value2: any
+        value1: unknown,
+        value2: unknown
     ): void {
         if (Array.isArray(unwrapValue(value1)) || Array.isArray(unwrapValue(value2))) {
             this.throwWithContext(
@@ -2806,7 +2814,7 @@ export class ParserVisitor extends BaseVisitor {
         const ctxStringValue = ctx.STRING_VALUE();
 
         let useType = '';
-        let useValue: any;
+        let useValue: string | number | NumericValue | undefined;
 
         if (ctxID) {
             useType = 'ID';
@@ -2973,13 +2981,13 @@ export class ParserVisitor extends BaseVisitor {
         if (value instanceof UndeclaredReference) {
             this.throwWithContext(data_expr, value.throwMessage());
         } else if (value instanceof DeclaredReference) {
-            return this.resolveDataValue(value);
+            return this.resolveDataValue(value) as T;
         }
 
         return value;
     }
 
-    private resolveDataValue(reference: DeclaredReference): any {
+    private resolveDataValue(reference: DeclaredReference): unknown {
         const { value } = reference;
         if (value instanceof NumericValue) {
             return value.toDisplayString();
@@ -2990,7 +2998,7 @@ export class ParserVisitor extends BaseVisitor {
 
     /** Parses the pin defintion from the `pins` property */
     private extractPinDefintion(
-        pinData: NumericValue | Map<string, any>,
+        pinData: NumericValue | PropertyMap,
         lastNumericPinId = 0,
     ): PinDefinition[] {
         const pins: PinDefinition[] = [];
@@ -3060,7 +3068,7 @@ export class ParserVisitor extends BaseVisitor {
     /**
      * Returns module ports defined in the `create module` command
      */
-    private parseCreateModulePorts(portsDefinition: Map<string, any>)
+    private parseCreateModulePorts(portsDefinition: PropertyMap)
         : {
             left: (string | [blank: number])[],
             right: (string | [blank: number])[],
@@ -3079,10 +3087,10 @@ export class ParserVisitor extends BaseVisitor {
     private getArrangePropFromModulePorts(
         modulePorts: { [key: string]: (string | [blank: number])[] },
         nameToPinId: Map<string, number>
-    ): Map<string, any> {
+    ): PropertyMap {
         const keys = [SymbolPinSide.Left, SymbolPinSide.Right, SymbolPinSide.Top, SymbolPinSide.Bottom];
 
-        const arrangeProp = new Map<string, any>();
+        const arrangeProp = new Map<string, PropertyValue>();
 
         keys.forEach(key => {
             // Prepare for the arrange prop
@@ -3104,7 +3112,7 @@ export class ParserVisitor extends BaseVisitor {
         return arrangeProp;
     }
 
-    private getPortItems(portsDefinition: Map<string, any>, key: string)
+    private getPortItems(portsDefinition: PropertyMap, key: string)
         : (string | [blank: number])[] {
 
         let tmpItems: (string | [blank: number])[] = [];
@@ -3120,7 +3128,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     private parseCreateComponentParams(
-        params: Map<string, any>,
+        params: PropertyMap,
     ): ParamDefinition[] {
         const result = [];
         if (params) {
@@ -3149,7 +3157,7 @@ export class ParserVisitor extends BaseVisitor {
         }, [] as Net[])
     }
 
-    dumpVariables(): Map<string, any> {
+    dumpVariables(): PropertyMap {
         return this.getScope().variables;
     }
 
@@ -3220,7 +3228,7 @@ export class ParserVisitor extends BaseVisitor {
      * Returns the sequence of commands in the script and the final list of
      * nets generated when executed.
      */
-    getGraph(): {sequence: any[], nets: ComponentPinNetPair[]} {
+    getGraph(): {sequence: SequenceItem[], nets: ComponentPinNetPair[]} {
         const executor = this.getExecutor();
         const fullSequence = executor.scope.sequence;
 

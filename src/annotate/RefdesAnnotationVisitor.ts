@@ -345,7 +345,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         return result;
     }
     
-    private log(...message: any[]): void {
+    private log(...message: unknown[]): void {
         if (this.debug) {
             console.log(...message);
         }

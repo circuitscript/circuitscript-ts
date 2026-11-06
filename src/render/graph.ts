@@ -361,7 +361,7 @@ export class NetGraph {
         this.print(`created edge: node1:${node1} node2:${node2} edgeValue:${edgeValue}`);
     }
 
-    protected print(...params: any[]): void {
+    protected print(...params: unknown[]): void {
         this.logger.add(params.join(' '));
     }
 

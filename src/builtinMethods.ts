@@ -23,6 +23,7 @@ import { ComponentBehavior } from "./behavior.js";
 import { calculateNodeVoltages, calculateNetResistance } from "./render/nodal-analysis.js";
 import { Scenario } from "./objects/Scenario.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any --  heterogeneous builtin signatures; each impl validates its own args at runtime
 const builtInFunctions: [name: string, impl: ((args: any) => any) | null][] = [
     ['enumerate', enumerate],
     ['to_mils', toMils],
@@ -812,7 +813,7 @@ function range(...args): NumericValue[] {
     return returnArray;
 }
 
-function enumerate(array:any[]): [index: number, value: any][] {
+function enumerate(array: unknown[]): [index: number, value: unknown][] {
     if (!Array.isArray(array)) {
         throw "Invalid parameter for enumerate function";
     }
@@ -840,7 +841,8 @@ function toMils(value: number | NumericValue): NumericValue {
     return resolveToNumericValue(bigValue);
 }
 
-function objectLength(obj: any[] | any): NumericValue {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any --  arbitrary value; probes a duck-typed length property
+function objectLength(obj: any): NumericValue {
     obj = unwrapValue(obj);
 
     if (Array.isArray(obj)){
@@ -863,7 +865,7 @@ function arrayPush(arrayObject: unknown[], valueToPush: unknown): unknown[] {
     return arrayObject;
 }
 
-function arrayGet(arrayObject: unknown[], index: number | NumericValue): any {
+function arrayGet(arrayObject: unknown[], index: number | NumericValue): unknown {
     if (!Array.isArray(arrayObject)) {
         throw "Invalid array object to get";
     }
@@ -882,7 +884,7 @@ function arrayGet(arrayObject: unknown[], index: number | NumericValue): any {
     return arrayObject[useValue];
 }
 
-function arraySet(arrayObject:unknown[], index: number|NumericValue, setValue: any): any {
+function arraySet(arrayObject:unknown[], index: number|NumericValue, setValue: unknown): unknown[] {
     if (!Array.isArray(arrayObject)) {
         throw "Invalid array object";
     }
@@ -902,6 +904,7 @@ function getPositionParams(params: CallableParameter[]): unknown[] {
     return params.map(([, , value]) => value); 
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any --  duck-typed property probing on arbitrary values
 function toString(obj: any): string {
     if (typeof obj === 'string') {
         return `"${obj}"`;
@@ -945,6 +948,7 @@ function toString(obj: any): string {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any --  duck-typed property probing on arbitrary values
 function strFunction(object: any): string {
     if (object instanceof NumericValue){
         return object.toDisplayString();

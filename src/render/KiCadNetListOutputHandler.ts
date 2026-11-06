@@ -21,7 +21,7 @@ export abstract class ParseOutputHandler {
     afterRender = false;
 
     abstract parse(visitor: ParserVisitor, outputPath: string | null,
-        fileExtension: string | null, extra: any | null): boolean;
+        fileExtension: string | null, extra: unknown): boolean;
 }
 /** Generates KiCAD compatible netlist. This netlist can be loaded into
  * KiCAD PCBView */

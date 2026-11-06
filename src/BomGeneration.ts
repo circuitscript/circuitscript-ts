@@ -197,7 +197,7 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
             if (instancePlaced) {
                 const keysUndefined: string[] = [];
                 columns.forEach(paramKey => {
-                    let useValue: any = undefined;
+                    let useValue: unknown = undefined;
 
                     if (paramKey === BomRefdesKey) {
                         useValue = instance.assignedRefDes;

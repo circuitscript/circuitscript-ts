@@ -13,7 +13,8 @@ import { BlockTypes } from "./objects/BlockTypes.js";
 import { ExecutionWarning } from "./utils.js";
 import { ClassComponent, ComponentUnit, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
-    SequenceAction } from './objects/ExecutionScope.js';
+    SequenceAction,
+    InnerBlockStackEntry } from './objects/ExecutionScope.js';
 import { Net } from './objects/Net.js';
 import { NumericValue } from './objects/NumericValue.js';
 import { ParamDefinition } from "./objects/ParamDefinition.js";
@@ -152,7 +153,7 @@ export class ExecutionContext {
         return this.logger.enabled || !this.silent;
     }
 
-    log(...params: any[]): void {
+    log(...params: unknown[]): void {
         if (!this.isLogging) {
             return;
         }
@@ -267,9 +268,9 @@ export class ExecutionContext {
             followWireOrientation: boolean,
             units: [string, ComponentUnitDefinition][],
 
-            behavior?: any,
+            behavior?: Map<unknown, unknown>,
 
-            sim?: Map<string, any>,
+            sim?: Map<string, unknown>,
 
             erc_net_bridge?: boolean,
         },
@@ -307,7 +308,7 @@ export class ExecutionContext {
             throw new RuntimeExecutionError("'erc_net_bridge' is only valid on components with exactly 2 pins");
         }
 
-        const paramsMap = new Map<string, any>();
+        const paramsMap = new Map<string, unknown>();
         params.forEach((param) => {
             component.parameters.set(param.paramName, param.paramValue);
             paramsMap.set(param.paramName, param.paramValue);
@@ -315,7 +316,7 @@ export class ExecutionContext {
         
         if (component.typeProp === ComponentTypes.net) {
             // If the net name is not defined, then generate a unique net name
-            const netName = paramsMap.get(ParamKeys.net_name) ?? this.getUniqueNetName();
+            const netName = (paramsMap.get(ParamKeys.net_name) as string | undefined) ?? this.getUniqueNetName();
 
             let priority = 0;
             if (paramsMap.has(ParamKeys.priority)) {
@@ -1063,7 +1064,7 @@ export class ExecutionContext {
                 this.scope.currentPin!,
                 this.scope.currentWireId],
             end_point: null,
-            inner_blocks: new Map<number, any>(),
+            inner_blocks: new Map<number, InnerBlockStackEntry>(),
             current_index: 0,
             type: blockType,
         });
@@ -1469,7 +1470,9 @@ export class ExecutionContext {
      * 
      * @param type - reference type for <item>
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- item is walked via dynamic property indexing on arbitrary runtime values
     resolveTrailers(type: ReferenceTypes, item: any, trailers: string[] = []): AnyReference {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- stored into AnyReference.rootValue (any-typed)
         let rootValue: any;
         let useValue = item;
 

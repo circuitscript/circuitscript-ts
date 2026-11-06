@@ -47,11 +47,11 @@ export class LayoutEngine {
         this.showBaseFrame = showBaseFrame;
     }
 
-    protected print(...params: any[]): void {
+    protected print(...params: unknown[]): void {
         this.logger.add(params.join(' '));
     }
 
-    protected printLevel(level: number, ...params: any[]): void {
+    protected printLevel(level: number, ...params: unknown[]): void {
         this.logger.add(this.padLevel(level) + params.join(' '));
     }
 
@@ -197,7 +197,7 @@ export class LayoutEngine {
     }
 
     // If the net class is set, then return the value from the net class
-    private getNetCombinedParameters(net: Net): Map<string, any> {
+    private getNetCombinedParameters(net: Net): Net['parameters'] {
         const tmpParams = new Map(net.parameters);
 
         if (net.class) {

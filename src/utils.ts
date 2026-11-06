@@ -126,8 +126,8 @@ export function getPortType(component: ClassComponent): string | null {
     return foundPinType;
 }
 
-export function combineMaps(map1: Map<string, any>, map2: Map<string, any>)
-    : Map<string, any> {
+export function combineMaps<T>(map1: Map<string, T>, map2: Map<string, T>)
+    : Map<string, T> {
 
     const newMap = new Map(map1);
     map2.forEach((value, key) => {
@@ -281,7 +281,8 @@ export function printWarnings(warnings: ExecutionWarning[]): void {
  * @param value
  * @returns 
  */
-export function unwrapValue(value: AnyReference | DeclaredReference | any): any {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- returns arbitrary unwrapped value; callers rely on untyped result
+export function unwrapValue(value: unknown): any {
     if (isReference(value)) {
         return value.value;
     } else {
@@ -289,7 +290,7 @@ export function unwrapValue(value: AnyReference | DeclaredReference | any): any 
     }
 }
 
-export function isReference(value: any): boolean {
+export function isReference(value: unknown): value is AnyReference | DeclaredReference {
     return (value instanceof AnyReference || 
             value instanceof DeclaredReference);
 }

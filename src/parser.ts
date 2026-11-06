@@ -11,7 +11,7 @@ import {
 
 import { MainLexer } from './lexer.js';
 import { SimpleStopwatch } from './utils.js';
-import { ParseSyntaxError, RuntimeExecutionError } from "./errors.js";
+import { BaseError, ParseSyntaxError, RuntimeExecutionError } from "./errors.js";
 import {
     ANTLRErrorListener, ATNConfigSet, ATNSimulator,
     BitSet, CharStream, CommonTokenStream, DFA, Parser,
@@ -36,7 +36,7 @@ export function parseFileWithVisitor(
     lexer: MainLexer,
     hasError: boolean, hasParseError: boolean,
     parserTimeTaken: number, lexerTimeTaken: number,
-    throwError: any,
+    throwError: BaseError | undefined,
 } {
 
     const lexerErrorListener = new CircuitscriptParserErrorListener(
@@ -83,7 +83,7 @@ export function parseFileWithVisitor(
     const parserTimer = new SimpleStopwatch();
     const tree = parser.script();
     
-    let throwError: any;
+    let throwError: BaseError | undefined;
     let hasError = false;
     let hasParseError = false;
     
@@ -96,7 +96,7 @@ export function parseFileWithVisitor(
             if(error instanceof RuntimeExecutionError){
                 visitor.onErrorHandler(error.message, null, error);
             } else {
-                throwError = error;
+                throwError = error as BaseError;
             }
         } 
         

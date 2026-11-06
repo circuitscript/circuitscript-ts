@@ -121,7 +121,7 @@ export enum PortSide {
     NORTH = 'NORTH'
 }
 
-export function isPinId(item: any): boolean {
+export function isPinId(item: unknown): boolean {
     return item instanceof PinId || (typeof item === 'number' || typeof item === 'string');
 }
 

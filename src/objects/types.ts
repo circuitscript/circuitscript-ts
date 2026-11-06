@@ -20,6 +20,8 @@ import { RefdesModification } from 'src/annotate/utils.js';
 import { SerializedExpression } from 'src/cache/types.js';
 import { BomConfig } from 'src/BomGeneration.js';
 import { FrameParamKeys } from './Frame.js';
+import type { Frame } from './Frame.js';
+import type { NetClass } from './NetClass.js';
 
 export type CFunction = (args: CallableParameter[],
     options?: CFunctionOptions) => CFunctionResult;
@@ -128,6 +130,36 @@ export type ComplexType = ValueType
 export type ValueType = boolean | number | string |
     NumericValue | PercentageValue;
 
+/**
+ * Value kinds found by inspecting instanceof checks and ExecutionScope /
+ * ParamsContainer get/set sites: boolean, number, string, NumericValue,
+ * PercentageValue, ClassComponent, Net, Frame, NetClass, UndeclaredReference,
+ * NoneValue, references, null/undefined, arrays and plain objects (property
+ * trees, e.g. bom config) and function entries.
+ */
+export type RuntimeValue = ComplexType
+    | Net
+    | Frame
+    | NetClass
+    | AnyReference
+    | CFunctionEntry
+    | null
+    | undefined
+    | RuntimeValue[]
+    | { [key: string]: RuntimeValue };
+
+export function isNumericValue(value: unknown): value is NumericValue {
+    return value instanceof NumericValue;
+}
+
+export function isRuntimeArray(value: unknown): value is RuntimeValue[] {
+    return Array.isArray(value);
+}
+
+export function isNoneValue(value: unknown): value is NoneValue {
+    return value instanceof NoneValue;
+}
+
 export type CallableParameter = 
     ['keyword', key: string, value: ValueType] | 
     ['position', key: number, value: ValueType];
@@ -159,10 +191,12 @@ export class AnyReference {
 
     // Stores the final value pointed by the reference (i.e. the actual
     // value of an object property/param)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- read as arbitrary runtime values (indexed, narrowed) by visitors; RuntimeValue cascades into many errors
     value?: any;
 
     // Nested objects will hold this rootValue reference and this value should be present within
     // the scope's variables property.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see `value`
     rootValue?: any; // If trailers are available, then this holds the parent
     // object of the trailers
 
@@ -174,7 +208,9 @@ export class AnyReference {
         trailers?: (string| ['index', number])[];
         trailerIndex: number,
         type?: ReferenceTypes;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mirrors AnyReference.value
         value?: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mirrors AnyReference.rootValue
         rootValue?: any;
     }) {
 
@@ -235,7 +271,7 @@ export class DeclaredReference extends AnyReference {
     referenceName = 'DeclaredReference';
 
     toDisplayString(): string {
-        let returnValue: any = undefined;
+        let returnValue: unknown = undefined;
 
         if (this.rootValue) {
             // Have trailers
@@ -251,10 +287,12 @@ export class DeclaredReference extends AnyReference {
 
         if (returnValue !== undefined) {
             if (returnValue !== null) {
-                if (returnValue.toDisplayString) {
-                    return returnValue.toDisplayString();
+                const displayable = returnValue as
+                    { toDisplayString?: () => string, toString(): string };
+                if (displayable.toDisplayString) {
+                    return displayable.toDisplayString();
                 } else {
-                    return returnValue.toString();
+                    return displayable.toString();
                 }
             } else {
                 return 'null';
@@ -373,6 +411,7 @@ export type ComponentUnitDefinition = {
     pins: PinDefinition[],
 
     display: SymbolDrawingCommands | null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arrange is a Map consumed by execute.ts; RuntimeValue breaks callers
     arrange: any | null,
 
     suffix: string | null,

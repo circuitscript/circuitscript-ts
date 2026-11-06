@@ -16,13 +16,13 @@ export type ConditionNode = {
     },
 
     // Values to compare with
-    values: any[],
+    values: unknown[],
 
     // Children of this condition node
     children: ConditionNode[],
 
     // If this is set, then this is an end-node in the condition tree.
-    endValue: any[],
+    endValue: string[],
 }
 
 export function flattenConditionNodes(conditionNodes: ConditionNode[], level = 0): ConditionNode[][] {
@@ -111,7 +111,7 @@ export function extractPartConditions(conditionBranches: ConditionNode[][]): Par
     return partConditions;
 }
 
-export function partMatchesConditions(instance: ClassComponent, partConditions: PartConditions[]): any | undefined {
+export function partMatchesConditions(instance: ClassComponent, partConditions: PartConditions[]): string[] | undefined {
     for (let i = 0; i < partConditions.length; i++) {
         const { endValue, conditions } = partConditions[i];
 
