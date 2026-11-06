@@ -92,7 +92,7 @@ import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, Delimiter1, Fram
     WireAutoDirection,
     defaultPinIdTextSize, RefdesMode, RefdesModes, GeneratedNetPrefix} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
-import { ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.js";
+import { assertDefined, getOrThrow, ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
 import { GraphicExprCommand, PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
 import { BaseVisitor, OnErrorHandler } from './BaseVisitor.js';
@@ -170,7 +170,7 @@ export class ParserVisitor extends BaseVisitor {
     visitAdd_component_expr = (ctx: Add_component_exprContext): void => {
         // Besides component, can also add graphic objects
 
-        let refComponent: ClassComponent;
+        let refComponent!: ClassComponent;
         const creationFlag = this.trackNewComponentCreated(() => {
             // The component is always the last item
             const [component, pinValue] = 
@@ -180,11 +180,11 @@ export class ParserVisitor extends BaseVisitor {
             refComponent = component;
         });
 
-        this.linkComponentToCtx(ctx, refComponent!, creationFlag);
+        this.linkComponentToCtx(ctx, refComponent, creationFlag);
     }
 
     visitAt_component_expr = (ctx: At_component_exprContext): ComponentPin => {
-        let refComponent: ClassComponent;
+        let refComponent!: ClassComponent;
 
         const ctxComponentSelect = ctx.component_select_expr();
         if (ctxComponentSelect){
@@ -197,14 +197,14 @@ export class ParserVisitor extends BaseVisitor {
                 refComponent = component;
             });
     
-            this.linkComponentToCtx(ctx, refComponent!, creationFlag);
+            this.linkComponentToCtx(ctx, refComponent, creationFlag);
         }
         return this.getExecutor().getCurrentPoint();
     }
 
     visitTo_component_expr = (ctx: To_component_exprContext): ComponentPin => {
         for (const item of ctx.component_select_expr()) {
-            let refComponent: ClassComponent;
+            let refComponent!: ClassComponent;
             const creationFlag = this.trackNewComponentCreated(() => {
                 const [component, pin] = this.visitResult(item);
 
@@ -220,7 +220,7 @@ export class ParserVisitor extends BaseVisitor {
             });
 
             // Link each item within the 'to' component list
-            this.linkComponentToCtx(item, refComponent!, creationFlag);
+            this.linkComponentToCtx(item, refComponent, creationFlag);
         }
 
         return this.getExecutor().getCurrentPoint();
@@ -238,7 +238,7 @@ export class ParserVisitor extends BaseVisitor {
             componentPin = this.visitResult(ctxDataExprWithAssigment);
 
         } else {
-            let component = this.getScope().currentComponent!;
+            let component = assertDefined(this.getScope().currentComponent, "Missing current component");
 
             if (component._pointLinkComponent){
                 // If the point link component is defined, then use it instead.
@@ -283,7 +283,7 @@ export class ParserVisitor extends BaseVisitor {
         const scopeLevel = scope.scopeLevel;
 
         if (scope.blockStack.has(scopeLevel)) {
-            const blockStackEntry = scope.blockStack.get(scopeLevel)!;
+            const blockStackEntry = getOrThrow(scope.blockStack, scopeLevel, "block stack entry");
             if (blockStackEntry.type !== blockType) {
                 // If the block type is not the same, then close the path blocks
                 executor.exitBlocks();
@@ -296,7 +296,7 @@ export class ParserVisitor extends BaseVisitor {
             executor.enterBlocks(blockType);
         }
 
-        const blockStackEntry = scope.blockStack.get(scopeLevel)!;
+        const blockStackEntry = getOrThrow(scope.blockStack, scopeLevel, "block stack entry");
         const { current_index } = blockStackEntry;
 
         executor.enterBlock(current_index);
@@ -344,13 +344,13 @@ export class ParserVisitor extends BaseVisitor {
 
                 if (this.refdesFileAnnotations.has(annotationKey)) {
                     this.log(`refdes annotation key matched: ${annotationKey}`);
-                    let refdesValue = this.refdesFileAnnotations.get(annotationKey)!;
+                    let refdesValue = getOrThrow(this.refdesFileAnnotations, annotationKey, "refdes annotation");
 
                     // Only use the first value for now.
                     refdesValue = refdesValue.split(',')[0];
 
                     // Force the refdes value to be saved during annotation.
-                    const currentComponent = this.getScope().currentComponent!;
+                    const currentComponent = assertDefined(this.getScope().currentComponent, "Missing current component");
                     this.setComponentRefdes(refdesValue, true, currentComponent);
                 }
             }
@@ -466,7 +466,7 @@ export class ParserVisitor extends BaseVisitor {
             // used during graphics creation.
             display.variables = properties.get('params') ?? new Map();
 
-            const drawCommands = display!.getCommands();
+            const drawCommands = display.getCommands();
             drawCommands.forEach(command => {
                 const [commandValue,] = command;
                 if (commandValue === PlaceHolderCommands.vpin
@@ -486,7 +486,7 @@ export class ParserVisitor extends BaseVisitor {
                         if (typeof command[1][2] === 'string'){
                             const pinTypeString = normalizePinType(command[1][2]);
                             if (AllPinTypes.indexOf(pinTypeString) !== -1){
-                                pinType = resolvePinType(pinTypeString)!;
+                                pinType = assertDefined(resolvePinType(pinTypeString), "Unknown pin type");
                             }
                         }
                     }
@@ -496,6 +496,7 @@ export class ParserVisitor extends BaseVisitor {
                 }
             });
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- pins may be absent; extractPinDefintion tolerates undefined at runtime
             pins = this.extractPinDefintion(properties.get('pins')!, lastNumericPinId);
         }
 
@@ -822,7 +823,7 @@ export class ParserVisitor extends BaseVisitor {
         const command = ctx._command;
 
         if (command) {
-            commandName = command.text!;
+            commandName = assertDefined(command.text, "Missing command text");
         } else {
             throw "Invalid command!";
         }
@@ -840,7 +841,7 @@ export class ParserVisitor extends BaseVisitor {
             });
 
         } else {
-            parameters = this.visitResult(ctx.parameters()!);
+            parameters = this.visitResult(assertDefined(ctx.parameters(), "Missing parameters"));
         }
 
         // For the `label` command, allow both 'in' and 'out' as shortform
@@ -881,7 +882,7 @@ export class ParserVisitor extends BaseVisitor {
                 });
 
                 const commands = 
-                    this.visitResult(ctx.graphic_expressions_block()!);
+                    this.visitResult(assertDefined(ctx.graphic_expressions_block(), "Missing graphic expressions block"));
 
                 allCommands = allCommands.concat(commands);
 
@@ -1003,7 +1004,7 @@ export class ParserVisitor extends BaseVisitor {
             throw new Error('unreachable');
         };
 
-        const widths = colWidths!.map(w => toNumeric(w, 'col_widths'));
+        const widths = assertDefined(colWidths, "Missing col_widths").map(w => toNumeric(w, 'col_widths'));
         const rowHeight = tableKwargs.has('row_height') ?
             toNumeric(tableKwargs.get('row_height'), 'row_height') : numeric(100);
         const padding = tableKwargs.has('padding') ?
@@ -1562,7 +1563,7 @@ export class ParserVisitor extends BaseVisitor {
 
         let value;
         if (ctx.data_expr().length === 1) {
-            value = this.visitResult(ctx.data_expr(0)!);
+            value = this.visitResult(assertDefined(ctx.data_expr(0), "Missing data expression"));
         } else {
             value = ctx.data_expr().map((item, index) => {
                 this.getScope().enterContext(index);
@@ -1690,8 +1691,8 @@ export class ParserVisitor extends BaseVisitor {
 
             const modifiers = ctx.component_modifier_expr();
             modifiers.forEach(modifier => {
-                const modifierText = modifier.ID(0)!.getText();
-                const ctxDataExpr = modifier.data_expr()!;
+                const modifierText = assertDefined(modifier.ID(0), "Missing modifier name").getText();
+                const ctxDataExpr = assertDefined(modifier.data_expr(), "Missing modifier value");
 
                 // This is needed to preserve the IDs for xy, etc.
                 this.setResult(ctxDataExpr, {keepReference: true});
@@ -1788,7 +1789,7 @@ export class ParserVisitor extends BaseVisitor {
         this.visit(component.moduleContainsExpressions);
 
         // Done with the new context
-        const executionContext = executionStack.pop()!;
+        const executionContext = assertDefined(executionStack.pop(), "Empty execution stack");
 
         // Defer the merging of execution context
         component.moduleExecutionContext = executionContext;
@@ -1819,14 +1820,14 @@ export class ParserVisitor extends BaseVisitor {
 
                 // Get the port name, which is the net name
                 const portName = component.parameters.get(ParamKeys.net_name);
-                const modulePinId = modulePinMapping.get(portName)!;
+                const modulePinId = getOrThrow(modulePinMapping, portName, "module pin");
 
                 pinIdToPortMap.set(modulePinId, component);
 
                 // Determine the port type and apply back to the module
                 // symbol
                 const portType = getPortType(component);
-                const tmpPin = moduleComponent.pins.get(modulePinId)!;
+                const tmpPin = getOrThrow(moduleComponent.pins, modulePinId, "module pin");
                 tmpPin.pinType = portType;
             }
         }
@@ -1888,8 +1889,8 @@ export class ParserVisitor extends BaseVisitor {
     }
     
     visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): void => {
-        const ctx0 = ctx.data_expr(0)!;
-        const ctx1 = ctx.data_expr(1)!;
+        const ctx0 = assertDefined(ctx.data_expr(0), "Missing data expression");
+        const ctx1 = assertDefined(ctx.data_expr(1), "Missing data expression");
 
         let value1: number | boolean | NumericValue | HighImpedanceValue = this.visitResult(ctx0);
         let value2: number | boolean | NumericValue | HighImpedanceValue = this.visitResult(ctx1);
@@ -1918,14 +1919,14 @@ export class ParserVisitor extends BaseVisitor {
                 value1 = value1.toNumber();
             }
 
-            this.checkValueUndefined(value1, ctx.data_expr(0)!);
+            this.checkValueUndefined(value1, assertDefined(ctx.data_expr(0), "Missing data expression"));
         }
 
         if (value2 instanceof NumericValue) {
             value2 = value2.toNumber();
         }
 
-        this.checkValueUndefined(value2, ctx.data_expr(1)!);
+        this.checkValueUndefined(value2, assertDefined(ctx.data_expr(1), "Missing data expression"));
 
         if (value1 instanceof HighImpedanceValue || value2 instanceof HighImpedanceValue) {
             // NaN-mirroring: any comparison touching Hi-Z is false, except !=
@@ -1970,14 +1971,14 @@ export class ParserVisitor extends BaseVisitor {
 
 
     visitLogicalOperatorExpr = (ctx: LogicalOperatorExprContext): void => {
-        const ctx0 = ctx.data_expr(0)!;
-        const ctx1 = ctx.data_expr(1)!;
+        const ctx0 = assertDefined(ctx.data_expr(0), "Missing data expression");
+        const ctx1 = assertDefined(ctx.data_expr(1), "Missing data expression");
 
         let value1: number | boolean | NumericValue = this.visitResult(ctx0);
         if (value1 instanceof NumericValue){
             value1 = value1.toNumber();
         }
-        this.checkValueUndefined(value1, ctx.data_expr(0)!);
+        this.checkValueUndefined(value1, assertDefined(ctx.data_expr(0), "Missing data expression"));
 
         
         // Skip evaluating value2 when value1 already determines the result
@@ -2004,7 +2005,7 @@ export class ParserVisitor extends BaseVisitor {
             }    
         }
 
-        this.checkValueUndefined(value2, ctx.data_expr(1)!);
+        this.checkValueUndefined(value2, assertDefined(ctx.data_expr(1), "Missing data expression"));
         
         let result: number | boolean | null = null;
 
@@ -2053,8 +2054,8 @@ export class ParserVisitor extends BaseVisitor {
         const tmpValue1 = operator.prepare(value1);
         const tmpValue2 = operator.prepare(value2);
 
-        this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
-        this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
+        this.checkValueUndefined(tmpValue1, assertDefined(ctx.data_expr(0), "Missing data expression"));
+        this.checkValueUndefined(tmpValue2, assertDefined(ctx.data_expr(1), "Missing data expression"));
 
         let result: number | null | NumberOperatorType | HighImpedanceValue = null;
         if (ctx.Multiply()) {
@@ -2087,8 +2088,8 @@ export class ParserVisitor extends BaseVisitor {
                 tmpValue2 = value2.toDisplayString();
             }
 
-            this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
-            this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
+            this.checkValueUndefined(tmpValue1, assertDefined(ctx.data_expr(0), "Missing data expression"));
+            this.checkValueUndefined(tmpValue2, assertDefined(ctx.data_expr(1), "Missing data expression"));
 
             const result = tmpValue1 + tmpValue2;
             this.setResult(ctx, result);
@@ -2111,8 +2112,8 @@ export class ParserVisitor extends BaseVisitor {
             const tmpValue1 = operator.prepare(value1);
             const tmpValue2 = operator.prepare(value2);
 
-            this.checkValueUndefined(tmpValue1, ctx.data_expr(0)!);
-            this.checkValueUndefined(tmpValue2, ctx.data_expr(1)!);
+            this.checkValueUndefined(tmpValue1, assertDefined(ctx.data_expr(0), "Missing data expression"));
+            this.checkValueUndefined(tmpValue2, assertDefined(ctx.data_expr(1), "Missing data expression"));
 
             let result: number | null | NumberOperatorType | HighImpedanceValue = null;
             if (ctx.Addition()) {
@@ -2128,8 +2129,8 @@ export class ParserVisitor extends BaseVisitor {
         const functionName = ctx.ID().getText();
         
         // TODO: include the filepath
-        const uniqueFunctionID = '__._' + ctx.start!.line + '_' 
-            + ctx.start!.column + '_' + functionName + '_' + this.environment.hashStringSHA256(ctx.getText());
+        const uniqueFunctionID = '__._' + assertDefined(ctx.start, "Missing start token").line + '_' 
+            + assertDefined(ctx.start, "Missing start token").column + '_' + functionName + '_' + this.environment.hashStringSHA256(ctx.getText());
 
         // These are the defined arguments for the function
         let funcDefinedParameters: FunctionDefinedParameter[] = [];
@@ -2198,7 +2199,7 @@ export class ParserVisitor extends BaseVisitor {
         // Get the position from the blockstack at the parent scope level
         // Find the nearest block stack entry with AtBlock
         for (let i = scopeLevel - 1; i >= 0; i--) {
-            const blockStackEntry = scope.blockStack.get(i)!;
+            const blockStackEntry = getOrThrow(scope.blockStack, i, "block stack entry");
             if (blockStackEntry.type === BlockTypes.AtBlock) {
                 useComponent = blockStackEntry.start_point[0];
                 break;
@@ -2239,14 +2240,14 @@ export class ParserVisitor extends BaseVisitor {
         // Special handling: If direct parent scope is a 'join' block, then
         // treat the block ending like a join block too.
         // TODO: Explore if this could be merged with path blocks
-        const parentBlockStackEntry = scope.blockStack.get(scopeLevel-1)!;
+        const parentBlockStackEntry = getOrThrow(scope.blockStack, scopeLevel-1, "block stack entry");
         if (parentBlockStackEntry.type === BlockTypes.Join){
             if (blockIndex === 0 && parentBlockStackEntry.current_index === 0){
                 // Treat it as a join block.
                 executor.addPointForBlockType(BlockTypes.Join);
 
                 parentBlockStackEntry.end_point = [
-                    scope.currentComponent!,
+                    assertDefined(scope.currentComponent, "Missing current component"),
                     scope.currentPin,
                     scope.currentWireId
                 ];
@@ -2268,7 +2269,7 @@ export class ParserVisitor extends BaseVisitor {
                 atBlockPinIndex++;
                 this.visit(ctxAtBlockPin);
             } else {
-                this.visit(tmpCtx.expression()!);
+                this.visit(assertDefined(tmpCtx.expression(), "Missing expression"));
             }
         }
     }
@@ -2469,7 +2470,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const activeFrame =
             this.getScope().frames.find(
-                frame => frame.frameId === this.getScope().currentFrameId)!;
+                frame => frame.frameId === this.getScope().currentFrameId);
         
         if (activeFrame && activeFrame.frameType === FrameType.Sheet){
             if (frameType === FrameType.Sheet){
@@ -2483,7 +2484,7 @@ export class ParserVisitor extends BaseVisitor {
         if (ctxExpressionsBlock ){
             // Modifiers are plain identifiers, so a bare modifier name with
             // no title (e.g. `frame row:`) parses as the title expression.
-            const modifiers = ctx._modifiers.map(token => token.text!);
+            const modifiers = ctx._modifiers.map(token => assertDefined(token.text, "Missing modifier text"));
             let ctxTitle = ctx._title;
             if (ctxTitle && FrameModifiers.includes(ctxTitle.getText())) {
                 modifiers.unshift(ctxTitle.getText());
@@ -2939,7 +2940,7 @@ export class ParserVisitor extends BaseVisitor {
             this.log(`Main schematic has refdes file: ${refdesFilePath}`);
 
             // Load the file and extract the annotations
-            const fileData = this.loadedFiles.get(refdesFilePath)!;
+            const fileData = getOrThrow(this.loadedFiles, refdesFilePath, "loaded file");
             const jsonData = JSON.parse(fileData);
 
             // Get relative path from main file to the library file being checked
@@ -2976,7 +2977,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     private resolveDataExpr<T>(data_expr: Data_exprContext | null): T {
-        const value: T | UndeclaredReference = this.visitResult(data_expr!);
+        const value: T | UndeclaredReference = this.visitResult(assertDefined(data_expr, "Missing data expression"));
 
         if (value instanceof UndeclaredReference) {
             this.throwWithContext(data_expr, value.throwMessage());
@@ -3034,7 +3035,7 @@ export class ParserVisitor extends BaseVisitor {
                 if (pinDef.length > 1) {
                     const maybeType = normalizePinType(pinDef[1]);
                     if (AllPinTypes.indexOf(maybeType) !== -1) {
-                        pinType = resolvePinType(maybeType)!;
+                        pinType = assertDefined(resolvePinType(maybeType), "Unknown pin type");
                         if (pinDef.length > 2) {
                             altPinNames = pinDef.slice(2);
                         }
@@ -3235,7 +3236,7 @@ export class ParserVisitor extends BaseVisitor {
         // If the __root component is not connected to any nets, then remove
         // it as the first action in the sequence. Otherwise it will occupy
         // some space in the final graphical output.
-        const componentRoot = executor.scope.componentRoot!;
+        const componentRoot = assertDefined(executor.scope.componentRoot, "Missing component root");
         const tmpNet = executor.scope.netMap.get(
             componentRoot, componentRoot.getDefaultPin()
         );
@@ -3534,7 +3535,7 @@ export class ParserVisitor extends BaseVisitor {
             let netBaseName = NoNetText;
 
             if (scope.netMap.hasNet(instance, pinId)) {
-                const netObject = scope.netMap.get(instance, pinId)!;
+                const netObject = assertDefined(scope.netMap.get(instance, pinId), "Missing net");
                 netName = netObject.namespace + netObject.name;
                 netBaseName = netObject.baseName;
             }

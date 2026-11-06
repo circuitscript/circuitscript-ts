@@ -10,6 +10,7 @@ import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/NumericValue.js";
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { RuntimeExecutionError } from './errors.js';
+import { getOrThrow } from './utils.js';
 
 export type BomConfig = {
     // Specifies paramKeys that will be used in the columns of the BOM.
@@ -153,7 +154,7 @@ export function groupComponents(bomConfig: BomConfig, bomComponents: Record<stri
             });
         }
 
-        const entry = grouped.get(groupKey)!;
+        const entry = getOrThrow(grouped, groupKey, "group");
         entry.items.push(row);
         entry.allRefdes.push(row.refdes);
 
@@ -235,7 +236,7 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
                         missingValues.set(useKey, []);
                     }
 
-                    missingValues.get(useKey)!.push(instance.assignedRefDes);
+                    getOrThrow(missingValues, useKey, "missing values key").push(instance.assignedRefDes);
                 }
 
                 resultRows.push(row);

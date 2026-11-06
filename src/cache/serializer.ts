@@ -11,6 +11,7 @@ import { CACHE_SCHEMA_VERSION, LibraryCacheIR, SerializedFunctionDef,
     SerializedExpression } from './types.js';
 import { CircuitScriptLexer } from '../antlr/CircuitScriptLexer.js';
 import { generateModifiedSourceText } from '../annotate/utils.js';
+import { assertDefined } from "../utils.js";
 
 export function serializeLibraryScope(
     importedLib: ImportedLibrary,
@@ -22,7 +23,7 @@ export function serializeLibraryScope(
     const scope = importedLib.context.scope;
     const { tokens: libraryTokens, refdesAnnotations } = importedLib;
 
-    const libraryInputStream = libraryTokens.tokenSource!.inputStream!;
+    const libraryInputStream = assertDefined(assertDefined(libraryTokens.tokenSource, "Missing token source").inputStream, "Missing input stream");
 
     scope.functions.forEach((entry) => {
 
@@ -32,12 +33,12 @@ export function serializeLibraryScope(
 
         // Complete library was parsed and loaded, not just the function!
         if (libraryTokens !== null && entry.source !== null) {
-            const source = entry.source!;
+            const source = assertDefined(entry.source, "Missing entry source");
             const startIndex = source.start?.tokenIndex ?? 0;
             const stopIndex = source.stop?.tokenIndex ?? -1;
             const contextTokens = libraryTokens.getTokens(startIndex, stopIndex);
 
-            const startToken = source.start!;
+            const startToken = assertDefined(source.start, "Missing start token");
             const startChar = startToken.start ?? -1;
             const stopChar = getFunctionDefinitionEnding(source, libraryTokens);
 
@@ -86,8 +87,8 @@ export function serializeLibraryScope(
             if (groupCtx.length > 0 && groupStart !== null) {
 
                 // extract the output
-                const startToken = groupCtx[0].start!;
-                const stopToken = groupCtx[groupCtx.length - 1].stop!;
+                const startToken = assertDefined(groupCtx[0].start, "Missing start token");
+                const stopToken = assertDefined(groupCtx[groupCtx.length - 1].stop, "Missing stop token");
 
                 const startIndex = startToken.tokenIndex ?? 0;
                 const stopIndex = stopToken.tokenIndex ?? -1;

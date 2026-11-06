@@ -8,6 +8,7 @@ import { ParserRuleContext } from 'antlr4ng';
 import { ClassComponent } from './../objects/ClassComponent.js';
 import { ComponentRefDesPrefixes } from './../visitor.js';
 import { KeywordRefdesPrefix, RefdesMode } from '../globals.js';
+import { assertDefined, getOrThrow } from "../utils.js";
 
 /** Tracks annotations already assigned and determines refdes for components */
 
@@ -57,7 +58,7 @@ export class ComponentAnnotater {
         let useCounterKey: string;
 
         if (instance.hasParam(KeywordRefdesPrefix)) {
-            const prefix = instance.getParam(KeywordRefdesPrefix)! as string;
+            const prefix = assertDefined(instance.getParam(KeywordRefdesPrefix), "Missing refdes prefix param") as string;
             if (this.counter[prefix] === undefined) {
                 this.counter[prefix] = 1;
             }
@@ -142,18 +143,18 @@ export class ComponentAnnotater {
                 }
 
                 // Generate the indexed refdes based on the prefix and the indexes
-                const prefixParts = [this.indexedContextPrefix.get(useCtx)!, ...indexes];
+                const prefixParts = [getOrThrow(this.indexedContextPrefix, useCtx, "indexed context prefix"), ...indexes];
                 resultRefdes = prefixParts.join('_');
 
                 if (this.existingSet.has(resultRefdes)) {
                     throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
                 }
 
-                const basePrefix = this.indexedContextPrefix.get(useCtx)!;
+                const basePrefix = getOrThrow(this.indexedContextPrefix, useCtx, "indexed context prefix");
                 if (!this.indexedRefdesGroups.has(basePrefix)) {
                     this.indexedRefdesGroups.set(basePrefix, []);
                 }
-                this.indexedRefdesGroups.get(basePrefix)!.push(resultRefdes);
+                getOrThrow(this.indexedRefdesGroups, basePrefix, "refdes group").push(resultRefdes);
 
             } else {
                 const refdesCounter = this.getNextRefdesCounter(
@@ -192,7 +193,7 @@ export class ComponentAnnotater {
             this.indexedContextPrefix.set(ctx, prefix);
 
         } else {
-            prefix = this.indexedContextPrefix.get(ctx)!;
+            prefix = getOrThrow(this.indexedContextPrefix, ctx, "indexed context prefix");
         }
 
         const n = (this.flatCounters.get(prefix) ?? 0) + 1;
@@ -206,7 +207,7 @@ export class ComponentAnnotater {
         if (!this.indexedRefdesGroups.has(prefix)) {
             this.indexedRefdesGroups.set(prefix, []);
         }
-        this.indexedRefdesGroups.get(prefix)!.push(resultRefdes);
+        getOrThrow(this.indexedRefdesGroups, prefix, "refdes group").push(resultRefdes);
 
         return resultRefdes;
     }

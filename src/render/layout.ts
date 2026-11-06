@@ -22,7 +22,7 @@ import { Logger } from '../logger.js';
 import { FixedFrameIds, Frame, FrameParamKeys, FramePlotDirection } from '../objects/Frame.js';
 import { areasOverlap, BoundBox, BoundBox2, combineMaps, getBoundsSize, 
     printBounds, resizeBounds, resizeToNearestGrid, 
-    toNearestGrid} from '../utils.js';
+    toNearestGrid, assertDefined, getOrThrow } from '../utils.js';
 import { AutoWireFailedError_, RuntimeExecutionError } from "../errors.js";
 import { ComponentPinNetPair, Direction } from '../objects/types.js';
 import { PinDefinition, PinId } from '../objects/PinDefinition.js';
@@ -266,8 +266,9 @@ export class LayoutEngine {
             });
 
             let renderNet: RenderNet | null = null;
-            if (nets.has(netName)) {
-                renderNet = nets.get(netName)!;
+            const foundNet = nets.get(netName);
+            if (foundNet !== undefined) {
+                renderNet = foundNet;
             }
 
             if (debugSegments) {
@@ -506,7 +507,7 @@ export class LayoutEngine {
                     // Set translate such that the origin of the frame is at it's 
                     // upper left corner.
                     innerFrame.bounds = resizeToNearestGrid(
-                        innerFrame.bounds!, gridSize);
+                        assertDefined(innerFrame.bounds, 'Frame bounds not computed'), gridSize);
                     innerFrame.didResize = true;
                 }
 
@@ -635,7 +636,7 @@ export class LayoutEngine {
 
                     // Set height to the largest height of the inner items
                     const itemHeights = container.innerItems.map(frame => {
-                        const bounds = (frame as RenderFrame).bounds!;
+                        const bounds = assertDefined((frame as RenderFrame).bounds, 'Frame bounds not computed');
                         return (bounds.ymax - bounds.ymin);
                     });
 
@@ -668,7 +669,7 @@ export class LayoutEngine {
 
             for (const innerFrame of innerFrames) {
                 const { width: innerFrameWidth, height: innerFrameHeight }
-                    = getBoundsSize(innerFrame.bounds!);
+                    = getBoundsSize(assertDefined(innerFrame.bounds, 'Frame bounds not computed'));
 
                 if (isFrameDirectionRow) {
                     innerFrame.x = accumValue.copy();
@@ -751,7 +752,7 @@ export class LayoutEngine {
 
                 for (const innerFrame of innerFrames) {
                     const { height: innerFrameHeight }
-                        = getBoundsSize(innerFrame.bounds!);
+                        = getBoundsSize(assertDefined(innerFrame.bounds, 'Frame bounds not computed'));
 
                     // For this case, then have to use the innerFrame's height
                     // to determine the offsetY.
@@ -794,7 +795,7 @@ export class LayoutEngine {
                 for(const innerFrame of innerFrames){
 
                     const { width: innerFrameHeight }
-                        = getBoundsSize(innerFrame.bounds!);
+                        = getBoundsSize(assertDefined(innerFrame.bounds, 'Frame bounds not computed'));
 
                     // For this case, then have to use the innerFrame's width
                     // to determine the offsetY.
@@ -1298,7 +1299,7 @@ export class LayoutEngine {
                 // into the node origin tree.
                 const originNode = findOriginNode(fixedNode);
 
-                const itemsArray = originNodeGroups.get(originNode)!;
+                const itemsArray = getOrThrow(originNodeGroups, originNode, 'origin node group');
                 if (itemsArray.indexOf(floatingNode) === -1) {
                     itemsArray.push(floatingNode);
                     this.print('linking node', floatingNode, 'to origin node', originNode);
@@ -2249,7 +2250,7 @@ function SplitIntoLines(frameWidth: NumericValue, frameHeight: NumericValue,
     // Group into lines and consider overlap areas
     for (const innerFrame of innerFrames) {
         const { width: innerFrameWidth, height: innerFrameHeight }
-            = getBoundsSize(innerFrame.bounds!);
+            = getBoundsSize(assertDefined(innerFrame.bounds, 'Frame bounds not computed'));
 
         const tmpX1 = accumX.toNumber();
         const tmpY1 = accumY.toNumber();

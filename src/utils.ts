@@ -333,3 +333,21 @@ export function getLinePositionAsString(ctx: ParserRuleContext): string | null {
 
     return result;
 }
+
+export function assertDefined<T>(
+  value: T | null | undefined,
+  message: string,
+): T {
+  if (value === null || value === undefined) {
+    throw new Error(message);
+  }
+  return value;
+}
+
+export function getOrThrow<K, V>(map: Map<K, V>, key: K, what = "key"): V {
+  const v = map.get(key);
+  if (v === undefined) {
+    throw new Error(`Missing ${what}: ${String(key)}`);
+  }
+  return v;
+}

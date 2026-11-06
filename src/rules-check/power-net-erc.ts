@@ -10,6 +10,7 @@ import { PinTypes } from "../objects/PinTypes.js";
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { ERC_Rules } from "./rules.js";
+import { assertDefined, getOrThrow } from "../utils.js";
 
 type NetState = {
     powerSymbolNames: Set<string>;
@@ -71,7 +72,7 @@ export function RuleCheck_PowerNetERC(
             });
         }
 
-        const state = netMap.get(net)!;
+        const state = getOrThrow(netMap, net, "net state");
         const unit = component.getUnitForPin(pin);
         const pinKey = Array.from(unit.pins.keys()).find(k => k.equals(pin));
         if (!pinKey) continue;
@@ -143,7 +144,7 @@ export function RuleCheck_PowerNetERC(
         if (state.hasPowerReference && !hasPowerSymbol) {
             items.push(makeViolation(
                 ERC_Rules.PowerReferenceOnUnnamedNet,
-                state.firstPowerReferenceComponent!,
+                assertDefined(state.firstPowerReferenceComponent, "Missing power reference component"),
                 state.firstPowerReferencePin,
                 state.netName
             ));
@@ -153,7 +154,7 @@ export function RuleCheck_PowerNetERC(
         if (state.hasPowerInput && !hasPowerSymbol) {
             items.push(makeViolation(
                 ERC_Rules.PowerInputOnUnnamedNet,
-                state.firstPowerInputComponent!,
+                assertDefined(state.firstPowerInputComponent, "Missing power input component"),
                 state.firstPowerInputPin,
                 state.netName
             ));
@@ -163,7 +164,7 @@ export function RuleCheck_PowerNetERC(
         if (state.hasPowerOutput && !hasPowerSymbol) {
             items.push(makeViolation(
                 ERC_Rules.PowerOutputOnUnnamedNet,
-                state.firstPowerOutputComponent!,
+                assertDefined(state.firstPowerOutputComponent, "Missing power output component"),
                 state.firstPowerOutputPin,
                 state.netName
             ));
@@ -173,7 +174,7 @@ export function RuleCheck_PowerNetERC(
         if (hasPowerSymbol && state.hasPowerInput && !sourcedRoots.has(root(net))) {
             items.push(makeViolation(
                 ERC_Rules.PowerNetNoSource,
-                state.firstPowerInputComponent!,
+                assertDefined(state.firstPowerInputComponent, "Missing power input component"),
                 state.firstPowerInputPin,
                 state.netName
             ));
@@ -186,7 +187,7 @@ export function RuleCheck_PowerNetERC(
             // to use for error messages.
             const netSymbol = state.netComponents.find(component => {
                 return component._copyFrom !== null;
-            }) ?? state.firstPowerSymbolComponent!;
+            }) ?? assertDefined(state.firstPowerSymbolComponent, "Missing power symbol component");
 
             items.push(makeViolation(
                 ERC_Rules.PowerNetUnused,
@@ -203,7 +204,7 @@ export function RuleCheck_PowerNetERC(
             const useComponent =
                 state.netComponents.find(
                     component => component._copyFrom !== null)
-                ?? state.firstPowerSymbolComponent!;
+                ?? assertDefined(state.firstPowerSymbolComponent, "Missing power symbol component");
 
             items.push(makeViolation(
                 ERC_Rules.PowerNetNameConflict,
@@ -226,7 +227,7 @@ export function RuleCheck_PowerNetERC(
                 }
 
                 const pinRef = component.getPin(pin);
-                const pinDef = component.pins.get(pinRef)!;
+                const pinDef = getOrThrow(component.pins, pinRef, "pin definition");
 
                 let usePin = pin.toString();
                 if (pinDef.name) {
@@ -252,7 +253,7 @@ export function RuleCheck_PowerNetERC(
 
                 items.push(makeViolation(
                     ERC_Rules.PowerNetMultipleOutputs,
-                    component!,
+                    assertDefined(component, "Missing component"),
                     pin,
                     state.netName
                 ));
@@ -263,7 +264,7 @@ export function RuleCheck_PowerNetERC(
         if (state.hasPowerReference && state.powerSymbolNames.size > 1) {
             items.push(makeViolation(
                 ERC_Rules.PowerReferenceAmbiguousNet,
-                state.firstPowerReferenceComponent!,
+                assertDefined(state.firstPowerReferenceComponent, "Missing power reference component"),
                 state.firstPowerReferencePin,
                 Array.from(state.powerSymbolNames).sort().join(', ')
             ));

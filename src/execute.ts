@@ -10,7 +10,7 @@ import { ComponentTypes, Delimiter1, FrameType, GeneratedNetPrefix, GlobalNames,
     ReferenceTypes, 
     SymbolPinSide} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
-import { ExecutionWarning } from "./utils.js";
+import { assertDefined, ExecutionWarning, getOrThrow } from "./utils.js";
 import { ClassComponent, ComponentUnit, ModuleComponent } from './objects/ClassComponent.js';
 import { ActiveObject, ExecutionScope, FrameAction, 
     SequenceAction,
@@ -328,7 +328,7 @@ export class ExecutionContext {
             let tmpNet: Net;
 
             if (result.found) {
-                tmpNet = result.net!;
+                tmpNet = assertDefined(result.net, "Net not found");
                 this.log('net found', tmpNet.namespace, tmpNet.name);
 
             } else {
@@ -445,7 +445,7 @@ export class ExecutionContext {
             pinSides.forEach(({ pinId, side, position }) => {
                 const matchedPinId = pinIdKeys.find(id => id.equals(pinId));
                 if (matchedPinId) {
-                    const tmpPin = pinsMap.get(matchedPinId)!;
+                    const tmpPin = getOrThrow(pinsMap, matchedPinId, "pin");
                     tmpPin.side = side;
                     tmpPin.position = position;
                 } else {
@@ -700,7 +700,9 @@ export class ExecutionContext {
 
         const { addSequence = false } = options ?? {};
         
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- the current component is set whenever a connection is added
         const currentComponent = this.scope.currentComponent!;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- the current pin is set whenever a connection is added
         const currentPin = this.scope.currentPin!;
 
         if (!(component instanceof ClassComponent)){
@@ -724,10 +726,10 @@ export class ExecutionContext {
             }
         }
 
-        const toPinDef = component.pins.get(component.getPin(pinId))!;
-        const fromPinDef = currentComponent.pins.get(
+        const toPinDef = assertDefined(component.pins.get(component.getPin(pinId)), "Pin definition not found");
+        const fromPinDef = assertDefined(currentComponent.pins.get(
             currentComponent.getPin(currentPin)
-        )!;
+        ), "Pin definition not found");
 
         let busConnectComponents: ClassComponent[] = [];
         let labelBusConnect = false;
@@ -757,7 +759,7 @@ export class ExecutionContext {
                     if (tmpNet) {
                         if (tmpNet.busNet) {
                             // If net is already connected to a bus, then use that bus.
-                            busConnectComponents = [tmpNet.busComponent!, busComponent];
+                            busConnectComponents = [assertDefined(tmpNet.busComponent, "Bus component not set"), busComponent];
                         } else {
                             tmpNet.busNet = true;
                             tmpNet.busComponent = busComponent;
@@ -799,7 +801,7 @@ export class ExecutionContext {
             for (let i = 0; i < busComponentPins.length; i++) {
                 const tmpPin = busComponentPins[i];
                 if (tmpPin.pinType !== PinTypes.Bus) {
-                    const pinNet = this.scope.netMap.get(useBusComponent, tmpPin.id)!;
+                    const pinNet = this.scope.netMap.get(useBusComponent, tmpPin.id);
                     if (pinNet && pinNet.priority === 0) {
                         const proposedNetName = `${labelNetName}.${useBusName}${tmpPin.name}`;
 
@@ -961,7 +963,7 @@ export class ExecutionContext {
             }
 
             // Set property if it is a bus pin.
-            const pinDef = component.pins.get(component.getPin(usePinId))!;
+            const pinDef = assertDefined(component.pins.get(component.getPin(usePinId)), "Pin definition not found");
             if (pinDef.pinType === PinTypes.Bus) {
                 tmpNet.busNet = true;
                 tmpNet.busComponent = component;
@@ -1060,7 +1062,9 @@ export class ExecutionContext {
         this.scope.blockStack.set(this.scope.scopeLevel, {
             // Tracks the position when the block is entered
             start_point: [
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- block points are only entered after a component/pin is set
                 this.scope.currentComponent!,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- block points are only entered after a component/pin is set
                 this.scope.currentPin!,
                 this.scope.currentWireId],
             end_point: null,
@@ -1077,9 +1081,9 @@ export class ExecutionContext {
             scopeLevel = this.scope.scopeLevel;
         }
 
-        const stackRef = this.scope.blockStack.get(
+        const stackRef = assertDefined(this.scope.blockStack.get(
             scopeLevel,
-        )!;
+        ), "Block stack entry not found");
 
         const { type: blockType } = stackRef;
 
@@ -1128,7 +1132,7 @@ export class ExecutionContext {
 
     enterBlock(blockIndex: number): void {
         // Current net before any blocks is already stored in enterBlocks()
-        const stackRef = this.scope.blockStack.get(this.scope.scopeLevel)!;
+        const stackRef = assertDefined(this.scope.blockStack.get(this.scope.scopeLevel), "Block stack entry not found");
 
         const { type: blockType } = stackRef;
 
@@ -1157,13 +1161,15 @@ export class ExecutionContext {
     }
 
     exitBlock(blockIndex: number): void {
-        const stackRef = this.scope.blockStack.get(this.scope.scopeLevel - 1)!;
+        const stackRef = assertDefined(this.scope.blockStack.get(this.scope.scopeLevel - 1), "Block stack entry not found");
         const { type: blockType } = stackRef;
 
         // Save the last net reference
-        const blockIndexRef = stackRef.inner_blocks.get(blockIndex)!;
+        const blockIndexRef = assertDefined(stackRef.inner_blocks.get(blockIndex), "Inner block entry not found");
         blockIndexRef.last_net = [
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- block points are only recorded after a component/pin is set
             this.scope.currentComponent!,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- block points are only recorded after a component/pin is set
             this.scope.currentPin!,
             this.scope.currentWireId
         ];
@@ -1193,7 +1199,9 @@ export class ExecutionContext {
                 this.addPointForBlockType(blockType);
 
                 stackRef.end_point = [
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- block points are only closed after a component/pin is set
                     this.scope.currentComponent!,
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- block points are only closed after a component/pin is set
                     this.scope.currentPin!,
                     this.scope.currentWireId
                 ];
@@ -1223,7 +1231,7 @@ export class ExecutionContext {
         this.log('get block point');
 
         for (let i = 0; i < this.scope.scopeLevel; i++) {
-            const stackRef = this.scope.blockStack.get(this.scope.scopeLevel - 1 - i)!;
+            const stackRef = this.scope.blockStack.get(this.scope.scopeLevel - 1 - i);
             if (stackRef){
                 const { start_point } = stackRef;
                 const component: ClassComponent = start_point[0];
@@ -1260,7 +1268,7 @@ export class ExecutionContext {
         // then indicates the current index within the structure.
         const latestCtx = this.scope.breakStack[this.scope.breakStack.length - 1];
         if (latestCtx) {
-            const current = this.indexedStack.get(latestCtx)!;
+            const current = assertDefined(this.indexedStack.get(latestCtx), "Break context not indexed");
             this.indexedStack.set(latestCtx, {
                 ...current,
                 index,
@@ -1276,7 +1284,7 @@ export class ExecutionContext {
     resetBreakContextFunctionCalls(): void {
         const latestCtx = this.scope.breakStack[this.scope.breakStack.length - 1];
         if (latestCtx) {
-            const current = this.indexedStack.get(latestCtx)!;
+            const current = assertDefined(this.indexedStack.get(latestCtx), "Break context not indexed");
             this.indexedStack.set(latestCtx, {
                 index: current.index,
                 funcCallIndex: new Map(), // Reset the function calls
@@ -1287,6 +1295,7 @@ export class ExecutionContext {
     popBreakContext(): ParserRuleContext {
         this.log('pop break context');
         // Find the nearest break
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- callers pop only after pushing a break context
         return this.scope.breakStack.pop()!;
     }
 
@@ -1315,7 +1324,7 @@ export class ExecutionContext {
         if (this.scope.functions.has(functionPath)) {
             this.log(`function: ${functionPath} already exists`);
 
-            const existingEntry = this.scope.functions.get(functionPath)!;
+            const existingEntry = getOrThrow(this.scope.functions, functionPath, "function");
             if (existingEntry.lazyLoaded) {
                 this.log(`updating lazy function: ${functionPath}`);
 
@@ -1355,6 +1364,7 @@ export class ExecutionContext {
     }
 
     getFunction(functionName: string): CFunctionEntry {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- callers rely on lookups of functions known to exist (may be undefined otherwise, as before)
         return this.scope.functions.get(functionName)!;
     }
 
@@ -1408,7 +1418,7 @@ export class ExecutionContext {
                 // Check if the idName is a library name
                 let isLibrary = false;
                 if (context.scope.libraries.has(idName)) {
-                    const library = context.scope.libraries.get(idName)!;
+                    const library = getOrThrow(context.scope.libraries, idName, "library");
                     if (library.importHandlingFlag === ImportFunctionHandling.AllWithNamespace) {
                         // Only if this flag is set, then allow using the
                         // library/namespace.
@@ -1594,7 +1604,7 @@ export class ExecutionContext {
                 this.scope.functionCounter.set(__runFunc, 0);
                 functionCallIndex = 0;
             } else {
-                functionCallIndex = this.scope.functionCounter.get(__runFunc)!;
+                functionCallIndex = getOrThrow(this.scope.functionCounter, __runFunc, "function counter");
             }
 
             this.scope.functionCounter.set(__runFunc, functionCallIndex + 1);
@@ -1710,7 +1720,7 @@ export class ExecutionContext {
             // then add an entry to update.
             if (childScopeMergedNets.has(net)) {
                 // New entry sets the new net.
-                toUpdate.push([component, pin, childScopeMergedNets.get(net)!]);
+                toUpdate.push([component, pin, getOrThrow(childScopeMergedNets, net, "merged net")]);
             }
         });
 
@@ -1728,7 +1738,7 @@ export class ExecutionContext {
         // be connected to the current component/pin of the parent
         const linkRootComponent = true;
 
-        const tmpRoot = childScope.componentRoot!;
+        const tmpRoot = assertDefined(childScope.componentRoot, "Child scope has no component root");
 
         if (linkRootComponent) {
             // Join the child_scope's __root net to the current component / pin
@@ -1888,12 +1898,12 @@ export class ExecutionContext {
         );
 
         const currentUnit = 
-            this.scope.currentComponent.getUnitForPin(this.scope.currentPin!);
+            this.scope.currentComponent.getUnitForPin(assertDefined(this.scope.currentPin, "No current pin"));
 
         if (!currentUnit.didSetWireOrientationAngle) {
             this.applyComponentAngleFromWire(
                 this.scope.currentComponent,
-                this.scope.currentPin!, true);
+                assertDefined(this.scope.currentPin, "No current pin"), true);
             currentUnit.didSetWireOrientationAngle = true;
         }
         
@@ -1920,6 +1930,7 @@ export class ExecutionContext {
 
         let usePointLinkComponent = null;
         if (this.scope.currentComponent._pointLinkComponent) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by the truthiness check above (property narrowing is lost)
             usePointLinkComponent = this.scope.currentComponent!._pointLinkComponent;
         } else {
             usePointLinkComponent = this.scope.currentComponent;
@@ -2034,7 +2045,7 @@ export class ExecutionContext {
             const pinPositions = CalculatePinPositions(targetUnit);
 
             if (pinPositions.has(usePin)){
-                const connectedPinPos = pinPositions.get(usePin)!;
+                const connectedPinPos = getOrThrow(pinPositions, usePin, "pin position");
 
                 // This is the final angle that the component unit will have
                 let targetAngle: number | null = null;

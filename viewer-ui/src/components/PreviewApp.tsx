@@ -193,7 +193,7 @@ export const PreviewApp: FunctionComponent<PreviewAppProps> = ({
           onClose={handleClose}
           onNetClick={handleNetClick}
           onSourceClick={transport.navigateToSource
-            ? (file, line) => transport.navigateToSource!(file, line)
+            ? (file, line) => transport.navigateToSource?.(file, line)
             : undefined}
         />
       </div>

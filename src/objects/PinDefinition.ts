@@ -129,7 +129,9 @@ export function getPinDefinition(map: Map<PinId, PinDefinition>, id: PinId): Pin
     const keys = Array.from(map.keys());
 
     // Method is needed to ensure that the correct object is used as the key.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- callers pass ids known to be in the map
     const tmpKey = keys.find(item => item.equals(id))!;
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- tmpKey was taken from the map keys
     return map.get(tmpKey)!;
 }

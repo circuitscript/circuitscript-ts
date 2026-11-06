@@ -83,20 +83,17 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   const bboxCacheRef = useRef<BboxCache>(new WeakMap());
   const hasFittedRef = useRef(false);
 
-  const selectedHighlightRef = useRef<SVGRectElement | undefined>(undefined);
-  if (!selectedHighlightRef.current) {
-    selectedHighlightRef.current = makeHighlightRect();
-    selectedHighlightRef.current.style.stroke = 'var(--cs-highlight-selected)';
-  }
-  const hoverHighlightRef = useRef<SVGRectElement | undefined>(undefined);
-  if (!hoverHighlightRef.current) {
-    hoverHighlightRef.current = makeHighlightRect();
-    hoverHighlightRef.current.style.stroke = 'var(--cs-highlight-hover)';
-  }
-  const frameHighlightRef = useRef<SVGRectElement | undefined>(undefined);
-  if (!frameHighlightRef.current) {
-    frameHighlightRef.current = makeFrameBoundsRect();
-  }
+  const [selectedHighlight] = useState(() => {
+    const rect = makeHighlightRect();
+    rect.style.stroke = 'var(--cs-highlight-selected)';
+    return rect;
+  });
+  const [hoverHighlight] = useState(() => {
+    const rect = makeHighlightRect();
+    rect.style.stroke = 'var(--cs-highlight-hover)';
+    return rect;
+  });
+  const [frameHighlight] = useState(() => makeFrameBoundsRect());
   const highlightedNetElsRef = useRef<Element[]>([]);
 
   const dragStateRef = useRef({ dragging: false, startX: 0, startY: 0, translateStartX: 0, translateStartY: 0 });
@@ -116,12 +113,12 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   }, []);
 
   const attachedRects = useMemo(
-    () => [selectedHighlightRef.current!, hoverHighlightRef.current!],
+    () => [selectedHighlight, hoverHighlight],
     []
   );
 
   const refreshHighlightPositions = useCallback(() => {
-    const selRect = selectedHighlightRef.current!;
+    const selRect = selectedHighlight;
     if (selRect.parentNode) {
       positionHighlight(
         selRect,
@@ -132,7 +129,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
         attachedRects
       );
     }
-    const hoverRect = hoverHighlightRef.current!;
+    const hoverRect = hoverHighlight;
     if (hoverRect.parentNode) {
       positionHighlight(
         hoverRect,
@@ -337,7 +334,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   // component or the underlying DOM (new svgMarkup) changes.
   useEffect(() => {
     const host = panZoomRef.current;
-    const selRect = selectedHighlightRef.current!;
+    const selRect = selectedHighlight;
     if (!selectedDomId || !host) {
       removeHighlight(selRect);
       return;
@@ -359,7 +356,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   // translate() for stacking multiple sheets vertically. Appending to the SVG
   // root directly would skip both, offsetting the overlay from the real frame.
   useEffect(() => {
-    const frameRect = frameHighlightRef.current!;
+    const frameRect = frameHighlight;
     const meta = selectedFrameDomId ? framesById[selectedFrameDomId] : undefined;
     const sheetElements = meta
       ? panZoomRef.current?.querySelector(`#sheet-${meta.sheetIndex} .sheet-elements`)
@@ -377,11 +374,11 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   const handlePointerOver = useCallback((event: JSX.TargetedPointerEvent<HTMLDivElement>) => {
     const target = (event.target as Element).closest?.('.cs-component') as SVGGraphicsElement | null;
     if (!target) {
-      removeHighlight(hoverHighlightRef.current!);
+      removeHighlight(hoverHighlight);
       return;
     }
     positionHighlight(
-      hoverHighlightRef.current!,
+      hoverHighlight,
       target,
       svgInternalScaleRef.current,
       scaleRef.current,
@@ -393,7 +390,7 @@ export const Viewport = forwardRef<ViewportHandle, ViewportProps>(function Viewp
   const handlePointerOut = useCallback((event: JSX.TargetedPointerEvent<HTMLDivElement>) => {
     const related = (event.relatedTarget as Element | null)?.closest?.('.cs-component');
     if (!related) {
-      removeHighlight(hoverHighlightRef.current!);
+      removeHighlight(hoverHighlight);
     }
   }, []);
 

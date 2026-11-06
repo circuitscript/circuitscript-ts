@@ -10,6 +10,7 @@ import { PinTypes } from "../objects/PinTypes.js";
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { ERC_Rules } from "./rules.js";
+import { getOrThrow } from "../utils.js";
 
 const EXCLUDED_TYPES  = new Set([PinTypes.PowerReference, PinTypes.NoConnect]);
 const POWER_NET_TYPES = new Set([PinTypes.PowerInput, PinTypes.PowerOutput, PinTypes.Power]);
@@ -64,11 +65,11 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]): Array<ReturnT
         if (!seenPerNet.has(net)) {
             seenPerNet.set(net, new Set());
         }
-        const seen = seenPerNet.get(net)!;
+        const seen = getOrThrow(seenPerNet, net, "seen net");
         if (seen.has(dedupKey)) continue;
         seen.add(dedupKey);
 
-        netMap.get(net)!.push({ component, pin, pinType });
+        getOrThrow(netMap, net, "net entry").push({ component, pin, pinType });
     }
 
     const items: ReturnType<typeof makeViolation>[] = [];

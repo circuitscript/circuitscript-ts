@@ -7,6 +7,7 @@
 import { ParserRuleContext, Token } from 'antlr4ng';
 import { CircuitScriptParser } from '../antlr/CircuitScriptParser.js';
 import { RefdesMode } from '../globals.js';
+import { getOrThrow } from "../utils.js";
 
 /** Resolves the refdes mode from the new option and the legacy boolean */
 export function resolveRefdesMode(refdesMode?: RefdesMode, indexedRefdes?: boolean): RefdesMode {
@@ -81,7 +82,7 @@ export function generateModifiedSourceText(
                 }
 
                 if (modifications.has(ctx)) {
-                    const modification = modifications.get(ctx)!;
+                    const modification = getOrThrow(modifications, ctx, "modification");
                     const joinedRefdes = modification.refdes.join(', ');
                     output.push(`${modification.originalText} #= ${joinedRefdes}`);
 

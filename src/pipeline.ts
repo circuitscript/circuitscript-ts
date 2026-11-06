@@ -32,7 +32,7 @@ import { renderSheetsToSVG, generateSvgOutput, generatePdfOutput,
 import { generateComponentMetadata, type ComponentMeta, generateFrameMetadata, type FrameMeta } from "./render/generateOutputMetadata.js";
 import { generateHtmlOutput } from "./render/generateHtmlOutput.js";
 import { ERCReportItem, ERCSeverity, EvaluateERCRules } from "./rules-check/rules.js";
-import { printWarnings, generateDebugSequenceAction, 
+import { assertDefined, getOrThrow, printWarnings, generateDebugSequenceAction, 
     sequenceActionString, SimpleStopwatch} from "./utils.js";
 import { ParserVisitor } from "./visitor.js";
 import { getStylesFromDocument } from "./styles.js";
@@ -99,6 +99,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 errors.push(error);
             } else if (error && error instanceof RecognitionException) {
                 if (context !== null){
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- parser rule contexts always carry start/stop tokens
                     errors.push(new ParseSyntaxError(message, context.start!, context.stop!));
                 } else {
                     if (error.recognizer){
@@ -112,6 +113,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                     }
                 }
             } else {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- parser rule contexts always carry start/stop tokens
                 errors.push(new ParseError(message, context.start!, context.stop!));
             }
         };
@@ -331,7 +333,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         // }
 
         const documentVariable = visitor.getScope()
-            .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            .variables.get(GlobalDocumentName) as unknown as DocumentVariable;
 
         if (enableBom) {
             const bomConfig = documentVariable.bom;
@@ -436,8 +438,10 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 let useErr = err;
                 // This error is rewrapped to include ParserRuleContext info.
                 if (err instanceof AutoWireFailedError_){
-                    const errCtx = visitor.wireCtxLinks.get(err.wire)!;
+                    const errCtx = getOrThrow(visitor.wireCtxLinks, err.wire, "wire context");
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- wire contexts always carry start/stop tokens
                     useErr = new AutoWireFailedError(err.message, errCtx.start!,
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- wire contexts always carry start/stop tokens
                         errCtx.stop!);
                 }
 
@@ -478,7 +482,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                 // Getting here means something still needs the laid-out sheets,
                 // which is exactly what made layoutNeeded true above - so the
                 // layout pass did run and sheetFrames is populated.
-                const renderedSheets = sheetFrames!;
+                const renderedSheets = assertDefined(sheetFrames, "Sheet frames missing after layout");
 
                 // The base SVG render is only needed for .svg/.pdf output, or
                 // when no output path was given and the caller wants the SVG
@@ -563,12 +567,14 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                             }
                         } else if (ext === 'pdf') {
                             try {
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- PDFDocument is loaded by the environment before pdf output is requested
                                 const doc = new PDFDocument!({
                                     layout: 'landscape',
                                     size: sheetSize
                                 });
                                 const outputStream = environment.createWriteStream(outPath);
 
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- svgCanvas is built whenever svg/pdf output is requested
                                 generatePdfOutput(doc, svgCanvas!, sheetSize, sheetSizeDefined, documentStyles, 1);
 
                                 doc.pipe(outputStream);
@@ -578,6 +584,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                             }
                         } else if (ext === 'html') {
                             try {
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- htmlOutput is built whenever html output is requested
                                 environment.writeFileSync(outPath, htmlOutput!);
                             } catch (err) {
                                 throw new RenderError(`Error generating HTML file: ${err}`, 'html_output');

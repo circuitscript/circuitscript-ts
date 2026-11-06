@@ -13,6 +13,7 @@ import CryptoJs from "crypto-js";
 import { VERSION } from "../version.js";
 import { SVGWindow } from "../helpers.js";
 import { RuntimeExecutionError } from "../errors.js";
+import { assertDefined } from "../utils.js";
 
 // TODO: create an interface for this. Default is to use node 
 // as the environment.
@@ -35,7 +36,7 @@ export class NodeScriptEnvironment {
     }
 
     static getInstance(): NodeScriptEnvironment {
-        return NodeScriptEnvironment._instance!;
+        return assertDefined(NodeScriptEnvironment._instance, "Environment instance not created");
     }
 
     // If set by user/system.
@@ -182,7 +183,7 @@ export class NodeScriptEnvironment {
             this.textMeasurementCanvas = SVG(document.documentElement);
         }
 
-        return this.textMeasurementCanvas!;
+        return assertDefined(this.textMeasurementCanvas, "Text measurement canvas not initialised");
     }
 
     prepareSVGEnvironment(): Promise<void> {
@@ -220,12 +221,12 @@ export class NodeScriptEnvironment {
     }
 
     getCurrentFile(): string {
-        return this.currentFile!;
+        return assertDefined(this.currentFile, "No current file set");
     }
 
     // Relative to current file that is set.
     getAbsPathRelativeToCurrentFolder(filePath: string): string {
-        return path.join(this.getDirPath(this.currentFile!), filePath);
+        return path.join(this.getDirPath(assertDefined(this.currentFile, "No current file set")), filePath);
     }
 
     async exists(path: fs.PathLike): Promise<boolean> {

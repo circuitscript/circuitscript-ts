@@ -19,7 +19,7 @@ import {
     defaultPageSpacingMM,
     fontDisplayScale} from '../globals.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
-import { BoundBox, combineMaps, getBoundsSize, sanitizeDomId } from '../utils.js';
+import { BoundBox, combineMaps, getBoundsSize, sanitizeDomId, assertDefined } from '../utils.js';
 import { milsToMM } from '../helpers.js';
 import { getPaperSize } from "./PaperSizes.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
@@ -431,11 +431,11 @@ function generateSVGChild(canvas: Svg | G,
 
     styles = styles ?? {};
     const defaultWireColor = styles.wireColor;
-    const defaultWireLineWidth = milsToMM(styles.wireWidth!).toNumber();
-    const defaultJunctionSize = milsToMM(styles.junctionSize!);
+    const defaultWireLineWidth = milsToMM(assertDefined(styles.wireWidth, "styles.wireWidth")).toNumber();
+    const defaultJunctionSize = milsToMM(assertDefined(styles.junctionSize, "styles.junctionSize"));
 
-    const defaultBusWireLineWidth = milsToMM(styles.busWireWidth!);
-    const defaultBusJunctionSize = milsToMM(styles.busJunctionSize!);
+    const defaultBusWireLineWidth = milsToMM(assertDefined(styles.busWireWidth, "styles.busWireWidth"));
+    const defaultBusJunctionSize = milsToMM(assertDefined(styles.busJunctionSize, "styles.busJunctionSize"));
     logger.add(`merged wires, len: ${mergedWires.length}`);
 
     // draw the merged wires
@@ -514,7 +514,7 @@ function generateSVGChild(canvas: Svg | G,
 
         const wireOverrides: Record<string, string> = {};
         if (useColor !== defaultColorForNetType) {
-            wireOverrides['stroke'] = useColor!;
+            wireOverrides['stroke'] = assertDefined(useColor, 'wire color');
         }
         if (useLineWidth !== defaultWidthForNetType) {
             wireOverrides['stroke-width'] = useLineWidth.toString();
@@ -744,10 +744,11 @@ function drawGrid(group: G,
     // If extend grid is true, then draw outside of the canvas size
     const extraValue = extendGrid ? 1 : 0;
 
-    const xmin = roundValue(canvasSize!.xmin);
-    const ymin = roundValue(canvasSize!.ymin);
-    const xmax = roundValue(canvasSize!.xmax);
-    const ymax = roundValue(canvasSize!.ymax);
+    const canvasSizeChecked = assertDefined(canvasSize, 'Missing grid bounds');
+    const xmin = roundValue(canvasSizeChecked.xmin);
+    const ymin = roundValue(canvasSizeChecked.ymin);
+    const xmax = roundValue(canvasSizeChecked.xmax);
+    const ymax = roundValue(canvasSizeChecked.ymax);
 
     const gridStartX = xmin.div(gridSize).floor().sub(extraValue).mul(gridSize);
     const gridStartY = ymin.div(gridSize).floor().sub(extraValue).mul(gridSize);

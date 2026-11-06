@@ -137,7 +137,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
               {panelData.isNet && panelData.netName ? (
                 <span
                   className="cs-net-link"
-                  onClick={() => onNetClick(panelData.netName!)}
+                  onClick={() => onNetClick(panelData.netName as string)}
                 >
                   {panelData.title}
                 </span>
@@ -167,7 +167,7 @@ export const InspectorPanel: FunctionComponent<InspectorPanelProps> = ({ meta, f
                     {pin.netName ? (
                       <td
                         className="cs-net-link"
-                        onClick={() => onNetClick(pin.netName!)}
+                        onClick={() => onNetClick(pin.netName as string)}
                       >
                         {pin.netName}
                       </td>

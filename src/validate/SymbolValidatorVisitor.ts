@@ -31,6 +31,7 @@ import { BaseVisitor } from "../BaseVisitor.js";
 import { FrameModifiers } from "../objects/Frame.js";
 import { SymbolValidatorContext } from "../globals.js";
 import { AllPinTypes } from "../objects/PinTypes.js";
+import { assertDefined } from "../utils.js";
 
 /**
  * @class SymbolValidatorVisitor
@@ -206,12 +207,12 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
         if (ctx instanceof Import_specific_or_allContext) {
             const tmpImports = ctx._funcNames.map(item => {
-                return item.text!;
+                return assertDefined(item.text, "Missing import name text");
             });
             specifiedImports.push(...tmpImports);
         }
 
-        const id = ctx._libraryName!.text!.slice(1, -1);
+        const id = assertDefined(assertDefined(ctx._libraryName, "Missing library name").text, "Missing library name text").slice(1, -1);
         const { pathExists, importedLibrary } =
             this.handleImportFile(id, handling,
                 true, ctx, specifiedImports);
@@ -219,7 +220,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         if (!pathExists) {
             this.symbolTable.addUndefined(
                 this.getCurrentFile(), this.getExecutor(), id,
-                ctx._libraryName!);
+                assertDefined(ctx._libraryName, "Missing library name"));
         } else {
             this.applyLibraryImports(importedLibrary);
         }
@@ -392,8 +393,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * operand expressions to ensure symbol validation.
      */
     visitMultiplyExpr = (ctx: MultiplyExprContext): void => {
-        this.visit(ctx.data_expr(0)!);
-        this.visit(ctx.data_expr(1)!);
+        this.visit(assertDefined(ctx.data_expr(0), "Missing left expression"));
+        this.visit(assertDefined(ctx.data_expr(1), "Missing right expression"));
     };
 
     /**
@@ -405,8 +406,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * operand expressions to ensure symbol validation.
      */
     visitAdditionExpr = (ctx: AdditionExprContext): void => {
-        this.visit(ctx.data_expr(0)!);
-        this.visit(ctx.data_expr(1)!);
+        this.visit(assertDefined(ctx.data_expr(0), "Missing left expression"));
+        this.visit(assertDefined(ctx.data_expr(1), "Missing right expression"));
     };
 
     /**
@@ -418,8 +419,8 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * operand expressions to ensure symbol validation.
      */
     visitBinaryOperatorExpr = (ctx: BinaryOperatorExprContext): void => {
-        this.visit(ctx.data_expr(0)!);
-        this.visit(ctx.data_expr(1)!);
+        this.visit(assertDefined(ctx.data_expr(0), "Missing left expression"));
+        this.visit(assertDefined(ctx.data_expr(1), "Missing right expression"));
     };
 
     /**

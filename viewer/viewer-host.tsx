@@ -42,6 +42,9 @@ function buildById<T extends { domId: string }>(items: T[] | undefined): Record<
 const componentsById = buildById(window.__CS_COMPONENTS__);
 const framesById = buildById(window.__CS_FRAMES__);
 
+const rootEl = document.getElementById('root');
+if (!rootEl) throw new Error('Missing #root element');
+
 render(
   <PreviewApp
     transport={noopTransport}
@@ -53,5 +56,5 @@ render(
     exportOptions={[]}
     pendingActions={new Set()}
   />,
-  document.getElementById('root')!
+  rootEl
 );

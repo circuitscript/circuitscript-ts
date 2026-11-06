@@ -140,8 +140,8 @@ export class NetGraph {
 
                         // All components must belong within a frame.
                         let useFrame = frameStack[frameStack.length - 1];
-                        if (nodeFrames.has(previousNode)){
-                            const previousNodeFrame = nodeFrames.get(previousNode)!;
+                        const previousNodeFrame = nodeFrames.get(previousNode);
+                        if (previousNodeFrame !== undefined){
                             if (previousNodeFrame !== useFrame){
                                 useFrame = previousNodeFrame;
                             }

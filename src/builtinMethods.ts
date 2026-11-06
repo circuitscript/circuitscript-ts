@@ -9,7 +9,7 @@ import { BaseVisitor } from "./BaseVisitor.js";
 import { ExecutionContext } from "./execute.js";
 import { HighImpedanceValue, HIGH_IMPEDANCE, NumericValue, numeric, resolveToNumericValue } from "./objects/NumericValue.js";
 import { CallableParameter, CFunctionEntry, ImportedLibrary, NetTypes } from "./objects/types.js";
-import { getLinePositionAsAtString, unwrapValue } from "./utils.js";
+import { assertDefined, getLinePositionAsAtString, getOrThrow, unwrapValue } from "./utils.js";
 import { RuntimeExecutionError, ScenarioRuntimeError } from "./errors.js";
 import { BaseNamespace, ComponentTypes, GlobalDocumentName } from "./globals.js";
 import { ClassComponent } from "./objects/ClassComponent.js";
@@ -142,8 +142,9 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
 
         if (args.length === 0) {
             // No params specified
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by the ClassComponent instanceof/usage that follows
             useComponent = visitor.getScope().currentComponent!;
-            usePinId = visitor.getScope().currentPin!;
+            usePinId = assertDefined(visitor.getScope().currentPin, "No current pin");
         } else {
             componentParam = args[0];
             if (!(componentParam instanceof ClassComponent)) {
@@ -172,10 +173,12 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
         const args = getPositionParams(params);
 
         if (args.length === 1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by the ClassComponent instanceof/usage that follows
             useComponent = visitor.getScope().currentComponent!;
-            usePinId = visitor.getScope().currentPin!.getValue();
+            usePinId = assertDefined(visitor.getScope().currentPin, "No current pin").getValue();
             newType = args[0] as string;
         } else if (args.length === 2){
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by the ClassComponent instanceof/usage that follows
             useComponent = visitor.getScope().currentComponent!;
             usePinId = args[0] as string;
             newType = args[1] as string;
@@ -197,7 +200,7 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
         usePinId = useComponent.getPin(PinId.from(usePinId));
 
         if (useComponent.pins.has(usePinId)) {
-            useComponent.pins.get(usePinId)!.pinType = resolvePinType(newType);
+            getOrThrow(useComponent.pins, usePinId, "pin").pinType = resolvePinType(newType);
 
             // Nothing returned.
             return [visitor];
@@ -213,9 +216,11 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
         const args = getPositionParams(params);
 
         if (args.length === 0) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by the ClassComponent instanceof/usage that follows
             useComponent = visitor.getScope().currentComponent!;
-            usePinId = visitor.getScope().currentPin!.getValue();
+            usePinId = assertDefined(visitor.getScope().currentPin, "No current pin").getValue();
         } else if (args.length === 1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by the ClassComponent instanceof/usage that follows
             useComponent = visitor.getScope().currentComponent!;
             usePinId = args[0] as string;
         } else {
@@ -230,7 +235,7 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
         usePinId = useComponent.getPin(PinId.from(usePinId));
 
         if (useComponent.pins.has(usePinId)) {
-            return [visitor, useComponent.pins.get(usePinId)!.pinType];
+            return [visitor, getOrThrow(useComponent.pins, usePinId, "pin").pinType];
         }
 
         throw `Invalid pin ${usePinId} for component ${useComponent}`;
@@ -243,6 +248,7 @@ export function linkBuiltInFunctions(context: ExecutionContext, visitor: BaseVis
         const args = getPositionParams(params);
 
         if (args.length === 1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by the ClassComponent instanceof/usage that follows
             useComponent = visitor.getScope().currentComponent!;
             usePinId = PinId.from(args[0]);
         } else if (args.length === 2) {
@@ -335,7 +341,7 @@ function resolveComponentPin(scenario: Scenario, args: unknown[],
             throw new RuntimeExecutionError(`${callerName}: no active component`);
         }
 
-        useComponent = scenario.currentComponent!;
+        useComponent = scenario.currentComponent;
     }
 
     if (typeof pinIdArg === "string") {
@@ -354,16 +360,16 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'set_voltage_diff', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
-        const useInstance = scenario.currentComponent!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
+        const useInstance = assertDefined(scenario.currentComponent, "No active component");
 
         const diffAmt = args[2] as NumericValue;
 
         const pinId1 = useInstance.getPin(PinId.from(args[0]));
-        const net1 = scope.netMap.get(useInstance, pinId1)!;
+        const net1 = assertDefined(scope.netMap.get(useInstance, pinId1), "Net not found for pin");
 
         const pinId2 = useInstance.getPin(PinId.from(args[1]));
-        const net2 = scope.netMap.get(useInstance, pinId2)!;
+        const net2 = assertDefined(scope.netMap.get(useInstance, pinId2), "Net not found for pin");
 
         /*
          * Register the constraint (net1 - net2 = diffAmt) so this
@@ -394,13 +400,13 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
 
     context.createFunction(BaseNamespace, 'set_voltage', (params) => {
         const args = getPositionParams(params);
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         let useInstance!: ClassComponent;
         if (args[0] instanceof ClassComponent) {
             useInstance = args[0] as ClassComponent;
         } else {
-            useInstance = scenario.currentComponent!;
+            useInstance = assertDefined(scenario.currentComponent, "No active component");
         }
 
         let pinId!: PinId;
@@ -423,7 +429,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         }
 
         const scope = visitor.getScope();
-        const net = scope.netMap.get(useInstance, pinId)!;
+        const net = assertDefined(scope.netMap.get(useInstance, pinId), "Net not found for pin");
 
         const netVoltage = scenario.solvedVoltages.get(net);
         if (netVoltage instanceof NumericValue) {
@@ -447,7 +453,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const scope = visitor.getScope();
         const net = scope.netMap.getNetWithName(netName);
         if (net !== null) {
-            const scenario = visitor.getExecutor().resolveScenario()!;
+            const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
             scenario.sourceVoltages.set(net, voltage);
         } else {
             throw new RuntimeExecutionError(`net not found: ${netName}`);
@@ -458,7 +464,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'voltage', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         const { useComponent, pinId } = resolveComponentPin(scenario, args, 'voltage');
         const net = scope.netMap.get(useComponent, pinId);
@@ -478,7 +484,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'voltage_net', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         const netName = args[0] as string;
         const net = scope.netMap.getNetWithName(netName);
@@ -495,14 +501,14 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'resistance', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         if (!scenario.evaluateCalled || !scenario.lastConductance) {
             throw new RuntimeExecutionError('resistance: evaluate() has not been called');
         }
 
         const { useComponent, pinId } = resolveComponentPin(scenario, args, 'resistance');
-        const net = scope.netMap.get(useComponent, pinId)!;
+        const net = assertDefined(scope.netMap.get(useComponent, pinId), "Net not found for pin");
 
         const knownVoltages = new Map(scenario.sourceVoltages);
         const gndNet = scope.netMap.getNetWithName('GND');
@@ -510,14 +516,14 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             knownVoltages.set(gndNet, numeric(0));
         }
 
-        const resistanceValue = calculateNetResistance(scenario.lastConductance!, net, knownVoltages);
+        const resistanceValue = calculateNetResistance(scenario.lastConductance, net, knownVoltages);
         return [visitor, numeric(resistanceValue)];
     });
 
     context.createFunction(BaseNamespace, 'resistance_net', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         if (!scenario.evaluateCalled || !scenario.lastConductance) {
             throw new RuntimeExecutionError('resistance_net: evaluate() has not been called');
@@ -535,13 +541,13 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
             knownVoltages.set(gndNet, numeric(0));
         }
 
-        const resistanceValue = calculateNetResistance(scenario.lastConductance!, net, knownVoltages);
+        const resistanceValue = calculateNetResistance(scenario.lastConductance, net, knownVoltages);
         return [visitor, numeric(resistanceValue)];
     });
 
     context.createFunction(BaseNamespace, 'evaluate', (_params) => {
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         if (scenario.evaluateCalled) {
             throw new RuntimeExecutionError('evaluate: already called');
@@ -644,7 +650,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     });
 
     context.createFunction(BaseNamespace, 'expect', (params) => {
-        if (!visitor.getScope().scenario!.evaluateCalled) {
+        if (!assertDefined(visitor.getScope().scenario, "No active scenario").evaluateCalled) {
             throw new RuntimeExecutionError('expect: evaluate() has not been called');
         }
 
@@ -660,7 +666,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'short', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
         const activeComponent = scenario.currentComponent;
         if (activeComponent === null) {
             throw new RuntimeExecutionError('short function failed: invalid component');
@@ -675,7 +681,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         }
 
         const netMap = scope.netMap;
-        const firstNet = netMap.get(activeComponent, pinIds[0])!;
+        const firstNet = assertDefined(netMap.get(activeComponent, pinIds[0]), "Net not found for pin");
 
         /*
          * Register a zero-diff branch constraint (net1 - net2 = 0) rather
@@ -683,7 +689,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
          * the current evaluate() iteration.
          */
         for (let i = 1; i < pinIds.length; i++) {
-            const secondNet = netMap.get(activeComponent, pinIds[i])!;
+            const secondNet = assertDefined(netMap.get(activeComponent, pinIds[i]), "Net not found for pin");
             scenario.voltageSourceBranches.push({ net1: firstNet, net2: secondNet, diff: 0 });
         }
 
@@ -698,15 +704,15 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const args = getPositionParams(params);
 
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
         const activeComponent = scenario.currentComponent;
 
         const outPin = activeComponent.getPin(PinId.from(args[0] as string));
         const checkPin = activeComponent.getPin(PinId.from(args[1] as string));
         const haltValue = (args[2] as NumericValue).toNumber();
 
-        const outNet = scope.netMap.get(activeComponent, outPin)!;
-        const checkNet = scope.netMap.get(activeComponent, checkPin)!;
+        const outNet = assertDefined(scope.netMap.get(activeComponent, outPin), "Net not found for pin");
+        const checkNet = assertDefined(scope.netMap.get(activeComponent, checkPin), "Net not found for pin");
 
         const constraint = scenario.driveConstraints.find(item => {
             return item.driveNet === outNet && item.targetNet === checkNet
@@ -731,7 +737,7 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const args = getPositionParams(params);
 
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
         const useComponent = args[0] as ClassComponent;
 
@@ -739,8 +745,8 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
         const checkPin = useComponent.getPin(PinId.from(args[2] as string));
         const modifiedValue = (args[3] as NumericValue).toNumber();
 
-        const outNet = scope.netMap.get(useComponent, outPin)!;
-        const checkNet = scope.netMap.get(useComponent, checkPin)!;
+        const outNet = assertDefined(scope.netMap.get(useComponent, outPin), "Net not found for pin");
+        const checkNet = assertDefined(scope.netMap.get(useComponent, checkPin), "Net not found for pin");
 
         scenario.modifiedDriveConstraints.push({ 
             driveNet: outNet, targetNet: checkNet, 
@@ -757,9 +763,9 @@ export function linkScenarioFunctions(context: ExecutionContext, visitor: BaseVi
     context.createFunction(BaseNamespace, 'set_pull', (params) => {
         const args = getPositionParams(params);
         const scope = visitor.getScope();
-        const scenario = visitor.getExecutor().resolveScenario()!;
+        const scenario = assertDefined(visitor.getExecutor().resolveScenario(), "No active scenario");
 
-        const activeComponent = scenario.currentComponent!;
+        const activeComponent = assertDefined(scenario.currentComponent, "No active component");
         const pinId1 = activeComponent.getPin(PinId.from(args[0] as string)); // Target pin
         const pinId2 = activeComponent.getPin(PinId.from(args[1] as string)); // Pull to pin
         const value = args[2] as NumericValue;

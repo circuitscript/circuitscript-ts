@@ -11,6 +11,7 @@ import { ColorScheme, DarkColorScheme, defaultFont, defaultGridSizeUnits, defaul
 import { milsToMM } from '../helpers.js';
 import { numeric } from '../objects/NumericValue.js';
 import { Styles } from '../styles.js';
+import { assertDefined } from '../utils.js';
 
 // Matches the Textbox fallback default font size used by the generic label/text
 // draw path when no explicit fontSize is set (draw_symbols.ts, numeric(50)).
@@ -31,6 +32,10 @@ export const StyleOverrideClass = 'styleOverride';
  * full property set to fall back on for elements that only override some of
  * a class's properties).
  */
+function req<T>(v: T | null | undefined, name: string): T {
+    return assertDefined(v, `Missing style: ${name}`);
+}
+
 export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, Record<string, string>> {
     // Grid size/stroke width are fixed constants (not per-document), so the
     // dasharray is always the same - matches drawGrid()'s strokeSize/numericGridSize.
@@ -42,13 +47,13 @@ export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, 
 
     return {
         wire: {
-            'stroke-width': `${milsToMM(styles.wireWidth!).toNumber()}px`,
+            'stroke-width': `${milsToMM(req(styles.wireWidth, "styles.wireWidth")).toNumber()}px`,
             'stroke-linecap': 'butt',
-            'stroke': styles.wireColor!,
+            'stroke': req(styles.wireColor, "styles.wireColor"),
             fill: 'none',
         },
         busWire: {
-            'stroke-width': `${milsToMM(styles.busWireWidth!).toNumber()}px`,
+            'stroke-width': `${milsToMM(req(styles.busWireWidth, "styles.busWireWidth")).toNumber()}px`,
             'stroke-linecap': 'butt',
             'stroke': ColorScheme.BusWireColor,
             fill: 'none',
@@ -63,29 +68,29 @@ export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, 
         },
         pin: {
             'stroke-width': `${defaultSymbolLineWidth}px`,
-            stroke: styles.lineColor!,
+            stroke: req(styles.lineColor, "styles.lineColor"),
             fill: 'none',
         },
         graphicLine: {
-            'stroke-width': `${milsToMM(styles.lineWidth!).toNumber()}px`,
-            stroke: styles.lineColor!,
+            'stroke-width': `${milsToMM(req(styles.lineWidth, "styles.lineWidth")).toNumber()}px`,
+            stroke: req(styles.lineColor, "styles.lineColor"),
             fill: 'none',
         },
         graphicPolygon: {
             fill: ColorScheme.BodyColor,
         },
         pinName: {
-            fill: styles.textColor!,
+            fill: req(styles.textColor, "styles.textColor"),
             'font-size': `${defaultPinNameTextSize * fontDisplayScale}px`,
             'font-weight': 'regular',
         },
         pinId: {
-            fill: styles.lineColor!,
+            fill: req(styles.lineColor, "styles.lineColor"),
             'font-size': `${defaultPinIdTextSize * fontDisplayScale}px`,
             'font-weight': 'regular',
         },
         label: {
-            fill: styles.textColor!,
+            fill: req(styles.textColor, "styles.textColor"),
             'font-size': `${defaultLabelTextSize * fontDisplayScale}px`,
             'font-weight': 'regular',
         },
@@ -98,7 +103,7 @@ export function getClassDefaults(styles: Styles): Record<DefaultStyleClassName, 
         // (decorative custom-symbol text, refdes, MPN, port labels, etc.) - only
         // fill is governed here, since font-size/weight always vary per instance.
         text: {
-            fill: styles.textColor!,
+            fill: req(styles.textColor, "styles.textColor"),
         },
         frame: {
             stroke: ColorScheme.FrameBorderColor,
@@ -147,12 +152,12 @@ const ThemeVarNames = {
  */
 function getThemeVariableCss(styles: Styles): string {
     const light: Record<string, string> = {
-        [ThemeVarNames.wire]: styles.wireColor!,
+        [ThemeVarNames.wire]: req(styles.wireColor, "styles.wireColor"),
         [ThemeVarNames.busWire]: ColorScheme.BusWireColor,
         [ThemeVarNames.junction]: ColorScheme.JunctionColor,
         [ThemeVarNames.busJunction]: ColorScheme.BusJunctionColor,
-        [ThemeVarNames.lineColor]: styles.lineColor!,
-        [ThemeVarNames.textColor]: styles.textColor!,
+        [ThemeVarNames.lineColor]: req(styles.lineColor, "styles.lineColor"),
+        [ThemeVarNames.textColor]: req(styles.textColor, "styles.textColor"),
         [ThemeVarNames.grid]: ColorScheme.GridColor,
         [ThemeVarNames.frame]: ColorScheme.FrameBorderColor,
         [ThemeVarNames.bodyColor]: ColorScheme.BodyColor,

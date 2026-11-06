@@ -71,6 +71,7 @@ export function throwWithContext(context: ParserRuleContext, messageOrError: str
         throw messageOrError;
     }
     const message = messageOrError instanceof BaseError ? messageOrError.message : messageOrError;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- parser rule contexts always carry start/stop tokens
     throwWithTokenRange(message, context.start!, context.stop!);
 }
 
@@ -137,7 +138,7 @@ export function collectErrorChain(error: Error): Error[] {
     for (let i = 0; i < 100; i++) {
         if (currentError.cause) {
             items.push(currentError.cause);
-            currentError = currentError.cause!;
+            currentError = currentError.cause as Error;
         } else {
             break;
         }

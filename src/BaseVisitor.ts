@@ -36,7 +36,7 @@ import { CallableParameter as CallableArgument, ComplexType,
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, ParamKeys, 
     ReferenceTypes, TrailerArrayIndex, DefaultMaxNetRenameAttempts } from './globals.js';
-import { ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
+import { assertDefined, getOrThrow, ExecutionWarning, isReference, unwrapValue as unwrapValue } from "./utils.js";
 import { linkBuiltInFunctions } from './builtinMethods.js';
 import { VERSION } from './version.js';
 import { BaseError, throwWithContext, RuntimeExecutionError } from './errors.js';
@@ -151,7 +151,10 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         // Start the sequence list with the cursor positioned at
         // the root node.
         scope.sequence.push([
-            SequenceAction.At, scope.componentRoot!, scope.currentPin!
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- componentRoot is set during scope setup
+            SequenceAction.At, scope.componentRoot!,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- currentPin may legitimately be unset here; preserve prior behavior
+            scope.currentPin!
         ]);
 
         // Add the document global object, this is used to set the page size
@@ -363,13 +366,13 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         const specificImports: string[] = [];
         if (ctx instanceof Import_specific_or_allContext) {
             const tmpSpecificImports = ctx._funcNames.map(item => {
-                return item.text!;
+                return assertDefined(item.text, "Missing import name");
             });
 
             specificImports.push(...tmpSpecificImports);
         }
 
-        const id = ctx._libraryName!.text!.slice(1, -1);
+        const id = assertDefined(assertDefined(ctx._libraryName, "Missing library name").text, "Missing library name text").slice(1, -1);
         const importedFile = this.handleImportFile(id, handling, true, ctx, specificImports);
 
         const ctxImportAnnotation = ctx.annotation_comment_expr();
@@ -417,7 +420,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             passedNetNamespace = this.visitResult(netNameSpaceExpr);
         }
 
-        const firstId = ctx.ID(0)!;
+        const firstId = assertDefined(ctx.ID(0), "Missing identifier");
         const atomId = firstId.getText();
 
         let currentReference: AnyReference;
@@ -451,7 +454,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             });
         } else {
             // Check if is a function call, then have to say it is undefined
-            if (ctx.trailer().length > 0 && ctx.trailer(0)!.LParen()) {
+            if (ctx.trailer().length > 0 && ctx.trailer(0)?.LParen()) {
                 this.throwWithContext(ctx, `Function not found: ${ctx.getText()}`);
             }
         }
@@ -640,7 +643,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
         if (trailers.length === 0) {
             // No trailers, directly assign the reference name
-            this.getScope().setVariable(leftSideReference.name!, rhsValue);
+            this.getScope().setVariable(assertDefined(leftSideReference.name, "Missing reference name"), rhsValue);
 
             let itemType = '';
             if (rhsValue instanceof ClassComponent) {
@@ -650,7 +653,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                 );
             } else {
                 itemType = ReferenceTypes.variable;
-                this.getScope().setVariable(leftSideReference.name!, rhsValue);
+                this.getScope().setVariable(assertDefined(leftSideReference.name, "Missing reference name"), rhsValue);
                 this.log2(`assigned variable "${leftSideReference.name}" to "${rhsValue}"`);
             }
 
@@ -852,13 +855,13 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             } else {
                 // Otherwise use the function call index within the 
                 // parent context
-                const parentEntry = executor.indexedStack.get(parentBreakContext)!;
+                const parentEntry = getOrThrow(executor.indexedStack, parentBreakContext, "indexed stack entry");
                 const { funcCallIndex } = parentEntry;
                 if (!funcCallIndex.has(ctx)) {
                     funcCallIndex.set(ctx, 0);
                     useIndex = 0;
                 } else {
-                    useIndex = funcCallIndex.get(ctx)! + 1;
+                    useIndex = getOrThrow(funcCallIndex, ctx, "function call index") + 1;
                     funcCallIndex.set(ctx, useIndex);
                 }
             }
@@ -890,7 +893,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         namespaceExtension: string,
         isBreakContext = true): ExecutionContext {
 
-        const poppedContext = executionStack.pop()!;
+        const poppedContext = assertDefined(executionStack.pop(), "Empty execution stack");
 
         // Merge what ever was created in the scope with the outer scope
         const nextLastExecution = executionStack[executionStack.length - 1];
@@ -905,7 +908,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             if (scope.breakStack.length > 0) {
                 const executor = this.getExecutor();
                 scope.breakStack.forEach(stackCtx => {
-                    const entry = executor.indexedStack.get(stackCtx)!;
+                    const entry = getOrThrow(executor.indexedStack, stackCtx, "indexed stack entry");
                     const { index } = entry;
                     indexedStack.push([stackCtx, index]);
                 });
@@ -1016,7 +1019,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                 const tmpCtx = defaultValuesProvided[index - boundary];
                 this.visit(tmpCtx);
                 const defaultValue = this.getResult(tmpCtx);
-                return [idText, tmpCtx.start!, defaultValue];
+                return [idText, assertDefined(tmpCtx.start, "Missing start token"), defaultValue];
             } else {
                 return [idText, id.getSymbol()];
             }
@@ -1029,7 +1032,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         if (ctx.DoubleDot()) {
             this.setResult(ctx, this.getScope().lastObjectReference)
         } else {
-            this.setResult(ctx, this.visitResult(ctx.data_expr()!));
+            this.setResult(ctx, this.visitResult(assertDefined(ctx.data_expr(), "Missing data expression")));
         }
     }
 
@@ -1080,11 +1083,11 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
     visitFlow_expressions = (ctx: Flow_expressionsContext): void => {
         if (ctx.if_expr()) {
-            this.visit(ctx.if_expr()!);
+            this.visit(assertDefined(ctx.if_expr(), "Missing if expression"));
         } else if (ctx.while_expr()) {
-            this.visit(ctx.while_expr()!);
+            this.visit(assertDefined(ctx.while_expr(), "Missing while expression"));
         } else if (ctx.for_expr()) {
-            this.visit(ctx.for_expr()!);
+            this.visit(assertDefined(ctx.for_expr(), "Missing for expression"));
         } else if (ctx.Break() || ctx.Continue()) {
             // When the `break` keyword is encountered inside a branch, then leave the branch
             // without storing the final state. If used, the break should be
@@ -1139,7 +1142,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         if (scope.breakStack.length > 0){
             const executor = this.getExecutor();    
             scope.breakStack.forEach(stackCtx => {
-                const entry = executor.indexedStack.get(stackCtx)!;
+                const entry = getOrThrow(executor.indexedStack, stackCtx, "indexed stack entry");
                 const { index } = entry;
                 indexedStack.push([stackCtx, index]);
             });
@@ -1193,12 +1196,12 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         // Extract the original import statement and store location
         let importStatement!: SerializedExpression;
         if (ctx !== null) {
-            const start = ctx.start!;
-            const inputStream = start.inputStream!;
+            const start = assertDefined(ctx.start, "Missing start token");
+            const inputStream = assertDefined(start.inputStream, "Missing input stream");
 
             importStatement = [
                 start.line, start.column,
-                inputStream.getTextFromRange(start.start, ctx.stop!.stop)
+                inputStream.getTextFromRange(start.start, assertDefined(ctx.stop, "Missing stop token").stop)
             ];
         }
 
@@ -1257,7 +1260,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         try {
             filePathUsed = relativeFilePath;
             if (this.loadedFiles.has(relativeFilePath)){
-                fileData = this.loadedFiles.get(relativeFilePath)!;
+                fileData = getOrThrow(this.loadedFiles, relativeFilePath, "loaded file");
                 pathExists = true;
             }
         } catch (err) {
@@ -1275,7 +1278,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                 filePathUsed = tmpFilePath2;
 
                 if(this.loadedFiles.has(tmpFilePath2)){
-                    fileData = this.loadedFiles.get(tmpFilePath2)!;
+                    fileData = getOrThrow(this.loadedFiles, tmpFilePath2, "loaded file");
                     pathExists = true;
                 }
 
@@ -1289,6 +1292,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             if (pathExists && filePathUsed) {
                 this.log('done reading imported file data');
 
+                const fileDataUsed = assertDefined(fileData, "Missing imported file data");
                 const executionStack = this.executionStack;
                 const executor = this.getExecutor();
 
@@ -1315,7 +1319,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
                 if (this.enableCachedImportsRead) {
                     try {
-                        contentHash = computeContentHash(fileData!);
+                        contentHash = computeContentHash(fileDataUsed);
                         const cachedIR = readCache(filePathUsed, contentHash);
                         if (cachedIR !== null) {
                             this.log('cache hit for:', filePathUsed);
@@ -1360,7 +1364,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
                 if (!loadedFromCache) {
                     const importResult = this.onImportFile(this,
-                        filePathUsed, fileData!, this.onErrorHandler);
+                        filePathUsed, fileDataUsed, this.onErrorHandler);
 
                     hasError = importResult.hasError;
                     hasParseError = importResult.hasParseError;
@@ -1434,7 +1438,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             hasError,
             hasParseError,
             pathExists,
-            importedLibrary: importedLibrary!
+            importedLibrary: importedLibrary
         };
 
         this.importedFiles.push(newImportedFile);

@@ -14,6 +14,7 @@ import { ComponentTypes } from "../globals.js";
 import { Net } from "../objects/Net.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { ERC_Rules } from "./rules.js";
+import { getOrThrow } from "../utils.js";
 
 /**
  * A pin counts as a physical pin unless it belongs to a net marker (supply,
@@ -65,7 +66,7 @@ export function RuleCheck_NoConnectOnConnectedPin(graph: Graph,
             if (!netPhysicalPins.has(net)) {
                 netPhysicalPins.set(net, []);
             }
-            netPhysicalPins.get(net)!.push([component, pin]);
+            getOrThrow(netPhysicalPins, net, "net physical pins").push([component, pin]);
         }
     };
 

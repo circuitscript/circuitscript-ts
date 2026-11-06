@@ -47,6 +47,7 @@ export class NetMap {
     }
 
     set(instance: ClassComponent, pin: PinId, net: Net): void {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- a missing pair yields undefined -> indexOf -1, handled below
         const pair = this.findNet(instance, pin)!;
         const result = this.items.indexOf(pair);
 
@@ -93,6 +94,7 @@ export class NetMap {
     }
 
     remove(component: ClassComponent, pin: PinId): void {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- a missing pair yields undefined -> indexOf -1, handled below
         const pair = this.findNet(component, pin)!;
         const result = this.items.indexOf(pair);
 
@@ -187,6 +189,7 @@ export class NetMap {
         }
 
         this.logEnabled?.() && this.log('final net after link: ', returnNet, returnNet.priority);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- one of the link branches above always assigns returnNet
         return returnNet!;
     }
 

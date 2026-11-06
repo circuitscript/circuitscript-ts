@@ -541,6 +541,7 @@ export class ClassComponent {
         if (unitId === null) {
             return this.units[0];
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- callers pass ids of existing units (missing id yields undefined as before)
             return this.units.find(item => {
                 return item.unitId === unitId;
             })!;

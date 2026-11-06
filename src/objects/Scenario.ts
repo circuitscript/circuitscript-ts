@@ -70,9 +70,11 @@ export class Scenario {
             if (this.errorWhenEvaluate){
                 result.push('evaluate() had an error');
             } else if (this.failError !== null){
-                const err = this.failError!;
+                const err = this.failError;
                 const position = getLinePositionAsString({
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- errors that fail a scenario carry token positions
                     start: err.startToken!,
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- errors that fail a scenario carry token positions
                     stop: err.endToken!
                 });
                 result.push(`line ${position} - ${err.message}`);

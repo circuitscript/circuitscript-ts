@@ -165,6 +165,7 @@ export class ExecutionScope {
     }
 
     exitContext(): ParserRuleContext {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- exit is always paired with an earlier enter
         return this.contextStack.pop()!;
     }
 
@@ -190,6 +191,7 @@ export class ExecutionScope {
     }
 
     popOnPropertyHandler(): OnPropertyHandler {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- pop is always paired with an earlier push
         return this.onPropertyHandler.pop()!;
     }
 

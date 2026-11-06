@@ -87,6 +87,7 @@ export async function resolveAllImportFilepaths(
         let fileData: string;
         if (passedInScriptData === undefined || passedInScriptData === null) {
             try {
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- script data is only omitted for file-backed scripts
                                 fileData = await environment.readFile(filePath!, { encoding: 'utf8' });
             } catch {
                                 return;

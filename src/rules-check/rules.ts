@@ -18,6 +18,7 @@ import { Wire } from "src/objects/Wire.js";
 import { Token } from "antlr4ng";
 import { RuntimeExecutionError } from "../errors.js";
 import { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js';
+import { assertDefined, getOrThrow } from "../utils.js";
 
 export { ERCSeverity, ERC_Rules, ERC_RuleSeverity } from './severity-defaults.js';
 
@@ -66,8 +67,8 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
             case ERC_Rules.UnconnectedWire: {
                 const wire = item.wire as Wire;
                 if (creationCtx.has(wire)) {
-                    const tmpCtx = creationCtx.get(wire)!;
-                    const startToken = tmpCtx.start!;
+                    const tmpCtx = getOrThrow(creationCtx, wire, "wire creation context");
+                    const startToken = assertDefined(tmpCtx.start, "Missing start token");
 
                     reportItems.push({
                         type,
@@ -318,7 +319,7 @@ function getComponentFirstCtxLocation(instance: ClassComponent):
     { start: Token, filePath: string } | null {
     if (instance.ctxReferences.length > 0) {
         const { ctx, filePath } = instance.ctxReferences[0];
-        return { start: ctx.start!, filePath };
+        return { start: assertDefined(ctx.start, "Missing start token"), filePath };
     }
 
     return null;

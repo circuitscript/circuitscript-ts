@@ -13,6 +13,7 @@ import { ClassComponent } from "../objects/ClassComponent.js";
 import { ImportedLibrary } from "../objects/types.js";
 import { RefdesAnnotationVisitor } from "./RefdesAnnotationVisitor.js";
 import { RefdesModification, resolveRefdesMode } from "./utils.js";
+import { assertDefined } from "../utils.js";
 
 export type AnnotationOutputFile = {
     filePath: string;
@@ -116,7 +117,7 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
                 const updatedLines = updatedScriptData.split('\n');
 
                 for (const [tokens, tree] of referencedTokens) {
-                    const inputStream = tokens.tokenSource.inputStream!;
+                    const inputStream = assertDefined(tokens.tokenSource.inputStream, "Missing input stream");
 
                     // Only a section of the entire code file.
                     const scriptChunk = 
@@ -172,9 +173,9 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
 
         // Process all external refdes libraries into a single JSON file
         if (externalRefdesLibraries.length > 0) {
-            const inputDir = environment.dirname(inputPath!);
-            const inputExt = environment.extname(inputPath!);
-            const inputBasename = environment.basename(inputPath!, inputExt);
+            const inputDir = environment.dirname(assertDefined(inputPath, "Missing input path"));
+            const inputExt = environment.extname(assertDefined(inputPath, "Missing input path"));
+            const inputBasename = environment.basename(assertDefined(inputPath, "Missing input path"), inputExt);
             const refdesFilePath = environment.join(inputDir, `${inputBasename}${RefdesFileSuffix}`);
 
             const libraries: ExternalLibAnnotationFile[] = [];
@@ -194,7 +195,7 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
                 const relativeFilePath = environment.relative(inputDir, filePath);
 
                 libraries.push({
-                    name: libraryName!,
+                    name: assertDefined(libraryName, "Missing library name"),
                     path: relativeFilePath,
                     items: output,
                 });

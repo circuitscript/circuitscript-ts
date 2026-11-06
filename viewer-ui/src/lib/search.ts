@@ -31,7 +31,7 @@ export function searchRefdes(
     (c) => c.kind === 'component' && !!c.refDes && matcher(c.refDes)
   );
   hits.sort((a, b) =>
-    a.refDes!.localeCompare(b.refDes!, undefined, { numeric: true, sensitivity: 'base' })
+    (a.refDes ?? '').localeCompare(b.refDes ?? '', undefined, { numeric: true, sensitivity: 'base' })
   );
   return hits.map((c) => c.domId);
 }

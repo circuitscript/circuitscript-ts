@@ -7,6 +7,7 @@
 import { TerminalNode, Token } from "antlr4ng";
 import { ExecutionContext } from "../execute.js";
 import { FunctionDefinedParameter, ParseSymbolType, ValueType } from "../objects/types.js";
+import { getOrThrow } from "../utils.js";
 
 /**
  * @class SymbolTable
@@ -247,6 +248,7 @@ export class SymbolTable {
      */
     get(executionContext: ExecutionContext, id: string): SymbolTableItem {
         const name = this.idName(executionContext, id);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- documented contract: caller verified exists()
         return this.symbols.get(name)!;
     }
 
@@ -288,7 +290,7 @@ export class SymbolTable {
 
         for (const [key,] of this.symbols) {
             if (key.endsWith(`.${id}`)) {
-                const { context } = this.symbols.get(key)! as SymbolTableItem;
+                const { context } = getOrThrow(this.symbols, key, "symbol") as SymbolTableItem;
 
                 if (contextNames.indexOf(context.namespace) !== -1) {
                     return context;

@@ -6,7 +6,7 @@
  */
 import { SheetFrame } from './layout.js';
 import { boundBoxToRect } from './render.js';
-import { sanitizeDomId } from '../utils.js';
+import { sanitizeDomId, getOrThrow } from '../utils.js';
 import { ComponentTypes, FrameType } from '../globals.js';
 import { NumericValue } from '../objects/NumericValue.js';
 import { FixedFrameIds, FrameParamKeys } from '../objects/Frame.js';
@@ -107,7 +107,7 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                 && component.getParam('no_connect') === true
             ) {
                 nc_nets.push(
-                    component.pinNets.get(component.getDefaultPin())!.toString());
+                    getOrThrow(component.pinNets, component.getDefaultPin(), 'default pin net').toString());
             }
         }
 

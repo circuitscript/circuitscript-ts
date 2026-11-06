@@ -7,6 +7,7 @@
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { Net } from "../objects/Net.js";
 import { ComponentPinNetPair } from "src/objects/types.js";
+import { getOrThrow } from "../utils.js";
 
 /**
  * Builds a union-find over Net object identity, joining the two nets on
@@ -22,11 +23,11 @@ function buildErcNetBridgeUnionFind(nets: ComponentPinNetPair[]): Map<Net, Net> 
     const find = (n: Net): Net => {
         let root = n;
         while (parent.has(root) && parent.get(root) !== root) {
-            root = parent.get(root)!;
+            root = getOrThrow(parent, root, "net parent");
         }
         let cur = n;
         while (parent.has(cur) && parent.get(cur) !== root) {
-            const next = parent.get(cur)!;
+            const next = getOrThrow(parent, cur, "net parent");
             parent.set(cur, root);
             cur = next;
         }
@@ -48,7 +49,7 @@ function buildErcNetBridgeUnionFind(nets: ComponentPinNetPair[]): Map<Net, Net> 
         if (!component.ercNetBridgeProp) continue;
         if (!parent.has(net)) parent.set(net, net);
         if (!byComponent.has(component)) byComponent.set(component, []);
-        byComponent.get(component)!.push(net);
+        getOrThrow(byComponent, component, "component nets").push(net);
     }
 
     for (const componentNets of byComponent.values()) {
@@ -66,7 +67,7 @@ function buildErcNetBridgeUnionFind(nets: ComponentPinNetPair[]): Map<Net, Net> 
 function walkRoot(parent: Map<Net, Net>, n: Net): Net {
     let root = n;
     while (parent.has(root) && parent.get(root) !== root) {
-        root = parent.get(root)!;
+        root = getOrThrow(parent, root, "net parent");
     }
     return root;
 }

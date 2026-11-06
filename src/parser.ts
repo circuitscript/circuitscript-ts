@@ -133,6 +133,7 @@ export class CircuitscriptParserErrorListener implements ANTLRErrorListener {
         e: RecognitionException | null): void {
 
         if (this.onErrorHandler && e) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- recognition exceptions raised by the parser carry a context
             this.onErrorHandler(msg, e.ctx!, e);
         } else {
 

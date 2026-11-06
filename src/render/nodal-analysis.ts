@@ -16,6 +16,7 @@ import { ComponentPinNetPair } from "../objects/types.js";
 import { NetMap } from "../objects/NetMap.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { RuntimeExecutionError } from "../errors.js";
+import { assertDefined, getOrThrow } from "../utils.js";
 
 /** Union-find over `Net`s, used to merge nets shorted together by
  * zero-ohm resistors so they can be treated as a single node during
@@ -37,14 +38,14 @@ class NetUnion {
     /** Merges the sets containing `netA` and `netB` into one, keyed under
      * whichever net was registered first (lower `setup()` index). */
     union(netA: Net, netB: Net): void {
-        const indexA = this.index.get(netA)!;
-        const indexB = this.index.get(netB)!;
+        const indexA = getOrThrow(this.index, netA);
+        const indexB = getOrThrow(this.index, netB);
 
         const parentNet = indexA < indexB ? netA : netB;
         const childNet = indexA < indexB ? netB : netA;
 
-        const parentSet = this.nets.get(parentNet)!;
-        const childSet = this.nets.get(childNet)!;
+        const parentSet = getOrThrow(this.nets, parentNet);
+        const childSet = getOrThrow(this.nets, childNet);
 
         /* Merge the parent and child set. Because the parent net is always
          added first, the net with the lower assigned index will always be
@@ -60,7 +61,7 @@ class NetUnion {
     /** Returns a representative net for the set containing `net`. This will be
      *  the net with the lowest assigned index. */
     getSetRoot(net: Net): Net {
-        return this.nets.get(net)!.values().next().value;
+        return getOrThrow(this.nets, net).values().next().value;
     }
 
     getNetGroups(): Map<Net, Net[]> {
@@ -134,8 +135,8 @@ function buildConductanceMatrix(netMap: NetMap): {
             const resistance = item.parameters.get('value') as NumericValue;
             const resistanceValue = resistance.toNumber();
 
-            const net1Index = representativeIndex.get(representativeOf.get(net1!)!)!;
-            const net2Index = representativeIndex.get(representativeOf.get(net2!)!)!;
+            const net1Index = getOrThrow(representativeIndex, getOrThrow(representativeOf, assertDefined(net1, "net for resistor pin 1")));
+            const net2Index = getOrThrow(representativeIndex, getOrThrow(representativeOf, assertDefined(net2, "net for resistor pin 2")));
 
             // Zero-ohm resistors were already folded into a shared
             // representative above. A nonzero resistor whose endpoints
@@ -200,7 +201,7 @@ function buildConductanceMatrixV2(netMap: NetMap): {
 
     // Build a graph with every net as a node, edges for zero-ohm resistor shorts only.
     const shortGraph = new Graph({ directed: false });
-    netsIndexed.forEach(net => shortGraph.setNode(idOf.get(net)!));
+    netsIndexed.forEach(net => shortGraph.setNode(getOrThrow(idOf, net)));
 
     for (const item of instances) {
         if (item.typeProp === ComponentTypes.resistor) {
@@ -209,7 +210,7 @@ function buildConductanceMatrixV2(netMap: NetMap): {
                 const net1 = netMap.get(item, PinId.from(1));
                 const net2 = netMap.get(item, PinId.from(2));
                 if (net1 && net2) {
-                    shortGraph.setEdge(idOf.get(net1)!, idOf.get(net2)!);
+                    shortGraph.setEdge(getOrThrow(idOf, net1), getOrThrow(idOf, net2));
                 }
             }
         }
@@ -231,8 +232,8 @@ function buildConductanceMatrixV2(netMap: NetMap): {
 
     const components = alg.components(shortGraph);
     for (const componentIds of components) {
-        const members = componentIds.map(id => netOf.get(id)!)
-            .sort((a, b) => netIndex.get(a)! - netIndex.get(b)!);
+        const members = componentIds.map(id => getOrThrow(netOf, id))
+            .sort((a, b) => getOrThrow(netIndex, a) - getOrThrow(netIndex, b));
         const representative = members[0];
         members.forEach(net => {
             representativeOf.set(net, representative);
@@ -254,8 +255,8 @@ function buildConductanceMatrixV2(netMap: NetMap): {
             const resistance = item.parameters.get('value') as NumericValue;
             const resistanceValue = resistance.toNumber();
 
-            const net1Index = representativeIndex.get(representativeOf.get(net1!)!)!;
-            const net2Index = representativeIndex.get(representativeOf.get(net2!)!)!;
+            const net1Index = getOrThrow(representativeIndex, getOrThrow(representativeOf, assertDefined(net1, "net for resistor pin 1")));
+            const net2Index = getOrThrow(representativeIndex, getOrThrow(representativeOf, assertDefined(net2, "net for resistor pin 2")));
 
             if (resistanceValue === 0 || net1Index === net2Index) {
                 return;
@@ -343,7 +344,7 @@ export function calculateNodeVoltagesLegacy(
     const knownVoltageOf = new Map<Net, number>();
     
     const getKnownVoltage = (rep: Net): number => {
-        return knownVoltageOf.get(rep)!;
+        return getOrThrow(knownVoltageOf, rep);
     };
 
     // Returns true for representatives that have some voltage defined (not high impedance)
@@ -352,7 +353,7 @@ export function calculateNodeVoltagesLegacy(
     };
 
     const setVoltageForRepresentative = (rep: Net, value: number): void => {
-        netGroups.get(rep)!.forEach(net => {
+        getOrThrow(netGroups, rep).forEach(net => {
             netVoltages.set(net, value);
         });
     };
@@ -411,10 +412,10 @@ export function calculateNodeVoltagesLegacy(
             const aKnown = knownVoltageOf.has(edge.repA);
             const bKnown = knownVoltageOf.has(edge.repB);
             if (aKnown && !bKnown) {
-                knownVoltageOf.set(edge.repB, knownVoltageOf.get(edge.repA)! - edge.diff);
+                knownVoltageOf.set(edge.repB, getOrThrow(knownVoltageOf, edge.repA) - edge.diff);
                 changed = true;
             } else if (bKnown && !aKnown) {
-                knownVoltageOf.set(edge.repA, knownVoltageOf.get(edge.repB)! + edge.diff);
+                knownVoltageOf.set(edge.repA, getOrThrow(knownVoltageOf, edge.repB) + edge.diff);
                 changed = true;
             }
         }
@@ -488,16 +489,16 @@ export function calculateNodeVoltagesLegacy(
     unknownIndices.forEach((repIndex, localIndex) => repIndexToLocal.set(repIndex, localIndex));
 
     const localSourceEdges = unresolvedSourceEdges.map(edge => ({
-        a: repIndexToLocal.get(repIndexOfNet.get(edge.repA)!)!,
-        b: repIndexToLocal.get(repIndexOfNet.get(edge.repB)!)!,
+        a: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.repA)),
+        b: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.repB)),
         value: edge.diff,
     }));
 
     // Same two-stage mapping as localSourceEdges above, built fresh from
     // the already-validated driveEdges (not reused from an earlier stage).
     const localDriveEdges = driveEdges.map(edge => ({
-        a: repIndexToLocal.get(repIndexOfNet.get(edge.driveRep)!)!,
-        b: repIndexToLocal.get(repIndexOfNet.get(edge.targetRep)!)!,
+        a: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.driveRep)),
+        b: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.targetRep)),
         value: edge.targetValue,
     }));
 
@@ -584,7 +585,9 @@ export function calculateNodeVoltagesLegacy(
         visited[start] = true;
 
         while (stack.length > 0) {
-            const current = stack.pop()!;
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures stack is non-empty
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures stack is non-empty
+        const current = stack.pop()!;
             component.push(current);
             for (const neighbor of adjacency[current]) {
                 if (!visited[neighbor]) {
@@ -686,8 +689,8 @@ export function calculateNodeVoltagesLegacy(
 
             componentEdges.forEach((edge, edgeIdx) => {
                 const row = n + edgeIdx;
-                const pLocal = localOf.get(edge.a)!;
-                const mLocal = localOf.get(edge.b)!;
+                const pLocal = getOrThrow(localOf, edge.a);
+                const mLocal = getOrThrow(localOf, edge.b);
 
                 /* KCL: branch current leaves node p, enters node m. */
                 A.set(pLocal, row, A.get(pLocal, row) + 1);
@@ -701,8 +704,8 @@ export function calculateNodeVoltagesLegacy(
 
             componentDriveEdges.forEach((edge, edgeIdx) => {
                 const row = n + m + edgeIdx;
-                const driveLocal = localOf.get(edge.a)!;
-                const targetLocal = localOf.get(edge.b)!;
+                const driveLocal = getOrThrow(localOf, edge.a);
+                const targetLocal = getOrThrow(localOf, edge.b);
 
                 /* Column: injected current at driveNet only - asymmetric
                  * vs. a diff branch's +1/-1 pair. The drive node
@@ -786,7 +789,7 @@ export function calculateNodeVoltagesV2(
     const knownVoltageOf = new Map<Net, number>();
 
     const getKnownVoltage = (rep: Net): number => {
-        return knownVoltageOf.get(rep)!;
+        return getOrThrow(knownVoltageOf, rep);
     };
 
     /* Returns true for representatives that have some voltage defined (not high impedance) */
@@ -795,7 +798,7 @@ export function calculateNodeVoltagesV2(
     };
 
     const setVoltageForRepresentative = (rep: Net, value: number): void => {
-        netGroups.get(rep)!.forEach(net => {
+        getOrThrow(netGroups, rep).forEach(net => {
             netVoltages.set(net, value);
         });
     };
@@ -854,10 +857,10 @@ export function calculateNodeVoltagesV2(
             const aKnown = knownVoltageOf.has(edge.repA);
             const bKnown = knownVoltageOf.has(edge.repB);
             if (aKnown && !bKnown) {
-                knownVoltageOf.set(edge.repB, knownVoltageOf.get(edge.repA)! - edge.diff);
+                knownVoltageOf.set(edge.repB, getOrThrow(knownVoltageOf, edge.repA) - edge.diff);
                 changed = true;
             } else if (bKnown && !aKnown) {
-                knownVoltageOf.set(edge.repA, knownVoltageOf.get(edge.repB)! + edge.diff);
+                knownVoltageOf.set(edge.repA, getOrThrow(knownVoltageOf, edge.repB) + edge.diff);
                 changed = true;
             }
         }
@@ -934,16 +937,16 @@ export function calculateNodeVoltagesV2(
     unknownIndices.forEach((repIndex, localIndex) => repIndexToLocal.set(repIndex, localIndex));
 
     const localSourceEdges = unresolvedSourceEdges.map(edge => ({
-        a: repIndexToLocal.get(repIndexOfNet.get(edge.repA)!)!,
-        b: repIndexToLocal.get(repIndexOfNet.get(edge.repB)!)!,
+        a: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.repA)),
+        b: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.repB)),
         value: edge.diff,
     }));
 
     /* Same two-stage mapping as localSourceEdges above, built fresh from
      * the already-validated driveEdges (not reused from an earlier stage). */
     const localDriveEdges = driveEdges.map(edge => ({
-        a: repIndexToLocal.get(repIndexOfNet.get(edge.driveRep)!)!,
-        b: repIndexToLocal.get(repIndexOfNet.get(edge.targetRep)!)!,
+        a: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.driveRep)),
+        b: getOrThrow(repIndexToLocal, getOrThrow(repIndexOfNet, edge.targetRep)),
         value: edge.targetValue,
     }));
 
@@ -1114,8 +1117,8 @@ export function calculateNodeVoltagesV2(
 
             componentEdges.forEach((edge, edgeIdx) => {
                 const row = n + edgeIdx;
-                const pLocal = localOf.get(edge.a)!;
-                const mLocal = localOf.get(edge.b)!;
+                const pLocal = getOrThrow(localOf, edge.a);
+                const mLocal = getOrThrow(localOf, edge.b);
 
                 /* KCL: branch current leaves node p, enters node m. */
                 A.set(pLocal, row, A.get(pLocal, row) + 1);
@@ -1129,8 +1132,8 @@ export function calculateNodeVoltagesV2(
 
             componentDriveEdges.forEach((edge, edgeIdx) => {
                 const row = n + m + edgeIdx;
-                const driveLocal = localOf.get(edge.a)!;
-                const targetLocal = localOf.get(edge.b)!;
+                const driveLocal = getOrThrow(localOf, edge.a);
+                const targetLocal = getOrThrow(localOf, edge.b);
 
                 /* Column: injected current at driveNet only - asymmetric
                  * vs. a diff branch's +1/-1 pair. The drive node
@@ -1235,7 +1238,7 @@ export function calculateNetResistance(
     representatives.forEach((rep, i) => repIndex.set(rep, i));
 
     const unknownReps = representatives.filter(rep => !knownReps.has(rep));
-    const unknownIndices = unknownReps.map(rep => repIndex.get(rep)!);
+    const unknownIndices = unknownReps.map(rep => getOrThrow(repIndex, rep));
     const knownIndices = representatives
         .map((_, i) => i)
         .filter(i => knownReps.has(representatives[i]));
@@ -1244,7 +1247,7 @@ export function calculateNetResistance(
 
     const localIndexOf = new Map<number, number>();
     unknownIndices.forEach((globalIdx, local) => localIndexOf.set(globalIdx, local));
-    const targetLocal = localIndexOf.get(repIndex.get(targetRep)!)!;
+    const targetLocal = getOrThrow(localIndexOf, getOrThrow(repIndex, targetRep));
 
     // BFS within Guu's nonzero off-diagonals to find just the connected
     // component containing targetLocal - avoids solving/inverting the
@@ -1262,6 +1265,7 @@ export function calculateNetResistance(
     const visited = new Set<number>([targetLocal]);
     const stack = [targetLocal];
     while (stack.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures stack is non-empty
         const current = stack.pop()!;
         for (const neighbor of adjacency[current]) {
             if (!visited.has(neighbor)) {

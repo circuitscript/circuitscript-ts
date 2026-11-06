@@ -989,7 +989,7 @@ export class SymbolPlaceholder extends SymbolGraphic {
                     }
                 }
             } catch (err){
-                throwWithContext(ctx!, "Error while parsing graphic expressions: " + err);
+                throwWithContext(ctx, "Error while parsing graphic expressions: " + err);
             }
         });
 

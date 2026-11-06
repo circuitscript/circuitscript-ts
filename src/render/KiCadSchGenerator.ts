@@ -270,10 +270,12 @@ export class KiCadSchGenerator {
             const { definitionName } = rc.component;
             if (definitionName) {
                 const numPins = rc.component.numPins;
-                if (!this.definitionPinCounts.has(definitionName)) {
-                    this.definitionPinCounts.set(definitionName, new Set());
+                let pinCounts = this.definitionPinCounts.get(definitionName);
+                if (pinCounts === undefined) {
+                    pinCounts = new Set();
+                    this.definitionPinCounts.set(definitionName, pinCounts);
                 }
-                this.definitionPinCounts.get(definitionName)!.add(numPins);
+                pinCounts.add(numPins);
             }
         }
 

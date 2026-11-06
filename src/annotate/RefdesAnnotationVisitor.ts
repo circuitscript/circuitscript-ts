@@ -20,6 +20,7 @@ import { BaseVisitor } from '../BaseVisitor.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import { generateModifiedSourceText, RefdesModification } from './utils.js';
 import { RefdesMode } from '../globals.js';
+import { assertDefined, getOrThrow } from "../utils.js";
 
 /**
  * A visitor that preserves original formatting including:
@@ -233,7 +234,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     private generateRefdesAnnotationComment(ctx:ParserRuleContext): string | null {
         if (this.componentCtxLinks.has(ctx)) {
-            const instance = this.componentCtxLinks.get(ctx)!;
+            const instance = getOrThrow(this.componentCtxLinks, ctx, "component context link");
 
             // If the refdes annotation was already added, then do not
             // add it again.
@@ -336,8 +337,8 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         const result:Record<string, string> = {};
 
         this.modifications.forEach((modification, ctx) => {
-            const { line: startLine, column: startColumn } = ctx.start!;
-            const { line: stopLine, column: stopColumn } = ctx.stop!;
+            const { line: startLine, column: startColumn } = assertDefined(ctx.start, "Missing start token");
+            const { line: stopLine, column: stopColumn } = assertDefined(ctx.stop, "Missing stop token");
             const joinedRefdes = modification.refdes.join(',');
             result[joinedRefdes] = `${startLine}:${startColumn}:${stopLine}:${stopColumn}`;
         });
