@@ -1,0 +1,13 @@
+from "std" import *
+
+frame row layout:
+
+frame column layout:
+    a = supply("5V")
+    gnd = dgnd()
+
+    at a 
+    wire down 100
+    add cap(100n)
+    wire down 100
+    to gnd
