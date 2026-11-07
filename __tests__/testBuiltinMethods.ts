@@ -58,7 +58,7 @@ import {
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
-    test(description, async () => {
+    test(`${description}`, async () => {
         await expectInlineScriptTest(description, scriptTest);
     });
 }

@@ -61,7 +61,7 @@ export async function runScript(script: string, scriptPath?: string, options?: {
     }
 
     const errorHandler: OnErrorHandler =
-        (message: string, context: ParserRuleContext, error: any) => {
+        (message: string, context: ParserRuleContext, error?: unknown) => {
             if (error instanceof VisitorExecutionException) {
                 throw new ParseSyntaxError(message);
             }
@@ -287,7 +287,7 @@ export async function renderCommon(scriptPath: string, options?: RenderCommonOpt
     options = options ?? {};
     const {runErc = false, generateBom: generateBomOption = false} = options;
 
-    const documentRules = (documentVariable as any).rules as Record<string, string> | undefined;
+    const documentRules = (documentVariable as unknown as { rules?: Record<string, string> }).rules;
     const ercResults = runErc ? EvaluateERCRules(visitor, graph, nets, documentRules ?? {}) : [];
 
     let bomCsvOutput: string[][] = [];
@@ -408,11 +408,13 @@ export function compareSvgToFile(svgFilePath: string, svgString: string, thresho
 export async function runScriptExpectError(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst',
     maxNetRenameAttempts?: number): Promise<string> {
     const err = await runScriptExpectErrorObject(script, scriptPath, maxNetRenameAttempts);
-    return (err as any).message ?? String(err);
+    return (err as { message?: string }).message ?? String(err);
 }
 
+export type ThrownScriptError = Error & { startToken: { line: number } } & Record<string, unknown>;
+
 export async function runScriptExpectErrorObject(script: string, scriptPath = '__tests__/testData/scenarioData/inline.cst',
-    maxNetRenameAttempts?: number): Promise<any> {
+    maxNetRenameAttempts?: number): Promise<ThrownScriptError> {
     const chars = CharStream.fromString(script);
     const lexer = new MainLexer(chars);
     const tokens = new CommonTokenStream(lexer);
@@ -446,11 +448,11 @@ export async function runScriptExpectErrorObject(script: string, scriptPath = '_
     visitor.enterFile(scriptPath);
     await visitor.resolveImportsAndLoad(scriptPath, script);
 
-    let capturedError: any = null;
+    let capturedError: (ThrownScriptError) | null = null;
     try {
         visitor.visit(tree);
     } catch (err) {
-        capturedError = err;
+        capturedError = err as ThrownScriptError;
     }
 
     visitor.exitFile();

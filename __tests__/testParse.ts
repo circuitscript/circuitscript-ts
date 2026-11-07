@@ -1,5 +1,6 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
+import { ClassComponent } from '../src/objects/ClassComponent.js';
 import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
@@ -95,7 +96,7 @@ import {
 } from './parseScripts.js';
 
 function testInlineScriptTest(description: string, scriptTest: ScriptTest<unknown>): void {
-    test(description, async () => {
+    test(`${description}`, async () => {
         await expectInlineScriptTest(description, scriptTest);
     });
 }
@@ -233,7 +234,7 @@ tmp_block_2()
         expect(findItem(instances, 'res', 'R2_2', 'numeric:10k')).not.toBeNull();
     });
 
-    const getRefdes = (instances: Map<string, any>, type: string) =>
+    const getRefdes = (instances: Map<string, ClassComponent>, type: string) =>
         [...instances.values()].filter(i => i.typeProp === type)
             .map(i => i.assignedRefDes as string).sort();
 

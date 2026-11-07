@@ -159,7 +159,7 @@ describe('Refdes annotation: output format', () => {
         const output = annotationVisitor.getOutput();
 
         expect(output).toMatch(/^add lib1.my_resistor\(\) #= R\d+$/m);
-        expect(output).not.toMatch(/    {8}add lib1.my_resistor\(\) #=/);
+        expect(output).not.toMatch(/ {3} {8}add lib1.my_resistor\(\) #=/);
         expect(output).not.toMatch(/#= [A-Z]+\d*_/);
         expect(annotationVisitor.getSkippedIndexedCount()).toBeGreaterThan(0);
     });

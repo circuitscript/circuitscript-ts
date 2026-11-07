@@ -74,16 +74,6 @@ describe('ERC rules', () => {
         expectJsonOutput(jsonString, `${mainPath}expected/${scriptPath}.json`);
     });
 
-    // test('ERC check - unconnected pin without refdes', async () => {
-    //     const { ercResults } = await renderCommon(mainPath + 'script11.cst', {
-    //         runErc: true,
-    //         skipAnnotation: true,
-    //     });
-    //     const simplified = extractSimpleERCResult(ercResults);
-    //     const jsonString = JSON.stringify(simplified);
-    //     expectJsonOutput(jsonString, `${mainPath}expected/script11.cst.json`);
-    // });
-
     describe('erc_get and erc_set built-ins', () => {
         const scriptPath = '__tests__/testData/rulesCheckData/';
 

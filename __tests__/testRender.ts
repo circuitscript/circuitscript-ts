@@ -1,11 +1,10 @@
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, 
-    unlinkSync, writeFileSync } from 'fs';
+    unlinkSync } from 'fs';
 import PDFDocument from "pdfkit";
 import crypto from 'crypto';
 
 import { generatePdfOutput, generateSvgOutput, renderSheetsToSVG } from "../src/render/render.js";
 import { compareSvgToFile, orderNets, parseNets, renderCommon, runScript, runScriptExpectError } from "./helpers.js";
-import { PNG } from 'pngjs';
 import { defaultZoomScale } from '../src/globals.js';
 import { Logger } from '../src/logger.js';
 import { getStylesFromDocument } from '../src/styles.js';
@@ -201,7 +200,10 @@ describe('Render tests', () => {
         const expectedSvgOutput = readFileSync(mainPath + "svgs/" + useSvgPath + ".svg", { encoding: 'utf8' });
         const doPixelCheck = false;
 
-        if (doPixelCheck && svgOutput !== expectedSvgOutput){
+        const usePixelCheck = doPixelCheck && svgOutput !== expectedSvgOutput;
+        let pixelCheckOk = true;
+
+        if (usePixelCheck){
             const expectedSvgPath = `${mainPath}svgs/${useSvgPath}.svg`;
             console.log("run manual pixel check: " + useSvgPath);
             const pixCompare = compareSvgToFile(expectedSvgPath, svgOutput);
@@ -211,13 +213,15 @@ describe('Render tests', () => {
             // writeFileSync(`${expectedSvgPath}-img1.png`, PNG.sync.write(pixCompare.img1));
             // writeFileSync(`${expectedSvgPath}-img2.png`, PNG.sync.write(pixCompare.img2));
 
-            expect(pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10).toBe(true);
-        } else {
-            expect(svgOutput).toEqual(expectedSvgOutput);
-            
-            // Do not spit out all the differences
-            expect(svgOutput === expectedSvgOutput).toEqual(true);
+            pixelCheckOk = pixCompare.numDiffPixels >= 0 && pixCompare.numDiffPixels < 10;
         }
+
+        expect(pixelCheckOk).toBe(true);
+        // Exact match is skipped only when the pixel check is used instead
+        expect(usePixelCheck ? expectedSvgOutput : svgOutput).toEqual(expectedSvgOutput);
+
+        // Do not spit out all the differences
+        expect(usePixelCheck || svgOutput === expectedSvgOutput).toEqual(true);
     });
 
     test('pdf output', async () => {

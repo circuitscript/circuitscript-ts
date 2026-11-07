@@ -112,7 +112,7 @@ describe('Simple operator tests', () => {
         const variables = visitor.dumpVariables();
         const value = variables.get('a');
 
-        let useValue: any;
+        let useValue: unknown;
         if (typeof expectedResult === 'boolean'){
             useValue = value;
         } else if (typeof expectedResult === 'string'){
@@ -148,11 +148,8 @@ describe('Percentage operator tests', () => {
         const variables = visitor.dumpVariables();
         const value = variables.get('a');
 
-        if (kind === 'percentage') {
-            expect(value.toString()).toEqual(expectedResult);
-        } else {
-            expect(value.toNumber()).toEqual(expectedResult);
-        }
+        const actual = kind === 'percentage' ? value.toString() : value.toNumber();
+        expect(actual).toEqual(expectedResult);
     });
 
     test('compound assignment with percent literal', async () => {

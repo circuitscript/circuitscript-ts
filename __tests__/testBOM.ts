@@ -126,7 +126,7 @@ describe('BOM generation', () => {
     ])('invalid %s (%p) throws', async (key, value) => {
         await expect(renderCommon(mainPath + 'script1.cst', {
             generateBom: true,
-            bomConfig: { ...qtyBase, [key]: value } as any,
+            bomConfig: { ...qtyBase, [key]: value } as unknown as { columns: string[], group_by: string[] },
         })).rejects.toThrow(RuntimeExecutionError);
     });
 

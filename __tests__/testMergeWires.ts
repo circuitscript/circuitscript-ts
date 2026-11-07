@@ -1,14 +1,7 @@
 import { Geometry } from "../src/render/geometry.js";
-import { numeric, NumericValue } from "../src/objects/NumericValue.js";
+import { numeric } from "../src/objects/NumericValue.js";
 
 describe('geometry merge wires test', () => {
-
-    function makePoint(x: number, y:number): {x: NumericValue, y: NumericValue} {
-        return {
-            x: numeric(x),
-            y: numeric(y)
-        }
-    }
 
     function parseWires(wires:[x: number, y: number][][]){
         return wires.map(points => {
@@ -143,7 +136,7 @@ describe('geometry merge wires test', () => {
             ]
         ]);
 
-        const { intersectPoints, segments, lines } = Geometry.mergeWires(wires);
+        const { intersectPoints, segments } = Geometry.mergeWires(wires);
 
         // No intersection points, because only have two segments
         // connected at each point.

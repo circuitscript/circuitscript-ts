@@ -1,3 +1,4 @@
+import type { ParserVisitor } from '../src/visitor.js';
 import { readFileSync } from 'fs';
 import { _id, generateKiCadNetList, SExpObject } from "../src/render/export.js";
 import { runScript } from "./helpers";
@@ -474,10 +475,10 @@ branch:
                 (w[0] === x && w[1] === y) || (w[2] === x && w[3] === y));
         }
 
-        function netNames(visitor: any): Set<string> {
+        function netNames(visitor: ParserVisitor): Set<string> {
             const { tree } = generateKiCadNetList(visitor.getNetList());
             const nets = new SExpObject(new SExpObject(tree).getWithId('nets')!);
-            const json = nets.getJSON() as any;
+            const json = nets.getJSON();
             const net = json.nets?.net;
             const list: { name: string }[] = net === undefined ? [] : Array.isArray(net) ? net : [net];
             return new Set(list.map(x => x.name));
@@ -496,7 +497,7 @@ branch:
 
         // Labels absent from the netlist must be single-pin nets, which the
         // netlist omits. Returns those so callers can assert on them.
-        function expectLabelsMatchNetlist(output: string, visitor: any, lone: string[] = []) {
+        function expectLabelsMatchNetlist(output: string, visitor: ParserVisitor, lone: string[] = []) {
             const names = netNames(visitor);
             for (const l of parseLabels(output)) {
                 if (lone.includes(l.text)) {
@@ -829,7 +830,7 @@ ${extra}    at vcc
             test('duplicate cleaned titles throw', async () => {
                 const gen = await generateAll(body('power  supply'), 'proj', version);
                 expect(gen).toThrow(RenderError);
-                expect(gen).toThrow(/Power Supply.*power  supply/);
+                expect(gen).toThrow(/Power Supply.*power {2}supply/);
             });
 
             test('name param resolves a collision', async () => {

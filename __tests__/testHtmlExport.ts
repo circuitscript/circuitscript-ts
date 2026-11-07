@@ -1,5 +1,6 @@
 import { readFileSync, existsSync, unlinkSync } from 'fs';
 import { renderScript } from '../src/pipeline.js';
+import type { ComponentMeta, FrameMeta } from '../src/render/generateOutputMetadata.js';
 import { getTestEnvironment } from './helpers';
 
 const renderPath = '__tests__/testData/renderData/';
@@ -17,13 +18,13 @@ describe('interactive HTML viewer output', () => {
         }
     });
 
-    function extractComponents(html: string): any[] {
+    function extractComponents(html: string): ComponentMeta[] {
         const match = html.match(/window\.__CS_COMPONENTS__ = (\[.*?\]);/s);
         expect(match).not.toBeNull();
         return JSON.parse(match![1]);
     }
 
-    function extractFrames(html: string): any[] {
+    function extractFrames(html: string): FrameMeta[] {
         const match = html.match(/window\.__CS_FRAMES__ = (\[.*?\]);/s);
         expect(match).not.toBeNull();
         return JSON.parse(match![1]);
@@ -54,8 +55,8 @@ describe('interactive HTML viewer output', () => {
         const components = extractComponents(html);
         expect(components.length).toBeGreaterThan(0);
 
-        const resistor = components.find((c: any) =>
-            c.params.some((p: any) => p.key === 'value' && p.value === '10k'));
+        const resistor = components.find((c) =>
+            c.params.some((p) => p.key === 'value' && p.value === '10k'))!;
         expect(resistor).toBeDefined();
         expect(resistor.pins.length).toBe(2);
 
@@ -169,8 +170,8 @@ describe('interactive HTML viewer output', () => {
         const components = result.outputExtra!;
         expect(components.length).toBeGreaterThan(0);
 
-        const resistor = components.find((c: any) =>
-            c.params.some((p: any) => p.key === 'value' && p.value === '10k'));
+        const resistor = components.find((c) =>
+            c.params.some((p) => p.key === 'value' && p.value === '10k'))!;
         expect(resistor).toBeDefined();
         expect(resistor.pins.length).toBe(2);
 
@@ -209,17 +210,17 @@ to dgnd()
         });
 
         expect(result.errors.length).toBe(0);
-        const components = result.outputExtra! as any[];
+        const components = result.outputExtra! as ComponentMeta[];
 
-        const netInstances = components.filter((c: any) =>
-            c.params.some((p: any) => p.key === 'net_name' && p.value === '5V'));
+        const netInstances = components.filter((c) =>
+            c.params.some((p) => p.key === 'net_name' && p.value === '5V'));
         expect(netInstances.length).toBe(2);
 
         // `n` is used twice (`add n` then `to n`); since net() has `copy: true`,
         // the second usage clones the component. Each clone should report the
         // sourceLine of its own add/to statement, not both pointing at the same
         // line and not silently keeping the first clone's stamped value.
-        const lines = netInstances.map((c: any) => c.sourceLine).sort((a: number, b: number) => a - b);
+        const lines = netInstances.map((c) => c.sourceLine).sort((a, b) => a! - b!);
         expect(lines).toEqual([4, 6]);
         for (const instance of netInstances) {
             expect(instance.sourceFile).toContain('scratch.cst');
@@ -355,8 +356,8 @@ to dgnd()
             expect(frame.sourceLine).not.toBeNull();
             expect(frame.sourceFile).toContain('frameMetadata.cst');
             expect(frame.bounds).not.toBeNull();
-            expect(frame.bounds.width).toBeGreaterThan(0);
-            expect(frame.bounds.height).toBeGreaterThan(0);
+            expect(frame.bounds!.width).toBeGreaterThan(0);
+            expect(frame.bounds!.height).toBeGreaterThan(0);
 
             expect(html).toContain(`id="${frame.domId}"`);
             const groupMatch = html.match(new RegExp(`<[a-zA-Z]+[^>]*id="${frame.domId}"[^>]*>`));
@@ -366,7 +367,7 @@ to dgnd()
             // Regression guards: the untitled `frame:` block, the titled
             // `sheet:` block (out of scope for this plan), and any
             // synthetic/base frame must not appear in the metadata.
-            const titles = frames.map((f: any) => f.title);
+            const titles = frames.map((f) => f.title);
             expect(titles).not.toContain('Titled Sheet');
             expect(titles.length).toBe(1);
         } finally {
