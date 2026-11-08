@@ -12,7 +12,42 @@ import { printTree } from '../src/render/s_expressions.js';
 import { DocumentVariable } from '../src/objects/types.js';
 import { RenderError } from '../src/errors.js';
 
+type CompJson = { value?: string; property?: unknown };
+
 describe('export to KiCad', () => {
+
+    test('export KiCad net list, emits bom_exclude and dnp properties', async () => {
+        const flagScript = `
+from "std" import *
+
+at res(1k)
+..footprint = "Resistor_SMD:R_0402_1005Metric"
+..bom_exclude = true
+
+at res(2k)
+..footprint = "Resistor_SMD:R_0402_1005Metric"
+..place = false
+
+at res(3k)
+..footprint = "Resistor_SMD:R_0402_1005Metric"
+`;
+        const {hasError, visitor} = await runScript(flagScript);
+        expect(hasError).toBe(false);
+
+        const {tree} = generateKiCadNetList(visitor.getNetList());
+        const sExp = new SExpObject(tree);
+        const components = new SExpObject(sExp.getWithId('components')!).getJSON() as { components: { comp: CompJson[] } };
+        const comps = components.components.comp;
+        const byValue = (v: string) => comps.find(c => c.value === v);
+
+        expect(byValue('1k').property).toStrictEqual({ name: 'exclude_from_bom' });
+        expect(byValue('2k').property).toStrictEqual({ name: 'dnp' });
+        expect('property' in byValue('3k')).toBe(false);
+
+        const text = printTree(tree);
+        expect(text).toMatch(/\(property\s+\(name "exclude_from_bom"\)\)/);
+        expect(text).toMatch(/\(property\s+\(name "dnp"\)\)/);
+    });
 
     test('export KiCad net list, catch missing footprints', async () => {
         const {hasError, visitor} = await runScript(script);

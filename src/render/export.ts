@@ -57,6 +57,13 @@ export function generateKiCadNetList(netlist: NetListItem[])
                 })
             }
 
+            if (instance.parameters.get('bom_exclude') === true) {
+                instanceDetails.push([Id('property'), [Id('name'), 'exclude_from_bom']]);
+            }
+            if (instance.parameters.get('place') === false) {
+                instanceDetails.push([Id('property'), [Id('name'), 'dnp']]);
+            }
+
             componentsList.push(instanceDetails);
 
             for(const key in pins){
