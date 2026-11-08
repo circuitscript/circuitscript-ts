@@ -66,6 +66,9 @@ describe('ERC rules', () => {
         ['no_connect on bus pin with one physical pin on net', 'script45.cst'],
         ['no_connect with label and duplicate no_connect on single-pin nets', 'script46.cst'],
         ['graphic components (text) skipped by unconnected-pin check', 'script47.cst'],
+        ['pin tied only to a supply or label is unconnected', 'script48.cst'],
+        ['no_connect clears pin tied only to a supply or label', 'script49.cst'],
+        ['two physical pins on one labelled net are connected', 'script50.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

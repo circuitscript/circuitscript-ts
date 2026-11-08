@@ -13,6 +13,49 @@ describe('test cli program', () => {
 
     const baseCommand = `node ${baseCommandESM}`;
 
+    describe('ERC output', () => {
+        let ercOutput = '';
+
+        beforeAll(() => {
+            const cmd = `${baseCommand} ${mainPath}ercMixedSeverity.cst -x -e`;
+            try {
+                ercOutput = execSync(cmd, { stdio: 'pipe' }).toString();
+            } catch (err) {
+                // ERC errors give a non-zero exit code
+                ercOutput = ((err as { stdout?: Buffer }).stdout ?? Buffer.from('')).toString();
+            }
+        });
+
+        test('ERC header includes an info count', () => {
+            expect(ercOutput).toMatch(/ERC found \d+ error\(s\), \d+ warning\(s\), \d+ info:/);
+        });
+
+        test('ERC results are ordered by severity', () => {
+            const lines = ercOutput.split('\n');
+            const firstOf = (label: string) => lines.findIndex(l => l.includes(label));
+            const lastOf = (label: string) => lines.map(l => l.includes(label)).lastIndexOf(true);
+
+            const firstError = firstOf('[Error]');
+            const firstWarning = firstOf('[Warning]');
+            const firstInfo = firstOf('[Info]');
+            expect(firstError).toBeGreaterThanOrEqual(0);
+            expect(firstWarning).toBeGreaterThanOrEqual(0);
+            expect(firstInfo).toBeGreaterThanOrEqual(0);
+            expect(firstError).toBeLessThan(firstWarning);
+            expect(firstWarning).toBeLessThan(firstInfo);
+            expect(lastOf('[Error]')).toBeLessThan(firstWarning);
+            expect(lastOf('[Warning]')).toBeLessThan(firstInfo);
+        });
+
+        test('info results use the [Info] label', () => {
+            expect(ercOutput).toContain('[Info]');
+        });
+
+        test('Off severity results are not displayed', () => {
+            expect(ercOutput).not.toContain('POWER-NET-UNUSED');
+        });
+    });
+
     test('start program and display help', () => {
         const result = execSync(baseCommand).toString();
 

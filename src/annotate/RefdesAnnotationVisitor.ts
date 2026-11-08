@@ -209,8 +209,11 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         // Do nothing and don't signal the end.
     }
 
-    visitFrame_expr = (ctx: Frame_exprContext): void  => {
-        this.visit(ctx.expressions_block());
+    visitFrame_expr = (ctx: Frame_exprContext): void => {
+        const ctxExpressionsBlock = ctx.expressions_block();
+        if (ctxExpressionsBlock) {
+            this.visit(ctxExpressionsBlock);
+        }
     }
 
     visitFunction_call_expr = (_ctx: Function_call_exprContext): void => {

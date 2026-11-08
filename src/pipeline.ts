@@ -413,11 +413,16 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
 
                         if (ercResults.length > 0) {
 
-                            const displayErcResults = ercResults.filter(i => (i.severity === ERCSeverity.Error || i.severity === ERCSeverity.Warning));
+                            const severityOrder = [ERCSeverity.Error, ERCSeverity.Warning, ERCSeverity.Info];
+                            // Array.sort is stable, so original order is kept within a severity
+                            const displayErcResults = ercResults
+                                .filter(i => i.severity !== ERCSeverity.Off)
+                                .sort((a, b) => severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity));
 
                             const errorCount = displayErcResults.filter(i => i.severity === ERCSeverity.Error).length;
                             const warningCount = displayErcResults.filter(i => i.severity === ERCSeverity.Warning).length;
-                            console.log(`ERC found ${errorCount} error(s), ${warningCount} warning(s):`);
+                            const infoCount = displayErcResults.filter(i => i.severity === ERCSeverity.Info).length;
+                            console.log(`ERC found ${errorCount} error(s), ${warningCount} warning(s), ${infoCount} info:`);
 
                             displayErcResults.forEach((item, index) => {
                                 let position = "";
@@ -425,7 +430,8 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
                                     const file = item.filePath ? `${item.filePath}: ` : "";
                                     position = `${file}line ${item.start.line}, column: ${item.start.column}: `
                                 }
-                                const label = item.severity === 'error' ? '[Error]' : '[Warning]';
+                                const label = item.severity === ERCSeverity.Error ? '[Error]' :
+                                    item.severity === ERCSeverity.Warning ? '[Warning]' : '[Info]';
                                 console.log(`${(index + 1).toString().padStart(3)}. ${label} ${position}${item.type} - ${item.message}`);
                             });
                         } else {

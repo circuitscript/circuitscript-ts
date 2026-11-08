@@ -576,3 +576,31 @@ describe('generateAnnotatedFiles', () => {
         }
     });
 });
+
+describe('Refdes annotation: empty frame', () => {
+    const dir = '__tests__/testData/annotateData/';
+
+    test('empty frame body does not throw', async () => {
+        const script = readFileSync(`${dir}script8.cst`, 'utf8');
+        await expect(annotate(script)).resolves.toBeDefined();
+    });
+
+    test('component after an empty frame is annotated', async () => {
+        const script = readFileSync(`${dir}script8.cst`, 'utf8');
+        const { output } = await annotate(script);
+        expect(output).toMatch(/add cap\(100n\) #= C1/);
+    });
+
+    test('already annotated script is unchanged', async () => {
+        const script = readFileSync(`${dir}script9.cst`, 'utf8');
+        const { output, av } = await annotate(script);
+        expect(output).toEqual(script);
+        expect(av.getModifications().size).toBe(0);
+    });
+
+    test('empty frame only script', async () => {
+        const script = 'from "std" import *\n\nframe row layout:\n';
+        const { output } = await annotate(script);
+        expect(output).toEqual(script);
+    });
+});

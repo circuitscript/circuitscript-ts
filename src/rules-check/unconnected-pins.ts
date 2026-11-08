@@ -9,13 +9,15 @@ import { RenderItemType } from "../render/graph.js";
 import { RenderComponent, RenderWire } from "../render/layout.js";
 import { PinId } from "../objects/PinDefinition.js";
 import { PinTypes } from "../objects/PinTypes.js";
-import { ComponentPinNetPair } from "../objects/types.js";
-import { ERC_Rules } from "./rules.js";
+import { Net } from "../objects/Net.js";
+import { ClassComponent } from "../objects/ClassComponent.js";
+import { ERC_Rules, isPhysicalPin, makeComponentPinHash } from "./rules.js";
 import { ComponentTypes } from "../globals.js";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous ERC items are read by rules.ts via property access on a mixed array; a union breaks that caller
-export function RuleCheck_UnconnectedPinsWires(graph: Graph, _nets: ComponentPinNetPair[] = []): any[] {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see return type
+export function RuleCheck_UnconnectedPinsWires(graph: Graph,
+    netPhysicalPins: Map<Net, [ClassComponent, PinId][]>,
+    pinMapping: Map<string, Net>,
+    noConnectNets: Set<Net>) {
     const items: any[] = [];
     const allNodes = graph.nodes();
 
@@ -30,48 +32,39 @@ export function RuleCheck_UnconnectedPinsWires(graph: Graph, _nets: ComponentPin
                 continue;
             }
 
-            // Find all edges connected to this node/component
-            const edges = graph.nodeEdges(node) as Edge[];
-
             const componentUnit = component.getUnit(unitId);
             const instanceName = componentUnit.instanceName;
-            const connectedUnitPins: string[] = [];
 
-            // Either side of the edge must be the component
-            edges.forEach(edge => {
-                const edgeInfo = graph.edge(edge.v, edge.w);
-                let pin!: PinId;
-                if (edge.v === instanceName) {
-                    pin = edgeInfo[1];
-                } else if (edge.w === instanceName) {
-                    pin = edgeInfo[3];
+            for (const pinId of componentUnit.pins.keys()) {
+                if (!isPhysicalPin(component, pinId)) {
+                    continue;
                 }
 
-                connectedUnitPins.push(pin.getHashValue());
-            });
+                const net = pinMapping.get(makeComponentPinHash(instanceName, pinId));
+                if (net !== undefined && noConnectNets.has(net)) {
+                    continue;
+                }
+                if (net !== undefined && (netPhysicalPins.get(net)?.length ?? 0) > 1) {
+                    continue;
+                }
 
-            const pinIds = Array.from(componentUnit.pins.keys());
-            pinIds.forEach(pinId => {
-                const hashValue = pinId.getHashValue();
-                if (connectedUnitPins.indexOf(hashValue) === -1) {
-                    // Missing pin — check for power-specific type to emit targeted rule
-                    const pinDef = componentUnit.pins.get(pinId);
-                    let ruleType = ERC_Rules.UnconnectedPin;
-                    if (pinDef) {
-                        switch (pinDef.pinType) {
-                            case PinTypes.PowerReference: ruleType = ERC_Rules.PowerReferenceUnconnected; break;
-                            case PinTypes.PowerInput:     ruleType = ERC_Rules.PowerInputUnconnected;     break;
-                            case PinTypes.PowerOutput:    ruleType = ERC_Rules.PowerOutputUnconnected;    break;
-                            case PinTypes.Power:          ruleType = ERC_Rules.PowerSymbolUnconnected;    break;
-                        }
+                // Check for power-specific type to emit targeted rule
+                const pinDef = componentUnit.pins.get(pinId);
+                let ruleType = ERC_Rules.UnconnectedPin;
+                if (pinDef) {
+                    switch (pinDef.pinType) {
+                        case PinTypes.PowerReference: ruleType = ERC_Rules.PowerReferenceUnconnected; break;
+                        case PinTypes.PowerInput:     ruleType = ERC_Rules.PowerInputUnconnected;     break;
+                        case PinTypes.PowerOutput:    ruleType = ERC_Rules.PowerOutputUnconnected;    break;
+                        case PinTypes.Power:          ruleType = ERC_Rules.PowerSymbolUnconnected;    break;
                     }
-                    items.push({
-                        type: ruleType,
-                        instance: component,
-                        pin: pinId,
-                    });
                 }
-            });
+                items.push({
+                    type: ruleType,
+                    instance: component,
+                    pin: pinId,
+                });
+            }
         } else if (nodeInfo[0] === RenderItemType.Wire){
             const renderWire = nodeInfo[1] as RenderWire;
             const edges = graph.nodeEdges(node) as Edge[];
