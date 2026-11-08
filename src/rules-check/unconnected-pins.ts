@@ -13,12 +13,20 @@ import { Net } from "../objects/Net.js";
 import { ClassComponent } from "../objects/ClassComponent.js";
 import { ERC_Rules, isPhysicalPin, makeComponentPinHash } from "./rules.js";
 import { ComponentTypes } from "../globals.js";
+import { Wire } from "../objects/Wire.js";
+
+export type UnconnectedItem = {
+    type: ERC_Rules;
+    instance?: ClassComponent;
+    pin?: PinId;
+    wire?: Wire;
+};
 
 export function RuleCheck_UnconnectedPinsWires(graph: Graph,
     netPhysicalPins: Map<Net, [ClassComponent, PinId][]>,
     pinMapping: Map<string, Net>,
-    noConnectNets: Set<Net>) {
-    const items: any[] = [];
+    noConnectNets: Set<Net>): UnconnectedItem[] {
+    const items: UnconnectedItem[] = [];
     const allNodes = graph.nodes();
 
     for (const node of allNodes){
