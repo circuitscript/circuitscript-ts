@@ -1,0 +1,16 @@
+diff --git a/node_modules/svgdom/src/utils/pathUtils.js b/node_modules/svgdom/src/utils/pathUtils.js
+index 07b664a..c387ce1 100644
+--- a/node_modules/svgdom/src/utils/pathUtils.js
++++ b/node_modules/svgdom/src/utils/pathUtils.js
+@@ -629,7 +629,10 @@ export class PathSegmentArray extends Array {
+   }
+ 
+   merge (other) {
+-    return this.concat(other)
++    // Append in place. concat() copied the whole accumulator on every call, which
++    // made getBBox() on a group with many children quadratic.
++    for (let i = 0; i < other.length; i++) this.push(other[i])
++    return this
+   }
+ 
+   transform (matrix) {

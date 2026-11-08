@@ -50,6 +50,7 @@
         "eslint-plugin-jest": "~27.2",
         "jest": "~29.5",
         "license-check-and-add": "^4.0.5",
+        "patch-package": "^8.0.1",
         "pixelmatch": "^7.1.0",
         "pngjs": "^7.0.0",
         "preact": "10.29.8",
@@ -62,6 +63,7 @@
         "typescript": "^5.4.5"
     },
     "scripts": {
+        "prepare": "patch-package",
         "start": "node dist/esm/main.js",
         "clean": "rimraf coverage build tmp dist",
         "compile": "npm run build",
