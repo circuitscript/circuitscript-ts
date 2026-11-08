@@ -32,7 +32,7 @@ import { CallableParameter as CallableArgument, ComplexType,
     ImportedLibrary,
     NewContextOptions,
     ImportFunctionHandling as ImportFunctionHandling,
-    ComponentPinNetPair, RuntimeValue} from "./objects/types.js";
+    ComponentPinNetPair} from "./objects/types.js";
 import { CommonTokenStream, ParserRuleContext } from 'antlr4ng';
 import { BaseNamespace, DoubleDelimiter1, GlobalDocumentName, ParamKeys, 
     ReferenceTypes, TrailerArrayIndex, DefaultMaxNetRenameAttempts } from './globals.js';
