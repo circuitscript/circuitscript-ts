@@ -147,19 +147,7 @@ export type RuntimeValue = ComplexType
     | undefined
     | RuntimeValue[]
     | { [key: string]: RuntimeValue };
-
-export function isNumericValue(value: unknown): value is NumericValue {
-    return value instanceof NumericValue;
-}
-
-export function isRuntimeArray(value: unknown): value is RuntimeValue[] {
-    return Array.isArray(value);
-}
-
-export function isNoneValue(value: unknown): value is NoneValue {
-    return value instanceof NoneValue;
-}
-
+    
 export type CallableParameter = 
     ['keyword', key: string, value: ValueType] | 
     ['position', key: number, value: ValueType];
