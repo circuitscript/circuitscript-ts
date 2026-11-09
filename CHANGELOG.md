@@ -1,6 +1,273 @@
 # Changelog
 
-## [v0.11.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.2...v0.11.3)
+## [v0.12.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.3...v0.12.0)
+
+[1c4544e](https://github.com/circuitscript/circuitscript-ts/commit/1c4544ec297357f967bc91a246aa7e05be255729)Annotate refdes beside inline component creation in path commands
+- 
+- Allow an annotation comment after the create component colon, and place
+- refdes annotations there for add, at and to expressions. Component refdes
+- can now be set on an explicit component rather than only the current one.
+
+[ca415b2](https://github.com/circuitscript/circuitscript-ts/commit/ca415b2e8f5efb16ab0129b25e89efe5b396f2bb)Add table command to graphic blocks
+- 
+- Add a table: command with header/row children that lowers into hline,
+- vline and text commands. Supports col_widths, row_height, padding and
+- text style keywords at table and row level.
+- 
+- Includes parser, visitor, semantic token and validator changes, tests,
+- a render fixture and documentation.
+- 
+- Co-Authored-By: Claude Sonnet 5.5 &lt;noreply@anthropic.com&gt;
+
+[3eff98b](https://github.com/circuitscript/circuitscript-ts/commit/3eff98b175dc022ab5fb7ece066467b3922c5a2f)Base unconnected pin and no_connect ERC checks on nets
+- 
+- Unconnected pin detection now looks at the net a pin belongs to instead of
+- graph edges. A pin tied only to a supply or label counts as unconnected, and
+- a no_connect on such a net clears it. Two physical pins on one labelled net
+- are treated as connected. The no_connect-on-connected-pin rule shares the
+- same net and physical pin data built in rules.ts.
+- 
+- Add ERC scripts 48-50 and tests for generated net handling when merging
+- child scopes and for the NetMap counter.
+
+[cc519f4](https://github.com/circuitscript/circuitscript-ts/commit/cc519f441f208709355f542fe1300af6035cb8b5)Remove non-null assertions and enforce the lint rule
+- 
+- Replace `!` assertions across src, viewer-ui and viewer with getOrThrow,
+- assertDefined, local guards or optional chaining. Add the two helpers to
+- src/utils.ts. The 48 remaining assertions carry eslint-disable comments
+- with a stated invariant. Raise @typescript-eslint/no-non-null-assertion
+- to error outside tests.
+- 
+- Failed lookups that previously raised a raw TypeError or passed undefined
+- along now throw an Error with a short message.
+
+[afffacb](https://github.com/circuitscript/circuitscript-ts/commit/afffacbe7ac8cb80e03481651cd9d030b55680d9)Patch svgdom to make PathSegmentArray.merge linear
+- 
+- PathSegmentArray.merge used concat(), copying the whole accumulator on
+- every call and making getBBox() on a group with many children quadratic.
+- Append in place instead.
+- 
+- Apply the patch via patch-package on install (prepare script) and add
+- patch-package as a devDependency.
+
+[73c99f9](https://github.com/circuitscript/circuitscript-ts/commit/73c99f9948121580b8cd435e20bfa32ce848b78c)Use per-site bases for indexed-flat refdes and split annotation file generation
+- 
+- Indexed-flat mode now assigns a separate base per loop/function site
+- instead of sharing one base per component type. Placeholder annotations
+- are deduplicated per placeholder so repeated runs stay stable.
+- 
+- Extract generateAnnotatedFiles from DefaultPostAnnotationCallback so
+- annotated file contents can be computed without writing to disk, and
+- export it from the package index.
+
+[aa4f14a](https://github.com/circuitscript/circuitscript-ts/commit/aa4f14ad0d6dd8e2018988b69f868853fb069d82)Add refdes search with wildcard matching and click-to-center in viewer toolbar
+- 
+- Search box in the toolbar matches refdes by substring or */? wildcards,
+- steps through results with Enter/Shift+Enter and arrow buttons, and
+- centers the viewport on the selected component.
+
+[072c54e](https://github.com/circuitscript/circuitscript-ts/commit/072c54e86982c881a73d3c220634bbafe5eedc00)Clean up ESLint errors and configuration
+- 
+- Ignore generated files (dist, antlr output, viewer bundle), add a test
+- file override so __tests__ parses, and relax rules where the code
+- intentionally deviates (unused args prefixed with _, @ts-expect-error
+- with description, return-type annotations for typed expressions).
+- 
+- Source fixes: prefer-const, unnecessary regex escapes, non-breaking
+- space in a comment, unused imports/locals and two dead private
+- functions, stale @ts-ignore directives, and explicit return types on
+- the remaining functions. No behavior changes; all 865 tests pass.
+
+[f0da6d3](https://github.com/circuitscript/circuitscript-ts/commit/f0da6d3b778406442944780b46754237d432628b)Add place_default frame param to set default place state for components
+- 
+- Frames accept ..place_default = false to mark contained components as
+- unplaced (excluded from BOM, flagged dnp in KiCad). Nested frames
+- override and inherit; an explicit per-part place wins; nets, graphics
+- and ports are skipped. Non-boolean values raise an error.
+
+[b6f9362](https://github.com/circuitscript/circuitscript-ts/commit/b6f93622845f28876025fd88d85154de4a769029)Add refdes mode option with indexed-flat mode
+- 
+- Add RefdesMode (flat, indexed, indexed-flat) selectable via the
+- --refdes-mode CLI option, the refdesMode script option, or the
+- document.refdes_assignment parameter. Indexed-flat uses a single
+- counter per prefix, giving R1_1, R1_2, R1_3 for components created
+- in loops and functions. --no-indexed-refdes maps to flat mode and
+- conflicts with other explicit modes.
+
+[b2fb13d](https://github.com/circuitscript/circuitscript-ts/commit/b2fb13d98c730e510ba2cf448adafd325e4ab428)Honor erc_net_bridge when checking power nets for a source
+- 
+- The power_input without power_output check now treats nets joined by an
+- erc_net_bridge component as one group, so a power_input net sourced
+- through a bridge (including chained bridges) no longer reports no
+- source. Adds getErcNetRoots and ERC test scripts 41-44. Also adds
+- viewer search tests.
+
+[7e8b43a](https://github.com/circuitscript/circuitscript-ts/commit/7e8b43a8a40908e2440e417fdbf5f059384eb2fd)Eliminate explicit any from src
+- 
+- Replace `any` with `unknown`, narrower types, or documented
+- eslint-disable comments across the object model, visitors, builtins,
+- execution and render/export code. Add a RuntimeValue union and type
+- guards in objects/types.ts. BaseVisitor now extends
+- CircuitScriptParserVisitor&lt;unknown&gt;. Type-only changes aside from the
+- new guard helpers; tests and emitted behavior are unchanged.
+
+[b7b1878](https://github.com/circuitscript/circuitscript-ts/commit/b7b1878f23f0b629986ea704599cfe4c717f4f55)Detect refdes clashes in annotation and report source locations
+- 
+- Error on duplicate explicit refdes, placeholders reused across functions,
+- and placeholders that conflict with explicit refdes. Replace the 100-attempt
+- limit when picking the next free refdes with an unbounded search, and skip
+- simplifications that would collide with an existing refdes.
+
+[9caea60](https://github.com/circuitscript/circuitscript-ts/commit/9caea602a6fd40274e7cf4335d72000454e46a60)Include source file path in ERC report items for imported files
+- 
+- Track the file in which each wire is created and resolve component locations to a file path, so ERC results from imported libraries show the originating file in CLI output.
+
+[3763f81](https://github.com/circuitscript/circuitscript-ts/commit/3763f81148ad8d85263814e8ebbd020f68ee9aa3)Add KiCad root sheet for multi-sheet export and inline label font overrides
+- 
+- KiCad export now emits a root schematic with one hierarchical sheet block
+- per child sheet. Sheet names come from the title, file names from the
+- `name` param or the cleaned title, and duplicate or root-clashing file
+- names raise a RenderError.
+- 
+- Label font_size and font_weight overrides are written as inline styles,
+- since the class rule takes precedence over presentation attributes.
+
+[cea2761](https://github.com/circuitscript/circuitscript-ts/commit/cea2761f8da56f6a91a0c8fb29775f0d57452e4e)Count only physical pins in no_connect on connected pin check
+- 
+- The check now counts physical pins per net instead of every pin, so
+- net markers (supply, label), buses, ports, modules, graphics, internal
+- path objects and bus pins no longer cause a no_connect to be flagged. A
+- no_connect is reported only when its net has more than one physical pin,
+- and at most once per net. Adds ERC test scripts 45 and 46.
+
+[f8600f1](https://github.com/circuitscript/circuitscript-ts/commit/f8600f137b3defdec7e8f5032018a29a9cffbc41)Add font_size and color parameters to net, supply, label and text in std lib
+- 
+- net, supply and label accept font_size and color. text accepts color.
+- An empty color keeps the default theme-aware label color. Adds render
+- test script128 and updates validation symbol expectations.
+
+[6d50993](https://github.com/circuitscript/circuitscript-ts/commit/6d50993a87914d0dd71365fcdd9f44c991afa616)Add --no-indexed-refdes flag to avoid indexed refdes names
+- 
+- Loop- and function-created components normally get indexed refdes
+- (e.g. R2_1, R2_2). With --no-indexed-refdes they are assigned plain
+- sequential refdes (R2, R3, ...) instead, and stale indexed placeholders
+- in source are ignored. Source write-back skips loop/function instances
+- when the flag is on and warns that their refdes may change between runs.
+- 
+- Co-Authored-By: Claude Sonnet 5.5 &lt;noreply@anthropic.com&gt;
+
+[ac8d25c](https://github.com/circuitscript/circuitscript-ts/commit/ac8d25c61e81aa52a180b6292bff6df7819d8326)Show info-level ERC results sorted by severity and handle empty frames in refdes annotation
+
+[88a4edd](https://github.com/circuitscript/circuitscript-ts/commit/88a4edda4f06fa293497c5ed028ba11337011d02)Add bom_exclude param to omit components from BOM and KiCad in_bom
+- 
+- Excluded parts are skipped in BOM generation and exported with in_bom
+- set to no. Also add default size and footprint params to ind in std lib.
+
+[85e5ea1](https://github.com/circuitscript/circuitscript-ts/commit/85e5ea1e91567a165d9047078dd5042041101e2e)Add configurable retry limit for renaming colliding generated nets
+- 
+- Replace the hardcoded 100-attempt loop with a limit carried on a new
+- ExecutionSettings object (default 5000), exposed as the
+- --max-net-rename-attempts CLI option and ScriptOptions.maxNetRenameAttempts.
+- Exhausting the limit now throws a RuntimeExecutionError naming the flag.
+
+[deb9629](https://github.com/circuitscript/circuitscript-ts/commit/deb96297fa6773bd73643d3b3b7a29a4081e6211)Add configurable retry limit for renaming colliding generated nets
+- 
+- Replace the hardcoded 100-attempt loop with a limit carried on a new
+- ExecutionSettings object (default 5000), exposed as the
+- --max-net-rename-attempts CLI option and ScriptOptions.maxNetRenameAttempts.
+- Exhausting the limit now throws a RuntimeExecutionError naming the flag.
+
+[a91d434](https://github.com/circuitscript/circuitscript-ts/commit/a91d434e45c5b037cebc13848629d655e40de335)Fix remaining ESLint warnings in tests
+- 
+- Remove unused variables and imports, tighten regexes and escapes, make
+- test titles literal, and remove conditional expects. Replace explicit
+- any in tests with real types or unknown. Recognise local expect*
+- helpers in jest/expect-expect and delete a commented-out ERC test.
+
+[32abc77](https://github.com/circuitscript/circuitscript-ts/commit/32abc77f1939443d610309d8364677600d4f78dd)Add qty column and display_name_qty/display_name_refdes options to BOM
+
+[ebbb4b9](https://github.com/circuitscript/circuitscript-ts/commit/ebbb4b95be3c7704de2c7ca8aaa328c82bb206a1)Return BOM table and warnings from renderScriptCustom
+- 
+- Populate bomTable and bomWarnings on the render result whenever enableBom
+- is set, without requiring a bomOutputPath. Console warnings and CSV
+- writing remain limited to the export path. Add tests for the table
+- return.
+
+[506e151](https://github.com/circuitscript/circuitscript-ts/commit/506e1511d726647ae62e1c41943fb6b8c6176779)Drop leading slash from KiCad netlist net names and use invisible rect for hidden grid
+- 
+- KiCad netlist net names no longer start with the root namespace '/'.
+- When gridStyle is none, draw a single transparent rect to preserve
+- bounds instead of transparent grid lines that some PDF readers render.
+
+[ffecb4a](https://github.com/circuitscript/circuitscript-ts/commit/ffecb4a60d8b3458e7444f42613f17b97eed4d01)Avoid generated net name collisions when merging child scope nets
+- 
+- Add GeneratedNetPrefix constant, track the net counter when child scope
+- generated nets are merged into the parent, and retry renaming until the
+- new name is unused.
+
+[74063d3](https://github.com/circuitscript/circuitscript-ts/commit/74063d3b654e5acc5a230d77d830c2b372f9563e)Return resolved import filepaths from renderScript
+- 
+- Expose importedFiles on the render result, including direct and
+- transitive imports, and populate it even when the render has errors.
+- Add tests with import chain fixtures.
+
+[e177b50](https://github.com/circuitscript/circuitscript-ts/commit/e177b50fa67ddd7876ee84d08da604e82fb5997d)Skip unused bbox in svg translate and gate disabled logging
+- 
+- svg.js translate() resolves its origin through getOrigin(), which defaults
+- to 'center' and calls element.bbox() even though a translation never uses
+- the origin. With svgdom the bbox of a large group walks every descendant,
+- so translating a sheet group was a dominant render cost. Override
+- Element.translate to pass a numeric origin; the transform matrix and SVG
+- output are unchanged.
+- 
+- Also return early from ExecutionContext.log and BaseVisitor.log when the
+- logger is disabled and the context is silent, and skip building the eager
+- NetMap log strings in that case.
+
+[453f277](https://github.com/circuitscript/circuitscript-ts/commit/453f27791d5915bfe1b2248e27f685ebd8e67695)Skip unused bbox in svg translate and gate disabled logging
+- 
+- svg.js translate() resolves its origin through getOrigin(), which defaults
+- to 'center' and calls element.bbox() even though a translation never uses
+- the origin. With svgdom the bbox of a large group walks every descendant,
+- so translating a sheet group was a dominant render cost. Override
+- Element.translate to pass a numeric origin; the transform matrix and SVG
+- output are unchanged.
+- 
+- Also return early from ExecutionContext.log and BaseVisitor.log when the
+- logger is disabled and the context is silent, and skip building the eager
+- NetMap log strings in that case.
+
+[a510265](https://github.com/circuitscript/circuitscript-ts/commit/a5102650135e2a812b825e8f155dc8a84b17fb83)Dedupe refdes annotations for components created inside loops
+- 
+- Record placeholder refdes in addedRefdesAnnotations so a loop body
+- component is annotated once instead of on every iteration. Add tests
+- for single, mixed, repeated and nested loop cases in indexed and
+- indexed-flat modes.
+
+[d357429](https://github.com/circuitscript/circuitscript-ts/commit/d35742928e5c0b302cdc8c2fa8874bfa88d44b40)Emit exclude_from_bom and dnp properties in KiCad netlist
+- 
+- Components with bom_exclude=true get an exclude_from_bom property and
+- components with place=false get a dnp property in the generated .net file.
+
+[8b646be](https://github.com/circuitscript/circuitscript-ts/commit/8b646becc34fc81960697be83b57a2f1b34b0e5e)Type unconnected-pins ERC items to clear remaining lint warnings
+
+[fc807eb](https://github.com/circuitscript/circuitscript-ts/commit/fc807eb572c2adccb6d575b5e61d029b540688a4)Merge dev into lint-cleanup
+
+[6fc4a4a](https://github.com/circuitscript/circuitscript-ts/commit/6fc4a4a96b75c6ae95a35a56edfcadb0131c7c22)Skip graphic components in unconnected pin ERC check
+- 
+- Text and other graphic components are not electrical parts, so they no longer produce unconnected pin results. Adds script47 test.
+
+[ff079bd](https://github.com/circuitscript/circuitscript-ts/commit/ff079bd69f3a56750b9a1d2de4ac11960be943e2)Render URLs in inspector parameter values as links
+- 
+- Parameter values containing http(s) URLs are now clickable and open in a new tab.
+
+[b9a1ac2](https://github.com/circuitscript/circuitscript-ts/commit/b9a1ac203c3ca88f674e6d8eb140a90b7a4e5822)Show source file label next to line number in viewer inspector panel
+- 
+- Add optional sourceFileLabel to ComponentMeta and FrameMeta, supplied by the host. The inspector shows 'Line N: label' when set, uses the full file path as the link tooltip, and wraps long text.
+
+[c9f6cfb](https://github.com/circuitscript/circuitscript-ts/commit/c9f6cfb57e76027e61ba0e0eb59d804a675b2e13)Remove unused RuntimeValue import from BaseVisitor
+
+## [v0.11.3](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.2...v0.11.3) - 2026-10-18
 
 [1fb5b77](https://github.com/circuitscript/circuitscript-ts/commit/1fb5b776ed033dc4ebbb3cb8f626f23e43212cc4)Track symbol usage inside for loops in validation
 - 
