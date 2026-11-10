@@ -1,0 +1,87 @@
+# Wire auto-orientation together with user flips (flip is applied after angle)
+from "std" import *
+
+def cmp():
+    return create component:
+        pins: 4
+        arrange:
+            left: 1, 2
+            right: 3, 4
+
+def coil():
+    return create component:
+        pins: 2
+        display: create graphic (params):
+            arc: -25, 0, 25, 180, 360
+            arc: 25, 0, 25, 180, 360
+            hpin: 1, "1", "passive", -150, 0, 100, pin_only=true
+            hpin: 2, "2", "passive", 150, 0, -100, pin_only=true
+
+gnd = dgnd()
+
+sheet:
+    ..direction = "column"
+
+    frame:
+        at gnd
+        wire right 100
+        add res(1k) flip:"x"
+        wire right 100 to gnd
+
+        at gnd
+        wire left 100
+        add res(1k) flip:"x"
+        wire left 100 to gnd
+
+        at gnd
+        wire down 100
+        add res(1k) flip:"x"
+        wire down 100 to gnd
+
+        at gnd
+        wire up 100
+        add res(1k) flip:"x"
+        wire up 100 to gnd
+
+    frame:
+        at gnd
+        wire right 100
+        add res(1k) flip:"y"
+        wire right 100 to gnd
+
+        at gnd
+        wire left 100
+        add res(1k) flip:"y"
+        wire left 100 to gnd
+
+        at gnd
+        wire down 100
+        add res(1k) flip:"y"
+        wire down 100 to gnd
+
+        at gnd
+        wire up 100
+        add res(1k) flip:"y"
+        wire up 100 to gnd
+
+    frame:
+        at gnd
+        wire right 100
+        to cmp() flip:"x" pin 1
+        wire right 100 to gnd
+
+        at gnd
+        wire down 100
+        to cmp() flip:"y" pin 3
+        wire down 100 to gnd
+
+    frame:
+        at gnd
+        wire right 100
+        add coil() flip:"x"
+        wire right 100 to gnd
+
+        at gnd
+        wire down 100
+        add coil() flip:"y"
+        wire down 100 to gnd

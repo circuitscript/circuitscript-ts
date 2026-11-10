@@ -521,8 +521,7 @@ export class KiCadSchGenerator {
                 return true;
             }
         }).map((label, index) => {
-            let feat = Geometry.flip(label, flipX, flipY);
-            feat = Geometry.rotateDegs(feat, angle, drawing.mainOrigin);
+            const feat = Geometry.orient(label, angle, flipX, flipY, drawing.mainOrigin);
 
             const transformed = feat as Textbox;
             const [ax, ay] = transformed.getLabelPosition();
@@ -531,7 +530,11 @@ export class KiCadSchGenerator {
             // In Flatten.js Y-up space: flipX reflects θ → 180-θ, flipY reflects θ → -θ.
             // KiCad negates the angle (Y-up lib space vs Y-down schematic space).
             const styleAngle = label.style?.angle?.toNumber() ?? 0;
-            const totalAngle = styleAngle + angle;
+            // The symbol is rotated and then mirrored; the label angle logic
+            // below is written for mirror-then-rotate, so use the equivalent
+            // pre-flip angle (see SymbolGraphic.drawLabels).
+            const symbolAngle = Geometry.preFlipAngle(angle, flipX, flipY);
+            const totalAngle = styleAngle + symbolAngle;
             let kicadAngle: number;
             if (flipX !== 0 && flipY !== 0) {
                 kicadAngle = 180 - totalAngle;
@@ -742,8 +745,7 @@ export class KiCadSchGenerator {
         const [pinId, feature,, , displayId, displayName, pinName] = pin;
 
         // Apply transforms to pin segment
-        let feat = Geometry.flip(feature, flipX, flipY);
-        feat = Geometry.rotateDegs(feat, drawingAngle, drawing.mainOrigin);
+        const feat = Geometry.orient(feature, drawingAngle, flipX, flipY, drawing.mainOrigin);
 
         const coords = Geometry.getCoords(feat);
         if (coords.length < 2) return null;
@@ -895,29 +897,16 @@ export class KiCadSchGenerator {
         const mirrorNodes: N[] = [];
 
         /**
-         * Circuitscript will applies the flip first then the rotation. But
-         * Kicad seems to do the opposite, it applies the rotation first, 
-         * then the flip.
+         * Both CircuitScript and KiCad apply the rotation first and then the
+         * mirror, so the flips map directly: flipX is a left-right mirror
+         * (KiCad 'y') and flipY is an up-down mirror (KiCad 'x').
          */
-
-        const isConsideredHorizontal = usePlacementAngle === 0 || usePlacementAngle == 180;
-
         let useMirrorValue: string | null = null;
 
         if (flipX) {
-            if (isConsideredHorizontal) {
-                useMirrorValue = 'y';
-            } else {
-                useMirrorValue = 'x';
-            }
-        }
-
-        if (useMirrorValue === null && flipY) {
-            if (isConsideredHorizontal) {
-                useMirrorValue = 'x';
-            } else {
-                useMirrorValue = 'y';
-            }
+            useMirrorValue = 'y';
+        } else if (flipY) {
+            useMirrorValue = 'x';
         }
 
         if (useMirrorValue !== null) {

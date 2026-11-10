@@ -1104,14 +1104,58 @@ to spi angle:${a}${f} pin "MOSI"
             const l = labels.find(x => x.text.includes('SPI.MOSI') || x.text === 'GND')!;
             expect(l).toBeDefined();
 
-            // Canonical pin direction is 0; flip x mirrors it, then the
-            // drawing angle turns it clockwise on screen (KiCad angles are CCW).
-            const dir = f.includes('x') ? 0 : 180;
-            expect(l.angle).toBe((((dir - a) % 360) + 360) % 360);
+            // The unflipped pin direction is 180. The drawing angle turns it
+            // clockwise on screen (KiCad angles are CCW), then the flips
+            // mirror the result: flip x is a left-right mirror (theta ->
+            // 180 - theta) and flip y an up-down mirror (theta -> -theta).
+            let expected = 180 - a;
+            if (f.includes('x')) expected = 180 - expected;
+            if (f.includes('y')) expected = -expected;
+            expect(l.angle).toBe(((expected % 360) + 360) % 360);
 
             // Label sits on the end of the connecting wire
             expect(wiresAt(parseWires(output), l).length).toBeGreaterThan(0);
             expect(l.justify).toBe(BUS_JUSTIFY[l.angle]);
+        });
+    });
+
+    describe('component flip is applied after angle', () => {
+        const flips: [string, string | null][] = [['x', 'y'], ['y', 'x']];
+        const angles = [0, 90, 180, 270];
+        const cases = angles.flatMap(a =>
+            flips.map(([f, mirror]) => [a, f, mirror] as [number, string, string | null]));
+
+        test.each(cases)('placement for angle %i flip %s', async (a, f, mirror) => {
+            const text = `
+from "std" import *
+at res(1k) flip:"${f}" angle:${a}
+`;
+            const { hasError, visitor } = await runScript(text);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+            const { output } = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0')
+                .generate(visitor, sheetFrames, 'flip_case')[0];
+
+            const match = output.match(
+                /\(lib_id "[^"]*"\)\s*\(at [-\d.]+ [-\d.]+ ([-\d.]+)\)\s*\(mirror (\w)\)/);
+            expect(match).not.toBeNull();
+
+            // KiCad rotates first and then mirrors, same as CircuitScript:
+            // the angle maps straight through (negated) and flip x is a
+            // left-right mirror (KiCad 'y'), flip y an up-down mirror ('x').
+            expect(Number(match![1])).toBe(((-a % 360) + 360) % 360);
+            expect(match![2]).toBe(mirror);
         });
     });
 
