@@ -8,6 +8,7 @@ import * as csv from '@fast-csv/format';
 
 import { ClassComponent } from "./objects/ClassComponent.js";
 import { NumericValue } from "./objects/NumericValue.js";
+import { resolveValuesInTemplate } from "./objects/paramTemplate.js";
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { RuntimeExecutionError } from './errors.js';
 import { getOrThrow } from './utils.js';
@@ -247,21 +248,6 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
     });
 
     return { resultRows, unplacedItems, missingValues };
-}
-
-function resolveValuesInTemplate(instance: ClassComponent, templateString: string): string {
-    return templateString.replace(/\{(\w+)\}/g, (match, paramName) => {
-        if (instance.hasParam(paramName)) {
-            const paramValue = instance.getParam(paramName);
-            if (paramValue instanceof NumericValue) {
-                return paramValue.toDisplayString();
-            }
-
-            return instance.getParam(paramName);
-        }
-
-        return match; // Keep original if parameter not found
-    });
 }
 
 export function generateBomCSV(

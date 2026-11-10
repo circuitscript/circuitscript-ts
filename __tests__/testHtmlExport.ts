@@ -227,6 +227,23 @@ to dgnd()
         }
     });
 
+    test('expands {param} templates in component params', async () => {
+        const environment = getTestEnvironment();
+        await environment.prepareSVGEnvironment();
+        const result = await renderScript('from "std" import *\n\nat res(10k)\n', [], {
+            dumpNets: false,
+            dumpData: false,
+            showStats: false,
+            environment,
+            inputPath: 'scratch.cst',
+            outputReturnType: 'data-svg',
+        });
+        expect(result.errors.length).toBe(0);
+        const components = result.outputExtra! as ComponentMeta[];
+        const desc = components.flatMap((c) => c.params).find((p) => p.key === 'description');
+        expect(desc?.value).toBe('RES 10k OHM 0402');
+    });
+
     test("'data-svg' with a handler-consumed-only output path still returns componentMeta", async () => {
         const scriptData = readFileSync(`${renderPath}script1.cst`, { encoding: 'utf8' });
         const environment = getTestEnvironment();

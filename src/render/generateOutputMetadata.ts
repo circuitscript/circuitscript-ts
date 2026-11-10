@@ -9,6 +9,7 @@ import { boundBoxToRect } from './render.js';
 import { sanitizeDomId, getOrThrow } from '../utils.js';
 import { ComponentTypes, FrameType } from '../globals.js';
 import { NumericValue } from '../objects/NumericValue.js';
+import { resolveValuesInTemplate } from '../objects/paramTemplate.js';
 import { FixedFrameIds, FrameParamKeys } from '../objects/Frame.js';
 
 export type FrameMeta = {
@@ -162,7 +163,9 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                 sourceFile: firstCtxReference?.filePath ?? null,
                 params: Array.from(instance.parameters.entries()).map(([key, value]) => ({
                     key,
-                    value: stringifyParamValue(value),
+                    value: typeof value === 'string'
+                        ? resolveValuesInTemplate(instance, value)
+                        : stringifyParamValue(value),
                 })),
                 pins,
             });

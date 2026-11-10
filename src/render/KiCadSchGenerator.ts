@@ -18,6 +18,7 @@ import { ComponentTypes, NoNetText } from '../globals.js';
 import { PinId } from '../objects/PinDefinition.js';
 import { PinTypes } from '../objects/PinTypes.js';
 import { Net } from '../objects/Net.js';
+import { resolveValuesInTemplate } from '../objects/paramTemplate.js';
 import { NumericValue } from '../objects/NumericValue.js';
 import { RenderError } from '../errors.js';
 import { resolveToLiteralColor, ThemedColor } from './svgClasses.js';
@@ -883,7 +884,8 @@ export class KiCadSchGenerator {
             if (KicadExcludedParams.has(key) || key.length === 0) continue;
             const name = kicadPropertyName(key);
             if (KicadReservedFields.has(name) || emittedNames.has(name)) continue;
-            const text = formatParamValue(val);
+            const expanded = typeof val === 'string' ? resolveValuesInTemplate(rc.component, val) : val;
+            const text = formatParamValue(expanded);
             if (text === null || text === '') continue;
             emittedNames.add(name);
             children.push(

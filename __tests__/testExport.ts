@@ -653,6 +653,17 @@ at res(10k)
             expect(output).not.toContain('(property "Net_name"');
         });
 
+        test('expands {param} templates in string parameters', async () => {
+            const output = await gen('from "std" import *\n\nat res(10k)\n');
+            expect(output).toContain('(property "Description" "RES 10k OHM 0402"');
+            expect(output).not.toContain('{value}');
+        });
+
+        test('leaves unknown {param} placeholders unchanged', async () => {
+            const output = await gen('from "std" import *\n\nat res(10k)\n..description = "X {nope}"\n');
+            expect(output).toContain('(property "Description" "X {nope}"');
+        });
+
         test('empty mpn emits no MPN property', async () => {
             const output = await gen('from "std" import *\n\nat res(10k)\n');
             expect(output).not.toContain('(property "MPN"');
