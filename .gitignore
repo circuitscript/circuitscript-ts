@@ -48,3 +48,6 @@ __tests__/tmp
 __tests__/cliTest/*.annotated.cst
 examples/*
 oshwa-examples/*
+
+CLAUDE.md
+.claude/

@@ -248,12 +248,15 @@ export class KiCadSchGenerator {
         // Components with isNetLabel are rendered as KiCad (label ...) tokens, not symbols.
         const labelComponents = keepComponents.filter(rc => rc.component.isNetLabel);
         const noConnectComponents = keepComponents.filter(rc => this.isNoConnectMarker(rc));
+        // text() components become KiCad (text ...) objects, not symbols.
+        const textComponents = keepComponents.filter(rc => this.isTextObject(rc));
 
         // Buses are exported as per-pin net labels, not as symbols.
         const busComponents = keepComponents.filter(rc =>
             rc.component.typeProp === ComponentTypes.bus);
         const regularComponents = keepComponents.filter(rc =>
             !rc.component.isNetLabel && !this.isNoConnectMarker(rc) &&
+            !this.isTextObject(rc) &&
             rc.component.typeProp !== ComponentTypes.bus);
 
         // Nets that touch a real (non-bus) component pin. Wires and labels
@@ -348,6 +351,9 @@ export class KiCadSchGenerator {
 
             // no_connect() components become KiCad no_connect markers
             ...noConnectComponents.map(rc => this.buildNoConnect(rc)),
+
+            // text() components become KiCad text objects
+            ...textComponents.flatMap(rc => this.buildTextObject(rc)),
 
             // Component instance placements
             ...regularComponents.map(rc =>
@@ -987,6 +993,67 @@ export class KiCadSchGenerator {
         return component.typeProp === ComponentTypes.graphic
             && component.hasParam('no_connect')
             && component.getParam('no_connect') === true;
+    }
+
+    private isTextObject(rc: RenderComponent): boolean {
+        const { component } = rc;
+        return component.typeProp === ComponentTypes.graphic
+            && component.hasParam('text_object')
+            && component.getParam('text_object') === true;
+    }
+
+    /** Build sheet-level (text ...) nodes, one per non-pin textbox. */
+    private buildTextObject(rc: RenderComponent): N[] {
+        const offsetX = rc.x.toNumber();
+        const offsetY = rc.y.toNumber();
+        const labels = rc.symbol.drawing.getLabels().filter(l =>
+            !l.id?.startsWith('pin-id_') && !l.id?.startsWith('pin-name_'));
+
+        return this.transformedProperties(rc).map((t, index) => {
+            const style = labels[index]?.style;
+            const effectsChildren: Array<N | RawAtom> = [
+                n('font', n('size', raw(mm(t.fontSizeMM)), raw(mm(t.fontSizeMM))),
+                    ...(style?.fontWeight === 'bold' ? [n('bold', raw('yes'))] : []),
+                    ...(style?.fontStyle === 'italic' ? [n('italic', raw('yes'))] : []),
+                    ...this.textColorNodes(style?.textColor))
+            ];
+            effectsChildren.push(n('justify', ...this.justifyParts(t.anchor, t.vanchor).map(p => raw(p))));
+
+            // Sheet space is Y-down like CircuitScript: no y negation.
+            return n('text', t.text,
+                n('exclude_from_sim', raw('no')),
+                n('at', raw(mm(offsetX + t.x)), raw(mm(offsetY + t.y)), raw(t.kicadAngle)),
+                n('effects', ...effectsChildren),
+                n('uuid', deterministicUUID(`text_${rc.component.instanceName}_${index}`))
+            );
+        });
+    }
+
+    private justifyParts(anchor: HorizontalAlign, vanchor: VerticalAlign): string[] {
+        const h = anchor === HorizontalAlign.Left ? 'left'
+            : anchor === HorizontalAlign.Right ? 'right' : null;
+        const v = vanchor === VerticalAlign.Top ? 'top'
+            : vanchor === VerticalAlign.Bottom ? 'bottom' : null;
+        return [h, v].filter(Boolean) as string[];
+    }
+
+    /** (color r g b a) node for a non-default text color, else empty. */
+    private textColorNodes(color: ThemedColor | undefined): N[] {
+        if (color === undefined) return [];
+        const lit = resolveToLiteralColor(color).trim().toLowerCase();
+        if (lit === '#333' || lit === '#333333' || lit === '') return [];
+        const named: Record<string, string> = {
+            red: '#ff0000', green: '#008000', blue: '#0000ff', black: '#000000',
+            white: '#ffffff', orange: '#ffa500', yellow: '#ffff00', purple: '#800080',
+            gray: '#808080', grey: '#808080',
+        };
+        let hex = named[lit] ?? lit;
+        const m3 = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(hex);
+        if (m3) hex = `#${m3[1]}${m3[1]}${m3[2]}${m3[2]}${m3[3]}${m3[3]}`;
+        const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/.exec(hex);
+        if (!m) return [];
+        return [n('color', raw(parseInt(m[1], 16)), raw(parseInt(m[2], 16)),
+            raw(parseInt(m[3], 16)), raw(1))];
     }
 
     private buildNoConnect(rc: RenderComponent): N {

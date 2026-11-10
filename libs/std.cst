@@ -287,6 +287,8 @@ def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic
                     font_size: font_size
                     bold: bold
                     italic: italic
+        params:
+            text_object: true
 
 # Drawing markers
 

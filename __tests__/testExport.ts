@@ -511,8 +511,98 @@ sub()
         const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
         const { output } = generator.generate(visitor, sheetFrames, 'multiline')[0];
 
-        expect(output).toContain('"Hello\\nNew text\\nLine"');
+        expect(output).toContain('(text "Hello\\nNew text\\nLine"');
         expect(output).not.toContain('Hello\nNew text');
+        const libEnd = output.indexOf('(lib_symbols') >= 0
+            ? output.indexOf('\n  )', output.indexOf('(lib_symbols')) : -1;
+        expect(output.indexOf('(text "Hello')).toBeGreaterThan(libEnd);
+        expect(output).not.toMatch(/\(symbol\s+\(lib_id/);
+    });
+
+    describe('text() as text objects', () => {
+        async function gen(script: string, version: KiCadVersion) {
+            const { hasError, visitor } = await runScript(script);
+            expect(hasError).toBe(false);
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+            return new KiCadSchGenerator(version, '0.0.0')
+                .generate(visitor, sheetFrames, 'textobj')[0].output;
+        }
+
+        const script = `from "std" import *
+
+at res(10k)
+at text("Hi", font_size=100, bold=true)
+`;
+
+        test.each([KiCadVersion.V9, KiCadVersion.V10])(
+            'KiCad schematic export emits text() as text objects (%s)', async (version) => {
+                const output = await gen(script, version);
+                expect(output.match(/\(text "Hi"/g)).toHaveLength(1);
+                expect(output).toMatch(/\(text "Hi"[\s\S]*?\(bold yes\)/);
+                expect(output).toMatch(/\(text "Hi"\s+\(exclude_from_sim no\)\s+\(at -?[\d.]+ -?[\d.]+ \d+\)/);
+                expect(output).toContain('(property "Reference"');
+                expect(output).toContain('(property "Value"');
+                // Only the resistor has a placed symbol / lib_symbol.
+                expect(output.match(/\(lib_id /g)).toHaveLength(1);
+                expect(output).not.toContain('Text_0');
+            });
+
+        test('text object position matches component placement', async () => {
+            const output = await gen(`from "std" import *
+
+at text("Hi")
+`, KiCadVersion.V9);
+            expect(output).toMatch(/\(text "Hi"\s+\(exclude_from_sim no\)\s+\(at -?[\d.]+ -?[\d.]+ 0\)/);
+        });
+
+        test('text object keeps rotation angle', async () => {
+            const output = await gen(`from "std" import *
+
+at text("Rot")
+..rotate = 90
+`, KiCadVersion.V9);
+            const m = /\(text "Rot"\s+\(exclude_from_sim no\)\s+\(at -?[\d.]+ -?[\d.]+ (\d+)\)/.exec(output);
+            expect(m).not.toBeNull();
+            expect([0, 90, 180, 270]).toContain(Number(m![1]));
+        });
+
+        test('text-like component without text_object still exports as symbol', async () => {
+            const output = await gen(`from "std" import *
+
+def fake_text(value):
+    return create component:
+        pins: 1
+        type: "graphic"
+        display: create graphic:
+            pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
+            text:
+                content: value
+                font_size: 50
+
+at fake_text("Fake")
+`, KiCadVersion.V9);
+            expect(output).toContain('(lib_id ');
+            expect(output).toContain('(text "Fake"');
+            expect(output.indexOf('(text "Fake"')).toBeLessThan(output.indexOf('(lib_id '));
+        });
+
+        test('non-text_object labels still produce lib_symbol text', async () => {
+            const output = await gen(`from "std" import *
+
+at nmos()
+`, KiCadVersion.V9);
+            expect(output).toMatch(/\(text "/);
+            expect(output).toMatch(/_sym[0-9a-f]+/);
+        });
     });
 
     describe('custom symbol pin names', () => {
