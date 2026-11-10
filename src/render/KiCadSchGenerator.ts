@@ -475,11 +475,14 @@ export class KiCadSchGenerator {
             if (pinNode !== null) subSymChildren.push(pinNode);
         }
 
+        // Non-field labels become text objects in the symbol body.
+        subSymChildren.push(...this.buildLibraryTextNodes(rc));
+
         if (subSymChildren.length > 0) {
             children.push(n('symbol', `${symbolPart}_1_1`, ...subSymChildren));
         }
 
-        // Labels as KiCad property tokens
+        // Field labels (Reference / Value) as KiCad property tokens
         children.push(...this.buildLibraryProperties(rc));
 
         return n('symbol', symbolId, ...children);
@@ -576,8 +579,47 @@ export class KiCadSchGenerator {
         });
     }
 
+    /** Labels that map to KiCad fields (properties); all others become text objects. */
+    private isFieldLabel(name: string | undefined): boolean {
+        return name === 'refdes' || name === 'value';
+    }
+
+    /** Non-field labels (canonical transform) that are emitted as symbol text objects. */
+    private textLabelsOf(rc: RenderComponent): ReturnType<KiCadSchGenerator['transformedProperties']> {
+        return this.transformedProperties(rc, true)
+            .filter(l => !this.isFieldLabel(l.name));
+    }
+
     /**
-     * Build KiCad (property ...) nodes for all Textbox items in the drawing,
+     * Build KiCad (text ...) nodes for non-field labels, for the lib_symbol body.
+     */
+    private buildLibraryTextNodes(rc: RenderComponent): N[] {
+        return this.textLabelsOf(rc)
+            .map(({ text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
+                const justifyH = anchor === HorizontalAlign.Left ? 'left'
+                    : anchor === HorizontalAlign.Right ? 'right'
+                        : null;
+                const justifyV = vanchor === VerticalAlign.Top ? 'top'
+                    : vanchor === VerticalAlign.Bottom ? 'bottom'
+                        : null;
+                const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];
+
+                const effectsChildren: Array<N | RawAtom> = [
+                    n('font', n('size', raw(mm(fontSizeMM)), raw(mm(fontSizeMM))))
+                ];
+                // Always explicit: KiCad defaults to centered.
+                effectsChildren.push(n('justify', ...justifyParts.map(p => raw(p))));
+
+                // Lib symbol body is Y-up; negate y.
+                return n('text', text,
+                    n('at', raw(mm(x)), raw(mm(-y)), raw(kicadAngle)),
+                    n('effects', ...effectsChildren)
+                );
+            });
+    }
+
+    /**
+     * Build KiCad (property ...) nodes for field labels in the drawing,
      * for use inside a lib_symbol (no placement offset, canonical transforms).
      */
     private buildLibraryProperties(rc: RenderComponent): N[] {
@@ -597,10 +639,9 @@ export class KiCadSchGenerator {
         const offsetY = useComponentOrigin ? rc.y.toNumber() : 0;
 
         return this.transformedProperties(rc, canonical)
-            .map(({ index, name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
-                let propName = `Text_${index}`;
-                if (name === 'refdes') propName = 'Reference';
-                else if (name === 'value') propName = 'Value';
+            .filter(l => this.isFieldLabel(l.name))
+            .map(({ name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
+                const propName = name === 'refdes' ? 'Reference' : 'Value';
 
                 // Map CircuitScript anchor/vanchor to KiCad justify terms.
                 const justifyH = anchor === HorizontalAlign.Left ? 'left'
@@ -802,7 +843,7 @@ export class KiCadSchGenerator {
             );
         }
 
-        // Label properties mirroring the lib_symbol text items
+        // Field properties (Reference / Value); other labels are lib_symbol text objects
         children.push(...this.buildPlacementProperties(rc));
 
         // Kicad uses 
@@ -1262,7 +1303,13 @@ export class KiCadSchGenerator {
             const baseName = needsPinSuffix
                 ? `${definitionName}-${numPins}_sym`
                 : `${definitionName}_sym`;
-            const symbolPart = baseName.replace(/:/g, '_');
+            const textSignature = this.textLabelsOf(rc).map(l => l.text).join('\u0001');
+            const hashSuffix = textSignature.length > 0
+                ? `_${createHash('sha256').update(textSignature).digest('hex').slice(0, 8)}`
+                : '';
+            const symbolPart = (hashSuffix
+                ? baseName.replace(/_sym$/, `_sym${hashSuffix}`)
+                : baseName).replace(/:/g, '_');
 
             return {
                 projectName: this.currentProjectName,

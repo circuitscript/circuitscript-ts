@@ -637,6 +637,173 @@ sub()
         });
     });
 
+    describe('symbol labels as text objects vs properties', () => {
+        const scriptPath = '__tests__/testData/renderData/inline.cst';
+
+        async function generateFromScript(script: string, version: KiCadVersion) {
+            const { hasError, visitor } = await runScript(script, scriptPath);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+
+            const generator = new KiCadSchGenerator(version, '0.0.0');
+            return generator.generate(visitor, sheetFrames, 'inline')[0].output;
+        }
+
+        function libSymbolIds(output: string): string[] {
+            const libStart = output.indexOf('(lib_symbols');
+            const lib = output.slice(libStart);
+            return Array.from(lib.matchAll(/\n\s{4}\(symbol "([^"]+)"/g)).map(m => m[1]);
+        }
+
+        function textNodes(output: string): string[] {
+            return Array.from(output.matchAll(/\(text "/g))
+                .map(m => {
+                    let depth = 0;
+                    for (let i = m.index!; i < output.length; i++) {
+                        if (output[i] === '(') depth++;
+                        else if (output[i] === ')' && --depth === 0) return output.slice(m.index!, i + 1);
+                    }
+                    return '';
+                });
+        }
+
+        const mosfetScript = (extra = '') => `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add q = nmos()
+    q.mpn = "MPN1"
+${extra}`;
+
+        for (const version of [KiCadVersion.V9, KiCadVersion.V10]) {
+            describe(`V${version}`, () => {
+                test('MOSFET labels become text objects', async () => {
+                    const output = await generateFromScript(mosfetScript(), version);
+                    for (const t of ['S', 'D', 'G', 'MPN1']) {
+                        expect(output).toContain(`(text "${t}"`);
+                    }
+                    expect(output).not.toMatch(/\(property "Text_\d+"/);
+                    expect(output).toContain('(property "Reference"');
+                });
+
+                test('LEDs share lib_symbol only with identical label text', async () => {
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add led("GREEN") pin "A"
+    wire d 100
+    add led("GREEN") pin "A"
+    wire d 100
+    add led("RED") pin "A"
+    wire d 100
+    to gnd
+`;
+                    const output = await generateFromScript(script, version);
+                    const ids = libSymbolIds(output).filter(id => id.includes('led'));
+                    expect(ids.length).toBe(2);
+                    expect(new Set(ids).size).toBe(2);
+                    expect(output).toContain('(text "GREEN"');
+                    expect(output).toContain('(text "RED"');
+                    expect(output).not.toMatch(/\(property "Text_\d+"/);
+                });
+
+                test('resistor has Reference/Value and no text nodes', async () => {
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add res(10k)
+    wire d 100
+    to gnd
+`;
+                    const output = await generateFromScript(script, version);
+                    expect(output).toContain('(property "Reference"');
+                    expect(output).toContain('(property "Value"');
+                    expect(textNodes(output)).toEqual([]);
+                    expect(output).not.toMatch(/\(property "Text_\d+"/);
+                });
+
+                test('supply keeps Value as net name', async () => {
+                    const script = `from "std" import *
+v5 = supply("5V")
+gnd = dgnd()
+frame:
+    at v5
+    add res(10k)
+    wire d 100
+    to gnd
+`;
+                    const output = await generateFromScript(script, version);
+                    expect(output).toContain('(property "Value" "5V"');
+                });
+
+                test('orientations share one lib_symbol with identical text', async () => {
+                    const script = mosfetScript() + `    at net("B")
+    add q2 = nmos()
+    q2.mpn = "MPN1"
+    q2.flip = "x"
+`;
+                    const output = await generateFromScript(script, version);
+                    const ids = libSymbolIds(output).filter(id => id.includes('nmos'));
+                    expect(ids.length).toBe(1);
+                });
+
+                test('multi-line label text escapes newlines', async () => {
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add q = nmos()
+    q.mpn = "Line1\nLine2"
+`;
+                    const output = await generateFromScript(script, version);
+                    expect(output).toContain('(text "Line1\\nLine2"');
+                    expect(output).not.toContain('Line1\nLine2');
+                });
+
+                test('all rotations and flips share one lib_symbol with identical text', async () => {
+                    const orientations = [
+                        'angle:0', 'angle:90', 'angle:180', 'angle:270',
+                        'flip:"x"', 'flip:"y"', 'flip:"xy"',
+                    ];
+                    const body = orientations.map((o, i) => `    at net("N${i}")
+    add q${i} = nmos() ${o}
+    q${i}.mpn = "MPN1"
+`).join('');
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+${body}`;
+                    const output = await generateFromScript(script, version);
+                    const ids = libSymbolIds(output).filter(id => id.includes('nmos'));
+                    expect(ids.length).toBe(1);
+
+                    // Each placed instance only references the single lib_symbol
+                    const libIds = Array.from(output.matchAll(/\(lib_id "([^"]+)"/g))
+                        .map(m => m[1]).filter(id => id.includes('nmos'));
+                    expect(libIds.length).toBe(orientations.length);
+                    expect(new Set(libIds).size).toBe(1);
+
+                    // Text nodes live only in the lib_symbol, once per label
+                    const mpnNodes = textNodes(output).filter(t => t.startsWith('(text "MPN1"'));
+                    expect(mpnNodes.length).toBe(1);
+                });
+            });
+        }
+    });
+
     describe('bus export as net labels', () => {
         const dir = '__tests__/testData/renderData/';
 
