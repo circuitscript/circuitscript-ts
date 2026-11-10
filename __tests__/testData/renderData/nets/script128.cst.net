@@ -30,6 +30,6 @@
 /small3 | label-2.COMP-1-small3:0 | 1
 /t | label-6.COMP-1-t | 1
 /t | label-6.COMP-1-t:0 | 1
-/t | text-0.COMP-1 | 1
-/t | text-1.COMP-1 | 1
-/t | text-2.COMP-1 | 1
+/t | text-0.COMP-1-true | 1
+/t | text-1.COMP-1-true | 1
+/t | text-2.COMP-1-true | 1

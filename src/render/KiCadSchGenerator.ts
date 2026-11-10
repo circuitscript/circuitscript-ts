@@ -248,12 +248,15 @@ export class KiCadSchGenerator {
         // Components with isNetLabel are rendered as KiCad (label ...) tokens, not symbols.
         const labelComponents = keepComponents.filter(rc => rc.component.isNetLabel);
         const noConnectComponents = keepComponents.filter(rc => this.isNoConnectMarker(rc));
+        // text() components become KiCad (text ...) objects, not symbols.
+        const textComponents = keepComponents.filter(rc => this.isTextObject(rc));
 
         // Buses are exported as per-pin net labels, not as symbols.
         const busComponents = keepComponents.filter(rc =>
             rc.component.typeProp === ComponentTypes.bus);
         const regularComponents = keepComponents.filter(rc =>
             !rc.component.isNetLabel && !this.isNoConnectMarker(rc) &&
+            !this.isTextObject(rc) &&
             rc.component.typeProp !== ComponentTypes.bus);
 
         // Nets that touch a real (non-bus) component pin. Wires and labels
@@ -348,6 +351,9 @@ export class KiCadSchGenerator {
 
             // no_connect() components become KiCad no_connect markers
             ...noConnectComponents.map(rc => this.buildNoConnect(rc)),
+
+            // text() components become KiCad text objects
+            ...textComponents.flatMap(rc => this.buildTextObject(rc)),
 
             // Component instance placements
             ...regularComponents.map(rc =>
@@ -475,11 +481,14 @@ export class KiCadSchGenerator {
             if (pinNode !== null) subSymChildren.push(pinNode);
         }
 
+        // Non-field labels become text objects in the symbol body.
+        subSymChildren.push(...this.buildLibraryTextNodes(rc));
+
         if (subSymChildren.length > 0) {
             children.push(n('symbol', `${symbolPart}_1_1`, ...subSymChildren));
         }
 
-        // Labels as KiCad property tokens
+        // Field labels (Reference / Value) as KiCad property tokens
         children.push(...this.buildLibraryProperties(rc));
 
         return n('symbol', symbolId, ...children);
@@ -512,8 +521,7 @@ export class KiCadSchGenerator {
                 return true;
             }
         }).map((label, index) => {
-            let feat = Geometry.flip(label, flipX, flipY);
-            feat = Geometry.rotateDegs(feat, angle, drawing.mainOrigin);
+            const feat = Geometry.orient(label, angle, flipX, flipY, drawing.mainOrigin);
 
             const transformed = feat as Textbox;
             const [ax, ay] = transformed.getLabelPosition();
@@ -522,7 +530,11 @@ export class KiCadSchGenerator {
             // In Flatten.js Y-up space: flipX reflects θ → 180-θ, flipY reflects θ → -θ.
             // KiCad negates the angle (Y-up lib space vs Y-down schematic space).
             const styleAngle = label.style?.angle?.toNumber() ?? 0;
-            const totalAngle = styleAngle + angle;
+            // The symbol is rotated and then mirrored; the label angle logic
+            // below is written for mirror-then-rotate, so use the equivalent
+            // pre-flip angle (see SymbolGraphic.drawLabels).
+            const symbolAngle = Geometry.preFlipAngle(angle, flipX, flipY);
+            const totalAngle = styleAngle + symbolAngle;
             let kicadAngle: number;
             if (flipX !== 0 && flipY !== 0) {
                 kicadAngle = 180 - totalAngle;
@@ -576,8 +588,47 @@ export class KiCadSchGenerator {
         });
     }
 
+    /** Labels that map to KiCad fields (properties); all others become text objects. */
+    private isFieldLabel(name: string | undefined): boolean {
+        return name === 'refdes' || name === 'value';
+    }
+
+    /** Non-field labels (canonical transform) that are emitted as symbol text objects. */
+    private textLabelsOf(rc: RenderComponent): ReturnType<KiCadSchGenerator['transformedProperties']> {
+        return this.transformedProperties(rc, true)
+            .filter(l => !this.isFieldLabel(l.name));
+    }
+
     /**
-     * Build KiCad (property ...) nodes for all Textbox items in the drawing,
+     * Build KiCad (text ...) nodes for non-field labels, for the lib_symbol body.
+     */
+    private buildLibraryTextNodes(rc: RenderComponent): N[] {
+        return this.textLabelsOf(rc)
+            .map(({ text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
+                const justifyH = anchor === HorizontalAlign.Left ? 'left'
+                    : anchor === HorizontalAlign.Right ? 'right'
+                        : null;
+                const justifyV = vanchor === VerticalAlign.Top ? 'top'
+                    : vanchor === VerticalAlign.Bottom ? 'bottom'
+                        : null;
+                const justifyParts = [justifyH, justifyV].filter(Boolean) as string[];
+
+                const effectsChildren: Array<N | RawAtom> = [
+                    n('font', n('size', raw(mm(fontSizeMM)), raw(mm(fontSizeMM))))
+                ];
+                // Always explicit: KiCad defaults to centered.
+                effectsChildren.push(n('justify', ...justifyParts.map(p => raw(p))));
+
+                // Lib symbol body is Y-up; negate y.
+                return n('text', text,
+                    n('at', raw(mm(x)), raw(mm(-y)), raw(kicadAngle)),
+                    n('effects', ...effectsChildren)
+                );
+            });
+    }
+
+    /**
+     * Build KiCad (property ...) nodes for field labels in the drawing,
      * for use inside a lib_symbol (no placement offset, canonical transforms).
      */
     private buildLibraryProperties(rc: RenderComponent): N[] {
@@ -597,10 +648,9 @@ export class KiCadSchGenerator {
         const offsetY = useComponentOrigin ? rc.y.toNumber() : 0;
 
         return this.transformedProperties(rc, canonical)
-            .map(({ index, name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
-                let propName = `Text_${index}`;
-                if (name === 'refdes') propName = 'Reference';
-                else if (name === 'value') propName = 'Value';
+            .filter(l => this.isFieldLabel(l.name))
+            .map(({ name, text, x, y, kicadAngle, fontSizeMM, anchor, vanchor }) => {
+                const propName = name === 'refdes' ? 'Reference' : 'Value';
 
                 // Map CircuitScript anchor/vanchor to KiCad justify terms.
                 const justifyH = anchor === HorizontalAlign.Left ? 'left'
@@ -695,8 +745,7 @@ export class KiCadSchGenerator {
         const [pinId, feature,, , displayId, displayName, pinName] = pin;
 
         // Apply transforms to pin segment
-        let feat = Geometry.flip(feature, flipX, flipY);
-        feat = Geometry.rotateDegs(feat, drawingAngle, drawing.mainOrigin);
+        const feat = Geometry.orient(feature, drawingAngle, flipX, flipY, drawing.mainOrigin);
 
         const coords = Geometry.getCoords(feat);
         if (coords.length < 2) return null;
@@ -802,7 +851,7 @@ export class KiCadSchGenerator {
             );
         }
 
-        // Label properties mirroring the lib_symbol text items
+        // Field properties (Reference / Value); other labels are lib_symbol text objects
         children.push(...this.buildPlacementProperties(rc));
 
         // Kicad uses 
@@ -848,29 +897,16 @@ export class KiCadSchGenerator {
         const mirrorNodes: N[] = [];
 
         /**
-         * Circuitscript will applies the flip first then the rotation. But
-         * Kicad seems to do the opposite, it applies the rotation first, 
-         * then the flip.
+         * Both CircuitScript and KiCad apply the rotation first and then the
+         * mirror, so the flips map directly: flipX is a left-right mirror
+         * (KiCad 'y') and flipY is an up-down mirror (KiCad 'x').
          */
-
-        const isConsideredHorizontal = usePlacementAngle === 0 || usePlacementAngle == 180;
-
         let useMirrorValue: string | null = null;
 
         if (flipX) {
-            if (isConsideredHorizontal) {
-                useMirrorValue = 'y';
-            } else {
-                useMirrorValue = 'x';
-            }
-        }
-
-        if (useMirrorValue === null && flipY) {
-            if (isConsideredHorizontal) {
-                useMirrorValue = 'x';
-            } else {
-                useMirrorValue = 'y';
-            }
+            useMirrorValue = 'y';
+        } else if (flipY) {
+            useMirrorValue = 'x';
         }
 
         if (useMirrorValue !== null) {
@@ -946,6 +982,67 @@ export class KiCadSchGenerator {
         return component.typeProp === ComponentTypes.graphic
             && component.hasParam('no_connect')
             && component.getParam('no_connect') === true;
+    }
+
+    private isTextObject(rc: RenderComponent): boolean {
+        const { component } = rc;
+        return component.typeProp === ComponentTypes.graphic
+            && component.hasParam('text_object')
+            && component.getParam('text_object') === true;
+    }
+
+    /** Build sheet-level (text ...) nodes, one per non-pin textbox. */
+    private buildTextObject(rc: RenderComponent): N[] {
+        const offsetX = rc.x.toNumber();
+        const offsetY = rc.y.toNumber();
+        const labels = rc.symbol.drawing.getLabels().filter(l =>
+            !l.id?.startsWith('pin-id_') && !l.id?.startsWith('pin-name_'));
+
+        return this.transformedProperties(rc).map((t, index) => {
+            const style = labels[index]?.style;
+            const effectsChildren: Array<N | RawAtom> = [
+                n('font', n('size', raw(mm(t.fontSizeMM)), raw(mm(t.fontSizeMM))),
+                    ...(style?.fontWeight === 'bold' ? [n('bold', raw('yes'))] : []),
+                    ...(style?.fontStyle === 'italic' ? [n('italic', raw('yes'))] : []),
+                    ...this.textColorNodes(style?.textColor))
+            ];
+            effectsChildren.push(n('justify', ...this.justifyParts(t.anchor, t.vanchor).map(p => raw(p))));
+
+            // Sheet space is Y-down like CircuitScript: no y negation.
+            return n('text', t.text,
+                n('exclude_from_sim', raw('no')),
+                n('at', raw(mm(offsetX + t.x)), raw(mm(offsetY + t.y)), raw(t.kicadAngle)),
+                n('effects', ...effectsChildren),
+                n('uuid', deterministicUUID(`text_${rc.component.instanceName}_${index}`))
+            );
+        });
+    }
+
+    private justifyParts(anchor: HorizontalAlign, vanchor: VerticalAlign): string[] {
+        const h = anchor === HorizontalAlign.Left ? 'left'
+            : anchor === HorizontalAlign.Right ? 'right' : null;
+        const v = vanchor === VerticalAlign.Top ? 'top'
+            : vanchor === VerticalAlign.Bottom ? 'bottom' : null;
+        return [h, v].filter(Boolean) as string[];
+    }
+
+    /** (color r g b a) node for a non-default text color, else empty. */
+    private textColorNodes(color: ThemedColor | undefined): N[] {
+        if (color === undefined) return [];
+        const lit = resolveToLiteralColor(color).trim().toLowerCase();
+        if (lit === '#333' || lit === '#333333' || lit === '') return [];
+        const named: Record<string, string> = {
+            red: '#ff0000', green: '#008000', blue: '#0000ff', black: '#000000',
+            white: '#ffffff', orange: '#ffa500', yellow: '#ffff00', purple: '#800080',
+            gray: '#808080', grey: '#808080',
+        };
+        let hex = named[lit] ?? lit;
+        const m3 = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(hex);
+        if (m3) hex = `#${m3[1]}${m3[1]}${m3[2]}${m3[2]}${m3[3]}${m3[3]}`;
+        const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/.exec(hex);
+        if (!m) return [];
+        return [n('color', raw(parseInt(m[1], 16)), raw(parseInt(m[2], 16)),
+            raw(parseInt(m[3], 16)), raw(1))];
     }
 
     private buildNoConnect(rc: RenderComponent): N {
@@ -1262,7 +1359,13 @@ export class KiCadSchGenerator {
             const baseName = needsPinSuffix
                 ? `${definitionName}-${numPins}_sym`
                 : `${definitionName}_sym`;
-            const symbolPart = baseName.replace(/:/g, '_');
+            const textSignature = this.textLabelsOf(rc).map(l => l.text).join('\u0001');
+            const hashSuffix = textSignature.length > 0
+                ? `_${createHash('sha256').update(textSignature).digest('hex').slice(0, 8)}`
+                : '';
+            const symbolPart = (hashSuffix
+                ? baseName.replace(/_sym$/, `_sym${hashSuffix}`)
+                : baseName).replace(/:/g, '_');
 
             return {
                 projectName: this.currentProjectName,

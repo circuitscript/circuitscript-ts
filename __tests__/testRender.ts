@@ -175,6 +175,7 @@ describe('Render tests', () => {
         ['script128.cst', 'Label function font_size and color parameters'],
         ['script134.cst', 'Label font_size override is written as inline style'],
         ['script135.cst', 'Colliding generated child scope nets are renamed'],
+        ['script136.cst', 'wire auto-orientation keeps the connected pin on the wire with user flips'],
         ['script130.cst', 'Graphic table: command'],
 
         ['script131.cst', 'place_default frame param: unplaced parts, nets and ground still drawn']

@@ -371,6 +371,44 @@ export class Geometry {
         });
     }
 
+    /** Orient: rotate by angle about center, THEN mirror about the origin. */
+    static orient(feature: Feature, angle: number, flipX: number, flipY: number,
+        center: [x: NumericValue, y: NumericValue]): Feature {
+        return Geometry.flip(Geometry.rotateDegs(feature, angle, center), flipX, flipY);
+    }
+
+    static groupOrient(features: Feature[], angle: number, flipX: number,
+        flipY: number, center: [x: NumericValue, y: NumericValue]): Feature[] {
+        return Geometry.groupFlip(Geometry.groupRotate(features, angle, center), flipX, flipY);
+    }
+
+    /**
+     * Direction (degrees) after mirroring: flipX: θ→180−θ, flipY: θ→−θ,
+     * both: θ+180. Normalised to [0,360).
+     */
+    static flipDirection(angle: number, flipX: number, flipY: number): number {
+        let result = angle;
+        if (flipX !== 0) {
+            result = 180 - result;
+        }
+        if (flipY !== 0) {
+            result = -result;
+        }
+        return ((result % 360) + 360) % 360;
+    }
+
+    /**
+     * A mirror applied after rotation by angle equals a rotation by -angle
+     * followed by the same mirror (F*R(a) = R(-a)*F) when exactly one axis
+     * is flipped. Returns the angle to rotate by if the mirror were applied
+     * first, normalised to [0,360). Used for label text layout.
+     */
+    static preFlipAngle(angle: number, flipX: number, flipY: number): number {
+        const single = (flipX !== 0) !== (flipY !== 0);
+        const result = single ? -angle : angle;
+        return ((result % 360) + 360) % 360;
+    }
+
     static groupBounds(features: Feature[]): {
         start: [number, number], end: [number, number],
         width: number, height: number

@@ -311,7 +311,8 @@ export abstract class SymbolGraphic {
     }
 
     /**
-     * Label transforms are always applied in this order: flipx/y, then angle.
+     * Symbol geometry is oriented as angle then flipx/y. Label transforms
+     * are laid out as flipx/y then the equivalent pre-flip angle.
      * @param group
      */
     protected drawLabels(group: G): void {
@@ -340,7 +341,12 @@ export abstract class SymbolGraphic {
             let useDominantBaseline = vanchor;
 
             const labelAngle = tmpLabelAngle.toNumber();
-            const finalLabelAngle = labelAngle + this.angle;
+            // Symbol transform is: rotate by angle, then mirror. Text layout
+            // below is expressed as mirror-then-rotate, so use the
+            // equivalent pre-flip angle (identical final result).
+            const symbolAngle = Geometry.preFlipAngle(
+                this.angle, this.flipX, this.flipY);
+            const finalLabelAngle = labelAngle + symbolAngle;
 
             // If this is true, it means the text is upside-down. For 
             // readability, flip it around again.
@@ -410,7 +416,7 @@ export abstract class SymbolGraphic {
 
             translateX = position[0];
             translateY = position[1];
-            useRotateAngle = this.angle;
+            useRotateAngle = symbolAngle;
 
             translateX = roundValue(translateX);
             translateY = roundValue(translateY);
@@ -2209,9 +2215,8 @@ export class SymbolDrawing {
                         currentFill = item.value as ThemedColor;
                     }
                 } else {
-                    let tmpResult = Geometry.groupFlip([item], this.flipX, this.flipY);
-                    tmpResult = Geometry.groupRotate(tmpResult, this.angle,
-                        this.mainOrigin);
+                    const tmpResult = Geometry.groupOrient([item], this.angle,
+                        this.flipX, this.flipY, this.mainOrigin);
 
                     const transformed = tmpResult[0];
 
@@ -2247,8 +2252,8 @@ export class SymbolDrawing {
 
     getPinsPath(): { path: string, lineColor: ThemedColor }[] {
         return this.pins.map(item => {
-            let features = Geometry.groupFlip([item[1]], this.flipX, this.flipY);
-            features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
+            const features = Geometry.groupOrient([item[1]], this.angle,
+                this.flipX, this.flipY, this.mainOrigin);
             const { path } = this.featuresToPath(features, this.flipX, this.flipY);
             return {
                 path,
@@ -2289,8 +2294,8 @@ export class SymbolDrawing {
         }, [] as Feature[]);
 
         let features = [...drawingFeatures, ...pinFeatures];
-        features = Geometry.groupFlip(features, this.flipX, this.flipY);
-        features = Geometry.groupRotate(features, this.angle, this.mainOrigin);
+        features = Geometry.groupOrient(features, this.angle,
+            this.flipX, this.flipY, this.mainOrigin);
 
         return Geometry.groupBounds(features);
     }
@@ -2308,9 +2313,9 @@ export class SymbolDrawing {
         if (pin) {
             const [, feature, angle] = pin;
 
-            // Apply flip, angle to feature
-            let tmpFeature = Geometry.flip(feature, this.flipX, this.flipY);
-            tmpFeature = Geometry.rotateDegs(tmpFeature, this.angle, this.mainOrigin);
+            // Apply angle, then flip to feature
+            const tmpFeature = Geometry.orient(feature, this.angle,
+                this.flipX, this.flipY, this.mainOrigin);
             const coords = Geometry.getCoords(tmpFeature);
 
             return {

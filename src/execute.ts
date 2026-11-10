@@ -31,6 +31,7 @@ import { Wire, WireSegment } from './objects/Wire.js';
 import { Logger } from './logger.js';
 import { Frame } from './objects/Frame.js';
 import { CalculatePinPositions } from './render/layout.js';
+import { Geometry } from './render/geometry.js';
 import { UnitDimension } from './helpers.js';
 import { ParserRuleContext } from 'antlr4ng';
 import { PlaceHolderCommands, SymbolDrawingCommands } from './render/draw_symbols.js';
@@ -2091,19 +2092,36 @@ export class ExecutionContext {
                     ', component unit angle:', targetUnit.angleProp, 'pin angle:',
                     pinAngle);
                     
-                let useAngle = (targetAngle - pinAngle) % 360;
+                // The unit is oriented by rotating by angle first and then
+                // mirroring (user flips). So the direction the pin must have
+                // after rotation (before the mirror) is the target direction
+                // mirrored by the user's flips.
+                const userFlipX = (targetUnit.parameters.get(ParamKeys.flipX) as NumericValue | undefined)?.toNumber() ?? 0;
+                const userFlipY = (targetUnit.parameters.get(ParamKeys.flipY) as NumericValue | undefined)?.toNumber() ?? 0;
+                const hasUserFlip = userFlipX !== 0 || userFlipY !== 0;
+
+                const preTarget = Geometry.flipDirection(
+                    targetAngle, userFlipX, userFlipY);
+
+                let useAngle = (preTarget - pinAngle) % 360;
                 if (useAngle < 0) {
                     useAngle += 360;
                 }
 
-                if (useAngle === 90) {
+                if (hasUserFlip) {
+                    // Never overwrite the user's flips, only rotate.
+                    if (useAngle === 90 || useAngle === 180 || useAngle === 270) {
+                        targetUnit.setParam(ParamKeys.angle, numeric(useAngle));
+                    }
+                } else if (useAngle === 90) {
                     // Just rotate the component
                     targetUnit.setParam(ParamKeys.angle, numeric(90));
                 } else if (useAngle === 180) {
 
                     // If the final angle is 180, check the orientation of the
                     // original pin to determine if flipX or flipY should be 
-                    // applied.
+                    // applied (keeps text upright). Rotation is 0 in this
+                    // branch so the order of flip and rotate does not matter.
                     if (pinAngle == 90 || pinAngle == 270){
                         targetUnit.setParam(ParamKeys.flipY, numeric(1));
                     } else if (pinAngle == 0 || pinAngle == 180){

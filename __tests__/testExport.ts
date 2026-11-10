@@ -511,8 +511,98 @@ sub()
         const generator = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0');
         const { output } = generator.generate(visitor, sheetFrames, 'multiline')[0];
 
-        expect(output).toContain('"Hello\\nNew text\\nLine"');
+        expect(output).toContain('(text "Hello\\nNew text\\nLine"');
         expect(output).not.toContain('Hello\nNew text');
+        const libEnd = output.indexOf('(lib_symbols') >= 0
+            ? output.indexOf('\n  )', output.indexOf('(lib_symbols')) : -1;
+        expect(output.indexOf('(text "Hello')).toBeGreaterThan(libEnd);
+        expect(output).not.toMatch(/\(symbol\s+\(lib_id/);
+    });
+
+    describe('text() as text objects', () => {
+        async function gen(script: string, version: KiCadVersion) {
+            const { hasError, visitor } = await runScript(script);
+            expect(hasError).toBe(false);
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+            return new KiCadSchGenerator(version, '0.0.0')
+                .generate(visitor, sheetFrames, 'textobj')[0].output;
+        }
+
+        const script = `from "std" import *
+
+at res(10k)
+at text("Hi", font_size=100, bold=true)
+`;
+
+        test.each([KiCadVersion.V9, KiCadVersion.V10])(
+            'KiCad schematic export emits text() as text objects (%s)', async (version) => {
+                const output = await gen(script, version);
+                expect(output.match(/\(text "Hi"/g)).toHaveLength(1);
+                expect(output).toMatch(/\(text "Hi"[\s\S]*?\(bold yes\)/);
+                expect(output).toMatch(/\(text "Hi"\s+\(exclude_from_sim no\)\s+\(at -?[\d.]+ -?[\d.]+ \d+\)/);
+                expect(output).toContain('(property "Reference"');
+                expect(output).toContain('(property "Value"');
+                // Only the resistor has a placed symbol / lib_symbol.
+                expect(output.match(/\(lib_id /g)).toHaveLength(1);
+                expect(output).not.toContain('Text_0');
+            });
+
+        test('text object position matches component placement', async () => {
+            const output = await gen(`from "std" import *
+
+at text("Hi")
+`, KiCadVersion.V9);
+            expect(output).toMatch(/\(text "Hi"\s+\(exclude_from_sim no\)\s+\(at -?[\d.]+ -?[\d.]+ 0\)/);
+        });
+
+        test('text object keeps rotation angle', async () => {
+            const output = await gen(`from "std" import *
+
+at text("Rot")
+..rotate = 90
+`, KiCadVersion.V9);
+            const m = /\(text "Rot"\s+\(exclude_from_sim no\)\s+\(at -?[\d.]+ -?[\d.]+ (\d+)\)/.exec(output);
+            expect(m).not.toBeNull();
+            expect([0, 90, 180, 270]).toContain(Number(m![1]));
+        });
+
+        test('text-like component without text_object still exports as symbol', async () => {
+            const output = await gen(`from "std" import *
+
+def fake_text(value):
+    return create component:
+        pins: 1
+        type: "graphic"
+        display: create graphic:
+            pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
+            text:
+                content: value
+                font_size: 50
+
+at fake_text("Fake")
+`, KiCadVersion.V9);
+            expect(output).toContain('(lib_id ');
+            expect(output).toContain('(text "Fake"');
+            expect(output.indexOf('(text "Fake"')).toBeLessThan(output.indexOf('(lib_id '));
+        });
+
+        test('non-text_object labels still produce lib_symbol text', async () => {
+            const output = await gen(`from "std" import *
+
+at nmos()
+`, KiCadVersion.V9);
+            expect(output).toMatch(/\(text "/);
+            expect(output).toMatch(/_sym[0-9a-f]+/);
+        });
     });
 
     describe('custom symbol pin names', () => {
@@ -635,6 +725,173 @@ sub()
             expect(nameEffects(pin)).toContain('(name "~"');
             expect(nameEffects(pin)).not.toContain('hide');
         });
+    });
+
+    describe('symbol labels as text objects vs properties', () => {
+        const scriptPath = '__tests__/testData/renderData/inline.cst';
+
+        async function generateFromScript(script: string, version: KiCadVersion) {
+            const { hasError, visitor } = await runScript(script, scriptPath);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+
+            const generator = new KiCadSchGenerator(version, '0.0.0');
+            return generator.generate(visitor, sheetFrames, 'inline')[0].output;
+        }
+
+        function libSymbolIds(output: string): string[] {
+            const libStart = output.indexOf('(lib_symbols');
+            const lib = output.slice(libStart);
+            return Array.from(lib.matchAll(/\n\s{4}\(symbol "([^"]+)"/g)).map(m => m[1]);
+        }
+
+        function textNodes(output: string): string[] {
+            return Array.from(output.matchAll(/\(text "/g))
+                .map(m => {
+                    let depth = 0;
+                    for (let i = m.index!; i < output.length; i++) {
+                        if (output[i] === '(') depth++;
+                        else if (output[i] === ')' && --depth === 0) return output.slice(m.index!, i + 1);
+                    }
+                    return '';
+                });
+        }
+
+        const mosfetScript = (extra = '') => `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add q = nmos()
+    q.mpn = "MPN1"
+${extra}`;
+
+        for (const version of [KiCadVersion.V9, KiCadVersion.V10]) {
+            describe(`V${version}`, () => {
+                test('MOSFET labels become text objects', async () => {
+                    const output = await generateFromScript(mosfetScript(), version);
+                    for (const t of ['S', 'D', 'G', 'MPN1']) {
+                        expect(output).toContain(`(text "${t}"`);
+                    }
+                    expect(output).not.toMatch(/\(property "Text_\d+"/);
+                    expect(output).toContain('(property "Reference"');
+                });
+
+                test('LEDs share lib_symbol only with identical label text', async () => {
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add led("GREEN") pin "A"
+    wire d 100
+    add led("GREEN") pin "A"
+    wire d 100
+    add led("RED") pin "A"
+    wire d 100
+    to gnd
+`;
+                    const output = await generateFromScript(script, version);
+                    const ids = libSymbolIds(output).filter(id => id.includes('led'));
+                    expect(ids.length).toBe(2);
+                    expect(new Set(ids).size).toBe(2);
+                    expect(output).toContain('(text "GREEN"');
+                    expect(output).toContain('(text "RED"');
+                    expect(output).not.toMatch(/\(property "Text_\d+"/);
+                });
+
+                test('resistor has Reference/Value and no text nodes', async () => {
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add res(10k)
+    wire d 100
+    to gnd
+`;
+                    const output = await generateFromScript(script, version);
+                    expect(output).toContain('(property "Reference"');
+                    expect(output).toContain('(property "Value"');
+                    expect(textNodes(output)).toEqual([]);
+                    expect(output).not.toMatch(/\(property "Text_\d+"/);
+                });
+
+                test('supply keeps Value as net name', async () => {
+                    const script = `from "std" import *
+v5 = supply("5V")
+gnd = dgnd()
+frame:
+    at v5
+    add res(10k)
+    wire d 100
+    to gnd
+`;
+                    const output = await generateFromScript(script, version);
+                    expect(output).toContain('(property "Value" "5V"');
+                });
+
+                test('orientations share one lib_symbol with identical text', async () => {
+                    const script = mosfetScript() + `    at net("B")
+    add q2 = nmos()
+    q2.mpn = "MPN1"
+    q2.flip = "x"
+`;
+                    const output = await generateFromScript(script, version);
+                    const ids = libSymbolIds(output).filter(id => id.includes('nmos'));
+                    expect(ids.length).toBe(1);
+                });
+
+                test('multi-line label text escapes newlines', async () => {
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+    at net("A")
+    add q = nmos()
+    q.mpn = "Line1\nLine2"
+`;
+                    const output = await generateFromScript(script, version);
+                    expect(output).toContain('(text "Line1\\nLine2"');
+                    expect(output).not.toContain('Line1\nLine2');
+                });
+
+                test('all rotations and flips share one lib_symbol with identical text', async () => {
+                    const orientations = [
+                        'angle:0', 'angle:90', 'angle:180', 'angle:270',
+                        'flip:"x"', 'flip:"y"', 'flip:"xy"',
+                    ];
+                    const body = orientations.map((o, i) => `    at net("N${i}")
+    add q${i} = nmos() ${o}
+    q${i}.mpn = "MPN1"
+`).join('');
+                    const script = `from "std" import *
+gnd = dgnd()
+frame:
+${body}`;
+                    const output = await generateFromScript(script, version);
+                    const ids = libSymbolIds(output).filter(id => id.includes('nmos'));
+                    expect(ids.length).toBe(1);
+
+                    // Each placed instance only references the single lib_symbol
+                    const libIds = Array.from(output.matchAll(/\(lib_id "([^"]+)"/g))
+                        .map(m => m[1]).filter(id => id.includes('nmos'));
+                    expect(libIds.length).toBe(orientations.length);
+                    expect(new Set(libIds).size).toBe(1);
+
+                    // Text nodes live only in the lib_symbol, once per label
+                    const mpnNodes = textNodes(output).filter(t => t.startsWith('(text "MPN1"'));
+                    expect(mpnNodes.length).toBe(1);
+                });
+            });
+        }
     });
 
     describe('bus export as net labels', () => {
@@ -847,14 +1104,58 @@ to spi angle:${a}${f} pin "MOSI"
             const l = labels.find(x => x.text.includes('SPI.MOSI') || x.text === 'GND')!;
             expect(l).toBeDefined();
 
-            // Canonical pin direction is 0; flip x mirrors it, then the
-            // drawing angle turns it clockwise on screen (KiCad angles are CCW).
-            const dir = f.includes('x') ? 0 : 180;
-            expect(l.angle).toBe((((dir - a) % 360) + 360) % 360);
+            // The unflipped pin direction is 180. The drawing angle turns it
+            // clockwise on screen (KiCad angles are CCW), then the flips
+            // mirror the result: flip x is a left-right mirror (theta ->
+            // 180 - theta) and flip y an up-down mirror (theta -> -theta).
+            let expected = 180 - a;
+            if (f.includes('x')) expected = 180 - expected;
+            if (f.includes('y')) expected = -expected;
+            expect(l.angle).toBe(((expected % 360) + 360) % 360);
 
             // Label sits on the end of the connecting wire
             expect(wiresAt(parseWires(output), l).length).toBeGreaterThan(0);
             expect(l.justify).toBe(BUS_JUSTIFY[l.angle]);
+        });
+    });
+
+    describe('component flip is applied after angle', () => {
+        const flips: [string, string | null][] = [['x', 'y'], ['y', 'x']];
+        const angles = [0, 90, 180, 270];
+        const cases = angles.flatMap(a =>
+            flips.map(([f, mirror]) => [a, f, mirror] as [number, string, string | null]));
+
+        test.each(cases)('placement for angle %i flip %s', async (a, f, mirror) => {
+            const text = `
+from "std" import *
+at res(1k) flip:"${f}" angle:${a}
+`;
+            const { hasError, visitor } = await runScript(text);
+            expect(hasError).toBe(false);
+
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+            const { output } = new KiCadSchGenerator(KiCadVersion.V9, '0.0.0')
+                .generate(visitor, sheetFrames, 'flip_case')[0];
+
+            const match = output.match(
+                /\(lib_id "[^"]*"\)\s*\(at [-\d.]+ [-\d.]+ ([-\d.]+)\)\s*\(mirror (\w)\)/);
+            expect(match).not.toBeNull();
+
+            // KiCad rotates first and then mirrors, same as CircuitScript:
+            // the angle maps straight through (negated) and flip x is a
+            // left-right mirror (KiCad 'y'), flip y an up-down mirror ('x').
+            expect(Number(match![1])).toBe(((-a % 360) + 360) % 360);
+            expect(match![2]).toBe(mirror);
         });
     });
 
