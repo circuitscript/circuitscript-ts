@@ -1,0 +1,27 @@
+# KiCad export: custom symbol with numeric pin names
+
+from "std" import *
+vcc = supply("VCC")
+gnd = dgnd()
+
+reg = create component:
+    pins:
+        1: 5
+        2: "GND"
+        3: 3.3
+    arrange:
+        left:   1
+        right:  3
+        bottom: 2
+
+at vcc
+wire down 100
+to reg pin 1
+
+at reg pin 3
+wire right 100
+to vcc
+
+at reg pin 2
+wire down 100
+to gnd

@@ -801,12 +801,22 @@ export class KiCadSchGenerator {
         }
 
         const pinNum = pinId.getValue().toString();
-        const nameStr = pinName ?? '~';
+
+        let usePinName: string | null = "";
+        if (typeof pinName === "string"){
+            usePinName = pinName;
+        } else if (pinName instanceof NumericValue){
+            usePinName = (pinName as NumericValue).toDisplayString();
+        } else {
+            usePinName = null;
+        }
+
+        const nameStr = usePinName ?? '~';
 
         const nameEffectsChildren: Array<N | RawAtom> = [
             n('font', n('size', raw(1.27), raw(1.27)))
         ];
-        if (pinName !== null && pinName !== '' && displayName === false) {
+        if (usePinName !== null && usePinName !== '' && displayName === false) {
             nameEffectsChildren.push(this.hideAttrNode());
         }
 

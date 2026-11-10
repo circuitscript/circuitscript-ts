@@ -769,6 +769,16 @@ at res(10k)
             }
         });
 
+        test.each(versions)('numeric pin names are exported as text (%s)', async (version) => {
+            const output = await generateKiCadSch(`${dir}script137.cst`, 'script137', version);
+            const symbol = libSymbol(output, 'J1_unit_sym');
+
+            expect(nameEffects(pinText(symbol, '1'))).toContain('(name "5"');
+            expect(nameEffects(pinText(symbol, '3'))).toContain('(name "3.3"');
+            expect(nameEffects(pinText(symbol, '2'))).toContain('(name "GND"');
+            expect(nameEffects(pinText(symbol, '1'))).not.toContain('hide');
+        });
+
         test.each(versions)('display_name=false hides only that pin name (%s)', async (version) => {
             const output = await generateKiCadSch(`${dir}script121.cst`, 'script121', version);
             const symbol = libSymbol(output, 'mixed_sym');
