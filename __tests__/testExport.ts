@@ -595,6 +595,45 @@ at fake_text("Fake")
             expect(output.indexOf('(text "Fake"')).toBeLessThan(output.indexOf('(lib_id '));
         });
 
+        describe('table_object', () => {
+            const tableScript = (params: string) => `from "std" import *
+
+def mk_table():
+    return create component:
+        pins: 1
+        type: "graphic"
+        display: create graphic:
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            table: 0, 50, col_widths=[400, 200], row_height=100, padding=20, \\
+                    font_size=40
+                header: "TBL_A", "TBL_B"
+                row: "TBL_C", "TBL_D"
+${params}
+at mk_table()
+`;
+
+            test.each([KiCadVersion.V9, KiCadVersion.V10])(
+                'table_object exports polylines and text, no symbol (%s)', async (version) => {
+                    const output = await gen(tableScript(
+                        '        params:\n            table_object: true'), version);
+                    // 3 rows x 2 cols grid: 3 horizontal + 3 vertical lines
+                    const sheetPart = output.slice(output.indexOf('(lib_symbols'));
+                    expect(sheetPart.match(/\(polyline/g)).toHaveLength(6);
+                    ['TBL_A', 'TBL_B', 'TBL_C', 'TBL_D'].forEach(t =>
+                        expect(output.match(new RegExp(`\\(text "${t}"`, 'g'))).toHaveLength(1));
+                    expect(output).not.toContain('(lib_id ');
+                    expect(output).toMatch(/\(text "TBL_A"[\s\S]*?\(bold yes\)/);
+                });
+
+            test('without table_object the table stays inside a symbol', async () => {
+                const output = await gen(tableScript(''), KiCadVersion.V9);
+                expect(output).toContain('(lib_id ');
+                // Polylines sit inside lib_symbols, before the placed instance.
+                expect(output.indexOf('(polyline')).toBeGreaterThan(-1);
+                expect(output.indexOf('(polyline')).toBeLessThan(output.indexOf('(lib_id '));
+            });
+        });
+
         test('non-text_object labels still produce lib_symbol text', async () => {
             const output = await gen(`from "std" import *
 

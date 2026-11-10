@@ -280,9 +280,11 @@ export class KiCadSchGenerator {
         // Buses are exported as per-pin net labels, not as symbols.
         const busComponents = keepComponents.filter(rc =>
             rc.component.typeProp === ComponentTypes.bus);
+        // table() graphics become sheet-level lines and text, not symbols.
+        const tableComponents = keepComponents.filter(rc => this.isTableObject(rc));
         const regularComponents = keepComponents.filter(rc =>
             !rc.component.isNetLabel && !this.isNoConnectMarker(rc) &&
-            !this.isTextObject(rc) &&
+            !this.isTextObject(rc) && !this.isTableObject(rc) &&
             rc.component.typeProp !== ComponentTypes.bus);
 
         // Nets that touch a real (non-bus) component pin. Wires and labels
@@ -380,6 +382,9 @@ export class KiCadSchGenerator {
 
             // text() components become KiCad text objects
             ...textComponents.flatMap(rc => this.buildTextObject(rc)),
+
+            // Components marked table_object become sheet-level lines and text
+            ...tableComponents.flatMap(rc => this.buildTableObject(rc)),
 
             // Component instance placements
             ...regularComponents.map(rc =>
@@ -707,18 +712,26 @@ export class KiCadSchGenerator {
     /**
      * Build a single geometry feature as a KiCad polyline or arc node.
      */
-    private buildFeature(feat: Feature, fillType: string, lineWidth: number): N {
+    private buildFeature(feat: Feature, fillType: string, lineWidth: number,
+        sheet?: { x: number, y: number, uuid: string }): N {
         const f: Feature = feat;
+
+        // Lib symbols are Y-up and local. Sheet objects are Y-down and offset
+        // by the placement, and carry a uuid.
+        const tx = (x: number) => raw(mm(sheet ? sheet.x + x : x));
+        const ty = (y: number) => raw(mm(sheet ? sheet.y + y : -y));
+        const extra: N[] = sheet ? [n('uuid', sheet.uuid)] : [];
         const stroke = n('stroke', n('width', raw(mm(lineWidth))), n('type', raw('default')));
         const fill = n('fill', n('type', raw(fillType)));
 
         // Circle: Flatten.Circle has center and r but no startAngle
         if (f instanceof Flatten.Circle) {
             return n('circle',
-                n('center', raw(mm(f.center.x)), raw(mm(-f.center.y))),
+                n('center', tx(f.center.x), ty(f.center.y)),
                 n('radius', raw(mm(f.r))),
                 stroke,
-                fill
+                fill,
+                ...extra
             );
         } else if (f instanceof Flatten.Arc) {
             const start = f.start;
@@ -728,21 +741,22 @@ export class KiCadSchGenerator {
                 ? f.startAngle + (f.endAngle - f.startAngle) / 2
                 : (f.startAngle + f.endAngle) / 2 + Math.PI;
             const midX = f.center.x + f.r * Math.cos(midAngle);
-            const midY = -(f.center.y + f.r * Math.sin(midAngle));
+            const midY = f.center.y + f.r * Math.sin(midAngle);
 
             return n('arc',
-                n('start', raw(mm(start.x)), raw(mm(-start.y))),
-                n('mid', raw(mm(midX)), raw(mm(midY))),
-                n('end', raw(mm(end.x)), raw(mm(-end.y))),
+                n('start', tx(start.x), ty(start.y)),
+                n('mid', tx(midX), ty(midY)),
+                n('end', tx(end.x), ty(end.y)),
                 stroke,
-                fill
+                fill,
+                ...extra
             );
         }
 
         // Segment, Polygon, Multiline – all expose vertices
         // KiCad lib symbols use Y-up; negate all y coordinates
         const vertices = Array.from(f.vertices) as { x: number; y: number }[];
-        const ptsChildren: N[] = vertices.map(v => n('xy', raw(mm(v.x)), raw(mm(-v.y))));
+        const ptsChildren: N[] = vertices.map(v => n('xy', tx(v.x), ty(v.y)));
 
         let useFill:N;
 
@@ -751,14 +765,14 @@ export class KiCadSchGenerator {
             const first = vertices[0];
             const last = vertices[vertices.length - 1];
             if (first.x !== last.x || first.y !== last.y) {
-                ptsChildren.push(n('xy', raw(mm(first.x)), raw(mm(-first.y))));
+                ptsChildren.push(n('xy', tx(first.x), ty(first.y)));
             }
             useFill = fill;
         } else {
             useFill = n('fill', n('type', raw('none')));
         }
 
-        return n('polyline', n('pts', ...ptsChildren), stroke, useFill);
+        return n('polyline', n('pts', ...ptsChildren), stroke, useFill, ...extra);
     }
 
     /**
@@ -1044,6 +1058,45 @@ export class KiCadSchGenerator {
         return component.typeProp === ComponentTypes.graphic
             && component.hasParam('text_object')
             && component.getParam('text_object') === true;
+    }
+
+    private isTableObject(rc: RenderComponent): boolean {
+        const { component } = rc;
+        return component.typeProp === ComponentTypes.graphic
+            && component.hasParam('table_object')
+            && component.getParam('table_object') === true;
+    }
+
+    /**
+     * Build sheet-level nodes for a table_object component: one polyline per
+     * line in the drawing plus (text ...) nodes for the cells.
+     */
+    private buildTableObject(rc: RenderComponent): N[] {
+        const drawing = rc.symbol.drawing;
+        const offset = { x: rc.x.toNumber(), y: rc.y.toNumber() };
+        const nodes: N[] = [];
+        let lineWidth = 0;
+        let index = 0;
+
+        for (const item of drawing.items) {
+            if (item instanceof Textbox) continue;
+            if (item instanceof GeometryProp) {
+                if (item.name === 'lineWidth') {
+                    lineWidth = (item.value as NumericValue).toNumber();
+                }
+                continue;
+            }
+            const oriented = Geometry.groupOrient([item as Feature], drawing.angle,
+                drawing.flipX, drawing.flipY, drawing.mainOrigin);
+            for (const feat of oriented) {
+                nodes.push(this.buildFeature(feat, 'none', lineWidth, {
+                    ...offset,
+                    uuid: deterministicUUID(`table_${rc.component.instanceName}_${index++}`)
+                }));
+            }
+        }
+
+        return [...nodes, ...this.buildTextObject(rc)];
     }
 
     /** Build sheet-level (text ...) nodes, one per non-pin textbox. */
