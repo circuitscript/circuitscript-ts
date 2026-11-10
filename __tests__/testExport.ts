@@ -605,6 +605,67 @@ at nmos()
         });
     });
 
+    describe('component parameters as properties', () => {
+        async function gen(script: string) {
+            const { hasError, visitor } = await runScript(script);
+            expect(hasError).toBe(false);
+            visitor.applySheetFrameComponent();
+            const { sequence, nets } = visitor.getGraph();
+            const documentVariable = visitor.getScope()
+                .variables.get(GlobalDocumentName)! as unknown as DocumentVariable;
+            const styles = getStylesFromDocument(documentVariable);
+            const logger = new Logger();
+            const graphEngine = new NetGraph(logger);
+            graphEngine.setStyles(styles);
+            const { graph, containerFrames } = graphEngine.generateLayoutGraph(sequence, nets);
+            const sheetFrames = await new LayoutEngine(logger).runLayout(graph, containerFrames, nets);
+            return new KiCadSchGenerator(KiCadVersion.V9, '0.0.0')
+                .generate(visitor, sheetFrames, 'params')[0].output;
+        }
+
+        const script = `from "std" import *
+
+at res(10k)
+..mpn = "RC0603"
+..manufacturer = "Yageo"
+..description = "10k resistor"
+..voltage_rating = 50
+..size = "0603"
+..erc_net_bridge = true
+..bom_exclude = true
+`;
+
+        test('exports parameters as hidden properties', async () => {
+            const output = await gen(script);
+            expect(output).toContain('(property "MPN" "RC0603"');
+            expect(output).toContain('(property "Manufacturer" "Yageo"');
+            expect(output).toContain('(property "Description" "10k resistor"');
+            expect(output).toContain('(property "Voltage_rating" "50"');
+            expect(output).toContain('(property "Size" "0603"');
+        });
+
+        test('does not export internal parameters', async () => {
+            const output = await gen(script);
+            expect(output).not.toContain('(property "Erc_net_bridge"');
+            expect(output).not.toContain('(property "Bom_exclude"');
+            expect(output).not.toContain('(property "Place"');
+            expect(output).not.toContain('(property "Refdes"');
+            expect(output).not.toContain('(property "Net_name"');
+        });
+
+        test('empty mpn emits no MPN property', async () => {
+            const output = await gen('from "std" import *\n\nat res(10k)\n');
+            expect(output).not.toContain('(property "MPN"');
+        });
+
+        test('one Value and Footprint property per symbol', async () => {
+            const output = await gen(script + '..footprint = "R_0603"\n');
+            const placed = output.slice(output.indexOf('(lib_id '));
+            expect(placed.match(/\(property "Value"/g)).toHaveLength(1);
+            expect(placed.match(/\(property "Footprint"/g)).toHaveLength(1);
+        });
+    });
+
     describe('custom symbol pin names', () => {
         const dir = '__tests__/testData/renderData/';
 

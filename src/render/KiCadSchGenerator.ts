@@ -27,6 +27,31 @@ export enum KiCadVersion {
     V10 = 10
 }
 
+/* Parameters that are CircuitScript-internal or already exported another way. */
+const KicadExcludedParams = new Set([
+    'refdes', 'value', 'footprint',
+    'place', 'bom_exclude',
+    'erc_net_bridge', 'copy', 'priority',
+    'net', 'net_name', 'net_type',
+    'angle', 'flip', 'flipx', 'flipy',
+    'refdes_offsetx', 'refdes_offsety',
+]);
+
+const KicadReservedFields = new Set(['Reference', 'Value', 'Footprint']);
+
+function kicadPropertyName(key: string): string {
+    if (key === 'mpn') return 'MPN';
+    return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+function formatParamValue(v: unknown): string | null {
+    if (typeof v === 'string') return v;
+    if (v instanceof NumericValue) return v.toDisplayString();
+    if (typeof v === 'number') return String(v);
+    if (typeof v === 'boolean') return v ? 'true' : 'false';
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
@@ -845,6 +870,24 @@ export class KiCadSchGenerator {
             const fp = String(params.get('footprint') ?? '');
             children.push(
                 n('property', 'Footprint', fp,
+                    n('at', raw(mm(x)), raw(mm(y)), raw(0)),
+                    n('effects', n('font', n('size', raw(1.27), raw(1.27))), this.hideAttrNode())
+                )
+            );
+        }
+
+        // Remaining parameters as hidden custom fields
+        const emittedNames = new Set<string>(['Reference', 'Value']);
+        if (params.has('footprint')) emittedNames.add('Footprint');
+        for (const [key, val] of params) {
+            if (KicadExcludedParams.has(key) || key.length === 0) continue;
+            const name = kicadPropertyName(key);
+            if (KicadReservedFields.has(name) || emittedNames.has(name)) continue;
+            const text = formatParamValue(val);
+            if (text === null || text === '') continue;
+            emittedNames.add(name);
+            children.push(
+                n('property', name, text,
                     n('at', raw(mm(x)), raw(mm(y)), raw(0)),
                     n('effects', n('font', n('size', raw(1.27), raw(1.27))), this.hideAttrNode())
                 )
