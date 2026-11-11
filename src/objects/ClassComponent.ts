@@ -14,7 +14,7 @@ import { PinTypes } from './PinTypes.js';
 import { WireSegment } from './Wire.js';
 import { ExecutionContext } from '../execute.js';
 import { NumericValue } from './NumericValue.js';
-import { DefaultComponentUnit, ParamKeys } from '../globals.js';
+import { ComponentTypes, DefaultComponentUnit, GraphicSubtypes, NetSubtypes, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from "../errors.js";
 import { comparePinIds } from '../helpers.js';
 
@@ -258,6 +258,21 @@ export class ClassComponent {
      * provide additionality functionality to the component.
     */
     typeProp: string| null = null;
+
+    /** Optional refinement of typeProp, e.g. type "net" + subtype "label". */
+    subtype: string | null = null;
+
+    get isTextObject(): boolean {
+        return this.typeProp === ComponentTypes.graphic && this.subtype === GraphicSubtypes.text;
+    }
+
+    get isTableObject(): boolean {
+        return this.typeProp === ComponentTypes.graphic && this.subtype === GraphicSubtypes.table;
+    }
+
+    get isNoConnect(): boolean {
+        return this.typeProp === ComponentTypes.graphic && this.subtype === GraphicSubtypes.noConnect;
+    }
     
     /** If true, then this component is copied upon reference. 
      * Used for nets, supply, gnd, labels */
@@ -299,7 +314,9 @@ export class ClassComponent {
 
     // For Kicad output generation, if true, indicates that this 
     // component is a kicad label.
-    isNetLabel = false;
+    get isNetLabel(): boolean {
+        return this.typeProp === ComponentTypes.net && this.subtype === NetSubtypes.label;
+    }
 
     // Store simulation properties
     simProp: Map<string, unknown> | null = null;
@@ -466,6 +483,7 @@ export class ClassComponent {
         if (this._copyID !== other._copyID) return false;
 
         if (this.typeProp !== other.typeProp) return false;
+        if (this.subtype !== other.subtype) return false;
         if (this._cachedPins !== other._cachedPins) return false;
 
         // Compare parameter length first then each key.
@@ -501,6 +519,7 @@ export class ClassComponent {
 
         component._copyID = this._copyID;
         component.typeProp = this.typeProp;
+        component.subtype = this.subtype;
 
         for (const [key, value] of this.parameters) {
             if (key === ParamKeys.flipX || key === ParamKeys.flipY || key === ParamKeys.angle) {
@@ -525,7 +544,6 @@ export class ClassComponent {
             return tmpUnit;
         });
 
-        component.isNetLabel = this.isNetLabel;
         // erc_net_bridge is copied by the generic `parameters` loop above (it's not
         // excluded like flipX/flipY/angle), so no explicit copy is needed here.
 

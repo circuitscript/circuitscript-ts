@@ -11,7 +11,7 @@ def label(value, anchor="left"):
                 anchor=anchor
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
         type: "net"
-        is_label: true
+        subtype: "label"
         params:
             net_name: value
             value: value

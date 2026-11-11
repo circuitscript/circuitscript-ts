@@ -208,6 +208,31 @@ This keyword will stop further processing of expressions in a branch. When the b
 ### Component definitions
 TDB
 
+#### `subtype` property
+`subtype` refines a component's `type`. It must be a string. Closed sets of values are validated for these types:
+
+| `type` | `subtype` | Meaning |
+|---|---|---|
+| `"net"` | `"label"` | net label (replaces `is_label: true`) |
+| `"graphic"` | `"text"` | text object, exported as KiCad text (replaces `params: text_object: true`) |
+| `"graphic"` | `"table"` | table, exported as KiCad lines and text (replaces `params: table_object: true`) |
+| `"graphic"` | `"no_connect"` | no-connect marker (replaces `params: no_connect: true`) |
+
+For other types `subtype` is stored and otherwise ignored. The old `is_label` property and the `text_object`, `table_object` and `no_connect` params are rejected with an error pointing to the new syntax.
+
+```
+def my_table():
+    return create component:
+        pins: 1
+        type: "graphic"
+        subtype: "table"
+        display: create graphic:
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+            table: 0, 50, col_widths=[400, 200], row_height=100
+                header: "A", "B"
+                row: "C", "D"
+```
+
 ### Variables
 TBD
 

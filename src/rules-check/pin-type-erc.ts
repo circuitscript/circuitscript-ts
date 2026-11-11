@@ -50,8 +50,8 @@ export function RuleCheck_PinTypeERC(nets: ComponentPinNetPair[]): Array<ReturnT
         if (!pinDef) continue;
 
         /* The std no_connect symbol's pin is declared passive, so identify
-         * it by its no_connect param. */
-        const pinType = component.hasParam('no_connect')
+         * it by its no_connect subtype. */
+        const pinType = component.isNoConnect
             ? PinTypes.NoConnect
             : pinDef.pinType as PinTypes;
         if (pinType === PinTypes.NoConnect) {

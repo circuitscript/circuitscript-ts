@@ -184,6 +184,22 @@ export enum ComponentTypes {
     resistor = 'res',
 }
 
+export enum NetSubtypes {
+    label = 'label',
+}
+
+export enum GraphicSubtypes {
+    text = 'text',
+    table = 'table',
+    noConnect = 'no_connect',
+}
+
+/** Closed set of valid subtypes per component type. Other types accept any. */
+export const ValidSubtypes: Partial<Record<string, string[]>> = {
+    [ComponentTypes.net]: Object.values(NetSubtypes),
+    [ComponentTypes.graphic]: Object.values(GraphicSubtypes),
+};
+
 export enum ReferenceTypes {
     function = 'function',
     value = 'value',

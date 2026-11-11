@@ -261,6 +261,7 @@ export class ExecutionContext {
             arrange?: Map<string, PinId[]>,
             display?: SymbolDrawingCommands,
             type?: string,
+            subtype?: string | null,
             width?: number,
             height?: number,
             copy: boolean,
@@ -295,11 +296,11 @@ export class ExecutionContext {
         });
 
         component.typeProp = props.type ?? null;
+        component.subtype = props.subtype ?? null;
         component.copyProp = props.copy ?? false;
         component.simProp = props.sim ?? null;
         component.behaviorProp = props.behavior ?? null;
 
-        component.isNetLabel = props.is_label ?? false;
 
         if (props.erc_net_bridge !== undefined) {
             component.setParam('erc_net_bridge', props.erc_net_bridge);

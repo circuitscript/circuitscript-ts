@@ -1,7 +1,8 @@
 import type { ParserVisitor } from '../src/visitor.js';
 import { readFileSync } from 'fs';
 import { _id, generateKiCadNetList, SExpObject } from "../src/render/export.js";
-import { runScript } from "./helpers";
+import { runScript, runScriptExpectError } from "./helpers";
+import { ClassComponent } from "../src/objects/ClassComponent.js";
 import { GlobalDocumentName } from '../src/globals.js';
 import { getStylesFromDocument } from '../src/styles.js';
 import { Logger } from '../src/logger.js';
@@ -575,7 +576,7 @@ at text("Rot")
             expect([0, 90, 180, 270]).toContain(Number(m![1]));
         });
 
-        test('text-like component without text_object still exports as symbol', async () => {
+        test('text-like component without subtype text still exports as symbol', async () => {
             const output = await gen(`from "std" import *
 
 def fake_text(value):
@@ -595,27 +596,27 @@ at fake_text("Fake")
             expect(output.indexOf('(text "Fake"')).toBeLessThan(output.indexOf('(lib_id '));
         });
 
-        describe('table_object', () => {
+        describe('subtype table', () => {
             const tableScript = (params: string) => `from "std" import *
 
 def mk_table():
     return create component:
         pins: 1
         type: "graphic"
+${params}
         display: create graphic:
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             table: 0, 50, col_widths=[400, 200], row_height=100, padding=20, \\
                     font_size=40
                 header: "TBL_A", "TBL_B"
                 row: "TBL_C", "TBL_D"
-${params}
 at mk_table()
 `;
 
             test.each([KiCadVersion.V9, KiCadVersion.V10])(
-                'table_object exports polylines and text, no symbol (%s)', async (version) => {
+                'subtype table exports polylines and text, no symbol (%s)', async (version) => {
                     const output = await gen(tableScript(
-                        '        params:\n            table_object: true'), version);
+                        '        subtype: "table"'), version);
                     // 3 rows x 2 cols grid: 3 horizontal + 3 vertical lines
                     const sheetPart = output.slice(output.indexOf('(lib_symbols'));
                     expect(sheetPart.match(/\(polyline/g)).toHaveLength(6);
@@ -625,7 +626,7 @@ at mk_table()
                     expect(output).toMatch(/\(text "TBL_A"[\s\S]*?\(bold yes\)/);
                 });
 
-            test('without table_object the table stays inside a symbol', async () => {
+            test('without subtype table the table stays inside a symbol', async () => {
                 const output = await gen(tableScript(''), KiCadVersion.V9);
                 expect(output).toContain('(lib_id ');
                 // Polylines sit inside lib_symbols, before the placed instance.
@@ -634,7 +635,110 @@ at mk_table()
             });
         });
 
-        test('non-text_object labels still produce lib_symbol text', async () => {
+        test('subtype text and no_connect export as before via std', async () => {
+            const output = await gen(`from "std" import *
+
+at text("Hi")
+at no_connect()
+`, KiCadVersion.V9);
+            expect(output).toMatch(/\(text "Hi"/);
+            expect(output.match(/\(no_connect\s+\(at /g)).toHaveLength(1);
+        });
+
+        test('device type with subtype text is not a text object', async () => {
+            const output = await gen(`from "std" import *
+
+def fake_text(value):
+    return create component:
+        pins: 1
+        type: "device"
+        subtype: "text"
+        display: create graphic:
+            pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
+            text:
+                content: value
+                font_size: 50
+
+at fake_text("Fake")
+`, KiCadVersion.V9);
+            expect(output).toContain('(lib_id ');
+        });
+
+        test.each([
+            ['text_object', 'text'],
+            ['table_object', 'table'],
+            ['no_connect', 'no_connect'],
+        ])('old param %s is rejected with hint', async (param, replacement) => {
+            const msg = await runScriptExpectError(`
+def mk():
+    return create component:
+        pins: 1
+        type: "graphic"
+        display: create graphic:
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+        params:
+            ${param}: true
+at mk()
+`);
+            expect(msg).toContain(`replaced by subtype: "${replacement}"`);
+        });
+
+        const mkWith = (type: string, subtype: string) => `
+def mk():
+    return create component:
+        pins: 1
+        type: "${type}"
+        subtype: ${subtype}
+        display: create graphic:
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+at mk()
+`;
+
+        test('invalid and non-string subtypes throw', async () => {
+            expect(await runScriptExpectError(mkWith('graphic', '"bogus"')))
+                .toContain("Invalid graphic subtype 'bogus'");
+            expect(await runScriptExpectError(mkWith('net', '"bogus"')))
+                .toContain("Invalid net subtype 'bogus'");
+            expect(await runScriptExpectError(mkWith('graphic', '"label"')))
+                .toContain("Invalid graphic subtype 'label'");
+            await expect(runScriptExpectError(mkWith('graphic', '1'))).resolves.toBeTruthy();
+        });
+
+        test('is_label property is rejected with hint', async () => {
+            const msg = await runScriptExpectError(`
+def mk():
+    return create component:
+        pins: 1
+        type: "net"
+        is_label: true
+        display: create graphic:
+            pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
+at mk()
+`);
+            expect(msg).toContain("'is_label' property was replaced");
+        });
+
+        test('device type with subtype label is not a net label', async () => {
+            const c = ClassComponent.simple('X', 1);
+            c.typeProp = 'device';
+            c.subtype = 'label';
+            expect(c.isNetLabel).toBe(false);
+            c.typeProp = 'net';
+            expect(c.isNetLabel).toBe(true);
+        });
+
+        test('subtype survives copy and affects equality', () => {
+            const a = ClassComponent.simple('X', 1);
+            a.typeProp = 'graphic';
+            a.subtype = 'text';
+            expect(a.clone().subtype).toBe('text');
+            const b = a.clone();
+            expect(a.isEqual(b)).toBe(true);
+            b.subtype = 'table';
+            expect(a.isEqual(b)).toBe(false);
+        });
+
+        test('non-text-subtype labels still produce lib_symbol text', async () => {
             const output = await gen(`from "std" import *
 
 at nmos()

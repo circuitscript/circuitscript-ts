@@ -86,7 +86,7 @@ import { ExecutionScope, FrameAction, PropertyTreeKey, SequenceAction, SequenceI
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
     ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
     Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
-import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, Delimiter1, FrameType, GlobalDocumentName,
+import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, ValidSubtypes, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
     WireAutoDirection,
@@ -398,16 +398,22 @@ export class ParserVisitor extends BaseVisitor {
         const unitDefinitions = this.extractComponentUnitProperties(properties, 
             typeProp);
 
+        const subtype = properties.get('subtype') ?? null;
+        if (subtype !== null && typeof typeProp === 'string') {
+            const valid = ValidSubtypes[typeProp];
+            if (valid && !valid.includes(subtype as string)) {
+                this.throwWithContext(ctx,
+                    `Invalid ${typeProp} subtype '${subtype}'. Valid: ${valid.join(', ')}`);
+            }
+        }
+
         const props = {
             type: typeProp,
+            subtype,
             copy,
 
             units: unitDefinitions
         };
-
-        if (properties.has('is_label')){
-            props.is_label = properties.get('is_label');
-        }
 
         if (properties.has('sim')){
             props.sim = properties.get('sim');
@@ -590,8 +596,12 @@ export class ParserVisitor extends BaseVisitor {
 
                 switch (keyName) {
                     case 'type':
+                    case 'subtype':
                         this.validateString(value, ctx);
                         break;
+                    case 'is_label':
+                        throw new RuntimeExecutionError(
+                            `The 'is_label' property was replaced by type: "net" with subtype: "label"`, ctx);
                     case 'angle':
                     case 'width':
                     case 'height':
@@ -693,6 +703,15 @@ export class ParserVisitor extends BaseVisitor {
                         case 'bom_exclude':
                             this.validateBoolean(value, ctx);
                             break;
+                        case 'text_object':
+                        case 'table_object':
+                        case 'no_connect': {
+                            const replacement = subKeyName === 'text_object' ? 'text'
+                                : subKeyName === 'table_object' ? 'table' : 'no_connect';
+                            throw new RuntimeExecutionError(
+                                `The '${subKeyName}' param was replaced by subtype: "${replacement}" ` +
+                                `(with type: "graphic")`, ctx);
+                        }
 
                     }
                 } else if (keyName === 'pins') {

@@ -78,7 +78,7 @@ def label(value, arrow="", anchor="right", priority=5, font_size=50, color=""):
                 path: "M", arrow_size + 10, 0, "L", -arrow_size-10, 0
                     
         type: "net"
-        is_label: true
+        subtype: "label"
         params:
             net_name: value
             value: value
@@ -270,6 +270,7 @@ def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic
         pins: 1
         follow_wire_orientation: false
         type: "graphic"
+        subtype: "text"
         display: create graphic:
             pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
             if color != "":
@@ -287,8 +288,6 @@ def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic
                     font_size: font_size
                     bold: bold
                     italic: italic
-        params:
-            text_object: true
 
 # Drawing markers
 
@@ -322,12 +321,11 @@ def no_connect(size=20):
     return create component:
         pins: 1
         type: "graphic"
+        subtype: "no_connect"
         display: create graphic:
             path: "M", -size, -size, "L", size, size
             path: "M", -size, size, "L", size, -size
             pin: 1, "1", "no_connect", 0, 0, 0, 0, pin_only=true
-        params:
-            no_connect: true
 
 def dnc(size=20):
     return no_connect(size)

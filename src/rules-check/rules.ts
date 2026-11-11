@@ -81,7 +81,7 @@ export function collectNoConnectTargets(graph: Graph,
         }
 
         const { component } = nodeInfo[1] as RenderComponent;
-        if (!component.hasParam('no_connect')) {
+        if (!component.isNoConnect) {
             continue;
         }
 
@@ -125,7 +125,7 @@ export function collectNoConnectNets(graph: Graph,
         }
 
         const { component } = nodeInfo[1] as RenderComponent;
-        if (!component.hasParam('no_connect')) {
+        if (!component.isNoConnect) {
             continue;
         }
 

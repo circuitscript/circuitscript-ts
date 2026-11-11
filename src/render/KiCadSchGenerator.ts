@@ -383,7 +383,7 @@ export class KiCadSchGenerator {
             // text() components become KiCad text objects
             ...textComponents.flatMap(rc => this.buildTextObject(rc)),
 
-            // Components marked table_object become sheet-level lines and text
+            // Components marked subtype table become sheet-level lines and text
             ...tableComponents.flatMap(rc => this.buildTableObject(rc)),
 
             // Component instance placements
@@ -1047,28 +1047,19 @@ export class KiCadSchGenerator {
     // -----------------------------------------------------------------------
 
     private isNoConnectMarker(rc: RenderComponent): boolean {
-        const { component } = rc;
-        return component.typeProp === ComponentTypes.graphic
-            && component.hasParam('no_connect')
-            && component.getParam('no_connect') === true;
+        return rc.component.isNoConnect;
     }
 
     private isTextObject(rc: RenderComponent): boolean {
-        const { component } = rc;
-        return component.typeProp === ComponentTypes.graphic
-            && component.hasParam('text_object')
-            && component.getParam('text_object') === true;
+        return rc.component.isTextObject;
     }
 
     private isTableObject(rc: RenderComponent): boolean {
-        const { component } = rc;
-        return component.typeProp === ComponentTypes.graphic
-            && component.hasParam('table_object')
-            && component.getParam('table_object') === true;
+        return rc.component.isTableObject;
     }
 
     /**
-     * Build sheet-level nodes for a table_object component: one polyline per
+     * Build sheet-level nodes for a subtype table component: one polyline per
      * line in the drawing plus (text ...) nodes for the cells.
      */
     private buildTableObject(rc: RenderComponent): N[] {

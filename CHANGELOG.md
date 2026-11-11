@@ -2,6 +2,14 @@
 
 ## [v0.12.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.3...v0.12.0)
 
+Breaking: component `subtype` replaces `is_label`, `text_object`, `table_object` and `no_connect`
+- 
+- Add a `subtype` component property: `type: "net"` with `subtype: "label"`, and
+- `type: "graphic"` with `subtype: "text"`, `"table"` or `"no_connect"`. The
+- `is_label` property and the `text_object`, `table_object` and `no_connect`
+- params are now rejected with a migration hint. Generated names for std
+- `text()` and `no_connect()` components no longer include the removed param.
+
 [1c4544e](https://github.com/circuitscript/circuitscript-ts/commit/1c4544ec297357f967bc91a246aa7e05be255729)Annotate refdes beside inline component creation in path commands
 - 
 - Allow an annotation comment after the create component colon, and place

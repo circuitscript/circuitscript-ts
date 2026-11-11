@@ -103,10 +103,7 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
         // Get nets that have NC component.
         for (const item of sheet.components) {
             const { component } = item;
-            if (component.typeProp === ComponentTypes.graphic
-                && component.hasParam('no_connect')
-                && component.getParam('no_connect') === true
-            ) {
+            if (component.isNoConnect) {
                 nc_nets.push(
                     getOrThrow(component.pinNets, component.getDefaultPin(), 'default pin net').toString());
             }
