@@ -30,15 +30,12 @@ export enum KiCadVersion {
 
 /* Parameters that are CircuitScript-internal or already exported another way. */
 const KicadExcludedParams = new Set([
-    'refdes', 'value', 'footprint',
     'place', 'bom_exclude',
     'erc_net_bridge', 'copy', 'priority',
     'net', 'net_name', 'net_type',
     'angle', 'flip', 'flipx', 'flipy',
     'refdes_offsetx', 'refdes_offsety',
 ]);
-
-const KicadReservedFields = new Set(['Reference', 'Value', 'Footprint']);
 
 function kicadPropertyName(key: string): string {
     if (key === 'mpn') return 'MPN';
@@ -901,13 +898,24 @@ export class KiCadSchGenerator {
             );
         }
 
+        // Add properties (Reference / Value) as visible labels in kicad.
+        children.push(...this.buildPlacementProperties(rc));
+
         // Remaining parameters as hidden custom fields
-        const emittedNames = new Set<string>(['Reference', 'Value']);
+        const emittedNames = new Set<string>(['Reference']);
         if (params.has('footprint')) emittedNames.add('Footprint');
+
+        // Check if value was already previously added.
+        if (children.find(item => item[1] === 'Value') !== undefined) {
+            emittedNames.add('Value');
+        }
+
         for (const [key, val] of params) {
-            if (KicadExcludedParams.has(key) || key.length === 0) continue;
+            if (key.length === 0 || KicadExcludedParams.has(key)) continue;
+
             const name = kicadPropertyName(key);
-            if (KicadReservedFields.has(name) || emittedNames.has(name)) continue;
+            if (emittedNames.has(name)) continue;
+
             const expanded = typeof val === 'string' ? resolveValuesInTemplate(rc.component, val) : val;
             const text = formatParamValue(expanded);
             if (text === null || text === '') continue;
@@ -919,9 +927,6 @@ export class KiCadSchGenerator {
                 )
             );
         }
-
-        // Field properties (Reference / Value); other labels are lib_symbol text objects
-        children.push(...this.buildPlacementProperties(rc));
 
         // Kicad uses 
         let usePlacementAngle = placementAngle * -1;

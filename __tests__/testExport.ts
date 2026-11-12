@@ -818,6 +818,20 @@ at res(10k)
             expect(placed.match(/\(property "Value"/g)).toHaveLength(1);
             expect(placed.match(/\(property "Footprint"/g)).toHaveLength(1);
         });
+
+        test('value param is exported as hidden Value when there is no value label', async () => {
+            const output = await gen('from "std" import *\n\nat diode()\n..value = "1N4148"\n');
+            const placed = output.slice(output.indexOf('(lib_id '));
+            const match = placed.match(/\(property "Value" "1N4148"[\s\S]*?\(hide yes\)/);
+            expect(match).not.toBeNull();
+            expect(placed.match(/\(property "Value"/g)).toHaveLength(1);
+        });
+
+        test('Value property carries the component value', async () => {
+            const output = await gen('from "std" import *\n\nat res(10k)\n');
+            const placed = output.slice(output.indexOf('(lib_id '));
+            expect(placed).toMatch(/\(property "Value" "10k"/);
+        });
     });
 
     describe('custom symbol pin names', () => {
