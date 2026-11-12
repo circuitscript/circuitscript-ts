@@ -398,6 +398,37 @@ export class Geometry {
     }
 
     /**
+     * Orientation changes needed so a pin with base angle pinAngle ends up
+     * pointing along targetAngle, given user flips that are applied after the
+     * rotation. Only returns additions; user flips are never cleared.
+     * A 180 reversal prefers mirroring the pin's own axis (keeps text upright
+     * and the user's flip visible), and rotates only if that axis is already
+     * flipped by the user.
+     */
+    static resolveWireOrientation(pinAngle: number, targetAngle: number,
+        userFlipX: number, userFlipY: number)
+        : { rotation: number; angle?: number; flipX?: true; flipY?: true } {
+
+        const preTarget = Geometry.flipDirection(targetAngle, userFlipX, userFlipY);
+        const rotation = (((preTarget - pinAngle) % 360) + 360) % 360;
+
+        if (rotation === 0) return { rotation };
+
+        // Non-multiples of 90: leave the unit unchanged
+        if (rotation % 90 !== 0) return { rotation };
+
+        if (rotation === 180) {
+            const vertical = pinAngle === 90 || pinAngle === 270;
+            const horizontal = pinAngle === 0 || pinAngle === 180;
+            if (vertical && userFlipY === 0) return { rotation, flipY: true };
+            if (horizontal && userFlipX === 0) return { rotation, flipX: true };
+        }
+
+        // 90, 270, or a 180 that cannot be done by a free flip
+        return { rotation, angle: rotation };
+    }
+
+    /**
      * A mirror applied after rotation by angle equals a rotation by -angle
      * followed by the same mirror (F*R(a) = R(-a)*F) when exactly one axis
      * is flipped. Returns the angle to rotate by if the mirror were applied

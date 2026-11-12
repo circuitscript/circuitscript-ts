@@ -44,6 +44,11 @@ import { Scenario } from './objects/Scenario.js';
 /** Contains the current running state of the circuit graph */
 export interface ExecutionSettings { maxNetRenameAttempts: number }
 
+const DIRECTION_ANGLE = new Map<Direction, number>([
+    [Direction.Right, 0], [Direction.Down, 90],
+    [Direction.Left, 180], [Direction.Up, 270],
+]);
+
 export class ExecutionContext {
 
     /** Local name of the execution context.  */
@@ -2050,102 +2055,40 @@ export class ExecutionContext {
                 const connectedPinPos = getOrThrow(pinPositions, usePin, "pin position");
 
                 // This is the final angle that the component unit will have
-                let targetAngle: number | null = null;
-
-                let useDirection = useSegment.direction;
-                if (opposite){
-                    if (useDirection === Direction.Down){
-                        useDirection = Direction.Up;
-                    } else if (useDirection === Direction.Up){
-                        useDirection = Direction.Down;
-                    } else if (useDirection === Direction.Right){
-                        useDirection = Direction.Left;
-                    } else if (useDirection === Direction.Left){
-                        useDirection = Direction.Right;
-                    }
-                }
-
-                switch (useDirection) {
-                    case Direction.Down:
-                        targetAngle = 90;
-                        break;
-                    case Direction.Up:
-                        targetAngle = 270;
-                        break;
-                    case Direction.Right:
-                        targetAngle = 0;
-                        break;
-                    case Direction.Left:
-                        targetAngle = 180;
-                        break;
-                    default:
-                        targetAngle = null;
-                }
+                let targetAngle = DIRECTION_ANGLE.get(useSegment.direction);
 
                 // If wire direction is auto or auto_, then do not
                 // apply the wire orientation
-                if (targetAngle === null) {
+                if (targetAngle === undefined) {
                     return;
                 }
-            
+                if (opposite) {
+                    targetAngle = (targetAngle + 180) % 360;
+                }
+
                 const pinAngle = connectedPinPos.angle.toNumber();
                 this.log('set component unit angle from wire, target angle:', targetAngle,
                     ', component unit angle:', targetUnit.angleProp, 'pin angle:',
                     pinAngle);
                     
-                // The unit is oriented by rotating by angle first and then
-                // mirroring (user flips). So the direction the pin must have
-                // after rotation (before the mirror) is the target direction
-                // mirrored by the user's flips.
+                // Unit is rotated first, then mirrored by the user flips.
                 const userFlipX = (targetUnit.parameters.get(ParamKeys.flipX) as NumericValue | undefined)?.toNumber() ?? 0;
                 const userFlipY = (targetUnit.parameters.get(ParamKeys.flipY) as NumericValue | undefined)?.toNumber() ?? 0;
-                const hasUserFlip = userFlipX !== 0 || userFlipY !== 0;
 
-                const preTarget = Geometry.flipDirection(
-                    targetAngle, userFlipX, userFlipY);
+                const result = Geometry.resolveWireOrientation(
+                    pinAngle, targetAngle, userFlipX, userFlipY);
 
-                let useAngle = (preTarget - pinAngle) % 360;
-                if (useAngle < 0) {
-                    useAngle += 360;
+                if (result.angle !== undefined) {
+                    targetUnit.setParam(ParamKeys.angle, numeric(result.angle));
+                }
+                if (result.flipX) {
+                    targetUnit.setParam(ParamKeys.flipX, numeric(1));
+                }
+                if (result.flipY) {
+                    targetUnit.setParam(ParamKeys.flipY, numeric(1));
                 }
 
-                if (hasUserFlip) {
-                    // Never overwrite the user's flips.
-                    if (useAngle === 180) {
-                        // Reverse the pin with a flip on its own axis when
-                        // the user has not flipped that axis, so the user's
-                        // flip stays visible. Otherwise rotate by 180.
-                        const isVerticalPin = pinAngle === 90 || pinAngle === 270;
-                        const isHorizontalPin = pinAngle === 0 || pinAngle === 180;
-                        if (isVerticalPin && userFlipY === 0) {
-                            targetUnit.setParam(ParamKeys.flipY, numeric(1));
-                        } else if (isHorizontalPin && userFlipX === 0) {
-                            targetUnit.setParam(ParamKeys.flipX, numeric(1));
-                        } else {
-                            targetUnit.setParam(ParamKeys.angle, numeric(180));
-                        }
-                    } else if (useAngle === 90 || useAngle === 270) {
-                        targetUnit.setParam(ParamKeys.angle, numeric(useAngle));
-                    }
-                } else if (useAngle === 90) {
-                    // Just rotate the component
-                    targetUnit.setParam(ParamKeys.angle, numeric(90));
-                } else if (useAngle === 180) {
-
-                    // If the final angle is 180, check the orientation of the
-                    // original pin to determine if flipX or flipY should be 
-                    // applied (keeps text upright). Rotation is 0 in this
-                    // branch so the order of flip and rotate does not matter.
-                    if (pinAngle == 90 || pinAngle == 270){
-                        targetUnit.setParam(ParamKeys.flipY, numeric(1));
-                    } else if (pinAngle == 0 || pinAngle == 180){
-                        targetUnit.setParam(ParamKeys.flipX, numeric(1));
-                    }
-                } else if (useAngle === 270) {
-                    targetUnit.setParam(ParamKeys.angle, numeric(270));
-                }
-
-                targetUnit.wireOrientationAngle = useAngle;
+                targetUnit.wireOrientationAngle = result.rotation;
                 targetUnit.didSetWireOrientationAngle = true;     
             }
         }
