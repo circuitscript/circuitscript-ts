@@ -2110,8 +2110,21 @@ export class ExecutionContext {
                 }
 
                 if (hasUserFlip) {
-                    // Never overwrite the user's flips, only rotate.
-                    if (useAngle === 90 || useAngle === 180 || useAngle === 270) {
+                    // Never overwrite the user's flips.
+                    if (useAngle === 180) {
+                        // Reverse the pin with a flip on its own axis when
+                        // the user has not flipped that axis, so the user's
+                        // flip stays visible. Otherwise rotate by 180.
+                        const isVerticalPin = pinAngle === 90 || pinAngle === 270;
+                        const isHorizontalPin = pinAngle === 0 || pinAngle === 180;
+                        if (isVerticalPin && userFlipY === 0) {
+                            targetUnit.setParam(ParamKeys.flipY, numeric(1));
+                        } else if (isHorizontalPin && userFlipX === 0) {
+                            targetUnit.setParam(ParamKeys.flipX, numeric(1));
+                        } else {
+                            targetUnit.setParam(ParamKeys.angle, numeric(180));
+                        }
+                    } else if (useAngle === 90 || useAngle === 270) {
                         targetUnit.setParam(ParamKeys.angle, numeric(useAngle));
                     }
                 } else if (useAngle === 90) {
