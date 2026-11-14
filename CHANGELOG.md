@@ -1,14 +1,115 @@
 # Changelog
 
-## [v0.12.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.3...v0.12.0)
+## [v0.12.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.0...v0.12.1)
 
-Breaking: component `subtype` replaces `is_label`, `text_object`, `table_object` and `no_connect`
+[be11868](https://github.com/circuitscript/circuitscript-ts/commit/be11868bdf89e420185e8b90b2ebfa45e4e45b4e)Extract graphic-to-component conversion and use bare graphics in std lib
 - 
-- Add a `subtype` component property: `type: "net"` with `subtype: "label"`, and
-- `type: "graphic"` with `subtype: "text"`, `"table"` or `"no_connect"`. The
-- `is_label` property and the `text_object`, `table_object` and `no_connect`
-- params are now rejected with a migration hint. Generated names for std
-- `text()` and `no_connect()` components no longer include the removed param.
+- Move the graphic-to-component conversion into createComponentFromGraphics
+- and use it for sheet type documents as well. Add a skip_default_pin param
+- to suppress the implicit pin. Rewrite text, marker_point, no_connect and
+- sheet_generator in std.cst to return bare graphics.
+
+[a307b89](https://github.com/circuitscript/circuitscript-ts/commit/a307b896e24de53ddb33d730f5937e81b8351acb)Apply component flip after rotation
+- 
+- Symbols are now rotated first and then mirrored, matching KiCad, so a
+- single flip combined with a 90/270 angle swaps direction compared to
+- before. Add orient, groupOrient, flipDirection and preFlipAngle helpers
+- and use them in symbol drawing, labels and the KiCad generator, which
+- now maps flip x to mirror y and flip y to mirror x at every angle.
+- Auto-orientation computes rotation from the pre-flip direction and
+- keeps the user's flips.
+- 
+- Migrate script116 and script79 angles, regenerate script76, and add
+- script136 render coverage plus KiCad placement tests.
+
+[ad203a6](https://github.com/circuitscript/circuitscript-ts/commit/ad203a6ac84db898d9b756dc1e4aa2287fd09728)Replace marker params with component subtype property
+- 
+- Add a `subtype` property on components to mark text, table, no_connect
+- and net label components, replacing the text_object, table_object,
+- no_connect and is_label marker params/properties. Valid subtypes are
+- validated per component type, and the old markers are rejected with a
+- hint pointing to `subtype`.
+- 
+- ClassComponent exposes isTextObject, isTableObject, isNoConnect and
+- isNetLabel getters, used by the KiCad export, output metadata and ERC.
+- Generated instance names for text() and no_connect() no longer carry the
+- trailing "-true" suffix, so affected net goldens were updated.
+
+[dd9e78e](https://github.com/circuitscript/circuitscript-ts/commit/dd9e78e80ea599702eac9f05c2fd1f5a8fe4c94b)Allow bare graphics to be added directly as components
+- 
+- A graphic used in an add/to expression is now converted into a
+- single-pin graphic component, reused across references. The graphic
+- block accepts subtype and params commands, with subtype validated
+- against the allowed graphic subtypes. Adds render, ERC and validation
+- tests.
+
+[e87f084](https://github.com/circuitscript/circuitscript-ts/commit/e87f08411f2ad09c84c2d55717a207b31e685226)Export KiCad symbol labels as lib_symbol text objects
+- 
+- Non-field labels (anything other than refdes/value) were emitted as
+- Text_&lt;n&gt; properties on symbols. They are now written as (text ...) nodes
+- inside the lib_symbol's _1_1 sub-unit, so they render as body text and
+- move/rotate/mirror with the symbol. Placed instances only carry the
+- Reference and Value properties.
+- 
+- Components with a definitionName now get a hash of their label text in
+- the lib_symbol id, so instances with different text (e.g. LED colours)
+- get separate lib_symbols while identical ones still share one.
+- 
+- Add tests for text objects, LED variants, resistors, supplies, newline
+- escaping, and rotation/flip sharing a single lib_symbol.
+
+[207af69](https://github.com/circuitscript/circuitscript-ts/commit/207af69522f0a6151439ec62112c26f6cdc33ef7)Extract wire orientation resolution into Geometry helper
+- 
+- Move the pin-to-wire-direction logic from execute.ts into
+- Geometry.resolveWireOrientation and add exhaustive tests over pin angles,
+- target directions and user flips.
+
+[e1a3579](https://github.com/circuitscript/circuitscript-ts/commit/e1a35791fead48edc4c8d66d1872fe5cc0084ba9)Export text() components as KiCad text objects
+- 
+- Mark std text() with a text_object param and emit those components as
+- sheet-level (text ...) nodes instead of placed symbols. Update the net
+- goldens and export tests, and extend .gitignore.
+
+[572432f](https://github.com/circuitscript/circuitscript-ts/commit/572432ff948f6b38008677e710445df80b12f910)Export table graphics as sheet-level KiCad lines and text
+- 
+- Components with the table_object parameter set to true are emitted as
+- polylines and text nodes on the sheet instead of a placed symbol.
+- buildFeature now accepts an optional sheet placement to produce
+- Y-down, offset geometry with a uuid.
+
+[b700272](https://github.com/circuitscript/circuitscript-ts/commit/b700272d255085ab2b199c4d4e58dac0461bf946)Export component parameters as hidden KiCad properties
+- 
+- Emit remaining component parameters as hidden custom fields, skipping
+- internal ones and fields already exported as Reference, Value and
+- Footprint. mpn maps to MPN, other names are capitalised.
+
+[4b5a111](https://github.com/circuitscript/circuitscript-ts/commit/4b5a111fba0e4f1a94886f8bd5ee65b137016942)Expand param templates in KiCad and HTML exports
+- 
+- Move resolveValuesInTemplate into objects/paramTemplate.ts and share it
+- between the BOM, KiCad property export and HTML component metadata, so
+- strings like "RES {value} OHM {size}" resolve to their values in every
+- output. Unknown placeholders are left unchanged.
+
+[e2de59c](https://github.com/circuitscript/circuitscript-ts/commit/e2de59cdc4c349696467491229881712036d8881)Export numeric pin names as text in KiCad symbols
+- 
+- Numeric pin names were dropped and fell back to '~'. Convert NumericValue
+- pin names to their display string and add a render test script covering
+- numeric and mixed pin names.
+
+[887c859](https://github.com/circuitscript/circuitscript-ts/commit/887c859d970887ea33afe49e727c13ac1190124c)Export value param as KiCad Value property
+- 
+- Stop excluding value, refdes and footprint from exported params and build the Reference/Value properties before the hidden custom fields. A value param is emitted as a hidden Value when no value label exists.
+
+[2227826](https://github.com/circuitscript/circuitscript-ts/commit/2227826cff6379b96a2b8245b73fa272aee603c9)Flip on pin axis when reversing a component with user flips
+- 
+- When a 180 degree reversal is needed and the user has already flipped
+- the component, flip along the pin's own axis if the user has not flipped
+- it, so the user's flip stays visible. Fall back to a 180 rotation
+- otherwise. Update affected render goldens.
+
+[7ca2b92](https://github.com/circuitscript/circuitscript-ts/commit/7ca2b9295258e1aaed2005e0d8186a9aff2a2059)Remove unused functions
+
+## [v0.12.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.11.3...v0.12.0) - 2026-11-09
 
 [1c4544e](https://github.com/circuitscript/circuitscript-ts/commit/1c4544ec297357f967bc91a246aa7e05be255729)Annotate refdes beside inline component creation in path commands
 - 
