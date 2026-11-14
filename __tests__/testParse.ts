@@ -1,6 +1,7 @@
 /* eslint jest/expect-expect: ["warn", { "assertFunctionNames": ["expect", "expectInlineScriptTest"] }] */
 
 import { ClassComponent } from '../src/objects/ClassComponent.js';
+import { Assignment_exprContext } from '../src/antlr/CircuitScriptParser.js';
 import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
@@ -1357,5 +1358,63 @@ table = 1
 x = table + 1
 `);
         expect(hasError).toEqual(false);
+    });
+});
+
+describe('ClassComponent.getFirstCtxReference', () => {
+    const MAKE = `def make():
+    return create component:
+        type: "res"
+        pins: 2
+`;
+
+    async function getInstance(body: string) {
+        const { hasError, visitor } = await runScript(MAKE + body, undefined, { skipAnnotation: true });
+        expect(hasError).toEqual(false);
+        const instances = Array.from(visitor.dumpInstances().entries())
+            .filter(([name]) => name !== '--root').map(([, inst]) => inst);
+        expect(instances.length).toEqual(1);
+        return instances[0];
+    }
+
+    test('inline created and added: single graph reference', async () => {
+        const inst = await getInstance(`add create component:
+    type: "res"
+    pins: 2
+`);
+        const ref = inst.getFirstCtxReference(true);
+        expect(ref).not.toBeNull();
+        expect(ref!.ctx instanceof Assignment_exprContext).toEqual(false);
+        expect(inst.getFirstCtxReference(false)).toBe(ref);
+    });
+
+    test('assigned then used: graphOnly skips the assignment', async () => {
+        const inst = await getInstance(`R1 = make()\nadd R1\n`);
+        expect(inst.getFirstCtxReference(false)!.ctx instanceof Assignment_exprContext).toEqual(true);
+        const graphRef = inst.getFirstCtxReference(true);
+        expect(graphRef).not.toBeNull();
+        expect(graphRef!.ctx instanceof Assignment_exprContext).toEqual(false);
+    });
+
+    test('assigned then used twice: graphOnly returns the first use', async () => {
+        const inst = await getInstance(`R1 = make()\nat R1 pin 1\nwire right 20\nadd R1\n`);
+        const first = inst.getFirstCtxReference(true)!;
+        const nonAssign = inst.ctxReferences.filter(r => !(r.ctx instanceof Assignment_exprContext));
+        expect(nonAssign.length).toBeGreaterThanOrEqual(2);
+        expect(first).toBe(nonAssign[0]);
+        expect(first).not.toBe(nonAssign[1]);
+    });
+
+    test('assigned but never used', async () => {
+        const inst = await getInstance(`R1 = make()\n`);
+        expect(inst.getFirstCtxReference(true)).toBeNull();
+        expect(inst.getFirstCtxReference(false)!.ctx instanceof Assignment_exprContext).toEqual(true);
+    });
+
+    test('empty ctxReferences returns null', () => {
+        const inst = new ClassComponent('X', 2);
+        expect(inst.ctxReferences.length).toEqual(0);
+        expect(inst.getFirstCtxReference(true)).toBeNull();
+        expect(inst.getFirstCtxReference(false)).toBeNull();
     });
 });

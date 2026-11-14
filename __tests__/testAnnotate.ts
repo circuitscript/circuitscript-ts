@@ -604,3 +604,171 @@ describe('Refdes annotation: empty frame', () => {
         expect(output).toEqual(script);
     });
 });
+
+const LOOP_USE = `import "lib1"\nR1 = lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        at R1 pin 1\n`;
+const SAME_LOOP = `import "lib1"\nfor i in range(0, 3):\n    branch:\n        R1 = lib1.my_resistor()\n        at R1 pin 1\n`;
+
+const ASSIGN_IN_LOOP_USE_AFTER = `import "lib1"\nfor i in range(0, 3):\n    R1 = lib1.my_resistor()\nat R1 pin 1\n`;
+const ASSIGN_IN_LOOP_USE_OTHER_LOOP = `import "lib1"\nfor i in range(0, 2):\n    R1 = lib1.my_resistor()\nfor j in range(0, 2):\n    at R1 pin 1\n`;
+
+const refdesList = (v: ParserVisitor) =>
+    [...v.dumpInstances().values()].map(i => i.assignedRefDes).filter(r => r !== null);
+
+describe('Refdes annotation: first graph reference', () => {
+    // One instance is created outside the loop, so it is not replicated
+    // and gets a plain refdes even though its first graph use is in a loop.
+    test('assigned outside a loop, used in a loop: single instance, plain refdes', async () => {
+        const { visitor, output } = await annotate(LOOP_USE);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output).toMatch(/^ {8}at R1 pin 1 #= R1_$/m);
+    });
+
+    test('assigned and used in the same loop: placeholder', async () => {
+        const { visitor, output } = await annotate(SAME_LOOP);
+        expect(refdesList(visitor)).toEqual(['R1_1', 'R1_2', 'R1_3']);
+        expect(output).toMatch(/^ {8}at R1 pin 1 #= R1_$/m);
+    });
+
+    test('assigned and used outside a loop: plain refdes', async () => {
+        const { visitor, output } = await annotate(`import "lib1"\nR1 = lib1.my_resistor()\nat R1 pin 1\n`);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output).toMatch(/^at R1 pin 1 #= R1$/m);
+    });
+
+    test('indexed-flat: assigned outside, used in loop', async () => {
+        const { visitor, output } = await annotate(LOOP_USE, RefdesMode.IndexedFlat);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output).toMatch(/^ {8}at R1 pin 1 #= R1_$/m);
+    });
+
+    test('indexed-flat: assigned and used in the same loop', async () => {
+        const { visitor, output } = await annotate(SAME_LOOP, RefdesMode.IndexedFlat);
+        expect(refdesList(visitor)).toEqual(['R1_1', 'R1_2', 'R1_3']);
+        expect(output).toMatch(/#= R1_$/m);
+    });
+
+    test('flat: assigned outside, used in loop', async () => {
+        const { visitor, output } = await annotate(LOOP_USE, RefdesMode.Flat);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output).not.toMatch(/R1_/);
+    });
+
+    test('flat: same-loop components get sequential refdes, no placeholder', async () => {
+        const { visitor, output } = await annotate(SAME_LOOP, RefdesMode.Flat);
+        expect(refdesList(visitor)).toEqual(['R1', 'R2', 'R3']);
+        expect(output).not.toContain('#=');
+    });
+
+    // Only the last instance is used in a graph expression, so only it is
+    // annotated. Failing this means assignments are chosen as the first
+    // reference.
+    test('assigned in loop, used after the loop: only the used instance annotated', async () => {
+        const { visitor } = await annotate(ASSIGN_IN_LOOP_USE_AFTER);
+        expect(refdesList(visitor)).toEqual(['R1']);
+    });
+
+    test('assigned in loop, used in another loop: only the used instance annotated', async () => {
+        const { visitor } = await annotate(ASSIGN_IN_LOOP_USE_OTHER_LOOP);
+        expect(refdesList(visitor)).toEqual(['R1']);
+    });
+
+    test('assigned but never used in a graph expression: not annotated', async () => {
+        const script = `import "lib1"\nR1 = lib1.my_resistor()\n`;
+        const { visitor, output } = await annotate(script);
+        expect(refdesList(visitor)).toEqual([]);
+        expect([...visitor.dumpInstances().values()].every(i => i.assignedRefDes === null)).toBe(true);
+        expect(output).not.toContain('#=');
+        expect(output).toBe(script);
+    });
+});
+
+describe('Refdes annotation: copied components', () => {
+    const LABEL = `def label(value):
+    return create component:
+        pins: 1
+        copy: true
+        type: "net"
+        subtype: "label"
+        params:
+            net_name: value
+            value: value
+`;
+
+    test('copy: true net component used twice gets no refdes and does not consume a counter', async () => {
+        const script = `import "lib1"\n${LABEL}tmp = label("hello")\nat tmp\nwire right 50\nadd tmp\nwire right 50\nadd lib1.my_resistor()\n`;
+        const { visitor, output } = await annotate(script);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output.match(/#=/g)!.length).toBe(1);
+        expect(output).toMatch(/^add lib1\.my_resistor\(\) #= R1$/m);
+    });
+
+    test('copy: true component with physical type: original skipped, clones annotated', async () => {
+        const script = `import "lib1"
+def copy_res():
+    return create component:
+        type: "res"
+        pins: 2
+        copy: true
+
+tmp = copy_res()
+at tmp pin 1
+wire right 50
+add tmp
+wire right 50
+add lib1.my_resistor()
+`;
+        const { visitor, output } = await annotate(script);
+        // The original (copyProp true) is skipped; each use clones it and the
+        // clones (copyProp false) are annotated like normal components.
+        const originals = [...visitor.dumpInstances().values()].filter(i => i.copyProp === true);
+        expect(originals.length).toBe(1);
+        expect(originals[0].assignedRefDes).toBeNull();
+        expect(refdesList(visitor)).toEqual(['R1', 'R2', 'R3']);
+        expect(output).toMatch(/^at tmp pin 1 #= R1$/m);
+        expect(output).toMatch(/^add tmp #= R2$/m);
+        expect(output).toMatch(/^add lib1\.my_resistor\(\) #= R3$/m);
+    });
+});
+
+describe('Refdes annotation: source update for graph references', () => {
+    // The use is inside a loop, so a placeholder is written even though
+    // the single instance is simplified to R1 in memory.
+    test('assigned outside, used in loop: placeholder written on the use', async () => {
+        const { output } = await annotate(LOOP_USE);
+        expect(output).toMatch(/^ {8}at R1 pin 1 #= R1_$/m);
+        expect(output.match(/#=/g)!.length).toBe(1);
+    });
+
+    // The first graph reference is outside any loop, so the written
+    // annotation is plain R1 and matches the in-memory refdes.
+    test('assigned in loop, used after the loop: plain refdes written', async () => {
+        const { visitor, output } = await annotate(ASSIGN_IN_LOOP_USE_AFTER);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output).toMatch(/^at R1 pin 1 #= R1$/m);
+        expect(output).not.toContain('R1_');
+    });
+
+    test('assigned in loop, used in another loop: placeholder written', async () => {
+        const { visitor, output } = await annotate(ASSIGN_IN_LOOP_USE_OTHER_LOOP);
+        expect(refdesList(visitor)).toEqual(['R1']);
+        expect(output).toMatch(/^ {4}at R1 pin 1 #= R1_$/m);
+    });
+
+    test('assigned in loop, used after the loop: re-annotating the output is stable', async () => {
+        const first = await annotate(ASSIGN_IN_LOOP_USE_AFTER);
+        const second = await annotate(first.output);
+        expect(second.output).toEqual(first.output);
+    });
+
+    test('assigned outside, used in loop: re-annotating the output is stable', async () => {
+        const first = await annotate(LOOP_USE);
+        const second = await annotate(first.output);
+        expect(second.output).toEqual(first.output);
+    });
+
+    test('assigned in loop, used in loop: re-annotating the output is stable', async () => {
+        const first = await annotate(SAME_LOOP);
+        const second = await annotate(first.output);
+        expect(second.output).toEqual(first.output);
+    });
+});

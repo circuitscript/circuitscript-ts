@@ -451,7 +451,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
 function getComponentFirstCtxLocation(instance: ClassComponent):
     { start: Token, filePath: string } | null {
     if (instance.ctxReferences.length > 0) {
-        const { ctx, filePath } = instance.ctxReferences[0];
+        const { ctx, filePath } = instance.getFirstCtxReference();
         return { start: assertDefined(ctx.start, "Missing start token"), filePath };
     }
 

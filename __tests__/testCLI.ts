@@ -1,7 +1,9 @@
+import { jest } from '@jest/globals';
 import { execSync } from 'child_process';
 import figlet from 'figlet';
 import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
-import { loadScriptFromFile, readFile } from './helpers';
+import { getTestEnvironment, loadScriptFromFile, readFile } from './helpers';
+import { renderScriptCustom } from '../src/pipeline.js';
 
 describe('test cli program', () => {
     const tmpFolder = '__tests__/tmp';
@@ -211,6 +213,37 @@ Supported output formats (selected by output path extension):
         }
         
         expect(result.trim()).toEqual(expectedSvgOutput.trim());
+    });
+
+    describe('dump nets', () => {
+        const netScript = `${mainPath}ercMixedSeverity.cst`;
+
+        test('CLI -n prints net lines to stdout', () => {
+            const result = execSync(`${baseCommand} ${netScript} -x -n`).toString();
+            const netLines = result.split('\n').filter(l => l.includes(' | '));
+            expect(netLines.length).toBeGreaterThan(0);
+            netLines.forEach(line => {
+                expect(line).toMatch(/^[^|]+( \| [^|]+)+$/);
+            });
+        });
+
+        test('renderScriptCustom returns nets without console output', async () => {
+            const environment = getTestEnvironment();
+            await environment.prepareSVGEnvironment();
+            const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+            try {
+                const result = await renderScriptCustom(
+                    readFileSync(netScript, { encoding: 'utf8' }), [], {
+                        dumpNets: true, dumpData: false, showStats: false,
+                        environment, inputPath: netScript,
+                    }, [], []);
+                expect(result.nets).toBeDefined();
+                expect(result.nets!.length).toBeGreaterThan(0);
+                expect(logSpy).not.toHaveBeenCalled();
+            } finally {
+                logSpy.mockRestore();
+            }
+        });
     });
 
     describe('exit codes', () => {

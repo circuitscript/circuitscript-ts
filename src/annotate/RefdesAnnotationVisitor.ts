@@ -271,9 +271,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                 // placeholder refdes.
                 let isPlaceholderRefdes = false;
 
-                const { ctxReferences } = instance;
-                if (ctxReferences.length > 0) {
-                    const firstReference = ctxReferences[0];
+                // Use the same reference as the annotater: the first graph
+                // reference, falling back to the first reference.
+                const firstReference = instance.getFirstCtxReference(true);
+                if (firstReference) {
                     const { indexedStack: loopStack = [] } = firstReference;
 
                     if (this.refdesMode === RefdesMode.Flat && loopStack.length > 0) {

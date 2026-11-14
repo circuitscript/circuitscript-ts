@@ -49,7 +49,7 @@ const interactiveHighlightWidth = 15 * MilsToMM;
 
 function componentTooltip(component: ClassComponent): string | null {
     const creation = component.ctxReferences.find(r => r.creationFlag)
-                  ?? component.ctxReferences[0];
+                  ?? component.getFirstCtxReference(true);
     if (!creation) return null;
     const line = creation.ctx.start?.line ?? '?';
     const col  = (creation.ctx.start?.column ?? 0) + 1;

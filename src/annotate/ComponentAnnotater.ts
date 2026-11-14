@@ -247,7 +247,7 @@ export class ComponentAnnotater {
 
     /** Reserves the base name of an indexed placeholder (e.g. R5_ -> R5) */
     reservePlaceholder(base: string, instance: ClassComponent): void {
-        const ctx = instance.ctxReferences[0]?.ctx;
+        const ctx = instance.getFirstCtxReference()?.ctx;
         const loc = this.describeLocation(instance);
         const owner = this.placeholderOwner.get(base);
 

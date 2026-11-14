@@ -42,7 +42,7 @@ export class KiCadSchOutputHandler extends ParseOutputHandler {
                     ) continue;
 
                     if (comp.assignedRefDes !== null && !comp.parameters.has('footprint')) {
-                        const origin = comp.ctxReferences[0] ?? undefined;
+                        const origin = comp.getFirstCtxReference(true) ?? undefined;
                         let location = '?';
                         let line = 0, col = 0;
                         if (origin) {

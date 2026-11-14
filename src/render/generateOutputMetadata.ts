@@ -149,7 +149,7 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                 }
             });
 
-            const firstCtxReference = instance.ctxReferences[0];
+            const firstCtxReference = instance.getFirstCtxReference(true);
 
             result.push({
                 domId: sanitizeDomId(`comp-${sheetIndex}-${instance.instanceName}`),
