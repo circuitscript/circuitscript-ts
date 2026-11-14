@@ -6,8 +6,9 @@
  */
 import { ParserRuleContext } from 'antlr4ng';
 import { ClassComponent } from './../objects/ClassComponent.js';
+import { CtxReference } from './../objects/types.js';
 import { ComponentRefDesPrefixes } from './../visitor.js';
-import { KeywordRefdesPrefix, RefdesMode } from '../globals.js';
+import { ParamKeys, RefdesMode } from '../globals.js';
 import { assertDefined, getOrThrow } from "../utils.js";
 
 /** Tracks annotations already assigned and determines refdes for components */
@@ -57,8 +58,8 @@ export class ComponentAnnotater {
         let usePrefix: string;
         let useCounterKey: string;
 
-        if (instance.hasParam(KeywordRefdesPrefix)) {
-            const prefix = assertDefined(instance.getParam(KeywordRefdesPrefix), "Missing refdes prefix param") as string;
+        if (instance.hasParam(ParamKeys.refdes_prefix)) {
+            const prefix = assertDefined(instance.getParam(ParamKeys.refdes_prefix), "Missing refdes prefix param") as string;
             if (this.counter[prefix] === undefined) {
                 this.counter[prefix] = 1;
             }
@@ -90,23 +91,22 @@ export class ComponentAnnotater {
         let prefix = '';
         let resultRefdes = '';
 
-        const { ctxReferences } = instance;
+        // Assume that the first usage of the component should determine
+        // whether the refdes is unique or indexed. The graphOnly is true,
+        // so only graph related ctx references are returned. 
+        const firstReference = instance.getFirstCtxReference(true) as CtxReference;
 
-        if (ctxReferences.length > 0) {
-            // Assume that the first usage of the component should determine
-            // whether the refdes is unique or indexed.
-            const firstReference = ctxReferences[0];
-
+        if (firstReference){    
             // If the creationFlag is true, it means that the component was 
             // created during that ctxReference.
 
             // The context of the firstReference is used as the replication point.
-            const { ctx: useCtx, indexedStack, creationFlag } = firstReference;
+            const { ctx: useCtx, indexedStack } = firstReference;
 
-            if (this.refdesMode === RefdesMode.IndexedFlat && indexedStack.length > 0 && creationFlag) {
+            if (this.refdesMode === RefdesMode.IndexedFlat && indexedStack.length > 0) {
                 resultRefdes = this.getFlatIndexedRefdes(useCtx, instance, usePrefix, useCounterKey);
 
-            } else if (this.refdesMode !== RefdesMode.Flat && indexedStack.length > 0 && creationFlag) {
+            } else if (this.refdesMode !== RefdesMode.Flat && indexedStack.length > 0) {
                 // If indexedStack is defined, then the instance was created within
                 // a indexing structure (loops or functions).
 
@@ -168,6 +168,8 @@ export class ComponentAnnotater {
 
             return resultRefdes;
         }
+
+        return null;
     }
 
     private getFlatIndexedRefdes(ctx: ParserRuleContext, instance: ClassComponent, usePrefix: string,

@@ -224,6 +224,11 @@ async function parseFile(scriptData: string, outputPaths: string[],
             process.exitCode = 1;
         }
 
+        if (scriptOptions.dumpNets) {
+            const { nets = [] } = result;
+            nets.forEach(item => console.log(item.join(" | ")));
+        }
+
         return output;
     } catch (error) {
         console.error(`Unexpected Error:`);

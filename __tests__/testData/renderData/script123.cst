@@ -4,7 +4,6 @@
 def mk_basic():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 offset = 40
@@ -14,7 +13,6 @@ def mk_basic():
 def mk_params(tag=""):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 t = params.tag
@@ -26,7 +24,6 @@ def mk_params(tag=""):
 def mk_if(mode):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 x = 0
@@ -42,7 +39,6 @@ def mk_if(mode):
 def mk_for():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 total = 0
@@ -54,7 +50,6 @@ def mk_for():
 def mk_graphic_if():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 flag = true
@@ -67,7 +62,6 @@ def mk_graphic_if():
 def mk_arrow(value, arrow="", anchor="right"):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 arrow_size = 0
@@ -123,7 +117,6 @@ def mk_arrow(value, arrow="", anchor="right"):
 def mk_pre_twice():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 v = 1
@@ -135,7 +128,6 @@ def mk_pre_twice():
 def mk_call():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pre:
                 x = str(5)

@@ -44,6 +44,7 @@ export enum ParamKeys {
 
     FollowWireOrientation = 'follow_wire_orientation',
     SkipDefaultPin = 'skip_default_pin',
+    refdes_prefix = 'refdes_prefix',
 }
 
 export enum LayoutDirection {
@@ -229,8 +230,6 @@ export enum FrameType {
 export const ModuleContainsKeyword = 'contains';
 
 export const GlobalDocumentName = 'document';
-
-export const KeywordRefdesPrefix = 'refdes_prefix';
 
 export const RenderFlags = {
     ShowElementFrames:      false,

@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { ParserRuleContext } from 'antlr4ng';
-import { Expressions_blockContext } from 'src/antlr/CircuitScriptParser.js';
+import { Assignment_exprContext, Expressions_blockContext } from '../antlr/CircuitScriptParser.js';
 import { SymbolDrawingCommands } from '../render/draw_symbols.js';
 import { Net } from './Net.js';
 import { PinDefinition, PinId, PinIdType } from './PinDefinition.js';
@@ -17,7 +16,7 @@ import { NumericValue } from './NumericValue.js';
 import { ComponentTypes, DefaultComponentUnit, GraphicSubtypes, NetSubtypes, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from "../errors.js";
 import { comparePinIds } from '../helpers.js';
-import { ParamMap, ParamValue } from './types.js';
+import { CtxReference, ParamMap, ParamValue } from './types.js';
 
 export class ComponentUnit {
     parent: ClassComponent;
@@ -611,6 +610,22 @@ export class ClassComponent {
 
         throw new RuntimeExecutionError("Could not find unit for pin: " + pinId);
     }
+
+    // Graph only ctx references mean: at, to, add
+    getFirstCtxReference(graphOnly = false): CtxReference | null {
+        if (this.ctxReferences.length > 0) {
+            if (graphOnly) {
+                return this.ctxReferences.find(item => {
+                    return !(item.ctx instanceof Assignment_exprContext);
+                }) ?? null;
+            } else {
+                return this.ctxReferences[0];
+            }
+
+        } else {
+            return null;
+        }
+    }
 }
 
 export class ModuleComponent extends ClassComponent {
@@ -626,24 +641,4 @@ export class ModuleComponent extends ClassComponent {
     /** Module is the same as a component, except the component pins are mapped
      * to ports that are defined within the module's inner circuits. */
     modulePinIdToPortMap?: Map<number, ClassComponent>;
-}
-
-export type CtxReference = {
-    
-    // Rule context that uses/references the component.
-    ctx: ParserRuleContext,
-
-    // Stores the stack of the current execution stack and the corresponding
-    // index. For example, a loop rule context (while, for) will have the 
-    // current iteration index. For a function rule context, the current 
-    // number of invocation within the scope is used (i.e. the nth time the
-    // function is called).
-    indexedStack: [ParserRuleContext, number][],
-
-    // If true, then the component reference was created during the 
-    // execution of the rule.
-    creationFlag: boolean,
-
-    // Identify filepath of this ctx reference.
-    filePath: string,
 }

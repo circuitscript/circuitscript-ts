@@ -273,7 +273,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     let dumpedNets: ComponentPinNet[] | undefined;
     if (dumpNets) {
         dumpedNets = visitor.dumpNets();
-        dumpedNets.forEach(item => console.log(item.join(" | ")));
+        // dumpedNets.forEach(item => console.log(item.join(" | ")));
     }
 
     dumpData && environment.writeFileSync(dumpDirectory + 'tree.lisp', tree.toStringTree(null, parser));

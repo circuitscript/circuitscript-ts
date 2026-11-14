@@ -4,7 +4,6 @@
 def mk(mode):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if mode == 1:
@@ -20,7 +19,6 @@ def mk(mode):
 def mk_if(flag):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if flag:
@@ -30,7 +28,6 @@ def mk_if(flag):
 def mk_else(flag):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if flag:
@@ -42,7 +39,6 @@ def mk_else(flag):
 def mk_first(mode):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if mode == 0:
@@ -58,7 +54,6 @@ def mk_first(mode):
 def mk_multi(mode):
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if mode == 1:
@@ -71,7 +66,6 @@ def mk_multi(mode):
 def mk_undeclared():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if undeclared_name:
@@ -83,7 +77,6 @@ def mk_undeclared():
 def mk_undeclared_elif():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             if false:
@@ -97,7 +90,6 @@ def mk_undeclared_elif():
 def mk_loop():
     return create component:
         pins: 1
-        copy: true
         display: create graphic (params):
             pin: 1, "1", "passive", 0, 0, 0, 0, pin_only=true
             for loop_idx in range(0, 3):

@@ -3340,10 +3340,12 @@ export class ParserVisitor extends BaseVisitor {
 
         for (const [, instance] of instances) {
             // Net and graphic components are skipped as they do not need
-            // to be annotated
+            // to be annotated. Also skip components that have copies, because
+            // this is not possible for physical components.
             if (instance.typeProp === ComponentTypes.net
                 || instance.typeProp === ComponentTypes.graphic
                 || instance.typeProp === ComponentTypes.bus
+                || instance.copyProp === true
             ) {
                 continue;
             }
@@ -3370,7 +3372,7 @@ export class ParserVisitor extends BaseVisitor {
 
         // Reserve placeholder prefixes after all explicit refdes are tracked.
         toAnnotate.forEach(instance => {
-            const first = instance.ctxReferences[0];
+            const first = instance.getFirstCtxReference();
             if (refdesMode !== RefdesMode.Flat && instance.placeHolderRefDes && first
                 && first.indexedStack.length > 0 && first.creationFlag) {
                 annotater.reservePlaceholder(
