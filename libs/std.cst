@@ -266,38 +266,33 @@ def dgnd(net_name="GND"):
             priority: 100
 
 def text(value, offset_x = 0, offset_y = 0, font_size = 50, bold = false, italic = false, color = ""):
-    return create component:
-        pins: 1
-        follow_wire_orientation: false
-        type: "graphic"
+    return create graphic:
         subtype: "text"
-        display: create graphic:
-            pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
-            if color != "":
-                text:
-                    content: strip(textwrap_dedent(value))
-                    offset: offset_x, offset_y
-                    font_size: font_size
-                    bold: bold
-                    italic: italic
-                    text_color: color
-            else:
-                text:
-                    content: strip(textwrap_dedent(value))
-                    offset: offset_x, offset_y
-                    font_size: font_size
-                    bold: bold
-                    italic: italic
+        if color != "":
+            text:
+                content: strip(textwrap_dedent(value))
+                offset: offset_x, offset_y
+                font_size: font_size
+                bold: bold
+                italic: italic
+                text_color: color
+        else:
+            text:
+                content: strip(textwrap_dedent(value))
+                offset: offset_x, offset_y
+                font_size: font_size
+                bold: bold
+                italic: italic
+
+        params:
+            follow_wire_orientation: false
 
 # Drawing markers
 
 def marker_point():
-    return create component:
-        pins: 1
-        display: create graphic:
-            hline: -25, 0, 50
-            vline: 0, -25, 50
-            pin: 1, "1", "unspecified", 0, 0, 0, 0, pin_only=true
+    return create graphic:
+        hline: -25, 0, 50
+        vline: 0, -25, 50
 
 def arrow_point():
     arrow_size = 30
@@ -318,14 +313,10 @@ def arrow_point():
             offset_y: 0
 
 def no_connect(size=20):
-    return create component:
-        pins: 1
-        type: "graphic"
+    return create graphic:
         subtype: "no_connect"
-        display: create graphic:
-            path: "M", -size, -size, "L", size, size
-            path: "M", -size, size, "L", size, -size
-            pin: 1, "1", "no_connect", 0, 0, 0, 0, pin_only=true
+        path: "M", -size, -size, "L", size, size
+        path: "M", -size, size, "L", size, -size
 
 def dnc(size=20):
     return no_connect(size)
@@ -943,110 +934,108 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
     title_block_x2 = title_block_x + title_block_width
     title_block_y2 = title_block_y + title_block_height
 
-    return create component:
-        type: "graphic"
-        display: create graphic (params):
-            fill: "none"
+    return create graphic (params):
+        fill: "none"
 
-            # outer rect
-            line_color: "#cccccc", dark="#333333", var="sheet-outer-line-color"
-            crect: paper_width/2, paper_height/2, \
-                paper_width, paper_height, class="paper-area"
+        # outer rect
+        line_color: "#cccccc", dark="#333333", var="sheet-outer-line-color"
+        crect: paper_width/2, paper_height/2, \
+            paper_width, paper_height, class="paper-area"
 
-            # inner rect
-            line_color: "#111111", dark="#dddddd", var="sheet-inner-line-color"
-            crect: paper_width/2, paper_height/2, \
-                inner_width, inner_height, class="plot-area"
+        # inner rect
+        line_color: "#111111", dark="#dddddd", var="sheet-inner-line-color"
+        crect: paper_width/2, paper_height/2, \
+            inner_width, inner_height, class="plot-area"
 
-            crect: paper_width/2, paper_height/2, \
-                paper_width - 2 * margin_x + inner_frame_margin * 2, \
-                paper_height - 2 * margin_y + inner_frame_margin * 2
+        crect: paper_width/2, paper_height/2, \
+            paper_width - 2 * margin_x + inner_frame_margin * 2, \
+            paper_height - 2 * margin_y + inner_frame_margin * 2
 
-            for i in range(1, num_rows):
-                hline: horizontal_1, \
-                    tmp_y + tmp_height * ratio_y * i, inner_frame_margin
-                hline: horizontal_2, \
-                    tmp_y + tmp_height * ratio_y * i, -inner_frame_margin
+        for i in range(1, num_rows):
+            hline: horizontal_1, \
+                tmp_y + tmp_height * ratio_y * i, inner_frame_margin
+            hline: horizontal_2, \
+                tmp_y + tmp_height * ratio_y * i, -inner_frame_margin
 
-            for i in range(1, num_columns):
-                vline: tmp_x + tmp_width * ratio_x * i, \
-                    vertical_1, inner_frame_margin
-                vline: tmp_x + tmp_width * ratio_x * i, \
-                    vertical_2, -inner_frame_margin
+        for i in range(1, num_columns):
+            vline: tmp_x + tmp_width * ratio_x * i, \
+                vertical_1, inner_frame_margin
+            vline: tmp_x + tmp_width * ratio_x * i, \
+                vertical_2, -inner_frame_margin
 
-            # labels on the columns
-            for i in col_display_value:
-                text:
-                    content: i
-                    offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), \
-                        tmp_y + inner_frame_margin * 0.5 + 2
-                    font_size: font_size
-                    anchor: "center"
-                    vanchor: "center"
-
-                text:
-                    content: i
-                    offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), \
-                        tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
-                    font_size: font_size
-                    anchor: "center"
-                    vanchor: "center"
-
-            for index, val in enumerate(row_display_value):
-                text:
-                    content: val
-                    offset: tmp_x + inner_frame_margin * 0.5, \
-                        tmp_y + tmp_height * ratio_y * (0.5 + index)
-                    font_size: font_size
-                    anchor: "center"
-                    vanchor: "center"
-
-                text:
-                    content: val
-                    offset: tmp_x + tmp_width - inner_frame_margin * 0.5, \
-                        tmp_y + tmp_height * ratio_y * (0.5 + index)
-                    font_size: font_size
-                    anchor: "center"
-                    vanchor: "center"
-
-            # Draw title frame
+        # labels on the columns
+        for i in col_display_value:
             text:
-                content: "Size: " + paper_size_name
-                offset: title_block_x + 20, title_block_y2 - 30
-                anchor: "left"
-                vanchor: "bottom"
+                content: i
+                offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), \
+                    tmp_y + inner_frame_margin * 0.5 + 2
+                font_size: font_size
+                anchor: "center"
+                vanchor: "center"
 
             text:
-                content: "Sheet: " + params.sheet_number \
-                    + "/" + params.sheet_total
-                anchor: "left"
-                vanchor: "bottom"
-                offset: title_block_x + title_block_width / 2 + 20, \
-                    title_block_y2 - 30
+                content: i
+                offset: tmp_x + tmp_width * ratio_x * (0.5 + (i-1)), \
+                    tmp_y + tmp_height - inner_frame_margin * 0.5 + 2
+                font_size: font_size
+                anchor: "center"
+                vanchor: "center"
 
-            hline: title_block_x, title_block_y2 - 100, title_block_width
-            vline: title_block_x + title_block_width / 2, title_block_y2, -100
+        for index, val in enumerate(row_display_value):
+            text:
+                content: val
+                offset: tmp_x + inner_frame_margin * 0.5, \
+                    tmp_y + tmp_height * ratio_y * (0.5 + index)
+                font_size: font_size
+                anchor: "center"
+                vanchor: "center"
 
             text:
-                content: "Rev: " + params.revision
-                anchor: "left"
-                vanchor: "bottom"
-                offset: title_block_x + 20 , title_block_y2 - 130
+                content: val
+                offset: tmp_x + tmp_width - inner_frame_margin * 0.5, \
+                    tmp_y + tmp_height * ratio_y * (0.5 + index)
+                font_size: font_size
+                anchor: "center"
+                vanchor: "center"
 
-            hline: title_block_x, title_block_y2 - 200, title_block_width
+        # Draw title frame
+        text:
+            content: "Size: " + paper_size_name
+            offset: title_block_x + 20, title_block_y2 - 30
+            anchor: "left"
+            vanchor: "bottom"
 
-            text:
-                content: params.title
-                offset: title_block_x + 20, title_block_y2 - 240
-                bold: true
-                font_size: 60
-                anchor: "left"
-                vanchor: "bottom"
+        text:
+            content: "Sheet: " + params.sheet_number \
+                + "/" + params.sheet_total
+            anchor: "left"
+            vanchor: "bottom"
+            offset: title_block_x + title_block_width / 2 + 20, \
+                title_block_y2 - 30
 
-            crect: title_block_x + title_block_width / 2, \
-                title_block_y + title_block_height / 2, \
-                title_block_width, title_block_height, \
-                class="keepout-area"
+        hline: title_block_x, title_block_y2 - 100, title_block_width
+        vline: title_block_x + title_block_width / 2, title_block_y2, -100
+
+        text:
+            content: "Rev: " + params.revision
+            anchor: "left"
+            vanchor: "bottom"
+            offset: title_block_x + 20 , title_block_y2 - 130
+
+        hline: title_block_x, title_block_y2 - 200, title_block_width
+
+        text:
+            content: params.title
+            offset: title_block_x + 20, title_block_y2 - 240
+            bold: true
+            font_size: 60
+            anchor: "left"
+            vanchor: "bottom"
+
+        crect: title_block_x + title_block_width / 2, \
+            title_block_y + title_block_height / 2, \
+            title_block_width, title_block_height, \
+            class="keepout-area"
 
         params:
             title: "Sheet title"
@@ -1063,6 +1052,8 @@ def sheet_generator(paper_size_name, paper_width, paper_height, margin_x, margin
 
             grid_width: paper_width - 2 * margin_x
             grid_height: paper_height - 2 * margin_y
+
+            skip_default_pin: true
 
 def sheet_A1():
     paper_width = to_mils(841)

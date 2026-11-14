@@ -42,7 +42,8 @@ export enum ParamKeys {
     flipY = 'flipy',
     angle = 'angle',
 
-    FollowWireOrientation = 'follow_wire_orientation'
+    FollowWireOrientation = 'follow_wire_orientation',
+    SkipDefaultPin = 'skip_default_pin',
 }
 
 export enum LayoutDirection {

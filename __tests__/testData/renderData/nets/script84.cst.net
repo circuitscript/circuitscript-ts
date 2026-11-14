@@ -124,8 +124,8 @@
 /GND | dgnd-0.COMP-1-GND:11 | 1
 /GND | supply-0.net-0.COMP-1-5V:14 | 1
 /GND | test_point-0.COMP-1-0 | 1
-/NET-(J4-1) | marker_point-0.COMP-1 | 1
-/NET-(J5-1) | arrow_point-0.COMP-1-0 | 1
-/NET-(dnc-0.no_connect-1.COMP-1-1) | dnc-0.no_connect-1.COMP-1 | 1
-/NET-(no_connect-0.COMP-1-1) | no_connect-0.COMP-1 | 1
-/NET-(text-0.COMP-1-1) | text-0.COMP-1 | 1
+/NET-(-graphic.0-1) | -graphic.0 | 1
+/NET-(-graphic.1-1) | -graphic.1 | 1
+/NET-(-graphic.2-1) | -graphic.2 | 1
+/NET-(-graphic.3-1) | -graphic.3 | 1
+/NET-(J4-1) | arrow_point-0.COMP-1-0 | 1

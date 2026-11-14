@@ -458,7 +458,7 @@ export class ParserVisitor extends BaseVisitor {
         const width = (properties.get('width') as NumericValue)?? null;
         const height = (properties.get('height') as NumericValue) ?? null;
         const angle = (properties.get(ParamKeys.angle) as NumericValue) ?? null;
-        const followWireOrientation = (properties.get('follow_wire_orientation') as boolean) ?? true;
+        const followWireOrientation = (properties.get(ParamKeys.FollowWireOrientation) as boolean) ?? true;
 
         const arrange = properties.get('arrange') ?? null;
         const display = (properties.get('display') as SymbolDrawingCommands) ?? null;
@@ -803,21 +803,16 @@ export class ParserVisitor extends BaseVisitor {
 
         const commands = ctx.graphic_expr().reduce((accum, item) => {
             try {
-                let parseExpression = false;
-
-                // Only parse the key with the 'params' name
+                // Only parse graphic expressions with keys that are considered
+                // as data keys.
                 if (dataKeysOnly) {
-                    parseExpression = item._command
+                    const parseExpression = item._command
                         && (
                             item._command.text === PlaceHolderCommands.params
-                            || item._command.text === PlaceHolderCommands.subtype)
-
-                } else {
-                    parseExpression = true;
-                }
-
-                if (!parseExpression) {
-                    return accum;
+                            || item._command.text === PlaceHolderCommands.subtype);
+                    if (!parseExpression) {
+                        return accum;
+                    }
                 }
 
                 const [commandName, parameters] =
@@ -1784,7 +1779,16 @@ export class ParserVisitor extends BaseVisitor {
             });
         }
 
-        let pinValue: number | string | null = null;
+        if (dataResult instanceof SymbolDrawingCommands) {
+            const executor = this.getExecutor();
+            if (executor.graphicsComponentMap.has(dataResult)) {
+                dataResult = executor.graphicsComponentMap.get(dataResult) as ClassComponent;
+            } else {
+                dataResult = this.createComponentFromGraphics(dataResult, componentCtx);
+            }
+        }
+
+        let pinValue: PinId | null = null;
         const ctxPinSelectExpr = ctx.pin_select_expr();
 
         if (ctxPinSelectExpr) {
@@ -1792,68 +1796,7 @@ export class ParserVisitor extends BaseVisitor {
         } else {
             if (dataResult instanceof ClassComponent) {
                 pinValue = (dataResult as ClassComponent).getDefaultPin();
-            } else if (dataResult instanceof SymbolDrawingCommands) {
-
-                const executor = this.getExecutor();
-                if (executor.graphicsComponentMap.has(dataResult)) {
-                    dataResult = executor.graphicsComponentMap.get(dataResult);
-                } else {
-                    // Convert this into a component
-                    const graphicComponentId = `${Delimiter1}graphic.${executor.tmpGraphicsId}`;
-                    executor.tmpGraphicsId++;
-
-                    const graphicComponent = ClassComponent.simple(graphicComponentId, 1);
-                    graphicComponent.typeProp = ComponentTypes.graphic;
-                    graphicComponent.copyProp = false;
-                    graphicComponent.addDefaultUnit(dataResult);
-
-                    const graphicSubtype = dataResult.getGraphicSubtype();
-                    if (graphicSubtype !== null) {
-                        this.validateSubtype(componentCtx, ComponentTypes.graphic,
-                            graphicSubtype);
-                        graphicComponent.subtype = graphicSubtype;
-                    }
-
-                    const graphicParamsObject = dataResult.getGraphicParamsCommand();
-                    if (graphicParamsObject !== null){
-                        graphicComponent.parameters = graphicParamsObject;
-                    }
-
-                    if (graphicComponent.parameters.has(ParamKeys.FollowWireOrientation)) {
-                        graphicComponent.units[0].followWireOrientationProp =
-                            (graphicComponent.parameters.get(ParamKeys.FollowWireOrientation) ?? true) as boolean;
-                    }
-
-                    // Graphic components need at least one pin, so insert this
-                    // at the start if no other pin is defined.
-                    dataResult.postCallback = (commands, variables) => {
-                        const hasPin = commands.find(item => item[0] === PlaceHolderCommands.pin);
-
-                        if (hasPin) {
-                            return commands;
-                        } else {
-                            return [
-                                [PlaceHolderCommands.pin,
-                                [
-                                    numeric(1), "1", "unspecified",
-                                    numeric(0), numeric(0), numeric(0), numeric(0)
-                                ],
-                                new Map([["pin_only", true]]), null
-                                ],
-                                ...commands
-                            ];
-                        }
-                    }
-
-                    this.getScope().instances.set(graphicComponentId, graphicComponent);
-
-                    executor.graphicsComponentMap.set(dataResult, graphicComponent);
-                    dataResult = graphicComponent;
-                }
-
-                pinValue = dataResult.getDefaultPin();
-
-            } else {
+            }  else {
                 const undeclaredRef = (dataResult as UndeclaredReference);
                 this.throwWithContext(
                     componentCtx,
@@ -3606,7 +3549,13 @@ export class ParserVisitor extends BaseVisitor {
         let frameComponent: ClassComponent | null = null;
 
         if (document && document[FrameParamKeys.SheetType]) {
-            frameComponent = document[FrameParamKeys.SheetType] as ClassComponent;
+            const sheetTypeVar = document[FrameParamKeys.SheetType] as ClassComponent;
+
+            if (sheetTypeVar instanceof SymbolDrawingCommands) {
+                frameComponent = this.createComponentFromGraphics(sheetTypeVar, null);
+            } else {
+                frameComponent = sheetTypeVar;
+            }
 
             // Get all sheet type frames
             const sheets = baseScope.frames.filter(item => {
@@ -3627,6 +3576,71 @@ export class ParserVisitor extends BaseVisitor {
         return {
             frameComponent
         };
+    }
+
+    private createComponentFromGraphics(
+        drawingCommands: SymbolDrawingCommands,
+        ctx: ParserRuleContext
+    ): ClassComponent {
+        const executor = this.getExecutor();
+
+        // Convert this into a component
+        const graphicComponentId = `${Delimiter1}graphic.${executor.tmpGraphicsId}`;
+        executor.tmpGraphicsId++;
+
+        const graphicComponent = ClassComponent.simple(graphicComponentId, 1);
+        graphicComponent.typeProp = ComponentTypes.graphic;
+        graphicComponent.copyProp = false;
+        graphicComponent.addDefaultUnit(drawingCommands);
+
+        const graphicSubtype = drawingCommands.getGraphicSubtype();
+        if (graphicSubtype !== null) {
+            if (ctx !== null){
+                this.validateSubtype(ctx, ComponentTypes.graphic,
+                    graphicSubtype);
+            }
+            graphicComponent.subtype = graphicSubtype;
+        }
+
+        const graphicParamsObject = drawingCommands.getGraphicParamsCommand();
+        if (graphicParamsObject !== null) {
+            graphicComponent.parameters = graphicParamsObject;
+        }
+
+        if (graphicComponent.parameters.has(ParamKeys.FollowWireOrientation)) {
+            graphicComponent.units[0].followWireOrientationProp =
+                (graphicComponent.parameters.get(ParamKeys.FollowWireOrientation) ?? true) as boolean;
+        }
+
+        let addDefaultPin = true;
+        if (graphicComponent.parameters.has(ParamKeys.SkipDefaultPin)) {
+            addDefaultPin = !(graphicComponent.parameters.get(ParamKeys.SkipDefaultPin) ?? true);
+        }
+
+        if (addDefaultPin) {
+            drawingCommands.postCallback = (commands, variables) => {
+                const hasPin = commands.find(item => item[0] === PlaceHolderCommands.pin);
+
+                if (hasPin) {
+                    return commands;
+                } else {
+                    return [
+                        [PlaceHolderCommands.pin,
+                        [
+                            numeric(1), "1", "unspecified",
+                            numeric(0), numeric(0), numeric(0), numeric(0)
+                        ],
+                        new Map([["pin_only", true]]), null
+                        ],
+                        ...commands
+                    ];
+                }
+            }
+        }
+
+        this.getScope().instances.set(graphicComponentId, graphicComponent);
+        executor.graphicsComponentMap.set(drawingCommands, graphicComponent);
+        return graphicComponent;
     }
 
     /** Returns the list of nets that a component's pins are assigned to */
