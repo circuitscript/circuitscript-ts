@@ -177,6 +177,8 @@ describe('Render tests', () => {
         ['script135.cst', 'Colliding generated child scope nets are renamed'],
         ['script136.cst', 'wire auto-orientation keeps the connected pin on the wire with user flips'],
         ['script130.cst', 'Graphic table: command'],
+        ['script140.cst', 'Graphic table: markdown command'],
+        ['script141.cst', 'Graphic table: markdown cells expand params templates'],
         ['script138.cst', 'bare graphic with subtype no_connect, reused twice'],
         ['script139.cst', 'bare graphic with subtype text'],
 
@@ -559,6 +561,69 @@ describe('Render tests', () => {
         expect(textTag('TBL_R1')).not.toMatch(/font-weight="bold"/);
         expect(textTag('TBL_Plain')).not.toMatch(/font-weight="bold"/);
         expect(svgOutput).toContain('TBL_C3');
+    });
+
+    test('graphic table: markdown header is bold and columns follow alignment', async () => {
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + 'script140.cst');
+        const styles = getStylesFromDocument(documentVariable);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames,
+            new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+        const textTag = (label: string): string => {
+            const match = new RegExp(
+                `<text[^>]*>(?:(?!</text>)[\\s\\S])*?>${label}</tspan>`).exec(svgOutput);
+            expect(match).not.toBeNull();
+            return match![0];
+        };
+
+        expect(textTag('MD_Ref')).toMatch(/font-weight="bold"/);
+        expect(textTag('MD_R1')).not.toMatch(/font-weight="bold"/);
+        expect(textTag('MD_10k')).toMatch(/text-anchor="middle"/);
+        expect(textTag('MD_2')).toMatch(/text-anchor="end"/);
+        expect(textTag('MD_R1')).not.toMatch(/text-anchor="(middle|end)"/);
+        expect(svgOutput).toContain('MX_a|b');
+    });
+
+    test('graphic table: markdown cells expand {name} from graphic params', async () => {
+        const { sheetFrames, documentVariable } = await renderCommon(mainPath + 'script141.cst');
+        const styles = getStylesFromDocument(documentVariable);
+        const { canvas: svgCanvas } = renderSheetsToSVG(sheetFrames,
+            new Logger(), documentVariable, styles);
+        const svgOutput = generateSvgOutput(svgCanvas, defaultZoomScale);
+
+        expect(svgOutput).toContain('TP_10k');
+        expect(svgOutput).toContain('TP_a|b');
+        expect(svgOutput).toContain('TP_loc');
+        expect(svgOutput).toContain('>5</tspan>');
+        expect(svgOutput).toContain('TP_top');
+        expect(svgOutput).toContain('>10k</tspan>');
+        // params take precedence over a local with the same name
+        expect(svgOutput).toContain('PAR_shared');
+        expect(svgOutput).not.toContain('LOC_shared');
+        // non-text locals and unknown names are left as written
+        expect(svgOutput).toContain('{local_list}');
+        expect(svgOutput).toContain('{unknown}');
+        expect(svgOutput).not.toContain('{part}');
+        expect(svgOutput).not.toContain('{local_tag}');
+    });
+
+    test.each([
+        ['no separator row', '"\n| A | B |\n"', /separator/],
+        ['too many cells', '"\n| A | B |\n|---|---|\n| 1 | 2 | 3 |\n"', /Too many cells/],
+        ['non-string argument', '5', /single string argument/],
+    ])('graphic table: malformed markdown (%s) throws', async (_name, arg, pattern) => {
+        const script = `def mk():
+    return create graphic (params):
+        table: 0, 50, col_widths=[200, 200]
+            markdown: ${arg}
+
+c = mk()
+at c pin 1
+wire left 100
+`;
+        const message = await runScriptExpectError(script);
+        expect(message).toMatch(pattern);
     });
 
     test('place_default marks only non-net parts as unplaced', async () => {

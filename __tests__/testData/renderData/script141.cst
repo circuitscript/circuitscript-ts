@@ -1,0 +1,30 @@
+# Graphic table: markdown cells expand {name} from graphic params.
+
+top_tag = "TP_top"
+
+def mk_tpl(value):
+    local_tag = "TP_loc"
+    local_num = 5
+    local_val = 10k
+    local_list = [1, 2]
+    shared = "LOC_shared"
+    return create graphic (params):
+        params:
+            part: value
+            note: "TP_a|b"
+            shared: "PAR_shared"
+        table: 0, 50, col_widths=[400, 400], row_height=100, padding=20, \
+                font_size=40
+            markdown: "
+                | Part | Note |
+                |---|---|
+                | TP_{part} | {note} |
+                | {local_tag} | {local_num} |
+                | {top_tag} | {local_val} |
+                | {shared} | {local_list} |
+                | {unknown} | |
+"
+
+c_tp = mk_tpl("10k")
+at c_tp pin 1
+wire left 100

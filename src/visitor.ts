@@ -80,6 +80,7 @@ import {
     NumericValue} from './objects/NumericValue.js';
 import { ParamDefinition } from "./objects/ParamDefinition.js";
 import { numeric } from "./objects/NumericValue.js";
+import { resolveValuesInTemplateWith } from "./objects/paramTemplate.js";
 import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { AllPinTypes, normalizePinType, PinTypes, resolvePinType } from './objects/PinTypes.js';
 import { ExecutionScope, FrameAction, PropertyTreeKey, SequenceAction, SequenceItem } from './objects/ExecutionScope.js';
@@ -107,6 +108,7 @@ import { applyPartConditions, ConditionNode, extractPartConditions, flattenCondi
 import { NodeScriptEnvironment } from './environment/environment.js';
 import { NetClass } from './objects/NetClass.js';
 import { ComponentBehavior } from './behavior.js';
+import { MarkdownAlign, MarkdownTable, parseMarkdownTable } from './markdownTable.js';
 import { Scenario, formatScenarioResults } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
 
@@ -746,6 +748,10 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
+    // Params of the graphic currently being evaluated, used to expand
+    // {name} templates in markdown tables.
+    private graphicParams: Record<string, unknown> | undefined = undefined;
+
     visitCreateGraphicExpr = (ctx: CreateGraphicExprContext): void => {
         const ctxId = ctx.ID();
         const paramIds = [];
@@ -772,6 +778,7 @@ export class ParserVisitor extends BaseVisitor {
                 });
 
                 executor.scope.setVariable(paramIds[0], obj);
+                this.graphicParams = obj;
             }
 
             // Set to execution stack for running the callbacks, do not
@@ -783,6 +790,7 @@ export class ParserVisitor extends BaseVisitor {
             this.setResult(graphicsExpressionsCtx, {dataKeysOnly: dataKeysOnly});
 
             const commands = this.visitResult(graphicsExpressionsCtx);
+            this.graphicParams = undefined;
 
             // Restore the stack
             this.executionStack.splice(0);
@@ -1064,15 +1072,78 @@ export class ParserVisitor extends BaseVisitor {
             tableTextStyle.set('vanchor', 'center');
         }
 
-        const rowCommands = this.visitResult(
+        const rawCommands = this.visitResult(
             ctx.graphic_expressions_block()) as GraphicExprCommand[];
 
-        rowCommands.forEach(([name,,, item]) => {
-            if (name !== 'row' && name !== 'header') {
+        rawCommands.forEach(([name,,, item]) => {
+            if (name !== 'row' && name !== 'header' && name !== 'markdown') {
                 this.throwWithContext(item ?? ctx,
-                    "Only `row` and `header` are allowed inside a table");
+                    "Only `row`, `header` and `markdown` are allowed inside a table");
             }
         });
+
+        // Expand markdown commands into header and row commands
+        const columnAlign = new Map<GraphicExprCommand, MarkdownAlign[]>();
+        const expanded: GraphicExprCommand[] = [];
+        rawCommands.forEach(command => {
+            const [name, cells, kwargs, item] = command;
+            if (name !== 'markdown') {
+                expanded.push(command);
+                return;
+            }
+
+            if (cells.length !== 1 || typeof cells[0] !== 'string') {
+                this.throwWithContext(item ?? ctx,
+                    "`markdown` takes a single string argument");
+            }
+            kwargs.forEach((_value, key) => {
+                if (!textStyleKeys.includes(key)) {
+                    this.throwWithContext(item ?? ctx,
+                        `Unknown markdown parameter: ${key}`);
+                }
+            });
+
+            let parsed: MarkdownTable;
+            try {
+                parsed = parseMarkdownTable(cells[0] as string);
+            } catch (error) {
+                this.throwWithContext(item ?? ctx, (error as Error).message);
+                throw error;
+            }
+
+            // Expand {name} using graphic params, then local variables, after
+            // splitting so that a value containing '|' cannot change the
+            // column layout.
+            const params = this.graphicParams;
+            const executor = this.getExecutor();
+            const lookup = (name: string): unknown => {
+                if (params && Object.prototype.hasOwnProperty.call(params, name)) {
+                    return params[name];
+                }
+                const reference = executor.resolveVariable(this.executionStack, name);
+                const value = reference.found ? reference.value : undefined;
+                const isPlain = typeof value === 'string'
+                    || typeof value === 'number'
+                    || typeof value === 'boolean'
+                    || value instanceof NumericValue;
+                return isPlain ? value : undefined;
+            };
+            const expand = (cell: string): string =>
+                resolveValuesInTemplateWith(lookup, cell);
+            parsed.header = parsed.header.map(expand);
+            parsed.rows = parsed.rows.map(row => row.map(expand));
+
+            const headerCommand: GraphicExprCommand =
+                ['header', parsed.header, kwargs, item];
+            columnAlign.set(headerCommand, parsed.align);
+            expanded.push(headerCommand);
+            parsed.rows.forEach(row => {
+                const rowCommand: GraphicExprCommand = ['row', row, kwargs, item];
+                columnAlign.set(rowCommand, parsed.align);
+                expanded.push(rowCommand);
+            });
+        });
+        const rowCommands = expanded;
 
         // Column left edges
         const colX: NumericValue[] = [];
@@ -1105,7 +1176,9 @@ export class ParserVisitor extends BaseVisitor {
             return String(value);
         };
 
-        rowCommands.forEach(([name, cells, rowKwargs, item], rowIndex) => {
+        rowCommands.forEach((command, rowIndex) => {
+            const [name, cells, rowKwargs, item] = command;
+            const rowAlign = columnAlign.get(command);
             rowKwargs.forEach((_value, key) => {
                 if (!textStyleKeys.includes(key)) {
                     this.throwWithContext(item ?? ctx,
@@ -1125,7 +1198,6 @@ export class ParserVisitor extends BaseVisitor {
             }
             rowKwargs.forEach((value, key) => style.set(key, value));
 
-            const anchor = style.get('anchor');
             const rowMiddle = tableY.add(rowHeight.mul(rowIndex)).add(rowHeight.half());
 
             cells.forEach((cell, colIndex) => {
@@ -1134,10 +1206,14 @@ export class ParserVisitor extends BaseVisitor {
                     return;
                 }
 
+                const cellAnchor = rowKwargs.has('anchor') ?
+                    style.get('anchor') :
+                    (rowAlign?.[colIndex] ?? style.get('anchor'));
+
                 let cellX: NumericValue;
-                if (anchor === 'center') {
+                if (cellAnchor === 'center') {
                     cellX = colX[colIndex].add(widths[colIndex].half());
-                } else if (anchor === 'right') {
+                } else if (cellAnchor === 'right') {
                     cellX = colX[colIndex].add(widths[colIndex]).sub(padding);
                 } else {
                     cellX = colX[colIndex].add(padding);
@@ -1145,6 +1221,7 @@ export class ParserVisitor extends BaseVisitor {
 
                 const kw = new Map<string, PropertyValue>(style);
                 kw.set('content', content);
+                kw.set('anchor', cellAnchor);
                 kw.set('offset', [cellX, rowMiddle]);
                 lowered.push([PlaceHolderCommands.text, [], kw, item]);
             });

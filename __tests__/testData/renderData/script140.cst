@@ -1,0 +1,32 @@
+# Graphic table: markdown command.
+
+def mk_md():
+    return create graphic (params):
+        table: 0, 50, col_widths=[400, 200, 200], row_height=100, padding=20, \
+                font_size=40
+            markdown: "
+                | MD_Ref | MD_Value | MD_Qty |
+                |:--- |:---:| ---:|
+                | MD_R1 | MD_10k | MD_2 |
+                | MD_R2 | | MD_3 |
+"
+
+def mk_mixed():
+    return create graphic (params):
+        table: 0, 50, col_widths=[400, 200, 200], row_height=100, padding=20, \
+                font_size=40
+            header: "MX_Ref", "MX_Value", "MX_Qty"
+            row: "MX_R1", "MX_10k", "MX_2"
+            markdown: "
+                | MX_Name | MX_Pipe | MX_Right
+                |:--- |:---:| ---:|
+                | MX_A | MX_a\|b | MX_z
+"
+
+c_md = mk_md()
+at c_md pin 1
+wire left 100
+
+c_mx = mk_mixed()
+at c_mx pin 1
+wire left 100

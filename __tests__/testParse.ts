@@ -9,6 +9,9 @@ import { expectInlineScriptTest, findItem, findItemByRefDes, getTestEnvironment,
 import { FrameType, RefdesMode } from '../src/globals.js';
 import { renderScript } from '../src/pipeline.js';
 import { readFileSync } from 'fs';
+import { parseMarkdownTable } from '../src/markdownTable.js';
+import { resolveValuesInTemplateWith } from '../src/objects/paramTemplate.js';
+import { numeric } from '../src/objects/NumericValue.js';
 import {
     inlineScript17, inlineScript18, inlineScript19,
     inlineScript20, inlineScript21, inlineScript22, inlineScript23, inlineScript24, inlineScript25, inlineScript26,
@@ -1323,7 +1326,7 @@ at c pin 1
     test('non row/header command inside a table is an error', async () => {
         const message = await runScriptExpectError(wrap(
             'table: 0, 0, col_widths=[100]\n    label: "a", 0, 0'));
-        expect(message).toContain('Only `row` and `header` are allowed inside a table');
+        expect(message).toContain('Only `row`, `header` and `markdown` are allowed inside a table');
     });
 
     test('missing col_widths is an error', async () => {
@@ -1358,6 +1361,78 @@ table = 1
 x = table + 1
 `);
         expect(hasError).toEqual(false);
+    });
+});
+
+describe('parseMarkdownTable', () => {
+    test('valid table', () => {
+        const result = parseMarkdownTable('\n| A | B |\n|---|---|\n| 1 | 2 |\n');
+        expect(result.header).toEqual(['A', 'B']);
+        expect(result.rows).toEqual([['1', '2']]);
+    });
+
+    test('alignment mapping', () => {
+        const result = parseMarkdownTable('|a|b|c|d|\n|:--|:-:|--:|---|');
+        expect(result.align).toEqual(['left', 'center', 'right', undefined]);
+    });
+
+    test('missing separator throws', () => {
+        expect(() => parseMarkdownTable('| A | B |')).toThrow(/separator/);
+    });
+
+    test('bad separator cell throws with line number', () => {
+        expect(() => parseMarkdownTable('| A | B |\n|---|abc|')).toThrow(/line 2/);
+    });
+
+    test('extra cells throws', () => {
+        expect(() => parseMarkdownTable('| A |\n|---|\n| 1 | 2 |')).toThrow(/line 3/);
+    });
+
+    test('short row is padded', () => {
+        const result = parseMarkdownTable('| A | B | C |\n|---|---|---|\n| 1 |');
+        expect(result.rows).toEqual([['1', '', '']]);
+    });
+
+    test('escaped pipe', () => {
+        const result = parseMarkdownTable('| A |\n|---|\n| x\\|y |');
+        expect(result.rows).toEqual([['x|y']]);
+    });
+
+    test('no trailing pipe', () => {
+        const result = parseMarkdownTable('| A | B\n|---|---\n| 1 | 2');
+        expect(result.header).toEqual(['A', 'B']);
+        expect(result.rows).toEqual([['1', '2']]);
+    });
+
+    test('no outer pipes', () => {
+        const result = parseMarkdownTable('A | B\n:-- | --:\n1 | 2');
+        expect(result.header).toEqual(['A', 'B']);
+        expect(result.align).toEqual(['left', 'right']);
+        expect(result.rows).toEqual([['1', '2']]);
+    });
+
+    test('header and separator need a pipe', () => {
+        expect(() => parseMarkdownTable('A\n---')).toThrow(/line 1/);
+    });
+});
+
+describe('resolveValuesInTemplateWith', () => {
+    const values: Record<string, unknown> = {
+        a: 'Hello', n: 5, flag: true, num: numeric('10k')
+    };
+    const lookup = (name: string) => values[name];
+
+    test.each([
+        ['string value', '{a} world', 'Hello world'],
+        ['number and boolean', '{n}/{flag}', '5/true'],
+        ['numeric value uses display string', 'R={num}', 'R=10k'],
+        ['several names in one string', '{a}-{n}-{a}', 'Hello-5-Hello'],
+        ['unknown name is left as written', '{missing} {a}', '{missing} Hello'],
+        ['non-identifier content is left as written', '{a + n}', '{a + n}'],
+        ['no placeholders', 'plain text', 'plain text'],
+        ['unmatched brace', '{a', '{a'],
+    ])('%s', (_name, template, expected) => {
+        expect(resolveValuesInTemplateWith(lookup, template)).toEqual(expected);
     });
 });
 
