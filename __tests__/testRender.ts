@@ -177,6 +177,8 @@ describe('Render tests', () => {
         ['script135.cst', 'Colliding generated child scope nets are renamed'],
         ['script136.cst', 'wire auto-orientation keeps the connected pin on the wire with user flips'],
         ['script130.cst', 'Graphic table: command'],
+        ['script138.cst', 'bare graphic with subtype no_connect, reused twice'],
+        ['script139.cst', 'bare graphic with subtype text'],
 
         ['script131.cst', 'place_default frame param: unplaced parts, nets and ground still drawn']
 

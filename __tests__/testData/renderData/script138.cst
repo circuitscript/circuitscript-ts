@@ -1,0 +1,15 @@
+# Bare graphic with subtype "no_connect"
+
+from "std" import *
+
+g = create graphic:
+    subtype: "no_connect"
+    path: "M", -20, -20, "L", 20, 20
+    path: "M", -20, 20, "L", 20, -20
+
+R1 = res(10k)
+
+at R1 pin 1
+wire right 100
+add g
+add g

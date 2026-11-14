@@ -22,7 +22,7 @@ import { Feature, Geometry, GeometryProp, HorizontalAlign, HorizontalAlignProp, 
 import { Logger } from "../logger.js";
 import { PinTypes } from "../objects/PinTypes.js";
 import { RuntimeExecutionError, throwWithContext } from "../errors.js";
-import { DeclaredReference, UndeclaredReference } from "../objects/types.js";
+import { DeclaredReference, ParamMap, UndeclaredReference } from "../objects/types.js";
 import { ParserRuleContext } from "antlr4ng";
 import { NumericValue, numeric, roundValue } from "../objects/NumericValue.js";
 import { PinId } from "../objects/PinDefinition.js";
@@ -993,6 +993,12 @@ export class SymbolPlaceholder extends SymbolGraphic {
                         drawing.addSetUnits(...positionParams);
                         break;
                     }
+
+                    case PlaceHolderCommands.subtype:
+                    case PlaceHolderCommands.params: {
+                        // Consumed by the visitor when a graphic is converted to a component
+                        break;
+                    }
                 }
             } catch (err){
                 throwWithContext(ctx, "Error while parsing graphic expressions: " + err);
@@ -1311,6 +1317,8 @@ export enum PlaceHolderCommands {
     text = 'text',
 
     units = 'units',
+    subtype = 'subtype',
+    params = 'params',
 
     for = 'for',
     if = 'if',
@@ -2349,10 +2357,12 @@ export class SymbolDrawingCommands extends SymbolDrawing {
                                 // graphic commands
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- variable values are untyped script values (see SymbolDrawing.variables)
-    callback: (variables: Map<string, any>) => GraphicExprCommand[];
+    callback: (variables: Map<string, any>, dataKeys: boolean) => GraphicExprCommand[];
+
+    postCallback: null | ((commands: GraphicExprCommand[], variables: Map<string, any>) => GraphicExprCommand[]) = null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- variable values are untyped script values (see SymbolDrawing.variables)
-    constructor(callback: (variables: Map<string, any>) => GraphicExprCommand[]){
+    constructor(callback: (variables: Map<string, any>, dataKeys:boolean) => GraphicExprCommand[]){
         super();
         this.callback = callback;
 
@@ -2360,13 +2370,59 @@ export class SymbolDrawingCommands extends SymbolDrawing {
         this.id = Math.random().toString().slice(2);
     }
 
-    runCommands(): void {
-        this.commands = this.callback(this.variables);
+    private runCommands(dataKeysOnly: boolean): void {
+        this.commands = this.callback(this.variables, dataKeysOnly);
+
+        if (this.postCallback !== null) {
+            this.commands = this.postCallback(this.commands, this.variables);
+        }
     }
 
-    getCommands(): GraphicExprCommand[] {
-        this.runCommands();
+    // If dataKeysOnly is true, only data related graphic exprs are parsed (i.e.
+    // subtype, params, etc.)
+    getCommands(dataKeysOnly = false): GraphicExprCommand[] {
+        this.runCommands(dataKeysOnly);
         return this.commands;
+    }
+
+    /** Returns the value of the last `subtype` command, or null if none is set. */
+    getGraphicSubtype(): string | null {
+        const result = this.getGraphicCommandValue(PlaceHolderCommands.subtype);
+        if (result !== null) {
+            const value = result[1][0];
+            if (typeof value !== 'string') {
+                throw new RuntimeExecutionError(
+                    "Graphic subtype must be a string");
+            }
+            return value;
+        }
+
+        return null;
+    }
+
+    getGraphicParamsCommand(): ParamMap | null {
+        const result = this.getGraphicCommandValue(PlaceHolderCommands.params);
+        if (result !== null) {
+            const value = result[2];
+            if (value instanceof Map) {
+                return value;
+            }
+
+            throw new RuntimeExecutionError(
+                "Graphic params not properly defined");
+        }
+
+        return result;
+    }
+
+    getGraphicCommandValue(key: string): GraphicExprCommand | null {
+        let result: GraphicExprCommand | null = null;
+        for (const item of this.getCommands(true)) {
+            if (item[0] === key) {
+                result = item;
+            }
+        }
+        return result;
     }
 
     clone(): SymbolDrawingCommands {

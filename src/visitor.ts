@@ -400,11 +400,7 @@ export class ParserVisitor extends BaseVisitor {
 
         const subtype = properties.get('subtype') ?? null;
         if (subtype !== null && typeof typeProp === 'string') {
-            const valid = ValidSubtypes[typeProp];
-            if (valid && !valid.includes(subtype as string)) {
-                this.throwWithContext(ctx,
-                    `Invalid ${typeProp} subtype '${subtype}'. Valid: ${valid.join(', ')}`);
-            }
+            this.validateSubtype(ctx, typeProp, subtype as string);
         }
 
         const props = {
@@ -443,6 +439,15 @@ export class ParserVisitor extends BaseVisitor {
 
         } catch (error) {
             this.throwWithContext(ctx, (error as BaseError).message)
+        }
+    }
+
+    private validateSubtype(ctx: ParserRuleContext, typeProp: string,
+        subtype: string): void {
+        const valid = ValidSubtypes[typeProp];
+        if (valid && !valid.includes(subtype)) {
+            this.throwWithContext(ctx,
+                `Invalid ${typeProp} subtype '${subtype}'. Valid: ${valid.join(', ')}`);
         }
     }
 
@@ -758,7 +763,7 @@ export class ParserVisitor extends BaseVisitor {
         // Save stack structure to reference the variables
         const stack = [...this.executionStack];
 
-        const drawing = new SymbolDrawingCommands(variables => {
+        const drawing = new SymbolDrawingCommands((variables, dataKeysOnly) => {
             if (variables && paramIds.length > 0) {
                 // Evaluate into an object
                 const obj = {};
@@ -775,6 +780,8 @@ export class ParserVisitor extends BaseVisitor {
             this.executionStack.push(...stack);
 
             const graphicsExpressionsCtx = ctx.graphic_expressions_block();
+            this.setResult(graphicsExpressionsCtx, {dataKeysOnly: dataKeysOnly});
+
             const commands = this.visitResult(graphicsExpressionsCtx);
 
             // Restore the stack
@@ -791,11 +798,31 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     visitGraphic_expressions_block = (ctx: Graphic_expressions_blockContext): void => {
+        const ctxParams = this.getResult(ctx) ?? {};
+        const { dataKeysOnly = false } = ctxParams;
+
         const commands = ctx.graphic_expr().reduce((accum, item) => {
             try {
+                let parseExpression = false;
+
+                // Only parse the key with the 'params' name
+                if (dataKeysOnly) {
+                    parseExpression = item._command
+                        && (
+                            item._command.text === PlaceHolderCommands.params
+                            || item._command.text === PlaceHolderCommands.subtype)
+
+                } else {
+                    parseExpression = true;
+                }
+
+                if (!parseExpression) {
+                    return accum;
+                }
+
                 const [commandName, parameters] =
                     this.visitResult(item) as [string, CallableParameter[]];
-                    
+
                 if (commandName === PlaceHolderCommands.for || commandName === PlaceHolderCommands.if
                     || commandName === PlaceHolderCommands.table) {
                     accum = accum.concat(parameters);
@@ -1765,6 +1792,67 @@ export class ParserVisitor extends BaseVisitor {
         } else {
             if (dataResult instanceof ClassComponent) {
                 pinValue = (dataResult as ClassComponent).getDefaultPin();
+            } else if (dataResult instanceof SymbolDrawingCommands) {
+
+                const executor = this.getExecutor();
+                if (executor.graphicsComponentMap.has(dataResult)) {
+                    dataResult = executor.graphicsComponentMap.get(dataResult);
+                } else {
+                    // Convert this into a component
+                    const graphicComponentId = `${Delimiter1}graphic.${executor.tmpGraphicsId}`;
+                    executor.tmpGraphicsId++;
+
+                    const graphicComponent = ClassComponent.simple(graphicComponentId, 1);
+                    graphicComponent.typeProp = ComponentTypes.graphic;
+                    graphicComponent.copyProp = false;
+                    graphicComponent.addDefaultUnit(dataResult);
+
+                    const graphicSubtype = dataResult.getGraphicSubtype();
+                    if (graphicSubtype !== null) {
+                        this.validateSubtype(componentCtx, ComponentTypes.graphic,
+                            graphicSubtype);
+                        graphicComponent.subtype = graphicSubtype;
+                    }
+
+                    const graphicParamsObject = dataResult.getGraphicParamsCommand();
+                    if (graphicParamsObject !== null){
+                        graphicComponent.parameters = graphicParamsObject;
+                    }
+
+                    if (graphicComponent.parameters.has(ParamKeys.FollowWireOrientation)) {
+                        graphicComponent.units[0].followWireOrientationProp =
+                            (graphicComponent.parameters.get(ParamKeys.FollowWireOrientation) ?? true) as boolean;
+                    }
+
+                    // Graphic components need at least one pin, so insert this
+                    // at the start if no other pin is defined.
+                    dataResult.postCallback = (commands, variables) => {
+                        const hasPin = commands.find(item => item[0] === PlaceHolderCommands.pin);
+
+                        if (hasPin) {
+                            return commands;
+                        } else {
+                            return [
+                                [PlaceHolderCommands.pin,
+                                [
+                                    numeric(1), "1", "unspecified",
+                                    numeric(0), numeric(0), numeric(0), numeric(0)
+                                ],
+                                new Map([["pin_only", true]]), null
+                                ],
+                                ...commands
+                            ];
+                        }
+                    }
+
+                    this.getScope().instances.set(graphicComponentId, graphicComponent);
+
+                    executor.graphicsComponentMap.set(dataResult, graphicComponent);
+                    dataResult = graphicComponent;
+                }
+
+                pinValue = dataResult.getDefaultPin();
+
             } else {
                 const undeclaredRef = (dataResult as UndeclaredReference);
                 this.throwWithContext(

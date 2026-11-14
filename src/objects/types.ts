@@ -408,3 +408,6 @@ export type ComponentUnitDefinition = {
 export type DocumentVariable = {
     bom: BomConfig;
 } & Partial<Record<FrameParamKeys, ValueType | ClassComponent>>;
+
+export type ParamValue = number | string | boolean | NumericValue | Net;
+export type ParamMap = Map<string, ParamValue>;

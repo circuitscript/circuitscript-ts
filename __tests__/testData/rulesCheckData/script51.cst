@@ -1,0 +1,13 @@
+from "std" import *
+
+ncg = create graphic:
+    subtype: "no_connect"
+    path: "M", -20, -20, "L", 20, 20
+
+recv = create component:
+    pins:
+        1: "1", "input"
+
+at recv:
+    1:
+        add ncg

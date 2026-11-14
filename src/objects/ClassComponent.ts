@@ -17,6 +17,7 @@ import { NumericValue } from './NumericValue.js';
 import { ComponentTypes, DefaultComponentUnit, GraphicSubtypes, NetSubtypes, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from "../errors.js";
 import { comparePinIds } from '../helpers.js';
+import { ParamMap, ParamValue } from './types.js';
 
 export class ComponentUnit {
     parent: ClassComponent;
@@ -215,7 +216,7 @@ export class ClassComponent {
     /** Component parameters in a map. These parameters may be defined by
      * user code. These are defined in the `params` property in the
      * `create component` command. */
-    parameters: Map<string, number | string | boolean | NumericValue> = new Map();
+    parameters: ParamMap = new Map();
 
     /** Maps pin indexes to the pin definition */
     pins: Map<PinId, PinDefinition> = new Map();
@@ -437,7 +438,7 @@ export class ClassComponent {
         }
     }
 
-    setParam(key: string, value: number | string | boolean | NumericValue | Net): void {
+    setParam(key: string, value: ParamValue): void {
         this.parameters.set(key, value);
     }
 

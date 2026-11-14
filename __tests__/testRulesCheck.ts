@@ -69,6 +69,7 @@ describe('ERC rules', () => {
         ['pin tied only to a supply or label is unconnected', 'script48.cst'],
         ['no_connect clears pin tied only to a supply or label', 'script49.cst'],
         ['two physical pins on one labelled net are connected', 'script50.cst'],
+        ['bare graphic with no_connect subtype clears undriven input', 'script51.cst'],
     ])('ERC check - %s (%s)', async (title, scriptPath) => {
         const { ercResults } = await renderCommon(mainPath + scriptPath, { runErc: true });
         const simplified = extractSimpleERCResult(ercResults);

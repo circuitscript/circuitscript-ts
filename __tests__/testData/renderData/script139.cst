@@ -1,0 +1,16 @@
+# Bare graphic with subtype "text"
+
+from "std" import *
+
+g = create graphic:
+    subtype: "text"
+    text:
+        content: "note"
+        offset: 0, 0
+        font_size: 50
+
+vcc = supply("VCC")
+
+at vcc
+wire down 100
+add g

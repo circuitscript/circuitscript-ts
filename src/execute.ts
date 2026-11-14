@@ -70,6 +70,11 @@ export class ExecutionContext {
     scope: ExecutionScope;
 
     tmpPointId = 0;     // Counter for points created within the context
+    tmpGraphicsId = 0;  // Counter for graphic only components/objects
+
+    // Map graphic commands (SymbolDrawingCommands) to ClassComponent to ensure
+    // unique/single instances.
+    graphicsComponentMap: Map<SymbolDrawingCommands, ClassComponent> = new Map();
 
     /** Callback to determine how nets in parent execution contexts are resolved */
     resolveNet: (name: string, netNamespace:string) => ({

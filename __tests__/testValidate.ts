@@ -268,6 +268,15 @@ sheet "t" column:
         expect(undefinedSymbols).toEqual([]);
     });
 
+    describe('graphic subtype command', () => {
+        test('invalid subtype throws', async () => {
+            const msg = await runScriptExpectError(
+                'g = create graphic:\n    subtype: "bogus"\n    path: "M", 0, 0, "L", 10, 10\n\nc1 = create component:\n    pins: 1\n\nat c1 pin 1\nadd g\n'
+            );
+            expect(msg).toContain("Invalid graphic subtype 'bogus'. Valid: text, table, no_connect");
+        });
+    });
+
     describe('erc_net_bridge property validation', () => {
         test('non-boolean value throws a validation error', async () => {
             const msg = await runScriptExpectError(
