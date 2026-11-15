@@ -286,6 +286,8 @@ export class ClassComponent {
     // given an idea of the loop depth.
     placeHolderRefDes: string|null = null;
 
+    refdesCommentType: 'refdes' | 'placeholder' | null = null;
+
     // If true, then during the annotation output stage, this will 
     // force the refdes to be saved to the external file.
     forceSaveRefdesAnnotation = false;

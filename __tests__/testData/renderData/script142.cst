@@ -1,0 +1,15 @@
+# Handle placeholder refdes at incorrect position and show warning
+from "std" import *
+
+at v5 = supply("5V")
+wire down 100
+add res(10k) #= R33_
+
+wire down 100
+to gnd = dgnd()
+
+at v5
+wire down 100
+add res(10k) #= R10
+wire down 100
+to gnd

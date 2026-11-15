@@ -260,9 +260,10 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             //
             // If component already has refdes annotation in comment, then it
             // will have the refdes param set, so this part will be skipped.
-            if (!alreadyHaveRefdesAnnotation && (forceSaveRefdes || (!instance.hasParam('refdes') 
-                && instance.placeHolderRefDes === null 
-                && instance.assignedRefDes))) {
+            if (!alreadyHaveRefdesAnnotation 
+                && (forceSaveRefdes 
+                    || (instance.refdesCommentType === null
+                    && instance.assignedRefDes))) {
 
                 let useRefDes = instance.assignedRefDes;
 

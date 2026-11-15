@@ -179,6 +179,7 @@ describe('Render tests', () => {
         ['script130.cst', 'Graphic table: command'],
         ['script140.cst', 'Graphic table: markdown command'],
         ['script141.cst', 'Graphic table: markdown cells expand params templates'],
+        ['script142.cst', 'Handle placeholder refdes at incorrect position and show warning'],
         ['script138.cst', 'bare graphic with subtype no_connect, reused twice'],
         ['script139.cst', 'bare graphic with subtype text'],
 
@@ -654,6 +655,18 @@ wire left 100
         expect(hasError).toEqual(false);
         expect(visitor.getWarnings().map(warning => warning.message)).toContainEqual(
             expect.stringContaining('Unknown frame property "..place_defualt"'));
+    });
+
+    test('placeholder refdes at a non-creation position warns to use a normal refdes', async () => {
+        const scriptPath = mainPath + 'script142.cst';
+        const { hasError, visitor } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+        expect(visitor.getWarnings().map(warning => warning.message)).toContainEqual(
+            expect.stringContaining("Placeholder refdes 'R33_'"));
+        expect(visitor.getWarnings().map(warning => warning.message)).toContainEqual(
+            expect.stringContaining("Change it to 'R33'"));
     });
 
     test('generated net rename throws when the attempt limit is exhausted', async () => {

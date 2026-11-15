@@ -605,11 +605,35 @@ describe('Refdes annotation: empty frame', () => {
     });
 });
 
-const LOOP_USE = `import "lib1"\nR1 = lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        at R1 pin 1\n`;
-const SAME_LOOP = `import "lib1"\nfor i in range(0, 3):\n    branch:\n        R1 = lib1.my_resistor()\n        at R1 pin 1\n`;
+const LOOP_USE = `
+import "lib1"
+R1 = lib1.my_resistor()
+for i in range(0, 3):
+    branch:
+        at R1 pin 1`;
+        
+const SAME_LOOP = `
+import "lib1"
+for i in range(0, 3):
+    branch:
+        R1 = lib1.my_resistor()
+        at R1 pin 1
+`;
 
-const ASSIGN_IN_LOOP_USE_AFTER = `import "lib1"\nfor i in range(0, 3):\n    R1 = lib1.my_resistor()\nat R1 pin 1\n`;
-const ASSIGN_IN_LOOP_USE_OTHER_LOOP = `import "lib1"\nfor i in range(0, 2):\n    R1 = lib1.my_resistor()\nfor j in range(0, 2):\n    at R1 pin 1\n`;
+const ASSIGN_IN_LOOP_USE_AFTER = `
+import "lib1"
+for i in range(0, 3):
+    R1 = lib1.my_resistor()
+at R1 pin 1
+`;
+
+const ASSIGN_IN_LOOP_USE_OTHER_LOOP = `
+import "lib1"
+for i in range(0, 2):
+    R1 = lib1.my_resistor()
+for j in range(0, 2):
+    at R1 pin 1
+`;
 
 const refdesList = (v: ParserVisitor) =>
     [...v.dumpInstances().values()].map(i => i.assignedRefDes).filter(r => r !== null);
@@ -727,6 +751,33 @@ add lib1.my_resistor()
         expect(output).toMatch(/^at tmp pin 1 #= R1$/m);
         expect(output).toMatch(/^add tmp #= R2$/m);
         expect(output).toMatch(/^add lib1\.my_resistor\(\) #= R3$/m);
+    });
+});
+
+const PLACEHOLDER_OUTSIDE_LOOP = `import "lib1"\nR1 = lib1.my_resistor()\nat R1 pin 1 #= R5_\n`;
+
+describe('Refdes annotation: placeholder refdes outside a loop', () => {
+    test('is treated as a normal refdes and a warning is raised', async () => {
+        const { visitor } = await annotate(PLACEHOLDER_OUTSIDE_LOOP);
+        expect(refdesList(visitor)).toEqual(['R5']);
+        expect(visitor.getWarnings().map(w => w.message)).toContainEqual(
+            expect.stringContaining("Placeholder refdes 'R5_' should be a normal refdes. Change it to 'R5'"));
+    });
+
+    // The existing comment is not rewritten; the warning prompts the user
+    // to make the change.
+    test('existing comment is left unchanged in the output', async () => {
+        const { output } = await annotate(PLACEHOLDER_OUTSIDE_LOOP);
+        expect(output).toEqual(PLACEHOLDER_OUTSIDE_LOOP);
+    });
+
+    test('no warning once changed to a normal refdes', async () => {
+        const fixed = PLACEHOLDER_OUTSIDE_LOOP.replace('R5_', 'R5');
+        const { visitor, output } = await annotate(fixed);
+        expect(refdesList(visitor)).toEqual(['R5']);
+        expect(output).toEqual(fixed);
+        expect(visitor.getWarnings().map(w => w.message)).not.toContainEqual(
+            expect.stringContaining('Placeholder refdes'));
     });
 });
 

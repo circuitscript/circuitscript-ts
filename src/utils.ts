@@ -265,7 +265,7 @@ export function printWarnings(warnings: ExecutionWarning[]): void {
             parts.push(linePosition);
         }
 
-        const finalMessage = parts.join('');
+        const finalMessage = parts.join(' ');
         if (warningMessages.indexOf(finalMessage) === -1) {
             warningMessages.push(finalMessage);
         }

@@ -253,6 +253,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
         }
     }
 
+    const warningCountBeforeAnnotate = visitor.getWarnings().length;
     try {
         visitor.annotateComponents(options.simplifyRefdes ?? true,
             options.refdesMode ?? (options.indexedRefdes === false ? RefdesMode.Flat : undefined));
@@ -260,6 +261,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     } catch (err) {
         throw new RenderError(`Error during component annotation: ${err}`, 'annotation');
     }
+    printWarnings(visitor.getWarnings().slice(warningCountBeforeAnnotate));
 
     const componentLinks = visitor.getComponentCtxLinks();
     const importedLibraries = Array.from(visitor.getScope().libraries.values());

@@ -2870,14 +2870,17 @@ export class ParserVisitor extends BaseVisitor {
         forceSave = false,
         component: ClassComponent): void {
 
+        component.refdesCommentType = null;
         if (component !== null) {
             if (refdesValue.indexOf('_') === -1) {
                 // Normal refdes, not a placeholder refdes
                 component.setParam('refdes', refdesValue);
+                component.refdesCommentType = 'refdes';
             } else {
                 // Store the placeholder refdes. In the annotation stage, this
                 // will be used.
                 component.placeHolderRefDes = refdesValue;
+                component.refdesCommentType = 'placeholder';
             }
             component.forceSaveRefdesAnnotation = forceSave;
         }
@@ -3428,19 +3431,37 @@ export class ParserVisitor extends BaseVisitor {
             }
 
             if (instance.assignedRefDes === null) {
+
+                /** If instance has a placeholder reference but is not used
+                 * in an indexed way, then use the placeholder refdes as a
+                 * normal refdes. */
+                const firstCtx = instance.getFirstCtxReference();
+                if (firstCtx && firstCtx.indexedStack.length === 0 && instance.placeHolderRefDes) {
+                    const normalRefDes = instance.placeHolderRefDes.replace('_', '');
+                    this.warnings.push({
+                        message: `Placeholder refdes '${instance.placeHolderRefDes}' should be a `
+                            + `normal refdes. Change it to '${normalRefDes}'`,
+                        ctx: firstCtx.ctx,
+                    });
+                    instance.assignedRefDes = normalRefDes;
+                    instance.placeHolderRefDes = null;
+                }
+
                 /** If component has a refdes parameter already defined, then
                  * use it for the final value as well. */
                 if (instance.hasParam('refdes')) {
                     const refdes = instance.getParam('refdes') as string;
-
                     if (refdes) {
                         instance.assignedRefDes = refdes;
-                        this.setComponentUnitRefdesSuffix(instance);
-                        
-                        annotater.trackRefDes(refdes, instance);
-                        this.log(refdes, '-', instance.instanceName);
-                        continue;
                     }
+                }
+
+                if (instance.assignedRefDes) {
+                    this.setComponentUnitRefdesSuffix(instance);
+
+                    annotater.trackRefDes(instance.assignedRefDes, instance);
+                    this.log(instance.assignedRefDes, '-', instance.instanceName);
+                    continue;
                 }
 
                 toAnnotate.push(instance);
