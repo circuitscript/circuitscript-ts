@@ -1,6 +1,39 @@
 # Changelog
 
-## [v0.12.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.0...v0.12.1)
+## [v0.12.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.1...v0.12.2)
+
+[86de126](https://github.com/circuitscript/circuitscript-ts/commit/86de1260c52ae9c672fc7cd7e7dd9c3801ee7dc0)Add markdown command for graphic tables
+- 
+- Parse markdown tables inside table: blocks into header and row commands,
+- with column alignment from the separator row. Expand {name} templates in
+- cells from the graphic's params, falling back to scope locals.
+
+[6c0d19f](https://github.com/circuitscript/circuitscript-ts/commit/6c0d19f753952a0a27c57797cde57efddffba65b)Use first graph reference for component source locations
+- 
+- Replace ctxReferences[0] with getFirstCtxReference in the refdes
+- visitor, KiCad export, component metadata, tooltips and ERC so a
+- component assigned outside a loop and used inside one is treated as a
+- single instance. Add tests for annotation, getFirstCtxReference and
+- net dumping via the CLI and renderScriptCustom. Update affected render
+- SVG goldens.
+
+[2e77bc5](https://github.com/circuitscript/circuitscript-ts/commit/2e77bc5ca6171dffb35929562561dacda9c8425b)Use first graph-related ctx reference for refdes annotation
+- 
+- Add ClassComponent.getFirstCtxReference to skip assignment references
+- when choosing the replication point for refdes. Skip annotation of
+- copied components, move CtxReference to types.ts, replace
+- KeywordRefdesPrefix with ParamKeys.refdes_prefix, and print dumped nets
+- from the CLI instead of the pipeline. Update render test scripts and
+- golden outputs.
+
+[45867d0](https://github.com/circuitscript/circuitscript-ts/commit/45867d05af2200ab3b4546748dfc9a1fde38db0c)Treat placeholder refdes outside loops as normal refdes with a warning
+- 
+- A placeholder refdes (e.g. R5_) on a component not used in an indexed
+- context is assigned as a normal refdes and a warning suggests the
+- corrected name. Annotation warnings are now printed from the pipeline,
+- and refdes comment type is tracked to avoid rewriting existing comments.
+
+## [v0.12.1](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.0...v0.12.1) - 2026-11-14
 
 [be11868](https://github.com/circuitscript/circuitscript-ts/commit/be11868bdf89e420185e8b90b2ebfa45e4e45b4e)Extract graphic-to-component conversion and use bare graphics in std lib
 - 
