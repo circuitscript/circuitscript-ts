@@ -8,7 +8,8 @@
 import { TerminalNode, Token } from "antlr4ng";
 import { CircuitScriptLexer } from "../antlr/CircuitScriptLexer.js";
 import { Function_def_exprContext, CreateComponentExprContext,
-    CreateGraphicExprContext, Callable_exprContext, Property_key_exprContext,
+    CreateGraphicExprContext, NamespacedCallableContext, PlainCallableContext,
+    Call_trailerContext, Property_key_exprContext,
     Assignment_exprContext,
     Function_args_exprContext,
     GraphicCommandExprContext,
@@ -241,39 +242,58 @@ export class SemanticTokensVisitor extends BaseVisitor {
     }
 
     /**
+     * Visits a trailer and walks its parameters or index expression
+     */
+    private visitTrailerContents(trailer: TrailerContext | Call_trailerContext): void {
+        const ctxCall = trailer instanceof TrailerContext
+            ? trailer.call_trailer() : trailer;
+        if (ctxCall) {
+            const params = ctxCall.parameters();
+            if (params) {
+                this.visit(params);
+            }
+            return;
+        }
+
+        if (trailer instanceof TrailerContext) {
+            const ctxDataExpr = trailer.non_call_trailer()?.data_expr();
+            if (ctxDataExpr) {
+                this.visit(ctxDataExpr);
+            }
+        }
+    }
+
+    /**
      * Visits callable expressions and identifies:
      * - Variable declarations in assignments
      * - Function calls (callable with parameters)
      */
-    visitCallable_expr = (ctx: Callable_exprContext): void => {
+    visitPlainCallable = (ctx: PlainCallableContext): void => {
         const id = ctx.ID();
-        if (!id) return;
 
-        // Check if this is a variable declaration (left side of assignment)
+        // Left side of an assignment is a variable declaration
         if (ctx.parent instanceof Assignment_exprContext) {
             this.addSemanticToken(id, [], 'variable');
             return;
         }
 
-        // Check if this is a function call (has parentheses trailer)
         const trailers = ctx.trailer();
-        trailers.forEach((trailer, index) => {
-            if (trailer.LParen() && trailer.RParen()) {
-                if (index === 0) {
-                    this.addSemanticToken(id, [], 'function');
-                }
+        if (trailers.length > 0 && trailers[0]?.call_trailer()) {
+            this.addSemanticToken(id, [], 'function');
+        }
+        trailers.forEach(trailer => this.visitTrailerContents(trailer));
+    }
 
-                const params = trailer.parameters();
-                if (params) {
-                    this.visit(params);
-                }
-            } else {
-                const ctxDataExpr = trailer.data_expr();
-                if (ctxDataExpr) {
-                    this.visit(ctxDataExpr);
-                }
-            }
-        });
+    visitNamespacedCallable = (ctx: NamespacedCallableContext): void => {
+        const trailers = ctx.trailer();
+
+        // The call trailer applies to the ID directly when there are no
+        // other trailers in between.
+        if (trailers.length === 0) {
+            this.addSemanticToken(ctx.ID(), [], 'function');
+        }
+        trailers.forEach(trailer => this.visitTrailerContents(trailer));
+        this.visitTrailerContents(ctx.call_trailer());
     }
 
     /**

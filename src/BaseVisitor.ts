@@ -8,12 +8,14 @@
 import { Big } from 'big.js';
 
 import {
-    ArrayExprContext, Assignment_exprContext, Callable_exprContext,
+    ArrayExprContext, Assignment_exprContext, Call_trailerContext, 
     CallableExprContext, Data_expr_with_doubledotContext, Double_dot_property_set_exprContext, ExpressionContext, Flow_expressionsContext,
     Function_args_exprContext, Function_exprContext, Function_return_exprContext, Import_exprContext,
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext,
+    NamespacedCallableContext,
+    Non_call_trailerContext,
     Non_newline_expressionContext,
-    ParametersContext, RoundedBracketsExprContext, ScriptContext,
+    ParametersContext, PlainCallableContext, RoundedBracketsExprContext, ScriptContext,
     TrailerContext,
     Value_exprContext, 
     ValueExprContext} from "./antlr/CircuitScriptParser.js";
@@ -404,7 +406,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.passResult(ctx, ctx.callable_expr());
     }
 
-    visitCallable_expr = (ctx: Callable_exprContext): void => {
+    private CommonCallableExpr = (ctx: NamespacedCallableContext | PlainCallableContext, 
+        passedNetNamespace: null | string): void => {
+            
         const ctxParams = this.getResult(ctx);
 
         // If keepReference is true, then keep the reference that is returned
@@ -413,13 +417,6 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         const { keepReference = false } = ctxParams ?? {};
 
         const executor = this.getExecutor();
-
-        let passedNetNamespace = null;
-        const netNameSpaceExpr = ctx.net_namespace_expr();
-        if (netNameSpaceExpr) {
-            passedNetNamespace = this.visitResult(netNameSpaceExpr);
-        }
-
         const firstId = assertDefined(ctx.ID(0), "Missing identifier");
         const atomId = firstId.getText();
 
@@ -441,8 +438,25 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.log2('atom resolved: ' + ctx.getText() + ' -> ' + currentReference);
     }
 
+    visitNamespacedCallable = (ctx: NamespacedCallableContext): void => {
+        let passedNetNamespace = null;
+        const netNameSpaceExpr = ctx.net_namespace_expr();
+        if (netNameSpaceExpr) {
+            passedNetNamespace = this.visitResult(netNameSpaceExpr);
+        }
+
+        this.CommonCallableExpr(ctx, passedNetNamespace);
+    }
+
+    visitPlainCallable = (ctx: PlainCallableContext): void => {
+        this.CommonCallableExpr(ctx, null);
+    }
+
     protected resolveTrailersForReference(reference: AnyReference,
-        passedNetNamespace: string | null, ctx: Callable_exprContext | Double_dot_property_set_exprContext): AnyReference {
+        passedNetNamespace: string | null,
+        ctx: NamespacedCallableContext
+            | PlainCallableContext
+            | Double_dot_property_set_exprContext): AnyReference {
 
         if (reference !== undefined && reference.found) {
             ctx.trailer().forEach(ctxTrailer => {
@@ -452,9 +466,20 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                 });
                 reference = this.visitResult(ctxTrailer);
             });
+
+            if (ctx instanceof NamespacedCallableContext) {
+                const ctxTrailer = ctx.call_trailer();
+                this.setResult(ctxTrailer, {
+                    reference: reference,
+                    netNamespace: passedNetNamespace
+                });
+                reference = this.visitResult(ctxTrailer);
+            }
+
         } else {
             // Check if is a function call, then have to say it is undefined
-            if (ctx.trailer().length > 0 && ctx.trailer(0)?.LParen()) {
+            if (ctx.trailer().length > 0 
+                && ctx.trailer(0) instanceof Call_trailerContext) {
                 this.throwWithContext(ctx, `Function not found: ${ctx.getText()}`);
             }
         }
@@ -462,16 +487,22 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         return reference;
     }
 
-    visitTrailer = (ctx: TrailerContext): void => {
-        // There should be some reference already set
-        const { reference, netNamespace } = this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
+    visitCall_trailer = (ctx: Call_trailerContext): void => {
+        const { reference, netNamespace } = 
+            this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
+        const nextReference = this.handleFunctionCall(reference, netNamespace, ctx);
+        this.setResult(ctx, nextReference);
+    }
 
-        const ctxLParam = ctx.LParen();         // Function call access
-        const ctxID = ctx.ID();                 // Dot access expression
-        const ctxDataExpr = ctx.data_expr();    // Array access
+    visitNon_call_trailer = (ctx: Non_call_trailerContext): void => {
+        // There should be some reference already set
+        const { reference } = this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
 
         const useValue = reference.value;
         let nextReference!: AnyReference;
+
+        const ctxID = ctx.ID();                 // Dot access expression
+        const ctxDataExpr = ctx.data_expr();    // Array access
 
         if (ctxID) {
             // Extend the property in reference
@@ -507,23 +538,25 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                     rootValue: useValue
                 });
             }
+        }
+        this.setResult(ctx, nextReference);
+    }
 
-        } else if (ctxLParam) {
-            nextReference = this.handleFunctionCall(reference, netNamespace, ctx);
+    visitTrailer = (ctx: TrailerContext): void => {
+        // There should be some reference already set
+        const params = this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
 
-            // NOTE: Deliberately disabled. This branch runs for every function-call
-            // trailer, so updating lastObjectReference (the `..` target) here would
-            // point `..` at any function's return value (including non-objects like
-            // range()/toString() and nested sub-calls), breaking its "last drawn
-            // object" meaning. `..` is advanced only at real placements (setCurrent,
-            // component/net assignment, frame creation).
-            // let useResultValue;
-            // if (isReference(nextReference)) {
-            //     useResultValue = unwrapValue(nextReference);
-            // } else {
-            //     useResultValue = nextReference as any;
-            // }
-            // this.getScope().lastObjectReference = useResultValue;
+        const ctxCallTrailer = ctx.call_trailer();
+        const ctxNonCallTrailer = ctx.non_call_trailer();
+
+        let nextReference!: AnyReference;
+
+        if (ctxCallTrailer) {
+            this.setResult(ctxCallTrailer, params);
+            nextReference = this.visitResult(ctxCallTrailer);
+        } else if (ctxNonCallTrailer) {
+            this.setResult(ctxNonCallTrailer, params);
+            nextReference = this.visitResult(ctxNonCallTrailer);
         }
 
         this.setResult(ctx, nextReference);
@@ -735,7 +768,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
      * function. A reference is always returned.
      */
     private handleFunctionCall(currentReference: AnyReference, 
-        passedNetNamespace: string| null, ctx: TrailerContext): AnyReference {
+        passedNetNamespace: string| null, ctx: Call_trailerContext): AnyReference {
         
         const executor = this.getExecutor();
                 
@@ -1628,7 +1661,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         if (passedNetNamespace !== null && passedNetNamespace.length > 0) {
             // Either user specified '/' or '/_' to indicate the global
             // net namespace
-            if (passedNetNamespace === '/' || passedNetNamespace === '_') {
+            if (passedNetNamespace === '/') {
                 result = '';
             } else if (passedNetNamespace[0] === '+') {
                 if (executorNetNamespace === '/') {

@@ -43,7 +43,10 @@ import { Function_exprContext } from "./CircuitScriptParser.js";
 import { Function_args_exprContext } from "./CircuitScriptParser.js";
 import { Function_return_exprContext } from "./CircuitScriptParser.js";
 import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
-import { Callable_exprContext } from "./CircuitScriptParser.js";
+import { Call_trailerContext } from "./CircuitScriptParser.js";
+import { Non_call_trailerContext } from "./CircuitScriptParser.js";
+import { NamespacedCallableContext } from "./CircuitScriptParser.js";
+import { PlainCallableContext } from "./CircuitScriptParser.js";
 import { TrailerContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Properties_blockContext } from "./CircuitScriptParser.js";
@@ -350,11 +353,31 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitNet_namespace_expr?: (ctx: Net_namespace_exprContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.callable_expr`.
+     * Visit a parse tree produced by `CircuitScriptParser.call_trailer`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitCallable_expr?: (ctx: Callable_exprContext) => Result;
+    visitCall_trailer?: (ctx: Call_trailerContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.non_call_trailer`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitNon_call_trailer?: (ctx: Non_call_trailerContext) => Result;
+    /**
+     * Visit a parse tree produced by the `NamespacedCallable`
+     * labeled alternative in `CircuitScriptParser.callable_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitNamespacedCallable?: (ctx: NamespacedCallableContext) => Result;
+    /**
+     * Visit a parse tree produced by the `PlainCallable`
+     * labeled alternative in `CircuitScriptParser.callable_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPlainCallable?: (ctx: PlainCallableContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.trailer`.
      * @param ctx the parse tree

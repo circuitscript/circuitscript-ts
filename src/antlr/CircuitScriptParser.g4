@@ -129,11 +129,12 @@ function_return_expr: Return data_expr ;
 
 net_namespace_expr: Addition? Divide data_expr?;
 
-callable_expr: net_namespace_expr? ID trailer*;
-trailer: LParen parameters? RParen
-       | Dot ID
-       | LSquare data_expr RSquare
-       ;
+call_trailer: LParen parameters? RParen;
+non_call_trailer: Dot ID | LSquare data_expr RSquare;
+
+callable_expr: net_namespace_expr ID trailer* call_trailer	# NamespacedCallable
+	| ID trailer*					# PlainCallable;
+trailer: call_trailer | non_call_trailer;
 
 property_block_expr: property_key_expr Colon expressions_block;
 properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;
@@ -141,7 +142,7 @@ properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;
 graphic_expressions_block:
     NEWLINE INDENT (NEWLINE | graphic_expr)+ DEDENT;
 
-create_expr: CreateComponent Colon annotation_comment_expr? properties_block                                                     #CreateComponentExpr
+create_expr: CreateComponent Colon annotation_comment_expr? properties_block                            #CreateComponentExpr
            | CreateNetClass  Colon properties_block                                                     #CreateNetClassExpr
            | CreateBus       Colon properties_block                                                     #CreateBusExpr
            | CreateBehavior  Colon behavior_block                                                       #CreateBehaviorExpr
@@ -172,7 +173,7 @@ graphics_data_expressions_block:
 graphic_expr: For ID (Comma ID)* In data_expr Colon graphic_expressions_block                          # GraphicForExpr
               | If data_expr Colon graphic_expressions_block if_inner_graphic_expr* else_graphic_expr? # GraphicIfExpr
               | ID Colon graphics_data_expressions_block                                               # GraphicPreExpr
-              | ID Colon parameters graphic_expressions_block                                           # GraphicTableExpr
+              | ID Colon parameters graphic_expressions_block                                          # GraphicTableExpr
               | command=(ID | Pin) Colon (parameters | LParen parameters RParen | properties_block)    # GraphicCommandExpr
               ;
 

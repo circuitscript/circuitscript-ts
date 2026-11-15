@@ -19,8 +19,11 @@ import { Assignment_exprContext,
     TrailerContext,
     CreateBehaviorExprContext,
     Create_scenario_exprContext,
-    Callable_exprContext,
-    Frame_exprContext} from "../antlr/CircuitScriptParser.js";
+    NamespacedCallableContext,
+    PlainCallableContext,
+    Frame_exprContext,
+    Call_trailerContext,
+    Non_call_trailerContext} from "../antlr/CircuitScriptParser.js";
 
 import { builtInBehaviorFunctionsNamesList, builtInFunctionsNamesList, linkScenarioFunctions, unlinkScenarioFunctions } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
@@ -299,7 +302,11 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         this.visit(ctxDataExpr);
         const value = this.getResult(ctxDataExpr) as ComplexType;
         
-        const atomId = ctx.callable_expr().ID();
+        const ctxCallable = ctx.callable_expr();
+        if (!(ctxCallable instanceof PlainCallableContext)) {
+            return null;
+        }
+        const atomId = ctxCallable.ID();
         const atomText = atomId.getText();
         const executor = this.getExecutor();
 
@@ -320,36 +327,33 @@ export class SymbolValidatorVisitor extends BaseVisitor {
 
     /**
      * @brief Visits callable expressions (variable references and function calls)
-     * @param ctx CallableExpr context from data_expr labeled alternative
+     * @param ctx Callable expression context
      *
      * @details
-     * Handles both simple variable references (`f`) and function calls (`res(10k)`)
-     * since both parse as `callable_expr` in the grammar. Resolves the symbol
-     * and visits any call parameters for scope analysis.
+     * Resolves the leading identifier and visits the trailers (and the final
+     * call trailer of a namespaced call) for scope analysis.
      */
-    visitCallable_expr = (ctx: Callable_exprContext): void => {
-        const ctxID = ctx.ID();
+    private visitCallableCommon(ctx: NamespacedCallableContext | PlainCallableContext): void {
+        const tmpSymbol = this.handleAtomSymbol(ctx.ID());
+
+        ctx.trailer().forEach(trailer => this.visit(trailer));
+        if (ctx instanceof NamespacedCallableContext) {
+            this.visit(ctx.call_trailer());
+        }
+
+        this.setResult(ctx, tmpSymbol);
+    }
+
+    visitPlainCallable = (ctx: PlainCallableContext): void => {
         if (AllPinTypes.indexOf(ctx.getText()) !== -1 && ctx.trailer().length === 0) {
             // Ignore pin types constants.
             return;
-        } else {
-            const tmpSymbol = this.handleAtomSymbol(ctxID);
-            ctx.trailer().forEach(trailer => {
-                if (trailer.LParen() && trailer.RParen()) {
-                    const params = trailer.parameters();
-                    if (params) {
-                        this.visit(params);
-                    }
-                } else {
-                    const ctxDataExpr = trailer.data_expr();
-                    if (ctxDataExpr) {
-                        this.visit(ctxDataExpr);
-                    }
-                }
-            });
-
-            this.setResult(ctx, tmpSymbol);
         }
+        this.visitCallableCommon(ctx);
+    };
+
+    visitNamespacedCallable = (ctx: NamespacedCallableContext): void => {
+        this.visitCallableCommon(ctx);
     };
 
     /**
@@ -553,11 +557,26 @@ export class SymbolValidatorVisitor extends BaseVisitor {
     }
 
     visitTrailer = (ctx: TrailerContext): void => {
+        const ctxCallTrailer = ctx.call_trailer();
+        const ctxNonCallTrailer = ctx.non_call_trailer();
+
+        if (ctxCallTrailer) {
+            this.visit(ctxCallTrailer);
+        } else if (ctxNonCallTrailer) {
+            this.visit(ctxNonCallTrailer);
+        }
+    }
+
+    visitCall_trailer = (ctx: Call_trailerContext): void => {
         const ctxParameters = ctx.parameters();
-        const ctxDataExpr = ctx.data_expr();
-        if (ctxParameters) {
+        if (ctxParameters){
             this.visit(ctxParameters);
-        } else if (ctxDataExpr) {
+        }
+    }
+
+    visitNon_call_trailer = (ctx: Non_call_trailerContext):void => {
+        const ctxDataExpr = ctx.data_expr();
+        if (ctxDataExpr){
             this.visit(ctxDataExpr);
         }
     }
