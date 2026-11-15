@@ -19,7 +19,7 @@ import {
     defaultPageSpacingMM,
     fontDisplayScale} from '../globals.js';
 import { NumericValue, numeric, roundValue } from '../objects/NumericValue.js';
-import { BoundBox, combineMaps, getBoundsSize, sanitizeDomId, assertDefined } from '../utils.js';
+import { BoundBox, combineMaps, getBoundsSize, sanitizeDomId, assertDefined, netHighlightKey } from '../utils.js';
 import { milsToMM } from '../helpers.js';
 import { getPaperSize } from "./PaperSizes.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
@@ -443,7 +443,7 @@ function generateSVGChild(canvas: Svg | G,
         const { intersectPoints, net = null, lines = null } = tmpItem;
 
         // Not sheet-scoped, so the same net highlights across all sheets.
-        const netKey = net !== null ? sanitizeDomId(net.net.name) : null;
+        const netKey = net !== null ? netHighlightKey(net.net) : null;
 
         let useJunctionColor = ColorScheme.JunctionColor;
         let useColor = defaultWireColor;

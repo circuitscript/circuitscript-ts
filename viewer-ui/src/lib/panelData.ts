@@ -48,11 +48,19 @@ export function formatPinType(type: string): string | undefined {
   return undefined;
 }
 
+/* Root namespace is "/"; nested ones look like "/a/". Root nets show the short name. */
+function qualifiedNetName(namespace: string | null | undefined, name: string): string {
+  return namespace && namespace !== '/' ? namespace + name : name;
+}
+
 export interface PanelPinData {
   id: string;
   name: string;
   typeLabel: string | undefined;
   netName: string | null | undefined;
+  netKey?: string | null;
+  /* Namespace-qualified name for display; equals netName for root nets. */
+  netDisplayName: string | null | undefined;
 }
 
 export interface PanelParamData {
@@ -64,6 +72,8 @@ export interface PanelData {
   title: string;
   isNet: boolean;
   netName?: string;
+  netKey?: string;
+  netNamespace?: string;
   sheetIndex: string;
   instanceId: string;
   sourceLine: number | null;
@@ -80,10 +90,13 @@ export function getPanelData(meta: ComponentMeta): PanelData {
 
   const netNameItem = isNet ? meta.params.find((item) => item.key === 'net_name') : undefined;
   const netName = netNameItem?.value;
+  const netPin = isNet ? meta.pins[0] : undefined;
+  const netKey = netPin?.netKey ?? undefined;
+  const netNamespace = netPin?.netNamespace ?? undefined;
 
   let title = meta.refDes || meta.instanceName;
   if (isNet) {
-    title = 'Net: ' + (netName ?? '');
+    title = 'Net: ' + qualifiedNetName(netNamespace, netName ?? '');
   } else if (isGraphic) {
     title = 'Graphic';
   }
@@ -92,6 +105,8 @@ export function getPanelData(meta: ComponentMeta): PanelData {
     title,
     isNet,
     netName,
+    netKey,
+    netNamespace,
     sheetIndex,
     instanceId: meta.instanceName,
     sourceLine: meta.sourceLine,
@@ -102,6 +117,8 @@ export function getPanelData(meta: ComponentMeta): PanelData {
       name: pin.name,
       typeLabel: formatPinType(pin.type),
       netName: pin.netName,
+      netKey: pin.netKey,
+      netDisplayName: pin.netName ? qualifiedNetName(pin.netNamespace, pin.netName) : pin.netName,
     })),
     params: meta.params,
   };

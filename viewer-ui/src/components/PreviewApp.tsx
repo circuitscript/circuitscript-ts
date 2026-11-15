@@ -64,8 +64,8 @@ export const PreviewApp: FunctionComponent<PreviewAppProps> = ({
     }
   }, [framesById, selectedFrameDomId]);
 
-  const handleNetClick = useCallback((netName: string) => {
-    viewportRef.current?.highlightNet(buildNetKey(netName));
+  const handleNetClick = useCallback((netName: string, netKey?: string | null) => {
+    viewportRef.current?.highlightNet(netKey ?? buildNetKey(netName));
   }, []);
 
   const handleClose = useCallback(() => {

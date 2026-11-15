@@ -19,6 +19,13 @@ export function sanitizeDomId(raw: string): string {
     return raw.replace(/[^A-Za-z0-9_-]/g, '-');
 }
 
+/** Key used for net highlighting in the SVG and metadata. Uses the full
+ * namespace-qualified net name so same-named nets in different namespaces
+ * stay distinct. */
+export function netHighlightKey(net: { toString(): string }): string {
+    return sanitizeDomId(net.toString());
+}
+
 export class SimpleStopwatch {
     startTime: number;
 

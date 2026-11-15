@@ -420,4 +420,50 @@ to dgnd()
             expect(result.outputReturn).toContain(`id="${frame.domId}"`);
         }
     });
+
+    test("same-named nets in different namespaces get distinct data-net keys and netKey metadata", async () => {
+        const scriptData = `from "std" import *
+
+def sub():
+    add res(1k)
+    wire right 100
+    add res(2k)
+    wire right 100
+    add net("SIG")
+
+anchor = net("ANCHOR")
+at anchor
+branch:
+    /a sub()
+branch:
+    /b sub()
+`;
+        const environment = getTestEnvironment();
+        await environment.prepareSVGEnvironment();
+
+        const result = await renderScript(scriptData, [], {
+            dumpNets: false,
+            dumpData: false,
+            showStats: false,
+            environment,
+            inputPath: 'scratch.cst',
+            outputReturnType: 'data-svg',
+        });
+
+        expect(result.errors.length).toBe(0);
+        const components = result.outputExtra! as ComponentMeta[];
+        const sigPins = components
+            .flatMap((c) => c.pins)
+            .filter((p) => p.netName === 'SIG');
+        const sigKeys = new Set(sigPins.map((p) => p.netKey));
+        expect(sigKeys).toEqual(new Set(['-a-SIG', '-b-SIG']));
+        expect(new Set(sigPins.map((p) => p.netNamespace)))
+            .toEqual(new Set(['/a/', '/b/']));
+
+        const svgKeys = new Set(
+            [...result.outputReturn!.matchAll(/data-net="([^"]*)"/g)].map((m) => m[1]));
+        expect(svgKeys.has('-a-SIG')).toBe(true);
+        expect(svgKeys.has('-b-SIG')).toBe(true);
+        expect(svgKeys.has('SIG')).toBe(false);
+    });
 });

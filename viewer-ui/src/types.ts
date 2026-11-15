@@ -13,6 +13,9 @@ export interface ComponentPinMeta {
   side: string;
   position: number;
   netName: string | null;
+  /* Namespace-qualified highlight key and namespace; absent in older host data. */
+  netKey?: string | null;
+  netNamespace?: string | null;
 }
 
 export interface ComponentMeta {

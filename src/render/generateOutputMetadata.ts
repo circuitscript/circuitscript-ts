@@ -6,7 +6,7 @@
  */
 import { SheetFrame } from './layout.js';
 import { boundBoxToRect } from './render.js';
-import { sanitizeDomId, getOrThrow } from '../utils.js';
+import { sanitizeDomId, getOrThrow, netHighlightKey } from '../utils.js';
 import { ComponentTypes, FrameType } from '../globals.js';
 import { NumericValue } from '../objects/NumericValue.js';
 import { resolveValuesInTemplate } from '../objects/paramTemplate.js';
@@ -31,6 +31,10 @@ export type ComponentPinMeta = {
     side: string;
     position: number;
     netName: string | null;
+    // Namespace-qualified highlight key and the net's namespace. Null when
+    // netName is null.
+    netKey: string | null;
+    netNamespace: string | null;
 };
 
 export type ComponentMeta = {
@@ -127,13 +131,19 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                 }
 
                 let netName: string | null = null;
+                let netKey: string | null = null;
+                let netNamespace: string | null = null;
                 for (const [pinId, net] of instance.pinNets) {
                     if (pinId.equals(p.id)) {
                         netName = net.name;
+                        netKey = netHighlightKey(net);
+                        netNamespace = net.namespace;
                         // If pin is on a NC net, then do not display the
                         // net name.
                         if (nc_nets.indexOf(net.toString()) !== -1) {
                             netName = null;
+                            netKey = null;
+                            netNamespace = null;
                         }
                         break;
                     }
@@ -146,6 +156,8 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
                     side: p.side,
                     position: p.position,
                     netName,
+                    netKey,
+                    netNamespace,
                 }
             });
 
