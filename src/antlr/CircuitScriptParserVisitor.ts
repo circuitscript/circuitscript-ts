@@ -43,11 +43,11 @@ import { Function_def_exprContext } from "./CircuitScriptParser.js";
 import { Function_exprContext } from "./CircuitScriptParser.js";
 import { Function_args_exprContext } from "./CircuitScriptParser.js";
 import { Function_return_exprContext } from "./CircuitScriptParser.js";
-import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Call_trailerContext } from "./CircuitScriptParser.js";
 import { Non_call_trailerContext } from "./CircuitScriptParser.js";
 import { Callable_exprContext } from "./CircuitScriptParser.js";
 import { TrailerContext } from "./CircuitScriptParser.js";
+import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Module_callable_exprContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Properties_blockContext } from "./CircuitScriptParser.js";
@@ -355,12 +355,6 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitFunction_return_expr?: (ctx: Function_return_exprContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.net_namespace_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitNet_namespace_expr?: (ctx: Net_namespace_exprContext) => Result;
-    /**
      * Visit a parse tree produced by `CircuitScriptParser.call_trailer`.
      * @param ctx the parse tree
      * @return the visitor result
@@ -384,6 +378,12 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      * @return the visitor result
      */
     visitTrailer?: (ctx: TrailerContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.net_namespace_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitNet_namespace_expr?: (ctx: Net_namespace_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.module_callable_expr`.
      * @param ctx the parse tree

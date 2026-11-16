@@ -1323,9 +1323,12 @@ export class ParserVisitor extends BaseVisitor {
 
             if (keyName === ModuleContainsKeyword) {
                 moduleComponent.moduleContainsExpressions = expressionsBlock;
+                const executor = this.getExecutor();
                 
                 this.expandModuleContains(moduleComponent, 
-                    this.getExecutor().netNamespace);
+                    executor.netNamespace,
+                    executor.componentNamespace
+                );
             }
         }
 
@@ -1902,7 +1905,8 @@ export class ParserVisitor extends BaseVisitor {
 
     /** Creates a new context and execute the expressions within the module
      *  `contains` block. */
-    private expandModuleContains(component: ModuleComponent, netNamespace: string): void {
+    private expandModuleContains(component: ModuleComponent, 
+        netNamespace: string, componentNamespace: string): void {
         this.getExecutor().log('expanding module `contains`')
 
         const executionStack = this.executionStack;
@@ -1922,7 +1926,10 @@ export class ParserVisitor extends BaseVisitor {
             executionStack,
             executor,
             executionContextName,
-            { netNamespace: tmpNamespace }, [], []
+            { 
+                netNamespace: tmpNamespace,
+                componentNamespace,
+            }, [], []
         );
 
         component.moduleCounter += 1;
@@ -2726,7 +2733,7 @@ export class ParserVisitor extends BaseVisitor {
         } else {
             // If no net namespace specified, then the global namespace
             // is assumed.
-            netNamespace = "/";
+            netNamespace = ctx.getText();
         }
 
         this.setResult(ctx, (hasPlus ? "+" : "") + netNamespace);

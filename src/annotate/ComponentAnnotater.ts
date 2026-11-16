@@ -104,7 +104,7 @@ export class ComponentAnnotater {
             const { ctx: useCtx, indexedStack } = firstReference;
 
             if (this.refdesMode === RefdesMode.IndexedFlat && indexedStack.length > 0) {
-                resultRefdes = this.getFlatIndexedRefdes(useCtx, instance, usePrefix, useCounterKey);
+                resultRefdes = this.getIndexedFlatRefdes(useCtx, instance, usePrefix, useCounterKey);
 
             } else if (this.refdesMode !== RefdesMode.Flat && indexedStack.length > 0) {
                 // If indexedStack is defined, then the instance was created within
@@ -145,6 +145,9 @@ export class ComponentAnnotater {
                 // Generate the indexed refdes based on the prefix and the indexes
                 const prefixParts = [getOrThrow(this.indexedContextPrefix, useCtx, "indexed context prefix"), ...indexes];
                 resultRefdes = prefixParts.join('_');
+                
+                const componentNamespace = instance.getComponentNamespace();
+                resultRefdes = `${componentNamespace}${resultRefdes}`;
 
                 if (this.existingSet.has(resultRefdes)) {
                     throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
@@ -172,7 +175,7 @@ export class ComponentAnnotater {
         return null;
     }
 
-    private getFlatIndexedRefdes(ctx: ParserRuleContext, instance: ClassComponent, usePrefix: string,
+    private getIndexedFlatRefdes(ctx: ParserRuleContext, instance: ClassComponent, usePrefix: string,
         useCounterKey: string): string {
         let prefix: string;
 

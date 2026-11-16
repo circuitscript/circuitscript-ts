@@ -73,6 +73,7 @@ export class CFunctionEntry {
 
 export type CFunctionOptions = {
     netNamespace?: string,
+    componentNamespace?: string,
 
     // The nth time that the function was called within the executing scope.
     functionCallIndex: number,
@@ -85,6 +86,8 @@ export type NewContextOptions = {
     // Only for function contexts: The nth time that the function was 
     // called within the executing scope.
     functionCallIndex?: number,
+
+    componentNamespace?: string,
 }
 
 export type CFunctionResult = [

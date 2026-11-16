@@ -129,7 +129,6 @@ function_args_expr: ID ((Comma ID)* | (Assign value_expr)) (Comma ID Assign valu
 
 function_return_expr: Return data_expr ;
 
-net_namespace_expr: Addition? Divide data_expr?;
 
 call_trailer: LParen parameters? RParen;
 non_call_trailer: Dot ID | LSquare data_expr RSquare;
@@ -137,6 +136,7 @@ non_call_trailer: Dot ID | LSquare data_expr RSquare;
 callable_expr: ID trailer*;
 trailer: call_trailer | non_call_trailer;
 
+net_namespace_expr: Addition? Divide Multiply? data_expr?;
 module_callable_expr: net_namespace_expr ID trailer* call_trailer annotation_comment_expr?;
 
 property_block_expr: property_key_expr Colon expressions_block;

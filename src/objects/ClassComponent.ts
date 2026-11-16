@@ -332,6 +332,8 @@ export class ClassComponent {
     get ercNetBridgeProp(): boolean {
         return this.parameters.get('erc_net_bridge') === true;
     }
+    
+    componentNamespace: string[] = [];
 
     constructor(instanceName: string, numPins: number) {
         this.instanceName = instanceName;
@@ -539,6 +541,8 @@ export class ClassComponent {
             component.pinsMaxPositions.set(key, value);
         }
 
+        component.componentNamespace = this.componentNamespace;
+
         // Clone the units as well
         component.units = this.units.map(unit => {
             const tmpUnit = unit.clone();
@@ -626,6 +630,14 @@ export class ClassComponent {
 
         } else {
             return null;
+        }
+    }
+
+    getComponentNamespace(): string {
+        if (this.componentNamespace.length > 0) {
+            return this.componentNamespace.join("");
+        } else {
+            return "";
         }
     }
 }

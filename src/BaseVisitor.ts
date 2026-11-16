@@ -140,15 +140,17 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.onErrorHandler = onErrorHandler;
         this.environment = environment;
 
-        this.startingContext = new ExecutionContext(
-            DoubleDelimiter1,
-            BaseNamespace,
-            '/',
-            0, 0, silent, 
-            this.logger, 
-            this.warnings,
-            this.settings,
-            null);
+        this.startingContext = new ExecutionContext({
+            name: DoubleDelimiter1,
+            namespace: BaseNamespace,
+            netNamespace: '/',
+            componentNamespace: '',
+            silent,
+            logger: this.logger,
+            warnings: this.warnings,
+            settings: this.settings,
+            parent: null,
+        });
 
         const scope = this.startingContext.scope;
 
@@ -434,7 +436,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             this.executionStack, atomId);
         this.log('reference:', currentReference.name, 'found:', currentReference.found);
 
-        currentReference = this.resolveTrailersForReference(currentReference, passedNetNamespace, ctx);
+        currentReference = this.resolveTrailersForReference(currentReference, 
+            passedNetNamespace, ctx);
+
         let resultValue = currentReference;
 
         if (!keepReference) {
@@ -546,7 +550,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
     visitTrailer = (ctx: TrailerContext): void => {
         // There should be some reference already set
-        const params = this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
+        const params = this.getResult(ctx);
 
         const ctxCallTrailer = ctx.call_trailer();
         const ctxNonCallTrailer = ctx.non_call_trailer();
@@ -770,7 +774,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
      * function. A reference is always returned.
      */
     private handleFunctionCall(currentReference: AnyReference, 
-        passedNetNamespace: string| null, ctx: Call_trailerContext): AnyReference {
+        passedNetNamespace: string| null, 
+        ctx: Call_trailerContext): AnyReference {
         
         const executor = this.getExecutor();
                 
@@ -779,6 +784,20 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         const ctxParameters = ctx.parameters();
         if (ctxParameters) {
             parameters = this.visitResult(ctxParameters);
+        }
+
+        let useComponentNamespace = "";
+
+        if (passedNetNamespace && passedNetNamespace.endsWith("*")) {
+            passedNetNamespace = 
+                passedNetNamespace.replace("*", "A" + executor.tmpNetNamespaceId);
+                
+            useComponentNamespace = "A" + executor.tmpNetNamespaceId;
+            executor.tmpNetNamespaceId++;
+        }
+
+        if (executor.componentNamespace !== ""){
+            useComponentNamespace = executor.componentNamespace;
         }
 
         const useNetNamespace = this.getNetNamespace(
@@ -824,7 +843,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                     currentReference,
                     parameters,
                     this.executionStack,
-                    useNetNamespace);
+                    useNetNamespace,
+                    useComponentNamespace
+                );
 
             if (isLibraryFunction){
                 this.log('pop library context scope');
@@ -1332,7 +1353,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                 const executor = this.getExecutor();
 
                 const executionContextName = name;
-                const netNamespace = executor.netNamespace;
+                const {netNamespace, componentNamespace} = executor;
 
                 // The library name in the namespace string is wrapped with [ ].
                 const libraryNamespace = `${BaseNamespace}[${name}].`;
@@ -1345,6 +1366,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                     executionContextName,
                     {
                         netNamespace,
+                        componentNamespace,
+                        
                         namespace: libraryNamespace,
                     }, [], []);
 
@@ -1768,6 +1791,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
     ): ExecutionContext {
         const { 
             netNamespace = "",
+            componentNamespace = "",
             namespace = null
         } = options;
 
@@ -1780,18 +1804,19 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         const executionContextNamespace = namespace ?? currentExecutionContext.namespace
             + executionContextName + ".";
 
-        const newExecutor = new ExecutionContext(
-            executionContextName,
-            executionContextNamespace,
+        const newExecutor = new ExecutionContext({
+            name: executionContextName,
+            namespace: executionContextNamespace,
             netNamespace,
-            executionLevel + 1,
-            this.getExecutor().scope.scopeLevel + 1,
-            currentExecutionContext.silent,
-            currentExecutionContext.logger,
-            currentExecutionContext.warnings,
-            currentExecutionContext.settings,
-            parentContext
-        );
+            componentNamespace,
+            executionLevel: executionLevel + 1,
+            scopeLevel: this.getExecutor().scope.scopeLevel + 1,
+            silent: currentExecutionContext.silent,
+            logger: currentExecutionContext.logger,
+            warnings: currentExecutionContext.warnings,
+            settings: currentExecutionContext.settings,
+            parent: parentContext,
+        });
 
         // Add the execution context to the end of the execution stack
         executionStack.push(newExecutor);

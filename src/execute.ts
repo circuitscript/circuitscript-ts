@@ -49,6 +49,22 @@ const DIRECTION_ANGLE = new Map<Direction, number>([
     [Direction.Left, 180], [Direction.Up, 270],
 ]);
 
+export interface ExecutionContextOptions {
+    name: string;
+    namespace: string;
+    
+    netNamespace: string;
+    componentNamespace: string;
+
+    executionLevel?: number;
+    scopeLevel?: number;
+    silent?: boolean;
+    logger: Logger;
+    warnings: ExecutionWarning[];
+    settings: ExecutionSettings;
+    parent: ExecutionContext | null;
+};
+
 export class ExecutionContext {
 
     /** Local name of the execution context.  */
@@ -66,11 +82,16 @@ export class ExecutionContext {
      * execution stack */
     executionLevel: number;
 
+    /** Components created in this namespace */
+    componentNamespace = "";
+
     /** Contains variables, components within this execution context */
     scope: ExecutionScope;
 
     tmpPointId = 0;     // Counter for points created within the context
     tmpGraphicsId = 0;  // Counter for graphic only components/objects
+
+    tmpNetNamespaceId = 0;
 
     // Map graphic commands (SymbolDrawingCommands) to ClassComponent to ensure
     // unique/single instances.
@@ -115,22 +136,24 @@ export class ExecutionContext {
         funcCallIndex: Map<ParserRuleContext, number>
     }>();
 
-    constructor(
-        name: string,
-        namespace: string,
-        netNamespace: string,
+    constructor({
+        name,
+        namespace,
+        netNamespace,
+        componentNamespace,
         executionLevel = 0,
         scopeLevel = 0,
         silent = false,
-        logger: Logger,
-        warnings: ExecutionWarning[],
-        settings: ExecutionSettings,
-        parent: ExecutionContext
-    ) {
+        logger,
+        warnings,
+        settings,
+        parent,
+    }: ExecutionContextOptions) {
         this.settings = settings;
         this.name = name;
         this.namespace = namespace;
         this.netNamespace = netNamespace;
+        this.componentNamespace = componentNamespace;
 
         this.executionLevel = executionLevel;
         this.logger = logger;
@@ -145,7 +168,7 @@ export class ExecutionContext {
 
         this.silent = silent;
 
-        this.log(`create new execution context, namespace: ${this.namespace}, name: ${this.name}, level: ${this.scope.scopeLevel}`);
+        this.log(`create new execution context, namespace: ${this.namespace}, name: ${this.name}, netNamespace: ${netNamespace}, componentNamespace: ${this.componentNamespace}, level: ${this.scope.scopeLevel}`);
         this.parentContext = parent;
         this.warnings = warnings;
     }
@@ -299,6 +322,10 @@ export class ExecutionContext {
         if (!isModule){
             component.definitionName = 
                 this.extractComponentDefinitionName(this.namespace); 
+
+            if (this.componentNamespace !== ""){
+                component.componentNamespace.push(this.componentNamespace);
+            }
         }
 
         pins.forEach((pin) => {
@@ -1555,7 +1582,8 @@ export class ExecutionContext {
         functionReference: AnyReference,
         functionParams: CallableParameter[],
         executionStack: ExecutionContext[],
-        netNamespace: string
+        netNamespace: string,
+        componentNamespace: string
     ): CFunctionResult {
 
         const functionEntry = functionReference.value as CFunctionEntry;
@@ -1621,12 +1649,15 @@ export class ExecutionContext {
 
             this.scope.functionCounter.set(__runFunc, functionCallIndex + 1);
 
-            this.log(`call function '${functionName}'`);
-            this.log(`net namespace: ${netNamespace}`);
+            this.log(`call function '${functionName}', netNamespace: ${netNamespace}, componentNamespace: ${componentNamespace}`);
 
             const functionResult = __runFunc(
                 functionParams,
-                { netNamespace, functionCallIndex });
+                { 
+                    netNamespace, 
+                    componentNamespace,
+                    functionCallIndex
+                });
 
             this.log(`done call function '${functionName}'`);
             
