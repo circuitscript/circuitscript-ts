@@ -1,0 +1,17 @@
+# Module without a ports property
+from "std" import *
+
+vcc = supply("VCC")
+gnd = dgnd()
+
+tmp = create module:
+    width: 600
+    height: 400
+    contains:
+        at vcc
+        wire down 100
+        add res(1k)
+        wire down 100
+        to gnd
+
+at tmp.contains

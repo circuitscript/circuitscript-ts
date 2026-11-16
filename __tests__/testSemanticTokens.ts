@@ -85,6 +85,23 @@ describe('SemanticTokensVisitor', () => {
         return result;
     }
 
+    test('module call tokens', async () => {
+        const script = `
+def sub():
+    a = 1
+
+/ns sub()
+x = sub()
+`;
+
+        const tokens = await getSemanticTokens(script);
+        const funcTokens = findTokensByType(tokens, 'function')
+            .filter(t => t.textValue === 'sub' && !t.tokenModifiers.includes('declaration'));
+
+        // Both the module call and the plain call mark `sub` as a function
+        expect(funcTokens.length).toBe(2);
+    });
+
     test('function definition tokens', async () => {
         const script = `
 def myFunction(param1, param2):

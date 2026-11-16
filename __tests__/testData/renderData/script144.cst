@@ -1,0 +1,18 @@
+# Continue a wire from the last location inside a module's contains
+from "std" import *
+
+vcc = supply("VCC")
+
+tmp = create module:
+    width: 600
+    height: 400
+    contains:
+        at vcc
+        wire down 100
+        add res(1k)
+
+at tmp.contains
+wire right 100
+add res(2k)
+wire right 100
+add label("out")

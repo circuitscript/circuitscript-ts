@@ -1,0 +1,8 @@
+/COMP-1-0/NET-(R1-2) | --.-COMP-1-0.res-0.COMP-1-1k | 2
+/COMP-1-0/NET-(R1-2) | res-1.COMP-1-2k | 1
+/VCC | supply-0.net-0.COMP-1-VCC | 1
+/VCC | --.-COMP-1-0.supply-0.net-0.COMP-1-VCC:0 | 1
+/VCC | --.-COMP-1-0.res-0.COMP-1-1k | 1
+/out | res-1.COMP-1-2k | 2
+/out | label-0.COMP-1-out | 1
+/out | label-0.COMP-1-out:0 | 1

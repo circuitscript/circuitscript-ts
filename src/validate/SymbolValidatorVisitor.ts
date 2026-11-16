@@ -19,11 +19,11 @@ import { Assignment_exprContext,
     TrailerContext,
     CreateBehaviorExprContext,
     Create_scenario_exprContext,
-    NamespacedCallableContext,
-    PlainCallableContext,
     Frame_exprContext,
     Call_trailerContext,
-    Non_call_trailerContext} from "../antlr/CircuitScriptParser.js";
+    Non_call_trailerContext,
+    Callable_exprContext,
+    Module_callable_exprContext} from "../antlr/CircuitScriptParser.js";
 
 import { builtInBehaviorFunctionsNamesList, builtInFunctionsNamesList, linkScenarioFunctions, unlinkScenarioFunctions } from "../builtinMethods.js";
 import { ExecutionContext } from "../execute.js";
@@ -303,9 +303,6 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         const value = this.getResult(ctxDataExpr) as ComplexType;
         
         const ctxCallable = ctx.callable_expr();
-        if (!(ctxCallable instanceof PlainCallableContext)) {
-            return null;
-        }
         const atomId = ctxCallable.ID();
         const atomText = atomId.getText();
         const executor = this.getExecutor();
@@ -333,18 +330,18 @@ export class SymbolValidatorVisitor extends BaseVisitor {
      * Resolves the leading identifier and visits the trailers (and the final
      * call trailer of a namespaced call) for scope analysis.
      */
-    private visitCallableCommon(ctx: NamespacedCallableContext | PlainCallableContext): void {
+    private visitCallableCommon(ctx: Callable_exprContext | Module_callable_exprContext): void {
         const tmpSymbol = this.handleAtomSymbol(ctx.ID());
 
         ctx.trailer().forEach(trailer => this.visit(trailer));
-        if (ctx instanceof NamespacedCallableContext) {
+        if (ctx instanceof Module_callable_exprContext) {
             this.visit(ctx.call_trailer());
         }
 
         this.setResult(ctx, tmpSymbol);
     }
 
-    visitPlainCallable = (ctx: PlainCallableContext): void => {
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
         if (AllPinTypes.indexOf(ctx.getText()) !== -1 && ctx.trailer().length === 0) {
             // Ignore pin types constants.
             return;
@@ -352,7 +349,7 @@ export class SymbolValidatorVisitor extends BaseVisitor {
         this.visitCallableCommon(ctx);
     };
 
-    visitNamespacedCallable = (ctx: NamespacedCallableContext): void => {
+    visitModule_callable_expr = (ctx: Module_callable_exprContext): void => {
         this.visitCallableCommon(ctx);
     };
 

@@ -8,7 +8,7 @@
 import { TerminalNode, Token } from "antlr4ng";
 import { CircuitScriptLexer } from "../antlr/CircuitScriptLexer.js";
 import { Function_def_exprContext, CreateComponentExprContext,
-    CreateGraphicExprContext, NamespacedCallableContext, PlainCallableContext,
+    CreateGraphicExprContext,
     Call_trailerContext, Property_key_exprContext,
     Assignment_exprContext,
     Function_args_exprContext,
@@ -21,7 +21,9 @@ import { Function_def_exprContext, CreateComponentExprContext,
     Import_simpleContext,
     Import_specific_or_allContext,
     Frame_exprContext,
-    TrailerContext} from "../antlr/CircuitScriptParser.js";
+    TrailerContext,
+    Callable_exprContext,
+    Module_callable_exprContext} from "../antlr/CircuitScriptParser.js";
 import { BaseVisitor, OnErrorHandler } from "../BaseVisitor.js";
 import { FrameModifiers } from "../objects/Frame.js";
 import { NodeScriptEnvironment } from "../environment/environment.js";
@@ -268,7 +270,7 @@ export class SemanticTokensVisitor extends BaseVisitor {
      * - Variable declarations in assignments
      * - Function calls (callable with parameters)
      */
-    visitPlainCallable = (ctx: PlainCallableContext): void => {
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
         const id = ctx.ID();
 
         // Left side of an assignment is a variable declaration
@@ -284,7 +286,11 @@ export class SemanticTokensVisitor extends BaseVisitor {
         trailers.forEach(trailer => this.visitTrailerContents(trailer));
     }
 
-    visitNamespacedCallable = (ctx: NamespacedCallableContext): void => {
+    /**
+     * Visits namespaced module calls and marks the callee as a function
+     * Example: /net_ns mymodule(a, b)
+     */
+    visitModule_callable_expr = (ctx: Module_callable_exprContext): void => {
         const trailers = ctx.trailer();
 
         // The call trailer applies to the ID directly when there are no
@@ -294,6 +300,11 @@ export class SemanticTokensVisitor extends BaseVisitor {
         }
         trailers.forEach(trailer => this.visitTrailerContents(trailer));
         this.visitTrailerContents(ctx.call_trailer());
+
+        const ctxAnnotation = ctx.annotation_comment_expr();
+        if (ctxAnnotation) {
+            this.visit(ctxAnnotation);
+        }
     }
 
     /**

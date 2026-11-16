@@ -9,13 +9,15 @@ import { Big } from 'big.js';
 
 import {
     ArrayExprContext, Assignment_exprContext, Call_trailerContext, 
+    Callable_exprContext, 
     CallableExprContext, Data_expr_with_doubledotContext, Double_dot_property_set_exprContext, ExpressionContext, Flow_expressionsContext,
     Function_args_exprContext, Function_exprContext, Function_return_exprContext, Import_exprContext,
     Import_simpleContext, Import_specific_or_allContext, Keyword_assignment_exprContext,
-    NamespacedCallableContext,
+    Module_callable_exprContext,
+    ModuleCallableExprContext,
     Non_call_trailerContext,
     Non_newline_expressionContext,
-    ParametersContext, PlainCallableContext, RoundedBracketsExprContext, ScriptContext,
+    ParametersContext, RoundedBracketsExprContext, ScriptContext,
     TrailerContext,
     Value_exprContext, 
     ValueExprContext} from "./antlr/CircuitScriptParser.js";
@@ -406,7 +408,12 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.passResult(ctx, ctx.callable_expr());
     }
 
-    private CommonCallableExpr = (ctx: NamespacedCallableContext | PlainCallableContext, 
+    visitModuleCallableExpr = (ctx: ModuleCallableExprContext): void => {
+        this.passResult(ctx, ctx.module_callable_expr());
+    }
+
+    private CommonCallableExpr = (
+        ctx: Callable_exprContext | Module_callable_exprContext, 
         passedNetNamespace: null | string): void => {
             
         const ctxParams = this.getResult(ctx);
@@ -438,24 +445,19 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.log2('atom resolved: ' + ctx.getText() + ' -> ' + currentReference);
     }
 
-    visitNamespacedCallable = (ctx: NamespacedCallableContext): void => {
-        let passedNetNamespace = null;
-        const netNameSpaceExpr = ctx.net_namespace_expr();
-        if (netNameSpaceExpr) {
-            passedNetNamespace = this.visitResult(netNameSpaceExpr);
-        }
-
+    visitModule_callable_expr = (ctx: Module_callable_exprContext): void => {
+        const passedNetNamespace = this.visitResult(ctx.net_namespace_expr());
         this.CommonCallableExpr(ctx, passedNetNamespace);
     }
 
-    visitPlainCallable = (ctx: PlainCallableContext): void => {
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
         this.CommonCallableExpr(ctx, null);
     }
 
     protected resolveTrailersForReference(reference: AnyReference,
         passedNetNamespace: string | null,
-        ctx: NamespacedCallableContext
-            | PlainCallableContext
+        ctx: Callable_exprContext
+            | Module_callable_exprContext
             | Double_dot_property_set_exprContext): AnyReference {
 
         if (reference !== undefined && reference.found) {
@@ -467,7 +469,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                 reference = this.visitResult(ctxTrailer);
             });
 
-            if (ctx instanceof NamespacedCallableContext) {
+            if (ctx instanceof Module_callable_exprContext) {
                 const ctxTrailer = ctx.call_trailer();
                 this.setResult(ctxTrailer, {
                     reference: reference,

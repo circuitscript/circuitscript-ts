@@ -24,6 +24,7 @@ non_newline_expression: flow_expressions
     | annotation_comment_expr
     | double_dot_property_set_expr
     | assignment_expr
+    | module_callable_expr
     | callable_expr
     | create_scenario_expr
     ;
@@ -108,6 +109,7 @@ data_expr:
     | data_expr (LogicalAnd | LogicalOr) data_expr      #LogicalOperatorExpr
     | value_expr                                        #ValueExpr 
     | callable_expr                                     #CallableExpr
+    | module_callable_expr                              #ModuleCallableExpr
     ;
     
 value_expr:
@@ -132,9 +134,10 @@ net_namespace_expr: Addition? Divide data_expr?;
 call_trailer: LParen parameters? RParen;
 non_call_trailer: Dot ID | LSquare data_expr RSquare;
 
-callable_expr: net_namespace_expr ID trailer* call_trailer	# NamespacedCallable
-	| ID trailer*					# PlainCallable;
+callable_expr: ID trailer*;
 trailer: call_trailer | non_call_trailer;
+
+module_callable_expr: net_namespace_expr ID trailer* call_trailer annotation_comment_expr?;
 
 property_block_expr: property_key_expr Colon expressions_block;
 properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;

@@ -1248,7 +1248,17 @@ export class ParserVisitor extends BaseVisitor {
     visitCreateModuleExpr = (ctx: CreateModuleExprContext): void => {
         const properties = this.getPropertyExprList(ctx.property_expr());
 
-        const modulePorts = this.parseCreateModulePorts(properties.get('ports'));
+        // Provide blank ports first, module component can also have blank ports.
+        let modulePorts: ModulePortsDefinition = {
+            left: [],
+            right: [],
+            top: [],
+            bottom: []
+        };
+
+        if (properties.has('ports')) {
+            modulePorts = this.parseCreateModulePorts(properties.get('ports'));
+        }
 
         const { 
             [SymbolPinSide.Left]: leftPorts, 
@@ -1769,7 +1779,12 @@ export class ParserVisitor extends BaseVisitor {
                     && trailers[0] === ModuleContainsKeyword) {
                     
                     dataResult = rootValue;
-                    this.placeModuleContains(dataResult as ModuleComponent);
+                    const moduleLocation = this.placeModuleContains(dataResult as ModuleComponent);
+                    if (moduleLocation !== null) {
+                        // Return the last location within the module.
+                        this.setResult(ctx, [moduleLocation.component, moduleLocation.pin]);
+                        return;
+                    }
                 } else {
                     dataResult = reference;
                 }
@@ -1960,7 +1975,7 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    private placeModuleContains(moduleComponent: ModuleComponent):void {
+    private placeModuleContains(moduleComponent: ModuleComponent): { component: ClassComponent, pin: PinId, wire: number } | null {
         if (moduleComponent.typeProp === ComponentTypes.module
             && moduleComponent.moduleContainsExpressions) {
             this.log('place module `contains`');
@@ -1973,7 +1988,7 @@ export class ParserVisitor extends BaseVisitor {
 
             this.log('connect module ports');
             // Link module ports to inner ports
-            for(const [pinId, portComponent] of moduleComponent.modulePinIdToPortMap){
+            for (const [pinId, portComponent] of moduleComponent.modulePinIdToPortMap) {
                 this.getExecutor().atComponent(
                     moduleComponent, pinId
                 );
@@ -1982,7 +1997,16 @@ export class ParserVisitor extends BaseVisitor {
                     portComponent, 1
                 );
             }
+
+            const scope = this.getScope();
+            return {
+                component: scope.currentComponent!,
+                pin: scope.currentPin!,
+                wire: scope.currentWireId
+            };
         }
+
+        return null;
     }
 
     visitUnaryOperatorExpr = (ctx: UnaryOperatorExprContext): void => {
@@ -3200,12 +3224,7 @@ export class ParserVisitor extends BaseVisitor {
      * Returns module ports defined in the `create module` command
      */
     private parseCreateModulePorts(portsDefinition: PropertyMap)
-        : {
-            left: (string | [blank: number])[],
-            right: (string | [blank: number])[],
-            top: (string | [blank: number])[],
-            bottom: (string | [blank: number])[]
-        } {
+        : ModulePortsDefinition {
 
         return {
             left: this.getPortItems(portsDefinition, SymbolPinSide.Left),
@@ -3842,6 +3861,13 @@ export type NetListItemPin = {
     netName: string,
     netBaseName: string,
     net: Net
+}
+
+export type ModulePortsDefinition = {
+    left: (string | [blank: number])[],
+    right: (string | [blank: number])[],
+    top: (string | [blank: number])[],
+    bottom: (string | [blank: number])[]
 }
 
 export class VisitorExecutionException {

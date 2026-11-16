@@ -33,6 +33,7 @@ import { AdditionExprContext } from "./CircuitScriptParser.js";
 import { MultiplyExprContext } from "./CircuitScriptParser.js";
 import { LogicalOperatorExprContext } from "./CircuitScriptParser.js";
 import { CreateExprContext } from "./CircuitScriptParser.js";
+import { ModuleCallableExprContext } from "./CircuitScriptParser.js";
 import { UnaryOperatorExprContext } from "./CircuitScriptParser.js";
 import { CallableExprContext } from "./CircuitScriptParser.js";
 import { BinaryOperatorExprContext } from "./CircuitScriptParser.js";
@@ -45,9 +46,9 @@ import { Function_return_exprContext } from "./CircuitScriptParser.js";
 import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Call_trailerContext } from "./CircuitScriptParser.js";
 import { Non_call_trailerContext } from "./CircuitScriptParser.js";
-import { NamespacedCallableContext } from "./CircuitScriptParser.js";
-import { PlainCallableContext } from "./CircuitScriptParser.js";
+import { Callable_exprContext } from "./CircuitScriptParser.js";
 import { TrailerContext } from "./CircuitScriptParser.js";
+import { Module_callable_exprContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Properties_blockContext } from "./CircuitScriptParser.js";
 import { Graphic_expressions_blockContext } from "./CircuitScriptParser.js";
@@ -289,6 +290,13 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitCreateExpr?: (ctx: CreateExprContext) => Result;
     /**
+     * Visit a parse tree produced by the `ModuleCallableExpr`
+     * labeled alternative in `CircuitScriptParser.data_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitModuleCallableExpr?: (ctx: ModuleCallableExprContext) => Result;
+    /**
      * Visit a parse tree produced by the `UnaryOperatorExpr`
      * labeled alternative in `CircuitScriptParser.data_expr`.
      * @param ctx the parse tree
@@ -365,25 +373,23 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitNon_call_trailer?: (ctx: Non_call_trailerContext) => Result;
     /**
-     * Visit a parse tree produced by the `NamespacedCallable`
-     * labeled alternative in `CircuitScriptParser.callable_expr`.
+     * Visit a parse tree produced by `CircuitScriptParser.callable_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitNamespacedCallable?: (ctx: NamespacedCallableContext) => Result;
-    /**
-     * Visit a parse tree produced by the `PlainCallable`
-     * labeled alternative in `CircuitScriptParser.callable_expr`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitPlainCallable?: (ctx: PlainCallableContext) => Result;
+    visitCallable_expr?: (ctx: Callable_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.trailer`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitTrailer?: (ctx: TrailerContext) => Result;
+    /**
+     * Visit a parse tree produced by `CircuitScriptParser.module_callable_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitModule_callable_expr?: (ctx: Module_callable_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.property_block_expr`.
      * @param ctx the parse tree

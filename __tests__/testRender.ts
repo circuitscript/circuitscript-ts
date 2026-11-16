@@ -180,6 +180,8 @@ describe('Render tests', () => {
         ['script140.cst', 'Graphic table: markdown command'],
         ['script141.cst', 'Graphic table: markdown cells expand params templates'],
         ['script142.cst', 'Handle placeholder refdes at incorrect position and show warning'],
+        ['script143.cst', 'module without ports property'],
+        ['script144.cst', 'continue wire from last location in module contains'],
         ['script138.cst', 'bare graphic with subtype no_connect, reused twice'],
         ['script139.cst', 'bare graphic with subtype text'],
 
@@ -667,6 +669,33 @@ wire left 100
             expect.stringContaining("Placeholder refdes 'R33_'"));
         expect(visitor.getWarnings().map(warning => warning.message)).toContainEqual(
             expect.stringContaining("Change it to 'R33'"));
+    });
+
+    test('wire after module contains continues from the last location inside the module', async () => {
+        const scriptPath = mainPath + 'script144.cst';
+        const { hasError, componentPinNets } = await runScript(
+            readFileSync(scriptPath, { encoding: 'utf8' }), scriptPath);
+
+        expect(hasError).toEqual(false);
+
+        // Inner 1k pin 2 is the last location in the module, outer 2k pin 1 continues from it
+        const netOf = (instancePattern: RegExp, pin: number) =>
+            componentPinNets.find(([, instance, p]) => instancePattern.test(instance) && p === pin)?.[0];
+
+        const innerNet = netOf(/^--\..*res-\d+\.COMP-\d+-1k$/, 2);
+        const outerNet = netOf(/^res-\d+\.COMP-\d+-2k$/, 1);
+        expect(innerNet).toBeDefined();
+        expect(outerNet).toEqual(innerNet);
+    });
+
+    test('contains on a non-module component', async () => {
+        const script = [
+            'from "std" import *',
+            'R1 = res(1k)',
+            'at R1.contains',
+        ].join('\n');
+        const { hasError } = await runScript(script);
+        expect(hasError).toEqual(false);
     });
 
     test('generated net rename throws when the attempt limit is exhausted', async () => {
