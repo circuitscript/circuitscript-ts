@@ -40,3 +40,4 @@ export * from './semantic-tokens/getSemanticTokens.js';
 export * from './render/KiCadSchOutputHandler.js'
 export * from './rules-check/rules.js'
 export * from './version.js'
+export { RefDes } from './objects/RefDes.js';

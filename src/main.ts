@@ -13,7 +13,7 @@
 import './enableCompileCache.js';
 
 import { program, Option, InvalidArgumentError } from 'commander';
-import { RefdesMode, RefdesModes } from './globals.js';
+import { RefdesAssignmentMode, RefdesModes } from './globals.js';
 import figlet from 'figlet';
 
 import { watch } from 'fs';
@@ -88,7 +88,7 @@ Supported output formats (selected by output path extension):
     const options = program.opts();
     const args = program.args;
 
-    if (options.refdesMode !== undefined && options.refdesMode !== RefdesMode.Flat
+    if (options.refdesMode !== undefined && options.refdesMode !== RefdesAssignmentMode.Flat
         && options.indexedRefdes === false) {
         console.error(`error: --no-indexed-refdes conflicts with --refdes-mode ${options.refdesMode}`);
         process.exit(1);

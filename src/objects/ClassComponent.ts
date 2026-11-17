@@ -16,6 +16,7 @@ import { NumericValue } from './NumericValue.js';
 import { ComponentTypes, DefaultComponentUnit, GraphicSubtypes, NetSubtypes, ParamKeys } from '../globals.js';
 import { RuntimeExecutionError } from "../errors.js";
 import { comparePinIds } from '../helpers.js';
+import { RefDes } from './RefDes.js';
 import { CtxReference, ParamMap, ParamValue } from './types.js';
 
 export class ComponentUnit {
@@ -279,12 +280,17 @@ export class ClassComponent {
     copyProp = false;
 
     /** Assigned refdes that is set for the component during the annotation step. */
-    assignedRefDes: string | null = null;
+    assignedRefDes: RefDes | null = null;
 
     // If set, then use the placeholder refdes extracted from refdes annotation 
     // comment. This should be in the format <type>___. The number of '_' will 
     // given an idea of the loop depth.
-    placeHolderRefDes: string|null = null;
+    placeHolderRefDes: RefDes | null = null;
+
+    /** Text form of the assigned refdes, or null */
+    getRefDesString(): string | null {
+        return this.assignedRefDes?.toString() ?? null;
+    }
 
     refdesCommentType: 'refdes' | 'placeholder' | null = null;
 

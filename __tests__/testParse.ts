@@ -6,7 +6,7 @@ import { NetGraph } from '../src/render/graph.js';
 import { LayoutEngine } from '../src/render/layout.js';
 import { Logger } from '../src/logger.js';
 import { expectInlineScriptTest, findItem, findItemByRefDes, getTestEnvironment, orderNets, runScript, runScriptExpectError, runScriptExpectErrorObject, ScriptTest } from './helpers.js';
-import { FrameType, RefdesMode } from '../src/globals.js';
+import { FrameType, RefdesAssignmentMode } from '../src/globals.js';
 import { renderScript } from '../src/pipeline.js';
 import { readFileSync } from 'fs';
 import { parseMarkdownTable } from '../src/markdownTable.js';
@@ -240,7 +240,7 @@ tmp_block_2()
 
     const getRefdes = (instances: Map<string, ClassComponent>, type: string) =>
         [...instances.values()].filter(i => i.typeProp === type)
-            .map(i => i.assignedRefDes as string).sort();
+            .map(i => i.getRefDesString() as string).sort();
 
     test('indexedRefdes disabled: loop gives running refdes', async () => {
         const { hasError, visitor } = await runScript(`
@@ -322,7 +322,7 @@ from "std" import *
 document.sheet_type = sheet_A5()
 `;
         const flat = (body: string, simplifyRefdes = true) =>
-            runScript(head + body, undefined, { refdesMode: RefdesMode.IndexedFlat, simplifyRefdes });
+            runScript(head + body, undefined, { refdesMode: RefdesAssignmentMode.IndexedFlat, simplifyRefdes });
 
         const loopBody = `
 for i in range(0, 2):
@@ -346,7 +346,7 @@ for i in range(0, 2):
         test('explicit option overrides document.refdes_assignment', async () => {
             const { visitor } = await runScript(
                 head + 'document.refdes_assignment = "indexed-flat"\n' + loopBody,
-                undefined, { refdesMode: RefdesMode.Flat });
+                undefined, { refdesMode: RefdesAssignmentMode.Flat });
             expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1', 'R2']);
         });
 
@@ -575,7 +575,7 @@ for i in range(0, 2):
             expect(getRefdes(flatResult.visitor.dumpInstances(), 'res'))
                 .toEqual(['R32_1', 'R32_2', 'R32_3', 'R32_4']);
 
-            await expect(runScript(head + body, undefined, { refdesMode: RefdesMode.Indexed }))
+            await expect(runScript(head + body, undefined, { refdesMode: RefdesAssignmentMode.Indexed }))
                 .rejects.toThrow(/Placeholder/);
         });
     });

@@ -6,15 +6,15 @@
  */
 import { ParserRuleContext, Token } from 'antlr4ng';
 import { CircuitScriptParser } from '../antlr/CircuitScriptParser.js';
-import { RefdesMode } from '../globals.js';
+import { RefdesAssignmentMode } from '../globals.js';
 import { getOrThrow } from "../utils.js";
 
 /** Resolves the refdes mode from the new option and the legacy boolean */
-export function resolveRefdesMode(refdesMode?: RefdesMode, indexedRefdes?: boolean): RefdesMode {
+export function resolveRefdesMode(refdesMode?: RefdesAssignmentMode, indexedRefdes?: boolean): RefdesAssignmentMode {
     if (refdesMode) {
         return refdesMode;
     }
-    return indexedRefdes === false ? RefdesMode.Flat : RefdesMode.Indexed;
+    return indexedRefdes === false ? RefdesAssignmentMode.Flat : RefdesAssignmentMode.Indexed;
 }
 
 /**

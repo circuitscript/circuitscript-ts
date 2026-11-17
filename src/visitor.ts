@@ -91,7 +91,7 @@ import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, ValidSubtypes, D
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
     WireAutoDirection,
-    defaultPinIdTextSize, RefdesMode, RefdesModes, GeneratedNetPrefix} from './globals.js';
+    defaultPinIdTextSize, RefdesAssignmentMode, RefdesModes, GeneratedNetPrefix} from './globals.js';
 import { BlockTypes } from "./objects/BlockTypes.js";
 import { assertDefined, getOrThrow, ExecutionWarning, getLinePositionAsString, unwrapValue } from "./utils.js";
 import { Net } from './objects/Net.js';
@@ -111,6 +111,7 @@ import { ComponentBehavior } from './behavior.js';
 import { MarkdownAlign, MarkdownTable, parseMarkdownTable } from './markdownTable.js';
 import { Scenario, formatScenarioResults } from './objects/Scenario.js';
 import { linkScenarioFunctions, unlinkScenarioFunctions } from './builtinMethods.js';
+import { RefDes } from './objects/RefDes.js';
 
 // Property trees (component/module/frame definitions) hold arbitrary runtime values
 // that are indexed and narrowed per key by the visitor.
@@ -120,7 +121,7 @@ type PropertyMap = Map<string, PropertyValue>;
 
 export class ParserVisitor extends BaseVisitor {
 
-    private refdesMode: RefdesMode = RefdesMode.Indexed;
+    private refdesMode: RefdesAssignmentMode = RefdesAssignmentMode.Indexed;
 
     constructor(silent = false, 
             onErrorHandler: OnErrorHandler | null = null,
@@ -2903,14 +2904,15 @@ export class ParserVisitor extends BaseVisitor {
 
         component.refdesCommentType = null;
         if (component !== null) {
-            if (refdesValue.indexOf('_') === -1) {
+            const parsed = parseRefDes(refdesValue) ?? RefDes.opaque(refdesValue);
+            if (!parsed.isIndexedOrPlaceholder()) {
                 // Normal refdes, not a placeholder refdes
                 component.setParam('refdes', refdesValue);
                 component.refdesCommentType = 'refdes';
             } else {
                 // Store the placeholder refdes. In the annotation stage, this
                 // will be used.
-                component.placeHolderRefDes = refdesValue;
+                component.placeHolderRefDes = parsed;
                 component.refdesCommentType = 'placeholder';
             }
             component.forceSaveRefdesAnnotation = forceSave;
@@ -3338,7 +3340,7 @@ export class ParserVisitor extends BaseVisitor {
 
             const componentItem = {
                 name: instanceName,
-                refdes: instance.assignedRefDes,
+                refdes: instance.getRefDesString(),
                 pins: {},
             };
 
@@ -3409,19 +3411,19 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     /** Refdes mode used by the last annotateComponents call */
-    getRefdesMode(): RefdesMode {
+    getRefdesMode(): RefdesAssignmentMode {
         return this.refdesMode;
     }
 
     /** Resolves the mode from an explicit option, then document.refdes_assignment */
-    private resolveRefdesMode(explicitMode?: RefdesMode): RefdesMode {
+    private resolveRefdesMode(explicitMode?: RefdesAssignmentMode): RefdesAssignmentMode {
         if (explicitMode) {
             return explicitMode;
         }
         const document = this.getScope().variables.get(GlobalDocumentName);
         const value = document?.[FrameParamKeys.RefdesAssignment];
         if (value === undefined) {
-            return RefdesMode.Indexed;
+            return RefdesAssignmentMode.Indexed;
         }
         if (!RefdesModes.includes(value)) {
             throw new Error(
@@ -3431,7 +3433,7 @@ export class ParserVisitor extends BaseVisitor {
     }
 
     /** Performs simple annotation for components and rename nets */
-    annotateComponents(simplifyRefdes = true, explicitRefdesMode?: RefdesMode): void {
+    annotateComponents(simplifyRefdes = true, explicitRefdesMode?: RefdesAssignmentMode): void {
         const refdesMode = this.refdesMode = this.resolveRefdesMode(explicitRefdesMode);
         this.log('===== annotate components =====');
 
@@ -3463,10 +3465,10 @@ export class ParserVisitor extends BaseVisitor {
                  * normal refdes. */
                 const firstCtx = instance.getFirstCtxReference();
                 if (firstCtx && firstCtx.indexedStack.length === 0 && instance.placeHolderRefDes) {
-                    const normalRefDes = instance.placeHolderRefDes.replace('_', '');
+                    const normalRefDes = instance.placeHolderRefDes.base();
                     this.warnings.push({
-                        message: `Placeholder refdes '${instance.placeHolderRefDes}' should be a `
-                            + `normal refdes. Change it to '${normalRefDes}'`,
+                        message: `Placeholder refdes '${instance.placeHolderRefDes.toString()}' should be a `
+                            + `normal refdes. Change it to '${normalRefDes.toString()}'`,
                         ctx: firstCtx.ctx,
                     });
                     instance.assignedRefDes = normalRefDes;
@@ -3478,7 +3480,7 @@ export class ParserVisitor extends BaseVisitor {
                 if (instance.hasParam('refdes')) {
                     const refdes = instance.getParam('refdes') as string;
                     if (refdes) {
-                        instance.assignedRefDes = refdes;
+                        instance.assignedRefDes = parseRefDes(refdes) ?? RefDes.opaque(refdes);
                     }
                 }
 
@@ -3486,7 +3488,7 @@ export class ParserVisitor extends BaseVisitor {
                     this.setComponentUnitRefdesSuffix(instance);
 
                     annotater.trackRefDes(instance.assignedRefDes, instance);
-                    this.log(instance.assignedRefDes, '-', instance.instanceName);
+                    this.log(instance.assignedRefDes.toString(), '-', instance.instanceName);
                     continue;
                 }
 
@@ -3497,10 +3499,10 @@ export class ParserVisitor extends BaseVisitor {
         // Reserve placeholder prefixes after all explicit refdes are tracked.
         toAnnotate.forEach(instance => {
             const first = instance.getFirstCtxReference();
-            if (refdesMode !== RefdesMode.Flat && instance.placeHolderRefDes && first
+            if (refdesMode !== RefdesAssignmentMode.Flat && instance.placeHolderRefDes && first
                 && first.indexedStack.length > 0 && first.creationFlag) {
                 annotater.reservePlaceholder(
-                    instance.placeHolderRefDes.replaceAll('_', ''), instance);
+                    instance.placeHolderRefDes.base(), instance);
             }
         });
 
@@ -3509,7 +3511,7 @@ export class ParserVisitor extends BaseVisitor {
 
             if (newRefDes !== null) {
                 instance.assignedRefDes = newRefDes;
-                this.log(newRefDes, '-', instance.instanceName);
+                this.log(newRefDes.toString(), '-', instance.instanceName);
                 this.setComponentUnitRefdesSuffix(instance);
             } else {
                 this.log('Failed to annotate:', instance.instanceName);
@@ -3521,13 +3523,13 @@ export class ParserVisitor extends BaseVisitor {
             const simplifications = annotater.getIndexedRefdesSimplifications();
             const assignedNames = new Set<string>();
             for (const [, instance] of instances) {
-                if (instance.assignedRefDes) assignedNames.add(instance.assignedRefDes);
+                if (instance.assignedRefDes) assignedNames.add(instance.assignedRefDes.toString());
             }
             if (simplifications.size > 0) {
                 for (const [, instance] of instances) {
-                    const simplified = simplifications.get(instance.assignedRefDes ?? '');
-                    if (simplified !== undefined && !assignedNames.has(simplified)) {
-                        this.log(`Simplify refdes: ${instance.assignedRefDes} → ${simplified}`);
+                    const simplified = simplifications.get(instance.getRefDesString() ?? '');
+                    if (simplified !== undefined && !assignedNames.has(simplified.toString())) {
+                        this.log(`Simplify refdes: ${instance.assignedRefDes?.toString()} → ${simplified.toString()}`);
                         instance.assignedRefDes = simplified;
                         this.setComponentUnitRefdesSuffix(instance);
                     }
@@ -3601,7 +3603,7 @@ export class ParserVisitor extends BaseVisitor {
 
                 let useIdName = component.instanceName;
                 if (component.assignedRefDes !== null){
-                    useIdName = component.assignedRefDes;
+                    useIdName = component.assignedRefDes.toString();
                 }
 
                 let useNetName = `${GeneratedNetPrefix}(${useIdName}-${pin.toString()})`;
@@ -3843,6 +3845,18 @@ export class ParserVisitor extends BaseVisitor {
 /**
  * Standard prefixes for components
  */
+/** Parses refdes text, mapping the prefix back to a component type */
+export function parseRefDes(text: string): RefDes | null {
+    return RefDes.parse(text, prefix => {
+        for (const [type, typePrefix] of Object.entries(ComponentRefDesPrefixes)) {
+            if (typePrefix === prefix) {
+                return type;
+            }
+        }
+        return null;
+    });
+}
+
 export const ComponentRefDesPrefixes: { [key: string]: string } = {
     res: 'R',
     cap: 'C',

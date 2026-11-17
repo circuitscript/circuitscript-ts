@@ -202,7 +202,7 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
                     let useValue: unknown = undefined;
 
                     if (paramKey === BomRefdesKey) {
-                        useValue = instance.assignedRefDes;
+                        useValue = instance.assignedRefDes.toString();
 
                     } else if (paramKey === BomQtyKey) {
                         // Placeholder so the key keeps its position in columns;
@@ -237,12 +237,12 @@ function extractComponentValuesForBom(bomConfig: BomConfig, instances: ClassComp
                         missingValues.set(useKey, []);
                     }
 
-                    getOrThrow(missingValues, useKey, "missing values key").push(instance.assignedRefDes);
+                    getOrThrow(missingValues, useKey, "missing values key").push(instance.assignedRefDes.toString());
                 }
 
                 resultRows.push(row);
             } else {
-                unplacedItems.push(instance.assignedRefDes);
+                unplacedItems.push(instance.assignedRefDes.toString());
             }
         }
     });

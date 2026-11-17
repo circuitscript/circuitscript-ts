@@ -42,7 +42,7 @@ export class NgSpiceNetListOutputHandler extends ParseOutputHandler {
                         // For diode model, the anode and cathode are flipped because
                         // pin 1 is the cathode and pin 2 is the anode.
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- null refdes was previously emitted as-is; preserve output
-                        lines.push([instance.assignedRefDes!,
+                        lines.push([instance.assignedRefDes!.toString(),
                             net2Name, net1Name, modelName]);
                     } else {
                         let simModel = "";
@@ -52,7 +52,7 @@ export class NgSpiceNetListOutputHandler extends ParseOutputHandler {
 
                         const value = instance.getParam("value") as NumericValue;
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- null refdes was previously emitted as-is; preserve output
-                        lines.push([instance.assignedRefDes!,
+                        lines.push([instance.assignedRefDes!.toString(),
                             net1Name, net2Name, `${value.toDisplayString()}${simModel}`]);
                     }
 
@@ -79,7 +79,7 @@ export class NgSpiceNetListOutputHandler extends ParseOutputHandler {
                             voltageSimString = voltage;
                         }
 
-                        lines.push([instance.assignedRefDes,
+                        lines.push([instance.assignedRefDes.toString(),
                             net1Name, net2Name, voltageSimString]);
                     }
                 }

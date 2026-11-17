@@ -44,7 +44,7 @@ export enum ParamKeys {
 
     FollowWireOrientation = 'follow_wire_orientation',
     SkipDefaultPin = 'skip_default_pin',
-    refdes_prefix = 'refdes_prefix',
+    RefdesPrefix = 'refdes_prefix',
 }
 
 export enum LayoutDirection {
@@ -251,10 +251,10 @@ export const TrailerArrayIndex = 'index';
 export const DefaultComponentUnit = '__default';
 
 export const BusMainPinName = '__BUS';
-export enum RefdesMode {
+export enum RefdesAssignmentMode {
     Flat = 'flat',
     Indexed = 'indexed',
     IndexedFlat = 'indexed-flat',
 }
 
-export const RefdesModes: RefdesMode[] = Object.values(RefdesMode);
+export const RefdesModes: RefdesAssignmentMode[] = Object.values(RefdesAssignmentMode);

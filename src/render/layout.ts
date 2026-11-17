@@ -1555,10 +1555,11 @@ export function applyComponentParamsToSymbol(componentUnit: ComponentUnit,
     const refdesKey = 'refdes';
 
     if (!newMap.has(refdesKey)) {
-        newMap.set(refdesKey, componentUnit.parent.assignedRefDes ?? "?");
-    }
-
-    if (componentUnit.refdesSuffix !== "") {
+        const assigned = componentUnit.parent.assignedRefDes;
+        newMap.set(refdesKey, assigned
+            ? assigned.withUnitSuffix(componentUnit.refdesSuffix).toString()
+            : `?${componentUnit.refdesSuffix}`);
+    } else if (componentUnit.refdesSuffix !== "") {
         const tmpRefdes = newMap.get(refdesKey) as string;
         newMap.set(refdesKey, `${tmpRefdes}${componentUnit.refdesSuffix}`);
     }

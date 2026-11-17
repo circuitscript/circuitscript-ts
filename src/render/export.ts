@@ -36,7 +36,7 @@ export function generateKiCadNetList(netlist: NetListItem[])
 
             const instanceDetails = [
                 Id('comp'),
-                [Id('ref'), instance.assignedRefDes],
+                [Id('ref'), instance.assignedRefDes.toString()],
             ];
 
             if (instance.parameters.has('value')){
@@ -52,7 +52,7 @@ export function generateKiCadNetList(netlist: NetListItem[])
                     instance.parameters.get('footprint')]);
             } else {
                 missingFootprints.push({
-                    refdes: instance.assignedRefDes,
+                    refdes: instance.assignedRefDes.toString(),
                     instanceName: instance.instanceName
                 })
             }
@@ -81,7 +81,7 @@ export function generateKiCadNetList(netlist: NetListItem[])
 
                 nets[netName].push([
                     Id('node'),
-                    [Id('ref'), instance.assignedRefDes],
+                    [Id('ref'), instance.assignedRefDes.toString()],
                     [Id('pin'), key],
                     [Id('pintype'), "passive"]
                 ])

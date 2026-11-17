@@ -19,7 +19,7 @@ import { Add_component_exprContext, Assignment_exprContext, At_block_headerConte
 import { BaseVisitor } from '../BaseVisitor.js';
 import { ClassComponent } from '../objects/ClassComponent.js';
 import { generateModifiedSourceText, RefdesModification } from './utils.js';
-import { RefdesMode } from '../globals.js';
+import { RefdesAssignmentMode } from '../globals.js';
 import { assertDefined, getOrThrow } from "../utils.js";
 
 /**
@@ -49,17 +49,17 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
     constructor(silent: boolean, sourceText: string,
         tokenStream: CommonTokenStream,
         componentCtxLinks: Map<ParserRuleContext, ClassComponent>,
-        refdesMode: RefdesMode = RefdesMode.Indexed) {
+        refdesAssignmentMode: RefdesAssignmentMode = RefdesAssignmentMode.Indexed) {
 
         // super(silent, null, null);
         super(true);
         this.sourceText = sourceText;
         this.tokenStream = tokenStream;
         this.componentCtxLinks = componentCtxLinks;
-        this.refdesMode = refdesMode;
+        this.refdesMode = refdesAssignmentMode;
     }
 
-    private refdesMode: RefdesMode;
+    private refdesMode: RefdesAssignmentMode;
     private skippedIndexed = 0;
 
     getSkippedIndexedCount(): number {
@@ -242,13 +242,12 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             // If the refdes annotation was already added, then do not
             // add it again.
             let alreadyHaveRefdesAnnotation = instance.assignedRefDes !== null ?
-                (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) !== -1) : false;
+                (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes.toString()) !== -1) : false;
 
             if (instance.assignedRefDes !== null){
                 // extract placeholder
-                const parts = instance.assignedRefDes.split('_');
-                if (parts.length > 1){
-                    const placeholder = parts[0] + '_';
+                if (instance.assignedRefDes.isIndexedOrPlaceholder()){
+                    const placeholder = instance.assignedRefDes.toPlaceholder(1).toString();
                     alreadyHaveRefdesAnnotation = this.addedRefdesPlaceholderAnnotations.indexOf(placeholder) !== -1;
                 }
             }
@@ -265,7 +264,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                     || (instance.refdesCommentType === null
                     && instance.assignedRefDes))) {
 
-                let useRefDes = instance.assignedRefDes;
+                let useRefDes = instance.assignedRefDes.toString();
 
                 // If false, then the instance does not have a placeholder 
                 // refdes. Only components in a loop structure can have a 
@@ -278,7 +277,7 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
                 if (firstReference) {
                     const { indexedStack: loopStack = [] } = firstReference;
 
-                    if (this.refdesMode === RefdesMode.Flat && loopStack.length > 0) {
+                    if (this.refdesMode === RefdesAssignmentMode.Flat && loopStack.length > 0) {
                         this.skippedIndexed++;
                         return null;
                     }
@@ -290,12 +289,12 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
                         // Placeholder refdes is indicated by the '_' after
                         // the prefix.
-                        const parts = instance.assignedRefDes.split('_');
-                        useRefDes = parts[0] + '_';
+                        useRefDes = instance.assignedRefDes.toPlaceholder(1).toString();
                     }
 
-                    if (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes) === -1) {
-                        this.addedRefdesAnnotations.push(instance.assignedRefDes);
+                    const assignedText = instance.assignedRefDes.toString();
+                    if (this.addedRefdesAnnotations.indexOf(assignedText) === -1) {
+                        this.addedRefdesAnnotations.push(assignedText);
                         if (isPlaceholderRefdes) {
                             this.addedRefdesPlaceholderAnnotations.push(useRefDes);
                         }

@@ -15,7 +15,7 @@ import { ATNSimulator, BaseErrorListener, CharStream, CommonTokenStream,
 import { MainLexer } from "./lexer.js";
 import { CircuitScriptParser, ScriptContext } from "./antlr/CircuitScriptParser.js";
 import { CircuitScriptLexer } from "./antlr/CircuitScriptLexer.js";
-import { LengthUnit, MilsToMM, PxToMM, RefdesMode } from "./globals.js";
+import { LengthUnit, MilsToMM, PxToMM, RefdesAssignmentMode } from "./globals.js";
 
 // Dynamic type definition for svgdom since it's ESM-only
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- svgdom is ESM-only and dynamically imported; no static typing available
@@ -68,7 +68,7 @@ export type ScriptOptions = {
     // If false, components in loops/functions get plain running refdes instead of indexed (R1_1, R1_2)
     indexedRefdes?: boolean,
     // Refdes mode: flat, indexed or indexed-flat. Overrides indexedRefdes.
-    refdesMode?: RefdesMode,
+    refdesMode?: RefdesAssignmentMode,
     // Max attempts when renaming a colliding generated net (default 5000)
     maxNetRenameAttempts?: number,
 

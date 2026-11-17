@@ -1,4 +1,4 @@
-import { RefdesMode } from '../src/globals.js';
+import { RefdesAssignmentMode } from '../src/globals.js';
 import { readFileSync } from 'fs';
 import { Resvg } from '@resvg/resvg-js';
 import { PNG } from 'pngjs';
@@ -38,7 +38,7 @@ export function getTestEnvironment(): NodeScriptEnvironment {
 export async function runScript(script: string, scriptPath?: string, options?: {
     simplifyRefdes?: boolean,
     indexedRefdes?: boolean,
-    refdesMode?: RefdesMode,
+    refdesMode?: RefdesAssignmentMode,
     skipAnnotation?: boolean,
     maxNetRenameAttempts?: number,
 }): Promise<{
@@ -116,7 +116,7 @@ export async function runScript(script: string, scriptPath?: string, options?: {
     hasError = hasError || errorListener.hasSyntaxErrors();
 
     if (!options?.skipAnnotation) {
-        visitor.annotateComponents(options?.simplifyRefdes ?? true, options?.refdesMode ?? (options?.indexedRefdes === false ? RefdesMode.Flat : undefined));
+        visitor.annotateComponents(options?.simplifyRefdes ?? true, options?.refdesMode ?? (options?.indexedRefdes === false ? RefdesAssignmentMode.Flat : undefined));
     }
 
     // Do not write cached libraries for tests
@@ -151,7 +151,7 @@ export function findItem(instances: Map<string, ClassComponent>, typeProp: strin
     // Find matching item by refdes and by value parameter
 
     for (const [, instance] of instances) {
-        if (instance.typeProp === typeProp && instance.assignedRefDes === refdes) {
+        if (instance.typeProp === typeProp && instance.getRefDesString() === refdes) {
             if (instance.parameters.get('value').toString() === value) {
                 return instance;
             }
@@ -164,7 +164,7 @@ export function findItem(instances: Map<string, ClassComponent>, typeProp: strin
 export function findItemByRefDes(instances: Map<string, ClassComponent>, typeProp: string,
     refdes: string): ClassComponent | null {
     for (const [, instance] of instances) {
-        if (instance.typeProp === typeProp && instance.assignedRefDes === refdes) {
+        if (instance.typeProp === typeProp && instance.getRefDesString() === refdes) {
             return instance;
         }
     }

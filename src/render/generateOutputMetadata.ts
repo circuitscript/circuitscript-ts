@@ -166,7 +166,7 @@ export function generateComponentMetadata(sheetFrames: SheetFrame[]): ComponentM
             result.push({
                 domId: sanitizeDomId(`comp-${sheetIndex}-${instance.instanceName}`),
                 type: instance.typeProp,
-                refDes: instance.assignedRefDes,
+                refDes: instance.getRefDesString(),
                 instanceName: instance.instanceName,
                 sourceLine: firstCtxReference?.ctx.start?.line ?? null,
                 sourceFile: firstCtxReference?.filePath ?? null,

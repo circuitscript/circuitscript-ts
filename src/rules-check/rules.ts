@@ -335,7 +335,7 @@ export function EvaluateERCRules(visitor: ParserVisitor, graph: Graph,
                 if (loc) {
                     let displayValue = "";
                     if (instance.assignedRefDes) {
-                        displayValue = instance.assignedRefDes;
+                        displayValue = instance.assignedRefDes.toString();
                     }
 
                     if (displayValue !== "") {

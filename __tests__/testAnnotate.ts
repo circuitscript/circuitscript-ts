@@ -9,7 +9,7 @@ import { ParserVisitor } from '../src/visitor.js';
 import { BaseVisitor, OnErrorHandler, ImportFileResult } from '../src/BaseVisitor.js';
 import { parseFileWithVisitor, CircuitscriptParserErrorListener } from '../src/parser.js';
 import { RefdesAnnotationVisitor } from '../src/annotate/RefdesAnnotationVisitor.js';
-import { ComponentTypes, RefdesMode } from '../src/globals.js';
+import { ComponentTypes, RefdesAssignmentMode } from '../src/globals.js';
 import { readFileSync } from 'fs';
 import { getTestEnvironment } from './helpers.js';
 import { renderScript, renderScriptCustom } from '../src/pipeline.js';
@@ -19,7 +19,7 @@ import { join, resolve, basename } from 'path';
 
 const SCRIPT_PATH = '__tests__/testData/annotateData/main.cst';
 
-async function runScript(script: string, scriptPath: string, simplify = true, refdesMode: RefdesMode = RefdesMode.Indexed): Promise<{
+async function runScript(script: string, scriptPath: string, simplify = true, refdesMode: RefdesAssignmentMode = RefdesAssignmentMode.Indexed): Promise<{
     hasError: boolean;
     visitor: ParserVisitor;
     tree: ReturnType<CircuitScriptParser['script']>;
@@ -70,7 +70,7 @@ async function runScript(script: string, scriptPath: string, simplify = true, re
     return { hasError, visitor, tree, tokens };
 }
 
-async function annotate(script: string, refdesMode: RefdesMode = RefdesMode.Indexed) {
+async function annotate(script: string, refdesMode: RefdesAssignmentMode = RefdesAssignmentMode.Indexed) {
     const r = await runScript(script, SCRIPT_PATH, true, refdesMode);
     expect(r.hasError).toBe(false);
     const av = new RefdesAnnotationVisitor(true, script, r.tokens,
@@ -150,11 +150,11 @@ describe('Refdes annotation: output format', () => {
 
     test('indexedRefdes disabled: loop instance not annotated, non-loop instance is', async () => {
         const script = `import "lib1"\nadd lib1.my_resistor()\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
-        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesMode.Flat);
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesAssignmentMode.Flat);
         expect(hasError).toBe(false);
 
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
-            visitor.getComponentCtxLinks(), RefdesMode.Flat);
+            visitor.getComponentCtxLinks(), RefdesAssignmentMode.Flat);
         annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
 
@@ -166,11 +166,11 @@ describe('Refdes annotation: output format', () => {
 
     test('indexed-flat: source update writes placeholder for loop component', async () => {
         const script = `import "lib1"\nfor i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
-        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesAssignmentMode.IndexedFlat);
         expect(hasError).toBe(false);
 
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
-            visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+            visitor.getComponentCtxLinks(), RefdesAssignmentMode.IndexedFlat);
         annotationVisitor.visit(tree);
         expect(annotationVisitor.getOutput()).toMatch(/add lib1.my_resistor\(\) #= R1_$/m);
         expect(annotationVisitor.getSkippedIndexedCount()).toBe(0);
@@ -179,11 +179,11 @@ describe('Refdes annotation: output format', () => {
     test('indexed-flat: two loops write distinct placeholders', async () => {
         const loop = `for i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
         const script = `import "lib1"\n${loop}${loop}`;
-        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        const { hasError, visitor, tree, tokens } = await runScript(script, SCRIPT_PATH, true, RefdesAssignmentMode.IndexedFlat);
         expect(hasError).toBe(false);
 
         const annotationVisitor = new RefdesAnnotationVisitor(true, script, tokens,
-            visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+            visitor.getComponentCtxLinks(), RefdesAssignmentMode.IndexedFlat);
         annotationVisitor.visit(tree);
         const output = annotationVisitor.getOutput();
         expect((output.match(/#= R1_$/gm) ?? []).length).toBe(1);
@@ -194,17 +194,17 @@ describe('Refdes annotation: output format', () => {
     test('indexed-flat: re-annotating written placeholders is stable', async () => {
         const loop = `for i in range(0, 3):\n    branch:\n        add lib1.my_resistor()\n`;
         const script = `import "lib1"\n${loop}${loop}`;
-        const first = await runScript(script, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        const first = await runScript(script, SCRIPT_PATH, true, RefdesAssignmentMode.IndexedFlat);
         expect(first.hasError).toBe(false);
         const v1 = new RefdesAnnotationVisitor(true, script, first.tokens,
-            first.visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+            first.visitor.getComponentCtxLinks(), RefdesAssignmentMode.IndexedFlat);
         v1.visit(first.tree);
         const output = v1.getOutput();
 
-        const second = await runScript(output, SCRIPT_PATH, true, RefdesMode.IndexedFlat);
+        const second = await runScript(output, SCRIPT_PATH, true, RefdesAssignmentMode.IndexedFlat);
         expect(second.hasError).toBe(false);
         const v2 = new RefdesAnnotationVisitor(true, output, second.tokens,
-            second.visitor.getComponentCtxLinks(), RefdesMode.IndexedFlat);
+            second.visitor.getComponentCtxLinks(), RefdesAssignmentMode.IndexedFlat);
         v2.visit(second.tree);
         const output2 = v2.getOutput();
         expect((output2.match(/#= R1_$/gm) ?? []).length).toBe(1);
@@ -212,7 +212,7 @@ describe('Refdes annotation: output format', () => {
         expect(output2).toEqual(output);
     });
 
-    describe.each([RefdesMode.Indexed, RefdesMode.IndexedFlat])('loop placeholder dedupe (%s)', (mode) => {
+    describe.each([RefdesAssignmentMode.Indexed, RefdesAssignmentMode.IndexedFlat])('loop placeholder dedupe (%s)', (mode) => {
         const count = (s: string, re: RegExp): number => (s.match(re) ?? []).length;
 
         test('loop component is annotated exactly once and is stable', async () => {
@@ -357,10 +357,10 @@ describe('Refdes annotation: inline create component', () => {
     test('explicit annotation binds to the created component', async () => {
         const script = `at create component: #= R7\n${CREATE_RES}wire right 50\nat create component:\n${CREATE_RES}`;
         const { visitor, output } = await annotate(script);
-        const refdes = [...visitor.getScope().instances.values()].map(i => i.assignedRefDes);
+        const refdes = [...visitor.getScope().instances.values()].map(i => i.getRefDesString());
         expect(refdes).toContain('R7');
         expect(refdes).toContain('R1');
-        const r7 = [...visitor.getScope().instances.values()].find(i => i.assignedRefDes === 'R7')!;
+        const r7 = [...visitor.getScope().instances.values()].find(i => i.getRefDesString() === 'R7')!;
         expect(r7.getParam('refdes')).toBe('R7');
         expect(output).toMatch(/^at create component: #= R7$/m);
         expect(output).toMatch(/^at create component: #= R1$/m);
@@ -450,7 +450,7 @@ describe('Refdes annotation: bus components', () => {
         getBuses(visitor).forEach(b => expect(b.assignedRefDes).toBeNull());
         const res = [...visitor.getScope().instances.values()]
             .filter(i => i.typeProp !== ComponentTypes.bus && i.assignedRefDes);
-        expect(res.map(r => r.assignedRefDes)).toContain('R1');
+        expect(res.map(r => r.getRefDesString())).toContain('R1');
     });
 });
 
@@ -461,7 +461,7 @@ describe('Refdes annotation: clashes', () => {
         const { visitor } = await runScript(script, dir + 'x.cst', simplify);
         return [...visitor.getScope().instances.values()]
             .filter(i => i.typeProp === ComponentTypes.resistor && i.assignedRefDes)
-            .map(i => i.assignedRefDes!)
+            .map(i => i.getRefDesString()!)
             .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     }
 
@@ -636,7 +636,7 @@ for j in range(0, 2):
 `;
 
 const refdesList = (v: ParserVisitor) =>
-    [...v.dumpInstances().values()].map(i => i.assignedRefDes).filter(r => r !== null);
+    [...v.dumpInstances().values()].map(i => i.getRefDesString()).filter(r => r !== null);
 
 describe('Refdes annotation: first graph reference', () => {
     // One instance is created outside the loop, so it is not replicated
@@ -660,25 +660,25 @@ describe('Refdes annotation: first graph reference', () => {
     });
 
     test('indexed-flat: assigned outside, used in loop', async () => {
-        const { visitor, output } = await annotate(LOOP_USE, RefdesMode.IndexedFlat);
+        const { visitor, output } = await annotate(LOOP_USE, RefdesAssignmentMode.IndexedFlat);
         expect(refdesList(visitor)).toEqual(['R1']);
         expect(output).toMatch(/^ {8}at R1 pin 1 #= R1_$/m);
     });
 
     test('indexed-flat: assigned and used in the same loop', async () => {
-        const { visitor, output } = await annotate(SAME_LOOP, RefdesMode.IndexedFlat);
+        const { visitor, output } = await annotate(SAME_LOOP, RefdesAssignmentMode.IndexedFlat);
         expect(refdesList(visitor)).toEqual(['R1_1', 'R1_2', 'R1_3']);
         expect(output).toMatch(/#= R1_$/m);
     });
 
     test('flat: assigned outside, used in loop', async () => {
-        const { visitor, output } = await annotate(LOOP_USE, RefdesMode.Flat);
+        const { visitor, output } = await annotate(LOOP_USE, RefdesAssignmentMode.Flat);
         expect(refdesList(visitor)).toEqual(['R1']);
         expect(output).not.toMatch(/R1_/);
     });
 
     test('flat: same-loop components get sequential refdes, no placeholder', async () => {
-        const { visitor, output } = await annotate(SAME_LOOP, RefdesMode.Flat);
+        const { visitor, output } = await annotate(SAME_LOOP, RefdesAssignmentMode.Flat);
         expect(refdesList(visitor)).toEqual(['R1', 'R2', 'R3']);
         expect(output).not.toContain('#=');
     });
@@ -821,5 +821,44 @@ describe('Refdes annotation: source update for graph references', () => {
         const first = await annotate(SAME_LOOP);
         const second = await annotate(first.output);
         expect(second.output).toEqual(first.output);
+    });
+});
+
+describe('Refdes annotation: structured RefDes', () => {
+    const NS_SCRIPT = `
+import "lib1"
+
+def amp():
+    for i in range(0, 2):
+        add lib1.my_resistor()
+    last = lib1.my_resistor()
+    add last
+    return last
+
+at /*amp()
+`;
+
+    test('plain, indexed and namespaced fields', async () => {
+        const plain = await annotate('import "lib1"\nadd lib1.my_resistor()\n');
+        const r1 = [...plain.visitor.getScope().instances.values()]
+            .find(i => i.getRefDesString() === 'R1')!.assignedRefDes!;
+        expect(r1.prefix).toBe('R');
+        expect(r1.componentTypeId).toBe(1);
+        expect(r1.indexedIds).toEqual([]);
+        expect(r1.componentNamespace).toBe('');
+
+        const loop = await annotate(
+            'import "lib1"\nfor i in range(0, 2):\n    add lib1.my_resistor()\n');
+        const looped = [...loop.visitor.getScope().instances.values()]
+            .map(i => i.assignedRefDes).filter(r => r !== null && r.indexedIds.length > 0);
+        expect(looped.map(r => r!.toString()).sort()).toEqual(['R1_1', 'R1_2']);
+        expect(looped[0]!.indexedIds).toEqual([1]);
+
+        const ns = await annotate(NS_SCRIPT);
+        const spaced = [...ns.visitor.getScope().instances.values()]
+            .map(i => i.assignedRefDes).filter(r => r !== null && r.componentNamespace !== '');
+        expect(spaced.length).toBeGreaterThan(0);
+        expect(spaced[0]!.componentNamespace).toBe('A0');
+        expect(spaced[0]!.toString()).toMatch(/^A0R\d+_/);
     });
 });
