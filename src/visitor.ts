@@ -3439,8 +3439,8 @@ export class ParserVisitor extends BaseVisitor {
         const mainFile = this.filePathStack[0];
         const annotater = mainFile
             ? new ComponentAnnotater(filePath => this.environment.relative(
-                this.environment.dirname(mainFile), filePath), refdesMode)
-            : new ComponentAnnotater(undefined, refdesMode);
+                this.environment.dirname(mainFile), filePath), refdesMode, this.logger)
+            : new ComponentAnnotater(undefined, refdesMode, this.logger);
         const instances = this.getScope().instances;
         const toAnnotate: ClassComponent[] = [];
 

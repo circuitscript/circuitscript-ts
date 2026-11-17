@@ -10,6 +10,7 @@ import { CtxReference } from './../objects/types.js';
 import { ComponentRefDesPrefixes } from './../visitor.js';
 import { ParamKeys, RefdesMode } from '../globals.js';
 import { assertDefined, getOrThrow } from "../utils.js";
+import { Logger } from '../logger.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 
@@ -45,14 +46,21 @@ export class ComponentAnnotater {
     private flatCounters = new Map<string, number>();
 
     constructor(private formatPath: (filePath: string) => string = defaultFormatPath,
-        private refdesMode: RefdesMode = RefdesMode.Indexed) {
+        private refdesMode: RefdesMode = RefdesMode.Indexed,
+        private logger: Logger = new Logger()) {
         // Refdes counting should all start at 1. e.g. R1, C1, etc.
         for (const key in ComponentRefDesPrefixes) {
             this.counter[key] = 1;
         }
     }
 
+    private log(...args: (string | number)[]): void {
+        this.logger.add('[annotate]', ...args);
+    }
+
     getAnnotation(instance: ClassComponent): string | null {
+        this.log(`annotating '${instance.instanceName}' (${this.describeLocation(instance)})`);
+        this.log(`componentNamespace: ${instance.getComponentNamespace()}`);
         // If instance has a refdesPrefix parameter, then use this instead.
 
         let usePrefix: string;
@@ -66,6 +74,7 @@ export class ComponentAnnotater {
 
             usePrefix = prefix;
             useCounterKey = prefix;
+            this.log(`  prefix '${usePrefix}' from refdes_prefix param`);
 
         } else {
             // If type is null, then assume it is connector.
@@ -86,6 +95,8 @@ export class ComponentAnnotater {
 
             usePrefix = ComponentRefDesPrefixes[useType];
             useCounterKey = useType;
+            this.log(`  prefix '${usePrefix}' from type '${type}'` +
+                (useType !== type ? ` (unknown, using '${useType}')` : ''));
         }
 
         let prefix = '';
@@ -102,14 +113,17 @@ export class ComponentAnnotater {
 
             // The context of the firstReference is used as the replication point.
             const { ctx: useCtx, indexedStack } = firstReference;
+            this.log(`  first reference at line ${useCtx?.start?.line}, indexedStack depth ${indexedStack.length}`);
 
             if (this.refdesMode === RefdesMode.IndexedFlat && indexedStack.length > 0) {
+                this.log('  strategy: indexed-flat');
                 resultRefdes = this.getIndexedFlatRefdes(useCtx, instance, usePrefix, useCounterKey);
 
             } else if (this.refdesMode !== RefdesMode.Flat && indexedStack.length > 0) {
                 // If indexedStack is defined, then the instance was created within
                 // a indexing structure (loops or functions).
 
+                this.log('  strategy: indexed');
                 // Collect the indexes from the indexedStack.
                 const indexes = indexedStack.map(item => {
                     return item[1] + 1; // Change from 0-indexed to 1-indexed.
@@ -123,6 +137,7 @@ export class ComponentAnnotater {
                         // Remove the '_' to get the main refdes.
                         // It was reserved up front by reservePlaceholder.
                         prefix = instance.placeHolderRefDes.replaceAll('_', '');
+                        this.log(`  base '${prefix}' from placeholder '${instance.placeHolderRefDes}'`);
                         if (!this.placeholderOwner.has(prefix)) {
                             this.reservePlaceholder(prefix, instance);
                         }
@@ -132,6 +147,7 @@ export class ComponentAnnotater {
                             this.getNextRefdesCounter(usePrefix, this.counter[useCounterKey]);
                         this.counter[useCounterKey] = nextIndex;
                         prefix = proposedName;
+                        this.log(`  base '${prefix}' from counter '${useCounterKey}', next=${nextIndex}`);
                     }
 
                     // Store the prefix so it should not be used further. This
@@ -140,6 +156,8 @@ export class ComponentAnnotater {
                         this.markUsed(prefix, instance);
                     }
                     this.indexedContextPrefix.set(useCtx, prefix);
+                } else {
+                    this.log(`  reusing base '${this.indexedContextPrefix.get(useCtx)}' for this context`);
                 }
 
                 // Generate the indexed refdes based on the prefix and the indexes
@@ -148,6 +166,7 @@ export class ComponentAnnotater {
                 
                 const componentNamespace = instance.getComponentNamespace();
                 resultRefdes = `${componentNamespace}${resultRefdes}`;
+                this.log(`  indexes [${indexes.join(',')}], namespace '${componentNamespace}' -> '${resultRefdes}'`);
 
                 if (this.existingSet.has(resultRefdes)) {
                     throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
@@ -160,6 +179,7 @@ export class ComponentAnnotater {
                 getOrThrow(this.indexedRefdesGroups, basePrefix, "refdes group").push(resultRefdes);
 
             } else {
+                this.log('  strategy: unique (not in an indexed structure, or flat mode)');
                 const refdesCounter = this.getNextRefdesCounter(
                     usePrefix, this.counter[useCounterKey]);
                 this.counter[useCounterKey] = refdesCounter.index;
@@ -168,10 +188,12 @@ export class ComponentAnnotater {
 
             // Track the refdes used.
             this.markUsed(resultRefdes, instance);
+            this.log(`  result: '${instance.instanceName}' -> '${resultRefdes}'`);
 
             return resultRefdes;
         }
 
+        this.log(`  no graph reference, '${instance.instanceName}' not annotated`);
         return null;
     }
 
@@ -186,12 +208,14 @@ export class ComponentAnnotater {
             if (instance.placeHolderRefDes) {
                 // Remove the '_' to get the main refdes.
                 prefix = instance.placeHolderRefDes.replaceAll('_', '');
+                this.log(`  flat base '${prefix}' from placeholder '${instance.placeHolderRefDes}'`);
                 this.reservePlaceholder(prefix, instance);
             } else {
                 const { index: nextIndex, proposedName } =
                     this.getNextRefdesCounter(usePrefix, this.counter[useCounterKey]);
                 this.counter[useCounterKey] = nextIndex;
                 prefix = proposedName;
+                this.log(`  flat base '${prefix}' from counter '${useCounterKey}', next=${nextIndex}`);
 
                 this.markUsed(prefix, instance);
             }
@@ -199,6 +223,7 @@ export class ComponentAnnotater {
 
         } else {
             prefix = getOrThrow(this.indexedContextPrefix, ctx, "indexed context prefix");
+            this.log(`  flat reusing base '${prefix}' for this context`);
         }
 
         const n = (this.flatCounters.get(prefix) ?? 0) + 1;
@@ -208,6 +233,7 @@ export class ComponentAnnotater {
             throw new Error(`Refdes '${resultRefdes}' already used (${this.claimedBy.get(resultRefdes) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
         }
         this.flatCounters.set(prefix, n);
+        this.log(`  flat counter for '${prefix}' = ${n} -> '${resultRefdes}'`);
 
         if (!this.indexedRefdesGroups.has(prefix)) {
             this.indexedRefdesGroups.set(prefix, []);
@@ -226,6 +252,9 @@ export class ComponentAnnotater {
                 throw new Error(`Annotation failed: no free refdes for '${prefix}' after ${this.maxRefdesAttempts} attempts`);
             }
         }
+        if (index !== startingIndex) {
+            this.log(`  '${prefix}${startingIndex}'..'${prefix}${index - 1}' already taken, picked '${prefix}${index}'`);
+        }
         return { index: index + 1, proposedName: prefix + index };
     }
 
@@ -235,6 +264,7 @@ export class ComponentAnnotater {
         for (const [basePrefix, indexedList] of this.indexedRefdesGroups) {
             if (indexedList.length === 1) {
                 simplifications.set(indexedList[0], basePrefix);
+                this.log(`simplify '${indexedList[0]}' -> '${basePrefix}' (only member of group)`);
             }
         }
 
@@ -245,6 +275,7 @@ export class ComponentAnnotater {
         if (this.existingSet.has(name)) {
             throw new Error(`Duplicate refdes '${name}': first used at ${this.claimedBy.get(name) ?? 'unknown'}, again at ${this.describeLocation(instance)}`);
         }
+        this.log(`explicit refdes '${name}' at ${this.describeLocation(instance)}`);
         this.markUsed(name, instance);
     }
 
@@ -258,6 +289,7 @@ export class ComponentAnnotater {
             if (this.existingSet.has(base)) {
                 throw new Error(`Placeholder '${base}_' at ${loc} conflicts with explicit refdes '${base}' (${this.claimedBy.get(base) ?? 'unknown'})`);
             }
+            this.log(`  reserved placeholder base '${base}' at ${loc}`);
             this.placeholderOwner.set(base, ctx);
             this.markUsed(base, instance);
         } else if (owner !== ctx && this.refdesMode !== RefdesMode.IndexedFlat) {
