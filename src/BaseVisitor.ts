@@ -769,7 +769,12 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         return reference;
     }
 
-     /**
+    // Map the same context to the same componet namespace. For loop structures,
+    // this ensures that the same function call reuses the same component 
+    // namespace.
+    ctxComponentNamespace = new Map<ParserRuleContext, string>();
+
+    /**
      * Executes the function and returns a reference to the result of the
      * function. A reference is always returned.
      */
@@ -786,18 +791,29 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             parameters = this.visitResult(ctxParameters);
         }
 
-        let useComponentNamespace = "";
+        let useComponentNamespace = executor.componentNamespace;
 
         if (passedNetNamespace && passedNetNamespace.endsWith("*")) {
-            passedNetNamespace = 
-                passedNetNamespace.replace("*", "A" + executor.tmpNetNamespaceId);
-                
-            useComponentNamespace = "A" + executor.tmpNetNamespaceId;
-            executor.tmpNetNamespaceId++;
-        }
+            this.log(`passed net namespace: ${passedNetNamespace}`);
 
-        if (executor.componentNamespace !== ""){
-            useComponentNamespace = executor.componentNamespace;
+            passedNetNamespace = 
+                passedNetNamespace.replace("*", "A" + executor.tmpComponentNamespaceId);
+            
+            if (!this.ctxComponentNamespace.has(ctx)){
+                useComponentNamespace = "A" + executor.tmpComponentNamespaceId;
+                executor.tmpComponentNamespaceId++;
+
+                this.ctxComponentNamespace.set(ctx, useComponentNamespace);
+            } else {
+                useComponentNamespace = this.ctxComponentNamespace.get(ctx) as string;
+            }
+
+            // If starts with +, then append the executor's component namespace in front.
+            if (passedNetNamespace.startsWith("+")){
+                useComponentNamespace = `${executor.componentNamespace}${useComponentNamespace}`;
+            }
+
+            this.log(`assigned net namespace and component namespace: ${passedNetNamespace}, ${useComponentNamespace}`);
         }
 
         const useNetNamespace = this.getNetNamespace(

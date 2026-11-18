@@ -2323,6 +2323,12 @@ export class ParserVisitor extends BaseVisitor {
                 executionContextName, ctx, options, 
                 funcDefinedParameters, passedInParameters);
 
+            const sameComponentNamespace = executor.componentNamespace === options.componentNamespace;
+            if (sameComponentNamespace){
+                this.log(`executors has same component namespace, same tmpComponentNamespaceId is used: ${executor.tmpComponentNamespaceId}`);
+                newExecutor.tmpComponentNamespaceId = executor.tmpComponentNamespaceId;
+            }
+
             // TODO: check if need to overwrite this.
             newExecutor.resolveNet = resolveNet;
             newExecutor.resolveComponentPinNet = resolveComponentPinNet;
@@ -2335,6 +2341,11 @@ export class ParserVisitor extends BaseVisitor {
                 executionStack, 
                 executionContextName
             );
+
+            if (sameComponentNamespace){
+                executor.tmpComponentNamespaceId = newExecutor.tmpComponentNamespaceId;
+                this.log(`executors have same namespace, update tmpComponentNamespaceId: ${executor.tmpComponentNamespaceId}`);
+            }
 
             // Return the last execution context and the final return value of the function
             return [lastExecution, returnValue];
@@ -2734,7 +2745,8 @@ export class ParserVisitor extends BaseVisitor {
         } else {
             // If no net namespace specified, then the global namespace
             // is assumed.
-            netNamespace = ctx.getText();
+            this.setResult(ctx, ctx.getText());
+            return;
         }
 
         this.setResult(ctx, (hasPlus ? "+" : "") + netNamespace);

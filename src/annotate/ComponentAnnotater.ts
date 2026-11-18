@@ -12,6 +12,7 @@ import { ParamKeys, RefdesAssignmentMode } from '../globals.js';
 import { assertDefined, getOrThrow } from "../utils.js";
 import { Logger } from '../logger.js';
 import { RefDes } from '../objects/RefDes.js';
+import { RuntimeExecutionError } from '../errors.js';
 
 /** Tracks annotations already assigned and determines refdes for components */
 
@@ -25,12 +26,10 @@ export class ComponentAnnotater {
     // that will be used for instances within the loop.
     indexedContextPrefix = new Map<ParserRuleContext, RefDes>();
 
-    existingRefDes: string[] = [];
-
     // Max candidate names tried when picking the next free refdes. Fixed for now.
     maxRefdesAttempts = 1000;
 
-    private existingSet = new Set<string>();
+    private assignedRefdes = new Set<string>();
 
     // Refdes -> "file:line" of the instance that claimed it.
     private claimedBy = new Map<string, string>();
@@ -124,7 +123,7 @@ export class ComponentAnnotater {
 
             if (this.refdesMode === RefdesAssignmentMode.IndexedFlat && indexedStack.length > 0) {
                 this.log('  strategy: indexed-flat');
-                resultRefdes = this.getIndexedFlatRefdes(useCtx, instance, usePrefix, useCounterKey,
+                resultRefdes = this.getIndexedFlatRefdes2(useCtx, instance, usePrefix, useCounterKey,
                     useComponentType);
 
             } else if (this.refdesMode !== RefdesAssignmentMode.Flat && indexedStack.length > 0) {
@@ -176,7 +175,7 @@ export class ComponentAnnotater {
                 this.log(`  indexes [${indexes.join(',')}], namespace '${componentNamespace}' -> '${resultRefdes}'`);
 
                 const resultKey = resultRefdes.toString();
-                if (this.existingSet.has(resultKey)) {
+                if (this.assignedRefdes.has(resultKey)) {
                     throw new Error(`Refdes '${resultKey}' already used (${this.claimedBy.get(resultKey) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
                 }
 
@@ -204,6 +203,115 @@ export class ComponentAnnotater {
 
         this.log(`  no graph reference, '${instance.instanceName}' not annotated`);
         return null;
+    }
+
+    // Maps contexts to base refdes (no component namespaces, no indexes)
+    ctxRefdes = new Map<ParserRuleContext, RefDes>();
+
+    refdesPrefixIndexCounters = new Map<string, number>();
+    refdesPrefixMap = new Map<string, RefDes>();
+
+    // Stores last counter of base refdes. 
+    baseRefdesCounters = new Map<string, number>();
+   
+    // Stores base refdes created.
+    baseRefdesSet = new Set();
+
+    private getIndexedFlatRefdes2(ctx: ParserRuleContext, 
+        instance: ClassComponent, usePrefix: string,
+        useCounterKey: string, useComponentType: string | null): RefDes {
+
+        // Generate base refdes        
+        if (!this.ctxRefdes.has(ctx)){
+            // If this context has not been assigned a refdes base yet. (R11, etc.)
+
+            this.log(`creating base refdes for ctx`);
+
+            if (!this.baseRefdesCounters.has(usePrefix)){
+                this.baseRefdesCounters.set(usePrefix, 1);
+                this.log(`setup base refdes counter`);
+            }
+
+            let index = this.baseRefdesCounters.get(usePrefix) as number;
+            this.log(`base refdes counter: ${index}`);
+
+            const endIndex = index + this.maxRefdesAttempts;
+
+            while (index < endIndex) {
+                const tmpRefdes = new RefDes(useComponentType, usePrefix, index);
+                if (this.baseRefdesSet.has(tmpRefdes.toString())) {
+                    index++;
+                } else {
+                    // Found available slot
+                    this.baseRefdesCounters.set(usePrefix, index);
+                    this.baseRefdesSet.add(tmpRefdes.toString());
+
+                    this.log(`base refdes assigned: ${tmpRefdes.toString()}`);
+                    break;
+                }
+            }
+
+            // Failed to find an available slot.
+            if (index === endIndex) {
+                throw new RuntimeExecutionError("Failed to find index for refdes base");
+            }
+
+            this.ctxRefdes.set(ctx, new RefDes(
+                useComponentType, usePrefix, index));
+        }
+
+        const ctxRefdes = this.ctxRefdes.get(ctx) as RefDes;
+        let useRefdes = ctxRefdes.base();
+
+        const componentNamespace = instance.getComponentNamespace();
+        if (componentNamespace) {
+            useRefdes = ctxRefdes.withNamespace(componentNamespace);
+        }
+
+        const refdesPrefixStr = useRefdes.toString();
+        this.log(`refdes prefix: ${refdesPrefixStr}`);
+
+        // Start tracking the refdes prefix as a counter. This includes 
+        // component namespace with the base.
+        if (!this.refdesPrefixIndexCounters.has(refdesPrefixStr)) {
+            this.refdesPrefixIndexCounters.set(refdesPrefixStr, 1);
+            this.refdesPrefixMap.set(refdesPrefixStr, useRefdes);
+
+            this.log(`setup refdes prefix counter`);
+        }
+
+        let index = this.refdesPrefixIndexCounters.get(refdesPrefixStr) as number;
+        this.log(`refdes prefix counter: ${index}`);
+
+        const endIndex = index + this.maxRefdesAttempts;
+
+        let tmpRefdes!: RefDes;
+
+        while (index < endIndex) {
+            tmpRefdes = useRefdes.withIndexes([index]);
+
+            if (this.assignedRefdes.has(tmpRefdes.toString())) {
+                index++;
+            } else {
+                // Found available index.
+
+                // Update the counter
+                this.refdesPrefixIndexCounters.set(refdesPrefixStr, index);
+
+                // Mark the refdes as already assigned/used.
+                this.assignedRefdes.add(tmpRefdes.toString());
+                this.log(`refdes prefix counter assigned: ${tmpRefdes.toString()}`);
+
+                break;
+            }
+        }
+
+        if (index === endIndex) {
+            // assume not found, throw an error
+            throw new RuntimeExecutionError("Failed to find index for namespaced refdes");
+        }
+
+        return tmpRefdes;
     }
 
     private getIndexedFlatRefdes(ctx: ParserRuleContext, 
@@ -245,7 +353,7 @@ export class ComponentAnnotater {
             resultRefdes = resultRefdes.withNamespace(instance.getComponentNamespace());
         }
 
-        if (this.existingSet.has(resultKey)) {
+        if (this.assignedRefdes.has(resultKey)) {
             throw new Error(`Refdes '${resultKey}' already used (${this.claimedBy.get(resultKey) ?? 'unknown'}), again at ${this.describeLocation(instance)}`);
         }
         this.flatCounters.set(prefixKey, n);
@@ -263,7 +371,7 @@ export class ComponentAnnotater {
     getNextRefdesCounter(prefix: string, startingIndex: number): { index: number, proposedName: string } {
         let index = startingIndex;
         const limit = startingIndex + this.maxRefdesAttempts;
-        while (this.existingSet.has(prefix + index)) {
+        while (this.assignedRefdes.has(prefix + index)) {
             index++;
             if (index >= limit) {
                 throw new Error(`Annotation failed: no free refdes for '${prefix}' after ${this.maxRefdesAttempts} attempts`);
@@ -278,20 +386,29 @@ export class ComponentAnnotater {
     getIndexedRefdesSimplifications(): Map<string, RefDes> {
         const simplifications = new Map<string, RefDes>();
 
-        for (const [baseKey, indexedList] of this.indexedRefdesGroups) {
-            if (indexedList.length === 1) {
-                const base = getOrThrow(this.indexedRefdesBases, baseKey, "refdes group base");
-                simplifications.set(indexedList[0].toString(), base);
-                this.log(`simplify '${indexedList[0]}' -> '${base}' (only member of group)`);
+        if (this.refdesMode === RefdesAssignmentMode.IndexedFlat){
+            for (const [refdesPrefixStr, counter] of this.refdesPrefixIndexCounters) {
+                if (counter === 1) {
+                    const refdes = this.refdesPrefixMap.get(refdesPrefixStr) as RefDes;
+                    // Remove the indexes
+                    simplifications.set(refdes.withIndexes([1]).toString(), refdes.withIndexes([]));
+                }
+            }
+        } else {
+            for (const [baseKey, indexedList] of this.indexedRefdesGroups) {
+                if (indexedList.length === 1) {
+                    const base = getOrThrow(this.indexedRefdesBases, baseKey, "refdes group base");
+                    simplifications.set(indexedList[0].toString(), base);
+                    this.log(`simplify '${indexedList[0]}' -> '${base}' (only member of group)`);
+                }
             }
         }
-
         return simplifications;
     }
 
     trackRefDes(refdes: RefDes | string, instance: ClassComponent): void {
         const name = refdes.toString();
-        if (this.existingSet.has(name)) {
+        if (this.assignedRefdes.has(name)) {
             throw new Error(`Duplicate refdes '${name}': first used at ${this.claimedBy.get(name) ?? 'unknown'}, again at ${this.describeLocation(instance)}`);
         }
         this.log(`explicit refdes '${name}' at ${this.describeLocation(instance)}`);
@@ -306,7 +423,7 @@ export class ComponentAnnotater {
         const owner = this.placeholderOwner.get(base);
 
         if (owner === undefined) {
-            if (this.existingSet.has(base)) {
+            if (this.assignedRefdes.has(base)) {
                 throw new Error(`Placeholder '${base}_' at ${loc} conflicts with explicit refdes '${base}' (${this.claimedBy.get(base) ?? 'unknown'})`);
             }
             this.log(`  reserved placeholder base '${base}' at ${loc}`);
@@ -319,8 +436,7 @@ export class ComponentAnnotater {
 
     private markUsed(refdes: RefDes | string, instance?: ClassComponent): void {
         const name = refdes.toString();
-        this.existingSet.add(name);
-        this.existingRefDes.push(name);
+        this.assignedRefdes.add(name);
         if (instance && !this.claimedBy.has(name)) {
             this.claimedBy.set(name, this.describeLocation(instance));
         }

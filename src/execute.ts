@@ -91,7 +91,7 @@ export class ExecutionContext {
     tmpPointId = 0;     // Counter for points created within the context
     tmpGraphicsId = 0;  // Counter for graphic only components/objects
 
-    tmpNetNamespaceId = 0;
+    tmpComponentNamespaceId = 1;
 
     // Map graphic commands (SymbolDrawingCommands) to ClassComponent to ensure
     // unique/single instances.

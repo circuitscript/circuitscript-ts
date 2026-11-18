@@ -17,7 +17,7 @@ export class RefDes {
 
     /**
      * Examples for the fields below, as (text -> fields):
-     *   R11     -> prefix 'R', componentTypeId 11
+     *   R11     -> prefix 'R', componentTypeId 11 (also know as the context refdes)
      *   R4_2_3  -> prefix 'R', componentTypeId 4, indexedIds [2, 3]
      *   R5__    -> prefix 'R', componentTypeId 5, placeholderDepth 2
      *   A1R49   -> componentNamespace 'A1', prefix 'R', componentTypeId 49
@@ -26,22 +26,28 @@ export class RefDes {
     constructor(
         /** Component type name the prefix maps to (e.g. 'res'). Null if unknown. */
         public componentType: string | null,
+        
         /** Letters of the designator (R in R11, U in U3A). */
         public prefix: string,
+        
         /** Number following the prefix (11 in R11, 4 in R4_2). */
         public componentTypeId: number,
+
         /** Loop indexes after the id (R4_2_3 -> [2, 3]). Empty if not in a loop. */
         public indexedIds: number[] = [],
+        
         /**
          * Module instance qualifier before the prefix. Each level is the
          * parent's prefix and id (A1R49 -> 'A1', nested A1B2R3 -> 'A1B2').
          */
         public componentNamespace: string = '',
+        
         /**
          * Number of trailing '_' when the index is not yet known
          * (R5_ -> 1, R5__ -> 2). Ignored when indexedIds is non-empty.
          */
         public placeholderDepth: number = 0,
+        
         /** Multi-unit part letter appended last (U3 unit A -> 'A'). */
         public unitSuffix: string = '',
     ) {}
