@@ -36,6 +36,7 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
     tree: ScriptContext,
     tokens: CommonTokenStream,
     componentLinks: Map<ParserRuleContext, ClassComponent>,
+    componentNamespaceLinks: Map<ParserRuleContext, string>,
     importedLibraries: ImportedLibrary[],
     environment: NodeScriptEnvironment,
     genOptions: GenerateAnnotatedFilesOptions = {}): Promise<{ files: AnnotationOutputFile[]; skippedIndexed: number }> {
@@ -124,7 +125,8 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
                         inputStream.getTextFromRange(0, inputStream.size);
 
                     const tmpVisitor = new RefdesAnnotationVisitor(true,
-                        scriptChunk, tokens, componentLinks, refdesMode);
+                        scriptChunk, tokens, 
+                        componentLinks, componentNamespaceLinks, refdesMode);
                     tmpVisitor.visit(tree);
                     skippedIndexed += tmpVisitor.getSkippedIndexedCount();
 
@@ -150,7 +152,7 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
 
             } else {
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
-                    scriptData, tokens, componentLinks, refdesMode);
+                    scriptData, tokens, componentLinks, componentNamespaceLinks, refdesMode);
                 tmpVisitor.visit(tree);
                 skippedIndexed += tmpVisitor.getSkippedIndexedCount();
                 modifications = tmpVisitor.getModifications();
@@ -184,7 +186,7 @@ export async function generateAnnotatedFiles(options: ScriptOptions,
                 const { scriptData, tokens, tree, filePath, libraryName } = item;
 
                 const tmpVisitor = new RefdesAnnotationVisitor(true,
-                    scriptData, tokens, componentLinks, refdesMode);
+                    scriptData, tokens, componentLinks, componentNamespaceLinks, refdesMode);
 
                 await tmpVisitor.visit(tree);
                 skippedIndexed += tmpVisitor.getSkippedIndexedCount();
@@ -229,6 +231,7 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
     tree: ScriptContext,
     tokens: CommonTokenStream,
     componentLinks: Map<ParserRuleContext, ClassComponent>,
+    componentNamespaceLinks: Map<ParserRuleContext, string>, 
     importedLibraries: ImportedLibrary[],
     environment: NodeScriptEnvironment): Promise<void> {
     const {
@@ -240,7 +243,8 @@ export async function DefaultPostAnnotationCallback(options: ScriptOptions,
     }
 
     const { files, skippedIndexed } = await generateAnnotatedFiles(options,
-        scriptData, tree, tokens, componentLinks, importedLibraries, environment);
+        scriptData, tree, tokens, componentLinks, componentNamespaceLinks,
+        importedLibraries, environment);
 
     for (const file of files) {
         let usePath = file.filePath;

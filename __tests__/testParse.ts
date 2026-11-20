@@ -561,7 +561,7 @@ for i in range(0, 2):
             expect(getRefdes(visitor.dumpInstances(), 'res')).toEqual(['R1_1', 'R1_2', 'R40_1', 'R40_2']);
         });
 
-        test('same placeholder at two sites: ok in flat, error in indexed', async () => {
+        test('same placeholder at two sites is an error in flat and indexed', async () => {
             const body = `
 for i in range(0, 2):
     branch:
@@ -570,10 +570,7 @@ for i in range(0, 2):
     branch:
         add res(10k) #= R32_
 `;
-            const flatResult = await flat(body);
-            expect(flatResult.hasError).toEqual(false);
-            expect(getRefdes(flatResult.visitor.dumpInstances(), 'res'))
-                .toEqual(['R32_1', 'R32_2', 'R32_3', 'R32_4']);
+            await expect(flat(body)).rejects.toThrow(/Placeholder/);
 
             await expect(runScript(head + body, undefined, { refdesMode: RefdesAssignmentMode.Indexed }))
                 .rejects.toThrow(/Placeholder/);

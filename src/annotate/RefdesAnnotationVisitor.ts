@@ -13,7 +13,7 @@ import { Add_component_exprContext, Assignment_exprContext, At_block_headerConte
     Component_select_exprContext, 
     CreateComponentExprContext, 
     Frame_exprContext, 
-    Function_def_exprContext, Function_return_exprContext, ScriptContext, 
+    Function_def_exprContext, Function_return_exprContext, Module_callable_exprContext, ScriptContext, 
     To_component_exprContext,
     TrailerContext} from '../antlr/CircuitScriptParser.js';
 import { BaseVisitor } from '../BaseVisitor.js';
@@ -21,6 +21,7 @@ import { ClassComponent } from '../objects/ClassComponent.js';
 import { generateModifiedSourceText, RefdesModification } from './utils.js';
 import { RefdesAssignmentMode } from '../globals.js';
 import { assertDefined, getOrThrow } from "../utils.js";
+import { RefDes } from 'src/objects/RefDes.js';
 
 /**
  * A visitor that preserves original formatting including:
@@ -41,21 +42,20 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
     debug = false;
 
-    componentCtxLinks: Map<ParserRuleContext, ClassComponent>;
-
     inPathCommand = false;
     inPathCommandUseCtx: ParserRuleContext | null = null;
 
     constructor(silent: boolean, sourceText: string,
         tokenStream: CommonTokenStream,
-        componentCtxLinks: Map<ParserRuleContext, ClassComponent>,
+        private componentCtxLinks: Map<ParserRuleContext, ClassComponent>,
+        private componentNamespaceLinks: Map<ParserRuleContext, string>,
         refdesAssignmentMode: RefdesAssignmentMode = RefdesAssignmentMode.Indexed) {
 
         // super(silent, null, null);
         super(true);
+
         this.sourceText = sourceText;
         this.tokenStream = tokenStream;
-        this.componentCtxLinks = componentCtxLinks;
         this.refdesMode = refdesAssignmentMode;
     }
 
@@ -229,11 +229,20 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         // Do nothing
     }
 
+    visitModule_callable_expr = (ctx: Module_callable_exprContext): void => {
+        const ctxAnnotation = ctx.annotation_comment_expr();
+        if (this.componentNamespaceLinks.has(ctx) && ctxAnnotation === null){
+            const componentNamespace = this.componentNamespaceLinks.get(ctx) as string;
+            const componentNamespacePlaceholder = `_${componentNamespace}`;
+            this.insertAnnotationComment(componentNamespacePlaceholder, ctx);
+        }
+    }
+
     // Refdes annotations that have already been aded
-    addedRefdesAnnotations:string[] = [];
+    private addedRefdesAnnotations = new Set<string>();
 
     // Refdes placeholder annotations that have already been added
-    addedRefdesPlaceholderAnnotations:string[] = [];
+    private addedRefdesPlaceholderAnnotations = new Set<string>();
 
     private generateRefdesAnnotationComment(ctx:ParserRuleContext): string | null {
         if (this.componentCtxLinks.has(ctx)) {
@@ -242,14 +251,14 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             // If the refdes annotation was already added, then do not
             // add it again.
             let alreadyHaveRefdesAnnotation = instance.assignedRefDes !== null ?
-                (this.addedRefdesAnnotations.indexOf(instance.assignedRefDes.toString()) !== -1) : false;
+                (this.addedRefdesAnnotations.has(instance.assignedRefDes.toString())) : false;
+            
+            const assignedRefDes = instance.assignedRefDes;
 
-            if (instance.assignedRefDes !== null){
-                // extract placeholder
-                if (instance.assignedRefDes.isIndexedOrPlaceholder()){
-                    const placeholder = instance.assignedRefDes.toPlaceholder(1).toString();
-                    alreadyHaveRefdesAnnotation = this.addedRefdesPlaceholderAnnotations.indexOf(placeholder) !== -1;
-                }
+            // extract placeholder
+            if (assignedRefDes !== null && assignedRefDes.isIndexedOrPlaceholder()){
+                const placeholder = assignedRefDes.toPlaceholder(1).toString();
+                alreadyHaveRefdesAnnotation = this.addedRefdesPlaceholderAnnotations.has(placeholder);
             }
 
             const { forceSaveRefdesAnnotation: forceSaveRefdes } = instance;
@@ -262,9 +271,11 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
             if (!alreadyHaveRefdesAnnotation 
                 && (forceSaveRefdes 
                     || (instance.refdesCommentType === null
-                    && instance.assignedRefDes))) {
+                    && assignedRefDes))) {
 
-                let useRefDes = instance.assignedRefDes.toString();
+                const tmpRefdes = assignedRefDes as RefDes;
+
+                let useRefDes = tmpRefdes.toString();
 
                 // If false, then the instance does not have a placeholder 
                 // refdes. Only components in a loop structure can have a 
@@ -289,14 +300,16 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
 
                         // Placeholder refdes is indicated by the '_' after
                         // the prefix.
-                        useRefDes = instance.assignedRefDes.toPlaceholder(1).toString();
+                        useRefDes = tmpRefdes
+                            .toPlaceholder(1)
+                            .withNamespace('').toString();
                     }
 
-                    const assignedText = instance.assignedRefDes.toString();
-                    if (this.addedRefdesAnnotations.indexOf(assignedText) === -1) {
-                        this.addedRefdesAnnotations.push(assignedText);
+                    const assignedText = tmpRefdes.toString();
+                    if (!this.addedRefdesAnnotations.has(assignedText)) {
+                        this.addedRefdesAnnotations.add(assignedText);
                         if (isPlaceholderRefdes) {
-                            this.addedRefdesPlaceholderAnnotations.push(useRefDes);
+                            this.addedRefdesPlaceholderAnnotations.add(useRefDes);
                         }
                     }
 
@@ -308,28 +321,33 @@ export class RefdesAnnotationVisitor extends BaseVisitor {
         return null;
     }
 
+    private insertAnnotationComment(refdes: string, ctx: ParserRuleContext,
+        insertCtx?: ParserRuleContext | TerminalNode): void {
+
+        if (insertCtx === undefined) {
+            insertCtx = ctx;
+        } else if (insertCtx instanceof TerminalNode) {
+            // Wrap the terminal's token in a context spanning only
+            // that token.
+            const terminalCtx = new ParserRuleContext(ctx);
+            terminalCtx.start = insertCtx.symbol;
+            terminalCtx.stop = insertCtx.symbol;
+            insertCtx = terminalCtx;
+        }
+
+        const originalText = this.getOriginalText(insertCtx);
+
+        // Default behavior: append annotation at end
+        this.modifications.set(insertCtx, {
+            originalText,
+            refdes: [refdes]
+        });
+    }
+
     private addRefdesAnnotationComment(ctx: ParserRuleContext, insertCtx?: ParserRuleContext | TerminalNode): void {
         const refdes = this.generateRefdesAnnotationComment(ctx);
-        if (refdes !== null) {
-
-            if (insertCtx === undefined) {
-                insertCtx = ctx;
-            } else if (insertCtx instanceof TerminalNode) {
-                // Wrap the terminal's token in a context spanning only
-                // that token.
-                const terminalCtx = new ParserRuleContext(ctx);
-                terminalCtx.start = insertCtx.symbol;
-                terminalCtx.stop = insertCtx.symbol;
-                insertCtx = terminalCtx;
-            }
-
-            const originalText = this.getOriginalText(insertCtx);
-
-            // Default behavior: append annotation at end
-            this.modifications.set(insertCtx, {
-                originalText,
-                refdes: [refdes]
-            });
+        if (refdes) {
+            this.insertAnnotationComment(refdes, ctx, insertCtx);
         }
     }
 

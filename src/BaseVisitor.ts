@@ -410,13 +410,18 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.passResult(ctx, ctx.callable_expr());
     }
 
+    visitCallable_expr = (ctx: Callable_exprContext): void => {
+        this.CommonCallableExpr(ctx, null, this.getExecutor().componentNamespace);
+    }
+
     visitModuleCallableExpr = (ctx: ModuleCallableExprContext): void => {
         this.passResult(ctx, ctx.module_callable_expr());
     }
 
     private CommonCallableExpr = (
         ctx: Callable_exprContext | Module_callable_exprContext, 
-        passedNetNamespace: null | string): void => {
+        passedNetNamespace: null | string,
+        fullComponentNamespace: string): void => {
             
         const ctxParams = this.getResult(ctx);
 
@@ -437,7 +442,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         this.log('reference:', currentReference.name, 'found:', currentReference.found);
 
         currentReference = this.resolveTrailersForReference(currentReference, 
-            passedNetNamespace, ctx);
+            passedNetNamespace, fullComponentNamespace, ctx);
 
         let resultValue = currentReference;
 
@@ -451,15 +456,76 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
     visitModule_callable_expr = (ctx: Module_callable_exprContext): void => {
         const passedNetNamespace = this.visitResult(ctx.net_namespace_expr());
-        this.CommonCallableExpr(ctx, passedNetNamespace);
-    }
+        const ctxAnnotation = ctx.annotation_comment_expr();
 
-    visitCallable_expr = (ctx: Callable_exprContext): void => {
-        this.CommonCallableExpr(ctx, null);
+        let componentNamespace: string | null = null;
+
+        // Get the component namespace from the annotation comment if it is set.
+        if (ctxAnnotation) {
+            this.setResult(ctxAnnotation, { setRefdes: false });
+            const refdesId = this.visitResult(ctxAnnotation);
+
+            // Component namespace form
+            if (refdesId && refdesId.startsWith('_')) {
+                componentNamespace = refdesId.replace('_', '');
+            }
+        }
+
+        const executor = this.getExecutor();
+
+        let fullComponentNamespace = executor.componentNamespace;
+        
+        if (componentNamespace !== null) {
+            fullComponentNamespace = `${executor.componentNamespace}${componentNamespace}`;
+            this.ctxComponentNamespaceMap.set(ctx, componentNamespace);
+            this.ctxComponentNamespaces.add(fullComponentNamespace);
+
+            this.log(`component namespace provided: ${componentNamespace}, full component namespace: ${fullComponentNamespace}`);
+
+        } else if (passedNetNamespace && passedNetNamespace.endsWith("*") && componentNamespace === null) {
+            this.log(`passed net namespace: ${passedNetNamespace}`);
+
+            if (!this.ctxComponentNamespaceMap.has(ctx)) {
+                let i = 0;
+                while (i < 1000) {
+                    const tmpComponentNamespace = "A" + executor.tmpComponentNamespaceId;
+                    executor.tmpComponentNamespaceId++;
+                    fullComponentNamespace = `${executor.componentNamespace}${tmpComponentNamespace}`;
+
+                    this.log(`check if full component namespace exists: ${fullComponentNamespace}`);
+
+                    if (!this.ctxComponentNamespaces.has(fullComponentNamespace)) {
+                        this.log(`full component namespace does not exist`);
+                        this.ctxComponentNamespaceMap.set(ctx, tmpComponentNamespace);
+                        this.ctxComponentNamespaces.add(fullComponentNamespace);
+                        break;
+                    }
+
+                    i++;
+                }
+
+                if (i === 1000) {
+                    this.throwWithContext(ctx, "Failed to find available component namespace");
+                }
+
+            } else {
+                const tmpComponentNamespace = this.ctxComponentNamespaceMap.get(ctx) as string;
+                this.log(`ctx already has component namespace: ${tmpComponentNamespace}`);
+
+                fullComponentNamespace = `${executor.componentNamespace}${tmpComponentNamespace}`;
+            }
+
+            this.log(`assigned net namespace and component namespace: ${passedNetNamespace}, ${fullComponentNamespace}`);
+        }
+        
+        this.CommonCallableExpr(ctx, 
+            passedNetNamespace, 
+            fullComponentNamespace);
     }
 
     protected resolveTrailersForReference(reference: AnyReference,
         passedNetNamespace: string | null,
+        fullComponentNamespace: string,
         ctx: Callable_exprContext
             | Module_callable_exprContext
             | Double_dot_property_set_exprContext): AnyReference {
@@ -467,8 +533,9 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         if (reference !== undefined && reference.found) {
             ctx.trailer().forEach(ctxTrailer => {
                 this.setResult(ctxTrailer, {
-                    reference: reference,
-                    netNamespace: passedNetNamespace
+                    reference,
+                    fullComponentNamespace,
+                    netNamespace: passedNetNamespace,
                 });
                 reference = this.visitResult(ctxTrailer);
             });
@@ -476,7 +543,8 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
             if (ctx instanceof Module_callable_exprContext) {
                 const ctxTrailer = ctx.call_trailer();
                 this.setResult(ctxTrailer, {
-                    reference: reference,
+                    reference,
+                    fullComponentNamespace,
                     netNamespace: passedNetNamespace
                 });
                 reference = this.visitResult(ctxTrailer);
@@ -484,7 +552,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
         } else {
             // Check if is a function call, then have to say it is undefined
-            if (ctx.trailer().length > 0 
+            if (ctx.trailer().length > 0
                 && ctx.trailer(0) instanceof Call_trailerContext) {
                 this.throwWithContext(ctx, `Function not found: ${ctx.getText()}`);
             }
@@ -494,9 +562,15 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
     }
 
     visitCall_trailer = (ctx: Call_trailerContext): void => {
-        const { reference, netNamespace } = 
-            this.getResult(ctx) as { reference: AnyReference, netNamespace: string | null };
-        const nextReference = this.handleFunctionCall(reference, netNamespace, ctx);
+        const { reference,
+            netNamespace, fullComponentNamespace
+        } = this.getResult(ctx) as {
+            reference: AnyReference,
+            netNamespace: string | null,
+            fullComponentNamespace: string
+        };
+        const nextReference = this.handleFunctionCall(reference, 
+            netNamespace, fullComponentNamespace, ctx);
         this.setResult(ctx, nextReference);
     }
 
@@ -769,10 +843,13 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         return reference;
     }
 
-    // Map the same context to the same componet namespace. For loop structures,
+    // Map the same context to the same component namespace. For loop structures,
     // this ensures that the same function call reuses the same component 
     // namespace.
-    ctxComponentNamespace = new Map<ParserRuleContext, string>();
+    private ctxComponentNamespaceMap = new Map<ParserRuleContext, string>();
+
+    // Stores full component namespaces.
+    private ctxComponentNamespaces = new Set<string>();
 
     /**
      * Executes the function and returns a reference to the result of the
@@ -780,6 +857,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
      */
     private handleFunctionCall(currentReference: AnyReference, 
         passedNetNamespace: string| null, 
+        fullComponentNamespace: string, 
         ctx: Call_trailerContext): AnyReference {
         
         const executor = this.getExecutor();
@@ -789,31 +867,6 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
         const ctxParameters = ctx.parameters();
         if (ctxParameters) {
             parameters = this.visitResult(ctxParameters);
-        }
-
-        let useComponentNamespace = executor.componentNamespace;
-
-        if (passedNetNamespace && passedNetNamespace.endsWith("*")) {
-            this.log(`passed net namespace: ${passedNetNamespace}`);
-
-            passedNetNamespace = 
-                passedNetNamespace.replace("*", "A" + executor.tmpComponentNamespaceId);
-            
-            if (!this.ctxComponentNamespace.has(ctx)){
-                useComponentNamespace = "A" + executor.tmpComponentNamespaceId;
-                executor.tmpComponentNamespaceId++;
-
-                this.ctxComponentNamespace.set(ctx, useComponentNamespace);
-            } else {
-                useComponentNamespace = this.ctxComponentNamespace.get(ctx) as string;
-            }
-
-            // If starts with +, then append the executor's component namespace in front.
-            if (passedNetNamespace.startsWith("+")){
-                useComponentNamespace = `${executor.componentNamespace}${useComponentNamespace}`;
-            }
-
-            this.log(`assigned net namespace and component namespace: ${passedNetNamespace}, ${useComponentNamespace}`);
         }
 
         const useNetNamespace = this.getNetNamespace(
@@ -860,7 +913,7 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
                     parameters,
                     this.executionStack,
                     useNetNamespace,
-                    useComponentNamespace
+                    fullComponentNamespace
                 );
 
             if (isLibraryFunction){
@@ -1232,6 +1285,10 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
 
     getComponentCtxLinks(): Map<ParserRuleContext, ClassComponent>{
         return this.componentCtxLinks;
+    }
+
+    getComponentNamespaceCtxLinks(): Map<ParserRuleContext, string> {
+        return this.ctxComponentNamespaceMap;
     }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see getResult

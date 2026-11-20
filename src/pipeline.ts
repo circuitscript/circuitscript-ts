@@ -67,6 +67,7 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
             tree: ScriptContext,
             tokens:CommonTokenStream, 
             componentLinks:Map<ParserRuleContext, ClassComponent>,
+            componentNamespaceLinks: Map<ParserRuleContext, string>,
             importedLibraries: ImportedLibrary[],
             environment: NodeScriptEnvironment) => void)[]
 
@@ -264,10 +265,13 @@ export async function renderScriptCustom(scriptData: string, outputPaths: string
     printWarnings(visitor.getWarnings().slice(warningCountBeforeAnnotate));
 
     const componentLinks = visitor.getComponentCtxLinks();
+    const componentNamespaceLinks = visitor.getComponentNamespaceCtxLinks();
+
     const importedLibraries = Array.from(visitor.getScope().libraries.values());
     for (let i = 0; i < postAnnotationCallbacks.length; i++) {
         await postAnnotationCallbacks[i](options, scriptData, tree, 
-            tokens, componentLinks, importedLibraries, environment);
+            tokens, componentLinks, componentNamespaceLinks, 
+            importedLibraries, environment);
     }
 
     visitor.cacheLibraries();

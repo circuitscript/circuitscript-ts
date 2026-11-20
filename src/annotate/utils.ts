@@ -119,8 +119,9 @@ export function generateModifiedSourceText(
     }
 
     return output.join('');
-}export type RefdesModification = {
+}
+
+export type RefdesModification = {
     originalText: string;
     refdes: string[];
 };
-

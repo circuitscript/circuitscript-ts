@@ -35,7 +35,7 @@ export class ComponentAnnotater {
     private claimedBy = new Map<string, string>();
 
     // Placeholder base (e.g. R5) -> ctx that owns it.
-    private placeholderOwner = new Map<string, ParserRuleContext>();
+    private placeholderCtx = new Map<string, ParserRuleContext>();
 
     // Base prefix (e.g. R5) -> indexed refdes generated under it (R5_1, R5_2, ...).
     // Used by getIndexedRefdesSimplifications to collapse single-member groups
@@ -123,8 +123,8 @@ export class ComponentAnnotater {
 
             if (this.refdesMode === RefdesAssignmentMode.IndexedFlat && indexedStack.length > 0) {
                 this.log('  strategy: indexed-flat');
-                resultRefdes = this.getIndexedFlatRefdes2(useCtx, instance, usePrefix, useCounterKey,
-                    useComponentType);
+                resultRefdes = this.getIndexedFlatRefdes2(useCtx, instance, 
+                    usePrefix, useComponentType);
 
             } else if (this.refdesMode !== RefdesAssignmentMode.Flat && indexedStack.length > 0) {
                 // If indexedStack is defined, then the instance was created within
@@ -145,7 +145,7 @@ export class ComponentAnnotater {
                         // It was reserved up front by reservePlaceholder.
                         prefix = instance.placeHolderRefDes.base();
                         this.log(`  base '${prefix}' from placeholder '${instance.placeHolderRefDes}'`);
-                        if (!this.placeholderOwner.has(prefix.toString())) {
+                        if (!this.placeholderCtx.has(prefix.toString())) {
                             this.reservePlaceholder(prefix, instance);
                         }
                     } else {
@@ -214,12 +214,12 @@ export class ComponentAnnotater {
     // Stores last counter of base refdes. 
     baseRefdesCounters = new Map<string, number>();
    
-    // Stores base refdes created.
-    baseRefdesSet = new Set();
+    // Stores base refdes created
+    baseRefdesSet = new Set<string>();
 
     private getIndexedFlatRefdes2(ctx: ParserRuleContext, 
         instance: ClassComponent, usePrefix: string,
-        useCounterKey: string, useComponentType: string | null): RefDes {
+        useComponentType: string | null): RefDes {
 
         // Generate base refdes        
         if (!this.ctxRefdes.has(ctx)){
@@ -406,40 +406,52 @@ export class ComponentAnnotater {
         return simplifications;
     }
 
-    trackRefDes(refdes: RefDes | string, instance: ClassComponent): void {
+    trackRefDes(refdes: RefDes, instance: ClassComponent, ctx: ParserRuleContext): void {
         const name = refdes.toString();
         if (this.assignedRefdes.has(name)) {
             throw new Error(`Duplicate refdes '${name}': first used at ${this.claimedBy.get(name) ?? 'unknown'}, again at ${this.describeLocation(instance)}`);
         }
         this.log(`explicit refdes '${name}' at ${this.describeLocation(instance)}`);
-        this.markUsed(name, instance);
+        this.markUsed(refdes, instance, ctx);
     }
 
     /** Reserves the base name of an indexed placeholder (e.g. R5_ -> R5) */
     reservePlaceholder(baseRefdes: RefDes, instance: ClassComponent): void {
         const base = baseRefdes.toString();
-        const ctx = instance.getFirstCtxReference()?.ctx;
+        const firstReferenceCtx = instance.getFirstCtxReference() as CtxReference;
+        const ctx = firstReferenceCtx.ctx;
         const loc = this.describeLocation(instance);
-        const owner = this.placeholderOwner.get(base);
 
-        if (owner === undefined) {
+        if (!this.placeholderCtx.has(base)) {
             if (this.assignedRefdes.has(base)) {
                 throw new Error(`Placeholder '${base}_' at ${loc} conflicts with explicit refdes '${base}' (${this.claimedBy.get(base) ?? 'unknown'})`);
             }
             this.log(`  reserved placeholder base '${base}' at ${loc}`);
-            this.placeholderOwner.set(base, ctx);
-            this.markUsed(base, instance);
-        } else if (owner !== ctx && this.refdesMode !== RefdesAssignmentMode.IndexedFlat) {
-            throw new Error(`Placeholder '${base}_' used at ${this.claimedBy.get(base) ?? 'unknown'} and ${loc}`);
+            this.placeholderCtx.set(base, ctx);
+            this.markUsed(baseRefdes, instance, ctx);
+        } else {
+            const linkedCtx = this.placeholderCtx.get(base) as ParserRuleContext;
+            if (linkedCtx !== ctx) {
+                throw new Error(`Placeholder '${base}_' used at ${this.claimedBy.get(base) ?? 'unknown'} and ${loc}`);
+            }
         }
     }
 
-    private markUsed(refdes: RefDes | string, instance?: ClassComponent): void {
+    private markUsed(refdes: RefDes, instance?: ClassComponent, ctx: ParserRuleContext): void {
         const name = refdes.toString();
         this.assignedRefdes.add(name);
         if (instance && !this.claimedBy.has(name)) {
             this.claimedBy.set(name, this.describeLocation(instance));
         }
+
+        const baseRefdes = refdes.base();
+        const baseRefdesStr = baseRefdes.toString();
+        if (!this.baseRefdesCounters.has(baseRefdesStr)){
+            this.baseRefdesCounters.set(baseRefdesStr, 1);
+        }
+
+        this.baseRefdesSet.add(baseRefdes.toString());
+        this.ctxRefdes.set(ctx, baseRefdes);
     }
 
     describeLocation(instance: ClassComponent): string {

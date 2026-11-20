@@ -85,8 +85,9 @@ import { PinDefinition, PinId, PinIdType } from './objects/PinDefinition.js';
 import { AllPinTypes, normalizePinType, PinTypes, resolvePinType } from './objects/PinTypes.js';
 import { ExecutionScope, FrameAction, PropertyTreeKey, SequenceAction, SequenceItem } from './objects/ExecutionScope.js';
 import { AnyReference, CFunctionOptions, CallableParameter, ComplexType, ComponentPin, 
-    ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, DeclaredReference, 
-    Direction, FunctionDefinedParameter, UndeclaredReference } from './objects/types.js';
+    ComponentPinNet, ComponentPinNetPair, ComponentUnitDefinition, 
+    CtxReference, DeclaredReference, Direction, FunctionDefinedParameter, 
+    UndeclaredReference } from './objects/types.js';
 import { BusMainPinName, ColorScheme, ComponentTypes, Defaults, ValidSubtypes, Delimiter1, FrameType, GlobalDocumentName,
     ModuleContainsKeyword, NoNetText, ParamKeys, RefdesFileSuffix, ReferenceTypes, SymbolPinSide,
     ValidPinSides,
@@ -2620,7 +2621,8 @@ export class ParserVisitor extends BaseVisitor {
             null, lastReference.value, [firstId]);
 
         const useReference = this.resolveTrailersForReference(
-            referenceWithFirstID, null, ctx);
+            referenceWithFirstID, 
+            null, null, ctx);
         
         this.assignValueToReference([], useReference, ctx, result);
     }
@@ -2937,10 +2939,15 @@ export class ParserVisitor extends BaseVisitor {
         const refdesID = ctx.getText().replace('#=', '').trim();
 
         const params = this.getResult(ctx) ?? {};
-        const currentComponent = this.getScope().currentComponent;
-        const {component = currentComponent} = params;
+        const { setRefdes = true } = params;
 
-        this.setComponentRefdes(refdesID, false, component);
+        if (setRefdes) {
+            const currentComponent = this.getScope().currentComponent;
+            const { component = currentComponent } = params;
+            this.setComponentRefdes(refdesID, false, component);
+        }
+
+        this.setResult(ctx, refdesID);
     }
     
     visitPart_set_expr = (ctx: Part_set_exprContext): void => {
@@ -3475,7 +3482,7 @@ export class ParserVisitor extends BaseVisitor {
                 /** If instance has a placeholder reference but is not used
                  * in an indexed way, then use the placeholder refdes as a
                  * normal refdes. */
-                const firstCtx = instance.getFirstCtxReference();
+                const firstCtx = instance.getFirstCtxReference() as CtxReference;
                 if (firstCtx && firstCtx.indexedStack.length === 0 && instance.placeHolderRefDes) {
                     const normalRefDes = instance.placeHolderRefDes.base();
                     this.warnings.push({
@@ -3499,7 +3506,7 @@ export class ParserVisitor extends BaseVisitor {
                 if (instance.assignedRefDes) {
                     this.setComponentUnitRefdesSuffix(instance);
 
-                    annotater.trackRefDes(instance.assignedRefDes, instance);
+                    annotater.trackRefDes(instance.assignedRefDes, instance, firstCtx.ctx);
                     this.log(instance.assignedRefDes.toString(), '-', instance.instanceName);
                     continue;
                 }
