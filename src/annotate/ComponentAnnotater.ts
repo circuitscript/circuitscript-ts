@@ -49,7 +49,7 @@ export class ComponentAnnotater {
     private flatCounters = new Map<string, number>();
 
     constructor(private formatPath: (filePath: string) => string = defaultFormatPath,
-        private refdesMode: RefdesAssignmentMode = RefdesAssignmentMode.Indexed,
+        private refdesMode: RefdesAssignmentMode = RefdesAssignmentMode.IndexedFlat,
         private logger: Logger = new Logger()) {
         // Refdes counting should all start at 1. e.g. R1, C1, etc.
         for (const key in ComponentRefDesPrefixes) {
