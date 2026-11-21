@@ -1,6 +1,76 @@
 # Changelog
 
-## [v0.12.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.1...v0.12.2)
+## [v0.13.0](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.2...v0.13.0)
+
+[eadc16b](https://github.com/circuitscript/circuitscript-ts/commit/eadc16b5def9e7c96a4bbe62477d894a9fcaa641)Split callable expression into namespaced and plain forms
+- 
+- Separate call_trailer and non_call_trailer in the grammar. A net
+- namespace prefix now requires a trailing call, so it is parsed as a
+- NamespacedCallable. Update the visitor, validator and semantic token
+- visitor and regenerate the parser.
+
+[84f1879](https://github.com/circuitscript/circuitscript-ts/commit/84f18799b47669c60c87516c9050cb09d13e383c)Split module calls into a separate callable rule
+- 
+- Move the namespaced call form out of callable_expr into module_callable_expr
+- and allow it as a standalone expression with a trailing annotation comment.
+- Update visitors, semantic tokens and validator for the new rule, and add
+- tests for module without ports and wire continuation after module contains.
+
+[39736c4](https://github.com/circuitscript/circuitscript-ts/commit/39736c45842e0ed81802fa45e9d53c3ee60f56cf)Replace net namespace prefix with @ decorator syntax
+- 
+- Module calls now use @/name@ style decorators. A trailing @ requests a
+- component namespace; a bare @ creates only a component namespace without
+- a net namespace. Annotation comments without a component namespace
+- decorator are ignored with a warning. Update lexer, parser, visitors,
+- regenerated ANTLR output and test scripts to the new syntax.
+
+[ea354ff](https://github.com/circuitscript/circuitscript-ts/commit/ea354ff0c608ca44772464911419b3b57b50532c)Add component namespace to refdes for module instances
+- 
+- Support a '/*' net namespace form that generates a temporary namespace per
+- call, and propagate a component namespace through execution contexts so
+- components created inside modules get a prefixed refdes. ExecutionContext
+- now takes an options object.
+
+[ab3c026](https://github.com/circuitscript/circuitscript-ts/commit/ab3c0267c82611863e18cc46cbf1428a7a7032c4)Assign component namespaces from annotation comments on module calls
+- 
+- Parse the refdes annotation comment on module calls to get an explicit
+- component namespace, and generate a unique temporary namespace when a
+- wildcard net namespace is used. Pass the full component namespace through
+- call trailers and expose namespace ctx links to the annotation visitor.
+- 
+- Track placeholder and explicit refdes bases in the annotater and update
+- annotation tests.
+
+[e92c8c3](https://github.com/circuitscript/circuitscript-ts/commit/e92c8c3f29727b93889d7535a5ebd1dac221c5da)Introduce structured RefDes class for reference designators
+- 
+- Replace string-based refdes handling with a RefDes object carrying
+- prefix, id, indexes, placeholder depth, component namespace and unit
+- suffix. Rename RefdesMode to RefdesAssignmentMode and update the
+- annotater, BOM, export and layout code to use the new type. Add
+- RefDes tests.
+
+[93e527e](https://github.com/circuitscript/circuitscript-ts/commit/93e527ed5e8a664e8bf8f6a4c0dcf5b6147d6f97)Add indexed-flat refdes assignment with component namespaces
+- 
+- Assign a base refdes per call context and track index counters per
+- namespaced prefix. Reuse the same component namespace for repeated calls
+- from the same context and share the namespace id counter between nested
+- executors with the same namespace. Rename existingSet to assignedRefdes
+- and drop the unused existingRefDes list.
+
+[e1d726a](https://github.com/circuitscript/circuitscript-ts/commit/e1d726a8cac50fec9f1e0a40fc131af621622235)Use namespace-qualified net keys for highlighting
+- 
+- Same-named nets in different namespaces previously shared a data-net key
+- and highlighted together. Wire data-net attributes and pin metadata now
+- carry a namespace-qualified netKey and netNamespace, and the viewer
+- inspector shows the qualified name and highlights by key.
+
+[fd89038](https://github.com/circuitscript/circuitscript-ts/commit/fd89038be22207c2dfa28fcdb78f87842d4a4e84)Add debug logging to component annotation
+- 
+- Route ComponentAnnotater logging through the visitor's logger to trace prefix selection, indexing strategy, namespace and final refdes assignment.
+
+[2e5d4e3](https://github.com/circuitscript/circuitscript-ts/commit/2e5d4e3479c58a7ae78ccbbf2635ab8689c4b28f) changed default refdes assignment mode
+
+## [v0.12.2](https://github.com/circuitscript/circuitscript-ts/compare/v0.12.1...v0.12.2) - 2026-11-15
 
 [86de126](https://github.com/circuitscript/circuitscript-ts/commit/86de1260c52ae9c672fc7cd7e7dd9c3801ee7dc0)Add markdown command for graphic tables
 - 
