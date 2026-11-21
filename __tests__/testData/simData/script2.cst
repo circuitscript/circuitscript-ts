@@ -13,7 +13,7 @@ def sub():
 at anchor
 for i in range(3):
     branch:
-        /("ch" + i) sub()
+        @/("ch" + i) sub()
 
 document.sim.title = "Computed net namespace test"
 document.sim.analysis = ".tran 100ns 500us"

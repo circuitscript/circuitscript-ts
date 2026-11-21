@@ -73,6 +73,8 @@ Divide:             '/';
 Multiply:           '*';
 Modulus:            '%';
 
+AtChar:             '@';
+
 AdditionAssign:     '+=';
 MinusAssign:        '-=';
 DivideAssign:       '/=';

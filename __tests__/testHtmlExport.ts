@@ -434,9 +434,9 @@ def sub():
 anchor = net("ANCHOR")
 at anchor
 branch:
-    /a sub()
+    @/a sub()
 branch:
-    /b sub()
+    @/b sub()
 `;
         const environment = getTestEnvironment();
         await environment.prepareSVGEnvironment();

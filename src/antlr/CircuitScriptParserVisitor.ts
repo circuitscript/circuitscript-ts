@@ -47,7 +47,7 @@ import { Call_trailerContext } from "./CircuitScriptParser.js";
 import { Non_call_trailerContext } from "./CircuitScriptParser.js";
 import { Callable_exprContext } from "./CircuitScriptParser.js";
 import { TrailerContext } from "./CircuitScriptParser.js";
-import { Net_namespace_exprContext } from "./CircuitScriptParser.js";
+import { Decorator_namespace_exprContext } from "./CircuitScriptParser.js";
 import { Module_callable_exprContext } from "./CircuitScriptParser.js";
 import { Property_block_exprContext } from "./CircuitScriptParser.js";
 import { Properties_blockContext } from "./CircuitScriptParser.js";
@@ -379,11 +379,11 @@ export class CircuitScriptParserVisitor<Result> extends AbstractParseTreeVisitor
      */
     visitTrailer?: (ctx: TrailerContext) => Result;
     /**
-     * Visit a parse tree produced by `CircuitScriptParser.net_namespace_expr`.
+     * Visit a parse tree produced by `CircuitScriptParser.decorator_namespace_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitNet_namespace_expr?: (ctx: Net_namespace_exprContext) => Result;
+    visitDecorator_namespace_expr?: (ctx: Decorator_namespace_exprContext) => Result;
     /**
      * Visit a parse tree produced by `CircuitScriptParser.module_callable_expr`.
      * @param ctx the parse tree

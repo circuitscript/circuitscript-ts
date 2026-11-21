@@ -136,8 +136,8 @@ non_call_trailer: Dot ID | LSquare data_expr RSquare;
 callable_expr: ID trailer*;
 trailer: call_trailer | non_call_trailer;
 
-net_namespace_expr: Addition? Divide Multiply? data_expr?;
-module_callable_expr: net_namespace_expr ID trailer* call_trailer annotation_comment_expr?;
+decorator_namespace_expr: AtChar (Addition? Divide data_expr?)? AtChar?;
+module_callable_expr: decorator_namespace_expr ID trailer* call_trailer annotation_comment_expr?;
 
 property_block_expr: property_key_expr Colon expressions_block;
 properties_block: NEWLINE INDENT (property_expr | NEWLINE)+ DEDENT;

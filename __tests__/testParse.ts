@@ -833,7 +833,7 @@ def sub():
     add res(0)
     add net("SIG")
 
-/(1 + 2) sub()
+@/(1 + 2) sub()
 `);
 
         expect(err.message).toContain('did not evaluate to a string');
@@ -849,7 +849,7 @@ def sub():
     add res(0)
     add net("SIG")
 
-/undeclaredVar sub()
+@/undeclaredVar sub()
 `);
 
         expect(hasError).toEqual(false);

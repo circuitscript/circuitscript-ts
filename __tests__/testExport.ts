@@ -174,7 +174,7 @@ def sub():
 at anchor
 for i in range(3):
     branch:
-        /("ch" + i) sub()
+        @/("ch" + i) sub()
 `);
         expect(hasError).toBe(false);
 
@@ -210,7 +210,7 @@ def sub():
 
 at anchor
 branch:
-    /("ns") sub()
+    @/("ns") sub()
 `);
         expect(hasError).toBe(false);
 

@@ -455,67 +455,81 @@ export class BaseVisitor extends CircuitScriptParserVisitor<unknown> {
     }
 
     visitModule_callable_expr = (ctx: Module_callable_exprContext): void => {
-        const passedNetNamespace = this.visitResult(ctx.net_namespace_expr());
+        const {
+            netNamespace: passedNetNamespace,
+            createComponentNamespace = false,
+        } = this.visitResult(ctx.decorator_namespace_expr());
         const ctxAnnotation = ctx.annotation_comment_expr();
 
         let componentNamespace: string | null = null;
 
-        // Get the component namespace from the annotation comment if it is set.
-        if (ctxAnnotation) {
-            this.setResult(ctxAnnotation, { setRefdes: false });
-            const refdesId = this.visitResult(ctxAnnotation);
+        const executor = this.getExecutor();
+        let fullComponentNamespace = executor.componentNamespace;
 
-            // Component namespace form
-            if (refdesId && refdesId.startsWith('_')) {
-                componentNamespace = refdesId.replace('_', '');
+        // Get the component namespace from the annotation comment if it is set.
+        if (createComponentNamespace){
+            this.log('create component namespace');
+
+            if(ctxAnnotation) {
+                this.setResult(ctxAnnotation, { setRefdes: false });
+                const refdesId = this.visitResult(ctxAnnotation);
+
+                // Component namespace form
+                if (refdesId && refdesId.startsWith('_')) {
+                    componentNamespace = refdesId.replace('_', '');
+                    this.log(`annotation coment for component namespace: ${componentNamespace}`);
+                }
+            }
+            
+            if (componentNamespace !== null) {
+                fullComponentNamespace = `${executor.componentNamespace}${componentNamespace}`;
+                this.ctxComponentNamespaceMap.set(ctx, componentNamespace);
+                this.ctxComponentNamespaces.add(fullComponentNamespace);
+
+                this.log(`component namespace provided: ${componentNamespace}, full component namespace: ${fullComponentNamespace}`);
+
+            } else {
+                if (!this.ctxComponentNamespaceMap.has(ctx)) {
+                    let i = 0;
+                    while (i < 1000) {
+                        const tmpComponentNamespace = "A" + executor.tmpComponentNamespaceId;
+                        executor.tmpComponentNamespaceId++;
+                        fullComponentNamespace = `${executor.componentNamespace}${tmpComponentNamespace}`;
+
+                        this.log(`check if full component namespace exists: ${fullComponentNamespace}`);
+
+                        if (!this.ctxComponentNamespaces.has(fullComponentNamespace)) {
+                            this.log(`full component namespace does not exist`);
+                            this.ctxComponentNamespaceMap.set(ctx, tmpComponentNamespace);
+                            this.ctxComponentNamespaces.add(fullComponentNamespace);
+                            break;
+                        }
+
+                        i++;
+                    }
+
+                    if (i === 1000) {
+                        this.throwWithContext(ctx, "Failed to find available component namespace");
+                    }
+
+                } else {
+                    const tmpComponentNamespace = this.ctxComponentNamespaceMap.get(ctx) as string;
+                    this.log(`ctx already has component namespace: ${tmpComponentNamespace}`);
+
+                    fullComponentNamespace = `${executor.componentNamespace}${tmpComponentNamespace}`;
+                }
+
+                this.log(`assigned net namespace and component namespace: ${passedNetNamespace}, ${fullComponentNamespace}`);
             }
         }
 
-        const executor = this.getExecutor();
-
-        let fullComponentNamespace = executor.componentNamespace;
-        
-        if (componentNamespace !== null) {
-            fullComponentNamespace = `${executor.componentNamespace}${componentNamespace}`;
-            this.ctxComponentNamespaceMap.set(ctx, componentNamespace);
-            this.ctxComponentNamespaces.add(fullComponentNamespace);
-
-            this.log(`component namespace provided: ${componentNamespace}, full component namespace: ${fullComponentNamespace}`);
-
-        } else if (passedNetNamespace && passedNetNamespace.endsWith("*") && componentNamespace === null) {
-            this.log(`passed net namespace: ${passedNetNamespace}`);
-
-            if (!this.ctxComponentNamespaceMap.has(ctx)) {
-                let i = 0;
-                while (i < 1000) {
-                    const tmpComponentNamespace = "A" + executor.tmpComponentNamespaceId;
-                    executor.tmpComponentNamespaceId++;
-                    fullComponentNamespace = `${executor.componentNamespace}${tmpComponentNamespace}`;
-
-                    this.log(`check if full component namespace exists: ${fullComponentNamespace}`);
-
-                    if (!this.ctxComponentNamespaces.has(fullComponentNamespace)) {
-                        this.log(`full component namespace does not exist`);
-                        this.ctxComponentNamespaceMap.set(ctx, tmpComponentNamespace);
-                        this.ctxComponentNamespaces.add(fullComponentNamespace);
-                        break;
-                    }
-
-                    i++;
-                }
-
-                if (i === 1000) {
-                    this.throwWithContext(ctx, "Failed to find available component namespace");
-                }
-
-            } else {
-                const tmpComponentNamespace = this.ctxComponentNamespaceMap.get(ctx) as string;
-                this.log(`ctx already has component namespace: ${tmpComponentNamespace}`);
-
-                fullComponentNamespace = `${executor.componentNamespace}${tmpComponentNamespace}`;
-            }
-
-            this.log(`assigned net namespace and component namespace: ${passedNetNamespace}, ${fullComponentNamespace}`);
+        if (ctxAnnotation && !createComponentNamespace){
+            // Add warning if there is component namespace annotation but no 
+            // component namespace decorator?
+            this.warnings.push({
+                ctx: ctx,
+                message: 'Component namespace decorator not specified, annotation comment is ignored.'
+            })
         }
         
         this.CommonCallableExpr(ctx, 

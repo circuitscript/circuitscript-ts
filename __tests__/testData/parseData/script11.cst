@@ -10,12 +10,12 @@ def tmp1():
 
     wire right 200
     add res(0)
-    add / label("global_label")
+    add @/ label("global_label")
 
     wire right 400
     add res(0)
     
-    +/inner tmp2()
+    @+/inner tmp2()
 
 def tmp2():
     wire right 100
@@ -26,8 +26,8 @@ def tmp2():
 at v5v
 wire down 100
 branch:
-    /scope1 tmp1()  # defines that circuits called in tmp1() will be under the /scope1 net namespace
+    @/scope1 tmp1()  # defines that circuits called in tmp1() will be under the /scope1 net namespace
 
 wire down 200
 branch:
-    /scope2 tmp1()  # defines that circuits called in tmp1() will be under the /scope2 net namespace
+    @/scope2 tmp1()  # defines that circuits called in tmp1() will be under the /scope2 net namespace

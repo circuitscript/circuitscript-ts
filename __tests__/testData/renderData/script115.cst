@@ -11,4 +11,4 @@ def sub():
     add res(1k) angle:0
     wire right 100 to gnd
 
-/adc1 sub()
+@/adc1 sub()

@@ -90,7 +90,7 @@ describe('SemanticTokensVisitor', () => {
 def sub():
     a = 1
 
-/ns sub()
+@/ns sub()
 x = sub()
 `;
 

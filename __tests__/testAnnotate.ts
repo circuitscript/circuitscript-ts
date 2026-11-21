@@ -988,7 +988,7 @@ def amp():
     add last
     return last
 
-at /*amp()
+at @/@amp()
 `;
 
     test('plain, indexed and namespaced fields', async () => {

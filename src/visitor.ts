@@ -21,7 +21,7 @@ import {
     Function_def_exprContext,
     MultiplyExprContext,
     Nested_propertiesContext,
-    Net_namespace_exprContext,
+    Decorator_namespace_exprContext,
     Pin_select_exprContext,
     Point_exprContext,
     Property_exprContext,
@@ -2711,47 +2711,58 @@ export class ParserVisitor extends BaseVisitor {
         }
     }
 
-    visitNet_namespace_expr = (ctx: Net_namespace_exprContext): void => {
+    visitDecorator_namespace_expr = (ctx: Decorator_namespace_exprContext): void => {
         let dataValue: AnyReference | string;
 
         let netNamespace = null;
         const hasPlus = ctx.Addition();
+        const hasDivide = ctx.Divide();
 
-        const ctxDataExpr = ctx.data_expr();
+        // Net namespace is defined
+        if (hasDivide){
+            const ctxDataExpr = ctx.data_expr();
+            
+            if (ctxDataExpr) {
+                this.setResult(ctxDataExpr, { keepReference: true });
+                dataValue = this.visitResult(ctxDataExpr);
 
-        if (ctxDataExpr) {
-            this.setResult(ctxDataExpr, {keepReference: true});
-            dataValue = this.visitResult(ctxDataExpr);
-
-            if (typeof dataValue === "string") {
-                // String literal or computed (e.g. concatenation) expression -
-                // the common case for parametric namespaces such as /("ch" + i).
-                netNamespace = "/" + dataValue;
-            } else if (dataValue instanceof AnyReference && dataValue.found &&
-                       typeof dataValue.value === "string") {
-                // A declared variable holding a string, e.g. `chname = "ch0"` then
-                // `/chname`.
-                netNamespace = "/" + dataValue.value;
-            } else if (dataValue instanceof AnyReference && dataValue.name) {
-                // Bare namespace tag, e.g. `/scope1` - resolveVariable finds no
-                // such declared variable (found === false), but `.name` carries
-                // the identifier text itself, which is the intended namespace
-                // string for this syntax.
-                netNamespace = "/" + dataValue.name;
-            } else {
-                this.throwWithContext(ctxDataExpr,
-                    "Failed to resolve net namespace value: '" +
-                    ctxDataExpr.getText() + "' did not evaluate to a string");
+                if (typeof dataValue === "string") {
+                    // String literal or computed (e.g. concatenation) expression -
+                    // the common case for parametric namespaces such as /("ch" + i).
+                    netNamespace = "/" + dataValue;
+                } else if (dataValue instanceof AnyReference && dataValue.found &&
+                    typeof dataValue.value === "string") {
+                    // A declared variable holding a string, e.g. `chname = "ch0"` then
+                    // `/chname`.
+                    netNamespace = "/" + dataValue.value;
+                } else if (dataValue instanceof AnyReference && dataValue.name) {
+                    // Bare namespace tag, e.g. `/scope1` - resolveVariable finds no
+                    // such declared variable (found === false), but `.name` carries
+                    // the identifier text itself, which is the intended namespace
+                    // string for this syntax.
+                    netNamespace = "/" + dataValue.name;
+                } else {
+                    this.throwWithContext(ctxDataExpr,
+                        "Failed to resolve net namespace value: '" +
+                        ctxDataExpr.getText() + "' did not evaluate to a string");
+                }
             }
 
-        } else {
-            // If no net namespace specified, then the global namespace
-            // is assumed.
-            this.setResult(ctx, ctx.getText());
-            return;
+            // A bare '/' with no name refers to the global net namespace.
+            if (netNamespace === null) {
+                netNamespace = "/";
+            }
+
+            netNamespace = (hasPlus ? "+" : "") + netNamespace;
         }
 
-        this.setResult(ctx, (hasPlus ? "+" : "") + netNamespace);
+        const createComponentNamespace = (hasDivide && ctx.AtChar().length === 2)
+            || (!hasDivide);
+
+        this.setResult(ctx, {
+            netNamespace,
+            createComponentNamespace,
+        });
     }
 
     visitIf_expr = (ctx: If_exprContext): void => {
